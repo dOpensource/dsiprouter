@@ -2,7 +2,7 @@
 
 Allows you to quickly turn kamailio into a easy to to use SIP trunking service that allow you to manage your carriers and PBX's from a web gui
 
-###Supported Platforms:
+### Supported Platforms:
 
 CentOS 7 - tested on 7.3.1611
 Kamailio 4.x - tested on Kamailio 4.4.5
