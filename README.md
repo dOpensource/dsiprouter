@@ -4,8 +4,8 @@ Allows you to quickly turn kamailio into a easy to to use SIP trunking service t
 
 ### Supported Platforms:
 
-CentOS 7 - tested on 7.3.1611
-Kamailio 4.x - tested on Kamailio 4.4.5
+- CentOS 7 (tested on 7.3.1611)
+- Kamailio 4.x (tested on Kamailio 4.4.5)
 
 ### Prerequites:
 
