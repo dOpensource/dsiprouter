@@ -62,7 +62,7 @@ mysql kamailio -e "insert into dr_rules values (null,8000,'.','','','','1,2','Ou
 
 rm -rf /etc/kamailio/kamailio.cfg.before_dsiprouter
 mv ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.before_dsiprouter
-ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_disrouter.cfg /etc/kamailio/kamailio.cfg
+ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg /etc/kamailio/kamailio.cfg
 
 
 }
