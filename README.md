@@ -7,7 +7,7 @@ Allows you to quickly turn kamailio into a easy to to use SIP trunking service t
 - CentOS 7 (tested on 7.3.1611)
 - Kamailio 4.x (tested on Kamailio 4.4.5)
 
-### Prerequites:
+### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
 - Kamailio needs to be installed with the default kamailio configurtion directory, which is /etc/kamailio on CentOS 7
