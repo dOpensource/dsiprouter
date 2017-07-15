@@ -1,0 +1,20 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block css %}
+        {{ link_tag('main') }}
+{% endblock %}
+
+{% block body %}
+
+{% if reloadstatus %}
+
+<h3>Kamailio reload: {{reloadstatus}}</h3>
+
+{% endif %}
+
+{% endblock %}
+
+{% block js %}
+{% endblock %}

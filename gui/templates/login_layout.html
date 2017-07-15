@@ -1,0 +1,31 @@
+{% from 'util.jinja2.html' import link_tag, script_tag, tracked_link %}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>dSIPRouter {% block title %}{% endblock %}</title>
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
+
+        {% block css %}
+        {% endblock %}
+
+    </head>
+    <body>
+
+        <div class="container">
+
+            {% block body %}
+            {% endblock %}
+
+        </div>
+
+        {{ script_tag('js/jquery') }}
+        {{ script_tag('js/bootstrap') }}
+        <script>window.RAPID = {};</script>
+
+        {% block js %}
+        {% endblock %}
+
+    </body>
+</html>
