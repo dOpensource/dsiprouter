@@ -37,7 +37,7 @@ class OutboundRoutes(object):
 
 
 def loadSession(db_uri):
-    engine = create_engine(db_uri, echo=True)
+    engine = create_engine(db_uri, echo=True, pool_recycle=3600)
     metadata = MetaData(engine)
     dr_gateways = Table('dr_gateways', metadata, autoload=True)
     address = Table('address', metadata, autoload=True)
