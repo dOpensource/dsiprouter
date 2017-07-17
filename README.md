@@ -42,3 +42,17 @@ Put this line in /etc/rc.local
 
 vi ./gui/settings
 change the PASSWORD field to reflect the password you want
+
+### Screenshots
+
+#### Carrier Management Screen
+![dSIPRouter Carrier Screen](/docs/images/dsiprouter-carriers.jpg)
+
+#### PBX(s) and Endpoint Management Screen
+![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbxs.jpg)
+
+#### Inbound Mapping Screen
+![dSIPRouter Inbound Mapping Screen](/docs/images/dsiprouter-inboundmapping.jpg)
+
+#### Outbound Routing Screen
+![dSIPRouter Outbound Routing Screen](/docs/images/dsiprouter-outboundrouting.jpg)
