@@ -13,7 +13,7 @@ Allows you to quickly turn [Kamailio](https://www.kamailio.org/) into a easy to 
 
 - Must run this as the root user (you can use sudo)
 - Kamailio needs to be installed with the default kamailio configurtion directory, which is /etc/kamailio on CentOS 7
-- The Kamailio database must be mysql and the root user must be able to access the tables without a password
+- The Kamailio database must be mysql and the root user must be able to access the tables without a password.  You can add a password to the root database user after the installation.   
 
 ### Installing and Running It:
 
