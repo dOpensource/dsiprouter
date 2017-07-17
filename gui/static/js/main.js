@@ -109,6 +109,15 @@ $(function() {
   
 });
 
+
+$(function(){
+  $('a').each(function() {
+    if ($(this).prop('href') == window.location.href) {
+      $(this).addClass('currentlink');
+    }
+  });
+});
+
 /**
  * Get the value of a querystring
  * @param  {String} field The field to get the value of

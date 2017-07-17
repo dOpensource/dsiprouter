@@ -220,3 +220,12 @@
 .panel-info {
     border-color: #FFB266;
 }
+
+.navlink a:link, a:visited, a:hover {
+	color: #9d9d9d;
+}
+
+a.currentlink{
+
+	color: #FFB266;
+}
