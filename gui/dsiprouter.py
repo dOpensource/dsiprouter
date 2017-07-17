@@ -15,7 +15,7 @@ def index():
         return render_template('index.html',version=settings.VERSION)
     else:
         action = request.args.get('action')
-        return render_template('dashboard.html',show_add_onload=action)
+        return render_template('dashboard.html',show_add_onload=action, version=settings.VERSION)
 
 @app.route('/login', methods=['POST'])
 def login():

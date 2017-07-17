@@ -14,6 +14,26 @@
 
 {% endif %}
 
+<div class="panel panel-default" style="margin-top:5px">
+<div class="panel-heading"><h1>Welcome to dSIPRouter v{{version}}</h1></div>
+<div class="panel-body">
+Our goal is to make it easier to configure and manage Kamailio for one or more use cases.  For the first release we are focused on the SIP Trunking use case.  
+This use case consist of using Kamailio to provide SIP Trunking services.  There are four main components: carriers, PBX(s) and endpoints, inbound DID routing and global outbound routing.
+
+<h2>Carriers</h2>
+When you install dSIPRouter we installed a set of carriers.  If you use one of the provided carriers then you just have to provision your IP address and enter in a tech prefix 
+to start using the carrier.  Otherwise, you will need to add the carrier.
+
+<h2>PBX(s) and Endpoints</h2>
+You can define the IP address of the PBX(s) that you want to provide SIP Trunking services for.  You can also specify the number of digits to strip off an inbound DID and the prefix that you want to 
+add to an inbound DID.  The IP address of the PBX(s) will automatically be added to the access control list of the switch.  If you want to simulate a PBX, you can add your IP address as a PBX and then use a softphone to place a call.  Note, disable registration when you setup the extension of the softphone.
+
+<h2>Inbound DID Mapping</h2>
+This is where you define a mapping between a DID and PBX.  At this time, the mapping is one-to-one.  This means that one DID can only be mapped to one PBX.  In future releases we will support this.
+
+<h2>Global Outbound Routing</h2>
+Calls sent to dSIPRouter will be routed out the Global Outbound Routes (GOR).  The GOR contains a list of carriers sepreated by commas.  Calls are routed out the carriers based on the order in the list.  The next carrier is used if the previous one fails.  
+</div>
 {% endblock %}
 
 {% block js %}
