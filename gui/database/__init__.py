@@ -35,9 +35,19 @@ class OutboundRoutes(object):
     pass
 
 
+def getDBURI():
+#Define the database URI
+    if settings.KAM_DB_TYPE != "":
+        sql_uri=settings.KAM_DB_TYPE + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + settings.KAM_DB_HOST + "/" + settings.KAM_DB_NAME
+        print(sql_uri)
+        return sql_uri
+    else:
+       return None
 
-def loadSession(db_uri):
-    engine = create_engine(db_uri, echo=True, pool_recycle=3600)
+#Make the engine global
+engine = create_engine(getDBURI(), echo=True, pool_recycle=10)
+
+def loadSession():
     metadata = MetaData(engine)
     dr_gateways = Table('dr_gateways', metadata, autoload=True)
     address = Table('address', metadata, autoload=True)
@@ -50,16 +60,5 @@ def loadSession(db_uri):
 
     Session = sessionmaker(bind=engine)
     session = Session()
+    
     return session
-
-#Define the database URI
-if settings.KAM_DB_TYPE != "":
-    sql_uri=settings.KAM_DB_TYPE + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + settings.KAM_DB_HOST + "/" + settings.KAM_DB_NAME
-    #flask_app.config['SQLALCHEMY_DATABASE_URI'] = sql_uri
-    #flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
-    print(sql_uri)
-else:
-    print("Please set KAM_DB_TYPE to the type of database you are using.  The values could be mysql, postgresql or oracle.  Also make sure the credentials are specified in the settings file")
-    os._exit(1)
-
-db = loadSession(sql_uri)

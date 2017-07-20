@@ -1,0 +1,20 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block css %}
+        {{ link_tag('main') }}
+{% endblock %}
+
+{% block body %}
+
+{% if type=="db" %}
+ 
+DB Issue - Please check your database and try the request again!
+
+{% endif %}
+
+{% endblock %}
+
+{% block js %}
+{% endblock %}

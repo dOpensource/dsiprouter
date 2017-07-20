@@ -1,13 +1,14 @@
 from flask import Flask, render_template, request, redirect, abort, flash, session
 from flask_script import Manager
 import settings
-from database import db, Gateways,Address,InboundMapping,OutboundRoutes
+from database import loadSession, Gateways,Address,InboundMapping,OutboundRoutes
 import os
 import subprocess
 
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.debug = settings.DEBUG
 #app.add_template_filter()
+db = loadSession(); 
 
 @app.route('/')
 def index():
@@ -32,10 +33,20 @@ def logout():
     return index()
 
 @app.route('/carriers')
-def displayCarriers():
+def displayCarriers(db_err=0):
     if session.get('logged_in'):
-       res = db.query(Gateways).filter(Gateways.type==settings.FLT_CARRIER).all()
-       return render_template('carriers.html',rows=res)
+       try:
+           res = db.query(Gateways).filter(Gateways.type==settings.FLT_CARRIER).all()
+           return render_template('carriers.html',rows=res)
+       except:
+           db.rollback()
+           if db_err <= 3:
+           #Try again
+               db_err=db_err+1
+               print(db_err)
+               return displayCarriers(db_err);
+           else:
+               return render_template('error.html',type="db")
     else:
        return index()
 
@@ -51,18 +62,27 @@ def addUpdateCarriers():
         print(name)
         Gateway = Gateways(name,ip_addr,strip,prefix,settings.FLT_CARRIER)
         Addr=Address(name,ip_addr,32,settings.FLT_PBX)
-        db.add(Gateway)
-        db.add(Addr)
-        db.commit()
-        return displayCarriers()
+        
+        try:
+              db.add(Gateway)
+              db.add(Addr)
+              db.commit()
+              return displayCarriers()
+        except:
+              db.rollback()
+              return render_template('error.html',type="db")
     # Updating
     else:
         db.query(Gateways).filter(Gateways.gwid==gwid).update({'description':"name:"+name,'address':ip_addr,'strip':strip,'pri_prefix':prefix})
         #TODO: You will end up with multiple Address records -will fix
         Addr=Address(name,ip_addr,32,settings.FLT_PBX)
-        db.add(Addr)
-        db.commit()
-        return displayCarriers()
+        try:
+            db.add(Addr)
+            db.commit()
+            return displayCarriers()
+        except:
+             db.rollback()	
+             return render_template('error.html',type="db")
 
 @app.route('/carrierdelete',methods=['POST'])
 def deleteCarriers():
@@ -75,10 +95,18 @@ def deleteCarriers():
     return displayCarriers()
 
 @app.route('/pbx')
-def displayPBX():
+def displayPBX(db_err=0):
     if session.get('logged_in'):
-       res = db.query(Gateways).filter(Gateways.type==settings.FLT_PBX).all()
-       return render_template('pbxs.html',rows=res)
+       try:
+           res = db.query(Gateways).filter(Gateways.type==settings.FLT_PBX).all()
+           return render_template('pbxs.html',rows=res)
+       except:
+           if db_err <= 3:
+              db.rollback()
+              db_err=db_err + 1
+              return displayPBX(db_err)
+           else:
+              return render_template('error.html',type="db")
     else:
        return index()
 
@@ -118,12 +146,20 @@ def deletePBX():
     return displayPBX()
 
 @app.route('/inboundmapping')
-def displayInboundMapping():
+def displayInboundMapping(db_err=0):
     if session.get('logged_in'):
-        res = db.execute('select * from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid > 8000') 
-	#res = db.query(InboundMapping).filter(InboundMapping.groupid>8000).all()
-        gateways = db.query(Gateways).filter(Gateways.type==settings.FLT_PBX).all()
-        return render_template('inboundmapping.html',rows=res,gwlist=gateways)
+        try:
+            res = db.execute('select * from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid > 8000') 
+            gateways = db.query(Gateways).filter(Gateways.type==settings.FLT_PBX).all()
+            return render_template('inboundmapping.html',rows=res,gwlist=gateways)
+        except:
+            if db_err <= 3:
+               db.rollback()
+               db_err=db_err + 1
+               return displayInboundMapping(db_err)
+            else:
+              return render_template('error.html',type="db")
+
     else:
        return index()
 
@@ -156,10 +192,18 @@ def deleteInboundMapping():
 
 
 @app.route('/outboundroutes')
-def displayOutboundRoutes():
+def displayOutboundRoutes(db_err=0):
     if session.get('logged_in'):
-       gwlist = db.query(OutboundRoutes.gwlist).filter(OutboundRoutes.groupid==8000).scalar()
-       return render_template('outboundroutes.html',outboundroutes=gwlist)
+        try:
+           gwlist = db.query(OutboundRoutes.gwlist).filter(OutboundRoutes.groupid==8000).scalar()
+           return render_template('outboundroutes.html',outboundroutes=gwlist)
+        except:
+            if db_err <= 3:
+                db.rollback()
+                db_err=db_err + 1	
+                return displayPBX(db_err)
+            else:
+                return render_template('error.html',type="db")
     else:
        return index()
 
