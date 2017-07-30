@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, abort, flash, session
+from flask import Flask, render_template, request, redirect, abort, flash, session, url_for
 from flask_script import Manager
 import settings
 from database import loadSession, Gateways,Address,InboundMapping,OutboundRoutes
@@ -24,7 +24,8 @@ def login():
         session['logged_in'] = True
         session['username'] = request.form['username']
     else:
-        flash('wrong password!')
+        flash('wrong username or password!')
+        return redirect(url_for('index'))
     return index()
 
 @app.route('/logout')
