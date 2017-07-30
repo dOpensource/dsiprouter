@@ -27,9 +27,7 @@
       <div id ="top-menu" class="container-fluid active">
           <a class="navbar-brand" href="http://dopensource.com/dsiprouter">dSIPRouter by dOpenSource | a Flyball Company</a>
        <ul class="nav navbar-nav navbar-right">  
-		<form action="/reloadkam" class="navbar-form" type="GET">
-       			<button class="btn btn-primary btn-med" style="margin-top:3px" id="reloadkam" name="reloadkam">Reload Kamailio</button>
-      		</form>
+       		<button class="btn btn-primary btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam" name="reloadkam" onclick="reloadkam(this)">Reload Kamailio</button>
               <!-- <form id="qform" class="navbar-form pull-left" role="search">
                  <input type="text" class="form-control" placeholder="Search" />                        
                </form> -->
@@ -90,12 +88,14 @@
   
   <!--Body content-->
   <div class="content">
-    <div class="top-bar">       
-      <a href="#menu" class="side-menu-link burger"> 
+    <div class="top-bar"> 
+	<div class="message-bar" style="display: none;text-align:center;">
+	</div>
+      	<a href="#menu" class="side-menu-link burger"> 
         <span class='burger_inside' id='bgrOne'></span>
         <span class='burger_inside' id='bgrTwo'></span>
         <span class='burger_inside' id='bgrThree'></span>
-      </a>      
+      	</a>      
     </div>
     <section class="content-inner">
       {% block body %}

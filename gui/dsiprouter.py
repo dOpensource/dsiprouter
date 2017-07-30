@@ -4,6 +4,7 @@ import settings
 from database import loadSession, Gateways,Address,InboundMapping,OutboundRoutes
 import os
 import subprocess
+import json 
 
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.debug = settings.DEBUG
@@ -234,9 +235,9 @@ def reloadkam():
            subprocess.call(['kamcmd' ,'permissions.addressReload'])
            subprocess.call(['kamcmd','drouting.reload'])
            session['last_page'] = request.headers['Referer']
-           return render_template('dashboard.html',reloadstatus='successful')
+           return json.dumps({"status":"1"})
        except:
-           return render_template('dashboard.html',reloadstatus='failed')
+               return json.dumps({"status":"0"})
            
     
 

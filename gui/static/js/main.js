@@ -186,3 +186,32 @@ $('#inboundmapping #open-Delete').click(function () {
     var ruleid  =  $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
     $(".modal-body #ruleid").val(ruleid);
 });
+
+
+function reloadkam(elmnt) {
+
+	//elmnt.style.backgroundColor = "red";
+	//elmnt.style.borderColor = "red"
+
+	$.ajax({
+   		type: "GET",
+   		url: "/reloadkam",
+		dataType: "json",
+   		success: function(msg){
+			if (msg.status == 1) {
+				$(".message-bar").addClass("alert alert-success");
+				$(".message-bar").html("<strong>Success!</strong> Kamailio was reloaded successfully!");
+			}
+			else {
+				$(".message-bar").addClass("alert alert-danger");
+				$(".message-bar").html("<strong>Failed!</strong> Kamailio was NOT reloaded successfully!");
+			}
+
+			$(".message-bar").show();
+			$(".message-bar").slideUp(3000,"linear");
+			//elmnt.style.backgroundColor = "#337ab7";
+        		//elmnt.style.borderColor = "#2e6da4";
+  		 }
+ 	});
+
+}
