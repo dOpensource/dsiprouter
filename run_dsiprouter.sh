@@ -8,6 +8,15 @@ REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 
+# Get Linux Distro
+
+if [ -f /etc/redhat-release ]; then
+ 	DISTRO="centos"
+    elif [ -f /etc/debian_version ]; then
+	DISTRO="debian"
+    fi  
+
+
 # Uncomment and set this variable to an explicit Python executable file name
 # If set, the script will not try and find a Python version with 3.5 as the major release number
 PYTHON_CMD=/usr/bin/python3.4
@@ -69,14 +78,22 @@ ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_
 
 
 if [ ! -f "./.installed" ]; then
-        yum install yum install mysql-devel gcc gcc-devel i python34  python34-pip python34-devel	
+	if [ $DISTRO == "centos" ]; then
+        	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
+	elif [ $DISTRO == "debian" ]; then
+		apt-get -y install build-essential python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
+		#Setup Firewall for port 5000
+		firewall-cmd --zone=public --add-port=5000/tcp --permanent
+        	firewall-cmd --reload
+        fi
 	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
 	configureKamailio
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
 		touch ./.installed
     		isPythonInstalled
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+		#nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 &
 		if [ $? -eq 0 ]; then
 			echo "dSIPRouter is running"
 		fi
