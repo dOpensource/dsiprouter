@@ -7,7 +7,8 @@ Allows you to quickly turn [Kamailio](https://www.kamailio.org/) into a easy to 
 ### Supported Platforms:
 
 - CentOS 7 (tested on 7.3.1611)
-- Kamailio 4.x (tested on Kamailio 4.4.5)
+- Debian Jessie (tested on 8.9)
+- Kamailio 4.x (tested on Kamailio 4.4.5, 4.4.6)
 
 ### Prerequisites:
 
@@ -20,7 +21,7 @@ Allows you to quickly turn [Kamailio](https://www.kamailio.org/) into a easy to 
 ./run_dsiprouter.sh 
 
 
-Open a broswer and go to http://localhost:5000
+Open a broswer and go to http://[ip address of your server]:5000
 
 The username/password is admin/password
 
