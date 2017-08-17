@@ -63,7 +63,7 @@ def addUpdateCarriers():
     if len(gwid) <= 0:
         print(name)
         Gateway = Gateways(name,ip_addr,strip,prefix,settings.FLT_CARRIER)
-        Addr=Address(name,ip_addr,32,settings.FLT_PBX)
+        Addr=Address(name,ip_addr,32,settings.FLT_CARRIER)
         
         try:
               db.add(Gateway)
@@ -77,7 +77,7 @@ def addUpdateCarriers():
     else:
         db.query(Gateways).filter(Gateways.gwid==gwid).update({'description':"name:"+name,'address':ip_addr,'strip':strip,'pri_prefix':prefix})
         #TODO: You will end up with multiple Address records -will fix
-        Addr=Address(name,ip_addr,32,settings.FLT_PBX)
+        Addr=Address(name,ip_addr,32,settings.FLT_CARRIER)
         try:
             db.add(Addr)
             db.commit()
