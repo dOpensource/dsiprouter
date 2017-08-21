@@ -7,6 +7,8 @@ FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
+EXTERNAL_IP=`curl -s ip.alt.io`
+INTERNAL_IP=`hostname -I | awk '{print $1}'`
 
 # Get Linux Distro
 
@@ -77,6 +79,126 @@ ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_
 }
 
 
+
+# Start RTPEngine
+
+
+function startRTPEngine {
+
+systemctl start rtpengine
+
+}
+
+
+# Install the RTPEngine from sipwise
+# We are going to install it by default, but will users the ability to 
+# to disable it if needed
+
+function installRTPEngine {
+
+
+if [ $DISTRO == "debian" ]; then
+
+	#Install required libraries
+	apt-get install -y debhelper
+	apt-get install -y iptables-dev
+	apt-get install -y libcurl4-openssl-dev
+	apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
+	apt-get install -y markdown
+	apt-get install -y libglib2.0-dev
+	apt-get install -y libavcodec-dev
+  	apt-get install -y libevent-dev
+  	apt-get install -y libhiredis-dev
+  	apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
+  	apt-get install -y libavfilter-dev
+  	apt-get install -y libavformat-dev
+
+	git clone https://github.com/sipwise/rtpengine
+        cd rtpengine
+	./debian/flavors/no_ngcp
+	dpkg-buildpackage
+	cd ..
+	dpkg -i ngcp-rtpengine-daemon_*
+
+
+fi #end of installing for Debian
+
+if [ $DISTRO == "centos" ]; then
+
+	#Install required libraries
+	yum install -y glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c xmlrpc-c-devel libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel  
+	
+	#wget https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz
+	#tar -xvzf libevent-2.0.22-stable.tar.gz 
+	#cd libevent-2.0.22-stable
+	#./configure
+	#make && make install
+
+	
+	if [ $? -ne 0 ]; then
+		echo "Problem with installing the required libraries for RTPEngine"
+		exit 1
+	fi
+
+	#Make and Configure RTPEngine
+	#It's the same for CentOS and Debian
+	
+	git clone https://github.com/sipwise/rtpengine
+	cd rtpengine/daemon
+	make
+	if [ $? -eq 0 ]; then
+
+		# Copy binary to /usr/sbin
+		cp rtpengine /usr/sbin/rtpengine
+
+		# Add startup script
+		echo -e "[Unit]
+		Description=Kernel based rtp proxy
+		After=syslog.target
+		After=network.target
+
+		[Service]
+		Type=forking
+		PIDFile=/var/run/rtpengine.pid
+		EnvironmentFile=-/etc/sysconfig/rtpengine
+		ExecStart=/usr/sbin/rtpengine -p /var/run/rtpengine.pid \$OPTIONS
+
+		Restart=always
+
+		[Install]
+		WantedBy=multi-user.target
+		" > /etc/systemd/system/rtpengine.service
+
+		#Add Options File
+		echo -e "
+		# Add extra options here
+		# We don't support the NG protocol in this release 
+		# 
+		OPTIONS="\"-F -i $INTERNAL_IP!$EXTERNAL_IP -u 127.0.0.1:7222 -m 10000 -M 20000 -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1\""
+		" > /etc/sysconfig/rtpengine
+
+		#Setup RTPEngine Logging
+		echo "local1.*						-/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
+		touch /var/log/rtpengine
+		systemctl restart rsyslog
+
+		#Setup Firewall rules for RTPEngine
+		firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+		firewall-cmd --reload
+
+		#Enable the RTPEngine to start during boot
+		systemctl enable rtpengine
+	
+	fi  #end of configing RTPEngine for CentOS
+
+fi # end of installing RTPEngine for CentOS
+
+
+} #end of installing RTPEngine
+
+
+
+
 if [ ! -f "./.installed" ]; then
 	if [ $DISTRO == "centos" ]; then
         	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
@@ -87,13 +209,14 @@ if [ ! -f "./.installed" ]; then
         	firewall-cmd --reload
         fi
 	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
+	installRTPEngine
 	configureKamailio
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
 		touch ./.installed
     		isPythonInstalled
-		#nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+		#nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 &
 		if [ $? -eq 0 ]; then
 			echo "dSIPRouter is running"
 		fi
@@ -108,7 +231,7 @@ else
 	if [ -z ${PYTHON_CMD+x} ]; then
     		isPythonInstalled
 	fi
-
+	#installRTPEngine
 	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
 	if [ $? -eq 0 ]; then
               echo "dSIPRouter is running"
