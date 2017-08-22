@@ -120,6 +120,36 @@ if [ $DISTRO == "debian" ]; then
 	cd ..
 	dpkg -i ngcp-rtpengine-daemon_*
 
+	#cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
+
+	echo -e "
+	[rtpengine]
+	table = -1
+	interface = $EXTERNAL_IP
+	listen-udp = 7722
+	port-min = 10000
+	port-max = 30000
+        log-level = 7
+        log-facility = local1" > /etc/rtpengine/rtpengine.conf
+
+ 	
+        #sed -i -r  "s/# interface = [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/interface = "$EXTERNAL_IP"/" /etc/rtpengine/rtpengine.conf
+	sed -i 's/RUN_RTPENGINE=no/RUN_RTPENGINE=yes/' /etc/default/ngcp-rtpengine-daemon
+	#sed -i 's/# listen-udp = 12222/listen-udp = 7222/' /etc/rtpengine/rtpengine.conf
+
+	 #Setup Firewall rules for RTPEngine
+         
+	firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+        firewall-cmd --reload
+
+	 #Setup RTPEngine Logging
+         echo "local1.*                                          -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
+         touch /var/log/rtpengine
+         systemctl restart rsyslog
+
+        #Enable the RTPEngine to start during boot
+        systemctl enable ngcp-rtpengine-daemon
+	
 
 fi #end of installing for Debian
 
