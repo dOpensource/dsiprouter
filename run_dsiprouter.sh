@@ -180,7 +180,7 @@ fi # end of RTPEngine for CentOS Install
 } #end of installing RTPEngine
 
 
-
+function install {
 
 if [ ! -f "./.installed" ]; then
 	if [ $DISTRO == "centos" ]; then
@@ -208,15 +208,66 @@ if [ ! -f "./.installed" ]; then
 		exit 1
 	fi
 
+fi
 
-else
+} #end of install
+
+function start {
+
+	#Check if Python is installed before trying to start up the process
 
 	if [ -z ${PYTHON_CMD+x} ]; then
     		isPythonInstalled
 	fi
+
+	#Check if the dSIPRouter process is already running
+
+	PID=`cat /var/run/dsiprouter/dsiprouter.pid`
+	ps -ef | grep $PID
+	if [ $? -eq 0 ]; then
+		echo "dSIPRouter is already running under process id $PID"
+		exit
+	fi
+
+	#Start the process
 	
 	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
-	if [ $? -eq 0 ]; then
-              echo "dSIPRouter is running"
+	# Store the PID of the process
+	PID=$!
+	if [ $PID -gt 0 ]; then
+	      mkdir /var/run/dsiprouter/
+	      echo $PID > /var/run/dsiprouter/dsiprouter.pid
+
+              echo "dSIPRouter was started under process id $PID"
+
         fi
-fi
+	exit	
+	
+
+} #end of run
+
+
+function processCMD {
+
+	while [[ $# > 0 ]]
+	do
+		key="$1"
+		case $key in 
+			start)
+			start
+			shift
+			;;
+			*)
+			;;
+		esac
+	done
+	
+	
+	echo "Usage: $0 install [-rtpengine]"
+	echo "Usage: $0 uninstall [-rtpengine]"
+	echo "Usage: $0 start|stop|restart"
+
+} #end of processCMD
+
+
+processCMD "$@"
