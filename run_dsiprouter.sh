@@ -96,12 +96,63 @@ systemctl start rtpengine
 
 function installRTPEngine {
 
-
-#if [ $DISTRO == "debian" ]; then
-
 #Install required libraries
 
-#fi
+if [ $DISTRO == "debian" ]; then
+
+	#Install required libraries
+	apt-get install -y debhelper
+	apt-get install -y iptables-dev
+	apt-get install -y libcurl4-openssl-dev
+	apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
+	apt-get install -y markdown
+	apt-get install -y libglib2.0-dev
+	apt-get install -y libavcodec-dev
+  	apt-get install -y libevent-dev
+  	apt-get install -y libhiredis-dev
+  	apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
+  	apt-get install -y libavfilter-dev
+  	apt-get install -y libavformat-dev
+
+	git clone https://github.com/sipwise/rtpengine
+        cd rtpengine
+	./debian/flavors/no_ngcp
+	dpkg-buildpackage
+	cd ..
+	dpkg -i ngcp-rtpengine-daemon_*
+
+	#cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
+
+	echo -e "
+	[rtpengine]
+	table = -1
+	interface = $EXTERNAL_IP
+	listen-udp = 7722
+	port-min = 10000
+	port-max = 30000
+        log-level = 7
+        log-facility = local1" > /etc/rtpengine/rtpengine.conf
+
+ 	
+        #sed -i -r  "s/# interface = [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/interface = "$EXTERNAL_IP"/" /etc/rtpengine/rtpengine.conf
+	sed -i 's/RUN_RTPENGINE=no/RUN_RTPENGINE=yes/' /etc/default/ngcp-rtpengine-daemon
+	#sed -i 's/# listen-udp = 12222/listen-udp = 7222/' /etc/rtpengine/rtpengine.conf
+
+	 #Setup Firewall rules for RTPEngine
+         
+	firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+        firewall-cmd --reload
+
+	 #Setup RTPEngine Logging
+         echo "local1.*                                          -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
+         touch /var/log/rtpengine
+         systemctl restart rsyslog
+
+        #Enable the RTPEngine to start during boot
+        systemctl enable ngcp-rtpengine-daemon
+	
+
+fi #end of installing for Debian
 
 if [ $DISTRO == "centos" ]; then
 
@@ -173,7 +224,6 @@ fi # end of RTPEngine for CentOS Install
 		systemctl enable rtpengine
 	
 	fi  #end of configing RTPEngine for CentOS
-
 
 
 
