@@ -1,5 +1,5 @@
 #!/bin/bash
-# Uncomment if you want to debug this script
+# Uncomment if you want to debug this script.
 #set -x
 
 FLT_CARRIER=8
