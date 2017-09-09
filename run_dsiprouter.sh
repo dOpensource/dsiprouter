@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script
-set -x
+#set -x
 
 FLT_CARRIER=8
 FLT_PBX=9
@@ -89,6 +89,41 @@ systemctl start rtpengine
 
 }
 
+#Remove RTPEngine
+
+function removeRTPEngine {
+
+if [ ! -e ./rtpengineinstalled ]; then
+
+	echo -e "We did not install RTPEngine.  Would you like us to install it? [y/n]:\c"
+	read installrtpengine
+	case "$installrtpengine" in
+		[yY][eE][sS]|[yY])
+		installRTPEngine
+		exit 
+		;;
+		*)
+		exit 1
+		;;
+	esac
+fi 
+
+
+if [ $DISTRO == "debian" ]; then
+	
+echo "Removing RTPEngine for Debian"	
+	
+fi
+
+if [ $DISTRO == "centos" ]; then
+
+
+echo "Removing RTPEngine for CentOS"	
+
+fi
+
+
+} #end of removeRTPEngine
 
 # Install the RTPEngine from sipwise
 # We are going to install it by default, but will users the ability to 
@@ -152,7 +187,7 @@ if [ $DISTRO == "debian" ]; then
         systemctl enable ngcp-rtpengine-daemon
 	
 
-fi #end of installing for Debian
+fi #end of installing RTPEngine for Debian
 
 if [ $DISTRO == "centos" ]; then
 
@@ -222,6 +257,9 @@ fi # end of RTPEngine for CentOS Install
 
 		#Enable the RTPEngine to start during boot
 		systemctl enable rtpengine
+
+		#File to signify that the install happened
+		touch ./rtpengineinstalled
 	
 	fi  #end of configing RTPEngine for CentOS
 
@@ -242,7 +280,7 @@ if [ ! -f "./.installed" ]; then
         	firewall-cmd --reload
         fi
 	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
-	installRTPEngine
+	#installRTPEngine
 	configureKamailio
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
@@ -291,33 +329,93 @@ function start {
               echo "dSIPRouter was started under process id $PID"
 
         fi
-	exit	
+		
 	
 
-} #end of run
+} #end of start
 
+
+
+function stop {
+
+	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
+
+		kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
+		rm -rf /var/run/dsiprouter/dsiprouter.pid
+		echo "dSIPRouter was stopped"
+	fi 	
+	
+
+}
+
+function restart {
+	stop
+	start
+	exit
+}
+
+function usageOptions {
+
+ echo -e "Usage: $0 install|uninstall [-rtpengine]"
+ echo -e "Usage: $0 start|stop|restart"
+ echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.   This means that we aren’t a general purpose GUI for Kamailio." 
+ echo -e "If you want that then use Siremis, which is located at http://siremis.asipto.com/."
+ echo -e "\nThis script is used for installing and uninstalling dSIPRouter, which includes installing the Web GUI portion, Kamailio Configuration file and optionally for installing the RTPEngine by SIPwise"
+ echo -e "This script can also be used to start, stop and restart dSIPRouter.  It will not restart Kamailio."
+ echo -e "\nSupport is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
+ echo -e "\n\ndOpenSource | A Flyball Company\nMade in Detroit, MI USA"
+
+ exit 0
+}
 
 function processCMD {
 
 	while [[ $# > 0 ]]
 	do
 		key="$1"
-		case $key in 
+		case $key in
+			install)
+			shift
+			if [ "$1" == "-rtpengine" ]; then
+				installRTPEngine
+			fi
+			install
+			shift
+			;;
+			uninstall)
+			removeRTPEngine
+			exit
+			;;		 
 			start)
 			start
 			shift
 			;;
+			stop)
+			stop
+			shift
+			;;
+			restart)
+			stop 
+ 			start
+		 	shift
+			;;
+			-h)
+			usageOptions
+			;;
 			*)
+			usageOptions
 			;;
 		esac
 	done
+
+	#Display usage options if no options are specified
+
+	usageOptions	
 	
 	
-	echo "Usage: $0 install [-rtpengine]"
-	echo "Usage: $0 uninstall [-rtpengine]"
-	echo "Usage: $0 start|stop|restart"
 
 } #end of processCMD
+
 
 
 processCMD "$@"
