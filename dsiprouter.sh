@@ -91,45 +91,59 @@ systemctl start rtpengine
 
 #Remove RTPEngine
 
-function removeRTPEngine {
-
-if [ ! -e ./rtpengineinstalled ]; then
-
-	echo -e "We did not install RTPEngine.  Would you like us to install it? [y/n]:\c"
-	read installrtpengine
-	case "$installrtpengine" in
-		[yY][eE][sS]|[yY])
-		installRTPEngine
-		exit 
-		;;
-		*)
-		exit 1
-		;;
-	esac
-fi 
+function uninstallRTPEngine {
 
 
-if [ $DISTRO == "debian" ]; then
+if [ ! -e ./.rtpengineinstalled ]; then
+
+	echo -e "RTPEngine is not installed!"
+else 
+
+
+#if [ ! -e ./.rtpengineinstalled ]; then
+#
+#	echo -e "We did not install RTPEngine.  Would you like us to install it? [y/n]:\c"
+#	read installrtpengine
+#	case "$installrtpengine" in
+#		[yY][eE][sS]|[yY])
+#		installRTPEngine
+#		exit 
+#		;;
+#		*)
+#		exit 1
+#		;;
+#	esac
+#fi 
+
+
+	if [ $DISTRO == "debian" ]; then
 	
-echo "Removing RTPEngine for Debian"	
+		echo "Removing RTPEngine for Debian"	
 	
+	fi
+
+	if [ $DISTRO == "centos" ]; then
+
+
+		echo "Removing RTPEngine for CentOS"
+		systemctl stop rtpengine	
+		rm /usr/sbin/rtpengine
+		rm /etc/syslog.d/rtpengine 
+		rm /etc/rsyslog.d/rtpengine.conf
+		rm ./.rtpengineinstalled
+		echo "Removed RTPEngine for CentOS"
+
+	fi
 fi
 
-if [ $DISTRO == "centos" ]; then
-
-
-echo "Removing RTPEngine for CentOS"	
-
-fi
-
-
-} #end of removeRTPEngine
+} #end of uninstallRTPEngine
 
 # Install the RTPEngine from sipwise
 # We are going to install it by default, but will users the ability to 
 # to disable it if needed
 
 function installRTPEngine {
+
 
 #Install required libraries
 
@@ -149,6 +163,8 @@ if [ $DISTRO == "debian" ]; then
   	apt-get install -y libavfilter-dev
   	apt-get install -y libavformat-dev
 
+	rm -rf rtpengine.bak
+	mv -f rtpengine rtpengine.bak
 	git clone https://github.com/sipwise/rtpengine
         cd rtpengine
 	./debian/flavors/no_ngcp
@@ -212,6 +228,8 @@ fi # end of RTPEngine for CentOS Install
 #Make and Configure RTPEngine
 #It's the same for CentOS and Debian
 	
+	rm -rf rtpengine.bak
+	mv -f rtpengine rtpengine.bak
 	git clone https://github.com/sipwise/rtpengine
 	cd rtpengine/daemon
 	make
@@ -257,10 +275,13 @@ fi # end of RTPEngine for CentOS Install
 
 		#Enable the RTPEngine to start during boot
 		systemctl enable rtpengine
-
+		
 		#File to signify that the install happened
-		touch ./rtpengineinstalled
-	
+		if [ $? -eq 0 ]; then
+			cd ../..
+			touch ./.rtpengineinstalled
+			echo "RTPEngine has been installed!"
+		fi
 	fi  #end of configing RTPEngine for CentOS
 
 
@@ -280,25 +301,43 @@ if [ ! -f "./.installed" ]; then
         	firewall-cmd --reload
         fi
 	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
-	#installRTPEngine
 	configureKamailio
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
 		touch ./.installed
-    		isPythonInstalled
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
-		#nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 &
-		if [ $? -eq 0 ]; then
-			echo "dSIPRouter is running"
-		fi
+		#Let's start it
+		start
 	else
 		echo "dSIPRouter install failed"
 		exit 1
 	fi
 
+else
+	echo "dSIPRouter is already installed"
+	exit 1
+
 fi
 
+
 } #end of install
+
+function uninstall {
+
+if [ ! -f "./.installed" ]; then
+	echo "dSIPRouter is not installed!"
+else
+	#Stop dSIPRouter, remove ./.installed file, close firewall
+	stop
+	firewall-cmd --zone=public --remove-port=5000/tcp --permanent
+        firewall-cmd --reload
+	rm ./.installed
+	
+fi
+	
+
+
+} #end of uninstall
+
 
 function start {
 
@@ -381,29 +420,43 @@ function processCMD {
 			fi
 			install
 			shift
+			exit 0
 			;;
 			uninstall)
-			removeRTPEngine
-			exit
+			shift
+			if [ "$1" == "-rtpengine" ]; then
+				uninstallRTPEngine
+			fi
+			uninstall
+			exit 0
 			;;		 
 			start)
 			start
 			shift
+			exit 0
 			;;
 			stop)
 			stop
 			shift
+			exit 0
 			;;
 			restart)
 			stop 
  			start
 		 	shift
+			exit 0
+			;;
+			rtpengineonly)
+			installRTPEngine
+			exit 0
 			;;
 			-h)
 			usageOptions
+			exit 0
 			;;
 			*)
 			usageOptions
+			exit 0
 			;;
 		esac
 	done
