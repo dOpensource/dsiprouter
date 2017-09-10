@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 FLT_CARRIER=8
 FLT_PBX=9
@@ -86,6 +86,16 @@ function startRTPEngine {
 systemctl start rtpengine
 
 }
+
+# Stop RTPEngine
+
+
+function stopRTPEngine {
+
+systemctl stop rtpengine
+
+}
+
 
 #Remove RTPEngine
 
@@ -204,6 +214,9 @@ if [ $DISTRO == "debian" ]; then
          echo "local1.*                                          -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
          touch /var/log/rtpengine
          systemctl restart rsyslog
+
+	#Setup tmp files
+	echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
         #Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
@@ -382,6 +395,14 @@ function start {
 		fi
 	fi
 
+	#Start RTPEngine if it was installed
+
+	if [ -e ./.rtpengineinstalled ]; then
+
+                systemctl start rtpengine
+
+        fi
+
 	#Start the process
 	
 	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
@@ -407,12 +428,18 @@ function start {
 function stop {
 
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
-
+		
 		kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
 	fi 	
 	
+	if [ -e ./.rtpengineinstalled ]; then
+	
+		systemctl stop rtpengine 
+
+	fi
+
 
 }
 
