@@ -221,6 +221,12 @@ if [ $DISTRO == "debian" ]; then
         #Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
 	
+	#File to signify that the install happened
+        if [ $? -eq 0 ]; then
+               cd ../..
+               touch ./.rtpengineinstalled
+               echo "RTPEngine has been installed!"
+        fi	
 
 fi #end of installing RTPEngine for Debian
 
@@ -432,12 +438,18 @@ function stop {
 		kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
-	fi 	
-	
+	 	
+	else
+		echo "dSIPRouter is not running"
+
+	fi
+
 	if [ -e ./.rtpengineinstalled ]; then
 	
 		systemctl stop rtpengine 
-
+	else
+	
+		echo "RTPEngine is not running"
 	fi
 
 
