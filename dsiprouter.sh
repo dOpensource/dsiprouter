@@ -261,7 +261,7 @@ fi # end of RTPEngine for CentOS Install
 		# Add extra options here
 		# We don't support the NG protocol in this release 
 		# 
-		OPTIONS="\"-F -i $INTERNAL_IP!$EXTERNAL_IP -u 127.0.0.1:7222 -m 10000 -M 20000 -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1\""
+		OPTIONS="\"-F -i $INTERNAL_IP!$EXTERNAL_IP -u 127.0.0.1:7722 -m 10000 -M 20000 -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1\""
 		" > /etc/sysconfig/rtpengine
 
 		#Setup RTPEngine Logging
