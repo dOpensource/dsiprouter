@@ -7,8 +7,6 @@ FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
-EXTERNAL_IP=`curl -s ip.alt.io`
-INTERNAL_IP=`hostname -I | awk '{print $1}'`
 
 # Get Linux Distro
 
@@ -118,20 +116,25 @@ else
 
 	if [ $DISTRO == "debian" ]; then
 	
-		echo "Removing RTPEngine for Debian"	
-	
+		echo "Removing RTPEngine for $DISTRO"	
+		systemctl stop rtpengine
+                rm /usr/sbin/rtpengine
+                rm /etc/syslog.d/rtpengine
+                rm /etc/rsyslog.d/rtpengine.conf
+                rm ./.rtpengineinstalled
+                echo "Removed RTPEngine for $DISTRO"	
 	fi
 
 	if [ $DISTRO == "centos" ]; then
 
 
-		echo "Removing RTPEngine for CentOS"
+		echo "Removing RTPEngine for $DISTRO"
 		systemctl stop rtpengine	
 		rm /usr/sbin/rtpengine
 		rm /etc/syslog.d/rtpengine 
 		rm /etc/rsyslog.d/rtpengine.conf
 		rm ./.rtpengineinstalled
-		echo "Removed RTPEngine for CentOS"
+		echo "Removed RTPEngine for $DISTRO"
 
 	fi
 fi
@@ -144,6 +147,9 @@ fi
 
 function installRTPEngine {
 
+
+EXTERNAL_IP=`curl -s ip.alt.io`
+INTERNAL_IP=`hostname -I | awk '{print $1}'`
 
 #Install required libraries
 
@@ -288,10 +294,30 @@ fi # end of RTPEngine for CentOS Install
 
 } #end of installing RTPEngine
 
+#Enable RTP within the Kamailio configuration so that it uses the RTPEngine
+
+function enableRTP {
+
+sed -i 's/#!define WITH_NAT/##!define WITH_NAT/' ./kamailio_dsiprouter.cfg
+
+} #end of enableRTP
+
+#Disable RTP within the Kamailio configuration so that it doesn't use the RTPEngine
+
+function disableRTP {
+
+sed -i 's/##!define WITH_NAT/#!define WITH_NAT/' ./kamailio_dsiprouter.cfg
+
+} #end of disableRTP
+
 
 function install {
 
 if [ ! -f "./.installed" ]; then
+	
+	EXTERNAL_IP=`curl -s ip.alt.io`
+	INTERNAL_IP=`hostname -I | awk '{print $1}'`
+	
 	if [ $DISTRO == "centos" ]; then
         	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
 	elif [ $DISTRO == "debian" ]; then
@@ -348,12 +374,14 @@ function start {
 	fi
 
 	#Check if the dSIPRouter process is already running
-
-	PID=`cat /var/run/dsiprouter/dsiprouter.pid`
-	ps -ef | grep $PID
-	if [ $? -eq 0 ]; then
-		echo "dSIPRouter is already running under process id $PID"
-		exit
+	
+	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then 
+		PID=`cat /var/run/dsiprouter/dsiprouter.pid`
+		ps -ef | grep $PID > /dev/null
+		if [ $? -eq 0 ]; then
+			echo "dSIPRouter is already running under process id $PID"
+			exit
+		fi
 	fi
 
 	#Start the process
@@ -362,7 +390,10 @@ function start {
 	# Store the PID of the process
 	PID=$!
 	if [ $PID -gt 0 ]; then
-	      mkdir /var/run/dsiprouter/
+	      if [ ! -e /var/run/dsiprouter ]; then
+	      	mkdir /var/run/dsiprouter/
+	      fi
+		
 	      echo $PID > /var/run/dsiprouter/dsiprouter.pid
 
               echo "dSIPRouter was started under process id $PID"
