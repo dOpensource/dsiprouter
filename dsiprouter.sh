@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 FLT_CARRIER=8
 FLT_PBX=9
@@ -229,10 +229,7 @@ if [ $DISTRO == "centos" ]; then
 	fi
 
 
-fi # end of RTPEngine for CentOS Install
-
-#Make and Configure RTPEngine
-#It's the same for CentOS and Debian
+	#Make and Configure RTPEngine
 	
 	rm -rf rtpengine.bak
 	mv -f rtpengine rtpengine.bak
@@ -288,7 +285,8 @@ fi # end of RTPEngine for CentOS Install
 			touch ./.rtpengineinstalled
 			echo "RTPEngine has been installed!"
 		fi
-	fi  #end of configing RTPEngine for CentOS
+	fi
+fi  #end of configing RTPEngine for CentOS
 
 
 
