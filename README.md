@@ -1,4 +1,4 @@
-## dSIPRouter by dOpenSource 
+## dSIPRouter by dOpenSource | a Flyball Company
 ##### [ Built in Detroit ]
 
 
@@ -18,28 +18,34 @@ Allows you to quickly turn [Kamailio](https://www.kamailio.org/) into a easy to 
 
 ### Installing and Running It:
 
-./run_dsiprouter.sh 
+The install command will install dSIPRouter. 
 
+./dsiprouter.sh install
+
+
+If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
+
+./dsiprouter.sh install -rtpengine
+
+Once the install is complete, dSIPRouter will automatically start the Web GUI and the RTPEngine.  
 
 Open a broswer and go to http://[ip address of your server]:5000
 
-The username/password is admin/password
+The default username/password is admin/password.  
 
 The first time it's executed it will attempt to install everything and create a hidden file called ./.installed.  You can remove that file if you want to force a reinstall
 
-### Stopping It:
+### Stopping dSIPRouter:
 
-./stop_dsiprouter.sh
-
+./dsiprouter.sh stop
 
 ### Run At Startup:
 
 Put this line in /etc/rc.local
 
-<your directory>/run_dsiprouter.sh
+<your directory>/dsiprouter.sh start
 
 * We will provide a systemctl startup/stop script in the near future
-
 
 ### Changing Admin Password
 
