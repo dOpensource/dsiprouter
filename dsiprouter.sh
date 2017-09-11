@@ -178,6 +178,7 @@ if [ $DISTRO == "debian" ]; then
   	apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
   	apt-get install -y libavfilter-dev
   	apt-get install -y libavformat-dev
+	apt-get install -y libmysqlclient-dev
 
 	rm -rf rtpengine.bak
 	mv -f rtpengine rtpengine.bak
