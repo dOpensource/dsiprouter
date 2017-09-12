@@ -19,7 +19,7 @@ if [ -f /etc/redhat-release ]; then
 
 # Uncomment and set this variable to an explicit Python executable file name
 # If set, the script will not try and find a Python version with 3.5 as the major release number
-PYTHON_CMD=/usr/bin/python3.4
+#PYTHON_CMD=/usr/bin/python3.4
 
 function isPythonInstalled {
 
@@ -333,6 +333,12 @@ sed -i 's/##!define WITH_NAT/#!define WITH_NAT/' ./kamailio_dsiprouter.cfg
 function install {
 
 if [ ! -f "./.installed" ]; then
+
+	#Check if Python is installed before trying to start up the process
+
+        if [ -z ${PYTHON_CMD+x} ]; then
+                isPythonInstalled
+        fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
@@ -340,12 +346,16 @@ if [ ! -f "./.installed" ]; then
 	if [ $DISTRO == "centos" ]; then
         	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
 	elif [ $DISTRO == "debian" ]; then
-		apt-get -y install build-essential python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
+		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
 		#Setup Firewall for port 5000
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
         	firewall-cmd --reload
         fi
 	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
+	 if [ $? -eq 1 ]; then
+		echo "dSIPRouter install failed: Couldn't install required libraries"
+                exit 1
+        fi
 	configureKamailio
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
@@ -353,7 +363,7 @@ if [ ! -f "./.installed" ]; then
 		#Let's start it
 		start
 	else
-		echo "dSIPRouter install failed"
+		echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
 		exit 1
 	fi
 
