@@ -19,7 +19,7 @@ if [ -f /etc/redhat-release ]; then
 
 # Uncomment and set this variable to an explicit Python executable file name
 # If set, the script will not try and find a Python version with 3.5 as the major release number
-PYTHON_CMD=/usr/bin/python3.4
+#PYTHON_CMD=/usr/bin/python3.4
 
 function isPythonInstalled {
 
@@ -86,6 +86,16 @@ function startRTPEngine {
 systemctl start rtpengine
 
 }
+
+# Stop RTPEngine
+
+
+function stopRTPEngine {
+
+systemctl stop rtpengine
+
+}
+
 
 #Remove RTPEngine
 
@@ -168,6 +178,7 @@ if [ $DISTRO == "debian" ]; then
   	apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
   	apt-get install -y libavfilter-dev
   	apt-get install -y libavformat-dev
+	apt-get install -y libmysqlclient-dev
 
 	rm -rf rtpengine.bak
 	mv -f rtpengine rtpengine.bak
@@ -205,9 +216,19 @@ if [ $DISTRO == "debian" ]; then
          touch /var/log/rtpengine
          systemctl restart rsyslog
 
+	#Setup tmp files
+	echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
+
+	ln -s /etc/init.d/ngcp-rtpengine-daemon /etc/init.d/rtpengine
+
         #Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
 	
+	#File to signify that the install happened
+        if [ $? -eq 0 ]; then
+               touch ./.rtpengineinstalled
+               echo "RTPEngine has been installed!"
+        fi	
 
 fi #end of installing RTPEngine for Debian
 
@@ -229,10 +250,7 @@ if [ $DISTRO == "centos" ]; then
 	fi
 
 
-fi # end of RTPEngine for CentOS Install
-
-#Make and Configure RTPEngine
-#It's the same for CentOS and Debian
+	#Make and Configure RTPEngine
 	
 	rm -rf rtpengine.bak
 	mv -f rtpengine rtpengine.bak
@@ -288,7 +306,8 @@ fi # end of RTPEngine for CentOS Install
 			touch ./.rtpengineinstalled
 			echo "RTPEngine has been installed!"
 		fi
-	fi  #end of configing RTPEngine for CentOS
+	fi
+fi  #end of configing RTPEngine for CentOS
 
 
 
@@ -314,6 +333,12 @@ sed -i 's/##!define WITH_NAT/#!define WITH_NAT/' ./kamailio_dsiprouter.cfg
 function install {
 
 if [ ! -f "./.installed" ]; then
+
+	#Check if Python is installed before trying to start up the process
+
+        if [ -z ${PYTHON_CMD+x} ]; then
+                isPythonInstalled
+        fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
@@ -321,12 +346,16 @@ if [ ! -f "./.installed" ]; then
 	if [ $DISTRO == "centos" ]; then
         	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
 	elif [ $DISTRO == "debian" ]; then
-		apt-get -y install build-essential python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
+		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
 		#Setup Firewall for port 5000
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
         	firewall-cmd --reload
         fi
 	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
+	 if [ $? -eq 1 ]; then
+		echo "dSIPRouter install failed: Couldn't install required libraries"
+                exit 1
+        fi
 	configureKamailio
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
@@ -334,7 +363,7 @@ if [ ! -f "./.installed" ]; then
 		#Let's start it
 		start
 	else
-		echo "dSIPRouter install failed"
+		echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
 		exit 1
 	fi
 
@@ -384,6 +413,14 @@ function start {
 		fi
 	fi
 
+	#Start RTPEngine if it was installed
+
+	if [ -e ./.rtpengineinstalled ]; then
+
+                systemctl start rtpengine
+
+        fi
+
 	#Start the process
 	
 	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
@@ -409,12 +446,25 @@ function start {
 function stop {
 
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
-
+		
 		kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
-	fi 	
+	 	
+	else
+		echo "dSIPRouter is not running"
+
+	fi
+
+	if [ -e ./.rtpengineinstalled ]; then
 	
+		systemctl stop rtpengine 
+		echo "RTPEngine was stopped"
+	else
+	
+		echo "RTPEngine was not installed"
+	fi
+
 
 }
 
