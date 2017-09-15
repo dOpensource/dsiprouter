@@ -28,10 +28,12 @@ possible_python_versions=`find / -name "python$REQ_PYTHON_MAJOR_VER*" -type f -e
 for i in $possible_python_versions
 do
     ver=`$i -V 2>&1`
-    echo $ver | grep $REQ_PYTHON_MAJOR_VER >/dev/null
-    if [ $? -eq 0 ]; then
-        PYTHON_CMD=$i
-        return
+    if [ $? -eq 0 ]; then  #Check if the version parameter is working correctly
+    	echo $ver | grep $REQ_PYTHON_MAJOR_VER >/dev/null
+    	if [ $? -eq 0 ]; then
+        	PYTHON_CMD=$i
+       		return
+    	fi
     fi
 done
 
