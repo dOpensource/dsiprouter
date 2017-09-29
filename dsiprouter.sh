@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 FLT_CARRIER=8
 FLT_PBX=9
@@ -28,10 +28,12 @@ possible_python_versions=`find / -name "python$REQ_PYTHON_MAJOR_VER*" -type f -e
 for i in $possible_python_versions
 do
     ver=`$i -V 2>&1`
-    echo $ver | grep $REQ_PYTHON_MAJOR_VER >/dev/null
-    if [ $? -eq 0 ]; then
-        PYTHON_CMD=$i
-        return
+    if [ $? -eq 0 ]; then  #Check if the version parameter is working correctly
+    	echo $ver | grep $REQ_PYTHON_MAJOR_VER >/dev/null
+    	if [ $? -eq 0 ]; then
+        	PYTHON_CMD=$i
+       		return
+    	fi
     fi
 done
 
@@ -43,14 +45,30 @@ done
 
 function configureKamailio {
 
+
+echo -e "Please enter the username for the Kamailio schema:\c"
+read MYSQL_KAM_USERNAME
+
+echo -e "Please enter the password for the Kamailio schema:\c"
+read MYSQL_KAM_PASSWORD
+
+if [ "$MYSQL_KAM_USERNAME" == "" ]; then
+	MYSQL_KAM_USERNAME=root
+fi
+
+if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
+	MYSQL_KAM_PASSWORD=""
+fi
+
+
 # Install schema for drouting module
-mysql kamailio -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
-mysql kamailio -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
+mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
+mysql -u $MYSQL_KAM_USERNAME -pc$MYSQL_KAM_PASSWORD kamailio -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
-        mysql kamailio < /usr/share/kamailio/mysql/drouting-create.sql
+        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio < /usr/share/kamailio/mysql/drouting-create.sql
 else
         sqlscript=`find / -name drouting-create.sql | grep mysql | grep 4. | sed -n 1p`
-        mysql kamailio < $sqlscript
+        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio < $sqlscript
 
 fi
 
@@ -58,16 +76,16 @@ fi
 # Import Carrier Addresses
 
 if [  -e `which mysqlimport` ]; then
-        mysql kamailio -e "delete from address where grp=$FLT_CARRIER"
+        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "delete from address where grp=$FLT_CARRIER"
         sed -i s/FLT_CARRIER/$FLT_CARRIER/g address.csv
-        mysqlimport --fields-terminated-by=',' --ignore-lines=0  -L kamailio address.csv
+        mysqlimport  -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD --fields-terminated-by=',' --ignore-lines=0  -L kamailio address.csv
 fi
 
 
-mysql kamailio -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
+mysql  -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
 
 # Setup Outbound Rules to use Flowroute by default
-mysql kamailio -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
+mysql  -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
 
 rm -rf /etc/kamailio/kamailio.cfg.before_dsiprouter
 mv ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.before_dsiprouter
@@ -235,7 +253,7 @@ fi #end of installing RTPEngine for Debian
 if [ $DISTRO == "centos" ]; then
 
 	#Install required libraries
-	yum install -y glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c xmlrpc-c-devel libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel  
+	yum install -y glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel  
 	
 	#wget https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz
 	#tar -xvzf libevent-2.0.22-stable.tar.gz 
@@ -336,15 +354,17 @@ if [ ! -f "./.installed" ]; then
 
 	#Check if Python is installed before trying to start up the process
 
-        if [ -z ${PYTHON_CMD+x} ]; then
-                isPythonInstalled
-        fi
+        #if [ -z ${PYTHON_CMD+x} ]; then
+        #        isPythonInstalled
+        #fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
 	
 	if [ $DISTRO == "centos" ]; then
         	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
+		firewall-cmd --zone=public --add-port=5000/tcp --permanent
+        	firewall-cmd --reload
 	elif [ $DISTRO == "debian" ]; then
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
 		#Setup Firewall for port 5000
