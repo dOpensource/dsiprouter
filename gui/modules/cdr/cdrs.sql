@@ -41,7 +41,7 @@ CREATE TABLE `acc` (
   `calltype` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `acc_callid` (`callid`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,9 +67,10 @@ CREATE TABLE `cdrs` (
   `cost` int(11) NOT NULL DEFAULT '0',
   `rated` int(11) NOT NULL DEFAULT '0',
   `created` datetime NOT NULL,
+  `calltype` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`cdr_id`),
   UNIQUE KEY `uk_cft` (`sip_call_id`,`sip_from_tag`,`sip_to_tag`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -79,28 +80,27 @@ CREATE TABLE `cdrs` (
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = '' */ ;
 DELIMITER ;;
-CREATE DEFINER=`kamailio`@`localhost` PROCEDURE `kamailio_cdrs`()
+CREATE DEFINER=`root`@`localhost` PROCEDURE `kamailio_cdrs`()
 BEGIN
   DECLARE done INT DEFAULT 0;
   DECLARE bye_record INT DEFAULT 0;
-  DECLARE v_src_user,v_src_domain,v_dst_user,v_dst_domain,v_dst_ouser,v_callid,
-     v_from_tag,v_to_tag,v_src_ip VARCHAR(64);
+  DECLARE v_src_user,v_src_domain,v_dst_user,v_dst_domain,v_callid,v_from_tag,
+     v_to_tag,v_src_ip,v_calltype VARCHAR(64);
   DECLARE v_inv_time, v_bye_time DATETIME;
   DECLARE inv_cursor CURSOR FOR SELECT src_user, src_domain, dst_user,
-     dst_domain, dst_ouser, time, callid,from_tag, to_tag, src_ip
-     FROM acc
+     dst_domain, time, callid,from_tag, to_tag, src_ip, calltype FROM acc
      where method='INVITE' and cdr_id='0';
   DECLARE CONTINUE HANDLER FOR SQLSTATE '02000' SET done = 1;
   OPEN inv_cursor;
   REPEAT
     FETCH inv_cursor INTO v_src_user, v_src_domain, v_dst_user, v_dst_domain,
-            v_dst_ouser, v_inv_time, v_callid, v_from_tag, v_to_tag, v_src_ip;
+            v_inv_time, v_callid, v_from_tag, v_to_tag, v_src_ip, v_calltype;
     IF NOT done THEN
       SET bye_record = 0;
       SELECT 1, time INTO bye_record, v_bye_time FROM acc WHERE
@@ -110,11 +110,11 @@ BEGIN
                  ORDER BY time ASC LIMIT 1;
       IF bye_record = 1 THEN
         INSERT INTO cdrs (src_username,src_domain,dst_username,
-                 dst_domain,dst_ousername,call_start_time,duration,sip_call_id,
-                 sip_from_tag,sip_to_tag,src_ip,created) VALUES (v_src_user,
-                 v_src_domain,v_dst_user,v_dst_domain,v_dst_ouser,v_inv_time,
+                 dst_domain,call_start_time,duration,sip_call_id,sip_from_tag,
+                 sip_to_tag,src_ip,created,calltype) VALUES (v_src_user,v_src_domain,
+                 v_dst_user,v_dst_domain,v_inv_time,
                  UNIX_TIMESTAMP(v_bye_time)-UNIX_TIMESTAMP(v_inv_time),
-                 v_callid,v_from_tag,v_to_tag,v_src_ip,NOW());
+                 v_callid,v_from_tag,v_to_tag,v_src_ip,NOW(),v_calltype);
         UPDATE acc SET cdr_id=last_insert_id() WHERE callid=v_callid
                  AND from_tag=v_from_tag AND to_tag=v_to_tag;
       END IF;
@@ -178,4 +178,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-10-05 21:33:42
+-- Dump completed on 2017-10-07 11:57:33
