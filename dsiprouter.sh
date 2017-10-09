@@ -7,7 +7,7 @@ FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
-DSIP_PORT=5000
+DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT=\K[0-9]*')
 
 # Get Linux Distro
 
