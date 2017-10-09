@@ -357,21 +357,24 @@ if [ ! -f "./.installed" ]; then
         #if [ -z ${PYTHON_CMD+x} ]; then
         #        isPythonInstalled
         #fi
-	
+
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
 	
 	if [ $DISTRO == "centos" ]; then
-        	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
+	    PIP_CMD="pip"
+        yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
-        	firewall-cmd --reload
+        firewall-cmd --reload
+
 	elif [ $DISTRO == "debian" ]; then
+		PIP_CMD="pip3"
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
 		#Setup Firewall for port 5000
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
-        	firewall-cmd --reload
-        fi
-	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
+        firewall-cmd --reload
+    fi
+	$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
 	 if [ $? -eq 1 ]; then
 		echo "dSIPRouter install failed: Couldn't install required libraries"
                 exit 1
