@@ -65,3 +65,7 @@ change the PASSWORD field to reflect the password you want
 
 #### Outbound Routing Screen
 ![dSIPRouter Outbound Routing Screen](/docs/images/dsiprouter-outboundrouting.jpg)
+
+### License
+
+* Apache License 2.0, [read more here](./LICENSE)
