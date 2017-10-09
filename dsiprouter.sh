@@ -7,6 +7,7 @@ FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
+DSIP_PORT=5000
 
 # Get Linux Distro
 
@@ -364,14 +365,14 @@ if [ ! -f "./.installed" ]; then
 	if [ $DISTRO == "centos" ]; then
 	    PIP_CMD="pip"
         yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
-		firewall-cmd --zone=public --add-port=5000/tcp --permanent
+		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
 
 	elif [ $DISTRO == "debian" ]; then
 		PIP_CMD="pip3"
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
-		#Setup Firewall for port 5000
-		firewall-cmd --zone=public --add-port=5000/tcp --permanent
+		#Setup Firewall for DSIP_PORT
+		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
     fi
 	$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
@@ -406,7 +407,7 @@ if [ ! -f "./.installed" ]; then
 else
 	#Stop dSIPRouter, remove ./.installed file, close firewall
 	stop
-	firewall-cmd --zone=public --remove-port=5000/tcp --permanent
+	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
 	rm ./.installed
 	
@@ -446,7 +447,7 @@ function start {
 
 	#Start the process
 	
-	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} >/dev/null 2>&1 &
 	# Store the PID of the process
 	PID=$!
 	if [ $PID -gt 0 ]; then
