@@ -49,9 +49,8 @@ Put this line in /etc/rc.local
 
 ### Changing Admin Password
 
-navigate to `dsiprouter` directory and  
-`vi ./gui/settings.py`
-change the PASSWORD field to reflect the password you want
+Navigate to dSIPRouter directory and `vi ./gui/settings.py`
+change the `PASSWORD` field to reflect the password you want
 
 ### Screenshots
 
