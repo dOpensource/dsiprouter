@@ -35,6 +35,9 @@ echo ""
 
 }
 
+# This installer will be kicked off by the main dSIPRouter installer by passing the MySQL DB root username, database name, and/or the root password
+# This is needed since we are installing stored procedures which require SUPER privileges on MySQL
+
 if [ $# -gt 2 ]; then
 
 	MYSQL_ROOT_USERNAME="-u$1"
