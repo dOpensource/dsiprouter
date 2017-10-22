@@ -187,6 +187,32 @@ $('#inboundmapping #open-Delete').click(function () {
     $(".modal-body #ruleid").val(ruleid);
 });
 
+$('#toggleFusionPBXDomain').change(function() {
+	if ($(this).is(":checked")) {
+		$('#FusionPBXDomainOptions').removeClass("hidden");
+		$('#fusionpbx_db_enabled').val(1);
+	}
+	else {
+		$('#FusionPBXDomainOptions').addClass("hidden");
+		$('#fusionpbx_db_enabled').val(0);
+
+	}
+	
+});
+
+$('#toggleFusionPBXDomainAdd').change(function() {
+	if ($(this).is(":checked")) {
+		$('#FusionPBXDomainOptionsAdd').removeClass("hidden");
+		$('#fusionpbx_db_enabled').val(1);
+	}
+	else {
+		$('#FusionPBXDomainOptionsAdd').addClass("hidden");
+		$('#fusionpbx_db_enabled').val(0);
+
+	}
+	
+});
+
 
 function reloadkam(elmnt) {
 

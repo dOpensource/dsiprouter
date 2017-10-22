@@ -79,26 +79,25 @@
         <div class="form-group">
         <input class="form-control " type="text" id="prefix" name="prefix" placeholder="The characters to prefix to a RURI">
         </div>
-	<div class="checkbox">
-    		<label>
-        		<input id="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle">Enable FusionPBX Domain Support
-    		</label>
-	</div>
-	<div id="FusionPBXDomainOptions"  class="form-group hidden">
-		<div class="form-group">
-			<input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server" placeholder="FusionPBX Database IP or Hostname">
-        	</div>
-		<div class="form-group">
-			<input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_name" placeholder="FusionPBX DB Username">
-		</div>
-		<div class="form-group">
-			<input class="form-control" type="text" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password">
-		</div>
-	</div>
+	<div class="form-group">
+                <input id="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"><label for="toggleFusionPBXDomain" class="label-toggle">Enable FusionPBX Domain Support</label>
+        </div>
+        <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="1">
+        <div id="FusionPBXDomainOptions"  class="form-group hidden">
+                <div class="form-group">
+                        <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server" placeholder="FusionPBX Database IP or Hostname">
+                </div>
+                <div class="form-group">
+                        <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username" placeholder="FusionPBX DB Username">
+                </div>
+                <div class="form-group">
+                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password">
+                </div>
+        </div>
+      </div>
           <div class="modal-footer ">
         <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span class="glyphicon glyphicon-ok-sign"></span> Update</button>
       </div>
-
         </div>
 	</form>
     <!-- /.modal-content --> 
@@ -128,6 +127,21 @@
         </div>
         <div class="form-group">
         <input class="form-control " type="text" id="prefix" name="prefix" placeholder="The characters to prefix to a RURI">
+        </div>
+	<div class="form-group">
+		<input id="toggleFusionPBXDomainAdd" type="checkbox" data-toggle="toggle" value="1"><label for="toggleFusionPBXDomainAdd" class="label-toggle">Enable FusionPBX Domain Support</label>
+	</div>
+        <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="1">
+        <div id="FusionPBXDomainOptionsAdd"  class="form-group hidden">
+                <div class="form-group">
+                        <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server" placeholder="FusionPBX Database IP or Hostname">
+                </div>
+                <div class="form-group">
+                        <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username" placeholder="FusionPBX DB Username">
+                </div>
+                <div class="form-group">
+                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password">
+                </div>
         </div>
       </div>
           <div class="modal-footer ">
@@ -170,5 +184,4 @@
 {% endblock %}
 
 {% block js %}
-	<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
 {% endblock %}
