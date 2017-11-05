@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for
 from flask_script import Manager
 import settings
-from database import loadSession, Gateways,Address,InboundMapping,OutboundRoutes
+from database import loadSession, Gateways,Address,InboundMapping,OutboundRoutes,dSIPFusionPBXDB
 import os
 import subprocess
 import json 
@@ -100,7 +100,8 @@ def deleteCarriers():
 def displayPBX(db_err=0):
     if session.get('logged_in'):
        try:
-           res = db.query(Gateways).filter(Gateways.type==settings.FLT_PBX).all()
+           #res = db.query(Gateways).filter(Gateways.type==settings.FLT_PBX).all()
+           res = db.query(Gateways).outerjoin(dSIPFusionPBXDB,Gateways.gwid == dSIPFusionPBXDB.pbx_id).add_columns(Gateways.gwid,Gateways.description,Gateways.address,Gateways.strip,Gateways.pri_prefix,dSIPFusionPBXDB.enabled, dSIPFusionPBXDB.db_ip, dSIPFusionPBXDB.db_username,dSIPFusionPBXDB.db_password).filter(Gateways.type==settings.FLT_PBX).all()
            return render_template('pbxs.html',rows=res)
        except:
            if db_err <= 3:
@@ -119,6 +120,11 @@ def addUpdatePBX():
     ip_addr = request.form['ip_addr']
     strip = request.form['strip']
     prefix = request.form['prefix']
+    fusionpbx_db_enabled = request.form.get('fusionpbx_db_enabled',"0")
+    fusionpbx_db_server = request.form['fusionpbx_db_server']
+    fusionpbx_db_username = request.form['fusionpbx_db_username']
+    fusionpbx_db_password = request.form['fusionpbx_db_password']
+    print("fusionpbx_db_enabled: %s",fusionpbx_db_enabled)
     # Adding
     if len(gwid) <= 0:
         print(name)
@@ -127,13 +133,24 @@ def addUpdatePBX():
         db.add(Gateway)
         db.add(Addr)
         db.commit()
+        db.refresh(Gateway)
+        if fusionpbx_db_enabled == "1":
+            print('*****This fusionpbx_db_server:' +fusionpbx_db_server)
+            FusionPBXDB = dSIPFusionPBXDB(Gateway.gwid,fusionpbx_db_server,fusionpbx_db_username,fusionpbx_db_password,int(fusionpbx_db_enabled))
+            db.add(FusionPBXDB)
+            db.commit()
         return displayPBX()
     # Updating
     else:
         db.query(Gateways).filter(Gateways.gwid==gwid).update({'description':"name:"+name,'address':ip_addr,'strip':strip,'pri_prefix':prefix})
-        #TODO: You will end up with multiple Address records -will fix
-        Addr=Address(name,ip_addr,32,settings.FLT_PBX)
-        db.add(Addr)
+        exists = db.query(dSIPFusionPBXDB).filter(dSIPFusionPBXDB.pbx_id==gwid).scalar()
+        if exists:
+            db.query(dSIPFusionPBXDB).filter(dSIPFusionPBXDB.pbx_id==gwid).update({'pbx_id':gwid,'db_ip':fusionpbx_db_server,'db_username':fusionpbx_db_username,'db_password':fusionpbx_db_password,'enabled':fusionpbx_db_enabled})
+        else:
+            FusionPBXDB = dSIPFusionPBXDB(gwid,fusionpbx_db_server,fusionpbx_db_username,fusionpbx_db_password,int(fusionpbx_db_enabled))
+            db.add(FusionPBXDB)
+            db.query(Address).filter(Address.tag=="name:"+name).update({'ip_addr':ip_addr})
+            
         db.commit()
         return displayPBX()
 
@@ -141,10 +158,13 @@ def addUpdatePBX():
 def deletePBX():
     gwid = request.form['gwid']
     name = request.form['name']
-    d = db.query(Gateways).filter(Gateways.gwid==gwid)
-    d.delete(synchronize_session=False)
-    a = db.query(Address).filter(Address.tag=='name:'+name)
-    a.delete(synchronize_session=False)
+    gateway = db.query(Gateways).filter(Gateways.gwid==gwid)
+    gateway.delete(synchronize_session=False)
+    address = db.query(Address).filter(Address.tag=='name:'+name)
+    address.delete(synchronize_session=False)
+    fusionpbxdb = db.query(dSIPFusionPBXDB).filter(dSIPFusionPBXDB.pbx_id==gwid)
+    fusionpbxdb.delete(synchronize_session=False)
+    db.commit()
     return displayPBX()
 
 @app.route('/inboundmapping')
@@ -250,11 +270,18 @@ def init_app(flask_app):
 
     #Add jinga2 filter
     app.jinja_env.filters["attrFilter"]=attrFilter
+    app.jinja_env.filters["yesOrNoFilter"]=yesOrNoFilter
 
     #db.init_app(flask_app)
     #db.app = app
 
     manager.run()
+
+def yesOrNoFilter(list,field):
+    if list == 1:
+        return "Yes"
+    else:
+        return "No"
 
 def attrFilter(list,field):
     if ":" in list:    
