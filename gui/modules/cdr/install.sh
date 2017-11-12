@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ENABLED=0
 
 function installSQL {
 
@@ -23,7 +23,10 @@ mysql -s -N $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_KAM_DBNAME < ./cdrs
 
 function install {
 
-echo ""
+if [ $ENABLED == "0" ];then
+    exit
+fi
+installSQL
 
 }
 
@@ -51,4 +54,4 @@ else
 fi
 
 
-installSQL
+install

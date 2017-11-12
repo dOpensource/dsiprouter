@@ -40,9 +40,9 @@
     {% else %}
 	<td class='fusionpbxenabled'>No</td>
     {% endif %}
-    <td class='fusion_db_server hide'>{{row.db_ip}}</td>
-    <td class='fusion_db_username hide'>{{row.db_username}}</td>
-    <td class='fusion_db_password hide'>{{row.db_password}}</td>
+    <td class='fusion_db_server hide'>{{row.db_ip|noneFilter()}}</td>
+    <td class='fusion_db_username hide'>{{row.db_username|noneFilter()}}</td>
+    <td class='fusion_db_password hide'>{{row.db_password|noneFilter()}}</td>
     <td><p data-placement="top" data-toggle="tooltip" title="Edit"><button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal" data-target="#edit" ><span class="glyphicon glyphicon-pencil"></span></button></p></td>
     <td><p data-placement="top" data-toggle="tooltip" title="Delete"><button id="open-Delete"class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal" data-target="#delete" ><span class="glyphicon glyphicon-trash"></span></button></p></td>
     </tr>
@@ -100,7 +100,7 @@
                         <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username" placeholder="FusionPBX DB Username">
                 </div>
                 <div class="form-group">
-                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password">
+                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password(Optional)">
                 </div>
         </div>
       </div>
@@ -142,6 +142,14 @@
 	</div>
         <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
         <div id="FusionPBXDomainOptionsAdd"  class="form-group hidden">
+                <div class="alert alert-warning .pre-scrollable">
+                    <strong>You need access to the FusionPBX database.  Run these commands as root on the FusionPBX server. Replace &lt;ip address&gt; with the ip address of this server.</strong>
+                    <pre>sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
+iptables -A INPUT -p tcp -s &lt;ip address&gt;/32 --dport 5432 -j ACCEPT
+#Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
+echo -e "host    all             all            &lt;ip address&gt;/32            trust” > /etc/postgresql/*/main/pg_hba.conf
+/etc/init.d/postgresql restart</pre>
+                </div>
                 <div class="form-group">
                         <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server" placeholder="FusionPBX Database IP or Hostname">
                 </div>
@@ -149,7 +157,7 @@
                         <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username" placeholder="FusionPBX DB Username">
                 </div>
                 <div class="form-group">
-                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password">
+                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password(Optional)">
                 </div>
         </div>
       </div>

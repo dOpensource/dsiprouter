@@ -142,6 +142,7 @@ $('#open-CarrierAdd').click(function () {
     $(".modal-body #fusionpbx_db_server").val('');
     $(".modal-body #fusionpbx_db_username").val('');
     $(".modal-body #fusionpbx_db_password").val('');
+    $(".modal-body #toggleFusionPBXDomainAdd").bootstrapToggle('off');
 });
 
 $('#carriers #open-Update').click(function () {
@@ -223,6 +224,8 @@ $('#toggleFusionPBXDomain').change(function() {
 	if ($(this).is(":checked")) {
 		$('#FusionPBXDomainOptions').removeClass("hidden");
 		$('.modal-body #fusionpbx_db_enabled').val(1);
+		$('.modal-body #fusionpbx_db_enabled').val(1);
+        
 	}
 	else {
 		$('#FusionPBXDomainOptions').addClass("hidden");
@@ -236,7 +239,14 @@ $('#toggleFusionPBXDomainAdd').change(function() {
 	if ($(this).is(":checked")) {
 		$('#FusionPBXDomainOptionsAdd').removeClass("hidden");
 		$('.modal-body #fusionpbx_db_enabled').val(1);
-	}
+        
+        if ($(".modal-body #fusionpbx_db_server").val() == "" &&  $(".modal-body #fusionpbx_db_username").val() == "") {
+            var ip_addr = $("input#ip_addr").val();
+            $(".modal-body #fusionpbx_db_server").val(ip_addr);
+            $(".modal-body #fusionpbx_db_username").val("fusionpbx");
+	    }
+    
+    }
 	else {
 		$('#FusionPBXDomainOptionsAdd').addClass("hidden");
 		$('.modal-body #fusionpbx_db_enabled').val(0);

@@ -271,6 +271,7 @@ def init_app(flask_app):
     #Add jinga2 filter
     app.jinja_env.filters["attrFilter"]=attrFilter
     app.jinja_env.filters["yesOrNoFilter"]=yesOrNoFilter
+    app.jinja_env.filters["noneFilter"]=noneFilter
 
     #db.init_app(flask_app)
     #db.app = app
@@ -282,6 +283,13 @@ def yesOrNoFilter(list,field):
         return "Yes"
     else:
         return "No"
+
+def noneFilter(list):
+    if list is None:
+        return ""
+    else:
+        return list
+
 
 def attrFilter(list,field):
     if ":" in list:    

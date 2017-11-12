@@ -1,12 +1,12 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-set -x
 
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
+DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
 
 # Get Linux Distro
 
@@ -45,8 +45,8 @@ done
 
 function configureKamailio {
 
-
-echo -e "Please enter the username for the Kamailio schema:\c"
+echo -e "[Database Configuration]\n"
+echo -e "Please enter the username for the Kamailio schema [default root]:\c"
 read MYSQL_KAM_USERNAME
 
 echo -e "Please enter the password for the Kamailio schema:\c"
@@ -60,6 +60,13 @@ if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
 	MYSQL_KAM_PASSWORD=""
 fi
 
+# Check the username and password
+
+mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "select * from version limit 1"
+if [ $? -eq 1 ]; then
+	echo "Your credentials for the kamailio schema is invalid.  Please try again!"
+	configureKamailio
+fi
 
 # Install schema for drouting module
 mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
@@ -442,8 +449,12 @@ function start {
         fi
 
 	#Start the process
-	
-	nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+	if [ $DEBUG -eq 0 ]; then	
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+	else
+		
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 > /var/log/dsiprouter.log 2>&1 &
+	fi
 	# Store the PID of the process
 	PID=$!
 	if [ $PID -gt 0 ]; then
@@ -532,6 +543,11 @@ function processCMD {
 			exit 0
 			;;		 
 			start)
+			shift
+			if [ "$1" == "-debug" ]; then
+                                DEBUG=1
+				set -x
+                        fi
 			start
 			shift
 			exit 0
@@ -551,6 +567,10 @@ function processCMD {
 			installRTPEngine
 			exit 0
 			;;
+			configurekam)
+			configureKamailio
+			exit 0
+			;;			
 			-h)
 			usageOptions
 			exit 0
