@@ -1,5 +1,5 @@
 #!/bin/bash
-
+ENABLED=1
 
 function installSQL {
 
@@ -17,14 +17,17 @@ fi
 
 # Replace the FusionPBX Domain Support tables and add some Kamailio stored procedures
 echo "Adding/Replacing the tables needed for FusionPBX Domain Support tables  within dSIPRouter..."
-mysql -s -N $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_KAM_DBNAME < ./fusionpbx.sql
+mysql -s -N $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_KAM_DBNAME < ./gui/modules/fusionpbx/fusionpbx.sql
 
 }
 
 function install {
 
-echo ""
+if [ $ENABLED == "0" ];then
+    exit
+fi
 
+installSQL
 }
 
 
@@ -41,14 +44,20 @@ echo ""
 if [ $# -gt 2 ]; then
 
 	MYSQL_ROOT_USERNAME="-u$1"
-	MYSQL_ROOT_PASSWORD="-p$2"
+	MYSQL_ROOT_PASSWORD=$2
 	MYSQL_KAM_DBNAME=$3
+
+elif [ $# -gt 1 ]; then
+    MYSQL_ROOT_USERNAME="-u$1"
+    MYSQL_ROOT_PASSWORD=""
+    MYSQL_KAM_DBNAME=$2
+
 else
 
 	MYSQL_ROOT_USERNAME="-u$1"
-        MYSQL_ROOT_PASSWORD=
-        MYSQL_KAM_DBNAME=$2
+    MYSQL_ROOT_PASSWORD=-p$2
+    MYSQL_KAM_DBNAME=$3
 fi
 
 
-installSQL
+install

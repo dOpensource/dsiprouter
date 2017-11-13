@@ -1,5 +1,8 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
+#set -x
+
+#Define some global variables
 
 FLT_CARRIER=8
 FLT_PBX=9
@@ -7,6 +10,12 @@ REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
+
+#Default MYSQL install values
+
+MYSQL_KAM_DEF_USERNAME=kamailio
+MYSQL_KAM_DEF_PASSWORD="kamailiorw"
+MYSQL_KAM_DEF_DATABASE="kamailio"
 
 # Get Linux Distro
 
@@ -38,44 +47,54 @@ do
 done
 
 #Required version of Python is not found.  So, tell the user to install the required version
-    echo -e "\nPlease install at least python version $REQ_PYTHON_VER\n"
-    exit
+echo -e "\nPlease install at least python version $REQ_PYTHON_VER\n"
+exit
 
 }
 
 function configureKamailio {
 
 echo -e "[Database Configuration]\n"
-echo -e "Please enter the username for the Kamailio schema [default root]:\c"
+echo -e "Please enter the username for the Kamailio schema [default $MYSQL_KAM_DEF_USERNAME]:\c"
 read MYSQL_KAM_USERNAME
 
-echo -e "Please enter the password for the Kamailio schema:\c"
+echo -e "Please enter the password for the Kamailio schema [default $MYSQL_KAM_DEF_PASSWORD]:\c"
 read MYSQL_KAM_PASSWORD
 
-if [ "$MYSQL_KAM_USERNAME" == "" ]; then
-	MYSQL_KAM_USERNAME=root
+echo -e "Please enter the database name for the Kamailio schema [default $MYSQL_KAM_DEF_DATABASE]:\c"
+read MYSQL_KAM_DATABASE
+
+if [ "$MYSQL_KAM_PASSWORD" != "" ]; then
+    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_PASSWORD"
+else
+    MYSQL_KAM_PASSWORD=-p$MYSQL_KAM_DEF_PASSWORD
 fi
 
-if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
-	MYSQL_KAM_PASSWORD=""
+if [ "$MYSQL_KAM_USERNAME" == "" ]; then
+    MYSQL_KAM_USERNAME=$MYSQL_KAM_DEF_USERNAME
 fi
+
+if [ "$MYSQL_KAM_DATABASE" == "" ]; then
+    MYSQL_KAM_DATABASE=$MYSQL_KAM_DEF_DATABASE
+fi
+
 
 # Check the username and password
 
-mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "select * from version limit 1"
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "select * from version limit 1"
 if [ $? -eq 1 ]; then
 	echo "Your credentials for the kamailio schema is invalid.  Please try again!"
 	configureKamailio
 fi
 
 # Install schema for drouting module
-mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
-mysql -u $MYSQL_KAM_USERNAME -pc$MYSQL_KAM_PASSWORD kamailio -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
-        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio < /usr/share/kamailio/mysql/drouting-create.sql
+        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
         sqlscript=`find / -name drouting-create.sql | grep mysql | grep 4. | sed -n 1p`
-        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio < $sqlscript
+        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
 
 fi
 
@@ -83,16 +102,16 @@ fi
 # Import Carrier Addresses
 
 if [  -e `which mysqlimport` ]; then
-        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "delete from address where grp=$FLT_CARRIER"
+        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
         sed -i s/FLT_CARRIER/$FLT_CARRIER/g address.csv
-        mysqlimport  -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD --fields-terminated-by=',' --ignore-lines=0  -L kamailio address.csv
+        mysqlimport  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=',' --ignore-lines=0  -L kamailio address.csv
 fi
 
 
-mysql  -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
+mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
 
 # Setup Outbound Rules to use Flowroute by default
-mysql  -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD kamailio -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
+mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
 
 rm -rf /etc/kamailio/kamailio.cfg.before_dsiprouter
 mv ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.before_dsiprouter
@@ -361,9 +380,9 @@ if [ ! -f "./.installed" ]; then
 
 	#Check if Python is installed before trying to start up the process
 
-        #if [ -z ${PYTHON_CMD+x} ]; then
-        #        isPythonInstalled
-        #fi
+        if [ -z ${PYTHON_CMD+x} ]; then
+                isPythonInstalled
+        fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
@@ -384,6 +403,7 @@ if [ ! -f "./.installed" ]; then
                 exit 1
         fi
 	configureKamailio
+    installModules 
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
 		touch ./.installed
@@ -393,7 +413,6 @@ if [ ! -f "./.installed" ]; then
 		echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
 		exit 1
 	fi
-
 else
 	echo "dSIPRouter is already installed"
 	exit 1
@@ -410,15 +429,41 @@ if [ ! -f "./.installed" ]; then
 else
 	#Stop dSIPRouter, remove ./.installed file, close firewall
 	stop
+    
+    #Remove firewall rule
 	firewall-cmd --zone=public --remove-port=5000/tcp --permanent
         firewall-cmd --reload
+    
+    #Remove crontab entry
+    echo "Removing crontab entry"
+    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+
+    #Remove the hidden installed file, which denotes if it's installed or not
 	rm ./.installed
-	
+
+    echo "dSIPRouter was uninstalled"
 fi
 	
 
 
 } #end of uninstall
+
+
+function installModules {
+
+
+    #Install dSIPModules
+    for dir in ./gui/modules/*; 
+    do 
+        $dir/install.sh $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE $PYTHON_CMD
+    done
+
+    #Setup dSIPRouter Cron scheduler
+    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+    echo -e "*/1 * * * *  $PYTHON_CMD `(pwd)`/gui/dsiprouter_cron.py" | crontab -
+
+
+}
 
 
 function start {
@@ -570,7 +615,11 @@ function processCMD {
 			configurekam)
 			configureKamailio
 			exit 0
-			;;			
+			;;	
+            installmodules)
+            installModules
+            exit 0
+            ;;
 			-h)
 			usageOptions
 			exit 0

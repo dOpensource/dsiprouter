@@ -5,3 +5,4 @@ requests
 jinja2
 Flask-Script
 mysqlclient
+psycopg2
