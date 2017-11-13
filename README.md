@@ -29,16 +29,20 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 ### Installing and Running It:
 
-The install command will install dSIPRouter (will not proxy audio (RTP) traffic). 
+#### Install (No Proxy audio (RTP) traffic)
 
 ```
 ./dsiprouter.sh install
 ```
+
+#### Install (Proxy audio (RTP) traffic)
+
 If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
 
 ```
 ./dsiprouter.sh install -rtpengine
 ```
+
 Once the install is complete, dSIPRouter will automatically start the Web GUI and the RTPEngine.  
 
 ### Login 
@@ -51,6 +55,12 @@ The default username/password is admin/password.
 ```
 ./dsiprouter.sh stop
 ```
+
+### Starting dSIPRouter:
+```
+./dsiprouter.sh start
+```
+
 ### Run At Startup:
 
 Put this line in /etc/rc.local
