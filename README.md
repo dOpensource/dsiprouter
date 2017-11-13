@@ -1,44 +1,57 @@
-## dSIPRouter by dOpenSource | a Flyball Company
-##### [ Built in Detroit ]
+## dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]
 
+dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into a easy to to use SIP trunking service, which enables three different use cases:
 
-Allows you to quickly turn [Kamailio](https://www.kamailio.org/) into a easy to to use SIP trunking service that allow you to manage your carriers and PBX's from a web gui
+- Providing SIP Trunking services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc
+- Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX. We have an integration with FusionPBX that make this really easy and scalable!
+- Both use cases above
 
 ### Supported Platforms:
 
+#### OS Support
+
 - CentOS 7 (tested on 7.3.1611)
 - Debian Jessie (tested on 8.9)
+
+#### Kamailio Versions
 - Kamailio 4.x (tested on Kamailio 4.4.5, 4.4.6)
+* Kamailio 5.x support is coming very soon
+
+#### Database Support
+
+- MySQL 5.x
 
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
-- Kamailio needs to be installed with the default kamailio configurtion directory, which is /etc/kamailio on CentOS 7
-- The Kamailio database must be mysql and the root user must be able to access the tables without a password.  You can add a password to the root database user after the installation.   
+- Kamailio needs to be installed with the default kamailio configuration directory
+- You will need your kamailio database
+  
 
 ### Installing and Running It:
 
-The install command will install dSIPRouter. 
+The install command will install dSIPRouter (will not proxy audio (RTP) traffic). 
 
+```
 ./dsiprouter.sh install
-
-
+```
 If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
 
+```
 ./dsiprouter.sh install -rtpengine
-
+```
 Once the install is complete, dSIPRouter will automatically start the Web GUI and the RTPEngine.  
+
+### Login 
 
 Open a broswer and go to http://[ip address of your server]:5000
 
 The default username/password is admin/password.  
 
-The first time it's executed it will attempt to install everything and create a hidden file called ./.installed.  You can remove that file if you want to force a reinstall
-
 ### Stopping dSIPRouter:
-
+```
 ./dsiprouter.sh stop
-
+```
 ### Run At Startup:
 
 Put this line in /etc/rc.local
@@ -46,6 +59,11 @@ Put this line in /etc/rc.local
 <your directory>/dsiprouter.sh start
 
 * We will provide a systemctl startup/stop script in the near future
+
+### Uninstall
+```
+./dsiprouter.sh uninstall
+```
 
 ### Changing Admin Password
 
