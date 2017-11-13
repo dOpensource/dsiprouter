@@ -81,7 +81,7 @@ fi
 
 # Check the username and password
 
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "select * from version limit 1"
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "select * from version limit 1" >/dev/null 2>&1
 if [ $? -eq 1 ]; then
 	echo "Your credentials for the kamailio schema is invalid.  Please try again!"
 	configureKamailio
@@ -523,7 +523,8 @@ function stop {
 
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
 		
-		kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
+		#kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
+        kill -9 `pgrep -f runserver`
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
 	 	
