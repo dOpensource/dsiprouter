@@ -32,6 +32,8 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 #### Install (No Proxy audio (RTP) traffic)
 
 ```
+git clone https://github.com/dOpensource/dsiprouter.git
+cd dsiprouter
 ./dsiprouter.sh install
 ```
 
@@ -40,6 +42,8 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
 
 ```
+git clone https://github.com/dOpensource/dsiprouter.git
+cd dsiprouter
 ./dsiprouter.sh install -rtpengine
 ```
 
