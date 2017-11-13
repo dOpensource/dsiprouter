@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 #Define some global variables
 
@@ -91,7 +91,7 @@ fi
 mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
 mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
-        mysql -u $MYSQL_KAM_USERNAME -p$MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
+        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
         sqlscript=`find / -name drouting-create.sql | grep mysql | grep 4. | sed -n 1p`
         mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
@@ -392,7 +392,7 @@ if [ ! -f "./.installed" ]; then
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
         	firewall-cmd --reload
 	elif [ $DISTRO == "debian" ]; then
-		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev
+		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev
 		#Setup Firewall for port 5000
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
         	firewall-cmd --reload
