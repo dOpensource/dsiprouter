@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 #Define some global variables
 
@@ -113,10 +113,13 @@ mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert
 # Setup Outbound Rules to use Flowroute by default
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
 
-rm -rf /etc/kamailio/kamailio.cfg.before_dsiprouter
-mv ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.before_dsiprouter
-ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
 
+#rm -rf /etc/kamailio/kamailio.cfg.before_dsiprouter
+mpath=`(grep mpath=\"/ /etc/kamailio/kamailio-basic.cfg)`
+cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
+rm ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
+ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
+sed -i 's#mpath=\".*\"#'$mpath'#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
 
 }
 
@@ -409,6 +412,17 @@ if [ ! -f "./.installed" ]; then
 		touch ./.installed
 		#Let's start it
 		start
+
+		echo -e "You can access the dSIPRouter web gui by going to:\n"
+		echo -e "External IP:  http://$EXTERNAL_IP:5000"
+		
+		if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
+			echo -e "Internal IP:  http://$INTERNAL_IP:5000"
+		fi
+
+		echo -e "\nThe default username/password is: admin/password\n"
+
+		echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
 	else
 		echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
 		exit 1
