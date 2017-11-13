@@ -88,7 +88,7 @@ change the PASSWORD field to reflect the password you want
 #### PBX(s) and Endpoint Management Screen
 ![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbxs.jpg)
 
-#### Fusion Domain Support
+#### FusionPBX Domain Support
 ![dSIPRouter FusionPBX Domain Support Screen](/docs/images/dsiprouter-fusionpbx_domain_support.jpg)
 
 #### Inbound Mapping Screen
