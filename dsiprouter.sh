@@ -395,6 +395,7 @@ if [ ! -f "./.installed" ]; then
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
         	firewall-cmd --reload
 	elif [ $DISTRO == "debian" ]; then
+ 		apt-get update
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev
 		#Setup Firewall for port 5000
 		firewall-cmd --zone=public --add-port=5000/tcp --permanent
