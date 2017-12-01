@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 #Define some global variables
 
@@ -114,15 +114,39 @@ mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
 
 
-#rm -rf /etc/kamailio/kamailio.cfg.before_dsiprouter
-mpath=`(grep mpath=\"/ /etc/kamailio/kamailio-basic.cfg)`
 cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
 rm ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
 ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
-sed -i 's#mpath=\".*\"#'$mpath'#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+
+
+#Fix the mpath
+fixMPATH
 
 }
 
+#Try to locate the Kamailio modules directory.  It will use the last modules directory found
+
+function fixMPATH {
+
+for i in `find /usr -name drouting.so`; 
+do 
+    mpath=`dirname $i| grep 'modules$'`
+    if [ "$mpath" != '' ]; then 
+        mpath=$mpath/ 
+        break #found a mpath
+    fi 
+done
+echo $mpath
+if [ "$mpath" != '' ]; then 
+    sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+    #sed -i 's#mpath=\".*\"#'$mpath'#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+    #cat ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg | tr -d '\r' > ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+else
+    echo "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
+    exit 1
+fi
+
+}
 
 
 # Start RTPEngine
@@ -634,6 +658,10 @@ function processCMD {
 			;;	
             installmodules)
             installModules
+            exit 0
+            ;;
+            fixmpath)
+            fixMPATH
             exit 0
             ;;
 			-h)
