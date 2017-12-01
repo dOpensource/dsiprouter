@@ -23,9 +23,18 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
+
 - Kamailio needs to be installed with the default kamailio configuration directory
 - You will need your kamailio database
   
+
+### Configuration
+
+To change dSIPRouter edit `gui/settings.py` file, e.g. `vi ./gui/settings.py`
+
+* DSIP_PORT - port on which web gui is running, 5000 by default
+* USERNAME - web gui admin username
+* PASSWORD - web gui admin password
 
 ### Installing and Running It:
 
@@ -52,8 +61,6 @@ Once the install is complete, dSIPRouter will automatically start the Web GUI an
 ### Login 
 
 Open a broswer and go to http://[ip address of your server]:5000
-
-The default username/password is admin/password.  
 
 ### Stopping dSIPRouter:
 ```
@@ -100,3 +107,7 @@ change the PASSWORD field to reflect the password you want
 
 #### Outbound Routing Screen
 ![dSIPRouter Outbound Routing Screen](/docs/images/dsiprouter-outboundrouting.jpg)
+
+### License
+
+* Apache License 2.0, [read more here](./LICENSE)

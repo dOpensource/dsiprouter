@@ -17,6 +17,9 @@ MYSQL_KAM_DEF_USERNAME=kamailio
 MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
 
+#Grab the port being using
+DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT=\K[0-9]*')
+
 # Get Linux Distro
 
 if [ -f /etc/redhat-release ]; then
@@ -391,17 +394,22 @@ if [ ! -f "./.installed" ]; then
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
 	
 	if [ $DISTRO == "centos" ]; then
-        	yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel	
-		firewall-cmd --zone=public --add-port=5000/tcp --permanent
-        	firewall-cmd --reload
+	    PIP_CMD="pip"
+        yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
+		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+        firewall-cmd --reload
+
 	elif [ $DISTRO == "debian" ]; then
+		
+        PIP_CMD="pip3"
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev
-		#Setup Firewall for port 5000
-		firewall-cmd --zone=public --add-port=5000/tcp --permanent
-        	firewall-cmd --reload
-        fi
-	$PYTHON_CMD -m pip install -r ./gui/requirements.txt
-	 if [ $? -eq 1 ]; then
+		#Setup Firewall for DSIP_PORT
+		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+        firewall-cmd --reload
+    fi
+	$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
+	 
+    if [ $? -eq 1 ]; then
 		echo "dSIPRouter install failed: Couldn't install required libraries"
                 exit 1
         fi
@@ -445,8 +453,8 @@ else
 	stop
     
     #Remove firewall rule
-	firewall-cmd --zone=public --remove-port=5000/tcp --permanent
-        firewall-cmd --reload
+	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
+    firewall-cmd --reload
     
     #Remove crontab entry
     echo "Removing crontab entry"
@@ -509,10 +517,10 @@ function start {
 
 	#Start the process
 	if [ $DEBUG -eq 0 ]; then	
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 >/dev/null 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} >/dev/null 2>&1 &
 	else
 		
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000 > /var/log/dsiprouter.log 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} > /var/log/dsiprouter.log 2>&1 &
 	fi
 	# Store the PID of the process
 	PID=$!
