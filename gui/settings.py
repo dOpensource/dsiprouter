@@ -2,11 +2,11 @@
 
 DSIP_PORT=5000
 USERNAME='admin'
-PASSWORD='password'
+PASSWORD='ZTM3NTQxMGVjMDNl'
 
 # dSIPRouter internal settings
 
-VERSION=0.2
+VERSION=0.3
 DEBUG=0
 
 # MySQL settings for kamailio
@@ -30,9 +30,3 @@ SQLALCHEMY_SQL_DEBUG=True
 FLT_CARRIER=8
 FLT_PBX=9
 
-VERSION=0.3
-
-USERNAME='admin'
-PASSWORD='password'
-
-DEBUG=1
