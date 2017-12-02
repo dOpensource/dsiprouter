@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 #Define some global variables
 
@@ -142,8 +142,7 @@ done
 echo $mpath
 if [ "$mpath" != '' ]; then 
     sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
-    #sed -i 's#mpath=\".*\"#'$mpath'#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
-    #cat ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg | tr -d '\r' > ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+
 else
     echo "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
     exit 1
