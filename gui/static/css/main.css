@@ -233,3 +233,10 @@ a.currentlink{
 .label-toggle{
 	margin-left:10px;
 }
+
+.container {
+   padding-right: 0px;
+   padding-left: 0px;
+   margin-right: auto;
+   margin-left: auto;
+}
