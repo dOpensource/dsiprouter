@@ -251,14 +251,14 @@ def addUpateOutboundRoutes():
 
 @app.route('/reloadkam')
 def reloadkam():
-       try:
-           subprocess.call(['kamcmd' ,'permissions.addressReload'])
-           subprocess.call(['kamcmd','drouting.reload'])
-           session['last_page'] = request.headers['Referer']
-           return json.dumps({"status":"1"})
-       except:
-               return json.dumps({"status":"0"})
-           
+    return_code = subprocess.call(['kamcmd' ,'permissions.addressReload'])
+    return_code += subprocess.call(['kamcmd','drouting.reload'])
+    session['last_page'] = request.headers['Referer']
+    if return_code == 0:
+        status_code = 1
+    else:
+        status_code = 0
+    return json.dumps({"status": status_code})
     
 
 
