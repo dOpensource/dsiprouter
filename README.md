@@ -33,8 +33,6 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 To change dSIPRouter edit `gui/settings.py` file, e.g. `vi ./gui/settings.py`
 
 * DSIP_PORT - port on which web gui is running, 5000 by default
-* USERNAME - web gui admin username
-* PASSWORD - web gui admin password
 
 ### Installing and Running It:
 
