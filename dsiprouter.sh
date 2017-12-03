@@ -441,6 +441,8 @@ if [ ! -f "./.installed" ]; then
 	if [ $? -eq 0 ]; then
 		echo "dSIPRouter is installed"
 		touch ./.installed
+        #Generate a unique admin password
+        generatePassword
 		#Let's start it
 		start
 
@@ -596,18 +598,45 @@ function restart {
 	exit
 }
 
+function resetPassword {
+
+echo -e "The admin account has been reset to the following:\n"
+
+#Call the bash function that generates the password
+generatePassword
+
+#dSIPRouter will be restarted to make the new password active
+echo -e "Restart dSIPRouter to make the password active!\n"
+
+}
+
+# Generate password and set it in the ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py PASSWORD field
+function generatePassword {
+
+password=`date +%s | sha256sum | base64 | head -c 16`
+
+#Add single quotes
+
+password1=\'$password\'
+sed -i 's/PASSWORD=.*/PASSWORD='$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
+
+echo -e "username: admin\npassword:$password\n"
+
+}
+
 function usageOptions {
 
- echo -e "Usage: $0 install|uninstall [-rtpengine]"
+ echo -e "\nUsage: $0 install|uninstall [-rtpengine]"
  echo -e "Usage: $0 start|stop|restart"
- echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.   This means that we aren’t a general purpose GUI for Kamailio." 
- echo -e "If you want that then use Siremis, which is located at http://siremis.asipto.com/."
+ echo -e "Usage: $0 resetpassword"
+ echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio." 
+ echo -e "If that's required then use Siremis, which is located at http://siremis.asipto.com/."
  echo -e "\nThis script is used for installing and uninstalling dSIPRouter, which includes installing the Web GUI portion, Kamailio Configuration file and optionally for installing the RTPEngine by SIPwise"
  echo -e "This script can also be used to start, stop and restart dSIPRouter.  It will not restart Kamailio."
  echo -e "\nSupport is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
- echo -e "\n\ndOpenSource | A Flyball Company\nMade in Detroit, MI USA"
+ echo -e "\n\ndOpenSource | A Flyball Company\nMade in Detroit, MI USA\n"
 
- exit 0
+ exit 1
 }
 
 function processCMD {
@@ -649,6 +678,10 @@ function processCMD {
 			exit 0
 			;;
 			restart)
+			if [ "$1" == "-debug" ]; then
+                                DEBUG=1
+				set -x
+            fi
 			stop 
  			start
 		 	shift
@@ -668,6 +701,10 @@ function processCMD {
             ;;
             fixmpath)
             fixMPATH
+            exit 0
+            ;;
+            resetpassword)
+            resetPassword
             exit 0
             ;;
 			-h)
