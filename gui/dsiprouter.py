@@ -137,6 +137,19 @@ def addUpdatePBX():
         if fusionpbx_db_enabled == "1":
             print('*****This fusionpbx_db_server:' +fusionpbx_db_server)
             FusionPBXDB = dSIPFusionPBXDB(Gateway.gwid,fusionpbx_db_server,fusionpbx_db_username,fusionpbx_db_password,int(fusionpbx_db_enabled))
+            #Add another Gateway that represents the External interface, which is 5080 by default
+            name = name + " external"
+            #Test ip address to see if it contains a port number
+            index=ip_addr.find(":")
+            if index > 0:
+                ip_addr = ip_addr[:index-1]
+                ip_addr = ip_addr + ":5080"
+                Gateway = Gateways(name,ip_addr,strip,prefix,settings.FLT_PBX)
+            else:
+                ip_addr = ip_addr + ":5080"
+                Gateway = Gateways(name,ip_addr,strip,prefix,settings.FLT_PBX)
+
+            db.add(Gateway)
             db.add(FusionPBXDB)
             db.commit()
         return displayPBX()
