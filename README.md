@@ -23,16 +23,9 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
-
 - Kamailio needs to be installed with the default kamailio configuration directory
-- You will need your kamailio database
+- You will need your kamailio database credentials.  
   
-
-### Configuration
-
-To change dSIPRouter edit `gui/settings.py` file, e.g. `vi ./gui/settings.py`
-
-* DSIP_PORT - port on which web gui is running, 5000 by default
 
 ### Installing and Running It:
 
@@ -54,11 +47,13 @@ cd dsiprouter
 ./dsiprouter.sh install -rtpengine
 ```
 
-Once the install is complete, dSIPRouter will automatically start the Web GUI and the RTPEngine.  
+Once the install is complete, dSIPRouter will automatically start the HTTP server and the RTPEngine if it was installed.    
 
 ### Login 
 
 Open a broswer and go to http://[ip address of your server]:5000
+
+The username and the dynamically generated password is displayed after the install
 
 ### Stopping dSIPRouter:
 ```
@@ -68,6 +63,11 @@ Open a broswer and go to http://[ip address of your server]:5000
 ### Starting dSIPRouter:
 ```
 ./dsiprouter.sh start
+```
+
+### Restarting dSIPRouter:
+```
+./dsiprouter.sh restart
 ```
 
 ### Run At Startup:
@@ -84,10 +84,15 @@ Put this line in /etc/rc.local
 ./dsiprouter.sh uninstall
 ```
 
-### Changing Admin Password
+### Change Configuration Parameters
 
-vi ./gui/settings
-change the PASSWORD field to reflect the password you want
+To change the configuration settings edit `gui/settings.py` file, e.g. `vi ./gui/settings.py`
+
+* USERNAME - web gui username
+* PASSWORD - web gui password
+* DSIP_PORT - port on which web gui is running, 5000 by default
+
+You will need to restart dSIPRouter for the changes to take effect.
 
 ### Screenshots
 
