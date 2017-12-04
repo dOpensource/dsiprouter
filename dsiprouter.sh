@@ -139,7 +139,7 @@ do
         break #found a mpath
     fi 
 done
-echo $mpath
+echo "The Kamailio mpath has been updated to:$mpath"
 if [ "$mpath" != '' ]; then 
     sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
 
@@ -424,8 +424,8 @@ if [ ! -f "./.installed" ]; then
 
 	elif [ $DISTRO == "debian" ]; then
  		apt-get update
-        PIP_CMD="pip3"
-		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev
+        PIP_CMD="pip"
+		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 		#Setup Firewall for DSIP_PORT
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
@@ -439,21 +439,26 @@ if [ ! -f "./.installed" ]; then
 	configureKamailio
     installModules 
 	if [ $? -eq 0 ]; then
-		echo "dSIPRouter is installed"
 		touch ./.installed
-        #Generate a unique admin password
-        generatePassword
-		#Let's start it
+		echo -e "-----------------------"
+		echo -e "dSIPRouter is installed"
+		echo -e "-----------------------\n\n"
+        	echo -e "The username and dynamically generated password is below:\n"
+		
+		#Generate a unique admin password
+       		generatePassword
+		
+		#Start dSIPRouter
 		start
 
+		#Tell them how to access the URL
+
 		echo -e "You can access the dSIPRouter web gui by going to:\n"
-		echo -e "External IP:  http://$EXTERNAL_IP:5000"
+		echo -e "External IP:  http://$EXTERNAL_IP:$DSIP_PORT\n"
 		
 		if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-			echo -e "Internal IP:  http://$INTERNAL_IP:5000"
+			echo -e "Internal IP:  http://$INTERNAL_IP:DSIP_PORT"
 		fi
-
-		echo -e "\nThe default username/password is: admin/password\n"
 
 		echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
 	else

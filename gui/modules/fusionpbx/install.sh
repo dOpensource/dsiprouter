@@ -5,9 +5,9 @@ function installSQL {
 
 #Check to see if the acc table or cdr tables are in use
 
-row_count=`mysql -s -N $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_KAM_DBNAME -e "select count(*) from dsip_fusionpbx_db limit 10"`
-if [ "$row_count" -gt 0 ]; then
-	echo -e "The FusionPBX Domain Support (dsip_fusionpbx_db) table in Kamailio has $row_count existing rows.  Please backup this table before moving forward if you want the data."  	
+mysql -s -N $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_KAM_DBNAME -e "select count(*) from dsip_fusionpbx_db limit 10" > /dev/null 2>&1  
+if [ "$?" -eq 0 ]; then
+	echo -e "The FusionPBX Domain Support (dsip_fusionpbx_db) table already exists.  Please backup this table before moving forward if you want the data."  	
 	echo -e "Would you like to install the FusionPBX Domain Support module now [y/n]:\c"
 	read ANSWER
 	if [ "$ANSWER" == "n" ]; then
