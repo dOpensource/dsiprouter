@@ -50,7 +50,7 @@ do
 done
 
 #Required version of Python is not found.  So, tell the user to install the required version
-echo -e "\nPlease install at least python version $REQ_PYTHON_VER\n"
+echo -e "\nPlease install at least python version $REQ_PYTHON_MAJOR_VER\n"
 exit
 
 }
