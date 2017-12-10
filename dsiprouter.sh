@@ -457,7 +457,7 @@ if [ ! -f "./.installed" ]; then
 		echo -e "External IP:  http://$EXTERNAL_IP:$DSIP_PORT\n"
 		
 		if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-			echo -e "Internal IP:  http://$INTERNAL_IP:DSIP_PORT"
+			echo -e "Internal IP:  http://$INTERNAL_IP:$DSIP_PORT"
 		fi
 
 		echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
