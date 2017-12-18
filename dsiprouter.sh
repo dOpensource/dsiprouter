@@ -409,9 +409,9 @@ if [ ! -f "./.installed" ]; then
 
 	#Check if Python is installed before trying to start up the process
 
-        if [ -z ${PYTHON_CMD+x} ]; then
-                isPythonInstalled
-        fi
+    #    if [ -z ${PYTHON_CMD+x} ]; then
+    #            isPythonInstalled
+    #    fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
@@ -424,6 +424,7 @@ if [ ! -f "./.installed" ]; then
 
 	elif [ $DISTRO == "debian" ]; then
  		apt-get update
+        ./kamailio/$DISTRO/jessie.sh install
         PIP_CMD="pip"
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 		#Setup Firewall for DSIP_PORT
