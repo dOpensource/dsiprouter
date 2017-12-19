@@ -23,10 +23,17 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
+- git needs to be installed
+
+**On Debian 8.9:**
+
+- Kamailio will be automatically installed along with dSIPRouter.  Just click "enter" and "y" to not have a ROOT password on mysql and to accept all of the default settings.  In the future we will enter all of these settings on your behalf.
+
+**On CentOS 7.x:**
+
 - Kamailio needs to be installed with the default kamailio configuration directory
 - You will need your kamailio database credentials.
-- git needs to be installed
-  
+
 
 ### Installing and Running It:
 
