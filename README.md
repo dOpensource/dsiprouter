@@ -24,7 +24,8 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 - Must run this as the root user (you can use sudo)
 - Kamailio needs to be installed with the default kamailio configuration directory
-- You will need your kamailio database credentials.  
+- You will need your kamailio database credentials.
+- git needs to be installed
   
 
 ### Installing and Running It:
