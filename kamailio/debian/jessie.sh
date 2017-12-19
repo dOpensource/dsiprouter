@@ -1,5 +1,5 @@
 #!/bin/bash
-set +x
+#set +x
 function install {
 grep deb.kamailio.org/kamailio jessie /etc/apt/sources.list > /dev/null
 # If repo is not installed

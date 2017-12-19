@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 #Define some global variables
 
@@ -453,6 +453,8 @@ if [ ! -f "./.installed" ]; then
         fi
 	configureKamailio
     	installModules 
+	# Restart Kamailio with the new configurations
+	systemctl restart kamailio
 	if [ $? -eq 0 ]; then
 		touch ./.installed
 		echo -e "-----------------------"
@@ -475,7 +477,7 @@ if [ ! -f "./.installed" ]; then
 			echo -e "Internal IP:  http://$INTERNAL_IP:$DSIP_PORT"
 		fi
 
-		echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
+		#echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
 	else
 		echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
 		exit 1
