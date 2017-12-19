@@ -1,14 +1,23 @@
 #!/bin/bash
 
 function install {
-echo "# install kamailio
-deb http://deb.kamailio.org/kamailio jessie main
-deb-src http://deb.kamailio.org/kamailio jessie main" >> /etc/apt/sources.list
+grep deb.kamailio.org/kamailio jessie /etc/apt/sources.list > /dev/null
+# If repo is not installed
+if [ $? -eq 1 ]; then
+	echo -e "\n# kamailio repo's
+	deb http://deb.kamailio.org/kamailio jessie main
+	deb-src http://deb.kamailio.org/kamailio jessie main" >> /etc/apt/sources.list
+fi
+#Add Key for Kamailio Repo
+apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xfb40d3e6508ea4c8
 
+#Update the repo
 apt-get update
 
-apt-get install kamailio,kamailio-mysql-modules, mariadb-server
+#Install Kamailio packages
+apt-get install -y kamailio kamailio-mysql-modules mariadb-server
 
+#Enable MySQL and Kamailio for system startup
 systemctl enable mysql
 systemctl enable kamailio
 
@@ -29,14 +38,15 @@ return #?
 
 function uninstall {
 
-#Stop Kamailio server
+#Stop servers
 systemctl stop kamailio
+systemctl stop mysql
 
 #Backup kamailio configuration directory
 mv /etc/kamailio /etc/kamailio.bak
 
 #Uninstall Kamailio modules - leave Mariadb
-apt-get uninstall kamailio,kamailio-mysql-modules
+apt-get remove -y kamailio kamailio-mysql-modules mariadb-server
 
 #Potentially remove the repo's
 }
