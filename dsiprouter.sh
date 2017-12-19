@@ -1,12 +1,13 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 #Define some global variables
 
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
+KAM_VERSION=44 # Version 4.4 and above
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
@@ -407,11 +408,7 @@ function install {
 
 if [ ! -f "./.installed" ]; then
 
-	#Check if Python is installed before trying to start up the process
 
-    #    if [ -z ${PYTHON_CMD+x} ]; then
-    #            isPythonInstalled
-    #    fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
@@ -421,24 +418,41 @@ if [ ! -f "./.installed" ]; then
         yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
+	
+	#Check if Python is installed before trying to start up the process
+        if [ -z ${PYTHON_CMD+x} ]; then
+                isPythonInstalled
+        fi
 
 	elif [ $DISTRO == "debian" ]; then
- 		apt-get update
-        ./kamailio/$DISTRO/jessie.sh install
-        PIP_CMD="pip"
+		echo -e "Attempting to install Kamailio...\n"
+        	./kamailio/$DISTRO/jessie.sh install ${KAM_VERSION}
+		if [ $? -eq 0 ]; then
+			echo "Kamailio was installed!"
+		else
+			echo "dSIPRouter install failed: Couldn't install Kamailio"
+		fi
+		
+		# Install dependencies for dSIPRouter
 		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+
+		#Check if Python is installed before installing dSIPRouter	
+    		if [ -z ${PYTHON_CMD+x} ]; then
+    		      	isPythonInstalled
+    		fi
+
 		#Setup Firewall for DSIP_PORT
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-        firewall-cmd --reload
+		firewall-cmd --reload
     fi
+	PIP_CMD="pip"
 	$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
-	 
-    if [ $? -eq 1 ]; then
+	if [ $? -eq 1 ]; then
 		echo "dSIPRouter install failed: Couldn't install required libraries"
                 exit 1
         fi
 	configureKamailio
-    installModules 
+    	installModules 
 	if [ $? -eq 0 ]; then
 		touch ./.installed
 		echo -e "-----------------------"
