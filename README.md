@@ -59,7 +59,7 @@ Once the install is complete, dSIPRouter will automatically start the HTTP serve
 
 ### Login 
 
-Open a broswer and go to `http://[ip address of your server]:5000`
+Open a browser and go to `http://[ip address of your server]:5000`
 
 The username and the dynamically generated password is displayed after the install
 
