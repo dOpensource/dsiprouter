@@ -23,7 +23,7 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
-- git needs to be installed
+- git and curl need to be installed
 
 **On Debian 8.9:**
 
@@ -59,7 +59,7 @@ Once the install is complete, dSIPRouter will automatically start the HTTP serve
 
 ### Login 
 
-Open a broswer and go to `http://[ip address of your server]:5000`
+Open a browser and go to `http://[ip address of your server]:5000`
 
 The username and the dynamically generated password is displayed after the install
 
