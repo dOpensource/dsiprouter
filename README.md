@@ -23,7 +23,7 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
-- git needs to be installed
+- git and curl need to be installed
 
 **On Debian 8.9:**
 
