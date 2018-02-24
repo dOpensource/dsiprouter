@@ -3,7 +3,7 @@
 DEB_REL=`basename -s .sh $0`
 
 function install {
-grep 'deb.kamailio.org/kamailio ${DEB_REL}' /etc/apt/sources.list 
+grep deb.kamailio.org/kamailio${KAM_VERSION} /etc/apt/sources.list 
 # If repo is not installed
 if [ $? -eq 1 ]; then
 	echo -e "\n# kamailio repo's
@@ -29,9 +29,14 @@ systemctl start mysql
 # Configure Kamailio and Required Database Modules
 sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
 
-#echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
-#echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
-#echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
+echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
+echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
+echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
+echo "DBROOTPW= " >> /etc/kamailio/kamctlrc
+
+#Will hardcode lation1 as the database character set used to create the Kamailio schema due to
+#a potential bug in how Kamailio additional tables are created
+echo "CHARSET=latin1" >> /etc/kamailio/kamctlrc
 
 # Execute 'kamdbctl create' to create the Kamailio database schema 
 kamdbctl create
@@ -49,10 +54,14 @@ systemctl stop kamailio
 systemctl stop mysql
 
 #Backup kamailio configuration directory
-mv /etc/kamailio /etc/kamailio.bak
+mv /etc/kamailio /etc/kamailio.bak/
 
 #Uninstall Kamailio modules - leave Mariadb
-apt-get remove -y  kamailio kamailio-mysql-modules mysql-server
+sudo apt-get -y remove --purge mysql\*
+sudo apt-get -y remove --purge mariadb\*
+
+#Backup Kamailio database just in 
+#mv /var/lib/mysql /var/lib/mysql.kamailio
 
 #Potentially remove the repo's
 }
