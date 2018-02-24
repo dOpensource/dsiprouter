@@ -24,6 +24,7 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 - Must run this as the root user (you can use sudo)
 - git needs to be installed
+- python version 3.0 or older
 
 **On Debian 8.9:**
 
