@@ -7,7 +7,8 @@
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
-KAM_VERSION=44 # Version 4.4 and above
+#KAM_VERSION=44 # Version 4.4.x 
+KAM_VERSION=51 # Version 5.1.x
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
@@ -426,30 +427,16 @@ if [ ! -f "./.installed" ]; then
 
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to install Kamailio...\n"
-        	./kamailio/$DISTRO/jessie.sh install ${KAM_VERSION}
+        	./kamailio/$DISTRO/$DEB_REL.sh install ${KAM_VERSION}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was installed!"
 		else
 			echo "dSIPRouter install failed: Couldn't install Kamailio"
+			exit
 		fi
-		
-		# Install dependencies for dSIPRouter
-		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+		echo -e "Attempting to install dSIPRouter 	
+		./dsiprouter/$DISTRO/$DEB_REL.sh install
 
-		#Check if Python is installed before installing dSIPRouter	
-    		if [ -z ${PYTHON_CMD+x} ]; then
-    		      	isPythonInstalled
-    		fi
-
-		#Setup Firewall for DSIP_PORT
-		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-		firewall-cmd --reload
-    fi
-	PIP_CMD="pip"
-	$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
-	if [ $? -eq 1 ]; then
-		echo "dSIPRouter install failed: Couldn't install required libraries"
-                exit 1
         fi
 	configureKamailio
     	installModules 
