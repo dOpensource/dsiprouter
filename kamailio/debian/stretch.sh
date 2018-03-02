@@ -1,5 +1,5 @@
 #!/bin/bash
-#set +x
+set -x
 DEB_REL=`basename -s .sh $0`
 
 function install {
@@ -63,7 +63,7 @@ systemctl stop kamailio
 systemctl stop mysql
 
 #Backup kamailio configuration directory
-mv /etc/kamailio /etc/kamailio.bak/
+mv /etc/kamailio /etc/kamailio.bak.`(date +%Y%m%d_%H%M%S)`
 
 #Uninstall Kamailio modules and Mariadb
 sudo apt-get -y remove --purge mysql\*
