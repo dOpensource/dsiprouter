@@ -41,6 +41,15 @@ echo "CHARSET=latin1" >> /etc/kamailio/kamctlrc
 # Execute 'kamdbctl create' to create the Kamailio database schema 
 kamdbctl create
 
+# Firewall settings
+firewall-cmd --zone=public --add-port=5060/udp --permanent
+
+if [ -n "$DSIP_PORT" ]; then
+	firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+fi
+
+firewall-cmd --reload
+
 #Start Kamailio
 systemctl start kamailio
 return #?
@@ -56,25 +65,42 @@ systemctl stop mysql
 #Backup kamailio configuration directory
 mv /etc/kamailio /etc/kamailio.bak/
 
-#Uninstall Kamailio modules - leave Mariadb
+#Uninstall Kamailio modules and Mariadb
 sudo apt-get -y remove --purge mysql\*
 sudo apt-get -y remove --purge mariadb\*
+sudo apt-get -y remove --purge kamailio\*
 
 #Backup Kamailio database just in 
 #mv /var/lib/mysql /var/lib/mysql.kamailio
 
 #Potentially remove the repo's
+
+#Remove firewall rules that was created by us:
+firewall-cmd --zone=public --remove-port=5060/udp
+
+if [ -n "$DSIP_PORT" ]; then
+	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp
+fi
+
+firewall-cmd --reload
+
 }
 
+case "$1" in 
+
+uninstall|remove)
 #Remove Kamailio
-if [ $# -eq 1 ]; then
-	$1
-	exit
-fi
-#Install Kamailio
-if [ $# -gt 1 ]; then
+	DSIP_PORT=$3
 	KAM_VERSION=$2
-        $1 
- else
-        echo "usage $0 [install <kamailio version>|uninstall]"   
- fi
+	$1
+	;;
+install)
+#Install Kamailio
+	DSIP_PORT=$3
+	KAM_VERSION=$2
+        $1
+	;;
+*)
+        echo "usage $0 [install <kamailio version> <dsip_port> | uninstall <kamailio version> <dsip_port>]"   
+	;;
+esac

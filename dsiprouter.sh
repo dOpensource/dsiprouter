@@ -28,6 +28,7 @@ if [ -f /etc/redhat-release ]; then
  	DISTRO="centos"
     elif [ -f /etc/debian_version ]; then
 	DISTRO="debian"
+	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
     fi  
 
 
@@ -121,7 +122,7 @@ mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert
 
 cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
 rm ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
-ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
+ln -s  ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
 
 
 #Fix the mpath
@@ -143,7 +144,7 @@ do
 done
 echo "The Kamailio mpath has been updated to:$mpath"
 if [ "$mpath" != '' ]; then 
-    sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+    sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 
 else
     echo "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
@@ -434,8 +435,8 @@ if [ ! -f "./.installed" ]; then
 			echo "dSIPRouter install failed: Couldn't install Kamailio"
 			exit
 		fi
-		echo -e "Attempting to install dSIPRouter 	
-		./dsiprouter/$DISTRO/$DEB_REL.sh install
+		echo -e "Attempting to install dSIPRouter...\n" 	
+		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DIP_PORT}
 
         fi
 	configureKamailio
