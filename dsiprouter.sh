@@ -453,7 +453,7 @@ if [ ! -f "./.installed" ]; then
 
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to install Kamailio...\n"
-        	./kamailio/$DISTRO/$DEB_REL.sh install ${KAM_VERSION} ${DIP_PORT}
+        	./kamailio/$DISTRO/$DEB_REL.sh install ${KAM_VERSION} ${DSIP_PORT}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was installed!"
 		else
@@ -461,7 +461,7 @@ if [ ! -f "./.installed" ]; then
 			exit
 		fi
 		echo -e "Attempting to install dSIPRouter...\n" 	
-		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DIP_PORT}
+		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT}
 
         fi
 
