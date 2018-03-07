@@ -255,6 +255,23 @@ $('#toggleFusionPBXDomainAdd').change(function() {
 	
 });
 
+$('#authoptions').change(function() {
+
+
+	// authtype_2 is the username/password option
+
+	if ($("div #authtype_2").is(":checked") ) {
+		$('#userpwd_enabled').removeClass("hidden");
+	}
+	else {
+
+		$('#userpwd_enabled').addClass("hidden");
+		
+	}
+
+
+});
+
 
 function reloadkam(elmnt) {
 
