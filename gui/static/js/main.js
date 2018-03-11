@@ -145,6 +145,7 @@ $('#open-CarrierAdd').click(function () {
     $(".modal-body #toggleFusionPBXDomainAdd").bootstrapToggle('off');
 });
 
+
 $('#carriers #open-Update').click(function () {
     var row_index = $(this).parent().parent().parent().index() + 1;
     var c = document.getElementById('carriers');
@@ -157,6 +158,9 @@ $('#carriers #open-Update').click(function () {
     var fusionpbx_db_server  =  $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
     var fusionpbx_db_username  =  $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
     var fusionpbx_db_password  =  $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+    var authtype  =  $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
+    var pbx_username  =  $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
+    var pbx_password  =  $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
      
 
 
@@ -166,7 +170,9 @@ $('#carriers #open-Update').click(function () {
     $(".modal-body #ip_addr").val('');
     $(".modal-body #strip").val('');
     $(".modal-body #prefix").val('');
-    
+    $(".modal-body #pbx_username").val('');
+    $(".modal-body #pbx_password").val('');
+     
     $(".modal-body #gwid").val(gwid);
     $(".modal-body #name").val(name);
     $(".modal-body #ip_addr").val(ip_addr);
@@ -175,6 +181,8 @@ $('#carriers #open-Update').click(function () {
     $(".modal-body #fusionpbx_db_server").val(fusionpbx_db_server);
     $(".modal-body #fusionpbx_db_username").val(fusionpbx_db_username);
     $(".modal-body #fusionpbx_db_password").val(fusionpbx_db_password);
+    $(".modal-body #pbx_username").val(pbx_username);
+    $(".modal-body #pbx_password").val(pbx_password);
 
     if (fusionpbxenabled == "Yes") {
     	$(".modal-body #toggleFusionPBXDomain").bootstrapToggle('on');
@@ -185,6 +193,20 @@ $('#carriers #open-Update').click(function () {
 	 $(".modal-body #toggleFusionPBXDomain").bootstrapToggle('off');
 
     }
+
+    if (authtype != "") {
+	
+	//Set the radio button to true
+	$("div #authtype_2").prop("checked",true );
+	$('#userpwd_enabled').removeClass("hidden");
+    }
+    else {  //IP auth is enabled
+
+	//Set the radio button to true
+	$("div #authtype_1").prop("checked",true );
+	$('#userpwd_enabled').addClass("hidden");
+    }
+
 });
 
 $('#carriers #open-Delete').click(function () {
@@ -262,10 +284,31 @@ $('#authoptions').change(function() {
 
 	if ($("div #authtype_2").is(":checked") ) {
 		$('#userpwd_enabled').removeClass("hidden");
+		$('#userpwd_enabled').prop("hidden",false);		
 	}
 	else {
 
 		$('#userpwd_enabled').addClass("hidden");
+		$('#userpwd_enabled').prop("hidden",true);
+		
+	}
+
+
+});
+
+$('#authoptions2').change(function() {
+
+
+	// authtype_2 is the username/password option
+
+	if ($("div #authtype_2").is(":checked") ) {
+		$('#userpwd_enabled2').removeClass("hidden");
+		$('#userpwd_enabled2').prop("hidden",false);		
+	}
+	else {
+
+		$('#userpwd_enabled2').addClass("hidden");
+		$('#userpwd_enabled2').prop("hidden",true);
 		
 	}
 
