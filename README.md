@@ -2,19 +2,24 @@
 
 dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:
 
-- **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc
+- **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
+
+**Follow us at #dopensource on Twitter to get the latest updates on dSIPRouter**
 
 ### Supported Platforms:
 
 #### OS Support
 
+You will get the best experience on Debian Stretch!  
+
 - CentOS 7 (tested on 7.3.1611)
 - Debian Jessie (tested on 8.9)
+- Debian Stretch (tested on 9.3)
 
 #### Kamailio Versions
 - Kamailio 4.x (tested on Kamailio 4.4.5, 4.4.6)
-* Kamailio 5.x support is coming very soon
+- Kamailio 5.1 (only for Debian Stretch)
 
 #### Database Support
 
@@ -100,6 +105,7 @@ To change the configuration settings edit `gui/settings.py` file, e.g. `vi ./gui
 * USERNAME - web gui username
 * PASSWORD - web gui password
 * DSIP_PORT - port on which web gui is running, 5000 by default
+* DOMAIN - the domain used to create usernames for PBX and Endpoint registration.  
 
 You will need to restart dSIPRouter for the changes to take effect.
 
@@ -113,6 +119,7 @@ You will need to restart dSIPRouter for the changes to take effect.
 
 #### FusionPBX Domain Support
 ![dSIPRouter FusionPBX Domain Support Screen](/docs/images/dsiprouter-fusionpbx_domain_support.jpg)
+
 
 #### Inbound Mapping Screen
 ![dSIPRouter Inbound Mapping Screen](/docs/images/dsiprouter-inboundmapping.jpg)
