@@ -117,6 +117,9 @@ You will need to restart dSIPRouter for the changes to take effect.
 #### PBX(s) and Endpoint Management Screen
 ![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbxs.jpg)
 
+#### PBX(s) and Endpoint IP or Credential Based Authentication
+![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbx-auth.jpg)
+
 #### FusionPBX Domain Support
 ![dSIPRouter FusionPBX Domain Support Screen](/docs/images/dsiprouter-fusionpbx_domain_support.jpg)
 
