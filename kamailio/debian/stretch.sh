@@ -32,7 +32,7 @@ sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
 echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
 echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
 echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
-echo "DBROOTPW= " >> /etc/kamailio/kamctlrc
+echo "DBROOTPW=' ' " >> /etc/kamailio/kamctlrc
 
 #Will hardcode lation1 as the database character set used to create the Kamailio schema due to
 #a potential bug in how Kamailio additional tables are created
