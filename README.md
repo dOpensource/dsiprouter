@@ -50,6 +50,8 @@ You will get the best experience on Debian Stretch!
 #### Install (No Proxy audio (RTP) traffic)
 
 ```
+apt-get update
+apt-get install -y git
 git clone https://github.com/dOpensource/dsiprouter.git
 cd dsiprouter
 ./dsiprouter.sh install
