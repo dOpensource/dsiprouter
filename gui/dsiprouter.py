@@ -102,7 +102,7 @@ def displayPBX(db_err=0):
        try:
            #res = db.query(Gateways).outerjoin(dSIPFusionPBXDB,Gateways.gwid == dSIPFusionPBXDB.pbx_id).add_columns(Gateways.gwid,Gateways.description,Gateways.address,Gateways.strip,Gateways.pri_prefix,dSIPFusionPBXDB.enabled, dSIPFusionPBXDB.db_ip, dSIPFusionPBXDB.db_username,dSIPFusionPBXDB.db_password).filter(Gateways.type==settings.FLT_PBX).all()
            res = db.query(Gateways).outerjoin(dSIPFusionPBXDB,Gateways.gwid == dSIPFusionPBXDB.pbx_id).outerjoin(Subscribers,Gateways.gwid == Subscribers.rpid).add_columns(Gateways.gwid,Gateways.description,Gateways.address,Gateways.strip,Gateways.pri_prefix,dSIPFusionPBXDB.enabled, dSIPFusionPBXDB.db_ip, dSIPFusionPBXDB.db_username,dSIPFusionPBXDB.db_password,Subscribers.rpid,Subscribers.username,Subscribers.password).filter(Gateways.type==settings.FLT_PBX).all()
-           return render_template('pbxs.html',rows=res)
+           return render_template('pbxs.html',rows=res,DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
        except:
            if db_err <= 3:
               db.rollback()
@@ -188,7 +188,7 @@ def addUpdatePBX():
             # Check if the entry in the subscriber table already exists
             exists = db.query(Subscribers).filter(Subscribers.rpid==gwid).scalar()
             if exists:
-                db.query(Subscribers).filter(Subscribers.rpid==gwid).update({'usernanme':pbx_username,'password':pbx_password,'rpid':gwid})
+                db.query(Subscribers).filter(Subscribers.rpid==gwid).update({'username':pbx_username,'password':pbx_password,'rpid':gwid})
             else:
                 Subscriber = Subscribers(pbx_username,pbx_password,settings.DOMAIN,Gateway.gwid)
                 db.add(Subscriber)
@@ -203,6 +203,9 @@ def deletePBX():
     gateway = db.query(Gateways).filter(Gateways.gwid==gwid)
     gateway.delete(synchronize_session=False)
     address = db.query(Address).filter(Address.tag=='name:'+name)
+    address.delete(synchronize_session=False)
+    subscriber = db.query(Subscribers).filter(Subscribers.rpid==gwid)
+    subscriber.delete(synchronize_session=False)
     address.delete(synchronize_session=False)
     fusionpbxdb = db.query(dSIPFusionPBXDB).filter(dSIPFusionPBXDB.pbx_id==gwid)
     fusionpbxdb.delete(synchronize_session=False)

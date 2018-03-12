@@ -139,6 +139,7 @@ $('#open-CarrierAdd').click(function () {
     $(".modal-body #ip_addr").val('');
     $(".modal-body #strip").val('');
     $(".modal-body #prefix").val('');
+    $(".modal-body #authtype").val('');
     $(".modal-body #fusionpbx_db_server").val('');
     $(".modal-body #fusionpbx_db_username").val('');
     $(".modal-body #fusionpbx_db_password").val('');
@@ -197,14 +198,14 @@ $('#carriers #open-Update').click(function () {
     if (authtype != "") {
 	
 	//Set the radio button to true
-	$("div #authtype_2").prop("checked",true );
-	$('#userpwd_enabled').removeClass("hidden");
+	$("div #authtype_4").prop("checked",true );
+	$('#userpwd_enabled2').removeClass("hidden");
     }
     else {  //IP auth is enabled
 
 	//Set the radio button to true
-	$("div #authtype_1").prop("checked",true );
-	$('#userpwd_enabled').addClass("hidden");
+	$("div #authtype_3").prop("checked",true );
+	$('#userpwd_enabled2').addClass("hidden");
     }
 
 });
@@ -301,7 +302,7 @@ $('#authoptions2').change(function() {
 
 	// authtype_2 is the username/password option
 
-	if ($("div #authtype_2").is(":checked") ) {
+	if ($("div #authtype_4").is(":checked") ) {
 		$('#userpwd_enabled2').removeClass("hidden");
 		$('#userpwd_enabled2').prop("hidden",false);		
 	}
