@@ -31,7 +31,11 @@ You will get the best experience on Debian Stretch!
 - git needs to be installed
 - python version 3.0 or older
 
-**On Debian 8.9:**
+**On Debian Stretch 9.x:**
+
+- Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 3-5 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
+
+**On Debian Jessie 8.9:**
 
 - Kamailio will be automatically installed along with dSIPRouter.  Just click "enter" and "y" to not have a ROOT password on mysql and to accept all of the default settings.  In the future we will enter all of these settings on your behalf.
 
