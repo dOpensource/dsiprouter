@@ -9,7 +9,8 @@ class Gateways(object):
         self.address=ip_addr
         self.strip=strip
         self.pri_prefix=prefix
-        self.type=type            
+        self.type=type
+        self.gwid=None
     pass
 
 class Address(object):
@@ -50,6 +51,17 @@ class dSIPFusionPBXMapping(object):
         self.excluded=excluded
     pass
 
+class Subscribers(object):
+    def __init__(self,username,password,domain,gwid):
+        self.username = username
+        self.password = password
+        self.domain = domain
+        self.ha1 = ''
+        self.ha1b =''
+        self.rpid  = gwid
+    pass
+
+
 
 def getDBURI():
 #Define the database URI
@@ -69,6 +81,7 @@ def loadSession():
     address = Table('address', metadata, autoload=True)
     outboundroutes = Table('dr_rules', metadata, autoload=True)
     inboundmapping = Table('dr_rules', metadata, autoload=True)
+    subscriber = Table('subscriber', metadata, autoload=True)
     #fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
     fusionpbx_db = Table('dsip_fusionpbx_db', metadata, autoload=True)
     mapper(Gateways, dr_gateways)
@@ -77,6 +90,7 @@ def loadSession():
     mapper(OutboundRoutes, outboundroutes)
     #mapper(dSIPFusionPBXMapping,fusionpbx_mappings)
     mapper(dSIPFusionPBXDB,fusionpbx_db)
+    mapper(Subscribers, subscriber)
 
     Session = sessionmaker(bind=engine)
     session = Session()

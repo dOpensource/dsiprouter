@@ -1,4 +1,5 @@
 #!/bin/bash
+#set -x
 ENABLED=1
 
 function installSQL {
@@ -44,7 +45,7 @@ echo ""
 if [ $# -gt 2 ]; then
 
 	MYSQL_ROOT_USERNAME="-u$1"
-	MYSQL_ROOT_PASSWORD=$2
+	MYSQL_ROOT_PASSWORD="-p$2"
 	MYSQL_KAM_DBNAME=$3
 
 elif [ $# -gt 1 ]; then

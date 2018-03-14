@@ -2,19 +2,24 @@
 
 dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:
 
-- **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc
+- **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
+
+**Follow us at #dopensource on Twitter to get the latest updates on dSIPRouter**
 
 ### Supported Platforms:
 
 #### OS Support
 
+You will get the best experience on Debian Stretch!  
+
 - CentOS 7 (tested on 7.3.1611)
 - Debian Jessie (tested on 8.9)
+- Debian Stretch (tested on 9.3)
 
 #### Kamailio Versions
 - Kamailio 4.x (tested on Kamailio 4.4.5, 4.4.6)
-* Kamailio 5.x support is coming very soon
+- Kamailio 5.1 (only for Debian Stretch)
 
 #### Database Support
 
@@ -26,7 +31,11 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 - git needs to be installed
 - python version 3.0 or older
 
-**On Debian 8.9:**
+**On Debian Stretch 9.x:**
+
+- Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 3-5 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
+
+**On Debian Jessie 8.9:**
 
 - Kamailio will be automatically installed along with dSIPRouter.  Just click "enter" and "y" to not have a ROOT password on mysql and to accept all of the default settings.  In the future we will enter all of these settings on your behalf.
 
@@ -41,6 +50,8 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 #### Install (No Proxy audio (RTP) traffic)
 
 ```
+apt-get update
+apt-get install -y git
 git clone https://github.com/dOpensource/dsiprouter.git
 cd dsiprouter
 ./dsiprouter.sh install
@@ -100,6 +111,7 @@ To change the configuration settings edit `gui/settings.py` file, e.g. `vi ./gui
 * USERNAME - web gui username
 * PASSWORD - web gui password
 * DSIP_PORT - port on which web gui is running, 5000 by default
+* DOMAIN - the domain used to create usernames for PBX and Endpoint registration.  
 
 You will need to restart dSIPRouter for the changes to take effect.
 
@@ -111,8 +123,12 @@ You will need to restart dSIPRouter for the changes to take effect.
 #### PBX(s) and Endpoint Management Screen
 ![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbxs.jpg)
 
+#### PBX and/or Endpoint IP or Credential Based Authentication Input Screen
+![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbx-auth.jpg)
+
 #### FusionPBX Domain Support
 ![dSIPRouter FusionPBX Domain Support Screen](/docs/images/dsiprouter-fusionpbx_domain_support.jpg)
+
 
 #### Inbound Mapping Screen
 ![dSIPRouter Inbound Mapping Screen](/docs/images/dsiprouter-inboundmapping.jpg)

@@ -7,7 +7,6 @@
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
-KAM_VERSION=44 # Version 4.4 and above
 SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
@@ -27,8 +26,36 @@ if [ -f /etc/redhat-release ]; then
  	DISTRO="centos"
     elif [ -f /etc/debian_version ]; then
 	DISTRO="debian"
+	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
     fi  
 
+
+function validateOSInfo {
+
+if [ "$DISTRO" == "debian" ]; then
+	case "$DEB_REL" in
+
+		stretch)
+			KAM_VERSION=51
+			;;
+		weezy)
+			KAM_VERSION=44
+			;;
+		*)
+			echo "Your operating system is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+			exit 1
+			;;
+	esac
+fi
+
+}
+
+# Validate OS and get supported Kamailio versions
+validateOSInfo
+
+#Force the installation of a Kamailio version by uncommenting
+#KAM_VERSION=44 # Version 4.4.x 
+#KAM_VERSION=51 # Version 5.1.x
 
 # Uncomment and set this variable to an explicit Python executable file name
 # If set, the script will not try and find a Python version with 3.5 as the major release number
@@ -58,20 +85,20 @@ exit
 
 function configureKamailio {
 
-echo -e "[Database Configuration]\n"
-echo -e "Please enter the username for the Kamailio schema [default $MYSQL_KAM_DEF_USERNAME]:\c"
-read MYSQL_KAM_USERNAME
+#echo -e "[Database Configuration]\n"
+#echo -e "Please enter the username for the Kamailio schema [default $MYSQL_KAM_DEF_USERNAME]:\c"
+#read MYSQL_KAM_USERNAME
 
-echo -e "Please enter the password for the Kamailio schema [default $MYSQL_KAM_DEF_PASSWORD]:\c"
-read MYSQL_KAM_PASSWORD
+#echo -e "Please enter the password for the Kamailio schema [default $MYSQL_KAM_DEF_PASSWORD]:\c"
+#read MYSQL_KAM_PASSWORD
 
-echo -e "Please enter the database name for the Kamailio schema [default $MYSQL_KAM_DEF_DATABASE]:\c"
-read MYSQL_KAM_DATABASE
+#echo -e "Please enter the database name for the Kamailio schema [default $MYSQL_KAM_DEF_DATABASE]:\c"
+#read MYSQL_KAM_DATABASE
 
-if [ "$MYSQL_KAM_PASSWORD" != "" ]; then
-    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_PASSWORD"
+if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
+    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_DEF_PASSWORD"
 else
-    MYSQL_KAM_PASSWORD=-p$MYSQL_KAM_DEF_PASSWORD
+    MYSQL_KAM_PASSWORD=-p$MYSQL_KAM__PASSWORD
 fi
 
 if [ "$MYSQL_KAM_USERNAME" == "" ]; then
@@ -85,11 +112,11 @@ fi
 
 # Check the username and password
 
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "select * from version limit 1" >/dev/null 2>&1
-if [ $? -eq 1 ]; then
-	echo "Your credentials for the kamailio schema is invalid.  Please try again!"
-	configureKamailio
-fi
+#mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "select * from version limit 1" >/dev/null 2>&1
+#if [ $? -eq 1 ]; then
+#	echo "Your credentials for the kamailio schema is invalid.  Please try again!"
+#	configureKamailio
+#fi
 
 # Install schema for drouting module
 mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
@@ -120,7 +147,7 @@ mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert
 
 cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
 rm ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
-ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
+ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
 
 
 #Fix the mpath
@@ -142,7 +169,7 @@ do
 done
 echo "The Kamailio mpath has been updated to:$mpath"
 if [ "$mpath" != '' ]; then 
-    sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio_dsiprouter.cfg
+    sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 
 else
     echo "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
@@ -426,33 +453,24 @@ if [ ! -f "./.installed" ]; then
 
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to install Kamailio...\n"
-        	./kamailio/$DISTRO/jessie.sh install ${KAM_VERSION}
+        	./kamailio/$DISTRO/$DEB_REL.sh install ${KAM_VERSION} ${DSIP_PORT}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was installed!"
 		else
 			echo "dSIPRouter install failed: Couldn't install Kamailio"
+			exit
 		fi
-		
-		# Install dependencies for dSIPRouter
-		apt-get -y install build-essential python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+		echo -e "Attempting to install dSIPRouter...\n" 	
+		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT}
 
-		#Check if Python is installed before installing dSIPRouter	
-    		if [ -z ${PYTHON_CMD+x} ]; then
-    		      	isPythonInstalled
-    		fi
-
-		#Setup Firewall for DSIP_PORT
-		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-		firewall-cmd --reload
-    fi
-	PIP_CMD="pip"
-	$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
-	if [ $? -eq 1 ]; then
-		echo "dSIPRouter install failed: Couldn't install required libraries"
-                exit 1
         fi
-	configureKamailio
-    	installModules 
+
+	#Configure Kamailio and Install dSIPRouter Modules
+	if [ $? -eq 0 ]; then
+
+		configureKamailio
+    		installModules 
+	fi
 	# Restart Kamailio with the new configurations
 	systemctl restart kamailio
 	if [ $? -eq 0 ]; then
@@ -494,15 +512,33 @@ fi
 function uninstall {
 
 if [ ! -f "./.installed" ]; then
-	echo "dSIPRouter is not installed!"
-else
+	echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
+fi
 	#Stop dSIPRouter, remove ./.installed file, close firewall
 	stop
     
-    #Remove firewall rule
-	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
-    firewall-cmd --reload
-    
+	if [ $DISTRO == "centos" ]; then
+	    	PIP_CMD="pip"
+        	yum -y remove mysql-devel gcc gcc-devel python34  python34-pip python34-devel
+		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+        	firewall-cmd --reload
+	
+	elif [ $DISTRO == "debian" ]; then
+		echo -e "Attempting to uninstall dSIPRouter...\n" 	
+		./dsiprouter/$DISTRO/$DEB_REL.sh uninstall ${DIP_PORT}
+		
+		echo -e "Attempting to uninstall Kamailio...\n"
+        	./kamailio/$DISTRO/$DEB_REL.sh uninstall ${KAM_VERSION} ${DIP_PORT}
+		if [ $? -eq 0 ]; then
+			echo "Kamailio was uninstalled!"
+		else
+			echo "dSIPRouter uninstall failed: Couldn't install Kamailio"
+			exit
+		fi
+
+        fi
+
+     
     #Remove crontab entry
     echo "Removing crontab entry"
     crontab -l | grep -v -F -w dsiprouter_cron | crontab -
@@ -511,7 +547,6 @@ else
 	rm ./.installed
 
     echo "dSIPRouter was uninstalled"
-fi
 	
 
 
@@ -520,6 +555,15 @@ fi
 
 function installModules {
 
+    #if [ -z "${MYSQL_KAM_USERNAME-}" ]; then
+	MYSQL_KAM_USERNAME=$MYSQL_KAM_DEF_USERNAME
+    #fi
+    #if [ -z "${MYSQL_KAM_PASSWORD-}" ]; then
+	MYSQL_KAM_PASSWORD=$MYSQL_KAM_DEF_PASSWORD
+    #fi
+    #if [ -z "${MYSQL_KAM_DATABASE-}" ]; then
+	MYSQL_KAM_DATABASE=$MYSQL_KAM_DEF_DATABASE
+    #fi
 
     #Install dSIPModules
     for dir in ./gui/modules/*; 
@@ -660,6 +704,7 @@ function usageOptions {
 
  exit 1
 }
+
 
 function processCMD {
 

@@ -30,6 +30,16 @@ sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
 # Execute 'kamdbctl create' to create the Kamailio database schema 
 kamdbctl create
 
+# Firewall settings
+firewall-cmd --zone=public --add-port=5060/udp --permanent
+
+if [ -n "$DSIP_PORT" ]; then
+	       
+	firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+fi
+
+firewall-cmd --reload
+
 #Start Kamailio
 systemctl start kamailio
 return #?

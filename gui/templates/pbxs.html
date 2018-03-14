@@ -43,6 +43,9 @@
     <td class='fusion_db_server hide'>{{row.db_ip|noneFilter()}}</td>
     <td class='fusion_db_username hide'>{{row.db_username|noneFilter()}}</td>
     <td class='fusion_db_password hide'>{{row.db_password|noneFilter()}}</td>
+    <td class='authtype hide'>{{row.rpid|noneFilter()}}</td>
+    <td class='pbx_username hide'>{{row.username|noneFilter()}}</td>
+    <td class='pbx_password hide'>{{row.password|noneFilter()}}</td>
     <td><p data-placement="top" data-toggle="tooltip" title="Edit"><button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal" data-target="#edit" ><span class="glyphicon glyphicon-pencil"></span></button></p></td>
     <td><p data-placement="top" data-toggle="tooltip" title="Delete"><button id="open-Delete"class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal" data-target="#delete" ><span class="glyphicon glyphicon-trash"></span></button></p></td>
     </tr>
@@ -82,6 +85,22 @@
         
         <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
         </div>
+        <div class="form-group">
+		<div class="radio" id="authoptions2">
+			<label><input type="radio" id="authtype_3" name="authtype" value="ip" checked>IP Auth</label>
+			<label><input type="radio" id="authtype_4" name="authtype" value="userpwd">Username/Password Auth</label>
+		</div>
+        </div>
+	
+	<div class="form-group hidden" id="userpwd_enabled2" name="userpwd_enabled" value="0">
+		<p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The user accounts will be created in the <b>{{DEFAULT_AUTH_DOMAIN}}</b></p>
+		 <div class="form-group">
+		 	<input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+        	 </div>
+		 <div class="form-group">
+			 <input class="form-control " type="password" id="pbx_password" name="pbx_password" placeholder="PBX Password">
+		</div>
+	</div>
         <div class="form-group">
         <input class="form-control " type="text" id="strip" name="strip" placeholder="# of characters to strip from RURI">
         </div>
@@ -128,9 +147,24 @@
         <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)">
         </div>
         <div class="form-group">
-
-        <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
+        	<input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
+	</div>
+        <div class="form-group">
+		<div class="radio" id="authoptions">
+			<label><input type="radio" id="authtype_1" name="authtype" value="ip" checked>IP Auth</label>
+			<label><input type="radio" id="authtype_2" name="authtype" value="userpwd">Username/Password Auth</label>
+		</div>
         </div>
+	
+	<div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
+		<p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The user accounts will be created in the <b>{{DEFAULT_AUTH_DOMAIN}}</b> domain</p>
+		 <div class="form-group">
+		 	<input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+        	 </div>
+		 <div class="form-group">
+			 <input class="form-control " type="password" id="pbx_password" name="pbx_password" placeholder="PBX Password">
+		</div>
+	</div>
         <div class="form-group">
         <input class="form-control " type="text" id="strip" name="strip" placeholder="# of characters to strip from RURI">
         </div>
