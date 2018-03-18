@@ -17,7 +17,33 @@
     <div class="form-group">
     <label for="gwlist">Outbound Mappings(comma seprated list of carrier id's):</label>
     <textarea class="form-control" rows="5" id="gwlist" name="gwlist">{{ outboundroutes }}</textarea>
-     </div
+    </div>
+    <div class="form-group">
+	  <label for="toggleTeleblock" class="label-toggle">Enable Gryphon Teleblock Support </label>
+	  {% if teleblock["gw_enabled"] == "1" %}
+	  <input id="toggleTeleblock"  name="gw_enabled" type="checkbox" checked data-toggle="toggle" value="{{ teleblock["gw_enabled"] }}">
+    	  {% else %}
+	  <input id="toggleTeleblock"  name="gw_enabled" type="checkbox" data-toggle="toggle" value="{{ teleblock["gw_enabled"] }}">
+	  {% endif %}
+    </div>
+ {% if teleblock["gw_enabled"]  == "1" %}
+    <div id="teleblockOptions" class="form-group">
+ {% else %} 
+    <div id="teleblockOptions" class="form-group hidden">
+ {% endif %}	    
+    <div class="form-group">
+	    <input class="form-control " type="text" id="gw_ip" name="gw_ip" placeholder="Teleblock Gateway IP" value="{{ teleblock["gw_ip"] }}">
+    </div>    
+    <div class="form-group">
+	    <input class="form-control " type="text" id="gw_port" name="gw_port" placeholder="Teleblock Gateway Port" value="{{ teleblock["gw_port"] }}" >
+    </div>    
+    <div class="form-group">
+	    <input class="form-control " type="text" id="media_ip" name="media_ip" placeholder="Media IP for Teleblock Messages" value="{{ teleblock["media_ip"] }}">
+    </div>    
+    <div class="form-group">
+	    <input class="form-control " type="text" id="media_port" name="media_port" placeholder="Media Port for Teleblock Messages" value="{{ teleblock["media_port"] }}">
+    </div>    
+    </div> <!--End of Teleblock settings-->
      </form>
 </div>
 

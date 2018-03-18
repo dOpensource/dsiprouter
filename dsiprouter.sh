@@ -18,7 +18,7 @@ MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
 
 #Grab the port being using
-DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT=\K[0-9]*')
+DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT ?= ?\K[0-9]*')
 
 # Get Linux Distro
 
@@ -64,7 +64,7 @@ validateOSInfo
 function isPythonInstalled {
 
 
-possible_python_versions=`find / -name "python$REQ_PYTHON_MAJOR_VER*" -type f -executable  2>/dev/null`
+possible_python_versions=`find /usr/bin -name "python$REQ_PYTHON_MAJOR_VER*" -type f -executable  2>/dev/null`
 for i in $possible_python_versions
 do
     ver=`$i -V 2>&1`

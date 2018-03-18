@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for
 from flask_script import Manager
 import settings
+from importlib import reload
+from shared import *
 from database import loadSession, Gateways,Address,InboundMapping,OutboundRoutes,Subscribers,dSIPFusionPBXDB
 import os
 import subprocess
@@ -263,7 +265,14 @@ def displayOutboundRoutes(db_err=0):
     if session.get('logged_in'):
         try:
            gwlist = db.query(OutboundRoutes.gwlist).filter(OutboundRoutes.groupid==8000).scalar()
-           return render_template('outboundroutes.html',outboundroutes=gwlist)
+           teleblock= {}
+           teleblock["gw_enabled"]=settings.TELEBLOCK_GW_ENABLED
+           teleblock["gw_ip"]=settings.TELEBLOCK_GW_IP
+           teleblock["gw_port"]=settings.TELEBLOCK_GW_PORT
+           teleblock["media_ip"]=settings.TELEBLOCK_MEDIA_IP
+           teleblock["media_port"]=settings.TELEBLOCK_MEDIA_PORT
+
+           return render_template('outboundroutes.html',outboundroutes=gwlist, teleblock=teleblock)
         except:
             if db_err <= 3:
                 db.rollback()
@@ -291,6 +300,17 @@ def addUpateOutboundRoutes():
     else:
        db.query(OutboundRoutes).filter(OutboundRoutes.groupid==8000).update({'gwlist':gwlist})
        db.commit()
+    
+    # Update the teleblock settings
+
+    teleblock={}
+    teleblock['TELEBLOCK_GW_ENABLED']=request.form.get('gw_enabled',0)
+    teleblock['TELEBLOCK_GW_IP']=request.form['gw_ip']
+    teleblock['TELEBLOCK_GW_PORT']=request.form['gw_port']
+    teleblock['TELEBLOCK_MEDIA_IP']=request.form['media_ip']
+    teleblock['TELEBLOCK_MEDIA_PORT']=request.form['media_port']
+    updateConfigFile('gui/settings.py',teleblock)
+    reload(settings) 
     return  displayOutboundRoutes()
 
 
@@ -298,6 +318,12 @@ def addUpateOutboundRoutes():
 def reloadkam():
     return_code = subprocess.call(['kamcmd' ,'permissions.addressReload'])
     return_code += subprocess.call(['kamcmd','drouting.reload'])
+    
+    # Enable/Disable Teleblock
+    teleblock_cmd = "\'cfg.seti teleblock gw_enabled {0}\'".format(settings.TELEBLOCK_GW_ENABLED)
+    
+    return_code += subprocess.call(['kamcmd',teleblock_cmd])
+    
     session['last_page'] = request.headers['Referer']
     if return_code == 0:
         status_code = 1

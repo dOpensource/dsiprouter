@@ -344,3 +344,20 @@ function reloadkam(elmnt) {
  	});
 
 }
+
+
+$('#toggleTeleblock').change(function() {
+	 if ($(this).is(":checked")) {
+		   $('#teleblockOptions').removeClass("hidden");
+		   $('#toggleTeleblock').val("1");
+		   $('#toggleTeleblock').bootstrapToggle('on');;
+		         
+		  }
+	 else {
+		   $('#teleblockOptions').addClass("hidden");
+		   $('#toggleTeleblock').val("0");
+		   $('#toggleTeleblock').bootstrapToggle('off');
+
+		  }
+	 
+});
