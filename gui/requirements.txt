@@ -6,3 +6,4 @@ jinja2
 Flask-Script
 mysqlclient
 psycopg2
+ConfigObj

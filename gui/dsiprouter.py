@@ -318,11 +318,14 @@ def addUpateOutboundRoutes():
 def reloadkam():
     return_code = subprocess.call(['kamcmd' ,'permissions.addressReload'])
     return_code += subprocess.call(['kamcmd','drouting.reload'])
+    return_code += subprocess.call(['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled',str(settings.TELEBLOCK_GW_ENABLED)])
     
     # Enable/Disable Teleblock
-    teleblock_cmd = "\'cfg.seti teleblock gw_enabled {0}\'".format(settings.TELEBLOCK_GW_ENABLED)
-    
-    return_code += subprocess.call(['kamcmd',teleblock_cmd])
+    if settings.TELEBLOCK_GW_ENABLED:
+        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'teleblock', 'gw_ip',str(settings.TELEBLOCK_GW_IP)])
+        return_code += subprocess.call(['kamcmd', 'cfg.seti', 'teleblock', 'gw_port',str(settings.TELEBLOCK_GW_PORT)])
+        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'teleblock', 'media_ip',str(settings.TELEBLOCK_MEDIA_IP)])
+        return_code += subprocess.call(['kamcmd', 'cfg.seti', 'teleblock', 'media_port',str(settings.TELEBLOCK_MEDIA_PORT)])
     
     session['last_page'] = request.headers['Referer']
     if return_code == 0:
