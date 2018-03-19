@@ -123,7 +123,7 @@ teleblock.media_ip = "" desc "Teleblock media ip"
 teleblock.media_port = "" desc "Teleblock media port"
 ```
 
-Change the teleblock.gw_enabled value to a 1
+Change the teleblock.gw_enabled value to a 1, update the gateway ip and port based on what Gryphon provides you and optionally you can specify a media server ip and port that can play a pre-recorded message to a user.  
  
 
 ### Change Configuration Parameters
