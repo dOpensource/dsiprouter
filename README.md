@@ -3,6 +3,7 @@
 dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:
 
 - **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
+
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
 
 **Follow us at #dopensource on Twitter to get the latest updates on dSIPRouter**
@@ -24,13 +25,13 @@ You will get the best experience on Debian Stretch!
 #### Database Support
 
 - MySQL 5.x 
-- MariaDB
+- MariaDB 10.x
 
 ### Prerequisites:
 
 - Must run this as the root user (you can use sudo)
 - git and curl needs to be installed
-- python version 3.0 or older
+- python version 3.4 or older
 
 **On Debian Stretch 9.x:**
 
@@ -110,18 +111,17 @@ Put this line in /etc/rc.local
 ### Gryphon Teleblock Support
 
 The Gryphon Teleblock services allows a call center to stay in compliance with "DO NOT CALL" lists.  When enabled,
-calls are routed to their service.  The service will return a SIP return code.  If the call is on the "DO NOT CALL" list a SIP return code of 403  will be returned 
-and dSIPRouter will send a SIP error message back to the user or the call can be routed to a media server, which will
-play a message to the user. A SIP return code of 499 means that the call is NOT on the "DO NOT CALL" list and dSIPRouter will route the call to the carrier you have defined.
+calls are routed to their service.  The service will return a SIP return code.  If the call is on the "DO NOT CALL" list a SIP return code of 403  will be returned and dSIPRouter will send a SIP error message back to the user or the call can be routed to a media server, which will play a message to the user. A SIP return code of 499 means that the call is NOT on the "DO NOT CALL" list and dSIPRouter will route the call to the carrier you have defined.
 
-The settings for this can be found in "Global Outbound Routes".  Note, you can enable this service from GUI and test that it's working as expected.  If you want the service
-enabled when Kamailio restarts you need to specify the settings in your /etc/kamailio/kamailio.cfg.  The default settings are:
+The settings for this can be found in "Global Outbound Routes".  Note, you can enable this service from GUI and test that it's working as expected.  If you want the service enabled when Kamailio restarts you need to specify the settings in your /etc/kamailio/kamailio.cfg.  The default settings are:
 
+```
 teleblock.gw_enabled = 0 desc "Enable Teleblock support"
 teleblock.gw_ip = "66.203.90.197" desc "Teleblock IP"
 teleblock.gw_port = "5066" desc "Teleblock Port"
 teleblock.media_ip = "" desc "Teleblock media ip"
 teleblock.media_port = "" desc "Teleblock media port"
+```
 
 Change the teleblock.gw_enabled value to a 1
  
