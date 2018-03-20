@@ -1,7 +1,7 @@
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - execept for Teleblock settings
 
-DSIP_PORT = 5001
+DSIP_PORT = 5000
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
