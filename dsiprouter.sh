@@ -320,7 +320,7 @@ if [ $DISTRO == "debian" ]; then
 	#Setup tmp files
 	echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
-	ln -s /etc/init.d/ngcp-rtpengine-daemon /etc/init.d/rtpengine
+	cp dsiprouter/debian/ngcp-rtpengine-daemon.ini /etc/init.d/ngcp-rtpengine-daemon
 
         #Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
@@ -329,7 +329,10 @@ if [ $DISTRO == "debian" ]; then
         if [ $? -eq 0 ]; then
                touch ./.rtpengineinstalled
                echo "RTPEngine has been installed!"
-        fi	
+	else
+		echo "FAILED: RTPEngine could not be installed!"
+        fi
+
 
 fi #end of installing RTPEngine for Debian
 
