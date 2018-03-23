@@ -6,11 +6,11 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
 
-**Follow us at #dopensource on Twitter to get the latest updates on dSIPRouter**
+**Follow us at #dsiprouter on Twitter to get the latest updates on dSIPRouter**
 
 ### Supported Platforms:
 
-We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or purchasing support so that we can provide more officially supported platform variations. 
+We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or [purchasing support](https://dopensource.com/shop) so that we can provide more officially supported platform variations and to add additional features to make Kamailio and RTPProxy much easier to learn and use.
 
 #### OS Support
 
