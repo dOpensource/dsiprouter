@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 #Define some global variables
 

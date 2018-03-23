@@ -10,21 +10,19 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 ### Supported Platforms:
 
+We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or purchasing support so that we can provide more officially supported platform variations. 
+
 #### OS Support
 
-You will get the best experience on Debian Stretch!  
+**Debian Stretch (tested on 9.4)**
 
-- CentOS 7 (tested on 7.3.1611)
-- Debian Jessie (tested on 8.9)
-- Debian Stretch (tested on 9.3)
+Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 3-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 
 #### Kamailio Versions
-- Kamailio 4.x (tested on Kamailio 4.4.5, 4.4.6)
-- Kamailio 5.1 (only for Debian Stretch)
+- Kamailio 5.1 
 
 #### Database Support
 
-- MySQL 5.x 
 - MariaDB 10.x
 
 ### Prerequisites:
@@ -33,11 +31,9 @@ You will get the best experience on Debian Stretch!
 - git and curl needs to be installed
 - python version 3.4 or older
 
-**On Debian Stretch 9.x:**
+### Non-Supported Platforms (but might work)
 
-- Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 3-5 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
-
-**On Debian Jessie 8.9:**
+**Debian Jessie 8.x:**
 
 - Kamailio will be automatically installed along with dSIPRouter.  Just click "enter" and "y" to not have a ROOT password on mysql and to accept all of the default settings. 
 
