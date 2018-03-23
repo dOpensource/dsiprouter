@@ -6,7 +6,7 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
 
-**Follow us at #dsiprouter on Twitter to get the latest updates on dSIPRouter**
+**Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
 ### Supported Platforms:
 
