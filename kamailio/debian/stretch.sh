@@ -11,24 +11,30 @@ if [ $? -eq 1 ]; then
 	deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} ${DEB_REL} main" >> /etc/apt/sources.list
 fi
 #Add Key for Kamailio Repo
-wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | sudo apt-key add -
+wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
 #Update the repo
 apt-get update
 
 #Install Kamailio packages
-apt-get install -y kamailio kamailio-mysql-modules mysql-server
+apt-get install -y --allow-unauthenticated kamailio kamailio-mysql-modules mysql-server
 
 #Enable MySQL and Kamailio for system startup
 systemctl enable mysql
+
+#Make sure mysql starts before Kamailio
+sed -i s/After=.*/After=mysqld.service/g /lib/systemd/system/kamailio.service
+systemctl daemon-reload
 systemctl enable kamailio
 
 #Start MySQL
 systemctl start mysql
 
 # Configure Kamailio and Required Database Modules
-sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
+#sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
 
+mkdir /etc/kamailio
+echo "DBENGINE=MYSQL" >> /etc/kamailio/kamctlrc
 echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
 echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
 echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
@@ -51,9 +57,9 @@ fi
 firewall-cmd --reload
 
 #Start Kamailio
-systemctl start kamailio
-return #?
-
+#systemctl start kamailio
+#return #?
+return 0
 }
 
 function uninstall {
@@ -66,9 +72,9 @@ systemctl stop mysql
 mv /etc/kamailio /etc/kamailio.bak.`(date +%Y%m%d_%H%M%S)`
 
 #Uninstall Kamailio modules and Mariadb
-sudo apt-get -y remove --purge mysql\*
-sudo apt-get -y remove --purge mariadb\*
-sudo apt-get -y remove --purge kamailio\*
+apt-get -y remove --purge mysql\*
+apt-get -y remove --purge mariadb\*
+apt-get -y remove --purge kamailio\*
 
 #Backup Kamailio database just in 
 #mv /var/lib/mysql /var/lib/mysql.kamailio

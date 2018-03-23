@@ -1,6 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 #Define some global variables
 
@@ -18,7 +18,7 @@ MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
 
 #Grab the port being using
-DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT ?= ?\K[0-9]*')
+DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT[[:space:]]?=[[:space:]]?\K[0-9]*')
 
 # Get Linux Distro
 
@@ -280,10 +280,12 @@ if [ $DISTRO == "debian" ]; then
   	apt-get install -y libavfilter-dev
   	apt-get install -y libavformat-dev
 	apt-get install -y libmysqlclient-dev
+	apt-get install -y libmariadbclient-dev
+	apt-get install -y default-libmysqlclient-dev
 
 	rm -rf rtpengine.bak
 	mv -f rtpengine rtpengine.bak
-	git clone https://github.com/sipwise/rtpengine
+	git clone -b mr6.1.1.1 https://github.com/sipwise/rtpengine
         cd rtpengine
 	./debian/flavors/no_ngcp
 	dpkg-buildpackage
@@ -320,7 +322,7 @@ if [ $DISTRO == "debian" ]; then
 	#Setup tmp files
 	echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
-	cp dsiprouter/debian/ngcp-rtpengine-daemon.ini /etc/init.d/ngcp-rtpengine-daemon
+	cp ./dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
 
         #Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
@@ -438,7 +440,12 @@ function install {
 
 if [ ! -f "./.installed" ]; then
 
+	cd ${DSIP_KAMAILIO_CONF_DIR} 
 
+	#Check if Python is installed before trying to start up the process
+        if [ -z ${PYTHON_CMD+x} ]; then
+                isPythonInstalled
+        fi
 	
 	EXTERNAL_IP=`curl -s ip.alt.io`
 	INTERNAL_IP=`hostname -I | awk '{print $1}'`
@@ -449,10 +456,6 @@ if [ ! -f "./.installed" ]; then
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
 	
-	#Check if Python is installed before trying to start up the process
-        if [ -z ${PYTHON_CMD+x} ]; then
-                isPythonInstalled
-        fi
 
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to install Kamailio...\n"
@@ -464,7 +467,7 @@ if [ ! -f "./.installed" ]; then
 			exit
 		fi
 		echo -e "Attempting to install dSIPRouter...\n" 	
-		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT}
+		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT} $PYTHON_CMD
 
         fi
 
@@ -528,10 +531,10 @@ fi
 	
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to uninstall dSIPRouter...\n" 	
-		./dsiprouter/$DISTRO/$DEB_REL.sh uninstall ${DIP_PORT}
+		./dsiprouter/$DISTRO/$DEB_REL.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
 		
 		echo -e "Attempting to uninstall Kamailio...\n"
-        	./kamailio/$DISTRO/$DEB_REL.sh uninstall ${KAM_VERSION} ${DIP_PORT}
+        	./kamailio/$DISTRO/$DEB_REL.sh uninstall ${KAM_VERSION} ${DSIP_PORT} ${PYTHON_CMD}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was uninstalled!"
 		else
@@ -687,7 +690,7 @@ password=`date +%s | sha256sum | base64 | head -c 16`
 #Add single quotes
 
 password1=\'$password\'
-sed -i 's/PASSWORD=.*/PASSWORD='$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
+sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
 
 echo -e "username: admin\npassword:$password\n"
 

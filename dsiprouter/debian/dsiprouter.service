@@ -1,0 +1,10 @@
+[Unit]
+Description=dSIPRouter Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=PYTHON_CMD DSIP_KAMAILIO_CONF_DIR/gui/dsiprouter.py runserver -h 0.0.0.0 -p 5000
+
+[Install]
+WantedBy=multi-user.target
