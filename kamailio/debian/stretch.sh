@@ -82,10 +82,10 @@ apt-get -y remove --purge kamailio\*
 #Potentially remove the repo's
 
 #Remove firewall rules that was created by us:
-firewall-cmd --zone=public --remove-port=5060/udp
+firewall-cmd --zone=public --remove-port=5060/udp --permanent
 
 if [ -n "$DSIP_PORT" ]; then
-	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp
+	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
 fi
 
 firewall-cmd --reload
