@@ -6,6 +6,7 @@ function install
 {
 		# Install dependencies for dSIPRouter
 		apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+		easy_install3 pip
 
 		#Setup Firewall for DSIP_PORT
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
