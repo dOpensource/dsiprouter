@@ -267,6 +267,7 @@ INTERNAL_IP=`hostname -I | awk '{print $1}'`
 if [ $DISTRO == "debian" ]; then
 
 	#Install required libraries
+	apt-get install -y firewalld
 	apt-get install -y debhelper
 	apt-get install -y iptables-dev
 	apt-get install -y libcurl4-openssl-dev
