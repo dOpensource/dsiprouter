@@ -1,12 +1,12 @@
 #!/bin/bash
 #set +x
 function install {
-grep 'deb.kamailio.org/kamailio jessie' /etc/apt/sources.list > /dev/null
+grep -ioP '.*deb.kamailio.org/kamailio[0-9]* jessie.*' /etc/apt/sources.list > /dev/null
 # If repo is not installed
 if [ $? -eq 1 ]; then
-	echo -e "\n# kamailio repo's
-	deb http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main
-	deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main" >> /etc/apt/sources.list
+echo -e "\n# kamailio repo's
+deb http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main
+deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main" >> /etc/apt/sources.list
 fi
 #Add Key for Kamailio Repo
 apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xfb40d3e6508ea4c8

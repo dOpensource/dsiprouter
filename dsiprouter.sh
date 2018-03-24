@@ -35,10 +35,10 @@ function validateOSInfo {
 if [ "$DISTRO" == "debian" ]; then
 	case "$DEB_REL" in
 
-		stretch)
+		stretch|jessie)
 			KAM_VERSION=51
 			;;
-		weezy)
+		wheezy)
 			KAM_VERSION=44
 			;;
 		*)
