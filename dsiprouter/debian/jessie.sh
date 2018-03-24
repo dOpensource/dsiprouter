@@ -5,6 +5,7 @@ set -x
 function install
 {
 		# Install dependencies for dSIPRouter
+
 		apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 		easy_install3 pip
 
@@ -34,6 +35,7 @@ function install
 function uninstall
 {
 		# Uninstall dependencies for dSIPRouter
+
 		apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 
 		#Remove Firewall for DSIP_PORT
