@@ -38,7 +38,7 @@ if [ "$DISTRO" == "debian" ]; then
 		stretch)
 			KAM_VERSION=51
 			;;
-		weezy)
+		jessie)
 			KAM_VERSION=44
 			;;
 		*)
