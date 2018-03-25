@@ -184,8 +184,13 @@ fi
 
 function startRTPEngine {
 
-systemctl start rtpengine
+if [ $DISTRO == "debian" ]; then
+	systemctl start ngcp-rtpengine-daemon
+fi
 
+if [ $DISTRO == "centos" ]; then
+	systemctl start rtpengine
+fi
 }
 
 # Stop RTPEngine
@@ -193,7 +198,13 @@ systemctl start rtpengine
 
 function stopRTPEngine {
 
-systemctl stop rtpengine
+if [ $DISTRO == "debian" ]; then
+	systemctl stop ngcp-rtpengine-daemon
+fi
+
+if [ $DISTRO == "centos" ]; then
+	systemctl stop rtpengine
+fi
 
 }
 
@@ -609,8 +620,7 @@ function start {
 
 	if [ -e ./.rtpengineinstalled ]; then
 
-                systemctl start rtpengine
-
+		startRTPEngine
         fi
 
 	#Start the process
@@ -655,8 +665,10 @@ function stop {
 
 	if [ -e ./.rtpengineinstalled ]; then
 	
-		systemctl stop rtpengine 
-		echo "RTPEngine was stopped"
+		stopRTPEngine
+	 	if [ $? -eq 0 ]; then	
+			echo "RTPEngine was stopped"
+		fi
 	else
 	
 		echo "RTPEngine was not installed"
