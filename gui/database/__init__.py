@@ -4,6 +4,10 @@ from sqlalchemy.orm import mapper, sessionmaker
 import settings
 
 class Gateways(object):
+    """
+    Schema for dr_gateways table\n
+    Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-dr-gateways>`_
+    """
     def __init__(self,name,ip_addr,strip,prefix,type):
         self.description="name:" + name 
         self.address=ip_addr
@@ -14,6 +18,10 @@ class Gateways(object):
     pass
 
 class Address(object):
+    """
+    Schema for address table\n
+    Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-address>`_
+    """
     def __init__(self,name,ip_addr,mask,type):
        self.tag="name:" + name
        self.ip_addr=ip_addr
@@ -33,7 +41,18 @@ class InboundMapping(object):
     pass
 
 class OutboundRoutes(object):
-    pass
+    """
+    Schema for dr_rules table\n
+    Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-dr-rules>`_
+    """
+    def __init__(self, groupid, prefix, timerec, priority, routeid, gwlist, description):
+        self.groupid = groupid
+        self.prefix = prefix
+        self.timerec = timerec
+        self.priority = priority
+        self.routeid = routeid
+        self.gwlist = gwlist
+        self.description = description
 
 class dSIPFusionPBXDB(object):
     def __init__(self,pbx_id,db_ip,db_username,db_password,db_enabled):

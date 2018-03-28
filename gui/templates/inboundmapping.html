@@ -1,149 +1,168 @@
-{% extends 'fullwidth_layout.html' %}
+{% extends 'table_layout.html' %}
 
-{% block title %}Dashboard{% endblock %}
 
-{% block css %}
-        {{ link_tag('main') }}
+{% block table_headers %}
+
+  <div class="tableAddButton">
+    <h4>List of Inbound Mappings</h4>
+    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
+            data-target="#add">Add
+    </button>
+  </div>
+
+  <div class="navBarButtons">
+    <ul class="pagination pull-right">
+      <li class="disabled"><a href="#"><span class="glyphicon glyphicon-chevron-left"></span></a></li>
+      <li class="active"><a href="#">1</a></li>
+      <li><a href="#">2</a></li>
+      <li><a href="#">3</a></li>
+      <li><a href="#">4</a></li>
+      <li><a href="#">5</a></li>
+      <li><a href="#"><span class="glyphicon glyphicon-chevron-right"></span></a></li>
+    </ul>
+  </div>
+
 {% endblock %}
 
 
-{% block body %}
-    
-    <div class="col-md-12">
-    <div class="tableAddButton">
-            <h4>List of Inbound Mappings</h4><button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add" >Add</button> 
-        </div>
-    <div class="table-responsive">
-              <table id="inboundmapping" class="table table-bordred table-striped">
-                   
-                   <thead>
-                   <th><input type="checkbox" id="checkall" /></th>
-                   <th data-field="ruleid">Rule ID</th>
-                   <th data-field="prefix">DID (or DID pattern)</th>
-                   <th data-field="gateway">PBX</th>
-                   <th data-field="gwid" style='display:none;'>PBX ID</th>
-                   <th></th>
-                   </thead>
+{% block table %}
+
+  <table id="inboundmapping" class="table table-bordred table-striped">
+
+    <thead>
+    <tr class='element-row'>
+      <th><input type="checkbox" id="checkall"/></th>
+      <th data-field="ruleid">Rule ID</th>
+      <th data-field="prefix">DID (or DID pattern)</th>
+      <th data-field="gateway">PBX</th>
+      <th data-field="gwid" style='display:none;'>PBX ID</th>
+      <th></th>
+    </tr>
+    </thead>
     <tbody>
     {% for row in rows %}
-    <tr class='element-row'>
-     <input type='hidden' name='gwid' value={{row.gwlist}}/>
-    <td><input type="checkbox" class="checkthis" value="1"/></td>
-    <td class='ruleid'>{{row.ruleid}}</td>
-    <td class='prefix'>{{row.prefix}}</td>
-    <td class='gwname'>{{row.description|attrFilter('name')}}</td>
-    <td class="gwid" style='display:none;'>{{row.gwlist}}</td>
-    <td><p data-placement="top" data-toggle="tooltip" title="Edit"><button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal" data-target="#edit" ><span class="glyphicon glyphicon-pencil"></span></button></p></td>
-    <td><p data-placement="top" data-toggle="tooltip" title="Delete"><button id="open-Delete"class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal" data-target="#delete" ><span class="glyphicon glyphicon-trash"></span></button></p></td>
-    </tr>
+      <tr class='element-row'>
+        <input type='hidden' name='gwid' value={{ row.gwlist }}/>
+        <td><input type="checkbox" class="checkthis" value="1"/></td>
+        <td class='ruleid'>{{ row.ruleid }}</td>
+        <td class='prefix'>{{ row.prefix }}</td>
+        <td class='gwname'>{{ row.description|attrFilter('name') }}</td>
+        <td class="gwid" style='display:none;'>{{ row.gwlist }}</td>
+        <td>
+          <p data-placement="top" data-toggle="tooltip" title="Edit">
+            <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit"
+                    data-toggle="modal" data-target="#edit"><span class="glyphicon glyphicon-pencil"></span>
+            </button>
+          </p>
+        </td>
+        <td>
+          <p data-placement="top" data-toggle="tooltip" title="Delete">
+            <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete"
+                    data-toggle="modal" data-target="#delete"><span class="glyphicon glyphicon-trash"></span>
+            </button>
+          </p>
+        </td>
+      </tr>
     {% endfor %}
-<div class="clearfix"></div>
-<ul class="pagination pull-right">
-  <li class="disabled"><a href="#"><span class="glyphicon glyphicon-chevron-left"></span></a></li>
-  <li class="active"><a href="#">1</a></li>
-  <li><a href="#">2</a></li>
-  <li><a href="#">3</a></li>
-  <li><a href="#">4</a></li>
-  <li><a href="#">5</a></li>
-  <li><a href="#"><span class="glyphicon glyphicon-chevron-right"></span></a></li>
-</ul>
-                
-            </div>
-            
-        </div>
-    </div>
-</div>
-
-
-<div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="edit" aria-hidden="true">
-      <div class="modal-dialog">
-    <div class="modal-content">
-          <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        <h4 class="modal-title custom_align" id="Heading">Edit Your Inbound Mapping  Rule</h4>
-      </div>
-          <div class="modal-body">
-      <form action="/inboundmapping" method="POST" role="form">
-        <input type="hidden" id="ruleid" name="ruleid"> 
-         <div class="form-group">
-        <input class="form-control " type="text" id="prefix" name="prefix" placeholder="DID">
-        </div>
-        <div class="form-group">
-            <select class="form-control" name="gwid" id="gwid">
-            {% for gw in gwlist %}
-                   <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name')}}</option>
-            {% endfor %}
-            </select>
-        </div>
-	</div>
-          <div class="modal-footer ">
-        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span class="glyphicon glyphicon-ok-sign"></span> Update</button>
-      </div>
-	</form>
-      </div>
-    <!-- /.modal-content --> 
-  </div>
-      <!-- /.modal-dialog --> 
-    </div>
-    
-<div class="modal fade" id="add" tabindex="-1" role="dialog" aria-labelledby="add" aria-hidden="true">
-      <div class="modal-dialog">
-    <div class="modal-content">
-          <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        <h4 class="modal-title custom_align" id="Heading">Add New Inbound Mapping Rule</h4>
-      </div>
-      <form action="/inboundmapping" method="POST" role="form">
-        <input type="hidden" id="ruleid" name="ruleid">
-        <div class="modal-body">
-        <div class="form-group">
-        <input class="form-control" type="text" id="prefix" name="prefix" placeholder="DID">
-        </div>
-        <div class="form-group">
-            <select class="form-control" name="gwid" id="gwid">
-            {% for gw in gwlist %}
-                   <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name')}}</option>
-            {% endfor %}
-            </select>
-	</div>
-      </div>
-          <div class="modal-footer ">
-        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span class="glyphicon glyphicon-ok-sign"></span> Add</button>
-      </div>
-        </div>
-      </form>
-    <!-- /.modal-content -->
-  </div>
-      <!-- /.modal-dialog -->
-    </div>
-
-<div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="Delete" aria-hidden="true">
-      <div class="modal-dialog">
-    <div class="modal-content">
-          <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
-      </div>
-      <form action="/inboundmappingdelete" method="POST" role="form">
-          <div class="modal-body">
-        <div class="form-group">
-        <input class="form-control " type="hidden" id="ruleid" name="ruleid">
-        </div>
-       
-       <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want to delete this Record?</div>
-       
-      </div>
-        <div class="modal-footer ">
-        <button type="submit" class="btn btn-success" ><span class="glyphicon glyphicon-ok-sign"></span> Yes</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> No</button>
-      </div>
-      </form>
-        </div>
-    <!-- /.modal-content --> 
-  </div>
-      <!-- /.modal-dialog --> 
+    </tbody>
+  </table>
 
 {% endblock %}
 
-{% block js %}
+
+{% block edit_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Edit Your Inbound Mapping Rule</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/inboundmapping" method="POST" role="form">
+      <input type="hidden" id="ruleid" name="ruleid">
+      <div class="form-group">
+        <input class="form-control " type="text" id="prefix" name="prefix" placeholder="DID">
+      </div>
+      <div class="form-group">
+        <select class="form-control" name="gwid" id="gwid">
+          {% for gw in gwlist %}
+            <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Update
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block add_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Add New Inbound Mapping Rule</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/inboundmapping" method="POST" role="form">
+      <input type="hidden" id="ruleid" name="ruleid">
+
+      <div class="form-group">
+        <input class="form-control" type="text" id="prefix" name="prefix" placeholder="DID">
+      </div>
+      <div class="form-group">
+        <select class="form-control" name="gwid" id="gwid">
+          {% for gw in gwlist %}
+            <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Add
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block delete_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/inboundmappingdelete" method="POST" role="form">
+      <div class="form-group">
+        <input class="form-control " type="hidden" id="ruleid" name="ruleid">
+      </div>
+
+      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
+        to delete this Record?
+      </div>
+
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok-sign"></span> Yes</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><span
+            class="glyphicon glyphicon-remove"></span> No
+        </button>
+      </div>
+    </form>
+  </div>
+
 {% endblock %}
