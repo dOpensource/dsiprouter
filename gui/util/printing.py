@@ -17,10 +17,10 @@ def printc(text, color=WHITE, out=sys.stdout):
 
     if has_colors(sys.stdout):
         string = strfc(text, color)
-        print(string, file=out)
+        print(string, file=out, flush=True)
     else:
-        string = str(text).strip() + "\n"
-        print(string, file=out)
+        string = str(text).strip()
+        print(string, file=out, flush=True)
 
 # some common use cases
 def printerror(message):
