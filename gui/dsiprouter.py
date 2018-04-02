@@ -112,16 +112,16 @@ def displayPBX(db_err=0):
         try:
             # res = db.query(Gateways).outerjoin(dSIPFusionPBXDB,Gateways.gwid == dSIPFusionPBXDB.pbx_id).add_columns(Gateways.gwid,Gateways.description,Gateways.address,Gateways.strip,Gateways.pri_prefix,dSIPFusionPBXDB.enabled, dSIPFusionPBXDB.db_ip, dSIPFusionPBXDB.db_username,dSIPFusionPBXDB.db_password).filter(Gateways.type==settings.FLT_PBX).all()
             res = db.query(Gateways).outerjoin(dSIPFusionPBXDB, Gateways.gwid == dSIPFusionPBXDB.pbx_id).outerjoin(
-                Subscribers, Gateways.gwid == Subscribers.rpid).add_columns(Gateways.gwid, Gateways.description,
-                                                                            Gateways.address, Gateways.strip,
-                                                                            Gateways.pri_prefix,
-                                                                            dSIPFusionPBXDB.enabled,
-                                                                            dSIPFusionPBXDB.db_ip,
-                                                                            dSIPFusionPBXDB.db_username,
-                                                                            dSIPFusionPBXDB.db_password,
-                                                                            Subscribers.rpid, Subscribers.username,
-                                                                            Subscribers.password).filter(
-                Gateways.type == settings.FLT_PBX).all()
+                Subscribers, Gateways.gwid == Subscribers.rpid).add_columns(
+                Gateways.gwid, Gateways.description,
+                Gateways.address, Gateways.strip,
+                Gateways.pri_prefix,
+                dSIPFusionPBXDB.enabled,
+                dSIPFusionPBXDB.db_ip,
+                dSIPFusionPBXDB.db_username,
+                dSIPFusionPBXDB.db_password,
+                Subscribers.rpid, Subscribers.username,
+                Subscribers.password).filter(Gateways.type == settings.FLT_PBX).all()
             return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
         except:
             if db_err <= 3:
@@ -217,7 +217,7 @@ def addUpdatePBX():
                 db.query(Subscribers).filter(Subscribers.rpid == gwid).update(
                     {'username': pbx_username, 'password': pbx_password, 'rpid': gwid})
             else:
-                Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, Gateway.gwid)
+                Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, Gateways.gwid)
                 db.add(Subscriber)
 
         db.commit()
@@ -243,9 +243,19 @@ def deletePBX():
 
 @app.route('/inboundmapping')
 def displayInboundMapping(db_err=0):
+    """
+    Displaying of dr_rules table (inbound routes only)\n
+    Partially Supports rule definitions for Kamailio Drouting module\n
+    Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
+    """
+
+    # group for inbound routes
+    groupid = 9000
+
     if session.get('logged_in'):
         try:
-            res = db.execute('select * from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid > 8000')
+            res = db.execute(
+                'select * from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(groupid))
             gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
             return render_template('inboundmapping.html', rows=res, gwlist=gateways)
         except:
@@ -262,21 +272,30 @@ def displayInboundMapping(db_err=0):
 
 @app.route('/inboundmapping', methods=['POST'])
 def addInboundMapping():
+    """
+    Adding and Updating of dr_rules table (inbound routes only)\n
+    Partially Supports rule definitions for Kamailio Drouting module\n
+    Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
+    """
+
     # group for inbound routes
     groupid = 9000
 
+    # id in dr_rules table
+    ruleid = None
     if request.form['ruleid']:
         ruleid = request.form['ruleid']
-    else:
-        ruleid = None
+
+    # get form data
     gwid = request.form['gwid']
     prefix = request.form['prefix']
+
     # Adding
     if not ruleid:
         IMap = InboundMapping(groupid, prefix, gwid)
         db.add(IMap)
         db.commit()
-        # Updating
+    # Updating
     else:
         db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update({'prefix': prefix, 'gwlist': gwid})
         db.commit()
@@ -285,6 +304,12 @@ def addInboundMapping():
 
 @app.route('/inboundmappingdelete', methods=['POST'])
 def deleteInboundMapping():
+    """
+    Deleting of dr_rules table (inbound routes only)\n
+    Partially Supports rule definitions for Kamailio Drouting module\n
+    Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
+    """
+
     ruleid = request.form['ruleid']
     d = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
     d.delete(synchronize_session=False)
@@ -293,9 +318,19 @@ def deleteInboundMapping():
 
 @app.route('/outboundroutes')
 def displayOutboundRoutes(db_err=0):
+    """
+    Displaying of dr_rules table (outbound routes only)\n
+    Supports rule definitions for Kamailio Drouting module\n
+    Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
+    """
+
+    # group for outbound routes
+    groupid = 8000
+
     if session.get('logged_in'):
         try:
-            gwlist = db.query(OutboundRoutes.gwlist).filter(OutboundRoutes.groupid == 8000).scalar()
+            rows = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == groupid)
+
             teleblock = {}
             teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
             teleblock["gw_ip"] = settings.TELEBLOCK_GW_IP
@@ -303,7 +338,9 @@ def displayOutboundRoutes(db_err=0):
             teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
             teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-            return render_template('outboundroutes.html', outboundroutes=gwlist, teleblock=teleblock)
+            custom_routes = getCustomRoutes()
+
+            return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=custom_routes)
         except:
             if db_err <= 3:
                 db.rollback()
@@ -318,21 +355,28 @@ def displayOutboundRoutes(db_err=0):
 @app.route('/outboundroutes', methods=['POST'])
 def addUpateOutboundRoutes():
     """
-    Supports Kamailio Drouting module features
+    Adding and Updating dr_rules table (outbound routes only)\n
+    Supports rule definitions for Kamailio Drouting module\n
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
     # group for outbound routes
     groupid = 8000
 
+    # id in dr_rules table
+    ruleid = None
+    if request.form['ruleid']:
+        ruleid = request.form['ruleid']
+
     # set default values
-    prefix = "."
+    prefix = ""
     timerec = ""
     priority = 0
-    routeid = 0
+    routeid = ""
     gwlist = ""
     description = ""
 
+    # get form data
     if request.form['prefix']:
         prefix = request.form['prefix']
     if request.form['timerec']:
@@ -340,25 +384,24 @@ def addUpateOutboundRoutes():
     if request.form['priority']:
         priority = int(request.form['priority'])
     if request.form['routeid']:
-        routeid = int(request.form['routeid'])
+        routeid = request.form['routeid']
     if request.form['gwlist']:
         gwlist = request.form['gwlist']
     if request.form['name']:
-        description = 'name: {}'.format(request.form['name'])
+        description = 'name:{}'.format(request.form['name'])
 
     # Adding
-    if not gwlist or gwlist == "":
+    if not ruleid:
         OMap = OutboundRoutes(groupid=groupid, prefix=prefix, timerec=timerec, priority=priority,
                               routeid=routeid, gwlist=gwlist, description=description)
         db.add(OMap)
         db.commit()
     # Updating
     else:
-        db.query(OutboundRoutes).filter(OutboundRoutes.groupid == groupid).update(
-            {
-                'prefix': prefix, 'timerec': timerec, 'priority': priority,
-                'routeid': routeid, 'gwlist': gwlist, 'description': description
-            })
+        db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+            'prefix': prefix, 'timerec': timerec, 'priority': priority,
+            'routeid': routeid, 'gwlist': gwlist, 'description': description
+        })
         db.commit()
 
     # Update the teleblock settings
@@ -376,10 +419,16 @@ def addUpateOutboundRoutes():
 
 @app.route('/outboundroutesdelete', methods=['POST'])
 def deleteOutboundRoute():
+    """
+    Deleting of dr_rules table (outbound routes only)\n
+    Supports rule definitions for Kamailio Drouting module\n
+    Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
+    """
+
     ruleid = request.form['ruleid']
     d = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid)
     d.delete(synchronize_session=False)
-    return displayInboundMapping()
+    return displayOutboundRoutes()
 
 
 @app.route('/reloadkam')

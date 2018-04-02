@@ -123,11 +123,13 @@
 <script>window.RAPID = {};</script>
 
 {% block js %}
-  $(document).ready(function(){
-  if (getQueryString('action') == 'add') {
-  $('#add').modal('show');
-  }
-  }
+  <script>
+    $(document).ready(function () {
+      if (getQueryString('action') == 'add') {
+        $('#add').modal('show');
+      }
+    });
+  </script>
 {% endblock %}
 
 </body>

@@ -44,7 +44,6 @@
     <tbody>
     {% for row in rows %}
       <tr class='element-row'>
-        <input type='hidden' name='gwid' value={{ row.gwlist }}/>
         <td><input type="checkbox" class="checkthis" value="1"/></td>
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
@@ -53,7 +52,6 @@
         <td class="routeid">{{ row.routeid }}</td>
         <td class="gwlist">{{ row.gwlist }}</td>
         <td class="description">{{ row.description|attrFilter('name') }}</td>
-        <td class="gwid" style='display:none;'>{{ row.gwlist }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit"
@@ -85,11 +83,12 @@
   </div>
 
 
-  <form action="/outboundroutes" method="POST" role="form">
   <div class="modal-body">
+    <form action="/outboundroutes" method="POST" role="form">
       <input type="hidden" id="ruleid" name="ruleid">
       <div class="form-group">
-        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name (Optional)">
+        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
       </div>
       <div class="form-group">
         <input class="form-control " type="text" id="prefix" name="prefix"
@@ -104,8 +103,12 @@
                placeholder="Priority (Optional: higher priorities routed first)">
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="routeid" name="routeid"
-               placeholder="Custom Kamailio Route (Optional)">
+        <label for="routeid">Custom Kamailio Route (Optional)</label>
+        <select class="form-control" name="routeid" id="routeid">
+          {% for routeid in custom_routes %}
+            <option value='{{ routeid }}'>{{ routeid }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
         <label for="gwlist">Outbound Mappings (comma seprated list of carrier id's)</label>
@@ -151,8 +154,8 @@
             class="glyphicon glyphicon-ok-sign"></span> Update
         </button>
       </div>
+    </form>
   </div>
-      </form>
 
 {% endblock %}
 
@@ -169,7 +172,8 @@
     <form action="/outboundroutes" method="POST" role="form">
       <input type="hidden" id="ruleid" name="ruleid">
       <div class="form-group">
-        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name (Optional)">
+        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
       </div>
       <div class="form-group">
         <input class="form-control " type="text" id="prefix" name="prefix"
@@ -184,8 +188,12 @@
                placeholder="Priority (Optional: higher priorities routed first)">
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="routeid" name="routeid"
-               placeholder="Custom Kamailio Route (Optional)">
+        <label for="routeid">Custom Kamailio Route (Optional)</label>
+        <select class="form-control" name="routeid" id="routeid">
+          {% for routeid in custom_routes %}
+            <option value='{{ routeid }}'>{{ routeid }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="form-group">
         <label for="gwlist">Outbound Mappings (comma seprated list of carrier id's)</label>
@@ -233,7 +241,6 @@
       </div>
     </form>
   </div>
-  <!-- /.modal-content -->
 
 {% endblock %}
 
