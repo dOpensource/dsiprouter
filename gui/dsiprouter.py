@@ -338,9 +338,8 @@ def displayOutboundRoutes(db_err=0):
             teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
             teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-            custom_routes = getCustomRoutes()
 
-            return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=custom_routes)
+            return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
         except:
             if db_err <= 3:
                 db.rollback()
@@ -377,6 +376,8 @@ def addUpateOutboundRoutes():
     description = ""
 
     # get form data
+    #if request.form['from_prefix']:
+    #    prefix = request.form['from_prefix']
     if request.form['prefix']:
         prefix = request.form['prefix']
     if request.form['timerec']:
@@ -396,6 +397,12 @@ def addUpateOutboundRoutes():
                               routeid=routeid, gwlist=gwlist, description=description)
         db.add(OMap)
         db.commit()
+        db.flush()
+
+        #Add From/To Prefix Rule Lookup
+        
+
+
     # Updating
     else:
         db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
