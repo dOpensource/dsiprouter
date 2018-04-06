@@ -240,6 +240,7 @@ $('#outboundmapping #open-Update').click(function () {
 
   var ruleid = $(c).find('tr:eq(' + row_index + ') > td.ruleid').text();
   var prefix = $(c).find('tr:eq(' + row_index + ') > td.prefix').text();
+  var from_prefix = $(c).find('tr:eq(' + row_index + ') > td.from_prefix').text();
   var timerec = $(c).find('tr:eq(' + row_index + ') > td.timerec').text();
   var priority = $(c).find('tr:eq(' + row_index + ') > td.priority').text();
   var routeid = $(c).find('tr:eq(' + row_index + ') > td.routeid').text();
@@ -248,6 +249,7 @@ $('#outboundmapping #open-Update').click(function () {
 
   $(".modal-body #ruleid").val(ruleid);
   $(".modal-body #prefix").val(prefix);
+  $(".modal-body #from_prefix").val(from_prefix);
   $(".modal-body #timerec").val(timerec);
   $(".modal-body #priority").val(priority);
   $(".modal-body #routeid").val(routeid);

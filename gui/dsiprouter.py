@@ -402,6 +402,9 @@ def addUpateOutboundRoutes():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
+    if session.get('logged_in') is None:
+        return index()
+
     # group for the default outbound routes
     groupid = 8000
 
@@ -439,14 +442,15 @@ def addUpateOutboundRoutes():
 
     # Adding
     if not ruleid:
-        if from_prefix:
+        if from_prefix != None :
             print("from_prefix: {}".format(from_prefix))
             #return displayOutboundRoutes()
             # Grab the lastest groupid and increment
-            mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid).first()
-           
+            mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
+            db.commit()
+
            #Start LCR routes with a groupid of 10000 
-            if mlcr == None:
+            if mlcr is None:
                 groupid=10000
             else:
                 groupid=int(mlcr.dr_groupid)+1
@@ -468,11 +472,24 @@ def addUpateOutboundRoutes():
 
     # Updating
     else:
-        db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+        OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
             'prefix': prefix, 'timerec': timerec, 'priority': priority,
             'routeid': routeid, 'gwlist': gwlist, 'description': description
         })
         db.commit()
+	
+        if from_prefix:
+            #Update the existing LCR mapping
+
+            # Setup new pattern
+            pattern = from_prefix + "-" + prefix
+
+            OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).first()
+            db.commit()
+
+            db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==OMap.groupid).update({
+              'pattern': pattern, 'from_prefix': from_prefix})
+            db.commit()
 
     return displayOutboundRoutes()
 
@@ -484,10 +501,21 @@ def deleteOutboundRoute():
     Supports rule definitions for Kamailio Drouting module\n
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
+    
 
     ruleid = request.form['ruleid']
+
+    OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).first()
+    db.commit()
+
+    d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==OMap.groupid)
+    d1.delete(synchronize_session=False)
+
     d = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid)
     d.delete(synchronize_session=False)
+   
+    db.commit() 
+    db.flush()
     return displayOutboundRoutes()
 
 
