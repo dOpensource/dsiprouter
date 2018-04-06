@@ -3,7 +3,7 @@ from flask_script import Manager
 import settings
 from importlib import reload
 from shared import *
-from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPFusionPBXDB
+from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPFusionPBXDB, dSIPLCR
 import os
 import subprocess
 import json
@@ -316,6 +316,49 @@ def deleteInboundMapping():
     return displayInboundMapping()
 
 
+@app.route('/teleblock')
+def displayTeleBlock(db_err=0):
+
+
+    if session.get('logged_in'):
+        try:
+
+            teleblock = {}
+            teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
+            teleblock["gw_ip"] = settings.TELEBLOCK_GW_IP
+            teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
+            teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
+            teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
+
+            return render_template('teleblock.html', teleblock=teleblock)
+        
+        except:
+         
+            return render_template('error.html', type="db")         
+
+@app.route('/teleblock', methods=['POST'])
+def addUpdateTeleBlock(db_err=0):
+
+
+    if session.get('logged_in'):
+        try:
+ 
+            # Update the teleblock settings
+            teleblock = {}
+            teleblock['TELEBLOCK_GW_ENABLED'] = request.form.get('gw_enabled', 0)
+            teleblock['TELEBLOCK_GW_IP'] = request.form['gw_ip']
+            teleblock['TELEBLOCK_GW_PORT'] = request.form['gw_port']
+            teleblock['TELEBLOCK_MEDIA_IP'] = request.form['media_ip']
+            teleblock['TELEBLOCK_MEDIA_PORT'] = request.form['media_port']
+
+            updateConfigFile('gui/settings.py', teleblock)
+            reload(settings)
+            return displayTeleBlock()
+
+        except:
+
+            return render_template('error.html', type="db")
+
 @app.route('/outboundroutes')
 def displayOutboundRoutes(db_err=0):
     """
@@ -329,7 +372,7 @@ def displayOutboundRoutes(db_err=0):
 
     if session.get('logged_in'):
         try:
-            rows = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == groupid)
+            rows = db.query(OutboundRoutes).filter((OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(dSIPLCR.from_prefix,dSIPLCR.cost,OutboundRoutes.ruleid, OutboundRoutes.prefix,OutboundRoutes.routeid,OutboundRoutes.gwlist,OutboundRoutes.timerec,OutboundRoutes.priority,OutboundRoutes.description)
 
             teleblock = {}
             teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -344,7 +387,7 @@ def displayOutboundRoutes(db_err=0):
             if db_err <= 3:
                 db.rollback()
                 db_err = db_err + 1
-                return displayPBX(db_err)
+                return displayOutboundRoutes(db_err)
             else:
                 return render_template('error.html', type="db")
     else:
@@ -359,11 +402,14 @@ def addUpateOutboundRoutes():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    # group for outbound routes
+    # group for the default outbound routes
     groupid = 8000
 
     # id in dr_rules table
     ruleid = None
+    from_prefix = None
+    pattern = None
+
     if request.form['ruleid']:
         ruleid = request.form['ruleid']
 
@@ -371,37 +417,54 @@ def addUpateOutboundRoutes():
     prefix = ""
     timerec = ""
     priority = 0
-    routeid = ""
+    routeid = "1"
     gwlist = ""
     description = ""
 
     # get form data
-    #if request.form['from_prefix']:
-    #    prefix = request.form['from_prefix']
+    if request.form['from_prefix']:
+        from_prefix = request.form['from_prefix']
     if request.form['prefix']:
         prefix = request.form['prefix']
     if request.form['timerec']:
         timerec = request.form['timerec']
     if request.form['priority']:
         priority = int(request.form['priority'])
-    if request.form['routeid']:
-        routeid = request.form['routeid']
+    routeid = request.form.get('routeid',"")
     if request.form['gwlist']:
         gwlist = request.form['gwlist']
     if request.form['name']:
         description = 'name:{}'.format(request.form['name'])
 
+
     # Adding
     if not ruleid:
+        if from_prefix:
+            print("from_prefix: {}".format(from_prefix))
+            #return displayOutboundRoutes()
+            # Grab the lastest groupid and increment
+            mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid).first()
+           
+           #Start LCR routes with a groupid of 10000 
+            if mlcr == None:
+                groupid=10000
+            else:
+                groupid=int(mlcr.dr_groupid)+1
+            
+            pattern = from_prefix + "-" + prefix
+
         OMap = OutboundRoutes(groupid=groupid, prefix=prefix, timerec=timerec, priority=priority,
                               routeid=routeid, gwlist=gwlist, description=description)
         db.add(OMap)
         db.commit()
         db.flush()
 
-        #Add From/To Prefix Rule Lookup
-        
-
+	#Add the lcr map
+        if pattern != None:
+            OLCRMap = dSIPLCR(pattern,from_prefix,groupid)
+            db.add(OLCRMap)
+            db.commit()
+            db.flush()
 
     # Updating
     else:
@@ -411,16 +474,6 @@ def addUpateOutboundRoutes():
         })
         db.commit()
 
-    # Update the teleblock settings
-    teleblock = {}
-    teleblock['TELEBLOCK_GW_ENABLED'] = request.form.get('gw_enabled', 0)
-    teleblock['TELEBLOCK_GW_IP'] = request.form['gw_ip']
-    teleblock['TELEBLOCK_GW_PORT'] = request.form['gw_port']
-    teleblock['TELEBLOCK_MEDIA_IP'] = request.form['media_ip']
-    teleblock['TELEBLOCK_MEDIA_PORT'] = request.form['media_port']
-
-    updateConfigFile('gui/settings.py', teleblock)
-    reload(settings)
     return displayOutboundRoutes()
 
 

@@ -258,7 +258,7 @@ $('#outboundmapping #open-Update').click(function () {
 $('#outboundmapping #open-Delete').click(function () {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('outboundmapping');
-  var ruleid = $(c).find('tr:eq(' + row_index + ') td:ruleid').text();
+  var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
   $(".modal-body #ruleid").val(ruleid);
 });
 

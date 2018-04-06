@@ -85,15 +85,19 @@ class CustomRouting(object):
     pass
 
 
-class LocaleLookup(object):
+class dSIPLCR(object):
     """
-    Schema for locale_lookup table\n
+    Schema for LCR lookup\n
+    The pattern field contains a complex key that includes FROM XNPA and TO NPA\n
+    There the pattern field looks like this XNPA-NPA\n
+    The dr_groupid field contains a dynamic routing group that maps to a gateway\n
     """
 
-    def __init__(self, locale, fprefix, tprefix):
-        self.locale = locale
-        self.fprefix = fprefix
-        self.tprefix = tprefix
+    def __init__(self, pattern, from_prefix, dr_groupid, cost=0.00):
+        self.pattern = pattern
+        self.from_prefix = from_prefix
+        self.dr_groupid = dr_groupid
+        self.cost = cost
 
     pass
 
@@ -152,20 +156,19 @@ def loadSession():
     outboundroutes = Table('dr_rules', metadata, autoload=True)
     inboundmapping = Table('dr_rules', metadata, autoload=True)
     subscriber = Table('subscriber', metadata, autoload=True)
-    # fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
+    #fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
     fusionpbx_db = Table('dsip_fusionpbx_db', metadata, autoload=True)
-    customrouting = Table('dr_custom_rules', metadata, autoload=True)
-    localelookup = Table('locale_lookup', metadata, autoload=True)
+    dsip_lcr  = Table('dsip_lcr', metadata, autoload=True)
 
     mapper(Gateways, dr_gateways)
     mapper(Address, address)
     mapper(InboundMapping, inboundmapping)
     mapper(OutboundRoutes, outboundroutes)
-    # mapper(dSIPFusionPBXMapping,fusionpbx_mappings)
+    #mapper(dSIPFusionPBXMapping,fusionpbx_mappings)
     mapper(dSIPFusionPBXDB, fusionpbx_db)
     mapper(Subscribers, subscriber)
-    mapper(CustomRouting, customrouting)
-    mapper(LocaleLookup, localelookup)
+    #mapper(CustomRouting, customrouting)
+    mapper(dSIPLCR, dsip_lcr)
 
     Session = sessionmaker(bind=engine)
     session = Session()
