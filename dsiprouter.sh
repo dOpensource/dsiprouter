@@ -7,13 +7,13 @@
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
-SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
+SYSTEM_KAMAILIO_CONF_DIR="/etc/kamailio"
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
 
 #Default MYSQL install values
 
-MYSQL_KAM_DEF_USERNAME=kamailio
+MYSQL_KAM_DEF_USERNAME="kamailio"
 MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
 
@@ -24,10 +24,10 @@ DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT[
 
 if [ -f /etc/redhat-release ]; then
  	DISTRO="centos"
-    elif [ -f /etc/debian_version ]; then
+elif [ -f /etc/debian_version ]; then
 	DISTRO="debian"
 	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
-    fi  
+fi
 
 
 function validateOSInfo {
@@ -83,6 +83,11 @@ exit
 
 }
 
+# set some of the default settings
+function configurePythonSettings {
+    sed -i -r "s|(KAM_CFG_PATH[[:space:]]?=.*)|KAM_CFG_PATH = '${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg'|g" gui/settings.py
+}
+
 function configureKamailio {
 
 #echo -e "[Database Configuration]\n"
@@ -98,7 +103,7 @@ function configureKamailio {
 if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
     MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_DEF_PASSWORD"
 else
-    MYSQL_KAM_PASSWORD=-p$MYSQL_KAM__PASSWORD
+    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM__PASSWORD"
 fi
 
 if [ "$MYSQL_KAM_USERNAME" == "" ]; then
@@ -124,10 +129,12 @@ mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "drop ta
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
         mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
-        sqlscript=`find / -name drouting-create.sql | grep mysql | grep 4. | sed -n 1p`
+        sqlscript=`find / -name 'drouting-create.sql' | grep mysql | grep 4. | sed -n 1p`
         mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
-
 fi
+
+# Install schema for custom drouting
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
 
 
 # Import Carrier Addresses
@@ -467,7 +474,6 @@ if [ ! -f "./.installed" ]; then
         yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
-	
 
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to install Kamailio...\n"
@@ -480,15 +486,17 @@ if [ ! -f "./.installed" ]; then
 		fi
 		echo -e "Attempting to install dSIPRouter...\n" 	
 		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT} $PYTHON_CMD
-
-        fi
+    fi
 
 	#Configure Kamailio and Install dSIPRouter Modules
 	if [ $? -eq 0 ]; then
-
 		configureKamailio
-    		installModules 
+        installModules
 	fi
+
+	# set some defaults in settings.py
+	configurePythonSettings
+
 	# Restart Kamailio with the new configurations
 	systemctl restart kamailio
 	if [ $? -eq 0 ]; then

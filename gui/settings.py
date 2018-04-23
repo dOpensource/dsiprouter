@@ -1,7 +1,7 @@
 # dSIPRouter settings
-# dSIPRouter will need to be restarted for any changes to take effect - execept for Teleblock settings
+# dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
 
-DSIP_PORT=5000
+DSIP_PORT = 5000
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
@@ -20,6 +20,7 @@ KAM_DB_USER = 'kamailio'
 KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
+KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 
 #SQLAlchemy Settings
@@ -36,7 +37,7 @@ FLT_PBX = 9
 DOMAIN = 'sip.dsiprouter.org'
 
 # Teleblock Settings
-TELEBLOCK_GW_ENABLED = '0'
+TELEBLOCK_GW_ENABLED = 0
 TELEBLOCK_GW_IP = '66.203.90.197'
 TELEBLOCK_GW_PORT = '5066'
 TELEBLOCK_MEDIA_IP = ''

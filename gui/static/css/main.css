@@ -240,3 +240,61 @@ a.currentlink{
    margin-right: auto;
    margin-left: auto;
 }
+
+.navBarButtons {
+  float: right;
+}
+
+/* horizontal wrapper for block elements */
+.wrapper-horizontal > div,
+.wrapper-horizontal > h1,
+.wrapper-horizontal > h2,
+.wrapper-horizontal > h3,
+.wrapper-horizontal > h4,
+.wrapper-horizontal > h5,
+.wrapper-horizontal > h6,
+.wrapper-horizontal > p,
+.wrapper-horizontal > form,
+.wrapper-horizontal > header,
+.wrapper-horizontal > footer,
+.wrapper-horizontal > section,
+.wrapper-horizontal > li,
+.wrapper-horizontal > ul,
+.wrapper-horizontal > ol,
+.wrapper-horizontal > table,
+.wrapper-horizontal > main,
+.wrapper-horizontal > nav,
+.wrapper-horizontal > pre,
+.wrapper-horizontal > noscript,
+.wrapper-horizontal > output,
+.wrapper-horizontal > section,
+.wrapper-horizontal > video {
+  display: inline-block;
+}
+
+/* vertical wrapper for block elements */
+.wrapper-vertical > div,
+.wrapper-vertical > h1,
+.wrapper-vertical > h2,
+.wrapper-vertical > h3,
+.wrapper-vertical > h4,
+.wrapper-vertical > h5,
+.wrapper-vertical > h6,
+.wrapper-vertical > p,
+.wrapper-vertical > form,
+.wrapper-vertical > header,
+.wrapper-vertical > footer,
+.wrapper-vertical > section,
+.wrapper-vertical > li,
+.wrapper-vertical > ul,
+.wrapper-vertical > ol,
+.wrapper-vertical > table,
+.wrapper-vertical > main,
+.wrapper-vertical > nav,
+.wrapper-vertical > pre,
+.wrapper-vertical > noscript,
+.wrapper-vertical > output,
+.wrapper-vertical > section,
+.wrapper-vertical > video {
+  display: block;
+}
