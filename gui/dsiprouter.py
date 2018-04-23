@@ -523,6 +523,7 @@ def deleteOutboundRoute():
 def reloadkam():
     return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
     return_code += subprocess.call(['kamcmd', 'drouting.reload'])
+    return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
     return_code += subprocess.call(
         ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
 
