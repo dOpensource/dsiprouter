@@ -149,7 +149,7 @@ fi
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
 
 # Setup Outbound Rules to use Flowroute by default
-mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
+mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
 
 cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
