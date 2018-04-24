@@ -7,7 +7,7 @@ PASSWORD = 'admin'
 
 # dSIPRouter internal settings
 
-VERSION = 0.34
+VERSION = 0.35
 DEBUG = 0
 
 # MySQL settings for kamailio
