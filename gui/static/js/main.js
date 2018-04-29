@@ -141,6 +141,8 @@ $('#open-CarrierAdd').click(function () {
   $(".modal-body #fusionpbx_db_server").val('');
   $(".modal-body #fusionpbx_db_username").val('');
   $(".modal-body #fusionpbx_db_password").val('');
+  $(".modal-body #pbx_username").val('');
+  $(".modal-body #pbx_password").val('');
   $(".modal-body #toggleFusionPBXDomainAdd").bootstrapToggle('off');
 });
 
@@ -194,6 +196,8 @@ $('#carriers #open-Update').click(function () {
     //Set the radio button to true
     $("div #authtype_4").prop("checked", true);
     $('#userpwd_enabled2').removeClass("hidden");
+    //Disable IP Address field because it should be configured during registration
+    $('#ip_addr').prop('disabled',true);
   }
   else {  //IP auth is enabled
     //Set the radio button to true
@@ -300,10 +304,12 @@ $('#authoptions').change(function () {
   if ($("div #authtype_2").is(":checked")) {
     $('#userpwd_enabled').removeClass("hidden");
     $('#userpwd_enabled').prop("hidden", false);
+    $('#ip_addr').prop('disabled',true);
   }
   else {
     $('#userpwd_enabled').addClass("hidden");
     $('#userpwd_enabled').prop("hidden", true);
+    $('#ip_addr').prop('disabled',false);
   }
 });
 
@@ -313,10 +319,12 @@ $('#authoptions2').change(function () {
   if ($("div #authtype_4").is(":checked")) {
     $('#userpwd_enabled2').removeClass("hidden");
     $('#userpwd_enabled2').prop("hidden", false);
+    $('#ip_addr').prop('disabled',true);
   }
   else {
     $('#userpwd_enabled2').addClass("hidden");
     $('#userpwd_enabled2').prop("hidden", true);
+    $('#ip_addr').prop('disabled',false);
   }
 });
 

@@ -145,7 +145,7 @@ def getDBURI():
 
 
 # Make the engine global
-engine = create_engine(getDBURI(), echo=True, pool_recycle=10)
+engine = create_engine(getDBURI(), echo=True, pool_recycle=10,isolation_level="READ UNCOMMITTED")
 
 
 def loadSession():
