@@ -138,8 +138,8 @@ def displayPBX(db_err=0):
 def addUpdatePBX():
     gwid = request.form['gwid']
     name = request.form['name']
-    ip_addr = request.form['ip_addr']
-    strip = request.form['strip']
+    ip_addr = request.form.get("ip_addr","")
+    strip = request.form.get('strip',"0")
     prefix = request.form['prefix']
     authtype = request.form['authtype']
     fusionpbx_db_enabled = request.form.get('fusionpbx_db_enabled', "0")
@@ -201,7 +201,6 @@ def addUpdatePBX():
             FusionPBXDB = dSIPFusionPBXDB(gwid, fusionpbx_db_server, fusionpbx_db_username, fusionpbx_db_password,
                                           int(fusionpbx_db_enabled))
             db.add(FusionPBXDB)
-            db.query(Address).filter(Address.tag == "name:" + name).update({'ip_addr': ip_addr})
 
         # Update Subscribers table auth credentials are being used
         if authtype == "userpwd":
@@ -219,7 +218,8 @@ def addUpdatePBX():
             else:
                 Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, Gateways.gwid)
                 db.add(Subscriber)
-
+        else: #Update the Address table with the new ip address
+                db.query(Address).filter(Address.tag == "name:" + name).update({'ip_addr': ip_addr})
         db.commit()
         return displayPBX()
 
