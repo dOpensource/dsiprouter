@@ -22,6 +22,37 @@ mysql -s -N $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_KAM_DBNAME < ./gui/
 
 }
 
+function installNginx {
+
+	apt-get install -y \
+    	apt-transport-https \
+    	ca-certificates \
+    	software-properties-common
+
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+
+	add-apt-repository \
+   	"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   	$(lsb_release -cs) \
+   	stable"
+
+	apt-get update
+
+	apt-get install -y docker-engine
+	if [ $? == 0 ]; then
+		echo "Docker is installed"
+	fi
+
+	# Install Nginx
+	abspath=`pwd`/gui/modules/fusionpbx
+	echo $abspath
+	docker create nginx
+	#docker run --name docker-nginx -p 80:80  -v ${abspath}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
+
+}
+
+
 function install {
 
 if [ $ENABLED == "0" ];then
@@ -29,6 +60,7 @@ if [ $ENABLED == "0" ];then
 fi
 
 installSQL
+installNginx
 }
 
 
@@ -36,6 +68,7 @@ installSQL
 function uninstall {
 
 echo ""
+uninstallNginx
 
 }
 

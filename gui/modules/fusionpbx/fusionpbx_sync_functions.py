@@ -2,6 +2,7 @@ import psycopg2
 import MySQLdb
 import os
 import subprocess
+import docker 
 
 #Obtain a set of FusionPBX systems that contains domains that Kamailio will route traffic to.
 def get_sources(db):
@@ -96,6 +97,67 @@ def reloadkam(kamcmd_path):
        except:
            return False
 
+def update_nginx(sources):
+
+    #Connect to docker
+    client = docker.from_env()
+    
+    # If there isn't any FusionPBX sources then just shutdown the container
+    if len(sources) < 1:
+        containers = client.containers.list()
+        for container in containers:
+            if container.name == "dsiprouter-nginx":
+                #Stop the container
+                container.stop()
+                container.remove(force=True)
+                print("Stopped nginx container")
+        return
+       
+    #Create the Nginx file
+
+    serverList = ""
+    for source in sources:
+        serverList += "server " + str(source) + ";\n"
+
+    #print(serverList)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    print(script_dir)
+
+    input = open(script_dir + "/dsiprouter.nginx.tpl")
+    output = open(script_dir + "/dsiprouter.nginx","w")
+    output.write(input.read().replace("##SERVERLIST##", serverList))
+    output.close()
+    input.close()
+
+
+    #Check if dsiprouter-nginx is running. If so, reload nginx
+
+    containers = client.containers.list()
+    for container in containers:
+        if container.name == "dsiprouter-nginx":
+            #Execute a command to reload nginx
+            container.exec_run("nginx -s reload")
+            print("Reloaded nginx") 
+            return
+
+    #Start the container if one is not running
+    try:
+           print("trying to create a container") 
+           host_volume_path = script_dir + "/dsiprouter.nginx"
+           #host_volume_path = script_dir
+           print(host_volume_path)
+           client.containers.run(image='nginx:latest',
+		name="dsiprouter-nginx",
+		ports={'80/tcp':'80/tcp'},
+                volumes={host_volume_path: {'bind':'/etc/nginx/conf.d/default.conf','mode':'rw'}},
+		detach=True)
+           print("created a container") 
+    except Exception as e: 
+    
+           print(e)
+                
+
+
 def run_sync(settings):
     
     #Set the system where sync'd data will be stored.  
@@ -120,6 +182,11 @@ def run_sync(settings):
     #Reload Kamailio
     reloadkam(settings.KAM_KAMCMD_PATH)
 
+    #Update Nginx configuration file for HTTP Provisioning and start docker container if we have FusionPBX systems
+    #update_nginx(sources[key])
+    if sources is not None:
+        sources = list(sources.keys())
+        update_nginx(sources)
 
 def main():
    
@@ -145,6 +212,7 @@ def main():
 
     #Reload Kamailio
     reloadkam('/usr/sbin/kamcmd')
+
 
 if __name__== "__main__":
     main()
