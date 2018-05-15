@@ -103,6 +103,7 @@ def deleteCarriers():
     d.delete(synchronize_session=False)
     a = db.query(Address).filter(Address.tag == 'name:' + name)
     a.delete(synchronize_session=False)
+    db.commit()
     return displayCarriers()
 
 
