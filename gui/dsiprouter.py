@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for
+from flask import Flask, render_template, request, redirect, abort, flash, session, url_for,send_from_directory
 from flask_script import Manager
 import settings
 from importlib import reload
@@ -22,6 +22,10 @@ def index():
         action = request.args.get('action')
         return render_template('dashboard.html', show_add_onload=action, version=settings.VERSION)
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/login', methods=['POST'])
 def login():

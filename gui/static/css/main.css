@@ -4,6 +4,8 @@
 .wrap .nav-bar .navbar-brand {
   margin-top: 15px;
   color: #FFB266;
+  height: 70px;
+  padding: 9px 40px;
 }
 .wrap .nav-bar .navbar-form {
   margin-top: 25px;
@@ -65,7 +67,7 @@
   z-index: -1;
   background: #404040;
   width: 22em;
-  padding-top: 40px;
+  padding-top: 10px;
   padding-right: 20px;
   padding-left: 10px;
   float: left;
@@ -212,22 +214,31 @@
 }
 
 .panel-info>.panel-heading {
-    color: #FFB266;
+    color: #FF8100;
     background-color: #000000;
-    border-color: #FFB266;;
+    border-color: #FF8100;
 }
 
 .panel-info {
-    border-color: #FFB266;
+    border-color: #FF8100;
+}
+
+.loginlogo {
+   text-align: center;
+
 }
 
 .navlink a:link, a:visited, a:hover {
 	color: #9d9d9d;
 }
 
+.a {
+    color: #9d9d9d;
+    text-decoration: none;
+}
 a.currentlink{
 
-	color: #FFB266;
+	color: #FF8100;
 }
 
 .label-toggle{

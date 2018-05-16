@@ -1,4 +1,4 @@
-$(function () {
+$(function(){
   var accordionActive = false;
 
   $(window).on('resize', function () {
