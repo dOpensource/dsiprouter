@@ -221,7 +221,7 @@ def addUpdatePBX():
                 db.query(Subscribers).filter(Subscribers.rpid == gwid).update(
                     {'username': pbx_username, 'password': pbx_password, 'rpid': gwid})
             else:
-                Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, Gateways.gwid)
+                Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, gwid)
                 db.add(Subscriber)
         else: #Update the Address table with the new ip address
                 db.query(Address).filter(Address.tag == "name:" + name).update({'ip_addr': ip_addr})
