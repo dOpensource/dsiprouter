@@ -8,6 +8,13 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 **Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
+### Sponsors
+
+We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for believing in us and becoming our first sponsor. 
+
+![Skyetel Logo](https://static1.squarespace.com/static/59c15558f6576e9a0ca6ef65/t/5accf0bc70a6adaedb9bf1c5/1524246789021/?format=1500w =120x120)
+
+
 ### Supported Platforms:
 
 We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or [purchasing support](https://dopensource.com/shop) so that we can provide more officially supported platform variations and to add additional features to make Kamailio and RTPProxy much easier to learn and use.
