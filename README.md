@@ -12,7 +12,7 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for believing in us and becoming our first sponsor. 
 
-![Skyetel Logo](https://static1.squarespace.com/static/59c15558f6576e9a0ca6ef65/t/5accf0bc70a6adaedb9bf1c5/1524246789021/ = 120x)
+![Skyetel Logo]()
 
 
 ### Supported Platforms:
