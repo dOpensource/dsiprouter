@@ -57,6 +57,7 @@ Kamailio will be automatically installed along with dSIPRouter.  Must be install
 ```
 apt-get update
 apt-get install -y git curl
+cd /opt
 git clone https://github.com/dOpensource/dsiprouter.git
 cd dsiprouter
 ./dsiprouter.sh install
@@ -70,6 +71,7 @@ If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the com
 ```
 apt-get update
 apt-get install -y git curl
+cd /opt
 git clone https://github.com/dOpensource/dsiprouter.git
 cd dsiprouter
 ./dsiprouter.sh install -rtpengine
