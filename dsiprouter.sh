@@ -192,6 +192,7 @@ fi
 function startRTPEngine {
 
 if [ $DISTRO == "debian" ]; then
+	echo $DISTRO
 	systemctl start ngcp-rtpengine-daemon
 fi
 
@@ -316,8 +317,8 @@ if [ $DISTRO == "debian" ]; then
 	echo -e "
 	[rtpengine]
 	table = -1
-	interface = $EXTERNAL_IP
-	listen-udp = 7722
+	interface = $INTERNAL_IP!$EXTERNAL_IP
+	listen-ng = 7722
 	port-min = 10000
 	port-max = 30000
         log-level = 7
@@ -761,6 +762,10 @@ function processCMD {
 			if [ "$1" == "-debug" ]; then
                                 DEBUG=1
 				set -x
+				shift
+                        fi
+			if [ "$1" == "-rtpengine" ]; then
+				startRTPEngine
                         fi
 			start
 			shift
@@ -775,7 +780,7 @@ function processCMD {
 			if [ "$1" == "-debug" ]; then
                                 DEBUG=1
 				set -x
-            fi
+            		fi
 			stop 
  			start
 		 	shift
@@ -789,18 +794,18 @@ function processCMD {
 			configureKamailio
 			exit 0
 			;;	
-            installmodules)
-            installModules
-            exit 0
-            ;;
-            fixmpath)
-            fixMPATH
-            exit 0
-            ;;
-            resetpassword)
-            resetPassword
-            exit 0
-            ;;
+	                installmodules)
+            		installModules
+            		exit 0
+            		;;
+            		fixmpath)
+            		fixMPATH
+            		exit 0
+            		;;
+            		resetpassword)
+            		resetPassword
+            		exit 0
+            		;;
 			-h)
 			usageOptions
 			exit 0
