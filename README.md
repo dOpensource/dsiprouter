@@ -61,6 +61,7 @@ git clone https://github.com/dOpensource/dsiprouter.git
 cd dsiprouter
 ./dsiprouter.sh install
 ```
+Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
 
 #### Install (Proxy audio (RTP) traffic)
 
@@ -74,7 +75,7 @@ cd dsiprouter
 ./dsiprouter.sh install -rtpengine
 ```
 
-Once the install is complete, dSIPRouter will automatically start the HTTP server and the RTPEngine if it was installed.    
+Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)   
 
 ### Login 
 
