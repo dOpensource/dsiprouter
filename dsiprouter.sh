@@ -353,7 +353,7 @@ if [ $DISTRO == "debian" ]; then
 	if [ $? -eq 1 ]; then
 
 		/usr/sbin/rtpengine --config-file=/etc/rtpengine/rtpengine.conf --pidfile=/var/run/ngcp-rtpengine-daemon.pid
-	if
+	fi
 
 	#File to signify that the install happened
         if [ $? -eq 0 ]; then
