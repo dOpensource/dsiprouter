@@ -192,7 +192,6 @@ fi
 function startRTPEngine {
 
 if [ $DISTRO == "debian" ]; then
-	echo $DISTRO
 	systemctl start ngcp-rtpengine-daemon
 fi
 
