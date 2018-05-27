@@ -8,6 +8,15 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 **Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
+### Demo System
+
+You can checkout our demo system, which is located here:
+
+[http://demo.dsiprouter.org](http://demo.dsiprouter.org0
+
+username: admin
+password: YzAzOWI5ZjdiMDcz
+
 ### Sponsors
 
 We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for believing in us and becoming our first sponsor. 
