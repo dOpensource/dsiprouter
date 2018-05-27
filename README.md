@@ -12,9 +12,10 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 You can checkout our demo system, which is located here:
 
-[http://demo.dsiprouter.org](http://demo.dsiprouter.org0
+[http://demo.dsiprouter.org](http://demo.dsiprouter.org)
 
 username: admin
+
 password: YzAzOWI5ZjdiMDcz
 
 ### Sponsors
