@@ -377,7 +377,7 @@ def displayOutboundRoutes(db_err=0):
 
     if session.get('logged_in'):
         try:
-            rows = db.query(OutboundRoutes).filter((OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(dSIPLCR.from_prefix,dSIPLCR.cost,OutboundRoutes.ruleid, OutboundRoutes.prefix,OutboundRoutes.routeid,OutboundRoutes.gwlist,OutboundRoutes.timerec,OutboundRoutes.priority,OutboundRoutes.description)
+            rows = db.query(OutboundRoutes).filter((OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(dSIPLCR.from_prefix,dSIPLCR.cost,dSIPLCR.dr_groupid,OutboundRoutes.ruleid, OutboundRoutes.prefix,OutboundRoutes.routeid,OutboundRoutes.gwlist,OutboundRoutes.timerec,OutboundRoutes.priority,OutboundRoutes.description)
 
             teleblock = {}
             teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -411,7 +411,7 @@ def addUpateOutboundRoutes():
         return index()
 
     # group for the default outbound routes
-    groupid = 8000
+    default_carrier_group = 8000
 
     # id in dr_rules table
     ruleid = None
@@ -420,6 +420,12 @@ def addUpateOutboundRoutes():
 
     if request.form['ruleid']:
         ruleid = request.form['ruleid']
+
+    groupid = request.form.get('groupid',default_carrier_group)
+    if isinstance(groupid,str):
+        if len(groupid) == 0:
+            groupid = 8000
+    
 
     # set default values
     prefix = ""
@@ -477,24 +483,52 @@ def addUpateOutboundRoutes():
 
     # Updating
     else:
-        OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
-            'prefix': prefix, 'timerec': timerec, 'priority': priority,
-            'routeid': routeid, 'gwlist': gwlist, 'description': description
-        })
-        db.commit()
 	
         if from_prefix:
             #Update the existing LCR mapping
+            if groupid >= 10000:
+                #Update the existing lcr rule with the new pattern and prefix
+               
+                # Setup new pattern
+                pattern = from_prefix + "-" + prefix
+                
+                # Update the database
+                db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==groupid).update({'pattern': pattern, 'from_prefix': from_prefix})
+                db.commit()
+            else: #Create new LCR Mapping
+                # Grab the lastest groupid and increment
+                mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
+                db.commit()
+           
+                #Start LCR routes with a groupid of 10000 
+                if mlcr is None:
+                    groupid=10000
+                else:
+                    groupid=int(mlcr.dr_groupid)+1
+	        
+                # Setup new pattern
+                pattern = from_prefix + "-" + prefix
+                
+                #Add the lcr map
+                if pattern != None:
+                    OLCRMap = dSIPLCR(pattern,from_prefix,groupid)
+                    db.add(OLCRMap)
+                    db.commit()
+                    db.flush()
 
-            # Setup new pattern
-            pattern = from_prefix + "-" + prefix
-
-            OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).first()
+                OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+                    'groupid': groupid, 'prefix': prefix, 'timerec': timerec, 'priority': priority,
+                    'routeid': routeid, 'gwlist': gwlist, 'description': description
+                })
+                db.commit()
+        if not from_prefix: #No from_prefix - just do a standard update to the outboundroutes
+            OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+            'prefix': prefix, 'timerec': timerec, 'priority': priority,
+            'routeid': routeid, 'gwlist': gwlist, 'description': description
+            })
             db.commit()
 
-            db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==OMap.groupid).update({
-              'pattern': pattern, 'from_prefix': from_prefix})
-            db.commit()
+
 
     return displayOutboundRoutes()
 

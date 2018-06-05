@@ -32,6 +32,7 @@
     <tr class='element-row'>
       <th><input type="checkbox" id="checkall"/></th>
       <th data-field="ruleid">Rule ID</th>
+      <th data-field="groupid" class="hidden">Group ID</th>
       <th data-field="from_prefix">From Prefix</th>
       <th data-field="prefix">To Prefix</th>
       <th data-field="timerec">Recurrence</th>
@@ -47,6 +48,7 @@
       <tr class='element-row'>
         <td><input type="checkbox" class="checkthis" value="1"/></td>
         <td class='ruleid'>{{ row.ruleid }}</td>
+        <td class='groupid hidden'>{{ row.groupid }}</td>
         <td class='from_prefix'>{{ row.from_prefix|noneFilter() }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
         <td class="timerec">{{ row.timerec }}</td>
@@ -88,6 +90,7 @@
   <div class="modal-body">
     <form action="/outboundroutes" method="POST" role="form">
       <input type="hidden" id="ruleid" name="ruleid">
+      <input type="hidden" id="groupid" name="groupid">
       <div class="form-group">
         <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name (Optional)"
                autofocus="autofocus">
@@ -202,6 +205,7 @@
       <div class="modal-body">
         <div class="form-group">
           <input class="form-control " type="hidden" id="ruleid" name="ruleid">
+          <input class="form-control " type="hidden" id="groupid" name="groupid">
         </div>
 
         <div class="alert alert-danger">
