@@ -308,4 +308,8 @@ a.currentlink{
 .wrapper-vertical > section,
 .wrapper-vertical > video {
   display: block;
+
+.hidden{
+  display:none;
+  visibility:hidden;
 }

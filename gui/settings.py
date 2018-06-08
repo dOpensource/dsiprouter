@@ -3,7 +3,7 @@
 
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'admin'
+PASSWORD = 'MzgzYjQwMTI5YTY3'
 
 # dSIPRouter internal settings
 
