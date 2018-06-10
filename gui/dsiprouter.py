@@ -539,10 +539,10 @@ def addUpateOutboundRoutes():
                 db.commit()
             elif (int(groupid) >=10000): #Update existing pattern
                 db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == groupid).update({
-                    'pattern':pattern })
+                    'pattern':pattern, 'from_prefix':from_prefix })
 
 
-            #Updated the dr_rules 
+            #Update the dr_rules table 
             OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
             'prefix': prefix, 'groupid': groupid,'timerec': timerec, 'priority': priority,
             'routeid': routeid, 'gwlist': gwlist, 'description': description
