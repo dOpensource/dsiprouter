@@ -3,11 +3,11 @@
 
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'MzgzYjQwMTI5YTY3'
+PASSWORD = 'admin'
 
 # dSIPRouter internal settings
 
-VERSION = 0.40
+VERSION = 0.41
 DEBUG = 0
 
 # MySQL settings for kamailio
