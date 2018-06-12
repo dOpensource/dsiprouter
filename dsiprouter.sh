@@ -351,7 +351,7 @@ if [ $DISTRO == "debian" ]; then
 	[rtpengine]
 	table = -1
 	interface = $INTERFACE
-	listen-udp = 7722
+	listen-ng = 7722
 	port-min = 10000
 	port-max = 30000
         log-level = 7
@@ -453,7 +453,7 @@ if [ $DISTRO == "centos" ]; then
 		systemctl restart rsyslog
 
 		#Setup Firewall rules for RTPEngine
-		firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+		firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
 		firewall-cmd --reload
 
 		#Enable the RTPEngine to start during boot
