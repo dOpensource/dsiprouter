@@ -161,7 +161,7 @@ ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg 
 fixMPATH
 
 #Enable SERVERNAT
-if [ "$SERVERNAT" == 1 ]; then
+if [ "$SERVERNAT" == "1" ]; then
 	enableSERVERNAT
 
 fi
@@ -340,10 +340,10 @@ if [ $DISTRO == "debian" ]; then
 
 	#cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
 
-	if [ "$SERVERNAT" == 0 ]; then
-		$INTERFACE = $EXTERNAL_IP
+	if [ "$SERVERNAT" == "0" ]; then
+		INTERFACE=$EXTERNAL_IP
 	else
-		$INTERFACE = $INTERNAL_IP!$EXTERNAL_IP
+		INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
 
 	fi
 
@@ -777,7 +777,6 @@ function processCMD {
 			shift
 			if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
 				SERVERNAT=1
-				enableSERVERNAT
 				installRTPEngine
 			
 			elif [ "$1" == "-rtpengine" ]; then
@@ -821,6 +820,10 @@ function processCMD {
 			exit 0
 			;;
 			rtpengineonly)
+			shift
+			if [ "$1" == "-servernat" ]; then
+				SERVERNAT=1
+			fi
 			installRTPEngine
 			exit 0
 			;;
