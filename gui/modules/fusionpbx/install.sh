@@ -29,7 +29,7 @@ function installNginx {
     	ca-certificates \
     	software-properties-common
 
-	curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+	curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 
 
 	add-apt-repository \
@@ -81,7 +81,9 @@ function uninstallNginx {
 	#	echo "Removed the docker repository"
 	#fi
 
-	# Stop trusting the docker key #TODO
+	# Stop trusting the docker key
+	key=`apt-key list | grep -B 1 docker | head -n1`
+	apt-key del $key
 }
 
 
