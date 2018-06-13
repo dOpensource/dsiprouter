@@ -428,6 +428,7 @@ def addUpateOutboundRoutes():
     
 
     # set default values
+    #from_prefix = ""
     prefix = ""
     timerec = ""
     priority = 0
@@ -453,8 +454,8 @@ def addUpateOutboundRoutes():
 
     # Adding
     if not ruleid:
-        if len(from_prefix) > 0 and len(prefix) == 0 :
-            return displayOutboundRoutes()
+        #if len(from_prefix) > 0 and len(prefix) == 0 :
+        #    return displayOutboundRoutes()
         if from_prefix != None :
             print("from_prefix: {}".format(from_prefix))
             #return displayOutboundRoutes()
