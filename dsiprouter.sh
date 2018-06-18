@@ -3,7 +3,7 @@
 #set -x
 
 #Define some global variables
-
+SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
@@ -160,6 +160,33 @@ ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg 
 #Fix the mpath
 fixMPATH
 
+#Enable SERVERNAT
+if [ "$SERVERNAT" == "1" ]; then
+	enableSERVERNAT
+
+fi
+}
+
+function enableSERVERNAT {
+
+	
+	EXTERNAL_IP=`curl -s ip.alt.io`
+	INTERNAL_IP=`hostname -I | awk '{print $1}'`
+        INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)	
+
+	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+
+
+}
+
+function disableSERVERNAT {
+
+
+	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+
 }
 
 #Try to locate the Kamailio modules directory.  It will use the last modules directory found
@@ -313,11 +340,18 @@ if [ $DISTRO == "debian" ]; then
 
 	#cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
 
+	if [ "$SERVERNAT" == "0" ]; then
+		INTERFACE=$EXTERNAL_IP
+	else
+		INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
+
+	fi
+
 	echo -e "
 	[rtpengine]
 	table = -1
-	interface = $EXTERNAL_IP
-	listen-udp = 7722
+	interface = $INTERFACE
+	listen-ng = 7722
 	port-min = 10000
 	port-max = 30000
         log-level = 7
@@ -419,7 +453,7 @@ if [ $DISTRO == "centos" ]; then
 		systemctl restart rsyslog
 
 		#Setup Firewall rules for RTPEngine
-		firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+		firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
 		firewall-cmd --reload
 
 		#Enable the RTPEngine to start during boot
@@ -719,7 +753,7 @@ echo -e "username: admin\npassword:$password\n"
 
 function usageOptions {
 
- echo -e "\nUsage: $0 install|uninstall [-rtpengine]"
+ echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
  echo -e "Usage: $0 start|stop|restart"
  echo -e "Usage: $0 resetpassword"
  echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio." 
@@ -741,7 +775,11 @@ function processCMD {
 		case $key in
 			install)
 			shift
-			if [ "$1" == "-rtpengine" ]; then
+			if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
+				SERVERNAT=1
+				installRTPEngine
+			
+			elif [ "$1" == "-rtpengine" ]; then
 				installRTPEngine
 			fi
 			install
@@ -782,6 +820,10 @@ function processCMD {
 			exit 0
 			;;
 			rtpengineonly)
+			shift
+			if [ "$1" == "-servernat" ]; then
+				SERVERNAT=1
+			fi
 			installRTPEngine
 			exit 0
 			;;
@@ -797,6 +839,16 @@ function processCMD {
             fixMPATH
             exit 0
             ;;
+    	    enableservernat)
+	    enableSERVERNAT
+	    echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	    exit 0
+	    ;;
+    	    disableservernat)
+	    disableSERVERNAT
+	    echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	    exit 0
+	    ;;
             resetpassword)
             resetPassword
             exit 0

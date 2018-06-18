@@ -243,6 +243,7 @@ $('#outboundmapping #open-Update').click(function () {
   var c = document.getElementById('outboundmapping');
 
   var ruleid = $(c).find('tr:eq(' + row_index + ') > td.ruleid').text();
+  var groupid = $(c).find('tr:eq(' + row_index + ') > td.groupid').text();
   var prefix = $(c).find('tr:eq(' + row_index + ') > td.prefix').text();
   var from_prefix = $(c).find('tr:eq(' + row_index + ') > td.from_prefix').text();
   var timerec = $(c).find('tr:eq(' + row_index + ') > td.timerec').text();
@@ -252,6 +253,7 @@ $('#outboundmapping #open-Update').click(function () {
   var name = $(c).find('tr:eq(' + row_index + ') > td.description').text();
 
   $(".modal-body #ruleid").val(ruleid);
+  $(".modal-body #groupid").val(groupid);
   $(".modal-body #prefix").val(prefix);
   $(".modal-body #from_prefix").val(from_prefix);
   $(".modal-body #timerec").val(timerec);

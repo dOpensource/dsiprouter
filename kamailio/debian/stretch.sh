@@ -56,6 +56,9 @@ fi
 
 firewall-cmd --reload
 
+#Setup logrotate
+cp ./dsiprouter/debian/logrotate/* /etc/logrotate.d
+
 #Start Kamailio
 #systemctl start kamailio
 #return #?
@@ -89,6 +92,10 @@ if [ -n "$DSIP_PORT" ]; then
 fi
 
 firewall-cmd --reload
+
+#Remove logrotate settings
+rm /etc/logrotate.d/kamailio
+rm /etc/logrotate.d/rtpengine
 
 }
 
