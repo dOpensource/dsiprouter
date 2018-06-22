@@ -99,6 +99,7 @@ def reloadkam(kamcmd_path):
 
 def update_nginx(sources):
 
+    print("Updating Nginx")
     #Connect to docker
     client = docker.from_env()
     
@@ -144,12 +145,13 @@ def update_nginx(sources):
     try:
            print("trying to create a container") 
            host_volume_path = script_dir + "/dsiprouter.nginx"
+           html_volume_path = script_dir + "/html"
            #host_volume_path = script_dir
            print(host_volume_path)
            client.containers.run(image='nginx:latest',
 		name="dsiprouter-nginx",
 		ports={'80/tcp':'80/tcp'},
-                volumes={host_volume_path: {'bind':'/etc/nginx/conf.d/default.conf','mode':'rw'}},
+                volumes={host_volume_path: {'bind':'/etc/nginx/conf.d/default.conf','mode':'rw'},html_volume_path: {'bind':'/etc/nginx/html','mode':'rw'}},
 		detach=True)
            print("created a container") 
     except Exception as e: 
@@ -162,6 +164,18 @@ def run_sync(settings):
     
     #Set the system where sync'd data will be stored.  
     #The Kamailio DB in our case
+
+
+    #If already running - don't run
+
+    if os.path.isfile("./.sync-lock"):
+        print("Already running")
+        return
+
+    else:
+        f=open("./.sync-lock","w+")
+        f.close()
+
     
     dest={}
     dest['hostname']=settings.KAM_DB_HOST
@@ -171,7 +185,7 @@ def run_sync(settings):
 
     #Get the list of FusionPBX's that needs to be sync'd
     sources = get_sources(dest)
-
+    print(sources)
     #Remove all existing domain and domain_attrs entries 
     delete_domain_tables(dest)
  
@@ -187,6 +201,9 @@ def run_sync(settings):
     if sources is not None:
         sources = list(sources.keys())
         update_nginx(sources)
+
+    #Remove lock file
+    os.remove("./.sync-lock") 
 
 def main():
    
@@ -215,4 +232,4 @@ def main():
 
 
 if __name__== "__main__":
-    main()
+    run_sync()

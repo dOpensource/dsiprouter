@@ -84,8 +84,10 @@ function uninstallNginx {
 	# Stop trusting the docker key
 	key=`apt-key list | grep -B 1 docker | head -n1`
 	apt-key del $key
-}
 
+	# Add firewall rull to allow port 80  traffic to Nginx server
+	firewall-cmd --zone=public --add-port=80/tcp --permanent
+        firewall-cmd --reload
 
 function install {
 

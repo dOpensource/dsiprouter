@@ -17,5 +17,10 @@
 	error_page 404	/404.html;
 
 	}
+
+	location /images/ {
+
+	    alias /etc/nginx/html/images/;
+	}
 	
     }
