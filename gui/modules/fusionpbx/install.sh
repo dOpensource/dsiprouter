@@ -88,7 +88,7 @@ function uninstallNginx {
 	# Add firewall rull to allow port 80  traffic to Nginx server
 	firewall-cmd --zone=public --add-port=80/tcp --permanent
         firewall-cmd --reload
-
+}
 function install {
 
 if [ $ENABLED == "0" ];then
