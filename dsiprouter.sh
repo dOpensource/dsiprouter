@@ -1,7 +1,6 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
 #set -x
-
 #Define some global variables
 SERVERNAT=0
 FLT_CARRIER=8
@@ -9,6 +8,7 @@ FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR="/etc/kamailio"
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
+DSIP_INSTALL_LOG="./dsiprouter_install.log"
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
 
 #Default MYSQL install values
@@ -29,6 +29,21 @@ elif [ -f /etc/debian_version ]; then
 	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
 fi
 
+function displayLogo {
+
+echo "CiAgICAgIF8gIF9fX19fIF9fX19fIF9fX19fICBfX19fXyAgICAgICAgICAgICBfIAogICAgIHwg
+fC8gX19fX3xfICAgX3wgIF9fIFx8ICBfXyBcICAgICAgICAgICB8IHwgICAgICAgICAgIAogICBf
+X3wgfCAoX19fICAgfCB8IHwgfF9fKSB8IHxfXykgfF9fXyAgXyAgIF98IHxfIF9fXyBfIF9fIAog
+IC8gX2AgfFxfX18gXCAgfCB8IHwgIF9fXy98ICBfICAvLyBfIFx8IHwgfCB8IF9fLyBfIFwgJ19f
+fAogfCAoX3wgfF9fX18pIHxffCB8X3wgfCAgICB8IHwgXCBcIChfKSB8IHxffCB8IHx8ICBfXy8g
+fCAgIAogIFxfXyxffF9fX19fL3xfX19fX3xffCAgICB8X3wgIFxfXF9fXy8gXF9fLF98XF9fXF9f
+X3xffCAgIAoKICAgQnVpbHQgaW4gRGV0cm9pdCwgVVNBIC0gUG93ZXJlZCBieSBLYW1haWxpbyAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAK
+ICAgCiAgIFN1cHBvcnQgY2FuIGJlIHB1cmNoYXNlZCBmcm9tIGh0dHBzOi8vZE9wZW5Tb3VyY2Uu
+Y29tL2RzaXByb3V0ZXIKCiAgIFRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRl
+bC5jb20pCg==" | base64
+
+}
 
 function validateOSInfo {
 
@@ -493,6 +508,8 @@ function install {
 
 if [ ! -f "./.installed" ]; then
 
+	# Start install log
+	script ${DSIP_INSTALL_LOG}
 	cd ${DSIP_KAMAILIO_CONF_DIR} 
 
 	#Check if Python is installed before trying to start up the process
@@ -535,9 +552,10 @@ if [ ! -f "./.installed" ]; then
 	systemctl restart kamailio
 	if [ $? -eq 0 ]; then
 		touch ./.installed
-		echo -e "-----------------------"
-		echo -e "dSIPRouter is installed"
-		echo -e "-----------------------\n\n"
+		displayLogo
+		echo -e "\e[32m-----------------------\e0m"
+		echo -e "\e[32mInstallation is complete! \e0m"
+		echo -e "\e[32m-----------------------\e0m"
         	echo -e "The username and dynamically generated password is below:\n"
 		
 		#Generate a unique admin password
@@ -747,7 +765,7 @@ password=`date +%s | sha256sum | base64 | head -c 16`
 password1=\'$password\'
 sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
 
-echo -e "username: admin\npassword:$password\n"
+echo -e "username: admin\npassword: $password\n"
 
 }
 
