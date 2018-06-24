@@ -8,7 +8,6 @@ FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR="/etc/kamailio"
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
-DSIP_INSTALL_LOG="./dsiprouter_install.log"
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
 
 #Default MYSQL install values
@@ -508,8 +507,6 @@ function install {
 
 if [ ! -f "./.installed" ]; then
 
-	# Start install log
-	script ${DSIP_INSTALL_LOG}
 	cd ${DSIP_KAMAILIO_CONF_DIR} 
 
 	#Check if Python is installed before trying to start up the process
