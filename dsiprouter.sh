@@ -30,17 +30,17 @@ fi
 
 function displayLogo {
 
-echo "CiAgICAgIF8gIF9fX19fIF9fX19fIF9fX19fICBfX19fXyAgICAgICAgICAgICBfIAogICAgIHwg
-fC8gX19fX3xfICAgX3wgIF9fIFx8ICBfXyBcICAgICAgICAgICB8IHwgICAgICAgICAgIAogICBf
-X3wgfCAoX19fICAgfCB8IHwgfF9fKSB8IHxfXykgfF9fXyAgXyAgIF98IHxfIF9fXyBfIF9fIAog
-IC8gX2AgfFxfX18gXCAgfCB8IHwgIF9fXy98ICBfICAvLyBfIFx8IHwgfCB8IF9fLyBfIFwgJ19f
-fAogfCAoX3wgfF9fX18pIHxffCB8X3wgfCAgICB8IHwgXCBcIChfKSB8IHxffCB8IHx8ICBfXy8g
-fCAgIAogIFxfXyxffF9fX19fL3xfX19fX3xffCAgICB8X3wgIFxfXF9fXy8gXF9fLF98XF9fXF9f
-X3xffCAgIAoKICAgQnVpbHQgaW4gRGV0cm9pdCwgVVNBIC0gUG93ZXJlZCBieSBLYW1haWxpbyAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAK
-ICAgCiAgIFN1cHBvcnQgY2FuIGJlIHB1cmNoYXNlZCBmcm9tIGh0dHBzOi8vZE9wZW5Tb3VyY2Uu
-Y29tL2RzaXByb3V0ZXIKCiAgIFRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRl
-bC5jb20pCg==" | base64
+
+echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
+IF9fX198XyAgIF98ICBfXyBcfCAgX18gXCAgICAgICAgICAgfCB8ICAgICAgICAgICAKICBfX3wg
+fCAoX19fICAgfCB8IHwgfF9fKSB8IHxfXykgfF9fXyAgXyAgIF98IHxfIF9fXyBfIF9fIAogLyBf
+YCB8XF9fXyBcICB8IHwgfCAgX19fL3wgIF8gIC8vIF8gXHwgfCB8IHwgX18vIF8gXCAnX198Cnwg
+KF98IHxfX19fKSB8X3wgfF98IHwgICAgfCB8IFwgXCAoXykgfCB8X3wgfCB8fCAgX18vIHwgICAK
+IFxfXyxffF9fX19fL3xfX19fX3xffCAgICB8X3wgIFxfXF9fXy8gXF9fLF98XF9fXF9fX3xffCAg
+IAoKQnVpbHQgaW4gRGV0cm9pdCwgVVNBIC0gUG93ZXJlZCBieSBLYW1haWxpbyAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgClN1cHBv
+cnQgY2FuIGJlIHB1cmNoYXNlZCBmcm9tIGh0dHBzOi8vZE9wZW5Tb3VyY2UuY29tL2RzaXByb3V0
+ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -d
 
 }
 
@@ -162,7 +162,7 @@ fi
 
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
 
-# Setup Outbound Rules to use Flowroute by default
+# Setup Outbound Rules to use Skyetel by default
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
 
@@ -549,11 +549,11 @@ if [ ! -f "./.installed" ]; then
 	systemctl restart kamailio
 	if [ $? -eq 0 ]; then
 		touch ./.installed
+		echo -e "\e[32m-------------------------\e[0m"
+		echo -e "\e[32mInstallation is complete! \e[0m"
+		echo -e "\e[32m-------------------------\e[0m\n"
 		displayLogo
-		echo -e "\e[32m-----------------------\e0m"
-		echo -e "\e[32mInstallation is complete! \e0m"
-		echo -e "\e[32m-----------------------\e0m"
-        	echo -e "The username and dynamically generated password is below:\n"
+        	echo -e "\n\nThe username and dynamically generated password are below:\n"
 		
 		#Generate a unique admin password
        		generatePassword
@@ -685,7 +685,7 @@ function start {
 		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} --threaded >/dev/null 2>&1 &
 	else
 		
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} > /var/log/dsiprouter.log 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} --threaded > /var/log/dsiprouter.log 2>&1 &
 	fi
 	# Store the PID of the process
 	PID=$!
