@@ -377,7 +377,7 @@ def displayOutboundRoutes(db_err=0):
 
     if session.get('logged_in'):
         try:
-            rows = db.query(OutboundRoutes).filter((OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(dSIPLCR.from_prefix,dSIPLCR.cost,OutboundRoutes.ruleid, OutboundRoutes.prefix,OutboundRoutes.routeid,OutboundRoutes.gwlist,OutboundRoutes.timerec,OutboundRoutes.priority,OutboundRoutes.description)
+            rows = db.query(OutboundRoutes).filter((OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(dSIPLCR.from_prefix,dSIPLCR.cost,dSIPLCR.dr_groupid,OutboundRoutes.ruleid, OutboundRoutes.prefix,OutboundRoutes.routeid,OutboundRoutes.gwlist,OutboundRoutes.timerec,OutboundRoutes.priority,OutboundRoutes.description)
 
             teleblock = {}
             teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -411,7 +411,7 @@ def addUpateOutboundRoutes():
         return index()
 
     # group for the default outbound routes
-    groupid = 8000
+    default_carrier_group = 8000
 
     # id in dr_rules table
     ruleid = None
@@ -421,7 +421,14 @@ def addUpateOutboundRoutes():
     if request.form['ruleid']:
         ruleid = request.form['ruleid']
 
+    groupid = request.form.get('groupid',default_carrier_group)
+    if isinstance(groupid,str):
+        if len(groupid) == 0 or (groupid == 'None'):
+            groupid = 8000
+    
+
     # set default values
+    #from_prefix = ""
     prefix = ""
     timerec = ""
     priority = 0
@@ -447,6 +454,8 @@ def addUpateOutboundRoutes():
 
     # Adding
     if not ruleid:
+        #if len(from_prefix) > 0 and len(prefix) == 0 :
+        #    return displayOutboundRoutes()
         if from_prefix != None :
             print("from_prefix: {}".format(from_prefix))
             #return displayOutboundRoutes()
@@ -476,24 +485,71 @@ def addUpateOutboundRoutes():
             db.flush()
 
     # Updating
-    else:
-        OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
-            'prefix': prefix, 'timerec': timerec, 'priority': priority,
+    else: #Handle the simple case of a To prefix being updated
+        if (from_prefix is None) and (prefix is not None):
+            print(groupid)
+            oldgroupid = groupid
+            if (groupid is None) or (groupid == "None"):
+                groupid=8000
+            
+            #Convert the dr_rule back to a default carrier rule
+            OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+            'prefix': prefix, 'groupid': groupid,'timerec': timerec, 'priority': priority,
             'routeid': routeid, 'gwlist': gwlist, 'description': description
-        })
-        db.commit()
+            })
+
+            #Delete from LCR table using the old group id
+            d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==oldgroupid)
+            d1.delete(synchronize_session=False)
+        
+            db.commit()
 	
         if from_prefix:
-            #Update the existing LCR mapping
 
-            # Setup new pattern
+            # Setup pattern
             pattern = from_prefix + "-" + prefix
 
-            OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).first()
-            db.commit()
+            #Check if pattern already exists
+            exists = db.query(dSIPLCR).filter(dSIPLCR.pattern==pattern).scalar()
+            if exists:
+                return displayOutboundRoutes()
 
-            db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==OMap.groupid).update({
-              'pattern': pattern, 'from_prefix': from_prefix})
+            elif (prefix is not None) and (groupid == 8000): #Adding a From prefix to an existing To  
+                #Create a new groupid
+                mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
+                db.commit()
+
+                #Start LCR routes with a groupid of 10000
+                if mlcr is None:
+                    groupid=10000
+                else:
+                    groupid=int(mlcr.dr_groupid)+1
+	        
+                # Setup new pattern
+                pattern = from_prefix + "-" + prefix
+                
+                #Add the lcr map
+                if pattern != None:
+                    OLCRMap = dSIPLCR(pattern,from_prefix,groupid)
+                    db.add(OLCRMap)
+                    db.commit()
+                    db.flush()
+
+                OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+                    'groupid': groupid, 'prefix': prefix, 'timerec': timerec, 'priority': priority,
+                    'routeid': routeid, 'gwlist': gwlist, 'description': description
+                })
+                db.commit()
+            elif (int(groupid) >=10000): #Update existing pattern
+                db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == groupid).update({
+                    'pattern':pattern, 'from_prefix':from_prefix })
+
+
+            #Update the dr_rules table 
+            OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+            'prefix': prefix, 'groupid': groupid,'timerec': timerec, 'priority': priority,
+            'routeid': routeid, 'gwlist': gwlist, 'description': description
+            })
             db.commit()
 
     return displayOutboundRoutes()

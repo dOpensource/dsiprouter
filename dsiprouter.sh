@@ -1,9 +1,8 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
 #set -x
-
 #Define some global variables
-
+SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
@@ -29,6 +28,21 @@ elif [ -f /etc/debian_version ]; then
 	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
 fi
 
+function displayLogo {
+
+
+echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
+IF9fX198XyAgIF98ICBfXyBcfCAgX18gXCAgICAgICAgICAgfCB8ICAgICAgICAgICAKICBfX3wg
+fCAoX19fICAgfCB8IHwgfF9fKSB8IHxfXykgfF9fXyAgXyAgIF98IHxfIF9fXyBfIF9fIAogLyBf
+YCB8XF9fXyBcICB8IHwgfCAgX19fL3wgIF8gIC8vIF8gXHwgfCB8IHwgX18vIF8gXCAnX198Cnwg
+KF98IHxfX19fKSB8X3wgfF98IHwgICAgfCB8IFwgXCAoXykgfCB8X3wgfCB8fCAgX18vIHwgICAK
+IFxfXyxffF9fX19fL3xfX19fX3xffCAgICB8X3wgIFxfXF9fXy8gXF9fLF98XF9fXF9fX3xffCAg
+IAoKQnVpbHQgaW4gRGV0cm9pdCwgVVNBIC0gUG93ZXJlZCBieSBLYW1haWxpbyAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgClN1cHBv
+cnQgY2FuIGJlIHB1cmNoYXNlZCBmcm9tIGh0dHBzOi8vZE9wZW5Tb3VyY2UuY29tL2RzaXByb3V0
+ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -d
+
+}
 
 function validateOSInfo {
 
@@ -148,7 +162,7 @@ fi
 
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
 
-# Setup Outbound Rules to use Flowroute by default
+# Setup Outbound Rules to use Skyetel by default
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
 
@@ -159,6 +173,33 @@ ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg 
 
 #Fix the mpath
 fixMPATH
+
+#Enable SERVERNAT
+if [ "$SERVERNAT" == "1" ]; then
+	enableSERVERNAT
+
+fi
+}
+
+function enableSERVERNAT {
+
+	
+	EXTERNAL_IP=`curl -s ip.alt.io`
+	INTERNAL_IP=`hostname -I | awk '{print $1}'`
+        INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)	
+
+	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+
+
+}
+
+function disableSERVERNAT {
+
+
+	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 
 }
 
@@ -313,10 +354,17 @@ if [ $DISTRO == "debian" ]; then
 
 	#cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
 
+	if [ "$SERVERNAT" == "0" ]; then
+		INTERFACE=$EXTERNAL_IP
+	else
+		INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
+
+	fi
+
 	echo -e "
 	[rtpengine]
 	table = -1
-	interface = $INTERNAL_IP!$EXTERNAL_IP
+	interface = $INTERFACE
 	listen-ng = 7722
 	port-min = 10000
 	port-max = 30000
@@ -427,7 +475,7 @@ if [ $DISTRO == "centos" ]; then
 		systemctl restart rsyslog
 
 		#Setup Firewall rules for RTPEngine
-		firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+		firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
 		firewall-cmd --reload
 
 		#Enable the RTPEngine to start during boot
@@ -509,10 +557,11 @@ if [ ! -f "./.installed" ]; then
 	systemctl restart kamailio
 	if [ $? -eq 0 ]; then
 		touch ./.installed
-		echo -e "-----------------------"
-		echo -e "dSIPRouter is installed"
-		echo -e "-----------------------\n\n"
-        	echo -e "The username and dynamically generated password is below:\n"
+		echo -e "\e[32m-------------------------\e[0m"
+		echo -e "\e[32mInstallation is complete! \e[0m"
+		echo -e "\e[32m-------------------------\e[0m\n"
+		displayLogo
+        	echo -e "\n\nThe username and dynamically generated password are below:\n"
 		
 		#Generate a unique admin password
        		generatePassword
@@ -644,7 +693,7 @@ function start {
 		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} --threaded >/dev/null 2>&1 &
 	else
 		
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} > /var/log/dsiprouter.log 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} --threaded > /var/log/dsiprouter.log 2>&1 &
 	fi
 	# Store the PID of the process
 	PID=$!
@@ -721,13 +770,13 @@ password=`date +%s | sha256sum | base64 | head -c 16`
 password1=\'$password\'
 sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
 
-echo -e "username: admin\npassword:$password\n"
+echo -e "username: admin\npassword: $password\n"
 
 }
 
 function usageOptions {
 
- echo -e "\nUsage: $0 install|uninstall [-rtpengine]"
+ echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
  echo -e "Usage: $0 start|stop|restart"
  echo -e "Usage: $0 resetpassword"
  echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio." 
@@ -749,7 +798,11 @@ function processCMD {
 		case $key in
 			install)
 			shift
-			if [ "$1" == "-rtpengine" ]; then
+			if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
+				SERVERNAT=1
+				installRTPEngine
+			
+			elif [ "$1" == "-rtpengine" ]; then
 				installRTPEngine
 			fi
 			install
@@ -794,6 +847,10 @@ function processCMD {
 			exit 0
 			;;
 			rtpengineonly)
+			shift
+			if [ "$1" == "-servernat" ]; then
+				SERVERNAT=1
+			fi
 			installRTPEngine
 			exit 0
 			;;
@@ -801,7 +858,7 @@ function processCMD {
 			configureKamailio
 			exit 0
 			;;	
-	                installmodules)
+            		installmodules)
             		installModules
             		exit 0
             		;;
@@ -809,10 +866,20 @@ function processCMD {
             		fixMPATH
             		exit 0
             		;;
-            		resetpassword)
+    	    		enableservernat)
+	    		enableSERVERNAT
+	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	   		exit 0
+	    		;;
+    	    		disableservernat)
+	    		disableSERVERNAT
+	    		echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	    		exit 0
+	    		;;
+           		 resetpassword)
             		resetPassword
             		exit 0
-            		;;
+           		 ;;
 			-h)
 			usageOptions
 			exit 0
