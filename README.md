@@ -33,7 +33,7 @@ We have to limit our offiical support to Debian Stretch with Kamailio 5.1 becaus
 
 **Debian Stretch (tested on 9.4)**
 
-Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 3-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
+Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 4-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 
 #### Kamailio Versions
 - Kamailio 5.1 
