@@ -111,7 +111,7 @@ Once the install is complete, dSIPRouter will automatically start MySQL, Kamaili
 
 #### Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
 
-If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
+If you have a requirement where the PBX's and dSIPRouter are behind NAT then use the steps below, which are the same as above, but you will add a -servernat parameter.   
 
 ```
 apt-get update
