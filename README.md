@@ -16,7 +16,7 @@ You can checkout our demo system, which is located here:
 
 username: admin
 
-password: YzAzOWI5ZjdiMDcz
+password: ZmIwMTdmY2I5NjE4
 
 ### Sponsors
 
@@ -62,7 +62,15 @@ Kamailio will be automatically installed along with dSIPRouter.  Must be install
 
 ### Installing and Running It:
 
-#### Install (No Proxy audio (RTP) traffic)
+There are three ways to install dSIPRouter:
+
+- Proxy SIP Traffic Only (Don't Proxy audio (RTP) traffic) 
+- Proxy SIP Traffic and Audio when it detects a SIP Agent is behind NAT
+- Proxy SIP Traffic, Audio and it configures the system to work properly when the PBX's and dSIPRouter are behind a NAT.
+
+The steps to install each configuration is below.  Note, there are one line versions of the install in each section below.  The average install time is between 4-9 minutes depending on the resources on your vm/server.
+
+#### Install (Don't Proxy audio (RTP) traffic)
 
 ```
 apt-get update
@@ -97,6 +105,27 @@ or the one line version
 
 ```
 apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine
+```
+
+Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)   
+
+#### Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
+
+If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
+
+```
+apt-get update
+apt-get install -y git curl
+cd /opt
+git clone https://github.com/dOpensource/dsiprouter.git
+cd dsiprouter
+./dsiprouter.sh install -rtpengine -servernat
+```
+
+or the one line version
+
+```
+apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine -servernat
 ```
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)   
