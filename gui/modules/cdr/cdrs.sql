@@ -70,7 +70,6 @@ CREATE TABLE `cdrs` (
   `calltype` varchar(20) DEFAULT NULL,
   `fraud` bool NOT NULL DEFAULT '0',
   PRIMARY KEY (`cdr_id`),
-  UNIQUE KEY `uk_cft` (`sip_call_id`,`sip_from_tag`,`sip_to_tag`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
