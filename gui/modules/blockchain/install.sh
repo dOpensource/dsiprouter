@@ -51,9 +51,16 @@ function init {
     ACCOUNT=`echo $ACCOUNT | cut -d " " -f 2 |  awk '{print substr($0,2,length($0)-3)}'`
     echo $ACCOUNT
 
-    #Generate a GenesisFile based on the Account Number
-    createGenesisFile
+    #Generate a GenesisFile based on the account number if one isn't already provided
+    if [ -e $MODULEDIR/genesis.json ]; then
 
+	cp $MODULEDIR/genesis.json $GETHDATADIR 
+    
+    else 
+        echo -e "$(tput setaf 1)***Creating Genesis File***"
+	createGenesisFile
+	
+    fi
     #Initialize the block chain
     docker run -it -p 8545:8545 -p 30303:30303 -v $GETHDATADIR:/root/.ethereum ethereum/client-go:stable --rpc --rpcaddr "127.0.0.1" init /root/.ethereum/genesis.json
 
