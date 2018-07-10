@@ -1,0 +1,9 @@
+/var/log/rtpengine  {
+    missingok
+    size=50M
+    rotate 7
+    create 0644 root root
+    postrotate
+        /bin/kill -HUP `cat /var/run/ngcp-rtpengine-daemon.pid 2> /dev/null` 2> /dev/null || true
+    endscript
+}

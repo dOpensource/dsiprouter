@@ -1,19 +1,18 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
 #set -x
-
 #Define some global variables
-
+SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
-SYSTEM_KAMAILIO_CONF_DIR=/etc/kamailio
+SYSTEM_KAMAILIO_CONF_DIR="/etc/kamailio"
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
 
 #Default MYSQL install values
 
-MYSQL_KAM_DEF_USERNAME=kamailio
+MYSQL_KAM_DEF_USERNAME="kamailio"
 MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
 
@@ -24,11 +23,26 @@ DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT[
 
 if [ -f /etc/redhat-release ]; then
  	DISTRO="centos"
-    elif [ -f /etc/debian_version ]; then
+elif [ -f /etc/debian_version ]; then
 	DISTRO="debian"
 	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
-    fi  
+fi
 
+function displayLogo {
+
+
+echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
+IF9fX198XyAgIF98ICBfXyBcfCAgX18gXCAgICAgICAgICAgfCB8ICAgICAgICAgICAKICBfX3wg
+fCAoX19fICAgfCB8IHwgfF9fKSB8IHxfXykgfF9fXyAgXyAgIF98IHxfIF9fXyBfIF9fIAogLyBf
+YCB8XF9fXyBcICB8IHwgfCAgX19fL3wgIF8gIC8vIF8gXHwgfCB8IHwgX18vIF8gXCAnX198Cnwg
+KF98IHxfX19fKSB8X3wgfF98IHwgICAgfCB8IFwgXCAoXykgfCB8X3wgfCB8fCAgX18vIHwgICAK
+IFxfXyxffF9fX19fL3xfX19fX3xffCAgICB8X3wgIFxfXF9fXy8gXF9fLF98XF9fXF9fX3xffCAg
+IAoKQnVpbHQgaW4gRGV0cm9pdCwgVVNBIC0gUG93ZXJlZCBieSBLYW1haWxpbyAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgClN1cHBv
+cnQgY2FuIGJlIHB1cmNoYXNlZCBmcm9tIGh0dHBzOi8vZE9wZW5Tb3VyY2UuY29tL2RzaXByb3V0
+ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -d
+
+}
 
 function validateOSInfo {
 
@@ -83,6 +97,11 @@ exit
 
 }
 
+# set some of the default settings
+function configurePythonSettings {
+    sed -i -r "s|(KAM_CFG_PATH[[:space:]]?=.*)|KAM_CFG_PATH = '${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg'|g" gui/settings.py
+}
+
 function configureKamailio {
 
 #echo -e "[Database Configuration]\n"
@@ -98,7 +117,7 @@ function configureKamailio {
 if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
     MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_DEF_PASSWORD"
 else
-    MYSQL_KAM_PASSWORD=-p$MYSQL_KAM__PASSWORD
+    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM__PASSWORD"
 fi
 
 if [ "$MYSQL_KAM_USERNAME" == "" ]; then
@@ -124,10 +143,12 @@ mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "drop ta
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
         mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
-        sqlscript=`find / -name drouting-create.sql | grep mysql | grep 4. | sed -n 1p`
+        sqlscript=`find / -name 'drouting-create.sql' | grep mysql | grep 4. | sed -n 1p`
         mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
-
 fi
+
+# Install schema for custom drouting
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
 
 
 # Import Carrier Addresses
@@ -141,8 +162,8 @@ fi
 
 mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
 
-# Setup Outbound Rules to use Flowroute by default
-mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Outbound Carriers');"
+# Setup Outbound Rules to use Skyetel by default
+mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
 
 cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
@@ -152,6 +173,33 @@ ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg 
 
 #Fix the mpath
 fixMPATH
+
+#Enable SERVERNAT
+if [ "$SERVERNAT" == "1" ]; then
+	enableSERVERNAT
+
+fi
+}
+
+function enableSERVERNAT {
+
+	
+	EXTERNAL_IP=`curl -s ip.alt.io`
+	INTERNAL_IP=`hostname -I | awk '{print $1}'`
+        INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)	
+
+	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+
+
+}
+
+function disableSERVERNAT {
+
+
+	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 
 }
 
@@ -184,8 +232,13 @@ fi
 
 function startRTPEngine {
 
-systemctl start rtpengine
+if [ $DISTRO == "debian" ]; then
+	systemctl start ngcp-rtpengine-daemon
+fi
 
+if [ $DISTRO == "centos" ]; then
+	systemctl start rtpengine
+fi
 }
 
 # Stop RTPEngine
@@ -193,7 +246,13 @@ systemctl start rtpengine
 
 function stopRTPEngine {
 
-systemctl stop rtpengine
+if [ $DISTRO == "debian" ]; then
+	systemctl stop ngcp-rtpengine-daemon
+fi
+
+if [ $DISTRO == "centos" ]; then
+	systemctl stop rtpengine
+fi
 
 }
 
@@ -267,6 +326,7 @@ INTERNAL_IP=`hostname -I | awk '{print $1}'`
 if [ $DISTRO == "debian" ]; then
 
 	#Install required libraries
+	apt-get install -y firewalld
 	apt-get install -y debhelper
 	apt-get install -y iptables-dev
 	apt-get install -y libcurl4-openssl-dev
@@ -294,11 +354,18 @@ if [ $DISTRO == "debian" ]; then
 
 	#cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
 
+	if [ "$SERVERNAT" == "0" ]; then
+		INTERFACE=$EXTERNAL_IP
+	else
+		INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
+
+	fi
+
 	echo -e "
 	[rtpengine]
 	table = -1
-	interface = $EXTERNAL_IP
-	listen-udp = 7722
+	interface = $INTERFACE
+	listen-ng = 7722
 	port-min = 10000
 	port-max = 30000
         log-level = 7
@@ -326,7 +393,15 @@ if [ $DISTRO == "debian" ]; then
 
         #Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
-	
+
+        #Start RTPEngine
+        systemctl start ngcp-rtpengine-daemon
+	#Start manually if the service fials to start
+	if [ $? -eq 1 ]; then
+
+		/usr/sbin/rtpengine --config-file=/etc/rtpengine/rtpengine.conf --pidfile=/var/run/ngcp-rtpengine-daemon.pid
+	fi
+
 	#File to signify that the install happened
         if [ $? -eq 0 ]; then
                touch ./.rtpengineinstalled
@@ -400,7 +475,7 @@ if [ $DISTRO == "centos" ]; then
 		systemctl restart rsyslog
 
 		#Setup Firewall rules for RTPEngine
-		firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+		firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
 		firewall-cmd --reload
 
 		#Enable the RTPEngine to start during boot
@@ -455,7 +530,6 @@ if [ ! -f "./.installed" ]; then
         yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
         firewall-cmd --reload
-	
 
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to install Kamailio...\n"
@@ -468,23 +542,26 @@ if [ ! -f "./.installed" ]; then
 		fi
 		echo -e "Attempting to install dSIPRouter...\n" 	
 		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT} $PYTHON_CMD
-
-        fi
+    fi
 
 	#Configure Kamailio and Install dSIPRouter Modules
 	if [ $? -eq 0 ]; then
-
 		configureKamailio
-    		installModules 
+        installModules
 	fi
+
+	# set some defaults in settings.py
+	configurePythonSettings
+
 	# Restart Kamailio with the new configurations
 	systemctl restart kamailio
 	if [ $? -eq 0 ]; then
 		touch ./.installed
-		echo -e "-----------------------"
-		echo -e "dSIPRouter is installed"
-		echo -e "-----------------------\n\n"
-        	echo -e "The username and dynamically generated password is below:\n"
+		echo -e "\e[32m-------------------------\e[0m"
+		echo -e "\e[32mInstallation is complete! \e[0m"
+		echo -e "\e[32m-------------------------\e[0m\n"
+		displayLogo
+        	echo -e "\n\nThe username and dynamically generated password are below:\n"
 		
 		#Generate a unique admin password
        		generatePassword
@@ -608,16 +685,15 @@ function start {
 
 	if [ -e ./.rtpengineinstalled ]; then
 
-                systemctl start rtpengine
-
+		startRTPEngine
         fi
 
 	#Start the process
 	if [ $DEBUG -eq 0 ]; then	
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} >/dev/null 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} --threaded >/dev/null 2>&1 &
 	else
 		
-		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} > /var/log/dsiprouter.log 2>&1 &
+		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver -h 0.0.0.0 -p ${DSIP_PORT} --threaded > /var/log/dsiprouter.log 2>&1 &
 	fi
 	# Store the PID of the process
 	PID=$!
@@ -654,8 +730,10 @@ function stop {
 
 	if [ -e ./.rtpengineinstalled ]; then
 	
-		systemctl stop rtpengine 
-		echo "RTPEngine was stopped"
+		stopRTPEngine
+	 	if [ $? -eq 0 ]; then	
+			echo "RTPEngine was stopped"
+		fi
 	else
 	
 		echo "RTPEngine was not installed"
@@ -692,13 +770,13 @@ password=`date +%s | sha256sum | base64 | head -c 16`
 password1=\'$password\'
 sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
 
-echo -e "username: admin\npassword:$password\n"
+echo -e "username: admin\npassword: $password\n"
 
 }
 
 function usageOptions {
 
- echo -e "\nUsage: $0 install|uninstall [-rtpengine]"
+ echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
  echo -e "Usage: $0 start|stop|restart"
  echo -e "Usage: $0 resetpassword"
  echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio." 
@@ -720,7 +798,11 @@ function processCMD {
 		case $key in
 			install)
 			shift
-			if [ "$1" == "-rtpengine" ]; then
+			if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
+				SERVERNAT=1
+				installRTPEngine
+			
+			elif [ "$1" == "-rtpengine" ]; then
 				installRTPEngine
 			fi
 			install
@@ -740,6 +822,10 @@ function processCMD {
 			if [ "$1" == "-debug" ]; then
                                 DEBUG=1
 				set -x
+				shift
+                        fi
+			if [ "$1" == "-rtpengine" ]; then
+				startRTPEngine
                         fi
 			start
 			shift
@@ -754,13 +840,17 @@ function processCMD {
 			if [ "$1" == "-debug" ]; then
                                 DEBUG=1
 				set -x
-            fi
+            		fi
 			stop 
  			start
 		 	shift
 			exit 0
 			;;
 			rtpengineonly)
+			shift
+			if [ "$1" == "-servernat" ]; then
+				SERVERNAT=1
+			fi
 			installRTPEngine
 			exit 0
 			;;
@@ -768,18 +858,28 @@ function processCMD {
 			configureKamailio
 			exit 0
 			;;	
-            installmodules)
-            installModules
-            exit 0
-            ;;
-            fixmpath)
-            fixMPATH
-            exit 0
-            ;;
-            resetpassword)
-            resetPassword
-            exit 0
-            ;;
+            		installmodules)
+            		installModules
+            		exit 0
+            		;;
+            		fixmpath)
+            		fixMPATH
+            		exit 0
+            		;;
+    	    		enableservernat)
+	    		enableSERVERNAT
+	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	   		exit 0
+	    		;;
+    	    		disableservernat)
+	    		disableSERVERNAT
+	    		echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	    		exit 0
+	    		;;
+           		 resetpassword)
+            		resetPassword
+            		exit 0
+           		 ;;
 			-h)
 			usageOptions
 			exit 0

@@ -17,7 +17,7 @@ wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 apt-get update
 
 #Install Kamailio packages
-apt-get install -y --allow-unauthenticated kamailio kamailio-mysql-modules mysql-server
+apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
 
 #Enable MySQL and Kamailio for system startup
 systemctl enable mysql
@@ -56,6 +56,9 @@ fi
 
 firewall-cmd --reload
 
+#Setup logrotate
+cp ./dsiprouter/debian/logrotate/* /etc/logrotate.d
+
 #Start Kamailio
 #systemctl start kamailio
 #return #?
@@ -82,13 +85,17 @@ apt-get -y remove --purge kamailio\*
 #Potentially remove the repo's
 
 #Remove firewall rules that was created by us:
-firewall-cmd --zone=public --remove-port=5060/udp
+firewall-cmd --zone=public --remove-port=5060/udp --permanent
 
 if [ -n "$DSIP_PORT" ]; then
-	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp
+	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
 fi
 
 firewall-cmd --reload
+
+#Remove logrotate settings
+rm /etc/logrotate.d/kamailio
+rm /etc/logrotate.d/rtpengine
 
 }
 

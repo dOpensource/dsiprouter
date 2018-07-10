@@ -4,6 +4,8 @@
 .wrap .nav-bar .navbar-brand {
   margin-top: 15px;
   color: #FFB266;
+  height: 70px;
+  padding: 9px 40px;
 }
 .wrap .nav-bar .navbar-form {
   margin-top: 25px;
@@ -65,7 +67,7 @@
   z-index: -1;
   background: #404040;
   width: 22em;
-  padding-top: 40px;
+  padding-top: 10px;
   padding-right: 20px;
   padding-left: 10px;
   float: left;
@@ -212,22 +214,31 @@
 }
 
 .panel-info>.panel-heading {
-    color: #FFB266;
+    color: #FF8100;
     background-color: #000000;
-    border-color: #FFB266;;
+    border-color: #FF8100;
 }
 
 .panel-info {
-    border-color: #FFB266;
+    border-color: #FF8100;
+}
+
+.loginlogo {
+   text-align: center;
+
 }
 
 .navlink a:link, a:visited, a:hover {
 	color: #9d9d9d;
 }
 
+.a {
+    color: #9d9d9d;
+    text-decoration: none;
+}
 a.currentlink{
 
-	color: #FFB266;
+	color: #FF8100;
 }
 
 .label-toggle{
@@ -239,4 +250,66 @@ a.currentlink{
    padding-left: 0px;
    margin-right: auto;
    margin-left: auto;
+}
+
+.navBarButtons {
+  float: right;
+}
+
+/* horizontal wrapper for block elements */
+.wrapper-horizontal > div,
+.wrapper-horizontal > h1,
+.wrapper-horizontal > h2,
+.wrapper-horizontal > h3,
+.wrapper-horizontal > h4,
+.wrapper-horizontal > h5,
+.wrapper-horizontal > h6,
+.wrapper-horizontal > p,
+.wrapper-horizontal > form,
+.wrapper-horizontal > header,
+.wrapper-horizontal > footer,
+.wrapper-horizontal > section,
+.wrapper-horizontal > li,
+.wrapper-horizontal > ul,
+.wrapper-horizontal > ol,
+.wrapper-horizontal > table,
+.wrapper-horizontal > main,
+.wrapper-horizontal > nav,
+.wrapper-horizontal > pre,
+.wrapper-horizontal > noscript,
+.wrapper-horizontal > output,
+.wrapper-horizontal > section,
+.wrapper-horizontal > video {
+  display: inline-block;
+}
+
+/* vertical wrapper for block elements */
+.wrapper-vertical > div,
+.wrapper-vertical > h1,
+.wrapper-vertical > h2,
+.wrapper-vertical > h3,
+.wrapper-vertical > h4,
+.wrapper-vertical > h5,
+.wrapper-vertical > h6,
+.wrapper-vertical > p,
+.wrapper-vertical > form,
+.wrapper-vertical > header,
+.wrapper-vertical > footer,
+.wrapper-vertical > section,
+.wrapper-vertical > li,
+.wrapper-vertical > ul,
+.wrapper-vertical > ol,
+.wrapper-vertical > table,
+.wrapper-vertical > main,
+.wrapper-vertical > nav,
+.wrapper-vertical > pre,
+.wrapper-vertical > noscript,
+.wrapper-vertical > output,
+.wrapper-vertical > section,
+.wrapper-vertical > video {
+  display: block;
+
+.hidden{
+  display:none;
+  visibility:hidden;
 }

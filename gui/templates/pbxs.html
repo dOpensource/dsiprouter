@@ -1,238 +1,273 @@
-{% extends 'fullwidth_layout.html' %}
+{% extends 'table_layout.html' %}
 
-{% block title %}Dashboard{% endblock %}
 
-{% block css %}
-        {{ link_tag('main') }}
+{% block table_headers %}
+
+  <div class="tableAddButton">
+    <h4>List of PBX(s)</h4>
+    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add">
+      Add
+    </button>
+  </div>
+
+  <div class="navBarButtons">
+    <ul class="pagination pull-right">
+      <li class="disabled"><a href="#"><span class="glyphicon glyphicon-chevron-left"></span></a></li>
+      <li class="active"><a href="#">1</a></li>
+      <li><a href="#">2</a></li>
+      <li><a href="#">3</a></li>
+      <li><a href="#">4</a></li>
+      <li><a href="#">5</a></li>
+      <li><a href="#"><span class="glyphicon glyphicon-chevron-right"></span></a></li>
+    </ul>
+  </div>
+
 {% endblock %}
 
 
-{% block body %}
-    
-    <div class="col-md-12">
-    <div class="tableAddButton">
-            <h4>List of PBX(s)</h4><button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add" >Add</button> 
-        </div>
-    <div class="table-responsive">
-              <table id="carriers" class="table table-bordred table-striped">
-                   
-                   <thead>
-                   <th><input type="checkbox" id="checkall" /></th>
-                   <th data-field="id">PBX ID</th>
-                   <th data-field="name">Name</th>
-                   <th data-field="ip_addr">IP Address</th>
-                   <th data-field="strip">Strip</th>
-                   <th data-field="prefix">Prefix</th>
-                   <th data-field="fusionpbxenabled">FusionPBX<br>Domain Support</th>
-                   <th></th>
-                   </thead>
+{% block table %}
+
+  <table id="carriers" class="table table-bordred table-striped">
+
+    <thead>
+    <tr class='element-row'>
+      <th><input type="checkbox" id="checkall"/></th>
+      <th data-field="id">PBX ID</th>
+      <th data-field="name">Name</th>
+      <th data-field="ip_addr">IP Address</th>
+      <th data-field="strip">Strip</th>
+      <th data-field="prefix">Prefix</th>
+      <th data-field="fusionpbxenabled">FusionPBX<br>Domain Support</th>
+      <th></th>
+    </tr>
+    </thead>
     <tbody>
     {% for row in rows %}
-    <tr class='element-row'>
-    <td><input type="checkbox" class="checkthis" value="1"/></td>
-    <td class='gwid'>{{row.gwid}}</td>
-    <td class='name'>{{row.description|attrFilter('name')}}</td>
-    <td class='ip_addr'>{{row.address}}</td>
-    <td class='strip'>{{row.strip}}</td>
-    <td class='prefix'>{{row.pri_prefix}}</td>
-    {% if row.enabled %} 
-    	<td class='fusionpbxenabled'>Yes</td>
-    {% else %}
-	<td class='fusionpbxenabled'>No</td>
-    {% endif %}
-    <td class='fusion_db_server hide'>{{row.db_ip|noneFilter()}}</td>
-    <td class='fusion_db_username hide'>{{row.db_username|noneFilter()}}</td>
-    <td class='fusion_db_password hide'>{{row.db_password|noneFilter()}}</td>
-    <td class='authtype hide'>{{row.rpid|noneFilter()}}</td>
-    <td class='pbx_username hide'>{{row.username|noneFilter()}}</td>
-    <td class='pbx_password hide'>{{row.password|noneFilter()}}</td>
-    <td><p data-placement="top" data-toggle="tooltip" title="Edit"><button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal" data-target="#edit" ><span class="glyphicon glyphicon-pencil"></span></button></p></td>
-    <td><p data-placement="top" data-toggle="tooltip" title="Delete"><button id="open-Delete"class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal" data-target="#delete" ><span class="glyphicon glyphicon-trash"></span></button></p></td>
-    </tr>
+      <tr class='element-row'>
+        <td><input type="checkbox" class="checkthis" value="1"/></td>
+        <td class='gwid'>{{ row.gwid }}</td>
+        <td class='name'>{{ row.description|attrFilter('name') }}</td>
+        <td class='ip_addr'>{{ row.address }}</td>
+        <td class='strip'>{{ row.strip }}</td>
+        <td class='prefix'>{{ row.pri_prefix }}</td>
+        {% if row.enabled %}
+          <td class='fusionpbxenabled'>Yes</td>
+        {% else %}
+          <td class='fusionpbxenabled'>No</td>
+        {% endif %}
+        <td class='fusion_db_server hide'>{{ row.db_ip|noneFilter() }}</td>
+        <td class='fusion_db_username hide'>{{ row.db_username|noneFilter() }}</td>
+        <td class='fusion_db_password hide'>{{ row.db_password|noneFilter() }}</td>
+        <td class='authtype hide'>{{ row.rpid|noneFilter() }}</td>
+        <td class='pbx_username hide'>{{ row.username|noneFilter() }}</td>
+        <td class='pbx_password hide'>{{ row.password|noneFilter() }}</td>
+        <td>
+          <p data-placement="top" data-toggle="tooltip" title="Edit">
+            <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
+                    data-target="#edit"><span class="glyphicon glyphicon-pencil"></span></button>
+          </p>
+        </td>
+        <td>
+          <p data-placement="top" data-toggle="tooltip" title="Delete">
+            <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal"
+                    data-target="#delete"><span class="glyphicon glyphicon-trash"></span></button>
+          </p>
+        </td>
+      </tr>
     {% endfor %}
-<div class="clearfix"></div>
-<ul class="pagination pull-right">
-  <li class="disabled"><a href="#"><span class="glyphicon glyphicon-chevron-left"></span></a></li>
-  <li class="active"><a href="#">1</a></li>
-  <li><a href="#">2</a></li>
-  <li><a href="#">3</a></li>
-  <li><a href="#">4</a></li>
-  <li><a href="#">5</a></li>
-  <li><a href="#"><span class="glyphicon glyphicon-chevron-right"></span></a></li>
-</ul>
-                
-            </div>
-            
-        </div>
-    </div>
-</div>
+    </tbody>
+  </table>
+
+{% endblock %}
 
 
-<div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="edit" aria-hidden="true">
-      <div class="modal-dialog">
-    <div class="modal-content">
-          <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        <h4 class="modal-title custom_align" id="Heading">Edit Your PBX Detail</h4>
-      </div>
-          <div class="modal-body">
-      <form action="/pbx" method="POST" role="form">
-        <input type="hidden" id="gwid" name="gwid"> 
-      <div class="form-group">
-        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)">
-        </div>
-        <div class="form-group">
-        
-        <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
-        </div>
-        <div class="form-group">
-		<div class="radio" id="authoptions2">
-			<label><input type="radio" id="authtype_3" name="authtype" value="ip" checked>IP Auth</label>
-			<label><input type="radio" id="authtype_4" name="authtype" value="userpwd">Username/Password Auth</label>
-		</div>
-        </div>
-	
-	<div class="form-group hidden" id="userpwd_enabled2" name="userpwd_enabled" value="0">
-		<p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The user accounts will be created in the <b>{{DEFAULT_AUTH_DOMAIN}}</b></p>
-		 <div class="form-group">
-		 	<input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
-        	 </div>
-		 <div class="form-group">
-			 <input class="form-control " type="password" id="pbx_password" name="pbx_password" placeholder="PBX Password">
-		</div>
-	</div>
-        <div class="form-group">
-        <input class="form-control " type="text" id="strip" name="strip" placeholder="# of characters to strip from RURI">
-        </div>
-        <div class="form-group">
-        <input class="form-control " type="text" id="prefix" name="prefix" placeholder="The characters to prefix to a RURI">
-        </div>
-	<div class="form-group">
-                <input id="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"><label for="toggleFusionPBXDomain" class="label-toggle">Enable FusionPBX Domain Support</label>
-        </div>
-        <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
-        <div id="FusionPBXDomainOptions"  class="form-group hidden">
-                <div class="form-group">
-                        <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server" placeholder="FusionPBX Database IP or Hostname">
-                </div>
-                <div class="form-group">
-                        <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username" placeholder="FusionPBX DB Username">
-                </div>
-                <div class="form-group">
-                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password(Optional)">
-                </div>
-        </div>
-      </div>
-          <div class="modal-footer ">
-        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span class="glyphicon glyphicon-ok-sign"></span> Update</button>
-      </div>
-        </div>
-	</form>
-    <!-- /.modal-content --> 
+{% block edit_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Edit Your PBX Detail</h4>
   </div>
-      <!-- /.modal-dialog --> 
-    </div>
-    
-<div class="modal fade" id="add" tabindex="-1" role="dialog" aria-labelledby="add" aria-hidden="true">
-      <div class="modal-dialog">
-    <div class="modal-content">
-          <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        <h4 class="modal-title custom_align" id="Heading">Add New PBX Detail</h4>
+
+  <div class="modal-body">
+    <form action="/pbx" method="POST" role="form">
+      <input type="hidden" id="gwid" name="gwid">
+      <div class="form-group">
+        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)"
+               autofocus="autofocus">
       </div>
-      <form action="/pbx" method="POST" role="form">
-          <div class="modal-body">
-        <input type="hidden" id="gwid" name="gwid">
-          <div class="form-group">
-        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)">
+      <div class="form-group">
+
+        <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
+      </div>
+      <div class="form-group">
+        <div class="radio" id="authoptions2">
+          <label><input type="radio" id="authtype_3" name="authtype" value="ip" checked>IP Auth</label>
+          <label><input type="radio" id="authtype_4" name="authtype" value="userpwd">Username/Password Auth</label>
+        </div>
+      </div>
+
+      <div class="form-group hidden" id="userpwd_enabled2" name="userpwd_enabled" value="0">
+        <p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The
+          user accounts will be created in the <b>{{ DEFAULT_AUTH_DOMAIN }}</b></p>
+        <div class="form-group">
+          <input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
         </div>
         <div class="form-group">
-        	<input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
-	</div>
-        <div class="form-group">
-		<div class="radio" id="authoptions">
-			<label><input type="radio" id="authtype_1" name="authtype" value="ip" checked>IP Auth</label>
-			<label><input type="radio" id="authtype_2" name="authtype" value="userpwd">Username/Password Auth</label>
-		</div>
+          <input class="form-control " type="password" id="pbx_password" name="pbx_password"
+                 placeholder="PBX Password">
         </div>
-	
-	<div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
-		<p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The user accounts will be created in the <b>{{DEFAULT_AUTH_DOMAIN}}</b> domain</p>
-		 <div class="form-group">
-		 	<input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
-        	 </div>
-		 <div class="form-group">
-			 <input class="form-control " type="password" id="pbx_password" name="pbx_password" placeholder="PBX Password">
-		</div>
-	</div>
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="strip" name="strip"
+               placeholder="# of characters to strip from RURI">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="prefix" name="prefix"
+               placeholder="The characters to prefix to a RURI">
+      </div>
+      <div class="form-group">
+        <input id="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"><label
+          for="toggleFusionPBXDomain" class="label-toggle">Enable FusionPBX Domain Support</label>
+      </div>
+      <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
+      <div id="FusionPBXDomainOptions" class="form-group hidden">
         <div class="form-group">
-        <input class="form-control " type="text" id="strip" name="strip" placeholder="# of characters to strip from RURI">
+          <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server"
+                 placeholder="FusionPBX Database IP or Hostname">
         </div>
         <div class="form-group">
-        <input class="form-control " type="text" id="prefix" name="prefix" placeholder="The characters to prefix to a RURI">
+          <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username"
+                 placeholder="FusionPBX DB Username">
         </div>
-	<div class="form-group">
-		<input id="toggleFusionPBXDomainAdd" type="checkbox" data-toggle="toggle" value="1"><label for="toggleFusionPBXDomainAdd" class="label-toggle">Enable FusionPBX Domain Support</label>
-	</div>
-        <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
-        <div id="FusionPBXDomainOptionsAdd"  class="form-group hidden">
-                <div class="alert alert-warning .pre-scrollable">
-                    <strong>You need access to the FusionPBX database.  Run these commands as root on the FusionPBX server. Replace &lt;ip address&gt; with the ip address of this server.</strong>
-                    <pre>sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
+        <div class="form-group">
+          <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password"
+                 placeholder="FusionPBX DB Password(Optional)">
+        </div>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Update
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block add_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Add New PBX Detail</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/pbx" method="POST" role="form">
+      <input type="hidden" id="gwid" name="gwid">
+      <div class="form-group">
+        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)"
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
+      </div>
+      <div class="form-group">
+        <div class="radio" id="authoptions">
+          <label><input type="radio" id="authtype_1" name="authtype" value="ip" checked>IP Auth</label>
+          <label><input type="radio" id="authtype_2" name="authtype" value="userpwd">Username/Password Auth</label>
+        </div>
+      </div>
+
+      <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
+        <p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The
+          user accounts will be created in the <b>{{ DEFAULT_AUTH_DOMAIN }}</b> domain</p>
+        <div class="form-group">
+          <input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+        </div>
+        <div class="form-group">
+          <input class="form-control " type="password" id="pbx_password" name="pbx_password"
+                 placeholder="PBX Password">
+        </div>
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="strip" name="strip"
+               placeholder="# of characters to strip from RURI">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="prefix" name="prefix"
+               placeholder="The characters to prefix to a RURI">
+      </div>
+      <div class="form-group">
+        <input id="toggleFusionPBXDomainAdd" type="checkbox" data-toggle="toggle" value="1"><label
+          for="toggleFusionPBXDomainAdd" class="label-toggle">Enable FusionPBX Domain Support</label>
+      </div>
+      <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
+      <div id="FusionPBXDomainOptionsAdd" class="form-group hidden">
+        <div class="alert alert-warning .pre-scrollable">
+          <strong>You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
+            Replace &lt;ip address&gt; with the ip address of this server.</strong>
+          <pre>sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
 iptables -A INPUT -p tcp -s &lt;ip address&gt;/32 --dport 5432 -j ACCEPT
+iptables-save
 #Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
 echo -e "host    all             all            &lt;ip address&gt;/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
 /etc/init.d/postgresql restart</pre>
-                </div>
-                <div class="form-group">
-                        <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server" placeholder="FusionPBX Database IP or Hostname">
-                </div>
-                <div class="form-group">
-                        <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username" placeholder="FusionPBX DB Username">
-                </div>
-                <div class="form-group">
-                        <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password" placeholder="FusionPBX DB Password(Optional)">
-                </div>
         </div>
-      </div>
-          <div class="modal-footer ">
-        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span class="glyphicon glyphicon-ok-sign"></span> Add</button>
-      </div>
-        </div>
-      </form>
-    <!-- /.modal-content -->
-  </div>
-      <!-- /.modal-dialog -->
-    </div>
-
-<div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="Delete" aria-hidden="true">
-      <div class="modal-dialog">
-    <div class="modal-content">
-          <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
-      </div>
-      <form action="/pbxdelete" method="POST" role="form">
-          <div class="modal-body">
         <div class="form-group">
-        <input class="form-control " type="hidden" id="gwid" name="gwid">
-        <input class="form-control " type="hidden" id="name" name="name">
+          <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server"
+                 placeholder="FusionPBX Database IP or Hostname">
         </div>
-       
-       <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want to delete this Record?</div>
-       
-      </div>
-        <div class="modal-footer ">
-        <button type="submit" class="btn btn-success" ><span class="glyphicon glyphicon-ok-sign"></span> Yes</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> No</button>
-      </div>
-      </form>
+        <div class="form-group">
+          <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username"
+                 placeholder="FusionPBX DB Username">
         </div>
-    <!-- /.modal-content --> 
+        <div class="form-group">
+          <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password"
+                 placeholder="FusionPBX DB Password(Optional)">
+        </div>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Add
+        </button>
+      </div>
+    </form>
   </div>
-      <!-- /.modal-dialog --> 
 
 {% endblock %}
 
-{% block js %}
+
+{% block delete_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/pbxdelete" method="POST" role="form">
+      <div class="form-group">
+        <input class="form-control " type="hidden" id="gwid" name="gwid">
+        <input class="form-control " type="hidden" id="name" name="name">
+      </div>
+
+      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
+        to delete this Record?
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok-sign"></span> Yes</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><span
+            class="glyphicon glyphicon-remove"></span> No
+        </button>
+      </div>
+    </form>
+  </div>
+
 {% endblock %}

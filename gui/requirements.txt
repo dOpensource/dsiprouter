@@ -7,3 +7,4 @@ Flask-Script
 mysqlclient
 psycopg2
 ConfigObj
+docker
