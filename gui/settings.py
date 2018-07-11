@@ -33,7 +33,7 @@ FLT_CARRIER = 8
 FLT_PBX = 9
 
 # The domain used to create user accounts for PBX and Endpoint registrations
-
+# defaults to this domain if not provided with username
 DOMAIN = 'sip.dsiprouter.org'
 
 # Teleblock Settings

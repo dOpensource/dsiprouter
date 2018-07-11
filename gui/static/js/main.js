@@ -143,6 +143,7 @@ $('#open-CarrierAdd').click(function () {
   $(".modal-body #fusionpbx_db_password").val('');
   $(".modal-body #pbx_username").val('');
   $(".modal-body #pbx_password").val('');
+  $(".modal-body #pbx_domain").val('');
   $(".modal-body #toggleFusionPBXDomainAdd").bootstrapToggle('off');
 });
 
@@ -162,6 +163,7 @@ $('#carriers #open-Update').click(function () {
   var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
   var pbx_username = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
   var pbx_password = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var pbx_domain = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
 
 
   /** Clear out the modal */
@@ -172,6 +174,7 @@ $('#carriers #open-Update').click(function () {
   $(".modal-body #prefix").val('');
   $(".modal-body #pbx_username").val('');
   $(".modal-body #pbx_password").val('');
+  $(".modal-body #pbx_domain").val('');
 
   $(".modal-body #gwid").val(gwid);
   $(".modal-body #name").val(name);
@@ -183,6 +186,7 @@ $('#carriers #open-Update').click(function () {
   $(".modal-body #fusionpbx_db_password").val(fusionpbx_db_password);
   $(".modal-body #pbx_username").val(pbx_username);
   $(".modal-body #pbx_password").val(pbx_password);
+  $(".modal-body #pbx_domain").val(pbx_domain);
 
   if (fusionpbxenabled == "Yes") {
     $(".modal-body #toggleFusionPBXDomain").bootstrapToggle('on');

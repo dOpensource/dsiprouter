@@ -126,7 +126,7 @@ def displayPBX(db_err=0):
                 dSIPFusionPBXDB.db_username,
                 dSIPFusionPBXDB.db_password,
                 Subscribers.rpid, Subscribers.username,
-                Subscribers.password).filter(Gateways.type == settings.FLT_PBX).all()
+                Subscribers.password, Subscribers.domain).filter(Gateways.type == settings.FLT_PBX).all()
             return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
         except:
             if db_err <= 3:
@@ -153,6 +153,9 @@ def addUpdatePBX():
     fusionpbx_db_password = request.form['fusionpbx_db_password']
     pbx_username = request.form['pbx_username']
     pbx_password = request.form['pbx_password']
+    pbx_domain = request.form['pbx_domain']
+    if pbx_domain == None or len(pbx_domain) <= 0:
+        pbx_domain = settings.DOMAIN
 
     print("fusionpbx_db_enabled: %s", fusionpbx_db_enabled)
     # Adding
@@ -165,8 +168,7 @@ def addUpdatePBX():
             Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
             db.add(Addr)
         else:
-
-            Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, Gateway.gwid)
+            Subscriber = Subscribers(pbx_username, pbx_password, pbx_domain, Gateway.gwid)
             db.add(Subscriber)
 
         db.commit()
@@ -191,6 +193,7 @@ def addUpdatePBX():
             db.add(FusionPBXDB)
             db.commit()
         return displayPBX()
+
     # Updating
     else:
         # Update the Gateway table
@@ -219,11 +222,12 @@ def addUpdatePBX():
             exists = db.query(Subscribers).filter(Subscribers.rpid == gwid).scalar()
             if exists:
                 db.query(Subscribers).filter(Subscribers.rpid == gwid).update(
-                    {'username': pbx_username, 'password': pbx_password, 'rpid': gwid})
+                    {'username': pbx_username, 'password': pbx_password, 'domain': pbx_domain, 'rpid': gwid})
             else:
-                Subscriber = Subscribers(pbx_username, pbx_password, settings.DOMAIN, gwid)
+                Subscriber = Subscribers(pbx_username, pbx_password, pbx_domain, gwid)
                 db.add(Subscriber)
-        else: #Update the Address table with the new ip address
+        # Update the Address table with the new ip address
+        else:
                 db.query(Address).filter(Address.tag == "name:" + name).update({'ip_addr': ip_addr})
         db.commit()
         return displayPBX()
