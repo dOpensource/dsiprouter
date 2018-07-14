@@ -1,8 +1,8 @@
 #!/bin/bash
 #set -x
 ENABLED=1
-MODULEDIR=$PWD/gui/modules/blockchain
-GETHDATADIR=$MODULEDIR/gethDataDir
+
+. ./gui/modules/blockchain/shared.sh
 
 function createGenesisFile {
 
@@ -71,7 +71,7 @@ function init {
 function startConsole {
 
 
-    docker run -it -p 8545:8545 -p 30303:30303 -v $GETHDATADIR:/root/.ethereum ethereum/client-go:stable --rpc --rpcaddr "127.0.0.1" --networkid $NETWORKID --nodiscover --verbosity 4 console
+    docker run -it --name $NETWORKID -p 8545:8545 -p 30303:30303 -v $GETHDATADIR:/root/.ethereum ethereum/client-go:stable --rpc --rpcaddr "127.0.0.1" --networkid $NETWORKID --nodiscover --verbosity 4 console
 
 }
 
@@ -87,6 +87,14 @@ function install {
 if [ $ENABLED == "0" ];then
     exit
 fi
+
+#Python Libraries that might be needed
+
+#Install Rust and Cargo
+curl -sSf https://static.rust-lang.org/rustup.sh | sh
+
+#Install ethabi, which is used to get the address of the solidity function
+cargo install ethabi-cli
 
 init
 NETWORKID=12345
