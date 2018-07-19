@@ -1,2 +1,2 @@
-MODULEDIR=$PWD/gui/modules/blockchain
+MODULEDIR=$PWD
 GETHDATADIR=$MODULEDIR/gethDataDir
