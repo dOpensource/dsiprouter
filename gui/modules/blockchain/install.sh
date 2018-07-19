@@ -1,8 +1,13 @@
 #!/bin/bash
-#set -x
+set -x
 ENABLED=1
 
-. ./gui/modules/blockchain/shared.sh
+# Try to source from local directory first
+if [ -e ./shared.sh ]; then
+	. ./shared.sh
+else
+	. ./gui/modules/blockchain/shared.sh
+fi
 
 function createGenesisFile {
 
@@ -45,22 +50,26 @@ function init {
     cp $MODULEDIR/password.txt $GETHDATADIR
     
     #Download the geth docker image and generate an ethereum account
-    ACCOUNT=$(docker run -it -v $GETHDATADIR:/root/.ethereum ethereum/client-go:stable account new --password /root/.ethereum/password.txt | sed '1,2d')
+    ACCOUNT=$(docker run -it -v $GETHDATADIR:/root/.ethereum ethereum/client-go:stable account new --password /root/.ethereum/password.txt > $MODULEDIR/output.txt)
 
     #Parse out the account number
-    ACCOUNT=`echo $ACCOUNT | cut -d " " -f 2 |  awk '{print substr($0,2,length($0)-3)}'`
+    #ACCOUNT=`echo $ACCOUNT | cut -d " " -f 2 |  awk '{print substr($0,2,length($0)-3)}'`
+    
+    ACCOUNT=`cat $MODULEDIR/output.txt | grep Address | sed 's/Address: {\(.*\)}/\1/' | sed -e 's/\\r//g'`
     echo $ACCOUNT
 
-    #Generate a GenesisFile based on the account number if one isn't already provided
-    if [ -e $MODULEDIR/genesis.json ]; then
+    rm -rf $MODULEDIR/output.txt 
 
-	cp $MODULEDIR/genesis.json $GETHDATADIR 
-    
-    else 
+    #Generate a GenesisFile based on the account number if one isn't already provided
+    #if [ -e $MODULEDIR/genesis.json ]; then
+    #
+    #	cp $MODULEDIR/genesis.json $GETHDATADIR 
+    #
+    #else 
         echo -e "$(tput setaf 1)***Creating Genesis File***"
 	createGenesisFile
 	
-    fi
+    #fi
     #Initialize the block chain
     docker run -it -p 8545:8545 -p 30303:30303 -v $GETHDATADIR:/root/.ethereum ethereum/client-go:stable --rpc --rpcaddr "127.0.0.1" init /root/.ethereum/genesis.json
 
@@ -97,31 +106,20 @@ curl -sSf https://static.rust-lang.org/rustup.sh | sh
 cargo install ethabi-cli
 
 init
-NETWORKID=12345
-startConsole
+docker rm -f $NETWORKID
+#startConsole
 }
 
 
 # This installer will be kicked off by the main dSIPRouter installer by passing the MySQL DB root username, database name, and/or the root password
 # This is needed since we are installing stored procedures which require SUPER privileges on MySQL
 
-if [ $# -gt 2 ]; then
-
-	MYSQL_ROOT_USERNAME="-u$1"
-	MYSQL_ROOT_PASSWORD="-p$2"
-	MYSQL_KAM_DBNAME=$3
-
-elif [ $# -gt 1 ]; then
-    MYSQL_ROOT_USERNAME="-u$1"
-    MYSQL_ROOT_PASSWORD=""
-    MYSQL_KAM_DBNAME=$2
-
+if [ "$#" -ne "1" ]; then
+	NETWORKID=12345
 else
-
-    MYSQL_ROOT_USERNAME="-u$1"
-    MYSQL_ROOT_PASSWORD=-p$2
-    MYSQL_KAM_DBNAME=$3
+	NETWORKID=$1
 fi
 
-
+# Clean up old container if it exists
+docker rm -f $NETWORKID
 install
