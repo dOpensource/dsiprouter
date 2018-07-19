@@ -1,0 +1,6 @@
+if [ $# -ne 1 ]; then
+	echo "usage: hex2dec <hex number>"
+else
+
+	echo $(( 16#$1))
+fi
