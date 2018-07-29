@@ -27,7 +27,7 @@
 
 {% block table %}
 
-  <table id="carriers" class="table table-bordred table-striped">
+  <table id="carriers" class="table table-bordered table-striped">
 
     <thead>
     <tr class='element-row'>
@@ -59,8 +59,9 @@
         <td class='fusion_db_username hide'>{{ row.db_username|noneFilter() }}</td>
         <td class='fusion_db_password hide'>{{ row.db_password|noneFilter() }}</td>
         <td class='authtype hide'>{{ row.rpid|noneFilter() }}</td>
-        <td class='pbx_username hide'>{{ row.username|noneFilter() }}</td>
-        <td class='pbx_password hide'>{{ row.password|noneFilter() }}</td>
+        <td class='auth_username hide'>{{ row.username|noneFilter() }}</td>
+        <td class='auth_password hide'>{{ row.password|noneFilter() }}</td>
+        <td class='auth_domain hide'>{{ row.domain|noneFilter() }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
@@ -108,14 +109,19 @@
       </div>
 
       <div class="form-group hidden" id="userpwd_enabled2" name="userpwd_enabled" value="0">
-        <p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The
-          user accounts will be created in the <b>{{ DEFAULT_AUTH_DOMAIN }}</b></p>
+        <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
+          different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
         <div class="form-group">
-          <input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+          <input class="form-control " type="text" id="auth_username" name="auth_username"
+                 placeholder="Auth Username">
         </div>
         <div class="form-group">
-          <input class="form-control " type="password" id="pbx_password" name="pbx_password"
-                 placeholder="PBX Password">
+          <input class="form-control " type="password" id="auth_password" name="auth_password"
+                 placeholder="Auth Password">
+        </div>
+        <div class="form-group">
+          <input class="form-control " type="text" id="auth_domain" name="auth_domain"
+                 placeholder="Auth Domain (optional)">
         </div>
       </div>
       <div class="form-group">
@@ -183,14 +189,19 @@
       </div>
 
       <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
-        <p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The
-          user accounts will be created in the <b>{{ DEFAULT_AUTH_DOMAIN }}</b> domain</p>
+        <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
+          different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
         <div class="form-group">
-          <input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+          <input class="form-control " type="text" id="auth_username" name="auth_username"
+                 placeholder="Auth Username">
         </div>
         <div class="form-group">
-          <input class="form-control " type="password" id="pbx_password" name="pbx_password"
-                 placeholder="PBX Password">
+          <input class="form-control " type="password" id="auth_password" name="auth_password"
+                 placeholder="Auth Password">
+        </div>
+        <div class="form-group">
+          <input class="form-control " type="text" id="auth_domain" name="auth_domain"
+                 placeholder="Auth Domain (optional)">
         </div>
       </div>
       <div class="form-group">
