@@ -129,7 +129,124 @@ var getQueryString = function (field, url) {
   return string ? string[1] : null;
 };
 
+
+$('#carrier-nav').click(function(e) {
+  target_link = $(e.target);
+  other_links = $(e.currentTarget).find('.nav-tabs a').not(target_link);
+  modal_body = $(e.currentTarget.parentNode);
+
+  /* handle dynamic routes (links) */
+  if (target_link.data("type") === "link") {
+    // add dynamic routes here for each link
+    if (target_link.attr("name") === "carriers-link") {
+      gwid = modal_body.find('#gwid').val();
+      gwgroup = modal_body.find('#gwgroup').val();
+
+      if (gwgroup !== undefined) {
+        target_link.attr('href', target_link.attr('href') + "/group/" + gwgroup);
+      }
+      else if (gwid !== undefined) {
+        target_link.attr('href', target_link.attr('href')+  "/" + gwid);
+      }
+    }
+
+    // make sure we follow the link after returning
+    return true;
+  }
+
+  /* handle dynamic modals (toggles) */
+  e.preventDefault();
+  modal_child_divs = modal_body.children('div:not(#carrier-nav)');
+  for (i = 0; i < modal_child_divs.length; i++) {
+    if ($(modal_child_divs[i]).attr('name') === target_link.attr('name')) {
+      $(modal_child_divs[i]).removeClass("hidden");
+    }
+    else {
+      $(modal_child_divs[i]).addClass("hidden");
+    }
+  }
+
+      // add styling to the toggles
+    target_link.addClass('current-navlink');
+    $.each(other_links, function(i, elem) {
+      elem.removeClass('current-navlink');
+    });
+
+  // make sure we don't follow the link
+  return false;
+});
+
+
+$('#open-CarrierGroupAdd').click(function () {
+  /** Clear out the modal */
+  $(".modal-body #gwgroup").val('');
+  $(".modal-body #name").val('');
+  $(".modal-body #gwlist").val('');
+  $(".modal-body #authtype").val('');
+  $(".modal-body #auth_username").val('');
+  $(".modal-body #auth_password").val('');
+  $(".modal-body #auth_domain").val('');
+});
+
+$('#carrier-groups #open-Update').click(function () {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('carrier-groups');
+  var gwgroup = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var gwlist = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
+  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
+  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
+
+
+  /** Clear out the modal */
+  $(".modal-body #gwgroup").val('');
+  $(".modal-body #name").val('');
+  $(".modal-body #gwlist").val('');
+  $(".modal-body #authtype").val('');
+  $(".modal-body #auth_username").val('');
+  $(".modal-body #auth_password").val('');
+  $(".modal-body #auth_domain").val('');
+
+  $(".modal-body #gwgroup").val(gwgroup);
+  $(".modal-body #name").val(name);
+  $(".modal-body #gwlist").val(gwlist);
+  $(".modal-body #auth_username").val(auth_username);
+  $(".modal-body #auth_password").val(auth_password);
+  $(".modal-body #auth_domain").val(auth_domain);
+
+  if (authtype != "") {
+    //Set the radio button to true
+    $("div #authtype_4").prop("checked", true);
+    $('#userpwd_enabled2').removeClass("hidden");
+  }
+  else {  //IP auth is enabled
+    //Set the radio button to true
+    $("div #authtype_3").prop("checked", true);
+    $('#userpwd_enabled2').addClass("hidden");
+  }
+
+  /* start carrier-nav on first tab */
+  $('#carrier-nav > .nav-tabs').find('a').first().trigger('click')
+});
+
+$('#carrier-groups #open-Delete').click(function () {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('carrier-groups');
+  var gwgroup = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var gwlist = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  $(".modal-body #gwgroup").val(gwgroup);
+  $(".modal-body #name").val(name);
+  $(".modal-body #gwlist").val(gwlist);
+});
+
+
 $('#open-CarrierAdd').click(function () {
+  /* put target modal on top */
+  $('.modal').css('z-index', '1000');
+  $($(this).data('target')).css('z-index', '2000');
 
   /** Clear out the modal */
   $(".modal-body #gwid").val('');
@@ -137,18 +254,22 @@ $('#open-CarrierAdd').click(function () {
   $(".modal-body #ip_addr").val('');
   $(".modal-body #strip").val('');
   $(".modal-body #prefix").val('');
-  $(".modal-body #authtype").val('');
   $(".modal-body #fusionpbx_db_server").val('');
   $(".modal-body #fusionpbx_db_username").val('');
   $(".modal-body #fusionpbx_db_password").val('');
-  $(".modal-body #pbx_username").val('');
-  $(".modal-body #pbx_password").val('');
-  $(".modal-body #pbx_domain").val('');
+  $(".modal-body #authtype").val('');
+  $(".modal-body #auth_username").val('');
+  $(".modal-body #auth_password").val('');
+  $(".modal-body #auth_domain").val('');
   $(".modal-body #toggleFusionPBXDomainAdd").bootstrapToggle('off');
 });
 
 
 $('#carriers #open-Update').click(function () {
+    /* put target modal on top */
+  $('.modal').css('z-index', '1500');
+  $($(this).data('target')).css('z-index', '2000');
+
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('carriers');
   var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -161,9 +282,9 @@ $('#carriers #open-Update').click(function () {
   var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
   var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
   var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var pbx_username = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-  var pbx_password = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-  var pbx_domain = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
+  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
 
 
   /** Clear out the modal */
@@ -172,9 +293,10 @@ $('#carriers #open-Update').click(function () {
   $(".modal-body #ip_addr").val('');
   $(".modal-body #strip").val('');
   $(".modal-body #prefix").val('');
-  $(".modal-body #pbx_username").val('');
-  $(".modal-body #pbx_password").val('');
-  $(".modal-body #pbx_domain").val('');
+  $(".modal-body #authtype").val('');
+  $(".modal-body #auth_username").val('');
+  $(".modal-body #auth_password").val('');
+  $(".modal-body #auth_domain").val('');
 
   $(".modal-body #gwid").val(gwid);
   $(".modal-body #name").val(name);
@@ -184,9 +306,9 @@ $('#carriers #open-Update').click(function () {
   $(".modal-body #fusionpbx_db_server").val(fusionpbx_db_server);
   $(".modal-body #fusionpbx_db_username").val(fusionpbx_db_username);
   $(".modal-body #fusionpbx_db_password").val(fusionpbx_db_password);
-  $(".modal-body #pbx_username").val(pbx_username);
-  $(".modal-body #pbx_password").val(pbx_password);
-  $(".modal-body #pbx_domain").val(pbx_domain);
+  $(".modal-body #auth_username").val(auth_username);
+  $(".modal-body #auth_password").val(auth_password);
+  $(".modal-body #auth_domain").val(auth_domain);
 
   if (fusionpbxenabled == "Yes") {
     $(".modal-body #toggleFusionPBXDomain").bootstrapToggle('on');
@@ -211,6 +333,10 @@ $('#carriers #open-Update').click(function () {
 });
 
 $('#carriers #open-Delete').click(function () {
+    /* put target modal on top */
+  $('.modal').css('z-index', '1000');
+  $($(this).data('target').va).css('z-index', '2000');
+
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('carriers');
   var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();

@@ -1,18 +1,30 @@
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for,send_from_directory
-from flask_script import Manager
-import settings
+from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
+from flask_script import Manager, Server
+from sqlalchemy import case
 from importlib import reload
-from shared import *
-from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPFusionPBXDB, dSIPLCR
-import os
-import subprocess
-import json
+from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes
+import os, re, json, subprocess
+import settings
+from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPFusionPBXDB, \
+    dSIPLCR, UAC, GatewayGroups
 
-app = Flask(__name__, static_folder="./static", static_url_path="/static")
-app.debug = settings.DEBUG
-# app.add_template_filter()
+app = Flask(__name__, static_folder="./static", static_url_path="/static", )
 db = loadSession()
 
+
+# TODO: error / exception handling per component.
+# for example, seperate DB, GUI, and Server errors:
+#
+# from sqlalchemy import exc as sql_exceptions
+# from werkzeug import exceptions as http_exceptions
+# try:
+#     ...
+# except sql_exceptions.SQLAlchemyError as ex:
+#     ...
+# except http_exceptions.HTTPException as ex:
+#     ...
+# except Exception as ex:
+#     ...
 
 @app.route('/')
 def index():
@@ -22,10 +34,12 @@ def index():
         action = request.args.get('action')
         return render_template('dashboard.html', show_add_onload=action, version=settings.VERSION)
 
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -44,19 +58,164 @@ def logout():
     return index()
 
 
-@app.route('/carriers')
-def displayCarriers(db_err=0):
+@app.route('/carriergroups')
+@app.route('/carriergroups/<int:gwgroup>')
+def displayCarrierGroups(db_err=0, gwgroup=None):
     if session.get('logged_in'):
         try:
-            res = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
-            return render_template('carriers.html', rows=res)
+            # res must be a list()
+            if gwgroup is not None and gwgroup != "":
+                res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
+                    GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
+                    UAC.auth_username, UAC.auth_password, UAC.realm).filter(
+                    GatewayGroups.id == gwgroup).first()]
+            else:
+                res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
+                    GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
+                    UAC.auth_username, UAC.auth_password, UAC.realm).all()
+
+            # DEBUG:
+            import sys, inspect
+            from pprint import pprint
+            for obj in res:
+                print("", file=sys.stdout)
+                d = dict((attr, getattr(obj, attr)) for attr in dir(obj) if not attr.startswith('__') and not inspect.ismethod(attr))
+                pprint(d, indent=4, stream=sys.stdout)
+                print("", file=sys.stdout)
+
+            return render_template('carriergroups.html', rows=res)
         except:
+            # DEBUG:
+            raise
+
             db.rollback()
             if db_err <= 3:
                 # Try again
                 db_err = db_err + 1
                 print(db_err)
-                return displayCarriers(db_err);
+                return displayCarrierGroups(db_err)
+            else:
+                return render_template('error.html', type="db")
+    else:
+        return index()
+
+
+@app.route('/carriergroups', methods=['POST'])
+def addUpdateCarrierGroups():
+    gwgroup = request.form['gwgroup']
+    name = request.form['name']
+    authtype = request.form['authtype']
+    auth_username = request.form['auth_username']
+    auth_password = request.form['auth_password']
+    auth_domain = request.form['auth_domain']
+    if len(auth_domain) <= 0:
+        auth_domain = settings.DOMAIN
+    auth_proxy = "sip:{}@{}:5060".format(auth_username, auth_domain)
+
+    # Adding
+    if len(gwgroup) <= 0:
+        print(name)
+
+        # TODO: add ability to select endpoints on creation
+        Gwgroup = GatewayGroups(name)
+        db.add(Gwgroup)
+        db.commit()
+        gwgroup = Gwgroup.id
+
+        if authtype == "userpwd":
+            Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
+                         settings.EXTERNAL_IP_ADDR, auth_domain)
+        else:
+            Uacreg = UAC(gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED)
+
+        db.add(Uacreg)
+
+    # Updating
+    else:
+        if authtype == "userpwd":
+            db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
+                {'l_username': auth_username, 'r_username': auth_username, 'auth_username': auth_username,
+                 'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
+                 'auth_proxy': auth_proxy}, synchronize_session=False)
+
+        # TODO: add ability to change group name
+        else:
+            pass
+            # description = "name:{}".format(name)
+            # db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).update({'description': description}, synchronize_session=False)
+
+    try:
+        db.commit()
+        return displayCarrierGroups()
+    except:
+        # DEBUG:
+        raise
+
+        db.rollback()
+        return render_template('error.html', type="db")
+
+
+@app.route('/carriergroupdelete', methods=['POST'])
+def deleteCarrierGroups():
+    gwgroup = request.form['gwgroup']
+    name = request.form['name']
+    gwlist = request.form['gwlist']
+
+    Addrs = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
+    Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup)
+    Uac = db.query(UAC).filter(UAC.l_uuid == Gwgroup.first().id)
+
+    # validate this group has gateways assigned to it
+    if not gwlist is None and gwlist != "":
+        GWs = db.query(Gateways).filter(Gateways.gwid.in_(list(map(int, gwlist.split(",")))))
+        GWs.delete(synchronize_session=False)
+
+    Addrs.delete(synchronize_session=False)
+    Gwgroup.delete(synchronize_session=False)
+    Uac.delete(synchronize_session=False)
+
+    try:
+        db.commit()
+        return displayCarrierGroups()
+    except:
+        # DEBUG:
+        raise
+
+        db.rollback()
+        return render_template('error.html', type="db")
+
+
+@app.route('/carriers')
+@app.route('/carriers/<int:gwid>')
+@app.route('/carriers/group/<int:gwgroup>')
+def displayCarriers(db_err=0, gwid=None, gwgroup=None):
+    if session.get('logged_in'):
+        try:
+            # res must be a list()
+            if gwgroup is not None:
+                Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
+                # check if any endpoints in group b4 converting to list(int)
+                if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
+                    gwlist = list(map(int, Gatewaygroup.gwlist.split(",")))
+                    res = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
+                else:
+                    res = []
+            elif gwid is not None:
+                res = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
+            else:
+                res = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+
+            return render_template('carriers.html', rows=res, gwgroup=gwgroup)
+        except:
+            # DEBUG:
+            raise
+
+            db.rollback()
+            if db_err <= 3:
+                # Try again
+                db_err = db_err + 1
+                print(db_err)
+                return displayCarriers(db_err)
             else:
                 return render_template('error.html', type="db")
     else:
@@ -66,56 +225,83 @@ def displayCarriers(db_err=0):
 @app.route('/carriers', methods=['POST'])
 def addUpdateCarriers():
     gwid = request.form['gwid']
+    gwgroup = request.form['gwgroup']
     name = request.form['name']
     ip_addr = request.form['ip_addr']
     strip = request.form['strip']
     prefix = request.form['prefix']
+
     # Adding
     if len(gwid) <= 0:
         print(name)
-        Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER)
         Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER)
-
-        try:
+        if gwgroup is not None and gwgroup != "":
+            Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup)
             db.add(Gateway)
-            db.add(Addr)
             db.commit()
-            return displayCarriers()
-        except:
-            db.rollback()
-            return render_template('error.html', type="db")
+            gwid = str(Gateway.gwid)
+            db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).update(
+                {'gwlist': case([(GatewayGroups.gwlist != "", gwid + "," + GatewayGroups.gwlist)],
+                                else_=gwid)}, synchronize_session=False)
+        else:
+            Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER)
+            db.add(Gateway)
+
+        db.add(Addr)
+
     # Updating
     else:
+        description = "name:{}".format(name)
         db.query(Gateways).filter(Gateways.gwid == gwid).update(
-            {'description': "name:" + name, 'address': ip_addr, 'strip': strip, 'pri_prefix': prefix})
+            {'description': description, 'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
+            synchronize_session=False)
         # TODO: You will end up with multiple Address records -will fix
         Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER)
-        try:
-            db.add(Addr)
-            db.commit()
-            return displayCarriers()
-        except:
-            db.rollback()
-            return render_template('error.html', type="db")
+
+        db.add(Addr)
+
+    try:
+        db.commit()
+        return displayCarriers(gwgroup=gwgroup)
+    except:
+        # DEBUG:
+        raise
+
+        db.rollback()
+        return render_template('error.html', type="db")
 
 
 @app.route('/carrierdelete', methods=['POST'])
 def deleteCarriers():
     gwid = request.form['gwid']
+    gwgroup = request.form['gwgroup']
     name = request.form['name']
-    d = db.query(Gateways).filter(Gateways.gwid == gwid)
-    d.delete(synchronize_session=False)
-    a = db.query(Address).filter(Address.tag == 'name:' + name)
-    a.delete(synchronize_session=False)
-    db.commit()
-    return displayCarriers()
+
+    Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
+    Addr = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
+
+    Gateway.delete(synchronize_session=False)
+    Addr.delete(synchronize_session=False)
+
+    db.query(GatewayGroups).filter(GatewayGroups.gwlist.contains(gwid)).update(
+        {"gwlist": re.sub(gwid + r",?", "", GatewayGroups.gwlist)},
+        synchronize_session=False)
+
+    try:
+        db.commit()
+        return displayCarriers(gwgroup=gwgroup)
+    except:
+        # DEBUG:
+        raise
+
+        db.rollback()
+        return render_template('error.html', type="db")
 
 
 @app.route('/pbx')
 def displayPBX(db_err=0):
     if session.get('logged_in'):
         try:
-            # res = db.query(Gateways).outerjoin(dSIPFusionPBXDB,Gateways.gwid == dSIPFusionPBXDB.pbx_id).add_columns(Gateways.gwid,Gateways.description,Gateways.address,Gateways.strip,Gateways.pri_prefix,dSIPFusionPBXDB.enabled, dSIPFusionPBXDB.db_ip, dSIPFusionPBXDB.db_username,dSIPFusionPBXDB.db_password).filter(Gateways.type==settings.FLT_PBX).all()
             res = db.query(Gateways).outerjoin(dSIPFusionPBXDB, Gateways.gwid == dSIPFusionPBXDB.pbx_id).outerjoin(
                 Subscribers, Gateways.gwid == Subscribers.rpid).add_columns(
                 Gateways.gwid, Gateways.description,
@@ -143,19 +329,19 @@ def displayPBX(db_err=0):
 def addUpdatePBX():
     gwid = request.form['gwid']
     name = request.form['name']
-    ip_addr = request.form.get("ip_addr","")
-    strip = request.form.get('strip',"0")
+    ip_addr = request.form.get("ip_addr", "")
+    strip = request.form.get('strip', "0")
     prefix = request.form['prefix']
     authtype = request.form['authtype']
     fusionpbx_db_enabled = request.form.get('fusionpbx_db_enabled', "0")
     fusionpbx_db_server = request.form['fusionpbx_db_server']
     fusionpbx_db_username = request.form['fusionpbx_db_username']
     fusionpbx_db_password = request.form['fusionpbx_db_password']
-    pbx_username = request.form['pbx_username']
-    pbx_password = request.form['pbx_password']
-    pbx_domain = request.form['pbx_domain']
-    if pbx_domain == None or len(pbx_domain) <= 0:
-        pbx_domain = settings.DOMAIN
+    auth_username = request.form['auth_username']
+    auth_password = request.form['auth_password']
+    auth_domain = request.form['auth_domain']
+    if auth_domain == None or len(auth_domain) <= 0:
+        auth_domain = settings.DOMAIN
 
     print("fusionpbx_db_enabled: %s", fusionpbx_db_enabled)
     # Adding
@@ -168,7 +354,7 @@ def addUpdatePBX():
             Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
             db.add(Addr)
         else:
-            Subscriber = Subscribers(pbx_username, pbx_password, pbx_domain, Gateway.gwid)
+            Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid)
             db.add(Subscriber)
 
         db.commit()
@@ -214,7 +400,7 @@ def addUpdatePBX():
         if authtype == "userpwd":
 
             # Remove ip address from address table
-            address = db.query(Address).filter(Address.tag == 'name:' + name)
+            address = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
             address.delete(synchronize_session=False)
 
             # Add the username and password that will be used for authentication
@@ -222,14 +408,14 @@ def addUpdatePBX():
             exists = db.query(Subscribers).filter(Subscribers.rpid == gwid).scalar()
             if exists:
                 db.query(Subscribers).filter(Subscribers.rpid == gwid).update(
-                    {'username': pbx_username, 'password': pbx_password, 'domain': pbx_domain, 'rpid': gwid})
+                    {'username': auth_username, 'password': auth_password, 'domain': auth_domain, 'rpid': gwid})
             else:
-                Subscriber = Subscribers(pbx_username, pbx_password, pbx_domain, gwid)
+                Subscriber = Subscribers(auth_username, auth_password, auth_domain, gwid)
                 db.add(Subscriber)
         # Update the Address table with the new ip address
         else:
-                db.query(Address).filter(Address.tag == "name:" + name).update({'ip_addr': ip_addr})
-        db.commit()
+            db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update({'ip_addr': ip_addr})
+            db.commit()
         return displayPBX()
 
 
@@ -239,7 +425,7 @@ def deletePBX():
     name = request.form['name']
     gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
     gateway.delete(synchronize_session=False)
-    address = db.query(Address).filter(Address.tag == 'name:' + name)
+    address = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
     address.delete(synchronize_session=False)
     subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwid)
     subscriber.delete(synchronize_session=False)
@@ -327,8 +513,6 @@ def deleteInboundMapping():
 
 @app.route('/teleblock')
 def displayTeleBlock(db_err=0):
-
-
     if session.get('logged_in'):
         try:
 
@@ -340,18 +524,17 @@ def displayTeleBlock(db_err=0):
             teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
             return render_template('teleblock.html', teleblock=teleblock)
-        
+
         except:
-         
-            return render_template('error.html', type="db")         
+
+            return render_template('error.html', type="db")
+
 
 @app.route('/teleblock', methods=['POST'])
 def addUpdateTeleBlock(db_err=0):
-
-
     if session.get('logged_in'):
         try:
- 
+
             # Update the teleblock settings
             teleblock = {}
             teleblock['TELEBLOCK_GW_ENABLED'] = request.form.get('gw_enabled', 0)
@@ -360,13 +543,14 @@ def addUpdateTeleBlock(db_err=0):
             teleblock['TELEBLOCK_MEDIA_IP'] = request.form['media_ip']
             teleblock['TELEBLOCK_MEDIA_PORT'] = request.form['media_port']
 
-            updateConfigFile('gui/settings.py', teleblock)
+            updateConfig(settings, teleblock)
             reload(settings)
             return displayTeleBlock()
 
         except:
 
             return render_template('error.html', type="db")
+
 
 @app.route('/outboundroutes')
 def displayOutboundRoutes(db_err=0):
@@ -381,7 +565,12 @@ def displayOutboundRoutes(db_err=0):
 
     if session.get('logged_in'):
         try:
-            rows = db.query(OutboundRoutes).filter((OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(dSIPLCR.from_prefix,dSIPLCR.cost,dSIPLCR.dr_groupid,OutboundRoutes.ruleid, OutboundRoutes.prefix,OutboundRoutes.routeid,OutboundRoutes.gwlist,OutboundRoutes.timerec,OutboundRoutes.priority,OutboundRoutes.description)
+            rows = db.query(OutboundRoutes).filter(
+                (OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(dSIPLCR,
+                                                                                                   dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
+                dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid, OutboundRoutes.prefix,
+                OutboundRoutes.routeid, OutboundRoutes.gwlist, OutboundRoutes.timerec, OutboundRoutes.priority,
+                OutboundRoutes.description)
 
             teleblock = {}
             teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -389,7 +578,6 @@ def displayOutboundRoutes(db_err=0):
             teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
             teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
             teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
-
 
             return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
         except:
@@ -415,7 +603,7 @@ def addUpateOutboundRoutes():
         return index()
 
     # group for the default outbound routes
-    default_carrier_group = 8000
+    default_gwgroup = 8000
 
     # id in dr_rules table
     ruleid = None
@@ -425,14 +613,13 @@ def addUpateOutboundRoutes():
     if request.form['ruleid']:
         ruleid = request.form['ruleid']
 
-    groupid = request.form.get('groupid',default_carrier_group)
-    if isinstance(groupid,str):
+    groupid = request.form.get('groupid', default_gwgroup)
+    if isinstance(groupid, str):
         if len(groupid) == 0 or (groupid == 'None'):
             groupid = 8000
-    
 
     # set default values
-    #from_prefix = ""
+    # from_prefix = ""
     prefix = ""
     timerec = ""
     priority = 0
@@ -449,30 +636,29 @@ def addUpateOutboundRoutes():
         timerec = request.form['timerec']
     if request.form['priority']:
         priority = int(request.form['priority'])
-    routeid = request.form.get('routeid',"")
+    routeid = request.form.get('routeid', "")
     if request.form['gwlist']:
         gwlist = request.form['gwlist']
     if request.form['name']:
         description = 'name:{}'.format(request.form['name'])
 
-
     # Adding
     if not ruleid:
-        #if len(from_prefix) > 0 and len(prefix) == 0 :
+        # if len(from_prefix) > 0 and len(prefix) == 0 :
         #    return displayOutboundRoutes()
-        if from_prefix != None :
+        if from_prefix != None:
             print("from_prefix: {}".format(from_prefix))
-            #return displayOutboundRoutes()
+
             # Grab the lastest groupid and increment
             mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
             db.commit()
 
-           #Start LCR routes with a groupid of 10000 
+            # Start LCR routes with a groupid of 10000
             if mlcr is None:
-                groupid=10000
+                groupid = 10000
             else:
-                groupid=int(mlcr.dr_groupid)+1
-            
+                groupid = int(mlcr.dr_groupid) + 1
+
             pattern = from_prefix + "-" + prefix
 
         OMap = OutboundRoutes(groupid=groupid, prefix=prefix, timerec=timerec, priority=priority,
@@ -481,60 +667,60 @@ def addUpateOutboundRoutes():
         db.commit()
         db.flush()
 
-	#Add the lcr map
+        # Add the lcr map
         if pattern != None:
-            OLCRMap = dSIPLCR(pattern,from_prefix,groupid)
+            OLCRMap = dSIPLCR(pattern, from_prefix, groupid)
             db.add(OLCRMap)
             db.commit()
             db.flush()
 
     # Updating
-    else: #Handle the simple case of a To prefix being updated
+    else:  # Handle the simple case of a To prefix being updated
         if (from_prefix is None) and (prefix is not None):
             print(groupid)
             oldgroupid = groupid
             if (groupid is None) or (groupid == "None"):
-                groupid=8000
-            
-            #Convert the dr_rule back to a default carrier rule
+                groupid = 8000
+
+            # Convert the dr_rule back to a default carrier rule
             OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
-            'prefix': prefix, 'groupid': groupid,'timerec': timerec, 'priority': priority,
-            'routeid': routeid, 'gwlist': gwlist, 'description': description
+                'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
+                'routeid': routeid, 'gwlist': gwlist, 'description': description
             })
 
-            #Delete from LCR table using the old group id
-            d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==oldgroupid)
+            # Delete from LCR table using the old group id
+            d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == oldgroupid)
             d1.delete(synchronize_session=False)
-        
+
             db.commit()
-	
+
         if from_prefix:
 
             # Setup pattern
             pattern = from_prefix + "-" + prefix
 
-            #Check if pattern already exists
-            exists = db.query(dSIPLCR).filter(dSIPLCR.pattern==pattern).scalar()
+            # Check if pattern already exists
+            exists = db.query(dSIPLCR).filter(dSIPLCR.pattern == pattern).scalar()
             if exists:
                 return displayOutboundRoutes()
 
-            elif (prefix is not None) and (groupid == 8000): #Adding a From prefix to an existing To  
-                #Create a new groupid
+            elif (prefix is not None) and (groupid == 8000):  # Adding a From prefix to an existing To
+                # Create a new groupid
                 mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
                 db.commit()
 
-                #Start LCR routes with a groupid of 10000
+                # Start LCR routes with a groupid of 10000
                 if mlcr is None:
-                    groupid=10000
+                    groupid = 10000
                 else:
-                    groupid=int(mlcr.dr_groupid)+1
-	        
+                    groupid = int(mlcr.dr_groupid) + 1
+
                 # Setup new pattern
                 pattern = from_prefix + "-" + prefix
-                
-                #Add the lcr map
+
+                # Add the lcr map
                 if pattern != None:
-                    OLCRMap = dSIPLCR(pattern,from_prefix,groupid)
+                    OLCRMap = dSIPLCR(pattern, from_prefix, groupid)
                     db.add(OLCRMap)
                     db.commit()
                     db.flush()
@@ -544,15 +730,14 @@ def addUpateOutboundRoutes():
                     'routeid': routeid, 'gwlist': gwlist, 'description': description
                 })
                 db.commit()
-            elif (int(groupid) >=10000): #Update existing pattern
+            elif (int(groupid) >= 10000):  # Update existing pattern
                 db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == groupid).update({
-                    'pattern':pattern, 'from_prefix':from_prefix })
+                    'pattern': pattern, 'from_prefix': from_prefix})
 
-
-            #Update the dr_rules table 
+            # Update the dr_rules table
             OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
-            'prefix': prefix, 'groupid': groupid,'timerec': timerec, 'priority': priority,
-            'routeid': routeid, 'gwlist': gwlist, 'description': description
+                'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
+                'routeid': routeid, 'gwlist': gwlist, 'description': description
             })
             db.commit()
 
@@ -566,20 +751,19 @@ def deleteOutboundRoute():
     Supports rule definitions for Kamailio Drouting module\n
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
-    
 
     ruleid = request.form['ruleid']
 
     OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).first()
     db.commit()
 
-    d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid==OMap.groupid)
+    d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == OMap.groupid)
     d1.delete(synchronize_session=False)
 
     d = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid)
     d.delete(synchronize_session=False)
-   
-    db.commit() 
+
+    db.commit()
     db.flush()
     return displayOutboundRoutes()
 
@@ -589,6 +773,7 @@ def reloadkam():
     return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
     return_code += subprocess.call(['kamcmd', 'drouting.reload'])
     return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
+    return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
     return_code += subprocess.call(
         ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
 
@@ -609,21 +794,61 @@ def reloadkam():
     return json.dumps({"status": status_code})
 
 
-manager = Manager(app)
 
+class CustomServer(Server):
+    """ Customize the Flask server with our settings """
+
+    def __init__(self):
+        super().__init__(
+            host=settings.DSIP_HOST,
+            port=settings.DSIP_PORT
+        )
+
+        if settings.DEBUG == True:
+            self.use_debugger = True
+            self.use_reloader = True
+            self.ssl_crt = None
+            self.ssl_key = None
+        else:
+            self.use_debugger = None
+            self.use_reloader = None
+            self.ssl_crt = settings.SSL_CERT
+            self.ssl_key = settings.SSL_KEY
+            # TODO: dynamically set # processes based on CPU
+            self.threaded = True
+            self.processes = 1
 
 def init_app(flask_app):
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
 
     # Add jinga2 filter
-    app.jinja_env.filters["attrFilter"] = attrFilter
-    app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
-    app.jinja_env.filters["noneFilter"] = noneFilter
+    flask_app.jinja_env.filters["attrFilter"] = attrFilter
+    flask_app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
+    flask_app.jinja_env.filters["noneFilter"] = noneFilter
 
     # db.init_app(flask_app)
     # db.app = app
 
+    # Dynamically update settings
+    fields = {}
+    fields['TELEBLOCK_GW_ENABLED'] = 0
+    fields['TELEBLOCK_GW_IP'] = '62.34.24.22'
+    fields['INTERNAL_IP_ADDR'] = getInternalIP()
+    fields['INTERNAL_IP_NET'] = "{}.*".format(getInternalIP().rsplit(".", 1)[0])
+    fields['EXTERNAL_IP_ADDR'] = getExternalIP()
+    updateConfig(settings, fields)
+    reload(settings)
+
+    # configs depending on updated settings go here
+    flask_app.env = "development" if settings.DEBUG else "production"
+    flask_app.debug = settings.DEBUG
+
+    # Flask App Manager configs
+    manager = Manager(app)
+    manager.add_command('runserver', CustomServer())
+
+    # start the server
     manager.run()
 
 
