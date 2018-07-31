@@ -106,7 +106,6 @@ curl -sSf https://static.rust-lang.org/rustup.sh | sh
 cargo install ethabi-cli
 
 init
-docker rm -f $NETWORKID
 #startConsole
 }
 
