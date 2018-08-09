@@ -12,7 +12,7 @@ from database import loadSession, Gateways, Address, InboundMapping, OutboundRou
 import settings
 
 # global variables
-app = Flask(__name__, static_folder="./static", static_url_path="/static", )
+app = Flask(__name__, static_folder="./static", static_url_path="/static")
 db = loadSession()
 reload_required = False
 
@@ -1337,9 +1337,8 @@ class CustomServer(Server):
             self.use_reloader = None
             self.ssl_crt = None if settings.SSL_CERT == "" else settings.SSL_CERT
             self.ssl_key = None if settings.SSL_KEY == "" else settings.SSL_KEY
-            # TODO: dynamically set # processes based on CPU
             self.threaded = True
-            self.processes = 8
+            self.processes = 1
 
 
 def init_app(flask_app):
