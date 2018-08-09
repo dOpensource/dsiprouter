@@ -1,26 +1,29 @@
 #!/bin/bash
 # Uncomment if you want to debug this script.
 #set -x
-#Define some global variables
+
+# Define some global variables
 SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
 REQ_PYTHON_MAJOR_VER=3
 SYSTEM_KAMAILIO_CONF_DIR="/etc/kamailio"
 DSIP_KAMAILIO_CONF_DIR=$(pwd)
+DEFAULTS_DIR=${DSIP_KAMAILIO_CONF_DIR}/kamailio/defaults
 DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
 
-#Default MYSQL install values
-
+# Default MYSQL install values
 MYSQL_KAM_DEF_USERNAME="kamailio"
 MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
 
-#Grab the port being using
+# Grab dynamic values
 DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT[[:space:]]?=[[:space:]]?\K[0-9]*')
+EXTERNAL_IP=`curl -s ip.alt.io`
+INTERNAL_IP=`hostname -I | awk '{print $1}'`
+INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
 # Get Linux Distro
-
 if [ -f /etc/redhat-release ]; then
  	DISTRO="centos"
 elif [ -f /etc/debian_version ]; then
@@ -29,7 +32,6 @@ elif [ -f /etc/debian_version ]; then
 fi
 
 function displayLogo {
-
 
 echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
 IF9fX198XyAgIF98ICBfXyBcfCAgX18gXCAgICAgICAgICAgfCB8ICAgICAgICAgICAKICBfX3wg
@@ -77,7 +79,6 @@ validateOSInfo
 
 function isPythonInstalled {
 
-
 possible_python_versions=`find /usr/bin -name "python$REQ_PYTHON_MAJOR_VER*" -type f -executable  2>/dev/null`
 for i in $possible_python_versions
 do
@@ -99,20 +100,12 @@ exit
 
 # set some of the default settings
 function configurePythonSettings {
+
     sed -i -r "s|(KAM_CFG_PATH[[:space:]]?=.*)|KAM_CFG_PATH = '${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg'|g" gui/settings.py
+
 }
 
 function configureKamailio {
-
-#echo -e "[Database Configuration]\n"
-#echo -e "Please enter the username for the Kamailio schema [default $MYSQL_KAM_DEF_USERNAME]:\c"
-#read MYSQL_KAM_USERNAME
-
-#echo -e "Please enter the password for the Kamailio schema [default $MYSQL_KAM_DEF_PASSWORD]:\c"
-#read MYSQL_KAM_PASSWORD
-
-#echo -e "Please enter the database name for the Kamailio schema [default $MYSQL_KAM_DEF_DATABASE]:\c"
-#read MYSQL_KAM_DATABASE
 
 if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
     MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_DEF_PASSWORD"
@@ -128,6 +121,25 @@ if [ "$MYSQL_KAM_DATABASE" == "" ]; then
     MYSQL_KAM_DATABASE=$MYSQL_KAM_DEF_DATABASE
 fi
 
+# required if tables exist and we are updating
+function resetIncrementers {
+    SQL_TABLES=$(
+        (for t in "$@"; do printf ",'$t'"; done) | cut -d ',' -f '2-'
+    )
+
+    # reset auto increment for related tables to max btwn the related tables
+    INCREMENT=$(
+mysql --skip-column-names <<- EOF
+    SELECT MAX(AUTO_INCREMENT) FROM  INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_SCHEMA = '$MYSQL_KAM_DATABASE'
+    AND TABLE_NAME IN($SQL_TABLES);
+EOF
+    )
+    for t in "$@"; do
+        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+            -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
+    done
+}
 
 # Check the username and password
 
@@ -138,36 +150,50 @@ fi
 #fi
 
 # Install schema for drouting module
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+    -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+    -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
-        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
+    mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
         sqlscript=`find / -name 'drouting-create.sql' | grep mysql | grep 4. | sed -n 1p`
-        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
+    mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
 fi
 
 # Install schema for custom drouting
 mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
 
+# reset auto incrementers for related tables
+resetIncrementers "dr_gw_lists" "uacreg"
 
-# Import Carrier Addresses
+# Import Default Carriers
+if [ -e `which mysqlimport` ]; then
+    mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
 
-if [  -e `which mysqlimport` ]; then
-        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
-        sed -i s/FLT_CARRIER/$FLT_CARRIER/g address.csv
-        mysqlimport  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=',' --ignore-lines=0  -L kamailio address.csv
+    # sub in dynamic values
+    sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DEFAULTS_DIR}/address.csv
+    sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DEFAULTS_DIR}/dr_gateways.csv
+    sed -i s/EXTERNAL_IP/$EXTERNAL_IP/g ${DEFAULTS_DIR}/uacreg.csv
+
+    # import default carriers
+    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=';' --ignore-lines=0  \
+        -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/address.csv
+    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=';' --ignore-lines=0  \
+        -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/dr_gw_lists.csv
+    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=',' --ignore-lines=0  \
+        -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/uacreg.csv
+    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=';' --ignore-lines=0  \
+        -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/dr_gateways.csv
 fi
 
-
-mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_gateways (gwid,type,address,strip,pri_prefix,attrs,description) select null,grp,ip_addr,'','','',tag from address;"
-
 # Setup Outbound Rules to use Skyetel by default
-mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
+mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+    -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
-
-cp ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
-rm ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
+# Backup kamcfg and link the dsiprouter kamcfg
+cp -f ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.`(date +%Y%m%d_%H%M%S)`
+rm -f ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
 ln -s  ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
 
 
@@ -182,25 +208,14 @@ fi
 }
 
 function enableSERVERNAT {
-
-	
-	EXTERNAL_IP=`curl -s ip.alt.io`
-	INTERNAL_IP=`hostname -I | awk '{print $1}'`
-        INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)	
-
 	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
 	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
-
-
 }
 
 function disableSERVERNAT {
-
-
 	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
-
 }
 
 #Try to locate the Kamailio modules directory.  It will use the last modules directory found
@@ -261,9 +276,7 @@ fi
 
 function uninstallRTPEngine {
 
-
 if [ ! -e ./.rtpengineinstalled ]; then
-
 	echo -e "RTPEngine is not installed!"
 else 
 
@@ -317,11 +330,7 @@ fi
 
 function installRTPEngine {
 
-
-EXTERNAL_IP=`curl -s ip.alt.io`
-INTERNAL_IP=`hostname -I | awk '{print $1}'`
-
-#Install required libraries
+# Install required libraries
 
 if [ $DISTRO == "debian" ]; then
 
@@ -517,13 +526,10 @@ if [ ! -f "./.installed" ]; then
 
 	cd ${DSIP_KAMAILIO_CONF_DIR} 
 
-	#Check if Python is installed before trying to start up the process
+	# Check if Python is installed before trying to start up the process
         if [ -z ${PYTHON_CMD+x} ]; then
-                isPythonInstalled
+            isPythonInstalled
         fi
-	
-	EXTERNAL_IP=`curl -s ip.alt.io`
-	INTERNAL_IP=`hostname -I | awk '{print $1}'`
 	
 	if [ $DISTRO == "centos" ]; then
 	    PIP_CMD="pip"
@@ -544,7 +550,7 @@ if [ ! -f "./.installed" ]; then
 		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT} $PYTHON_CMD
     fi
 
-	#Configure Kamailio and Install dSIPRouter Modules
+	# Configure Kamailio and Install dSIPRouter Modules
 	if [ $? -eq 0 ]; then
 		configureKamailio
         installModules
@@ -601,17 +607,17 @@ fi
 	stop
     
 	if [ $DISTRO == "centos" ]; then
-	    	PIP_CMD="pip"
-        	yum -y remove mysql-devel gcc gcc-devel python34  python34-pip python34-devel
+        PIP_CMD="pip"
+        yum -y remove mysql-devel gcc gcc-devel python34  python34-pip python34-devel
 		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-        	firewall-cmd --reload
+        firewall-cmd --reload
 	
 	elif [ $DISTRO == "debian" ]; then
 		echo -e "Attempting to uninstall dSIPRouter...\n" 	
 		./dsiprouter/$DISTRO/$DEB_REL.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
 		
 		echo -e "Attempting to uninstall Kamailio...\n"
-        	./kamailio/$DISTRO/$DEB_REL.sh uninstall ${KAM_VERSION} ${DSIP_PORT} ${PYTHON_CMD}
+        ./kamailio/$DISTRO/$DEB_REL.sh uninstall ${KAM_VERSION} ${DSIP_PORT} ${PYTHON_CMD}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was uninstalled!"
 		else

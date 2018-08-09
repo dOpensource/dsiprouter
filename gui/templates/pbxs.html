@@ -27,18 +27,18 @@
 
 {% block table %}
 
-  <table id="carriers" class="table table-bordred table-striped">
+  <table id="carriers" class="table table-bordered table-striped">
 
     <thead>
     <tr class='element-row'>
-      <th><input type="checkbox" id="checkall"/></th>
+      <th><input class="checkall " type="checkbox"/></th>
       <th data-field="id">PBX ID</th>
       <th data-field="name">Name</th>
       <th data-field="ip_addr">IP Address</th>
       <th data-field="strip">Strip</th>
       <th data-field="prefix">Prefix</th>
       <th data-field="fusionpbxenabled">FusionPBX<br>Domain Support</th>
-      <th></th>
+      <th colspan="2"></th>
     </tr>
     </thead>
     <tbody>
@@ -59,8 +59,9 @@
         <td class='fusion_db_username hide'>{{ row.db_username|noneFilter() }}</td>
         <td class='fusion_db_password hide'>{{ row.db_password|noneFilter() }}</td>
         <td class='authtype hide'>{{ row.rpid|noneFilter() }}</td>
-        <td class='pbx_username hide'>{{ row.username|noneFilter() }}</td>
-        <td class='pbx_password hide'>{{ row.password|noneFilter() }}</td>
+        <td class='auth_username hide'>{{ row.username|noneFilter() }}</td>
+        <td class='auth_password hide'>{{ row.password|noneFilter() }}</td>
+        <td class='auth_domain hide'>{{ row.domain|noneFilter() }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
@@ -91,57 +92,73 @@
 
   <div class="modal-body">
     <form action="/pbx" method="POST" role="form">
-      <input type="hidden" id="gwid" name="gwid">
+      <input class="gwid " type="hidden" name="gwid">
+
       <div class="form-group">
-        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)"
+        <input class="name form-control" type="text" name="name" placeholder="Friendly Name(Optional)"
                autofocus="autofocus">
       </div>
       <div class="form-group">
-
-        <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
+        <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div>
       <div class="form-group">
-        <div class="radio" id="authoptions2">
-          <label><input type="radio" id="authtype_3" name="authtype" value="ip" checked>IP Auth</label>
-          <label><input type="radio" id="authtype_4" name="authtype" value="userpwd">Username/Password Auth</label>
+        <div class="authoptions radio">
+          <label><input class="authtype " type="radio" data-toggle="ip_enabled" name="authtype" value="ip" checked>IP
+            Auth</label>
+          <label><input class="authtype " type="radio" data-toggle="userpwd_enabled" name="authtype" value="userpwd">Username/Password
+            Auth</label>
         </div>
       </div>
 
-      <div class="form-group hidden" id="userpwd_enabled2" name="userpwd_enabled" value="0">
-        <p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The
-          user accounts will be created in the <b>{{ DEFAULT_AUTH_DOMAIN }}</b></p>
+      <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
+        <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
+          different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
         <div class="form-group">
-          <input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+          <input class="auth_username form-control" type="text" name="auth_username"
+                 placeholder="Auth Username">
         </div>
         <div class="form-group">
-          <input class="form-control " type="password" id="pbx_password" name="pbx_password"
-                 placeholder="PBX Password">
+          <input class="auth_password form-control" type="password" name="auth_password"
+                 placeholder="Auth Password">
+        </div>
+        <div class="form-group">
+          <input class="auth_domain form-control" type="text" name="auth_domain"
+                 placeholder="Auth Domain (optional)">
         </div>
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="strip" name="strip"
+        <input class="strip form-control" type="text" name="strip"
                placeholder="# of characters to strip from RURI">
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="prefix" name="prefix"
+        <input class="prefix form-control" type="text" name="prefix"
                placeholder="The characters to prefix to a RURI">
       </div>
+
       <div class="form-group">
-        <input id="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"><label
-          for="toggleFusionPBXDomain" class="label-toggle">Enable FusionPBX Domain Support</label>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-fusionpbx'></span> Enabled"
+                   data-off="<span class='icon-fusionpbx'></span> Disabled"
+                   data-width="120px">
+            FusionPBX Domain Support
+          </label>
+        </div>
+        <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
       </div>
-      <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
-      <div id="FusionPBXDomainOptions" class="form-group hidden">
+
+      <div class="FusionPBXDomainOptions form-group hidden">
         <div class="form-group">
-          <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server"
+          <input class="fusionpbx_db_server form-control" type="text" name="fusionpbx_db_server"
                  placeholder="FusionPBX Database IP or Hostname">
         </div>
         <div class="form-group">
-          <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username"
+          <input class="fusionpbx_db_username form-control" type="text" name="fusionpbx_db_username"
                  placeholder="FusionPBX DB Username">
         </div>
         <div class="form-group">
-          <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password"
+          <input class="fusionpbx_db_password form-control" type="password" name="fusionpbx_db_password"
                  placeholder="FusionPBX DB Password(Optional)">
         </div>
       </div>
@@ -167,47 +184,63 @@
 
   <div class="modal-body">
     <form action="/pbx" method="POST" role="form">
-      <input type="hidden" id="gwid" name="gwid">
+      <input class="gwid " type="hidden" name="gwid">
       <div class="form-group">
-        <input class="form-control " type="text" id="name" name="name" placeholder="Friendly Name(Optional)"
+        <input class="name form-control" type="text" name="name" placeholder="Friendly Name(Optional)"
                autofocus="autofocus">
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="ip_addr" name="ip_addr" placeholder="IP Address">
+        <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div>
       <div class="form-group">
-        <div class="radio" id="authoptions">
-          <label><input type="radio" id="authtype_1" name="authtype" value="ip" checked>IP Auth</label>
-          <label><input type="radio" id="authtype_2" name="authtype" value="userpwd">Username/Password Auth</label>
+        <div class="authoptions radio">
+          <label><input class="authtype " type="radio" data-toggle="ip_enabled" name="authtype" value="ip" checked>IP
+            Auth</label>
+          <label><input class="authtype " type="radio" data-toggle="userpwd_enabled" name="authtype" value="userpwd">Username/Password
+            Auth</label>
         </div>
       </div>
 
       <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
-        <p>Please enter a username and password for the PBX/Endpoint if you want it to register to dSIPRouter. The
-          user accounts will be created in the <b>{{ DEFAULT_AUTH_DOMAIN }}</b> domain</p>
+        <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
+          different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
         <div class="form-group">
-          <input class="form-control " type="text" id="pbx_username" name="pbx_username" placeholder="PBX Username">
+          <input class="auth_username form-control" type="text" name="auth_username"
+                 placeholder="Auth Username">
         </div>
         <div class="form-group">
-          <input class="form-control " type="password" id="pbx_password" name="pbx_password"
-                 placeholder="PBX Password">
+          <input class="auth_password form-control" type="password" name="auth_password"
+                 placeholder="Auth Password">
+        </div>
+        <div class="form-group">
+          <input class="auth_domain form-control" type="text" name="auth_domain"
+                 placeholder="Auth Domain (optional)">
         </div>
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="strip" name="strip"
+        <input class="strip form-control" type="text" name="strip"
                placeholder="# of characters to strip from RURI">
       </div>
       <div class="form-group">
-        <input class="form-control " type="text" id="prefix" name="prefix"
+        <input class="prefix form-control" type="text" name="prefix"
                placeholder="The characters to prefix to a RURI">
       </div>
+
       <div class="form-group">
-        <input id="toggleFusionPBXDomainAdd" type="checkbox" data-toggle="toggle" value="1"><label
-          for="toggleFusionPBXDomainAdd" class="label-toggle">Enable FusionPBX Domain Support</label>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-fusionpbx'></span> Enabled"
+                   data-off="<span class='icon-fusionpbx'></span> Disabled"
+                   data-width="120px">
+            FusionPBX Domain Support
+          </label>
+        </div>
+        <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
       </div>
-      <input type="hidden" id="fusionpbx_db_enabled" name="fusionpbx_db_enabled" value="0">
-      <div id="FusionPBXDomainOptionsAdd" class="form-group hidden">
-        <div class="alert alert-warning .pre-scrollable">
+
+      <div class="FusionPBXDomainOptionsAdd form-group hidden">
+        <div class="alert alert-warning pre-scrollable">
           <strong>You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
             Replace &lt;ip address&gt; with the ip address of this server.</strong>
           <pre>sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
@@ -218,15 +251,15 @@ echo -e "host    all             all            &lt;ip address&gt;/32           
 /etc/init.d/postgresql restart</pre>
         </div>
         <div class="form-group">
-          <input class="form-control" type="text" id="fusionpbx_db_server" name="fusionpbx_db_server"
+          <input class="fusionpbx_db_server form-control" type="text" name="fusionpbx_db_server"
                  placeholder="FusionPBX Database IP or Hostname">
         </div>
         <div class="form-group">
-          <input class="form-control" type="text" id="fusionpbx_db_username" name="fusionpbx_db_username"
+          <input class="fusionpbx_db_username form-control" type="text" name="fusionpbx_db_username"
                  placeholder="FusionPBX DB Username">
         </div>
         <div class="form-group">
-          <input class="form-control" type="password" id="fusionpbx_db_password" name="fusionpbx_db_password"
+          <input class="fusionpbx_db_password form-control" type="password" name="fusionpbx_db_password"
                  placeholder="FusionPBX DB Password(Optional)">
         </div>
       </div>
@@ -253,8 +286,8 @@ echo -e "host    all             all            &lt;ip address&gt;/32           
   <div class="modal-body">
     <form action="/pbxdelete" method="POST" role="form">
       <div class="form-group">
-        <input class="form-control " type="hidden" id="gwid" name="gwid">
-        <input class="form-control " type="hidden" id="name" name="name">
+        <input class="gwid form-control" type="hidden" name="gwid">
+        <input class="name form-control" type="hidden" name="name">
       </div>
 
       <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
