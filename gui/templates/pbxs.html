@@ -5,7 +5,7 @@
 
   <div class="tableAddButton">
     <h4>List of PBX(s)</h4>
-    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add">
+    <button id='open-PbxAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add">
       Add
     </button>
   </div>
@@ -27,7 +27,7 @@
 
 {% block table %}
 
-  <table id="carriers" class="table table-bordered table-striped">
+  <table id="pbxs" class="table table-bordered table-striped">
 
     <thead>
     <tr class='element-row'>
@@ -239,7 +239,7 @@
         <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
       </div>
 
-      <div class="FusionPBXDomainOptionsAdd form-group hidden">
+      <div class="FusionPBXDomainOptions form-group hidden">
         <div class="alert alert-warning pre-scrollable">
           <strong>You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
             Replace &lt;ip address&gt; with the ip address of this server.</strong>

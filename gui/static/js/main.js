@@ -129,105 +129,103 @@ var getQueryString = function(field, url) {
   return string ? string[1] : null;
 };
 
-function setCarrierHandlers() {
-  $('#open-CarrierAdd').click(function() {
-    /** Clear out the modal */
-    var modal_body = $('#add .modal-body');
-    modal_body.find(".gwid").val('');
-    modal_body.find(".name").val('');
-    modal_body.find(".ip_addr").val('');
-    modal_body.find(".strip").val('');
-    modal_body.find(".prefix").val('');
-    modal_body.find(".fusionpbx_db_server").val('');
-    modal_body.find(".fusionpbx_db_username").val('');
-    modal_body.find(".fusionpbx_db_password").val('');
-    modal_body.find(".authtype").val('');
-    modal_body.find(".auth_username").val('');
-    modal_body.find(".auth_password").val('');
-    modal_body.find(".auth_domain").val('');
+$('#open-PbxAdd').click(function() {
+  /** Clear out the modal */
+  var modal_body = $('#add .modal-body');
+  modal_body.find(".gwid").val('');
+  modal_body.find(".name").val('');
+  modal_body.find(".ip_addr").val('');
+  modal_body.find(".strip").val('');
+  modal_body.find(".prefix").val('');
+  modal_body.find(".fusionpbx_db_server").val('');
+  modal_body.find(".fusionpbx_db_username").val('');
+  modal_body.find(".fusionpbx_db_password").val('');
+  modal_body.find(".authtype").val('');
+  modal_body.find(".auth_username").val('');
+  modal_body.find(".auth_password").val('');
+  modal_body.find(".auth_domain").val('');
+  modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+
+  /* make sure ip_addr not disabled */
+  modal_body.find('.ip_addr').prop('disabled', false);
+});
+
+
+$('#pbxs #open-Update').click(function() {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('pbxs');
+  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
+  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+  var fusionpbxenabled = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
+  var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
+  var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
+  var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
+  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
+  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+
+
+  /** Clear out the modal */
+  var modal_body = $('#edit .modal-body');
+  modal_body.find(".gwid").val('');
+  modal_body.find(".name").val('');
+  modal_body.find(".ip_addr").val('');
+  modal_body.find(".strip").val('');
+  modal_body.find(".prefix").val('');
+  modal_body.find(".authtype").val('');
+  modal_body.find(".auth_username").val('');
+  modal_body.find(".auth_password").val('');
+  modal_body.find(".auth_domain").val('');
+
+  /* update modal fields */
+  modal_body.find(".gwid").val(gwid);
+  modal_body.find(".name").val(name);
+  modal_body.find(".ip_addr").val(ip_addr);
+  modal_body.find(".strip").val(strip);
+  modal_body.find(".prefix").val(prefix);
+  modal_body.find(".authtype").val(authtype);
+  modal_body.find(".fusionpbx_db_server").val(fusionpbx_db_server);
+  modal_body.find(".fusionpbx_db_username").val(fusionpbx_db_username);
+  modal_body.find(".fusionpbx_db_password").val(fusionpbx_db_password);
+  modal_body.find(".auth_username").val(auth_username);
+  modal_body.find(".auth_password").val(auth_password);
+  modal_body.find(".auth_domain").val(auth_domain);
+
+  if (fusionpbxenabled === "Yes") {
+    modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
+    modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
+  }
+  else {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+  }
 
-    /* make sure ip_addr not disabled */
+  if (authtype !== "") {
+    /* userpwd auth enabled, Set the radio button to true */
+    modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
+    modal_body.find('.ip_addr').prop('disabled', true);
+  }
+  else {
+    /* ip auth enabled, Set the radio button to true */
+    modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
     modal_body.find('.ip_addr').prop('disabled', false);
-  });
+  }
+});
 
+$('#pbxs #open-Delete').click(function() {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('pbxs');
+  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
 
-  $('#carriers #open-Update').click(function() {
-    var row_index = $(this).parent().parent().parent().index() + 1;
-    var c = document.getElementById('carriers');
-    var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-    var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-    var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-    var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-    var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-    var fusionpbxenabled = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-    var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
-    var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
-    var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-    var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-    var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-    var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-    var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-
-
-    /** Clear out the modal */
-    var modal_body = $('#edit .modal-body');
-    modal_body.find(".gwid").val('');
-    modal_body.find(".name").val('');
-    modal_body.find(".ip_addr").val('');
-    modal_body.find(".strip").val('');
-    modal_body.find(".prefix").val('');
-    modal_body.find(".authtype").val('');
-    modal_body.find(".auth_username").val('');
-    modal_body.find(".auth_password").val('');
-    modal_body.find(".auth_domain").val('');
-
-    /* update modal fields */
-    modal_body.find(".gwid").val(gwid);
-    modal_body.find(".name").val(name);
-    modal_body.find(".ip_addr").val(ip_addr);
-    modal_body.find(".strip").val(strip);
-    modal_body.find(".prefix").val(prefix);
-    modal_body.find(".authtype").val(authtype);
-    modal_body.find(".fusionpbx_db_server").val(fusionpbx_db_server);
-    modal_body.find(".fusionpbx_db_username").val(fusionpbx_db_username);
-    modal_body.find(".fusionpbx_db_password").val(fusionpbx_db_password);
-    modal_body.find(".auth_username").val(auth_username);
-    modal_body.find(".auth_password").val(auth_password);
-    modal_body.find(".auth_domain").val(auth_domain);
-
-    if (fusionpbxenabled === "Yes") {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
-      modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
-    }
-    else {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-    }
-
-    if (authtype !== "") {
-      /* userpwd auth enabled, Set the radio button to true */
-      modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
-      modal_body.find('.ip_addr').prop('disabled', true);
-    }
-    else {
-      /* ip auth enabled, Set the radio button to true */
-      modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
-      modal_body.find('.ip_addr').prop('disabled', false);
-    }
-  });
-
-  $('#carriers #open-Delete').click(function() {
-    var row_index = $(this).parent().parent().parent().index() + 1;
-    var c = document.getElementById('carriers');
-    var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-    var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-
-    /* update modal fields */
-    var modal_body = $('#delete .modal-body');
-    modal_body.find(".gwid").val(gwid);
-    modal_body.find(".name").val(name);
-  });
-}
+  /* update modal fields */
+  var modal_body = $('#delete .modal-body');
+  modal_body.find(".gwid").val(gwid);
+  modal_body.find(".name").val(name);
+});
 
 $('#inboundmapping #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
@@ -312,6 +310,7 @@ function reloadkam(elmnt) {
   //elmnt.style.backgroundColor = "red";
   //elmnt.style.borderColor = "red"
   var msg_bar = $(".message-bar");
+  var reload_button = $('#reloadkam');
 
 
   $.ajax({
@@ -322,6 +321,8 @@ function reloadkam(elmnt) {
       if (msg.status === 1) {
         msg_bar.addClass("alert alert-success");
         msg_bar.html("<strong>Success!</strong> Kamailio was reloaded successfully!");
+        reload_button.removeClass('btn-warning');
+        reload_button.addClass('btn-primary');
       }
       else {
         msg_bar.addClass("alert alert-danger");
@@ -345,7 +346,7 @@ $('.modal-body .toggleFusionPBXDomain').change(function() {
   var fusionpbx_db_server = modal_body.find('.fusionpbx_db_server').val();
   var fusionpbx_db_username = modal_body.find('.fusionpbx_db_username').val();
 
-  if ($(this).is(":checked")) {
+  if ($(this).is(":checked") || $(this).prop("checked")) {
     modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
     modal_body.find('.fusionpbx_db_enabled').val(1);
 
@@ -366,7 +367,7 @@ $('.modal-body .toggleFusionPBXDomain').change(function() {
 
 /* listener for teleblock toggle */
 $('#toggleTeleblock').change(function() {
-  if ($(this).is(":checked")) {
+  if ($(this).is(":checked") || $(this).prop("checked")) {
     $('#teleblockOptions').removeClass("hidden");
     $(this).val("1");
     $(this).bootstrapToggle('on');
@@ -435,7 +436,7 @@ $(window).on('hide.bs.modal', function(e) {
 
 /* remove non-printable ascii chars on paste */
 $('form input[type!="hidden"]').on("paste", function() {
-   $(this).val(this.value.replace(/[^\x20-\x7E]+/g, ''))
+  $(this).val(this.value.replace(/[^\x20-\x7E]+/g, ''))
 });
 
 /* make sure autofocus is honored on loaded modals */
@@ -443,7 +444,3 @@ $('.modal').on('shown.bs.modal', function() {
   $(this).find('[autofocus]').focus();
 });
 
-/* any handlers that MAY rely on async calls put here */
-$(document).ajaxStop(function() {
-  setCarrierHandlers();
-});

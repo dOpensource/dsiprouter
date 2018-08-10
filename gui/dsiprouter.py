@@ -1232,6 +1232,7 @@ def reloadkam():
     """
 
     global reload_required
+    prev_reload_val = reload_required
 
     try:
         if (settings.DEBUG):
@@ -1256,12 +1257,13 @@ def reloadkam():
                 ['kamcmd', 'cfg.seti', 'teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)])
 
         session['last_page'] = request.headers['Referer']
-        reload_required = False
 
         if return_code == 0:
             status_code = 1
+            reload_required = False
         else:
             status_code = 0
+            reload_required = prev_reload_val
         return json.dumps({"status": status_code})
 
     except http_exceptions.HTTPException as ex:
@@ -1272,8 +1274,6 @@ def reloadkam():
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
         return showError(type=error)
-    finally:
-        reload_required = True
 
 
 # custom jinja filters
