@@ -3,16 +3,47 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block css %}
-        {{ link_tag('main') }}
+  {{ link_tag('main') }}
 {% endblock %}
 
 {% block body %}
 
-{% if type=="db" %}
- 
-DB Issue - Please check your database and try the request again!
+  {% set github_url = 'https://github.com/dOpensource/dsiprouter' %}
+  {% set github_issues_url = github_url + "/issues" %}
 
-{% endif %}
+  <div class="wrapper-vertical centered">
+
+    {% if type=="db" %}
+
+      <h2>DB Issue</h2>
+      <p>Please check your database and try the request again!</p>
+      <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.</p>
+
+    {% elif type=="http" %}
+
+      <h2>HTTP Issue</h2>
+      <p>Please check your connection and try the request again!</p>
+      <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.</p>
+
+    {% elif type=="server" %}
+
+      <h2>Server Issue</h2>
+      <p>Please check your configuration and try the request again!</p>
+      <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.</p>
+      <p>To submit a bug for review go to the <a href="{{ github_issues_url }}">dSIPRouter Issues</a> page and submit a new
+        issue with a <strong>detailed</strong> explanation and <strong>screenshots</strong> of the issue.</p>
+
+    {% else %}
+
+      <h2>Unknown Issue</h2>
+      <p>Please check your request and try it again!</p>
+      <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.</p>
+      <p>To submit a bug for review go to the <a href="{{ github_issues_url }}">dSIPRouter Issues</a> page and submit a new
+        issue with a <strong>detailed</strong> explanation and <strong>screenshots</strong> of the issue.</p>
+
+    {% endif %}
+
+  </div>
 
 {% endblock %}
 
