@@ -74,7 +74,7 @@ function setCarrierGroupHandlers() {
     modal_body.find(".auth_password").val('');
     modal_body.find(".auth_domain").val('');
     // update gwgroup for all modals
-    $('.modal-body').each(function() {
+    $('.modal-body').find(".gwgroup").each(function() {
       $(this).val('');
     });
 

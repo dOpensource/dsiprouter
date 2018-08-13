@@ -48,6 +48,10 @@
   position: relative;
 }
 
+.wrap .nav-bar {
+  border-radius: 0;
+}
+
 .wrap .nav-bar .navbar-brand {
   margin-top: 15px;
   color: #FFB266;
@@ -446,6 +450,10 @@ a.currentlink {
 }
 .equal-centered > * {
   text-align: center;
+}
+
+.children-align-inherit.children-align-inherit > * {
+  text-align: inherit;
 }
 
 .hidden {

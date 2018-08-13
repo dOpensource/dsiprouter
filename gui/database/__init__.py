@@ -158,6 +158,7 @@ class UAC(object):
     """
 
     class FLAGS(Enum):
+        REG_ENABLED = 0
         REG_DISABLED = 1
         REG_IN_PROGRESS = 2
         REG_SUCCEEDED = 4

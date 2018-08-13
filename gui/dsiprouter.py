@@ -184,7 +184,7 @@ def addUpdateCarrierGroups():
         # Updating
         else:
             # config form
-            if len(new_name) <= 0:
+            if len(new_name) > 0:
                 Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
                 fields = strFieldsToDict(Gwgroup.description)
                 fields['name'] = name
@@ -196,7 +196,7 @@ def addUpdateCarrierGroups():
                     db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                         {'l_username': auth_username, 'r_username': auth_username, 'auth_username': auth_username,
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                         'auth_proxy': auth_proxy}, synchronize_session=False)
+                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False)
 
                 else:
                     db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
@@ -592,7 +592,6 @@ def addUpdatePBX():
 
                 db.add(Gateway)
                 db.add(FusionPBXDB)
-                db.commit()
 
         # Updating
         else:
@@ -622,15 +621,17 @@ def addUpdatePBX():
                 exists = db.query(Subscribers).filter(Subscribers.rpid == gwid).scalar()
                 if exists:
                     db.query(Subscribers).filter(Subscribers.rpid == gwid).update(
-                        {'username': auth_username, 'password': auth_password, 'domain': auth_domain, 'rpid': gwid})
+                        {'username': auth_username, 'password': auth_password, 'domain': auth_domain, 'rpid': gwid},
+                        synchronize_session=False)
                 else:
                     Subscriber = Subscribers(auth_username, auth_password, auth_domain, gwid)
                     db.add(Subscriber)
             # Update the Address table with the new ip address
             else:
-                db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update({'ip_addr': ip_addr})
-                db.commit()
+                db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
+                    {'ip_addr': ip_addr}, synchronize_session=False)
 
+        db.commit()
         reload_required = True
         return displayPBX()
 
