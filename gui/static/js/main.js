@@ -383,9 +383,9 @@ $('#toggleTeleblock').change(function() {
 $('.authoptions.radio').get().forEach(function(elem) {
   elem.addEventListener('click', function(e) {
     var target_radio = $(e.target);
-    /* fix target if we hit an ancestor elem containing it */
+    /* keep trickling down until input hit */
     if ($(e.target).get(0).nodeName.toLowerCase() !== "input") {
-      target_radio = target_radio.find('input[type="radio"]');
+      return false;
     }
     var auth_radios = $(e.currentTarget).find('input[type="radio"]');
     var modal_body = $(this).closest('.modal-body');
@@ -395,7 +395,11 @@ $('.authoptions.radio').get().forEach(function(elem) {
     });
     var hide_show_divs = modal_body.find(hide_show_ids.join(', '));
 
-    if (target_radio.is(":checked")) {
+    if (target_radio.is(":checked") || target_radio.prop("checked")) {
+      /* change value of authtype inputs */
+      modal_body.find('.authtype').val(target_radio.data('toggle').split('_')[0]);
+
+      /* show correct div's */
       $.each(hide_show_divs, function(i, elem) {
         if (target_radio.data('toggle') === $(elem).attr('name')) {
           $(elem).removeClass("hidden");
@@ -406,6 +410,11 @@ $('.authoptions.radio').get().forEach(function(elem) {
       });
     }
     else {
+      /* change value of authtype inputs */
+      modal_body.find('.authtype').val('');
+
+      /* show correct div's */
+
       $.each(hide_show_divs, function(i, elem) {
         if (target_radio.data('toggle') === $(elem).attr('name')) {
           $(elem).addClass("hidden");
