@@ -27,22 +27,21 @@
 
 {% block table %}
 
-  <table id="inboundmapping" class="table table-bordred table-striped">
+  <table id="inboundmapping" class="table table-striped table-centered">
 
     <thead>
     <tr class='element-row'>
-      <th><input type="checkbox" id="checkall"/></th>
+      <th><input class="checkall " type="checkbox"/></th>
       <th data-field="ruleid">Rule ID</th>
       <th data-field="prefix">DID (or DID pattern)</th>
       <th data-field="gateway">PBX</th>
       <th data-field="gwid" style='display:none;'>PBX ID</th>
-      <th></th>
+      <th colspan="2"></th>
     </tr>
     </thead>
     <tbody>
     {% for row in rows %}
       <tr class='element-row'>
-        <input type='hidden' name='gwid' value={{ row.gwlist }}/>
         <td><input type="checkbox" class="checkthis" value="1"/></td>
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
@@ -80,12 +79,12 @@
 
   <div class="modal-body">
     <form action="/inboundmapping" method="POST" role="form">
-      <input type="hidden" id="ruleid" name="ruleid">
+      <input class="ruleid " type="hidden" name="ruleid">
       <div class="form-group">
-        <input class="form-control " type="text" id="prefix" name="prefix" placeholder="DID" autofocus="autofocus">
+        <input class="prefix form-control" type="text" name="prefix" placeholder="DID" autofocus="autofocus">
       </div>
       <div class="form-group">
-        <select class="form-control" name="gwid" id="gwid">
+        <select class="gwid form-control" name="gwid" title="gwid">
           {% for gw in gwlist %}
             <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
           {% endfor %}
@@ -113,13 +112,13 @@
 
   <div class="modal-body">
     <form action="/inboundmapping" method="POST" role="form">
-      <input type="hidden" id="ruleid" name="ruleid">
+      <input class="ruleid " type="hidden" name="ruleid">
 
       <div class="form-group">
-        <input class="form-control" type="text" id="prefix" name="prefix" placeholder="DID" autofocus="autofocus">
+        <input class="prefix form-control" type="text" name="prefix" placeholder="DID" autofocus="autofocus">
       </div>
       <div class="form-group">
-        <select class="form-control" name="gwid" id="gwid">
+        <select class="gwid form-control" name="gwid" title="gwid">
           {% for gw in gwlist %}
             <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
           {% endfor %}
@@ -148,7 +147,7 @@
   <div class="modal-body">
     <form action="/inboundmappingdelete" method="POST" role="form">
       <div class="form-group">
-        <input class="form-control " type="hidden" id="ruleid" name="ruleid">
+        <input class="ruleid form-control" type="hidden" name="ruleid">
       </div>
 
       <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
