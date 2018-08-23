@@ -9,3 +9,18 @@
 {%- macro tracked_link(title, url) -%}
         <a href="{{ url_for("click", url=url) }}">{{ title }}</a>
 {%- endmacro -%}
+
+{%- macro img_tag(location, alt="", style="width:auto; height:auto;") -%}
+        <img src="{{ location|imgFilter() }}" alt="{{ alt }}" style="{{ style }}">
+{%- endmacro -%}
+
+{%- macro modal(id, label='', hidden="true", content="") -%}
+  <div class="modal fade" id="{{ id }}" tabindex="-1" role="dialog" aria-labelledby="{{ label }}" aria-hidden="{{ hidden }}">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {{ content }}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+{%- endmacro %}
+
