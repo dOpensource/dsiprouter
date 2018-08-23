@@ -1,28 +1,28 @@
 {% from 'util.jinja2.html' import link_tag, script_tag, tracked_link %}
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>dSIPRouter {% block title %}{% endblock %}</title>
+    <head>
+        <meta charset="utf-8">
+        <title>dSIPRouter {% block title %}{% endblock %}</title>
 
-  {{ link_tag('bootstrap') }}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" />
 
-  {% block custom_css %}
-  {% endblock %}
+        {% block css %}
+        {% endblock %}
 
-</head>
-<body>
+    </head>
+    <body>
 
-<div class="container">
+        <div class="container">
 
-  {% block body %}
-  {% endblock %}
+            {% block body %}
+            {% endblock %}
 
-</div>
+        </div>
 
 
-{% block custom_js %}
-{% endblock %}
+        {% block js %}
+        {% endblock %}
 
-</body>
+    </body>
 </html>

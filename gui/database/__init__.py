@@ -1,6 +1,5 @@
-from enum import Enum
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, MetaData, Table, Column, String, join, Integer, ForeignKey, select
+from sqlalchemy import create_engine, MetaData, Table, Column, String
 from sqlalchemy.orm import mapper, sessionmaker
 import settings
 
@@ -11,28 +10,13 @@ class Gateways(object):
     Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-dr-gateways>`_
     """
 
-    def __init__(self, name, ip_addr, strip, prefix, type, gwgroup=None):
+    def __init__(self, name, ip_addr, strip, prefix, type):
         self.description = "name:" + name
-        if gwgroup is not None:
-            self.description += ",gwgroup:" + gwgroup
         self.address = ip_addr
         self.strip = strip
         self.pri_prefix = prefix
         self.type = type
-        self.attrs = ""
-
-    pass
-
-
-class GatewayGroups(object):
-    """
-    Schema for dr_gw_lists table\n
-    Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-dr-gw-lists>`_
-    """
-
-    def __init__(self, name, gwlist=[]):
-        self.description = "name:" + name
-        self.gwlist = ",".join(str(gw) for gw in gwlist)
+        self.gwid = None
 
     pass
 
@@ -43,10 +27,8 @@ class Address(object):
     Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-address>`_
     """
 
-    def __init__(self, name, ip_addr, mask, type, gwgroup=None):
+    def __init__(self, name, ip_addr, mask, type):
         self.tag = "name:" + name
-        if gwgroup is not None:
-            self.tag += ",gwgroup:" + gwgroup
         self.ip_addr = ip_addr
         self.mask = mask
         self.grp = type
@@ -151,37 +133,6 @@ class Subscribers(object):
 
     pass
 
-class UAC(object):
-    """
-    Schema for uacreg table\n
-    Documentation: `uacreg table <https://kamailio.org/docs/db-tables/kamailio-db-4.4.x.html#gen-db-uacreg>`_
-    """
-
-    class FLAGS(Enum):
-        REG_ENABLED = 0
-        REG_DISABLED = 1
-        REG_IN_PROGRESS = 2
-        REG_SUCCEEDED = 4
-        REG_IN_PROGRESS_AUTH = 8
-        REG_INITIALIZED = 16
-
-    def __init__(self, uuid, username="", password="", realm="", proxy="", local_domain="", remote_domain="", flags=0):
-        self.l_uuid = uuid
-        self.l_username = username
-        self.l_domain = local_domain
-        self.r_username = username
-        self.r_domain = remote_domain
-        self.realm = realm
-        self.auth_username = username
-        self.auth_password = password
-        self.auth_ha1 = ""
-        self.auth_proxy = proxy
-        self.expires = 60
-        self.flags = flags
-        self.reg_delay = 0
-
-    pass
-
 
 def getDBURI():
     # Define the database URI
@@ -208,18 +159,6 @@ def loadSession():
     #fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
     fusionpbx_db = Table('dsip_fusionpbx_db', metadata, autoload=True)
     dsip_lcr  = Table('dsip_lcr', metadata, autoload=True)
-    uacreg = Table('uacreg', metadata, autoload=True)
-    dr_gw_lists = Table('dr_gw_lists', metadata, autoload=True)
-    # dr_groups = Table('dr_groups', metadata, autoload=True)
-
-    # dr_gw_lists_alias = select([
-    #     dr_gw_lists.c.id.label("drlist_id"),
-    #     dr_gw_lists.c.gwlist,
-    #     dr_gw_lists.c.description.label("drlist_description"),
-    # ]).correlate(None).alias()
-    # gw_join = join(dr_gw_lists_alias, dr_groups,
-    #                dr_gw_lists_alias.c.drlist_id == dr_groups.c.id,
-    #                dr_gw_lists_alias.c.drlist_description == dr_groups.c.description)
 
     mapper(Gateways, dr_gateways)
     mapper(Address, address)
@@ -230,12 +169,6 @@ def loadSession():
     mapper(Subscribers, subscriber)
     #mapper(CustomRouting, customrouting)
     mapper(dSIPLCR, dsip_lcr)
-    mapper(UAC, uacreg)
-    # mapper(GatewayGroups, gw_join, properties={
-    #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
-    #     'description': [dr_groups.c.description, dr_gw_lists_alias.c.drlist_description],
-    # })
-    mapper(GatewayGroups, dr_gw_lists)
 
     Session = sessionmaker(bind=engine)
     session = Session()

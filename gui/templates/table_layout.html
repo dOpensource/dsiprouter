@@ -2,14 +2,16 @@
 
 {% block title %}Dashboard{% endblock %}
 
-{% block custom_css %}
+{% block css %}
+  {{ link_tag('main') }}
 {% endblock %}
+
 
 {% block body %}
 
   <div class="col-md-12">
 
-    <div class="wrapper-horizontal edge-centered children-align-inherit">
+    <div class="wrapper-horizontal">
       {% block table_headers %}
       {% endblock %}
     </div>
@@ -26,7 +28,7 @@
   </div>
 
 
-  <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="Edit" aria-hidden="true">
+  <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="edit" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         {% block edit_modal %}
@@ -36,7 +38,7 @@
   </div><!-- /.modal -->
 
 
-  <div class="modal fade" id="add" tabindex="-1" role="dialog" aria-labelledby="Add" aria-hidden="true">
+  <div class="modal fade" id="add" tabindex="-1" role="dialog" aria-labelledby="add" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         {% block add_modal %}
@@ -55,10 +57,8 @@
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
 
-  {% block custom_modals %}
-  {% endblock %}
 
 {% endblock %}
 
-{% block custom_js %}
+{% block js %}
 {% endblock %}
