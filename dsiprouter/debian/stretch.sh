@@ -33,7 +33,7 @@ function install
 function uninstall
 {
 		# Uninstall dependencies for dSIPRouter
-		apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+		apt-get -y uninstall build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 
 		#Remove Firewall for DSIP_PORT
 		firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
