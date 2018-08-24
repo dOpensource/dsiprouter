@@ -89,19 +89,6 @@ function uninstallNginx {
 	firewall-cmd --zone=public --add-port=80/tcp --permanent
         firewall-cmd --reload
 }
-function install {
-
-if [ $ENABLED == "0" ];then
-    exit
-fi
-
-installSQL
-installNginx
-}
-
-
-
-
 
 function install {
 
@@ -112,8 +99,6 @@ fi
 installSQL
 installNginx
 }
-
-
 
 function uninstall {
 
@@ -138,7 +123,7 @@ elif [ $# -gt 1 ]; then
 
 else
 
-	MYSQL_ROOT_USERNAME="-u$1"
+   MYSQL_ROOT_USERNAME="-u$1"
     MYSQL_ROOT_PASSWORD=-p$2
     MYSQL_KAM_DBNAME=$3
 fi
