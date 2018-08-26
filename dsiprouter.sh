@@ -19,7 +19,7 @@ MYSQL_KAM_DEF_DATABASE="kamailio"
 
 # Grab dynamic values
 DSIP_PORT=$(cat ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py | grep -oP 'DSIP_PORT[[:space:]]?=[[:space:]]?\K[0-9]*')
-EXTERNAL_IP=`curl -s ip.alt.io`
+EXTERNAL_IP=`curl -s https://api.ipify.org`
 INTERNAL_IP=`hostname -I | awk '{print $1}'`
 INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
