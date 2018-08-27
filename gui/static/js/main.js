@@ -111,6 +111,7 @@ $(function() {
 $(function() {
   $('a').each(function() {
     if ($(this).prop('href') === window.location.href) {
+      $(this).removeClass('navlink');
       $(this).addClass('currentlink');
     }
   });
