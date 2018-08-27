@@ -8,16 +8,27 @@
 
 {% block body %}
   <div class="container">
-    <div id="loginbox" style="margin-top:50px;" class="mainbox col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2">
+	  <div class="left-half">
+		  <div class="top-left">
+		 </div>
+		 <div class="bottom-left">
+			 <div class=sponsor-title>Sponsors</div>
+			 <div class=sponsor-group>
+			 	<div class=sponsor>
+					<a href="http://skye.tel/dsiprouter" target="_blank"><img src="/static/images/logo-h-blue.svg"></a>		
+				</div> 
+			 	<div class=sponsor>
+					<a href="http://dopensource.com/dsiprouter" target="_blank"><img src="/static/images/dopensource_logo.png"></a>		
+				</div> 
+			</div>
+		</div>
+	  </div>
+	  <div class="right-half">
+    <div id="loginbox" style="margin-top:100px;" class="mainbox col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2">
       <div id="loginlogo" class="loginlogo">
 	<img style="padding:20px 20px;" src="{{ url_for('static', filename='images/dsiprouter_x50px.png') }}">
       </div>
       <div class="panel panel-info">
-        <div class="panel-heading">
-          <div class="panel-title">Sign In</div>
-          <div style="float:right; font-size: 80%; position: relative; top:-10px"></div>
-        </div>
-
         <div style="padding-top:30px" class="panel-body">
           {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -64,6 +75,7 @@
         </div>
       </div>
     </div>
+	  </div> <!----End of right side ----!>
   </div>
 
 {% endblock %}
