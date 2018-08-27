@@ -345,6 +345,59 @@ a.currentlink {
   margin-left: auto;
 }
 
+.left-half {
+  position: absolute;
+  left: 0px;
+  width: 60%;
+  height: 100%;
+}
+
+.top-left { 
+  background-image: url("/static/images/flyball_office.jpg");
+  background-repeat: no-repeat;
+  background-color: #f4f6f9;
+  background-size: contain;
+  height: 90%;
+}
+
+.bottom-left {
+  background-color: #f4f6f9;
+  height: 10%;
+  align:
+}
+
+.right-half {
+  background-color: #f4f6f9;
+  position: absolute;
+  right: 0px;
+  width: 40%;
+  height: 100%;
+}
+
+.sponsor-title {
+  color: #5c9a4f;
+  font-size: 14px;
+  margin-left: 5px;
+  margin-bottom: 5px;
+}
+
+.sponsor-group {
+  width: 100%;
+  text-align: left;
+  margin-left: 10px
+}
+
+.sponsor {
+  
+  display: inline-block;
+  margin-right: 10px;
+     
+}
+
+.sponsor img {
+
+  width: 120px;
+}
 .navBarButtons {
   float: right;
 }
