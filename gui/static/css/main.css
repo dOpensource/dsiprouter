@@ -333,6 +333,10 @@ a.currentlink {
   color: #FF8100;
 }
 
+a.navlink {
+  color: #c4c4c5;
+}
+
 .label-toggle {
   margin-left: 10px;
   width: 100%;
@@ -363,7 +367,6 @@ a.currentlink {
 .bottom-left {
   background-color: #f4f6f9;
   height: 10%;
-  align:
 }
 
 .right-half {
