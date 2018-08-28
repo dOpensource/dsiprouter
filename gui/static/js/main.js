@@ -139,9 +139,9 @@ $('#open-PbxAdd').click(function() {
   modal_body.find(".strip").val('');
   modal_body.find(".prefix").val('');
   modal_body.find(".fusionpbx_db_server").val('');
-  modal_body.find(".fusionpbx_db_username").val('');
+  modal_body.find(".fusionpbx_db_username").val('fusionpbx');
   modal_body.find(".fusionpbx_db_password").val('');
-  modal_body.find(".authtype").val('');
+  modal_body.find(".authtype").val('ip');
   modal_body.find(".auth_username").val('');
   modal_body.find(".auth_password").val('');
   modal_body.find(".auth_domain").val('');
