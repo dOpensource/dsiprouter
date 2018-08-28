@@ -245,7 +245,7 @@
             Replace &lt;ip address&gt; with the ip address of this server.</strong>
           <pre>sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
 iptables -A INPUT -p tcp -s &lt;ip address&gt;/32 --dport 5432 -j ACCEPT
-iptables-save
+iptables-save > /etc/iptables/rules.v4
 #Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
 echo -e "host    all             all            &lt;ip address&gt;/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
 /etc/init.d/postgresql restart</pre>
