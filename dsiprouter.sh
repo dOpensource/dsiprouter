@@ -31,6 +31,14 @@ elif [ -f /etc/debian_version ]; then
 	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
 fi
 
+# run before install and uninstall functions
+function initialChecks {
+
+# comment out cdrom in sources as it can halt install
+sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.lis
+
+}
+
 function displayLogo {
 
 echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
@@ -157,12 +165,15 @@ mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
     mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
-        sqlscript=`find / -name 'drouting-create.sql' | grep mysql | grep 4. | sed -n 1p`
+    sqlscript=`find / -name 'drouting-create.sql' | grep mysql | grep 4. | sed -n 1p`
     mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
 fi
 
 # Install schema for custom drouting
 mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
+
+# Install schema for single & multi tenant pbx domain mapping
+mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/domain_mapping.sql
 
 # reset auto incrementers for related tables
 resetIncrementers "dr_gw_lists" "uacreg"
@@ -669,15 +680,12 @@ function installModules {
 
 
 function start {
-
-	#Check if Python is installed before trying to start up the process
-
+	# Check if Python is installed before trying to start up the process
 	if [ -z ${PYTHON_CMD+x} ]; then
-    		isPythonInstalled
+        isPythonInstalled
 	fi
 
-	#Check if the dSIPRouter process is already running
-	
+	# Check if the dSIPRouter process is already running
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then 
 		PID=`cat /var/run/dsiprouter/dsiprouter.pid`
 		ps -ef | grep $PID > /dev/null
@@ -687,64 +695,51 @@ function start {
 		fi
 	fi
 
-	#Start RTPEngine if it was installed
-
+	# Start RTPEngine if it was installed
 	if [ -e ./.rtpengineinstalled ]; then
-
 		startRTPEngine
-        fi
+    fi
 
-	#Start the process
+	# Start the process
 	if [ $DEBUG -eq 0 ]; then	
 		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >/dev/null 2>&1 &
 	else
 		nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >/var/log/dsiprouter.log 2>&1 &
 	fi
+
 	# Store the PID of the process
 	PID=$!
 	if [ $PID -gt 0 ]; then
-	      if [ ! -e /var/run/dsiprouter ]; then
-	      	mkdir /var/run/dsiprouter/
-	      fi
-		
-	      echo $PID > /var/run/dsiprouter/dsiprouter.pid
+      if [ ! -e /var/run/dsiprouter ]; then
+        mkdir /var/run/dsiprouter/
+      fi
 
-              echo "dSIPRouter was started under process id $PID"
-
-        fi
-		
-	
-
+      echo $PID > /var/run/dsiprouter/dsiprouter.pid
+      echo "dSIPRouter was started under process id $PID"
+    fi
 } #end of start
 
 
 
 function stop {
-
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
 		
 		#kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
-        kill -9 `pgrep -f runserver`
+        kill -9 $(pgrep -f runserver) 2>&1 >/dev/null
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
-	 	
 	else
 		echo "dSIPRouter is not running"
-
 	fi
 
 	if [ -e ./.rtpengineinstalled ]; then
-	
 		stopRTPEngine
 	 	if [ $? -eq 0 ]; then	
 			echo "RTPEngine was stopped"
 		fi
 	else
-	
 		echo "RTPEngine was not installed"
 	fi
-
-
 }
 
 function restart {
@@ -754,44 +749,38 @@ function restart {
 }
 
 function resetPassword {
+    echo -e "The admin account has been reset to the following:\n"
 
-echo -e "The admin account has been reset to the following:\n"
+    #Call the bash function that generates the password
+    generatePassword
 
-#Call the bash function that generates the password
-generatePassword
-
-#dSIPRouter will be restarted to make the new password active
-echo -e "Restart dSIPRouter to make the password active!\n"
-
+    #dSIPRouter will be restarted to make the new password active
+    echo -e "Restart dSIPRouter to make the password active!\n"
 }
 
 # Generate password and set it in the ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py PASSWORD field
 function generatePassword {
+    password=`date +%s | sha256sum | base64 | head -c 16`
 
-password=`date +%s | sha256sum | base64 | head -c 16`
+    # Add single quotes
+    password1=\'$password\'
+    sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
 
-#Add single quotes
-
-password1=\'$password\'
-sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
-
-echo -e "username: admin\npassword: $password\n"
-
+    echo -e "username: admin\npassword: $password\n"
 }
 
 function usageOptions {
+    echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
+    echo -e "Usage: $0 start|stop|restart"
+    echo -e "Usage: $0 resetpassword"
+    echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio."
+    echo -e "If that's required then use Siremis, which is located at http://siremis.asipto.com/."
+    echo -e "\nThis script is used for installing and uninstalling dSIPRouter, which includes installing the Web GUI portion, Kamailio Configuration file and optionally for installing the RTPEngine by SIPwise"
+    echo -e "This script can also be used to start, stop and restart dSIPRouter.  It will not restart Kamailio."
+    echo -e "\nSupport is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
+    echo -e "\n\ndOpenSource | A Flyball Company\nMade in Detroit, MI USA\n"
 
- echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
- echo -e "Usage: $0 start|stop|restart"
- echo -e "Usage: $0 resetpassword"
- echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio." 
- echo -e "If that's required then use Siremis, which is located at http://siremis.asipto.com/."
- echo -e "\nThis script is used for installing and uninstalling dSIPRouter, which includes installing the Web GUI portion, Kamailio Configuration file and optionally for installing the RTPEngine by SIPwise"
- echo -e "This script can also be used to start, stop and restart dSIPRouter.  It will not restart Kamailio."
- echo -e "\nSupport is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
- echo -e "\n\ndOpenSource | A Flyball Company\nMade in Detroit, MI USA\n"
-
- exit 1
+    exit 1
 }
 
 
@@ -802,108 +791,107 @@ function processCMD {
 		key="$1"
 		case $key in
 			install)
-			shift
-			if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
-				SERVERNAT=1
-				installRTPEngine
-			
-			elif [ "$1" == "-rtpengine" ]; then
-				installRTPEngine
-			fi
-			install
-			shift
-			exit 0
-			;;
+                shift
+                initialChecks
+                if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
+                    SERVERNAT=1
+                    installRTPEngine
+
+                elif [ "$1" == "-rtpengine" ]; then
+                    installRTPEngine
+                fi
+                install
+                shift
+                exit 0
+                ;;
 			uninstall)
-			shift
-			if [ "$1" == "-rtpengine" ]; then
-				uninstallRTPEngine
-			fi
-			uninstall
-			exit 0
-			;;		 
-			start)
-			shift
-			if [ "$1" == "-debug" ]; then
-                                DEBUG=1
-				set -x
-				shift
-                        fi
-			if [ "$1" == "-rtpengine" ]; then
-				startRTPEngine
-                        fi
-			start
-			shift
-			exit 0
-			;;
+                shift
+                initialChecks
+                if [ "$1" == "-rtpengine" ]; then
+                    uninstallRTPEngine
+                fi
+                uninstall
+                exit 0
+                ;;
+            start)
+                shift
+                if [ "$1" == "-debug" ]; then
+                    DEBUG=1
+                    set -x
+                    shift
+                fi
+                if [ "$1" == "-rtpengine" ]; then
+                    startRTPEngine
+                fi
+                start
+                shift
+                exit 0
+                ;;
 			stop)
-			stop
-			shift
-			exit 0
-			;;
-			restart)
-			if [ "$1" == "-debug" ]; then
-                                DEBUG=1
-				set -x
-            		fi
-			stop 
- 			start
-		 	shift
-			exit 0
-			;;
+                stop
+                shift
+                exit 0
+                ;;
+            restart)
+                if [ "$1" == "-debug" ]; then
+                    DEBUG=1
+                    set -x
+                fi
+                stop
+                start
+                shift
+                exit 0
+                ;;
 			rtpengineonly)
-			shift
-			if [ "$1" == "-servernat" ]; then
-				SERVERNAT=1
-			fi
-			installRTPEngine
-			exit 0
-			;;
+                shift
+                if [ "$1" == "-servernat" ]; then
+                    SERVERNAT=1
+                fi
+                installRTPEngine
+                exit 0
+                ;;
 			configurekam)
-			configureKamailio
-			exit 0
-			;;	
-            		installmodules)
-            		installModules
-            		exit 0
-            		;;
-            		fixmpath)
-            		fixMPATH
-            		exit 0
-            		;;
-    	    		enableservernat)
-	    		enableSERVERNAT
+                initialChecks
+                configureKamailio
+                exit 0
+                ;;
+            installmodules)
+                initialChecks
+                installModules
+                exit 0
+                ;;
+            fixmpath)
+                fixMPATH
+                exit 0
+                ;;
+            enableservernat)
+                enableSERVERNAT
 	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
-	   		exit 0
-	    		;;
-    	    		disableservernat)
-	    		disableSERVERNAT
-	    		echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
-	    		exit 0
-	    		;;
-           		 resetpassword)
-            		resetPassword
-            		exit 0
-           		 ;;
+	   		    exit 0
+                ;;
+            disableservernat)
+                disableSERVERNAT
+                echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+                exit 0
+                ;;
+            resetpassword)
+                resetPassword
+                exit 0
+                ;;
 			-h)
-			usageOptions
-			exit 0
-			;;
+                usageOptions
+                exit 0
+                ;;
 			*)
-			usageOptions
-			exit 0
-			;;
+                usageOptions
+                exit 0
+                ;;
 		esac
 	done
 
-	#Display usage options if no options are specified
-
-	usageOptions	
-	
-	
+	# Display usage options if no options are specified
+	usageOptions
 
 } #end of processCMD
-
-
 
 processCMD "$@"

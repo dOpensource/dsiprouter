@@ -1,11 +1,11 @@
 /* custom icons */
 @font-face {
   font-family: 'icomoon';
-  src:  url('/static/fonts/icomoon.eot?jnwfsx');
-  src:  url('/static/fonts/icomoon.eot?jnwfsx#iefix') format('embedded-opentype'),
-    url('/static/fonts/icomoon.ttf?jnwfsx') format('truetype'),
-    url('/static/fonts/icomoon.woff?jnwfsx') format('woff'),
-    url('/static/fonts/icomoon.svg?jnwfsx#icomoon') format('svg');
+  src: url('/static/fonts/icomoon.eot?jnwfsx');
+  src: url('/static/fonts/icomoon.eot?jnwfsx#iefix') format('embedded-opentype'),
+  url('/static/fonts/icomoon.ttf?jnwfsx') format('truetype'),
+  url('/static/fonts/icomoon.woff?jnwfsx') format('woff'),
+  url('/static/fonts/icomoon.svg?jnwfsx#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -25,23 +25,40 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-flowroute:before {
-  content: "\e905";
-}
-.icon-asterisk:before {
-  content: "\e903";
-}
-.icon-kamailio:before {
-  content: "\e904";
-}
 .icon-fusionpbx_full:before {
   content: "\e900";
 }
+
 .icon-gryphon:before {
   content: "\e901";
 }
+
 .icon-fusionpbx:before {
   content: "\e902";
+}
+
+.icon-asterisk:before {
+  content: "\e903";
+}
+
+.icon-kamailio:before {
+  content: "\e904";
+}
+
+.icon-flowroute:before {
+  content: "\e905";
+}
+
+.icon-freepbx:before {
+  content: "\e906";
+}
+
+.icon-circle-up:before {
+  content: "\ea41";
+}
+
+.icon-circle-down:before {
+  content: "\ea43";
 }
 
 .wrap {
@@ -49,6 +66,8 @@
 }
 
 .wrap .nav-bar {
+  -webkit-border-radius: 0;
+  -moz-border-radius: 0;
   border-radius: 0;
 }
 
@@ -109,7 +128,6 @@
   left: 2.5px;
   -webkit-transition: all 0.5s ease-out;
   -moz-transition: all 0.5s ease-out;
-  -ms-transition: all 0.5s ease-out;
   -o-transition: all 0.5s ease-out;
   transition: all 0.5s ease-out;
 }
@@ -146,7 +164,6 @@
   min-width: 400px;
   -webkit-transition: all 0.3s ease-out;
   -moz-transition: all 0.3s ease-out;
-  -ms-transition: all 0.3s ease-out;
   -o-transition: all 0.3s ease-out;
   transition: all 0.3s ease-out;
 }
@@ -183,6 +200,7 @@
   position: relative;
   -webkit-transition: all 0.4s ease;
   -o-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
   transition: all 0.4s ease;
 }
 
@@ -198,6 +216,7 @@
   color: #999;
   -webkit-transition: all 0.4s ease;
   -o-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
   transition: all 0.4s ease;
 }
 
@@ -219,6 +238,7 @@
   -webkit-transform: rotate(180deg);
   -ms-transform: rotate(180deg);
   -o-transform: rotate(180deg);
+  -moz-transform: rotate(180deg);
   transform: rotate(180deg);
 }
 
@@ -242,6 +262,7 @@
   padding-left: 42px;
   -webkit-transition: all 0.25s ease;
   -o-transition: all 0.25s ease;
+  -moz-transition: all 0.25s ease;
   transition: all 0.25s ease;
 }
 
@@ -275,6 +296,10 @@
 
   .wrap.active .content #bgrOne {
     top: 10px;
+    -webkit-transform: rotate(225deg);
+    -moz-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
     transform: rotate(225deg);
   }
 
@@ -284,6 +309,10 @@
 
   .wrap.active .content #bgrThree {
     top: 10px;
+    -webkit-transform: rotate(315deg);
+    -moz-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
     transform: rotate(315deg);
   }
 }
@@ -342,11 +371,10 @@ a.navlink {
   width: 100%;
 }
 
-.container {
-  padding-right: 0;
-  padding-left: 0;
-  margin-right: auto;
-  margin-left: auto;
+.container.container {
+  width: 100%;
+  margin: auto;
+  padding: 0;
 }
 
 .left-half {
@@ -356,7 +384,7 @@ a.navlink {
   height: 100%;
 }
 
-.top-left { 
+.top-left {
   background-image: url("/static/images/flyball_office.jpg");
   background-repeat: no-repeat;
   background-color: #f4f6f9;
@@ -391,16 +419,14 @@ a.navlink {
 }
 
 .sponsor {
-  
   display: inline-block;
   margin-right: 10px;
-     
 }
 
 .sponsor img {
-
   width: 120px;
 }
+
 .navBarButtons {
   float: right;
 }

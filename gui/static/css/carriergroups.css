@@ -13,7 +13,6 @@
 .navbar > ul > li {
   -webkit-transition: all 0.2s cubic-bezier(0.2, 0.6, 0.4, 1);
   -moz-transition: all 0.2s cubic-bezier(0.2, 0.6, 0.4, 1);
-  -ms-transition: all 0.2s cubic-bezier(0.2, 0.6, 0.4, 1);
   -o-transition: all 0.2s cubic-bezier(0.2, 0.6, 0.4, 1);
   transition: all 0.2s cubic-bezier(0.2, 0.6, 0.4, 1);
   background: rgba(0, 0, 0, 0.05);
@@ -23,13 +22,10 @@
 .navbar > ul > li a {
   -webkit-transition: all 0.2s ease;
   -moz-transition: all 0.2s ease;
-  -ms-transition: all 0.2s ease;
   -o-transition: all 0.2s ease;
   transition: all 0.2s ease;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
-  -ms-border-radius: 4px;
-  -o-border-radius: 4px;
   border-radius: 4px;
   border: 2px solid transparent;
   background: rgba(255, 255, 255, 0.75);
@@ -60,6 +56,8 @@
 .spinner-circle {
   border: 4px rgba(0, 0, 0, 0.25) solid;
   border-top: 4px black solid;
+  -webkit-border-radius: 50%;
+  -moz-border-radius: 50%;
   border-radius: 50%;
   -webkit-animation: rotator .5s infinite linear;
   -moz-animation: rotator .5s infinite linear;
@@ -68,18 +66,43 @@
 }
 
 @-webkit-keyframes rotator {
-  from { -webkit-transform: rotate(0deg); }
-  to { -webkit-transform: rotate(359deg); }
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(359deg);
+  }
 }
+
 @-moz-keyframes rotator {
-  from { -moz-transform: rotate(0deg); }
-  to { -moz-transform: rotate(359deg); }
+  from {
+    -moz-transform: rotate(0deg);
+  }
+  to {
+    -moz-transform: rotate(359deg);
+  }
 }
+
 @-o-keyframes rotator {
-  from { -o-transform: rotate(0deg); }
-  to { -o-transform: rotate(359deg); }
+  from {
+    -o-transform: rotate(0deg);
+  }
+  to {
+    -o-transform: rotate(359deg);
+  }
 }
+
 @keyframes rotator {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(359deg); }
+  from {
+    -webkit-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(359deg);
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
 }

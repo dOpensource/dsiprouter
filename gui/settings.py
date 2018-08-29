@@ -12,10 +12,14 @@ SSL_CERT = ""
 
 # dSIPRouter internal settings
 
-VERSION = 0.50
+VERSION = 0.51
 DEBUG = False
 
 # MySQL settings for kamailio
+# Supports multiple DB connection failover:
+# Specify a list of DB hostnames or ip's to enable, i.e.)
+# KAM_DB_HOST = ['db1', 'db2', 'db3']
+# kamailio.cfg must be manually configured && kamailio restarted
 
 KAM_DB_TYPE = 'mysql'
 KAM_DB_HOST = 'localhost'
@@ -55,6 +59,7 @@ TELEBLOCK_MEDIA_PORT = ''
 # auth info for flowroute accnt
 FLOWROUTE_ACCESS_KEY = ""
 FLOWROUTE_SECRET_KEY = ""
+FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # Network Settings
 
