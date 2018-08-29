@@ -1,4 +1,4 @@
-import settings, sys, re, socket, requests, logging, traceback, inspect
+import settings, sys, os, re, socket, requests, logging, traceback, inspect, string, random
 from flask import request
 
 
@@ -12,6 +12,7 @@ def getInternalIP():
         s.connect(("8.8.8.8", 80))
         return s.getsockname()[0]
 
+
 def getExternalIP():
     """ Returns external ip of system """
 
@@ -19,6 +20,7 @@ def getExternalIP():
     if ip == None or ip == "":
         ip = requests.get("http://ipv4.icanhazip.com").text.strip()
     return ip
+
 
 def getDNSNames():
     """ Returns ( hostname, domain ) of system """
@@ -30,28 +32,56 @@ def getDNSNames():
         host, domain = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3].split('.', 1)
     return host, domain
 
+def hostToIP(host):
+    """ Returns ip of host, or None on failure"""
+    try:
+         return socket.gethostbyaddr(host)[2][0]
+    except:
+        return None
+
+
+def ipToHost(ip):
+    """ Returns hostname of ip, or None on failure"""
+    try:
+        return socket.gethostbyaddr(ip)[0]
+    except:
+        return None
+
+
 def objToDict(obj):
     """
-    converts an object to dict
-    does not work on sqlalchemy row objects
+    converts an arbitrary object to dict
     """
-    return dict((attr, getattr(obj, attr)) for attr in dir(obj) if not attr.startswith('__') and not inspect.ismethod(getattr(obj,attr)))
+    return dict((attr, getattr(obj, attr)) for attr in dir(obj) if
+                not attr.startswith('__') and not inspect.ismethod(getattr(obj, attr)))
+
 
 def rowToDict(row):
     """
     convertings sqlalchemy row object to python dict
-    does not recurse through relationships (only returns table data)
+    does not recurse through relationships
+    tries table data, then _asdict() method, then objToDict()
     """
     d = {}
-    for column in row.__table__.columns:
-        d[column.name] = str(getattr(row, column.name))
+
+    if hasattr(row, '__table__'):
+        for column in row.__table__.columns:
+            d[column.name] = str(getattr(row, column.name))
+    elif hasattr(row, '_asdict'):
+        d = row._asdict()
+    else:
+        d = objToDict(row)
+
     return d
+
 
 def strFieldsToDict(fields_str):
     return dict(field.split(':') for field in fields_str.split(','))
 
+
 def dictToStrFields(fields_dict):
-    return ','.join("{}:{}".format(k,v) for k,v in fields_dict.items())
+    return ','.join("{}:{}".format(k, v) for k, v in fields_dict.items())
+
 
 def updateConfig(config_obj, field_dict):
     config_file = "<no filepath available>"
@@ -71,13 +101,15 @@ def updateConfig(config_obj, field_dict):
     except:
         print('Problem updating the {0} configuration file').format(config_file)
 
+
 def stripDictVals(d):
-    for key,val in d.items():
+    for key, val in d.items():
         if isinstance(val, str):
             d[key] = val.strip()
         elif isinstance(val, int):
             d[key] = int(str(val).strip())
     return d
+
 
 def getCustomRoutes():
     """ Return custom kamailio routes from config file """
@@ -99,6 +131,10 @@ def getCustomRoutes():
             print(route)
     return custom_routes
 
+def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+
 # modified method from Python cookbook, #475186
 def supportsColor(stream):
     """ Return True if terminal supports ASCII color codes  """
@@ -112,6 +148,7 @@ def supportsColor(stream):
     except:
         # guess false in case of error
         return False
+
 
 class IO():
     """ Contains static methods for handling i/o operations """
@@ -220,43 +257,33 @@ def debugException(ex, log_ex=True, print_ex=False, showstack=True):
     exc_type, exc_value, exc_tb = sys.exc_info()
 
     text = "((( EXCEPTION )))\n[CLASS]: {}\n[VALUE]: {}\n".format(exc_type, exc_value)
-    if log_ex:
-        # get detailed exception info
-        if vars(ex):
-            for k, v in vars(ex).items():
-                text += "[{}]: {}\n".format(k.upper(), v)
-        IO.logcrit(text)
+    # get detailed exception info
+    if vars(ex):
+        for k, v in vars(ex).items():
+            text += "[{}]: {}\n".format(k.upper(), str(v))
 
-    if print_ex:
-        # get detailed exception info
-        if vars(ex):
-            for k, v in vars(ex).items():
-                text += "[{}]: {}\n".format(k.upper(), v)
-        IO.printerr(text)
-
-    text = "((( BACKTRACE )))\n"
+    # determine how far we trace it back
+    tb_list = None
     if showstack:
-        for tb_info in traceback.extract_tb(exc_tb):
+        tb_list = traceback.extract_tb(exc_tb)
+    else:
+        tb_list = traceback.extract_tb(exc_tb, limit=1)
+
+    # ensure a backtrace exists first
+    if tb_list is not None and len(tb_list) > 0:
+        text += "((( BACKTRACE )))\n"
+
+        for tb_info in tb_list:
             filename, linenum, funcname, source = tb_info
+
             if funcname != '<module>':
                 funcname = funcname + '()'
             text += "[FILE]: {}\n[LINE NUM]: {}\n[FUNCTION]: {}\n[SOURCE]: {}".format(filename, linenum, funcname,
                                                                                       source)
-
-        if log_ex:
-            IO.logerr(text)
-        if print_ex:
-            IO.printerr(text)
-    else:
-        filename, linenum, funcname, source = traceback.extract_tb(exc_tb)[0]
-        if funcname != '<module>':
-            funcname = funcname + '()'
-        text += "[FILE]: {}\n[LINE NUM]: {}\n[FUNCTION]: {}\n[SOURCE]: {}".format(filename, linenum, funcname, source)
-
-        if log_ex:
-            IO.logerr(text)
-        if print_ex:
-            IO.printerr(text)
+    if log_ex:
+        IO.logerr(text)
+    if print_ex:
+        IO.printerr(text)
 
 
 def debugEndpoint(log_out=False, print_out=True, **kwargs):
@@ -271,16 +298,21 @@ def debugEndpoint(log_out=False, print_out=True, **kwargs):
 
     frame = sys._getframe().f_back if sys._getframe().f_back is not None else sys._getframe()
     # parent module
-    if hasattr(sys.modules[__name__], '__file__'):
-        calling_chain.append(getattr(sys.modules[__name__], '__file__').split('.', 1)[0])
+    if hasattr(frame.f_code, 'co_filename'):
+        calling_chain.append(os.path.abspath(frame.f_code.co_filename))
     # parent class
     if 'self' in frame.f_locals:
         calling_chain.append(frame.f_locals["self"].__class__)
+    else:
+        for k,v in frame.f_globals.items():
+            if not k.startswith('__') and frame.f_code.co_name in dir(v):
+                calling_chain.append(k)
+                break
     # parent func
     if frame.f_code.co_name != '<module>':
         calling_chain.append(frame.f_code.co_name)
 
-    text = "((( [DEBUG ENDPOINT]: {} )))".format('.'.join(calling_chain))
+    text = "((( [DEBUG ENDPOINT]: {} )))\n".format(' -> '.join(calling_chain))
     items_dict = objToDict(request)
     for k, v in sorted(items_dict.items()):
         text += '{}: {}\n'.format(k, str(v).strip())

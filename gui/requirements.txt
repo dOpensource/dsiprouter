@@ -1,5 +1,5 @@
 flask-restplus
-Flask-SQLAlchemy==2.1
+Flask-SQLAlchemy
 flask_cors
 requests
 jinja2

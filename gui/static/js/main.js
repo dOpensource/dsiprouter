@@ -130,6 +130,86 @@ var getQueryString = function(field, url) {
   return string ? string[1] : null;
 };
 
+/**
+ * Disable / Re-enable a form submittable element
+ * Use this instead of the HTML5 disabled prop
+ * @param selector  String|jQuery Object    The selector for elem
+ * @param disable   Boolean   Whether to disable or re-enable
+ */
+function toggleElemDisabled(selector, disable) {
+  var select_elem = null;
+  if (typeof selector === 'string' || selector instanceof String) {
+    select_elem = $(selector);
+  }
+  else if (selector instanceof jQuery) {
+    select_elem = selector;
+  }
+  else {
+    console.err("toggleElemDisabled(): invalid selector argument");
+    return;
+  }
+  if (disable) {
+    select_elem.parent().css({
+      'cursor': 'not-allowed'
+    });
+    select_elem.css({
+      'background-color': '#EEEEEE',
+      'opacity': '0.7',
+      'pointer-events': 'none'
+    });
+    select_elem.prop('readonly', true);
+    select_elem.prop('tabindex', -1);
+  }
+  else {
+    select_elem.parent().removeAttr('style');
+    select_elem.removeAttr('style');
+    select_elem.prop('readonly', false);
+    select_elem.prop('tabindex', 0);
+  }
+}
+
+/**
+ * Recursively search DOM tree until test is true
+ * Starts at and includes selected node, tests each desc
+ * Note that test callback applies to jQuery objects throughout
+ * @param selector   String|jQuery Object  The selector for start node
+ * @param test       function()            Test to apply to each node
+ * @return           jQuery Object|null    Returns found node or null
+ */
+function descendingSearch(selector, test) {
+  var select_node = null;
+  if (typeof selector === 'string' || selector instanceof String) {
+    select_node = $(selector);
+  }
+  else if (selector instanceof jQuery) {
+    select_node = selector;
+  }
+  else {
+    return null;
+  }
+
+  var num_nodes = select_node.length || 0;
+  if (num_nodes > 1) {
+    for (var i = 0; i < num_nodes; i++) {
+        if (test(select_node[i])) {
+          return select_node[i];
+      }
+    }
+  }
+  else {
+    if (test(select_node)) {
+        return select_node;
+      }
+  }
+
+  node_list = select_node.children();
+  if (node_list.length <= 0) {
+    return null;
+  }
+
+  descendingSearch(node_list, test)
+}
+
 $('#open-PbxAdd').click(function() {
   /** Clear out the modal */
   var modal_body = $('#add .modal-body');
@@ -146,9 +226,10 @@ $('#open-PbxAdd').click(function() {
   modal_body.find(".auth_password").val('');
   modal_body.find(".auth_domain").val('');
   modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+  modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
 
   /* make sure ip_addr not disabled */
-  modal_body.find('.ip_addr').prop('disabled', false);
+  toggleElemDisabled(modal_body.find('.ip_addr'), false);
 });
 
 
@@ -160,14 +241,15 @@ $('#pbxs #open-Update').click(function() {
   var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
   var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
   var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-  var fusionpbxenabled = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-  var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
-  var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
-  var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var fusionpbx_enabled = parseInt($(c).find('tr:eq(' + row_index + ') td:eq(7)').text(), 10);
+  var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
+  var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+  var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
+  var freepbx_enabled = parseInt($(c).find('tr:eq(' + row_index + ') td:eq(11)').text(), 10);
+  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
+  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
 
 
   /** Clear out the modal */
@@ -196,7 +278,7 @@ $('#pbxs #open-Update').click(function() {
   modal_body.find(".auth_password").val(auth_password);
   modal_body.find(".auth_domain").val(auth_domain);
 
-  if (fusionpbxenabled === "Yes") {
+  if (fusionpbx_enabled) {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
     modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
   }
@@ -204,15 +286,21 @@ $('#pbxs #open-Update').click(function() {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
   }
 
+  if (freepbx_enabled) {
+    modal_body.find(".toggleFreePBXDomain").bootstrapToggle('on');
+    modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
+  }
+  else {
+    modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
+  }
+
   if (authtype !== "") {
     /* userpwd auth enabled, Set the radio button to true */
     modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
-    modal_body.find('.ip_addr').prop('disabled', true);
   }
   else {
     /* ip auth enabled, Set the radio button to true */
     modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
-    modal_body.find('.ip_addr').prop('disabled', false);
   }
 });
 
@@ -343,26 +431,36 @@ $('.modal-body .toggleFusionPBXDomain').change(function() {
   var modal = $(this).closest('div.modal');
   var modal_body = modal.find('.modal-body');
 
-  var ip_addr = modal_body.find('input.ip_addr').val();
-  var fusionpbx_db_server = modal_body.find('.fusionpbx_db_server').val();
-  var fusionpbx_db_username = modal_body.find('.fusionpbx_db_username').val();
-
   if ($(this).is(":checked") || $(this).prop("checked")) {
     modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
     modal_body.find('.fusionpbx_db_enabled').val(1);
 
-    /* event triggered within edit modal */
-    if (modal.attr('id').toLowerCase().indexOf('edit') > -1) {
-      if (fusionpbx_db_server === "" && fusionpbx_db_username === "") {
-        modal_body.find('.fusionpbx_db_server').val(ip_addr);
-        modal_body.find('.fusionpbx_db_username').val('fusionpbx');
-      }
-    }
+    /* uncheck other toggles */
+    modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
   }
 
   else {
     modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
     modal_body.find('.fusionpbx_db_enabled').val(0);
+  }
+});
+
+/* listener for freePBX toggle */
+$('.modal-body .toggleFreePBXDomain').change(function() {
+  var modal = $(this).closest('div.modal');
+  var modal_body = modal.find('.modal-body');
+
+  if ($(this).is(":checked") || $(this).prop("checked")) {
+    modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
+    modal_body.find('.freepbx_enabled').val(1);
+
+    /* uncheck other toggles */
+    modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+  }
+
+  else {
+    modal_body.find('.FreePBXDomainOptions').addClass("hidden");
+    modal_body.find('.freepbx_enabled').val(0);
   }
 });
 
@@ -384,8 +482,11 @@ $('#toggleTeleblock').change(function() {
 $('.authoptions.radio').get().forEach(function(elem) {
   elem.addEventListener('click', function(e) {
     var target_radio = $(e.target);
-    /* keep trickling down until input hit */
-    if ($(e.target).get(0).nodeName.toLowerCase() !== "input") {
+    /* keep descending down DOM tree until input hit */
+    target_radio = descendingSearch($(e.target), function(node) {
+      return node.get(0).nodeName.toLowerCase() === "input"
+    });
+    if (target_radio === null) {
       return false;
     }
     var auth_radios = $(e.currentTarget).find('input[type="radio"]');
@@ -397,6 +498,16 @@ $('.authoptions.radio').get().forEach(function(elem) {
     var hide_show_divs = modal_body.find(hide_show_ids.join(', '));
 
     if (target_radio.is(":checked") || target_radio.prop("checked")) {
+      /* enable ip_addr on ip auth in #edit modal only */
+      if ($(this).closest('div.modal').attr('id').toLowerCase().indexOf('edit') > -1) {
+        if (target_radio.data('toggle') === "ip_enabled") {
+          toggleElemDisabled(modal_body.find('input.ip_addr'), false);
+        }
+        else {
+          toggleElemDisabled(modal_body.find('input.ip_addr'), true);
+        }
+      }
+
       /* change value of authtype inputs */
       modal_body.find('.authtype').val(target_radio.data('toggle').split('_')[0]);
 
@@ -425,7 +536,7 @@ $('.authoptions.radio').get().forEach(function(elem) {
         }
       });
     }
-    /* trickle down DOM tree */
+    /* trickle down DOM tree (capture event) */
   }, true);
 });
 

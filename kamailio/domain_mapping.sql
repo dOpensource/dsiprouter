@@ -1,13 +1,13 @@
--- MySQL dump 10.14  Distrib 5.5.56-MariaDB, for Linux (x86_64)
+-- MySQL dump 10.16  Distrib 10.1.26-MariaDB, for debian-linux-gnu (x86_64)
 --
 -- Host: localhost    Database: kamailio
 -- ------------------------------------------------------
--- Server version	5.5.56-MariaDB
+-- Server version	10.1.26-MariaDB-0+deb9u1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8 */;
+/*!40101 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -16,24 +16,45 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `dsip_fusionpbx_db`
+-- Table structure for table `dsip_multidomain_mapping`
 --
 
-DROP TABLE IF EXISTS `dsip_fusionpbx_db`;
+DROP TABLE IF EXISTS `dsip_multidomain_mapping`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `dsip_fusionpbx_db` (
+CREATE TABLE `dsip_multidomain_mapping` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
-  `pbx_id` int(10) DEFAULT NULL,
-  `db_ip` varchar(20) DEFAULT NULL,
-  `db_username` varchar(40) DEFAULT NULL,
-  `db_password` varchar(40) DEFAULT NULL,
-  `enabled` tinyint(1) DEFAULT NULL,
+  `pbx_id` int(10) NOT NULL,
+  `db_host` varchar(20) NOT NULL,
+  `db_username` varchar(40) NOT NULL,
+  `db_password` varchar(40) NOT NULL,
+  `domain_list` varchar(255) NOT NULL DEFAULT '',
+  `attr_list` varchar(255) NOT NULL DEFAULT '',
+  `type` tinyint(3) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) NOT NULL DEFAULT '0',
   `lastsync` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `syncstatus` tinyint(1) DEFAULT NULL,
-  `syncerror` varchar(200) DEFAULT NULL,
+  `syncstatus` tinyint(1) NOT NULL DEFAULT '0',
+  `syncerror` varchar(200) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `dsip_domain_mapping`
+--
+
+DROP TABLE IF EXISTS `dsip_domain_mapping`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dsip_domain_mapping` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `pbx_id` int(10) NOT NULL,
+  `domain_id` int(10) NOT NULL,
+  `attr_list` varchar(255) NOT NULL,
+  `type` tinyint(3) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -45,4 +66,4 @@ CREATE TABLE `dsip_fusionpbx_db` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2017-11-11 21:06:09
+-- Dump completed on 2018-08-28 22:04:51
