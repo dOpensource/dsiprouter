@@ -1,4 +1,4 @@
-import os, re, json, subprocess, urllib.parse, glob
+import os, re, json, subprocess, urllib.parse, glob,datetime
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
 from sqlalchemy import case, func
@@ -20,6 +20,14 @@ reload_required = False
 # TODO: unit testing per component
 # TODO: set up logging / log handlers
 
+
+@app.before_request
+def before_request():
+    session.permanent = True
+    if not hasattr(settings,'GUI_INACTIVE_TIMEOUT'):
+        settings.GUI_INACTIVE_TIMEOUT = 20 #20 minutes
+    app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
+    session.modified = True
 
 def showError(type="", code=500):
     return render_template('error.html', type=type), code
@@ -130,6 +138,8 @@ def displayCarrierGroups(gwgroup=None):
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -322,6 +332,8 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -517,6 +529,8 @@ def displayPBX():
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -737,6 +751,8 @@ def displayInboundMapping():
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -879,6 +895,8 @@ def displayTeleBlock():
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -979,6 +997,8 @@ def displayOutboundRoutes():
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
