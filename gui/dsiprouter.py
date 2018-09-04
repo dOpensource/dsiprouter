@@ -1482,8 +1482,10 @@ class CustomServer(Server):
         else:
             self.use_debugger = None
             self.use_reloader = None
-            self.ssl_crt = None if settings.SSL_CERT == "" else settings.SSL_CERT
-            self.ssl_key = None if settings.SSL_KEY == "" else settings.SSL_KEY
+            if hasattr(settings,'SSL_CERT'):
+                self.ssl_crt = settings.SSL_CERT
+            if hasattr(settings,'SSL_KEY'):
+                self.ssl_crt = settings.SSL_KEY
             self.threaded = True
             self.processes = 1
 
