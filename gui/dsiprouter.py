@@ -1485,7 +1485,7 @@ class CustomServer(Server):
             if hasattr(settings,'SSL_CERT'):
                 self.ssl_crt = settings.SSL_CERT
             if hasattr(settings,'SSL_KEY'):
-                self.ssl_crt = settings.SSL_KEY
+                self.ssl_key = settings.SSL_KEY
             self.threaded = True
             self.processes = 1
 
