@@ -691,6 +691,7 @@ def addUpdatePBX():
 
             # enable domain routing for this pbx
             if single_tenant_domain_enabled:
+
                 # put required VALUES for all single tenant use cases here
                 PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
                 PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_ENABLED.value
