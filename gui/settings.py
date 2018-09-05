@@ -4,7 +4,7 @@
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'NGVjYjYwYzJhMjdk'
+PASSWORD = 'admin'
 
 # dSIPRouter internal settings
 
@@ -17,7 +17,13 @@ ROLE = ''
 # MySQL settings for kamailio
 
 KAM_DB_TYPE = 'mysql'
-KAM_DB_HOST = ['64.129.84.40','64.129.84.41','50.237.20.140','50.237.20.141']
+
+# Database cluster
+# KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11,'50.237.20.12']
+
+# Single Host
+KAM_DB_HOST = 'localhost'
+
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
@@ -47,12 +53,12 @@ TELEBLOCK_GW_PORT = '5066'
 TELEBLOCK_MEDIA_IP = ''
 TELEBLOCK_MEDIA_PORT = ''
 
-
+# Flowroute API Settings
 FLOWROUTE_ACCESS_KEY=''
 FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL=''
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '64.129.84.43'
+INTERNAL_IP_ADDR = '64.129.84.44'
 INTERNAL_IP_NET = '64.129.84.*'
-EXTERNAL_IP_ADDR = '64.129.84.43'
+EXTERNAL_IP_ADDR = '64.129.84.44'
