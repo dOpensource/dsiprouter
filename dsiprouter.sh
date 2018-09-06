@@ -26,9 +26,10 @@ INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 # Get Linux Distro
 if [ -f /etc/redhat-release ]; then
  	DISTRO="centos"
+        RELEASE=7
 elif [ -f /etc/debian_version ]; then
 	DISTRO="debian"
-	DEB_REL=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
+	RELEASE=`grep -w "VERSION=" /etc/os-release | sed 's/VERSION=".* (\(.*\))"/\1/'`
 fi
 
 # run before install and uninstall functions
@@ -57,7 +58,7 @@ ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -
 function validateOSInfo {
 
 if [ "$DISTRO" == "debian" ]; then
-	case "$DEB_REL" in
+	case "$RELEASE" in
 
 		stretch|jessie)
 			KAM_VERSION=51
@@ -542,15 +543,10 @@ if [ ! -f "./.installed" ]; then
             isPythonInstalled
         fi
 	
-	if [ $DISTRO == "centos" ]; then
-	    PIP_CMD="pip"
-        yum -y install mysql-devel gcc gcc-devel python34  python34-pip python34-devel
-		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-        firewall-cmd --reload
 
-	elif [ $DISTRO == "debian" ]; then
+	if [[ $DISTRO =~ (debian|centos) ]]; then
 		echo -e "Attempting to install Kamailio...\n"
-        	./kamailio/$DISTRO/$DEB_REL.sh install ${KAM_VERSION} ${DSIP_PORT}
+        	./kamailio/$DISTRO/$RELEASE.sh install ${KAM_VERSION} ${DSIP_PORT}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was installed!"
 		else
@@ -558,7 +554,7 @@ if [ ! -f "./.installed" ]; then
 			exit
 		fi
 		echo -e "Attempting to install dSIPRouter...\n" 	
-		./dsiprouter/$DISTRO/$DEB_REL.sh install ${DSIP_PORT} $PYTHON_CMD
+		./dsiprouter/$DISTRO/$RELEASE.sh install ${DSIP_PORT} $PYTHON_CMD
     fi
 
 	# Configure Kamailio and Install dSIPRouter Modules
@@ -617,18 +613,13 @@ fi
 	#Stop dSIPRouter, remove ./.installed file, close firewall
 	stop
     
-	if [ $DISTRO == "centos" ]; then
-        PIP_CMD="pip"
-        yum -y remove mysql-devel gcc gcc-devel python34  python34-pip python34-devel
-		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-        firewall-cmd --reload
 	
-	elif [ $DISTRO == "debian" ]; then
+	if [[ $DISTRO =~ (debian|centos) ]]; then
 		echo -e "Attempting to uninstall dSIPRouter...\n" 	
-		./dsiprouter/$DISTRO/$DEB_REL.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
+		./dsiprouter/$DISTRO/$RELEASE.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
 		
 		echo -e "Attempting to uninstall Kamailio...\n"
-        ./kamailio/$DISTRO/$DEB_REL.sh uninstall ${KAM_VERSION} ${DSIP_PORT} ${PYTHON_CMD}
+        ./kamailio/$DISTRO/$RELEASE.sh uninstall ${KAM_VERSION} ${DSIP_PORT} ${PYTHON_CMD}
 		if [ $? -eq 0 ]; then
 			echo "Kamailio was uninstalled!"
 		else

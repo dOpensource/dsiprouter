@@ -1,78 +1,159 @@
-#PYTHON_CMD=python3.5
-DSIP_KAMAILIO_CONF_DIR=(`pwd`)
+#!/bin/bash
 
-set -x 
+set -x
+DEB_REL=`basename -s .sh $0`
 
-function install
-{
-		# Install dependencies for dSIPRouter
-		yum install -y python36u python36u-pip  glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel mariadb-devel python36-devel
+function centos_7_prereq() {
 
-		#Setup Firewall for DSIP_PORT
-		firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-		firewall-cmd --reload
-	
-		PIP_CMD="pip"
-		$PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
-		if [ $? -eq 1 ]; then
-			echo "dSIPRouter install failed: Couldn't install required libraries"
-                	exit 1
-        	fi
+ #Check if mariadb is installed
+ #
+ #if [ $? -eq 0 ]; then
+ # echo "Mariadb server is already installed"
+ #else
+ 
+  yum install -y mariadb-server 
 
-		#Install dSIPRouter as a service
-		cp ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-		sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp 
-		sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-
-		cp  ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp /lib/systemd/system/dsiprouter.service
-		chmod 644 /lib/systemd/system/dsiprouter.service
-		systemctl daemon-reload
-		systemctl enable dsiprouter.service
+ #fi 
+ 
+ return
 
 }
 
-function uninstall
-{
-		# Uninstall dependencies for dSIPRouter
-		apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 
-		#Remove Firewall for DSIP_PORT
-		firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
-		firewall-cmd --reload
-	
-		#Remove dSIProuter as a service
-		systemctl disable dsiprouter.service
-		rm /lib/systemd/system/dsiprouter.service
-		systemctl daemon-reload
+function centos_7_config() {
 
-		PIP_CMD="pip"
-		
-		/usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
-		if [ $? -eq 1 ]; then
-			echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
-                	exit 1
- 		else 
-			echo "DSIPRouter uninstall was successful"
-			exit 0
-        	fi
-	
+ touch /etc/tmpfiles.d/kamailio.conf
+        echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf 
+
+ sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
+ if [ $? -eq 0 ]; then
+  echo "Updated the Kamailio control file to support the configuration coming from a MySQL database"
+ fi 
+
+ #Execute 'kamdbctl create' to create the Kamailio database schema 
+ echo -e "You are about to create the database schema for Kamailio within MySQL.\nYou will need the MySQL root password that you used to create the database\n"
+ kamdbctl create
+ 
+ echo -e "\n\nIf kamdbctl create was successful you are now ready to setup the standard proxy configuration by running the ./setup script"
+
+ return
+}
+
+
+function centos_install_kamailio() {
+
+# Install Dependencies
+yum -y update
+yum -y groupinstall 'core'
+yum -y groupinstall 'base'
+yum -y groupinstall 'Developer Tools'
+yum -y install yum-utils psmisc wget sed gawk vim epel-release mariadb-server mariadb
+
+
+# Start MySql
+systemctl start mariadb
+systemctl enable mariadb
+alias mysql="mariadb"
+
+# Disable SELinux
+sed -i 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
+
+# Add the Kamailio repos to yum
+(cat << 'EOF'
+[home_kamailio_v5.1.x-rpms]
+name=RPM Packages for Kamailio v5.1.x (CentOS_7)
+type=rpm-md
+baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.1.x-rpms/CentOS_7/
+gpgcheck=1
+gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.1.x-rpms/CentOS_7/repodata/repomd.xml.key
+enabled=1
+EOF
+) > /etc/yum.repos.d/kamailio.repo
+
+yum -y update
+yum -y install kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
+    kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress
+
+ Configure Kamailio and Required Database Modules
+sed -i 's,# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
+
+
+# Execute 'kamdbctl create' to create the Kamailio database schema 
+kamdbctl create
+
+# Configure kamailio
+cp -f kamailio.cfg /etc/kamailio.cfg
+sed -i '/#!KAMAILIO/r ./kam-flags.txt' /etc/kamailio/kamailio.cfg
+
+chown kamailio:kamailio /etc/default/kamailio
+chown -R kamailio:kamailio /etc/kamailio/
+chown -R kamailio:kamailio /var/run/kamailio
+
+# Setup firewall rules
+firewall-cmd --zone=public --add-port=5060/udp --permanent
+firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
+firewall-cmd --reload
+
+}
+
+
+function install {
+
+	centos_7_prereq
+	centos_install_kamailio
+	centos_7_config
+
+}
+
+function uninstall {
+
+#Stop servers
+systemctl stop kamailio
+systemctl stop mysql
+
+#Backup kamailio configuration directory
+mv /etc/kamailio /etc/kamailio.bak.`(date +%Y%m%d_%H%M%S)`
+
+#Uninstall Kamailio modules and Mariadb
+apt-get -y remove --purge mysql\*
+apt-get -y remove --purge mariadb\*
+apt-get -y remove --purge kamailio\*
+
+#Backup Kamailio database just in 
+#mv /var/lib/mysql /var/lib/mysql.kamailio
+
+#Potentially remove the repo's
+
+#Remove firewall rules that was created by us:
+firewall-cmd --zone=public --remove-port=5060/udp --permanent
+
+if [ -n "$DSIP_PORT" ]; then
+	firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
+fi
+
+firewall-cmd --reload
+
+#Remove logrotate settings
+rm /etc/logrotate.d/kamailio
+rm /etc/logrotate.d/rtpengine
+
 }
 
 case "$1" in 
 
 uninstall|remove)
-#Remove 
- PYTHON_CMD=$3
- DSIP_PORT=$2
- $1
- ;;
+#Remove Kamailio
+	DSIP_PORT=$3
+	KAM_VERSION=$2
+	$1
+	;;
 install)
-#Install 
- PYTHON_CMD=$3
- DSIP_PORT=$2
- $1
- ;;
+#Install Kamailio
+	DSIP_PORT=$3
+	KAM_VERSION=$2
+        $1
+	;;
 *)
-        echo "usage $0 [install <dsip_port> <python_cmd> | uninstall <dsip_port> <python_cmd>]"   
-;;
+        echo "usage $0 [install <kamailio version> <dsip_port> | uninstall <kamailio version> <dsip_port>]"   
+	;;
 esac
