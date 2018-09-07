@@ -35,10 +35,10 @@ fi
 
 # run before install and uninstall functions
 function initialChecks {
-
-# comment out cdrom in sources as it can halt install
-sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.lis
-
+    if [ "$DISTRO" == "debian" ]; then
+        # comment out cdrom in sources as it can halt install
+        sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
+    fi
 }
 
 function displayLogo {
@@ -118,9 +118,9 @@ function configurePythonSettings {
 function configureKamailio {
 
 if [ "$MYSQL_KAM_PASSWORD" == "" ]; then
-    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM_DEF_PASSWORD"
+    MYSQL_KAM_PASSWORD="$MYSQL_KAM_DEF_PASSWORD"
 else
-    MYSQL_KAM_PASSWORD="-p$MYSQL_KAM__PASSWORD"
+    MYSQL_KAM_PASSWORD="$MYSQL_KAM__PASSWORD"
 fi
 
 if [ "$MYSQL_KAM_USERNAME" == "" ]; then
@@ -146,43 +146,43 @@ mysql --skip-column-names <<- EOF
 EOF
     )
     for t in "$@"; do
-        mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+        mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
             -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
     done
 }
 
 # Check the username and password
 
-#mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "select * from version limit 1" >/dev/null 2>&1
+#mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE -e "select * from version limit 1" >/dev/null 2>&1
 #if [ $? -eq 1 ]; then
 #	echo "Your credentials for the kamailio schema is invalid.  Please try again!"
 #	configureKamailio
 #fi
 
 # Install schema for drouting module
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
     -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
     -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
 if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
-    mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
+    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
 else
     sqlscript=`find / -name 'drouting-create.sql' | grep mysql | grep 4. | sed -n 1p`
-    mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < $sqlscript
+    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < $sqlscript
 fi
 
 # Install schema for custom drouting
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
+mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
 
 # Install schema for single & multi tenant pbx domain mapping
-mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/domain_mapping.sql
+mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/domain_mapping.sql
 
 # reset auto incrementers for related tables
 resetIncrementers "dr_gw_lists" "uacreg"
 
 # Import Default Carriers
 if [ -e `which mysqlimport` ]; then
-    mysql -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
+    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
 
     # sub in dynamic values
     sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DEFAULTS_DIR}/address.csv
@@ -190,18 +190,18 @@ if [ -e `which mysqlimport` ]; then
     sed -i s/EXTERNAL_IP/$EXTERNAL_IP/g ${DEFAULTS_DIR}/uacreg.csv
 
     # import default carriers
-    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=';' --ignore-lines=0  \
+    mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
         -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/address.csv
-    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=';' --ignore-lines=0  \
+    mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
         -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/dr_gw_lists.csv
-    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=',' --ignore-lines=0  \
+    mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=',' --ignore-lines=0  \
         -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/uacreg.csv
-    mysqlimport -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD --fields-terminated-by=';' --ignore-lines=0  \
+    mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
         -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/dr_gateways.csv
 fi
 
 # Setup Outbound Rules to use Skyetel by default
-mysql  -u $MYSQL_KAM_USERNAME $MYSQL_KAM_PASSWORD $MYSQL_KAM_DATABASE \
+mysql  --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
     -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
 # Backup kamcfg and link the dsiprouter kamcfg

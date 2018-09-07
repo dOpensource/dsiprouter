@@ -25,7 +25,7 @@ function centos_7_config() {
  touch /etc/tmpfiles.d/kamailio.conf
         echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf 
 
- sed -i 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
+ sed -i -e 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/g' /etc/kamailio/kamctlrc
  if [ $? -eq 0 ]; then
   echo "Updated the Kamailio control file to support the configuration coming from a MySQL database"
  fi 
@@ -46,8 +46,8 @@ function centos_install_kamailio() {
 yum -y update
 yum -y groupinstall 'core'
 yum -y groupinstall 'base'
-yum -y groupinstall 'Developer Tools'
-yum -y install yum-utils psmisc wget sed gawk vim epel-release mariadb-server mariadb
+yum -y groupinstall 'Development Tools'
+yum -y install psmisc wget sed gawk vim epel-release mariadb-server mariadb
 
 
 # Start MySql
@@ -56,7 +56,7 @@ systemctl enable mariadb
 alias mysql="mariadb"
 
 # Disable SELinux
-sed -i 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
+sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
 
 # Add the Kamailio repos to yum
 (cat << 'EOF'
@@ -74,8 +74,8 @@ yum -y update
 yum -y install kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
     kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress
 
- Configure Kamailio and Required Database Modules
-sed -i 's,# DBENGINE=MYSQL/DBENGINE=MYSQL/' /etc/kamailio/kamctlrc
+# Configure Kamailio and Required Database Modules
+sed -i -e 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/g' /etc/kamailio/kamctlrc
 
 
 # Execute 'kamdbctl create' to create the Kamailio database schema 
@@ -83,7 +83,6 @@ kamdbctl create
 
 # Configure kamailio
 cp -f kamailio.cfg /etc/kamailio.cfg
-sed -i '/#!KAMAILIO/r ./kam-flags.txt' /etc/kamailio/kamailio.cfg
 
 chown kamailio:kamailio /etc/default/kamailio
 chown -R kamailio:kamailio /etc/kamailio/
