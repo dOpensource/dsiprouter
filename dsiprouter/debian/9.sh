@@ -1,18 +1,12 @@
 #!/usr/bin/env bash
 
 #PYTHON_CMD=python3.5
-DSIP_KAMAILIO_CONF_DIR=$(pwd)
-
-set -x
+DSIP_KAMAILIO_CONF_DIR=(`pwd`)
+set -x 
 
 function install {
     # Install dependencies for dSIPRouter
-    yum remove -y rs-epel-release*
-
-    yum install -y yum-utils
-    yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-    yum install -y python36u python36u-libs python36u-devel python36u-pip
+    apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld sngrep
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -30,36 +24,28 @@ function install {
         exit 1
     fi
 
-    # Install dSIPRouter as a service
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tmp
-    sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tmp
-    sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tmp
+    #Install dSIPRouter as a service
+    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
+    sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
+    sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
 
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tmp /etc/systemd/system/dsiprouter.service
-    chmod 644 /etc/systemd/system/dsiprouter.service
+    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp /lib/systemd/system/dsiprouter.service
+    chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter.service
 }
 
-
 function uninstall {
     # Uninstall dependencies for dSIPRouter
-    yum remove -y python36u\*
-    yum remove -y ius-release
-    yum groupremove -y "Development Tools"
+    apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 
-    # Remove the repos
-    rm -f /etc/yum.repos.d/ius*
-    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
-    yum clean all
-
-    # Remove Firewall for DSIP_PORT
+    #Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
-    # Remove dSIProuter as a service
+    #Remove dSIProuter as a service
     systemctl disable dsiprouter.service
-    rm -f /etc/systemd/system/dsiprouter.service
+    rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
 
     PIP_CMD="pip"
@@ -73,7 +59,6 @@ function uninstall {
         exit 0
     fi
 }
-
 
 case "$1" in
     uninstall|remove)
@@ -89,6 +74,6 @@ case "$1" in
         $1
         ;;
     *)
-        echo "usage $0 [install <dsip_port> <python_cmd> | uninstall <dsip_port> <python_cmd>]"
+        echo "usage $0 [install <dsip_port> <python_cmd> | uninstall <dsip_port> <python_cmd>]"   
         ;;
 esac

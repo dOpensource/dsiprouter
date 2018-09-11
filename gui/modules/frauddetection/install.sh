@@ -1,44 +1,27 @@
-#!/bin/bash
-ENABLED=0
+#!/usr/bin/env bash
+#set -x
+ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
 
 function installSQL {
-
     echo ""
-
 }
-
 
 function install {
-
-if [ $ENABLED == "0" ];then
-    exit
-fi
-installSQL
-
+    installSQL
 }
-
-
 
 function uninstall {
-
-echo ""
-
+    echo ""
 }
 
-# This installer will be kicked off by the main dSIPRouter installer by passing the MySQL DB root username, database name, and/or the root password
-# This is needed since we are installing stored procedures which require SUPER privileges on MySQL
+function main {
+    if [[ ${ENABLED} -eq 1 ]]; then
+        install
+    elif [[ ${ENABLED} -eq -1 ]]; then
+        uninstall
+    else
+        exit 0
+    fi
+}
 
-if [ $# -gt 2 ]; then
-
-	MYSQL_ROOT_USERNAME="-u$1"
-	MYSQL_ROOT_PASSWORD="-p$2"
-	MYSQL_KAM_DBNAME=$3
-else
-
-	MYSQL_ROOT_USERNAME="-u$1"
-        MYSQL_ROOT_PASSWORD=
-        MYSQL_KAM_DBNAME=$2
-fi
-
-
-install
+main

@@ -6,24 +6,26 @@ DSIP_PORT = 5000
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
+# ssl key / cert paths
+SSL_KEY = ""
+SSL_CERT = ""
+
 # dSIPRouter internal settings
 
 VERSION = 0.51
-DEBUG = 0
+DEBUG = False
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
 
 # MySQL settings for kamailio
 
-KAM_DB_TYPE = 'mysql'
-
 # Database cluster
-# KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11,'50.237.20.12']
-
+# KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11','50.237.20.12']
 # Single Host
 KAM_DB_HOST = 'localhost'
 
+KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
@@ -33,7 +35,7 @@ KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 
-#SQLAlchemy Settings
+# SQLAlchemy Settings
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -56,9 +58,9 @@ TELEBLOCK_MEDIA_PORT = ''
 # Flowroute API Settings
 FLOWROUTE_ACCESS_KEY=''
 FLOWROUTE_SECRET_KEY=''
-FLOWROUTE_API_ROOT_URL=''
+FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '64.129.84.44'
-INTERNAL_IP_NET = '64.129.84.*'
-EXTERNAL_IP_ADDR = '64.129.84.44'
+INTERNAL_IP_ADDR = ''
+INTERNAL_IP_NET = ''
+EXTERNAL_IP_ADDR = ''

@@ -2,56 +2,45 @@
 
 set -x
 
-function install() {
-    # Install Dependencies
-    yum update -y
-    yum groupinstall -y 'core'
-    yum groupinstall -y 'base'
-    yum groupinstall -y 'Development Tools'
-    yum install -y psmisc wget sed gawk vim epel-release
+function install {
+    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* stretch.*' /etc/apt/sources.list > /dev/null
+    # If repo is not installed
+    if [ $? -eq 1 ]; then
+        echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
+        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
+        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
+    fi
 
-    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
-    ln -s /usr/share/mariadb/ /usr/share/mysql
+    # Add Key for Kamailio Repo
+    wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
+
+    # Update the repo
+    apt-get update
+
+    # Install Kamailio packages
+    apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
+
+    # Enable MySQL and Kamailio for system startup
+    systemctl enable mysql
+
+    # Make sure mysql starts before Kamailio
+    sed -i s/After=.*/After=mysqld.service/g /lib/systemd/system/kamailio.service
+    systemctl daemon-reload
+    systemctl enable kamailio
+
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
 
-    # Start MySql
-    systemctl start mariadb
-    systemctl enable mariadb
-    alias mysql="mariadb"
-
-    # Disable SELinux
-    sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
-
-    # Add the Kamailio repos to yum
-    (cat << 'EOF'
-[home_kamailio_v5.1.x-rpms]
-name=RPM Packages for Kamailio v5.1.x (CentOS_7)
-type=rpm-md
-baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.1.x-rpms/CentOS_7/
-gpgcheck=1
-gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.1.x-rpms/CentOS_7/repodata/repomd.xml.key
-enabled=1
-EOF
-    ) > /etc/yum.repos.d/kamailio.repo
-
-    yum update -y
-    yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
-        kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress
-
-
-    # TODO: what is this for???
-    touch /etc/tmpfiles.d/kamailio.conf
-    echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
+    # Start MySQL
+    systemctl start mysql
 
     # Configure Kamailio and Required Database Modules
     mkdir -p /etc/kamailio
-    echo "" >> /etc/kamailio/kamctlrc
     echo "DBENGINE=MYSQL" >> /etc/kamailio/kamctlrc
     echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
     echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
     echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
-    echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> /etc/kamailio/kamctlrc
+        echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> /etc/kamailio/kamctlrc
     if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
         echo "DBROOTPWSKIP=yes" >> /etc/kamailio/kamctlrc
     else
@@ -65,18 +54,28 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
-    # Setup firewall rules
+    # Firewall settings
     firewall-cmd --zone=public --add-port=5060/udp --permanent
-    firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
+
+    if [ -n "$DSIP_PORT" ]; then
+        firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+    fi
+
     firewall-cmd --reload
 
-    # TODO: add kamailio logrotate settings
+    #Setup logrotate
+    cp ./dsiprouter/debian/logrotate/* /etc/logrotate.d
+
+    # Start Kamailio
+    #systemctl start kamailio
+    #return #?
+    return 0
 }
 
 function uninstall {
     # Stop servers
     systemctl stop kamailio
-    systemctl stop mariadb
+    systemctl stop mysql
 
     # Backup kamailio configuration directory
     mv -f /etc/kamailio /etc/kamailio.bak.$(date +%Y%m%d_%H%M%S)
@@ -84,18 +83,24 @@ function uninstall {
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
 
-    # Uninstall Kamailio modules and mysql / Mariadb
-    yum remove -y mysql\*
-    yum remove -y mariadb\*
-    yum remove -y kamailio\*
+    # Uninstall Kamailio modules and Mariadb
+    apt-get -y remove --purge mysql\*
+    apt-get -y remove --purge mariadb\*
+    apt-get -y remove --purge kamailio\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:
     firewall-cmd --zone=public --remove-port=5060/udp --permanent
-    firewall-cmd --zone=public --remove-port=10000-30000/udp --permanent
+
+    if [ -n "$DSIP_PORT" ]; then
+        firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
+    fi
+
     firewall-cmd --reload
 
-    # TODO: remove kamailio logrotate settings
+    #Remove logrotate settings
+    rm -f /etc/logrotate.d/kamailio
+    rm -f /etc/logrotate.d/rtpengine
 }
 
 case "$1" in

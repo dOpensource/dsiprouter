@@ -32,7 +32,7 @@ def before_request():
     app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
-def showError(type="", code=500):
+def showError(type="", code=500, msg=None):
     return render_template('error.html', type=type), code
 
 
@@ -147,10 +147,14 @@ def displayCarrierGroups(gwgroup=None):
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
 
 
@@ -342,10 +346,14 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
 
 
@@ -543,10 +551,14 @@ def displayPBX():
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
 
 
@@ -913,10 +925,14 @@ def displayInboundMapping():
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
 
 
@@ -1057,10 +1073,14 @@ def displayTeleBlock():
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
 
 
@@ -1159,10 +1179,14 @@ def displayOutboundRoutes():
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
 
 
@@ -1502,10 +1526,12 @@ class CustomServer(Server):
         else:
             self.use_debugger = None
             self.use_reloader = None
-            if hasattr(settings,'SSL_CERT'):
+            if len(settings.SSL_CERT) > 0 and len(settings.SSL_KEY > 0):
                 self.ssl_crt = settings.SSL_CERT
-            if hasattr(settings,'SSL_KEY'):
                 self.ssl_key = settings.SSL_KEY
+            else:
+                self.ssl_crt = None
+                self.ssl_key = None
             self.threaded = True
             self.processes = 1
 

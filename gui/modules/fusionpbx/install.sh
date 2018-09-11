@@ -1,44 +1,63 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #set -x
-ENABLED=1
+ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
 
-function installNginx {
+function install {
 
-	apt-get install -y \
-    	apt-transport-https \
-    	ca-certificates \
-    	software-properties-common
+    if [[ "$DISTRO" == "debian" ]]; then
+        apt-get install -y \
+            apt-transport-https \
+            ca-certificates \
+            software-properties-common
 
-	curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
+        curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
 
+        add-apt-repository \
+        "deb [arch=amd64] https://download.docker.com/linux/debian \
+        $(lsb_release -cs) \
+        stable"
 
-	add-apt-repository \
-   	"deb [arch=amd64] https://download.docker.com/linux/debian \
-   	$(lsb_release -cs) \
-   	stable"
+        apt-get update -y
 
-	apt-get update
+        apt-get install -y docker-ce
+        if [ $? == 0 ]; then
+            echo "Docker is installed"
+        fi
 
-	apt-get install -y docker-ce
-	if [ $? == 0 ]; then
-		echo "Docker is installed"
-	fi
+    elif [[ "$DISTRO" == "centos" ]]; then
+        yum install -y ca-certificates
+#        CA_CERT_DIR=$(dirname $(find / -name '*ca-bundle.crt'))
+#        cp -f ${CA_CERT_DIR}/ca-bundle.crt ${CA_CERT_DIR}/ca-bundle.bak
+#        curl http://curl.haxx.se/ca/cacert.pem -o ${CA_CERT_DIR}/ca-bundle.crt
+#        update-ca-trust force-enable
+#        update-ca-trust extract
 
-	# Install Nginx
-	abspath=`pwd`/gui/modules/fusionpbx
-	echo $abspath
-	docker create nginx
-	#docker run --name docker-nginx -p 80:80  -v ${abspath}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
+        yum install -y yum-utils device-mapper-persistent-data lvm2
+        yum remove -y docker\*
+        yum-config-manager -y --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        yum-config-manager -y --enable docker-ce-stable
+        yum install -y docker-ce
 
+        if [ $? == 0 ]; then
+            echo "Docker is installed"
+        fi
+    fi
+
+    systemctl enable docker.service
+    systemctl start docker
+
+    firewall-cmd --permanent --zone=public --add-port=80/tcp
+    firewall-cmd --permanent --zone=public --add-port=443/tcp
+    firewall-cmd --reload
+
+    # Install Nginx container
+    abspath=$(pwd)/gui/modules/fusionpbx
+    echo "FusionPBX Path: $abspath"
+    docker create nginx
+    #docker run --name docker-nginx -p 80:80  -v ${abspath}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
 }
 
-function uninstallNginx {
-
-	# Can't remove packages because it removes python3-pip package
-	#apt-get remove -y \
-	#apt-transport-https \
-	#ca-certificates 
-	#software-properties-common
+function uninstall {
 
 	# Forcefully stop all docker containers and remove them
 	docker ps -a -q > /dev/null
@@ -49,59 +68,56 @@ function uninstallNginx {
 		echo "No docker containers to remove"
 	fi
 
-	# Remove Docker Engine
-	apt-get remove -y docker-ce
-	if [ $? == 0 ]; then
-		echo "Removed the docker engine"
-	fi
-	
-	# Remove docker repository
-	#sed -i 's|https://download\.docker\.com|d|' /etc/apt/sources.list
-	#if [ $? == 0 ]; then
-	#	echo "Removed the docker repository"
-	#fi
+    if [[ "$DISTRO" == "debian" ]]; then
+        # Can't remove packages because it removes python3-pip package
+        #apt-get remove -y \
+        #apt-transport-https \
+        #ca-certificates
+        #software-properties-common
 
-	# Stop trusting the docker key
-	key=`apt-key list | grep -B 1 docker | head -n1`
-	apt-key del $key
+        # Remove Docker Engine
+        apt-get remove -y docker-ce
+        if [ $? == 0 ]; then
+            echo "Removed the docker engine"
+        fi
 
-	# Add firewall rull to allow port 80  traffic to Nginx server
-	firewall-cmd --zone=public --add-port=80/tcp --permanent
-        firewall-cmd --reload
-}
+        # Remove docker repository
+        #sed -i 's|https://download\.docker\.com|d|' /etc/apt/sources.list
+        #if [ $? == 0 ]; then
+        #	echo "Removed the docker repository"
+        #fi
 
-function install {
-    if [ $ENABLED == "0" ];then
-        exit
+        # Stop trusting the docker key
+        key=`apt-key list | grep -B 1 docker | head -n1`
+        apt-key del $key
+
+    elif [[ "$DISTRO" == "centos" ]]; then
+        yum remove -y ca-certificates
+
+        yum remove -y device-mapper-persistent-data lvm2
+        yum remove -y docker-ce
+        if [ $? == 0 ]; then
+            echo "Removed the docker engine"
+        fi
+
+        # Remove the repos
+        rm -f /etc/yum.repos.d/docker-ce*
+        yum clean all
     fi
 
-    installNginx
+    firewall-cmd --permanent --zone=public --remove-port=80/tcp
+    firewall-cmd --permanent --zone=public --remove-port=443/tcp
+    firewall-cmd --reload
 }
 
-function uninstall {
-    echo ""
-    uninstallNginx
+function main {
+    if [[ ${ENABLED} -eq 1 ]]; then
+        install
+    elif [[ ${ENABLED} -eq -1 ]]; then
+        uninstall
+    else
+        exit 0
+    fi
 }
 
-# This installer will be kicked off by the main dSIPRouter installer by passing the MySQL DB root username, database name, and/or the root password
-# This is needed since we are installing stored procedures which require SUPER privileges on MySQL
-
-if [ $# -gt 2 ]; then
-
-	MYSQL_ROOT_USERNAME="-u$1"
-	MYSQL_ROOT_PASSWORD="-p$2"
-	MYSQL_KAM_DBNAME=$3
-
-elif [ $# -gt 1 ]; then
-    MYSQL_ROOT_USERNAME="-u$1"
-    MYSQL_ROOT_PASSWORD=""
-    MYSQL_KAM_DBNAME=$2
-
-else
-
-   MYSQL_ROOT_USERNAME="-u$1"
-    MYSQL_ROOT_PASSWORD=-p$2
-    MYSQL_KAM_DBNAME=$3
-fi
-
-install
+main
