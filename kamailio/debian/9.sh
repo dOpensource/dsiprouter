@@ -7,8 +7,8 @@ function install {
     # If repo is not installed
     if [ $? -eq 1 ]; then
         echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
-        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
-        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
+        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main" >> /etc/apt/sources.list
+        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch  main" >> /etc/apt/sources.list
     fi
 
     # Add Key for Kamailio Repo
