@@ -1,0 +1,20 @@
+### rtpengine startup
+
+https://www.slideshare.net/AndreasGranig/sipwise-rtpengine
+
+https://voipmagazine.wordpress.com/2015/10/26/run-rtpengine-under-systemd-control/
+
+A typical start-up sequence including in-kernel forwarding might look like this:
+
+# this only needs to be one once after system (re-) boot
+modprobe xt_RTPENGINE
+iptables -I INPUT -p udp -j RTPENGINE --id 0
+ip6tables -I INPUT -p udp -j RTPENGINE --id 0
+
+# ensure that the table we want to use doesn't exist - usually needed after a daemon
+# restart, otherwise will error
+echo 'del 0' > /proc/rtpengine/control
+
+# start daemon
+/usr/sbin/rtpengine --table=0 --interface=10.64.73.31 --interface=2001:db8::4f3:3d \
+--listen-ng=127.0.0.1:2223 --tos=184 --pidfile=/var/run/rtpengine.pid --no-fallback

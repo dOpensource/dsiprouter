@@ -55,6 +55,8 @@ function install {
     echo "FusionPBX Path: $abspath"
     docker create nginx
     #docker run --name docker-nginx -p 80:80  -v ${abspath}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
+
+    echo "FusionPBX module installed"
 }
 
 function uninstall {
@@ -108,6 +110,8 @@ function uninstall {
     firewall-cmd --permanent --zone=public --remove-port=80/tcp
     firewall-cmd --permanent --zone=public --remove-port=443/tcp
     firewall-cmd --reload
+
+    echo "FusionPBX module uninstalled"
 }
 
 function main {

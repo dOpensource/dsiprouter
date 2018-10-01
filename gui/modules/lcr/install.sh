@@ -21,10 +21,11 @@ function installSQL {
 
 function install {
     installSQL
+    echo "LCR module installed"
 }
 
 function uninstall {
-    echo ""
+    echo "LCR module uninstalled"
 }
 
 function main {
