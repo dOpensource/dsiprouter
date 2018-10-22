@@ -317,9 +317,15 @@ def createValidEngine(uri_list):
 
 # Make the engine global
 engine = createValidEngine(getDBURI())
-
+session = None
 
 def loadSession():
+    global session
+    
+    # Return a DB session if one already exists
+    if session:
+        return session
+    
     metadata = MetaData(engine)
 
     dr_gateways = Table('dr_gateways', metadata, autoload=True)

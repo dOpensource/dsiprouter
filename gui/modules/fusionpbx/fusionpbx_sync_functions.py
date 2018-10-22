@@ -79,34 +79,58 @@ def sync_db(source,dest):
     kam_password=dest['password']
     kam_database=dest['database']
      
-   
-    #Get a connection to Kamailio Server DB
+     
+    domain_id_list = []
+    attr_id_list = []
+
+#Get a connection to Kamailio Server DB
     db=MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
 
     #Trying connecting to PostgresSQL database using a Trust releationship first
     try:
         conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
+        if conn is not None:
+            print("Connection to database was successful")
         cur = conn.cursor()
         cur.execute("""select domain_name from v_domains where domain_enabled='true'""")
         rows = cur.fetchall()
         if rows is not None:
             c=db.cursor()
-            domain_id_list = []
-            attr_id_list = []
-            c.execute("""""")
-
+            counter = 0
+            
             for row in rows:
                 c.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""", (row[0],row[0]))
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_host',2,%s,NOW())""", (row[0],pbx_host))
                 c.execute("""SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN('domain','domain_attrs') ORDER BY FIND_IN_SET(TABLE_NAME, 'domain,domain_attrs')""")
                 rows = c.fetchall()
-                domain_id_list.append(rows[0][0] - 1)
-                attr_id_list.append(rows[1][0] - 1)
+                #domain_id_list.append(rows[0][0] - 1)
+                domain_id_list.append(str(rows[0][0] -1))
+                attr_id_list.append(str(rows[1][0] - 1))
+                print("[row {}] adding domain_id: {}, adding attr_id: {}".format(counter,rows[0][0] - 1,rows[1][0] -1))
+                counter = counter+1
 
-            pbx_domain_list = pbx_domain_list + ",".join(domain_id_list)
-            pbx_attr_list = pbx_attr_list + ",".join(attr_id_list)
+            for i in domain_id_list:
+                print(i)
+            
+            # Convert to a string seperated by commas
+            domain_id_list = ','.join(domain_id_list)
+            attr_id_list = ','.join(attr_id_list)
 
-            c.execute("""update dsip_multidomain_mapping set domain_list=%s, attr_list=%s, syncstatus=1, lastsync=NOW() where pbx_id=%s""",(pbx_domain_list,pbx_attr_list,pbx_id))
+            if not pbx_domain_list: #if empty string then this is the first set of domains
+                pbx_domain_list = domain_id_list
+            else:  #adding to an existing list of domains
+                pbx_domain_list = pbx_domain_list + "," + domain_id_list
+
+            if not pbx_attr_list: #if empty string then this is the first set of domains
+                pbx_attr_list = attr_id_list
+            else:  #adding to an existing list of domains
+                pbx_attr_list = pbx_attr_list + "," + attr_id_list
+            
+
+            print(pbx_domain_list)
+            print(pbx_attr_list)
+
+            c.execute("""update dsip_multidomain_mapping set domain_list=%s, attr_list=%s, syncstatus=1, lastsync=NOW(),syncerror='',where pbx_id=%s""",(pbx_domain_list,pbx_attr_list,pbx_id))
             db.commit()                
     except Exception as e:
         c=db.cursor()
