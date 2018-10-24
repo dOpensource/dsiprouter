@@ -21,7 +21,7 @@ git checkout -b domain_management_84
 
 3. Test your feature or enhancement and validate that it doesn't break the build.  The best way to validate this is to perform a full install (we will have a full Continous Integration(CI) platform very soon)
 
-4. Commit and make sure your commit message comtains a reference to the issue if you are working on one.  For example, the commit message could:
+4. Commit and make sure your commit message comtains a reference to the issue if you are working on one.  For example, the commit message for Domain Management (Issue 84):
 
 ```
 Added support for creating domains.  It contains these features:
@@ -30,6 +30,8 @@ Added support for creating domains.  It contains these features:
 - Can add/update/modifu a domain via the GUI
 - The logic to reload Dynamic domains has been adjusted to account for 
   the ability to add domains statically
+  
+  Issue #84
 ```
 
 5. Push your commit
