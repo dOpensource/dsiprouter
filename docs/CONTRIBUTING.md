@@ -17,4 +17,19 @@ If you are working on an issue reported via Github then add the issue number to 
 git checkout -b domain_management_84
 ```
 
-2. 
+2. Implement your feature or enhancement
+
+3. Test your feature or enhancement and validate that it doesn't break the build.  The best way to validate this is to perform a full install (we will have a full Continous Integration(CI) platform very soon)
+
+4. Commit and make sure your commit message comtains a reference to the issue if you are working on one.  For example, the commit message could:
+
+```
+Added support for creating domains.  It contains these features:
+
+- Ability to display static and dynamic domains via the UI
+- Can add/update/modifu a domain via the GUI
+- The logic to reload Dynamic domains has been adjusted to account for 
+  the ability to add domains statically
+```
+
+5. Push your commit
