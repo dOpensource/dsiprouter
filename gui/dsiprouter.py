@@ -1,12 +1,13 @@
-import os, re, json, subprocess, urllib.parse, glob,datetime
+import os, re, json, subprocess, urllib.parse, glob,datetime,csv
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
 from importlib import reload
 from sqlalchemy import case, func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
+from werkzeug.utils import secure_filename
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping
 from modules import flowroute
@@ -901,7 +902,7 @@ def displayInboundMapping():
 
         if session.get('logged_in'):
             res = db.execute(
-                'select * from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(groupid))
+                'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(groupid))
             gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
             dids = None
             if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
@@ -1018,6 +1019,7 @@ def deleteInboundMapping():
         ruleid = form['ruleid']
         d = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
         d.delete(synchronize_session=False)
+        db.commit()
 
         reload_required = True
         return displayInboundMapping()
@@ -1043,6 +1045,102 @@ def deleteInboundMapping():
     finally:
         reload_required = False
 
+def processInboundMappingImport(filename,groupid,pbxid,note,db):
+    try:
+
+        # Adding
+        f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
+        csv_f = csv.reader(f)
+
+        for row in csv_f:
+            if len(row) > 1:
+                pbxid=row[1]
+            if len(row) > 2:
+                note=row[2]
+            IMap = InboundMapping(groupid, row[0], pbxid, note)
+            db.add(IMap)
+        
+        db.commit()
+
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+
+
+@app.route('/inboundmappingimport',methods=['POST'])
+def importInboundMapping():
+    
+    global reload_required
+    
+    try:
+        
+        if not session.get('logged_in'):
+            return render_template('index.html', version=settings.VERSION)
+        
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        form = stripDictVals(request.form.to_dict())
+
+        # group for inbound routes
+        groupid = 9000
+
+        # get form data
+        gwid = form['gwid']
+        note = form['note']
+
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(url_for('displayInboundMapping'))
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
+            processInboundMappingImport(filename,groupid,gwid,note,db)
+            flash('X number of file were imported')
+            return redirect(url_for('displayInboundMapping',filename=filename))
+    
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        reload_required = True
 
 @app.route('/teleblock')
 def displayTeleBlock():

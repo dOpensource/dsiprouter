@@ -54,6 +54,15 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+  
+  <div class="modal fade" id="import" tabindex="-1" role="dialog" aria-labelledby="Import" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {% block import_modal %}
+        {% endblock %}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
 
   {% block custom_modals %}
   {% endblock %}

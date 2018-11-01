@@ -61,6 +61,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = ''
-INTERNAL_IP_NET = ''
-EXTERNAL_IP_ADDR = ''
+INTERNAL_IP_ADDR = '167.99.159.98'
+INTERNAL_IP_NET = '167.99.159.*'
+EXTERNAL_IP_ADDR = '167.99.159.98'
+
+# upload folder for files
+UPLOAD_FOLDER = '/tmp'

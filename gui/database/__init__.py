@@ -64,10 +64,12 @@ class InboundMapping(object):
 
     gwname = Column(String)
 
-    def __init__(self, groupid, prefix, gateway):
+    def __init__(self, groupid, prefix, gateway,description=''):
         self.groupid = groupid
         self.prefix = prefix
         self.gwlist = gateway
+        if description is not None:
+            self.description=description
         self.timerec = ''
         self.routeid = ''
 

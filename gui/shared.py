@@ -325,3 +325,7 @@ def debugEndpoint(log_out=False, print_out=True, **kwargs):
 
     if print_out:
         IO.printdbg(text)
+
+def allowed_file(filename,ALLOWED_EXTENSIONS=set(['csv','txt','pdf','png','jpg','jpeg','gif'])):
+    return '.' in filename and \
+            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
