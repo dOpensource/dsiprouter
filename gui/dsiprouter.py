@@ -1549,20 +1549,16 @@ class CustomServer(Server):
             port=settings.DSIP_PORT
         )
 
+        if len(settings.SSL_CERT) > 0 and len(settings.SSL_KEY) > 0:
+            self.ssl_crt = settings.SSL_CERT
+            self.ssl_key = settings.SSL_KEY
+
         if settings.DEBUG == True:
             self.use_debugger = True
             self.use_reloader = True
-            self.ssl_crt = None
-            self.ssl_key = None
         else:
             self.use_debugger = None
             self.use_reloader = None
-            if len(settings.SSL_CERT) > 0 and len(settings.SSL_KEY > 0):
-                self.ssl_crt = settings.SSL_CERT
-                self.ssl_key = settings.SSL_KEY
-            else:
-                self.ssl_crt = None
-                self.ssl_key = None
             self.threaded = True
             self.processes = 1
 

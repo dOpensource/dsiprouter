@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#================= NOTES =================#
+#========================== NOTES ==========================#
 #
 # Supported OS:
 # Debian 9 (stretch)
@@ -8,17 +8,27 @@
 # Debian 7 (wheezy)
 # CentOS 7
 #
+# Notes:
 # In general exported variables & functions
-# are used in external scripts / programs
+# are used in externally called scripts / programs
 #
 # TODO:
 # move reusable vars/funcs to a util/library script
-# allow external db connection on install
-# allow cluster db installation config (kamailio)
+# allow remote db configuration on install
+# allow user to move carriers freely between carrier groups
+# allow a carrier to be in more than one carrier group
 # add colored error output when installing / uninstalling
+# add ncurses selection menu for enabling / disabling modules
+# create templating schema for changing kam config values on install
 #
-#=========================================#
+#===========================================================#
 
+# Set project dir (where src and install files go)
+export DSIP_PROJECT_DIR="$(pwd)"
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsip_lib.sh
+
+#================== USER_CONFIG_SETTINGS ===================#
 
 # Uncomment if you want to debug this script.
 #set -x
@@ -27,12 +37,14 @@
 SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
+DEBUG=0 # By default debugging is turned off
 export REQ_PYTHON_MAJOR_VER=3
-DSIP_KAMAILIO_CONF_DIR=$(pwd)
-export DSIP_CONFIG_FILE=${DSIP_KAMAILIO_CONF_DIR}/gui/settings.py
-SYSTEM_KAMAILIO_CONF_DIR="/etc/kamailio"
-DEFAULTS_DIR=${DSIP_KAMAILIO_CONF_DIR}/kamailio/defaults
-DEBUG=0 # By default debugging is turned off, but can be enabled during startup by using "start -debug" parameters
+export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
+export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/dsiprouter.cfg"
+export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
+export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
+export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
+export SYSTEM_KAMAILIO_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg" # will be symlinked
 
 # Default MYSQL db root user values
 MYSQL_ROOT_DEF_USERNAME="root"
@@ -50,13 +62,24 @@ MYSQL_KAM_DEF_DATABASE="kamailio"
 
 # Uncomment and set this variable to an explicit Python executable file name
 # If set, the script will not try and find a Python version with 3.5 as the major release number
-#PYTHON_CMD=/usr/bin/python3.4
+#export PYTHON_CMD=/usr/bin/python3.4
 
-# Grab dynamic values
-DSIP_PORT=$(cat ${DSIP_CONFIG_FILE} | grep -oP 'DSIP_PORT[[:space:]]?=[[:space:]]?\K[0-9]*')
-EXTERNAL_IP=$(curl -s https://api.ipify.org)
-INTERNAL_IP=$(hostname -I | awk '{print $1}')
-INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
+# Network configuration values
+export RTP_PORT_MIN=10000
+export RTP_PORT_MAX=20000
+export KAM_SIP_PORT=5060
+
+#===========================================================#
+
+#================= DYNAMIC_CONFIG_SETTINGS =================#
+# updated dynamically!
+
+export DSIP_PORT=$(getPythonConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
+export EXTERNAL_IP=$(curl -s https://api.ipify.org)
+export INTERNAL_IP=$(hostname -I | awk '{print $1}')
+export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
+
+#===========================================================#
 
 # Get Linux Distro
 if [ -f /etc/redhat-release ]; then
@@ -66,9 +89,6 @@ elif [ -f /etc/debian_version ]; then
 	export DISTRO="debian"
 	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
 fi
-
-# Import dsip_lib utility / shared functions (depends on global vars)
-. ${DSIP_KAMAILIO_CONF_DIR}/dsip_lib.sh
 
 function displayLogo {
 echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
@@ -83,10 +103,12 @@ cnQgY2FuIGJlIHB1cmNoYXNlZCBmcm9tIGh0dHBzOi8vZE9wZW5Tb3VyY2UuY29tL2RzaXByb3V0
 ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -d
 }
 
-# cleanup exported variables on exit
+# Cleanup exported variables on exit
 function cleanupAndExit {
-    unset REQ_PYTHON_MAJOR_VER DSIP_CONFIG_FILE DISTRO DISTRO_VER PYTHON_CMD
+    unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
+    unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE MYSQL_KAM_PASSWORD MYSQL_KAM_USERNAME MYSQL_KAM_DATABASE
+    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET
     unset -f setPythonCmd
     exit $1
 }
@@ -136,7 +158,7 @@ function initialChecks {
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
     fi
-    
+
     # make sure root db settings set
     if [[ "$MYSQL_ROOT_PASSWORD" == "" ]]; then
         export MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_DEF_PASSWORD"
@@ -153,7 +175,7 @@ function initialChecks {
     else
         export MYSQL_ROOT_DATABASE
     fi
-    
+
     # make sure kamailio db settings set
     if [[ "$MYSQL_KAM_PASSWORD" == "" ]]; then
         export MYSQL_KAM_PASSWORD="$MYSQL_KAM_DEF_PASSWORD"
@@ -192,13 +214,47 @@ function setPythonCmd {
 }
 export -f setPythonCmd
 
-# set some of the default settings
+# set dynamic python config settings
 function configurePythonSettings {
-    # TODO:replace with util functions
-    sed -i -r "s|(KAM_CFG_PATH[[:space:]]?=.*)|KAM_CFG_PATH = '${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg'|g" gui/settings.py
+    setPythonConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
+    setPythonConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
 }
 
 function configureKamailio {
+    # set kamailio version in kam config
+    sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
+
+    # get kam db connection settings
+    local KAM_DB_HOST=$(getPythonConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
+    local KAM_DB_TYPE=$(getPythonConfigAttrib 'KAM_DB_TYPE' ${DSIP_CONFIG_FILE})
+    local KAM_DB_PORT=$(getPythonConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})
+    local KAM_DB_NAME=$(getPythonConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})
+    local KAM_DB_USER=$(getPythonConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})
+    local KAM_DB_PASS=$(getPythonConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})
+
+    # check for cluster db connection and set kam config settings appropriately
+    if printf "$KAM_DB_HOST" | grep -q -oP '.*\[.*\]'; then
+        # db connection is clustered
+        enableKamailioConfigAttrib 'WITH_DBCLUSTER' ${DSIP_KAMAILIO_CONFIG_FILE}
+
+        # TODO: support different type/user/pass/port/name per connection
+        # TODO: support multiple clusters
+        local KAM_DB_CLUSTER_CONNS=""
+        local KAM_DB_CLUSTER_MODES=""
+        KAM_DB_HOST=$(printf "$KAM_DB_HOST" | tr -d '[]'"'"'"' | tr ',' ' ')
+
+        local i=1
+        for HOST in $KAM_DB_HOST; do
+            KAM_DB_CLUSTER_CONNS+="modparam('db_cluster', 'connection', 'c${i}=>${KAM_DB_TYPE}://${KAM_DB_USER}:${KAM_DB_PASS}@${HOST}:${KAM_DB_PORT}/${KAM_DB_NAME}')\n"
+            KAM_DB_CLUSTER_MODES+="c${i}=9r9r;"
+            i=$((i+1))
+        done
+        KAM_DB_CLUSTER_MODES="modparam('db_cluster', 'cluster', 'dbcluster=>${KAM_DB_CLUSTER_MODES}')"
+        sed -i -e "s~DB_CLUSTER_PARAMS~${KAM_DB_CLUSTER_CONNS}${KAM_DB_CLUSTER_MODES}~" ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        sed -i -e "s~DB_CONNECTION_URI~${KAM_DB_TYPE}://${KAM_DB_USER}:${KAM_DB_PASS}@${KAM_DB_HOST}:${KAM_DB_PORT}/${KAM_DB_NAME}~" ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+
     # make sure kamailio user exists
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \
         -e "GRANT ALL PRIVILEGES ON $MYSQL_KAM_DATABASE.* TO '$MYSQL_KAM_USERNAME'@'localhost' IDENTIFIED BY '$MYSQL_KAM_PASSWORD';"
@@ -242,10 +298,10 @@ function configureKamailio {
     fi
 
     # Install schema for custom drouting
-    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/custom_routing.sql
+    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONFIG_DIR}/custom_routing.sql
 
     # Install schema for single & multi tenant pbx domain mapping
-    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONF_DIR}/kamailio/domain_mapping.sql
+    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONFIG_DIR}/domain_mapping.sql
 
     # reset auto incrementers for related tables
     resetIncrementers "dr_gw_lists" "uacreg"
@@ -255,19 +311,19 @@ function configureKamailio {
         mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
 
         # sub in dynamic values
-        sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DEFAULTS_DIR}/address.csv
-        sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DEFAULTS_DIR}/dr_gateways.csv
-        sed -i s/EXTERNAL_IP/$EXTERNAL_IP/g ${DEFAULTS_DIR}/uacreg.csv
+        sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DSIP_DEFAULTS_DIR}/address.csv
+        sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DSIP_DEFAULTS_DIR}/dr_gateways.csv
+        sed -i s/EXTERNAL_IP/$EXTERNAL_IP/g ${DSIP_DEFAULTS_DIR}/uacreg.csv
 
         # import default carriers
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/address.csv
+            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/address.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/dr_gw_lists.csv
+            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=',' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/uacreg.csv
+            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/uacreg.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DEFAULTS_DIR}/dr_gateways.csv
+            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_gateways.csv
     fi
 
     # Setup Outbound Rules to use Skyetel by default
@@ -275,9 +331,9 @@ function configureKamailio {
         -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
     # Backup kamcfg and link the dsiprouter kamcfg
-    cp -f ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg.$(date +%Y%m%d_%H%M%S)
-    rm -f ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
-    ln -s ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg ${SYSTEM_KAMAILIO_CONF_DIR}/kamailio.cfg
+    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
+    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    ln -s ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
 
     # Fix the mpath
     fixMPATH
@@ -289,14 +345,14 @@ function configureKamailio {
 }
 
 function enableSERVERNAT {
-	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
-	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
-	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
-	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
+	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
+	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
+	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
 }
 
 function disableSERVERNAT {
-	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
 }
 
 # Try to locate the Kamailio modules directory.  It will use the last modules directory found
@@ -311,7 +367,7 @@ function fixMPATH {
 
     echo "The Kamailio mpath has been updated to:$mpath"
     if [ "$mpath" != '' ]; then
-        sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONF_DIR}/kamailio/kamailio${KAM_VERSION}_dsiprouter.cfg
+        sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         echo "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
         cleanupAndExit 1
@@ -385,14 +441,17 @@ function uninstallRTPEngine {
 } #end of uninstallRTPEngine
 
 # Install the RTPEngine from sipwise
-# We are going to install it by default, but will users the ability to 
+# We are going to install it by default, but will users the ability to
 # to disable it if needed
 
+# TODO: seperate source dir from install dir
+# makes upgrading / git merging much easier
 function installRTPEngine {
-    
+    cd ${DSIP_PROJECT_DIR}
+
     if [[ $DISTRO == "debian" ]]; then
-    
-        #Install required libraries
+
+        # Install required libraries
         apt-get install -y firewalld
         apt-get install -y debhelper
         apt-get install -y iptables-dev
@@ -409,66 +468,64 @@ function installRTPEngine {
         apt-get install -y libmysqlclient-dev
         apt-get install -y libmariadbclient-dev
         apt-get install -y default-libmysqlclient-dev
-    
+
         rm -rf rtpengine.bak
         mv -f rtpengine rtpengine.bak
         git clone -b mr6.1.1.1 https://github.com/sipwise/rtpengine
-            cd rtpengine
+        cd rtpengine
         ./debian/flavors/no_ngcp
         dpkg-buildpackage
         cd ..
         dpkg -i ngcp-rtpengine-daemon_*
-    
+
         #cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
-    
+
         if [ "$SERVERNAT" == "0" ]; then
             INTERFACE=$EXTERNAL_IP
         else
             INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
         fi
-    
+
          (cat << EOF
 [rtpengine]
 table = -1
-interface = $INTERFACE
+interface = ${INTERFACE}
 listen-ng = 7722
-port-min = 10000
-port-max = 30000
+port-min = ${RTP_PORT_MIN}
+port-max = ${RTP_PORT_MAX}
 log-level = 7
 log-facility = local1
 EOF
          ) > /etc/rtpengine/rtpengine.conf
-    
-        
+
+
         #sed -i -r  "s/# interface = [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/interface = "$EXTERNAL_IP"/" /etc/rtpengine/rtpengine.conf
         sed -i 's/RUN_RTPENGINE=no/RUN_RTPENGINE=yes/' /etc/default/ngcp-rtpengine-daemon
         #sed -i 's/# listen-udp = 12222/listen-udp = 7222/' /etc/rtpengine/rtpengine.conf
-    
+
         # Setup Firewall rules for RTPEngine
-             
-        firewall-cmd --zone=public --add-port=10000-20000/udp --permanent
+        firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
         firewall-cmd --reload
-    
+
         # Setup RTPEngine Logging
         echo "local1.*     -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
         touch /var/log/rtpengine
         systemctl restart rsyslog
-    
+
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    
-        cp ./dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
-    
+        cp -f ./dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
+
         # Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
         # Start RTPEngine
         systemctl start ngcp-rtpengine-daemon
 
-        # Start manually if the service fials to start
+        # Start manually if the service fails to start
         if [ $? -eq 1 ]; then
             /usr/sbin/rtpengine --config-file=/etc/rtpengine/rtpengine.conf --pidfile=/var/run/ngcp-rtpengine-daemon.pid
         fi
-    
+
         # File to signify that the install happened
         if [ $? -eq 0 ]; then
            touch ./.rtpengineinstalled
@@ -476,36 +533,52 @@ EOF
         else
             echo "FAILED: RTPEngine could not be installed!"
         fi
-        # end of installing RTPEngine for Debian
-    
+
     elif [[ $DISTRO == "centos" ]]; then
-    
+
         # Install required libraries
-        yum install -y glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel  
-        
-        #wget https://github.com/libevent/libevent/releases/download/release-2.0.22-stable/libevent-2.0.22-stable.tar.gz
-        #tar -xvzf libevent-2.0.22-stable.tar.gz 
-        #cd libevent-2.0.22-stable
-        #./configure
-        #make && make install
-    
+        yum install -y epel-release
+        yum update -y
+        rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+        rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
+        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+            xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
+            iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel &&
+        yum install -y "kernel-devel-uname-r == $(uname -r)"
+
         if [ $? -ne 0 ]; then
             echo "Problem with installing the required libraries for RTPEngine"
             cleanupAndExit 1
         fi
-    
+
         # Make and Configure RTPEngine
-        
         rm -rf rtpengine.bak
         mv -f rtpengine rtpengine.bak
-        git clone https://github.com/sipwise/rtpengine
-        cd rtpengine/daemon
-        make
+        git clone https://github.com/sipwise/rtpengine.git
+        cd rtpengine/daemon && make
+
         if [ $? -eq 0 ]; then
-    
+
             # Copy binary to /usr/sbin
-            cp -f rtpengine /usr/sbin/rtpengine
-    
+            cp -f ${DSIP_PROJECT_DIR}/rtpengine/daemon/rtpengine /usr/sbin/rtpengine
+
+            # Remove RTPEngine kernel module if previously inserted
+            if lsmod | grep 'xt_RTPENGINE'; then
+                rmmod xt_RTPENGINE
+            fi
+
+            # Configure RTPEngine to support kernel packet forwarding
+            cd ${DSIP_PROJECT_DIR}/rtpengine/kernel-module && make && insmod xt_RTPENGINE.ko
+            if [ $? -ne 0 ]; then
+                echo "Problem installing RTPEngine kernel-module"
+                cleanupAndExit 1
+            fi
+            cd ${DSIP_PROJECT_DIR}/rtpengine/iptables-extension && make && cp -f libxt_RTPENGINE.so /lib64/xtables/
+            if [ $? -ne 0 ]; then
+                echo "Problem installing RTPEngine iptables-extension"
+                cleanupAndExit 1
+            fi
+
             # Add startup script
             (cat << EOF
 [Unit]
@@ -522,31 +595,40 @@ ExecStart=/usr/sbin/rtpengine -p /var/run/rtpengine.pid \$OPTIONS
 Restart=always
 
 [Install]
-WantedBy=multi-user.target 
+WantedBy=multi-user.target
 EOF
             ) > /etc/systemd/system/rtpengine.service
-    
+
             # Add Options File
             (cat << EOF
 # Add extra options here
 # We dont support the NG protocol in this release
 #
-OPTIONS="-F -i $INTERNAL_IP!$EXTERNAL_IP -u 127.0.0.1:7722 -m 10000 -M 20000 -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1"
+OPTIONS="-F -i ${INTERNAL_IP}!${EXTERNAL_IP} -u 127.0.0.1:7722 -m ${RTP_PORT_MIN} -M ${RTP_PORT_MAX} -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1"
 EOF
             ) > /etc/sysconfig/rtpengine
-    
+
             # Setup RTPEngine Logging
             echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
             touch /var/log/rtpengine
             systemctl restart rsyslog
-    
+
             # Setup Firewall rules for RTPEngine
-            firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
+            firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
             firewall-cmd --reload
-    
+
+            # Reload systemd configs
+            systemctl daemon-reload
             # Enable the RTPEngine to start during boot
             systemctl enable rtpengine
-            
+            # Start RTPEngine
+            systemctl start rtpengine
+
+            # Start manually if the service fails to start
+            if [ $? -ne 0 ]; then
+                /usr/sbin/rtpengine --config-file=/etc/sysconfig/rtpengine --pidfile=/var/run/rtpengine.pid
+            fi
+
             # File to signify that the install happened
             if [ $? -eq 0 ]; then
                 cd ../..
@@ -554,15 +636,15 @@ EOF
                 echo "RTPEngine has been installed!"
             fi
         fi
-    fi  #end of configuring RTPEngine for CentOS
+    fi
 
-} #end of installing RTPEngine
+} # end of installing RTPEngine
 
 # Enable RTP within the Kamailio configuration so that it uses the RTPEngine
 function enableRTP {
 
     sed -i 's/#!define WITH_NAT/##!define WITH_NAT/' ./kamailio_dsiprouter.cfg
-    
+
 } #end of enableRTP
 
 # Disable RTP within the Kamailio configuration so that it doesn't use the RTPEngine
@@ -575,10 +657,10 @@ function disableRTP {
 
 function install {
     if [ ! -f "./.installed" ]; then
-        cd ${DSIP_KAMAILIO_CONF_DIR}
+        cd ${DSIP_PROJECT_DIR}
 
         echo -e "Attempting to install Kamailio...\n"
-        ./kamailio/$DISTRO/$DISTRO_VER.sh install ${KAM_VERSION} ${DSIP_PORT}
+        ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
         if [ $? -eq 0 ]; then
             echo "Kamailio was installed!"
         else
@@ -586,7 +668,7 @@ function install {
             cleanupAndExit 1
         fi
         echo -e "Attempting to install dSIPRouter...\n"
-        ./dsiprouter/$DISTRO/$DISTRO_VER.sh install ${DSIP_PORT} ${PYTHON_CMD}
+        ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
 
         # Configure Kamailio and Install dSIPRouter Modules
         if [ $? -eq 0 ]; then
@@ -727,7 +809,7 @@ function stop {
 
 	if [ -e ./.rtpengineinstalled ]; then
 		stopRTPEngine
-	 	if [ $? -eq 0 ]; then	
+	 	if [ $? -eq 0 ]; then
 			echo "RTPEngine was stopped"
 		fi
 	else
@@ -762,6 +844,64 @@ function generatePassword {
     echo -e "username: admin\npassword: $password\n"
 }
 
+function upgrade {
+    # TODO: set / handle parsed args
+    UPGRADE_RELEASE="v0.51"
+
+    BACKUP_DIR="/var/opt/dsip/backups"
+    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
+    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
+    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR"),$(dirname "$DSIP_PROJECT_DIR")}
+
+    mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
+        --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" > ${CURR_BACKUP_DIR}/mysql_full.sql
+    mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
+        --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} \
+        | perl -0777 -pi -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs' \
+        > ${CURR_BACKUP_DIR}/kamdb_merge.sql
+
+    systemctl stop rtpengine
+    systemctl stop kamailio
+    systemctl stop dsiprouter
+    systemctl stop mysql
+
+    mv -f ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
+    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
+    # in case mysqldumps failed silently, backup mysql binary data
+    mv -f /var/lib/mysql ${CURR_BACKUP_DIR}/var/lib/
+    cp -f /etc/my.cnf* ${CURR_BACKUP_DIR}/etc/
+    cp -rf /etc/my.cnf* ${CURR_BACKUP_DIR}/etc/
+    cp -rf /etc/mysql ${CURR_BACKUP_DIR}/etc/
+    cp -f ${HOME}/.my.cnf* ${CURR_BACKUP_DIR}/${HOME}/
+
+    iptables-save > ${CURR_BACKUP_DIR}/iptables.dump
+    ip6tables-save > ${CURR_BACKUP_DIR}/ip6tables.dump
+
+    git clone https://github.com/dOpensource/dsiprouter.git --branch="$UPGRADE_RELEASE" ${DSIP_PROJECT_DIR}
+    cd ${DSIP_PROJECT_DIR}
+
+    # TODO: figure out what settings they installed with previously
+    # or we can simply store them in a text file (./installed)
+    # after a succesfull install completes
+    ./dsiprouter.sh uninstall
+    ./dsiprouter.sh install
+
+    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} < ${CURR_BACKUP_DIR}/kamdb_merge.sql
+
+    # TODO: fix any conflicts that would arise from our new modules / tables in KAMDB
+
+    # TODO: print backup location info to user
+
+    # TODO: transfer / merge backup configs to new configs
+    # kam configs
+    # dsip configs
+    # iptables configs
+    # mysql configs
+
+    # TODO: restart services, check for good startup
+}
+
+# TODO: update usage options
 function usageOptions {
     echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
     echo -e "Usage: $0 start|stop|restart"
@@ -782,8 +922,7 @@ function processCMD {
     initialChecks
     setPythonCmd # may be overridden in distro install script
 
-	while [[ $# > 0 ]]
-	do
+	while (( $# > 0 )); do
 		key="$1"
 		case $key in
 			install)
