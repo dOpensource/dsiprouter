@@ -935,6 +935,8 @@ def displayInboundMapping():
         db.rollback()
         db.flush()
         return showError(type=error)
+    finally:
+        db.close()
 
 
 @app.route('/inboundmapping', methods=['POST'])
@@ -964,15 +966,16 @@ def addInboundMapping():
         # get form data
         gwid = form['gwid']
         prefix = form['prefix']
+        note = form['note']
 
         # Adding
         if not ruleid:
-            IMap = InboundMapping(groupid, prefix, gwid)
+            IMap = InboundMapping(groupid, prefix, gwid, note)
             db.add(IMap)
 
         # Updating
         else:
-            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update({'prefix': prefix, 'gwlist': gwid})
+            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update({'prefix': prefix, 'gwlist': gwid, 'description': note})
 
         db.commit()
         reload_required = True
@@ -1141,6 +1144,7 @@ def importInboundMapping():
         return showError(type=error)
     finally:
         reload_required = True
+        db.close()
 
 @app.route('/teleblock')
 def displayTeleBlock():

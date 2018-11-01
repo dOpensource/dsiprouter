@@ -322,17 +322,20 @@ $('#inboundmapping #open-Update').click(function() {
   var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
   var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
   var gwname = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
+  var notes = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
+  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
 
   /** Clear out the modal */
   var modal_body = $('#edit .modal-body');
   modal_body.find(".ruleid").val('');
   modal_body.find(".prefix").val('');
+  modal_body.find(".notes").val('');
   modal_body.find(".gwid").val('');
 
   /* update modal fields */
   modal_body.find(".ruleid").val(ruleid);
   modal_body.find(".prefix").val(prefix);
+  modal_body.find(".notes").val(notes);
   modal_body.find(".gwid").val(gwid);
 });
 
