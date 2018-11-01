@@ -8,10 +8,11 @@ function installSQL {
 
 function install {
     installSQL
+    echo "Fraud Detection module installed"
 }
 
 function uninstall {
-    echo ""
+    echo "Fraud Detection module uninstalled"
 }
 
 function main {

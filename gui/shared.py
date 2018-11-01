@@ -7,7 +7,6 @@ from flask import request
 def getInternalIP():
     """ Returns current ip of system """
 
-    # TODO: this isnt reliable, need better way to filter between external & internal IP's
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.connect(("8.8.8.8", 80))
         return s.getsockname()[0]

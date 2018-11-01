@@ -316,12 +316,21 @@ def createValidEngine(uri_list):
 
     raise sql_exceptions.SQLAlchemyError(errors)
 
+# TODO: we should be creating a queue of the valid db_engines
+# from there we can perform round connections and more advanced clustering
+# this does have the requirement of new session instancing per request
 
 # Make the engine global
 engine = createValidEngine(getDBURI())
-
+session = None
 
 def loadSession():
+    global session
+    
+    # Return a DB session if one already exists
+    if session:
+        return session
+    
     metadata = MetaData(engine)
 
     dr_gateways = Table('dr_gateways', metadata, autoload=True)

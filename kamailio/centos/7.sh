@@ -4,11 +4,10 @@ set -x
 
 function install() {
     # Install Dependencies
-    yum update -y
     yum groupinstall -y 'core'
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
-    yum install -y psmisc wget sed gawk vim epel-release
+    yum install -y psmisc curl wget sed gawk vim epel-release perl
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
@@ -40,34 +39,33 @@ EOF
         kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress
 
 
-    # TODO: what is this for???
     touch /etc/tmpfiles.d/kamailio.conf
     echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
-    mkdir -p /etc/kamailio
-    echo "" >> /etc/kamailio/kamctlrc
-    echo "DBENGINE=MYSQL" >> /etc/kamailio/kamctlrc
-    echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
-    echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
-    echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
-    echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> /etc/kamailio/kamctlrc
+    mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
+    echo "" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "DBENGINE=MYSQL" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "INSTALL_EXTRA_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "INSTALL_PRESENCE_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "INSTALL_DBUID_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
-        echo "DBROOTPWSKIP=yes" >> /etc/kamailio/kamctlrc
+        echo "DBROOTPWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     else
-        echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> /etc/kamailio/kamctlrc
+        echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     fi
 
     # Will hardcode lation1 as the database character set used to create the Kamailio schema due to
     # a potential bug in how Kamailio additional tables are created
-    echo "CHARSET=latin1" >> /etc/kamailio/kamctlrc
+    echo "CHARSET=latin1" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
     # Setup firewall rules
-    firewall-cmd --zone=public --add-port=5060/udp --permanent
-    firewall-cmd --zone=public --add-port=10000-30000/udp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
 
     # TODO: add kamailio logrotate settings
@@ -79,7 +77,7 @@ function uninstall {
     systemctl stop mariadb
 
     # Backup kamailio configuration directory
-    mv -f /etc/kamailio /etc/kamailio.bak.$(date +%Y%m%d_%H%M%S)
+    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
@@ -91,8 +89,8 @@ function uninstall {
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:
-    firewall-cmd --zone=public --remove-port=5060/udp --permanent
-    firewall-cmd --zone=public --remove-port=10000-30000/udp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
 
     # TODO: remove kamailio logrotate settings

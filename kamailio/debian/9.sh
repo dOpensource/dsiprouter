@@ -3,12 +3,15 @@
 set -x
 
 function install {
+    # Install Dependencies
+    apt-get install -y curl wget sed gawk vim perl
+
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* stretch.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
     if [ $? -eq 1 ]; then
         echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
-        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
-        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
+        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main" >> /etc/apt/sources.list
+        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch  main" >> /etc/apt/sources.list
     fi
 
     # Add Key for Kamailio Repo
@@ -35,21 +38,21 @@ function install {
     systemctl start mysql
 
     # Configure Kamailio and Required Database Modules
-    mkdir -p /etc/kamailio
-    echo "DBENGINE=MYSQL" >> /etc/kamailio/kamctlrc
-    echo "INSTALL_EXTRA_TABLES=yes" >> /etc/kamailio/kamctlrc
-    echo "INSTALL_PRESENCE_TABLES=yes" >> /etc/kamailio/kamctlrc
-    echo "INSTALL_DBUID_TABLES=yes" >> /etc/kamailio/kamctlrc
-        echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> /etc/kamailio/kamctlrc
+    mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
+    echo "DBENGINE=MYSQL" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "INSTALL_EXTRA_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "INSTALL_PRESENCE_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    echo "INSTALL_DBUID_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+        echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
-        echo "DBROOTPWSKIP=yes" >> /etc/kamailio/kamctlrc
+        echo "DBROOTPWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     else
-        echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> /etc/kamailio/kamctlrc
+        echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     fi
 
     # Will hardcode lation1 as the database character set used to create the Kamailio schema due to
     # a potential bug in how Kamailio additional tables are created
-    echo "CHARSET=latin1" >> /etc/kamailio/kamctlrc
+    echo "CHARSET=latin1" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
@@ -78,7 +81,7 @@ function uninstall {
     systemctl stop mysql
 
     # Backup kamailio configuration directory
-    mv -f /etc/kamailio /etc/kamailio.bak.$(date +%Y%m%d_%H%M%S)
+    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)

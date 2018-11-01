@@ -11,10 +11,12 @@ from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, 
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping
 from modules import flowroute
+from modules.domain.domain_controller import domains
 import settings
 
 # global variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
+app.register_blueprint(domains)
 db = loadSession()
 numbers_api = flowroute.Numbers()
 reload_required = False
@@ -27,6 +29,23 @@ reload_required = False
 
 @app.before_request
 def before_request():
+
+    
+    #try:
+
+        #public_pages = ['/login','/logout','/static/']
+
+        #if 'logged_in' not in session:
+        #    if request.endpoint == '/': # Return the index page immediately
+        #        return 
+        #    for page in public_pages: # Otherwise, check for public URL's from list
+        #        if request.endpoint.startswith(page) == True:
+        #            return 
+         #   #return render_template('index.html', version=settings.VERSION)
+
+    #except Exception as ex:
+    #                return render_template('index.html', version=settings.VERSION)
+    
     session.permanent = True
     if not hasattr(settings,'GUI_INACTIVE_TIMEOUT'):
         settings.GUI_INACTIVE_TIMEOUT = 20 #20 minutes
@@ -42,6 +61,7 @@ def index():
     try:
         if (settings.DEBUG):
             debugEndpoint()
+
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
@@ -79,7 +99,8 @@ def login():
         else:
             flash('wrong username or password!')
             return redirect(url_for('index'))
-        return index()
+        return redirect(url_for('index'))
+        
 
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -97,7 +118,7 @@ def logout():
         if (settings.DEBUG):
             debugEndpoint()
 
-        session['logged_in'] = False
+        session.pop('logged_in', None)
         return index()
 
     except http_exceptions.HTTPException as ex:
@@ -1585,6 +1606,8 @@ def noneFilter(list):
 
 
 def attrFilter(list, field):
+    if list is None:
+        return ""
     if ":" in list:
         d = dict(item.split(":") for item in list.split(","))
         try:
@@ -1593,6 +1616,14 @@ def attrFilter(list, field):
             return
     else:
         return list
+
+def domainTypeFilter(list):
+    if list is None:
+        return "Unknown"
+    if list == 0:
+        return "Static"
+    else:
+        return "Dynamic"
 
 
 def imgFilter(name):
@@ -1620,20 +1651,16 @@ class CustomServer(Server):
             port=settings.DSIP_PORT
         )
 
+        if len(settings.SSL_CERT) > 0 and len(settings.SSL_KEY) > 0:
+            self.ssl_crt = settings.SSL_CERT
+            self.ssl_key = settings.SSL_KEY
+
         if settings.DEBUG == True:
             self.use_debugger = True
             self.use_reloader = True
-            self.ssl_crt = None
-            self.ssl_key = None
         else:
             self.use_debugger = None
             self.use_reloader = None
-            if len(settings.SSL_CERT) > 0 and len(settings.SSL_KEY > 0):
-                self.ssl_crt = settings.SSL_CERT
-                self.ssl_key = settings.SSL_KEY
-            else:
-                self.ssl_crt = None
-                self.ssl_key = None
             self.threaded = True
             self.processes = 1
 
@@ -1647,6 +1674,7 @@ def init_app(flask_app):
     flask_app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
     flask_app.jinja_env.filters["noneFilter"] = noneFilter
     flask_app.jinja_env.filters["imgFilter"] = imgFilter
+    flask_app.jinja_env.filters["domainTypeFilter"] = domainTypeFilter
 
     # db.init_app(flask_app)
     # db.app = app
