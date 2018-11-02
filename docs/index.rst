@@ -5,7 +5,7 @@ dSIPRouter Docs
 
 .. raw:: html
 
-        <object width="480" height="560"><param name="movie"
+        <object width="560" height="315"><param name="movie"
         value="https://www.youtube.com/embed/Iu4BQkL1wGc"></param><param
         name="allowFullScreen" value="true"></param><param
         name="allowscriptaccess" value="always"></param><embed
