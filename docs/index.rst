@@ -20,6 +20,9 @@ Intro to dSIPRouter
 dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]
        
            
+           
+           
+       dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:    
 
 Installing dSIPRouter
 =====================
