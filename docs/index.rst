@@ -131,7 +131,7 @@ The steps to install each configuration is below.  Note, there are one line vers
 
  Install (Don't Proxy audio (RTP) traffic)
 
-```
+
 apt-get update 
 
 apt-get install -y git curl
@@ -144,33 +144,39 @@ cd dsiprouter
 
 ./dsiprouter.sh install
 
-```
+
 or the one line version
 
-```
+
 apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install
-```
+
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
 
  Install (Proxy audio (RTP) traffic)
 
-If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be
+If you need to proxy RTP traffic then add the -rtpengine parameter.  So, the command to install dSIPRouter and the RTPEngine would be:
 
-```
+
 apt-get update
+
 apt-get install -y git curl
+
 cd /opt
+
 git clone https://github.com/dOpensource/dsiprouter.git
+
 cd dsiprouter
+
 ./dsiprouter.sh install -rtpengine
-```
+
+
 
 or the one line version
 
-```
+
 apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine
-```
+
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)   
 
@@ -178,7 +184,7 @@ Once the install is complete, dSIPRouter will automatically start MySQL, Kamaili
 
 If you have a requirement where the PBX's and dSIPRouter are behind NAT then use the steps below, which are the same as above, but you will add a -servernat parameter.   
 
-```
+
 apt-get update
 apt-get install -y git curl
 cd /opt
