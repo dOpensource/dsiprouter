@@ -1,3 +1,7 @@
+Intro to dSIPRouter
+===================
+
+
 Installing dSIPRouter
 =====================
 
@@ -6,23 +10,7 @@ Installing dSIPRouter
    
    installing.rst
    
-   
-   
-   Starting dSIPRouter
-   Configuring dSIPRouter
-   Implementing Use Cases
-        PBX Hosting
-        SIP Trunking
-        ITSP (Internet Telephony Service Provider)
-   Troubleshooting
-
-
-dSIPRouter Docs
-======================
-
-
-
-.. raw:: html
+   .. raw:: html
 
         <object width="560" height="315"><param name="movie"
         value="https://www.youtube.com/embed/Iu4BQkL1wGc"></param><param
@@ -32,6 +20,51 @@ dSIPRouter Docs
         type="application/x-shockwave-flash" allowscriptaccess="always"
         allowfullscreen="true" width=""
         height="385"></embed></object>
+
+   
+   
+  Starting dSIPRouter
+  =====================
+  
+  .. toctree::
+   :maxdepth: 2
+   
+   starting.rst
+  
+  
+  Configuring dSIPRouter
+  ======================
+  
+  .. toctree::
+   :maxdepth: 2
+   
+   configuring.rst
+  
+   
+  Implementing Use Cases
+  ======================
+  
+  .. toctree::
+   :maxdepth: 2
+   
+   use-cases.rst
+  
+       
+   Troubleshooting
+   ===============
+   
+  .. toctree::
+   :maxdepth: 2
+   
+   troubleshooting.rst
+   
+  
+   
+   
+
+
+
+
 
 
 
