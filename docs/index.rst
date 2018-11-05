@@ -23,10 +23,8 @@ Installing dSIPRouter
    installing.rst
    
    
-   
-   
-  Starting dSIPRouter
-  =====================
+Starting dSIPRouter
+=====================
   
   .. toctree::
    :maxdepth: 2
@@ -34,8 +32,8 @@ Installing dSIPRouter
    starting.rst
   
   
-  Configuring dSIPRouter
-  ======================
+Configuring dSIPRouter
+======================
   
   .. toctree::
    :maxdepth: 2
@@ -43,8 +41,8 @@ Installing dSIPRouter
    configuring.rst
   
    
-  Implementing Use Cases
-  ======================
+Implementing Use Cases
+======================
   
   .. toctree::
    :maxdepth: 2
@@ -52,8 +50,8 @@ Installing dSIPRouter
    use-cases.rst
   
        
-   Troubleshooting
-   ===============
+Troubleshooting
+===============
    
   .. toctree::
    :maxdepth: 2
