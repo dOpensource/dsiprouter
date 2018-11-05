@@ -53,7 +53,7 @@ Sponsors
 
 We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for believing in us and becoming our first sponsor. 
 
-[Skyetel Logo](/docs/images/skyetel_logo.png
+[Skyetel Logo](/pictures/skyetel_logo.png
 
 
 Installing dSIPRouter
