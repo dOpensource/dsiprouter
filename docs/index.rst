@@ -46,7 +46,7 @@ username: admin
 password: ZmIwMTdmY2I5NjE4
 
 
-**Follow us at [#dsiprouter](https://twitter.com/dsiprouter/) on Twitter to get the latest updates on dSIPRouter**
+**Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
 Installing dSIPRouter
 =====================
