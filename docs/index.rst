@@ -1,7 +1,3 @@
-======================
-dSIPRouter Docs
-======================
-
 .. toctree::
    :maxdepth: 2
    
@@ -13,6 +9,12 @@ dSIPRouter Docs
         SIP Trunking
         ITSP (Internet Telephony Service Provider)
    Troubleshooting
+
+======================
+dSIPRouter Docs
+======================
+
+
 
 .. raw:: html
 
