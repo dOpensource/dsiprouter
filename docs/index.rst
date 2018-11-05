@@ -78,7 +78,7 @@ Prerequisites:
 - python version 3.4 or older
 
 
-#### OS Support
+OS Support
 
 **Debian Stretch (tested on 9.4)**
 
@@ -94,24 +94,24 @@ Kamailio will be automatically installed along with dSIPRouter.  Must be install
 
 
 
-#### Database Support
+Database Support
 
 - MariaDB 10.x
 
 
 
-#### Kamailio Versions
+Kamailio Versions
 - Kamailio 5.1 
 
 
 
-### Supported Platforms:
+Supported Platforms:
 
 We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or [purchasing support](https://dopensource.com/shop) so that we can provide more officially supported platform variations and to add additional features to make Kamailio and RTPProxy much easier to learn and use.
 
 
 
-### Non-Supported Platforms (but might work)
+Non-Supported Platforms (but might work)
 
 **Debian Jessie 8.x:**
 
