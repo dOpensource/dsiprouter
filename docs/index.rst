@@ -205,6 +205,47 @@ Starting dSIPRouter
    starting.rst
   
   
+  
+  Login 
+
+Open a broswer and go to `http://[ip address of your server]:5000`
+
+The username and the dynamically generated password is displayed after the install
+
+
+
+Starting dSIPRouter:
+
+./dsiprouter.sh start
+
+
+
+Stopping dSIPRouter:
+
+./dsiprouter.sh stop
+
+
+
+Restarting dSIPRouter:
+
+./dsiprouter.sh restart
+
+
+
+Run At Startup:
+
+Put this line in /etc/rc.local
+
+
+<your directory>/dsiprouter.sh start
+
+* We will provide a systemctl startup/stop script in the near future
+
+Uninstall
+
+./dsiprouter.sh uninstall
+
+
 Configuring dSIPRouter
 ======================
   
