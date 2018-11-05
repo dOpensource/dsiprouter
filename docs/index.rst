@@ -145,7 +145,7 @@ cd dsiprouter
 ./dsiprouter.sh install
 
 
-or the one line version: apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install
+or the one line version:apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install
 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
