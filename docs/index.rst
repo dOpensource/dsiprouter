@@ -2,6 +2,17 @@
 dSIPRouter Docs
 ======================
 
+.. toctree::
+   :maxdepth: 2
+   
+   Installing dSIPRouter
+   Starting dSIPRouter
+   Configuring dSIPRouter
+   Implementing Use Cases
+        PBX Hosting
+        SIP Trunking
+        ITSP (Internet Telephony Service Provider)
+   Troubleshooting
 
 .. raw:: html
 
@@ -15,9 +26,4 @@ dSIPRouter Docs
         height="385"></embed></object>
 
 
-Installing dSIPRouter
-
-Setting up Carriers
-
-Setting up PBX's and Endpoints
 
