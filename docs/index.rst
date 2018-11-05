@@ -1,16 +1,7 @@
 Intro to dSIPRouter
 ===================
 
-
-Installing dSIPRouter
-=====================
-
-.. toctree::
-   :maxdepth: 2
-   
-   installing.rst
-   
-   .. raw:: html
+.. raw:: html
 
         <object width="560" height="315"><param name="movie"
         value="https://www.youtube.com/embed/Iu4BQkL1wGc"></param><param
@@ -21,6 +12,17 @@ Installing dSIPRouter
         allowfullscreen="true" width=""
         height="385"></embed></object>
 
+
+
+Installing dSIPRouter
+=====================
+
+.. toctree::
+   :maxdepth: 2
+   
+   installing.rst
+   
+   
    
    
   Starting dSIPRouter
