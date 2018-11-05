@@ -49,11 +49,11 @@ password: ZmIwMTdmY2I5NjE4
 **Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
 
-### Sponsors
+Sponsors
 
 We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for believing in us and becoming our first sponsor. 
 
-![Skyetel Logo](/docs/images/skyetel_logo.png
+[Skyetel Logo](/docs/images/skyetel_logo.png
 
 
 Installing dSIPRouter
@@ -64,13 +64,16 @@ Installing dSIPRouter
    
    installing.rst
    
- ### Prerequisites:
+
+
+
+   
+   
+   
+Prerequisites:
 - Must run this as the root user (you can use sudo)
 - git and curl needs to be installed
-- python version 3.4 or older
-
-
-
+- python version 3.4 or olde
    
 Starting dSIPRouter
 =====================
