@@ -12,7 +12,8 @@ Intro to dSIPRouter
         allowfullscreen="true" width=""
         height="385"></embed></object>
 
-        <## dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]>
+       | <## dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]>
+           |
 
 Installing dSIPRouter
 =====================
