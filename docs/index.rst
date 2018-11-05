@@ -46,7 +46,7 @@ username: admin
 password: ZmIwMTdmY2I5NjE4
 
 
-**Follow us at [#dsiprouter(https://twitter.com/dsiprouter] on Twitter to get the latest updates on dSIPRouter**
+**Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
 Installing dSIPRouter
 =====================
@@ -56,6 +56,14 @@ Installing dSIPRouter
    
    installing.rst
    
+   ### Prerequisites:
+
+- Must run this as the root user (you can use sudo)
+- git and curl needs to be installed
+- python version 3.4 or older
+
+
+
    
 Starting dSIPRouter
 =====================
