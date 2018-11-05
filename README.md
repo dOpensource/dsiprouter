@@ -4,13 +4,13 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 - **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
 
-- **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
+- **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make is really easy and scalable!
 
-**Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
+**Follow us at [#dsiprouter] (https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
 ### Demo System
 
-You can checkout our demo system, which is located here:
+You can checkout our demo system by clicking the link below and enter the listed username and password:
 
 [http://demo.dsiprouter.org:5000](http://demo.dsiprouter.org:5000)
 
