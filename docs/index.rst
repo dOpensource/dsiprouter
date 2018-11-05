@@ -129,7 +129,7 @@ There are three ways to install dSIPRouter:
 
 The steps to install each configuration is below.  Note, there are one line versions of the install in each section below.  The average install time is between 4-9 minutes depending on the resources on your vm/server.
 
- -**Install (Don't Proxy audio (RTP) traffic)
+ ---Install (Don't Proxy audio (RTP) traffic)
 
 
 apt-get update 
