@@ -57,6 +57,10 @@ Installing dSIPRouter
    installing.rst
    
   
+ 
+ 
+ 
+ 
  ### Prerequisites:
 - Must run this as the root user (you can use sudo)
 - git and curl needs to be installed
