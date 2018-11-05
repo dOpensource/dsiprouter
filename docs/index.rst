@@ -129,7 +129,7 @@ There are three ways to install dSIPRouter:
 
 The steps to install each configuration is below.  Note, there are one line versions of the install in each section below.  The average install time is between 4-9 minutes depending on the resources on your vm/server.
 
- ---Install (Don't Proxy audio (RTP) traffic)
+ -->Install (Don't Proxy audio (RTP) traffic)
 
 
 apt-get update 
@@ -150,7 +150,7 @@ Or the One Line Version: apt-get update;apt-get install -y git curl;cd /opt;git 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
 
- Install (Proxy audio (RTP) traffic)
+--> Install (Proxy audio (RTP) traffic)
 
 If you need to proxy RTP traffic then add the -rtpengine parameter. The command to install dSIPRouter and the RTPEngine would be:
 
@@ -174,7 +174,7 @@ Or the One Line Version: apt-get update;apt-get install -y git curl;cd /opt;git 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)   
 
- Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
+ -->Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
 
 If you have a requirement where the PBX's and dSIPRouter are behind NAT then use the steps below, which are the same as above, but you will add a -servernat parameter.   
 
