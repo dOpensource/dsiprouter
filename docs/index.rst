@@ -1,4 +1,5 @@
 Installing dSIPRouter
+=====================
 
 .. toctree::
    :maxdepth: 2
@@ -15,7 +16,7 @@ Installing dSIPRouter
         ITSP (Internet Telephony Service Provider)
    Troubleshooting
 
-======================
+
 dSIPRouter Docs
 ======================
 
