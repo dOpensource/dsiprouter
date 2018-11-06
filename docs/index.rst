@@ -17,12 +17,8 @@ Intro to dSIPRouter
        
        
        
-dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]
-       
-           
-           
-           
-       dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables the following two basic use cases: 
+
+dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables the following two basic use cases: 
        
        
 - **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
@@ -32,6 +28,7 @@ dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]
 
 
 Demo System
+===========
 
 You can checkout our demo system by clicking the link below and enter the listed username and password:
 
