@@ -12,6 +12,6 @@ Adding a Carrier
 
 - Click "Add" to create a Carrier Group.  A carrier group can contain 1 or more SIP endpoints provided by the carrier.
 
-.. image:: images/add_carrier_groups.png
+.. image:: images/add_carrier_group.png
         :align: center
 
