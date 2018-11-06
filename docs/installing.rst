@@ -1,5 +1,53 @@
-Installing
-==========
+Prerequisites:
+
+
+- Must run this as the root user (you can use sudo)
+- git and curl needs to be installed
+- python version 3.4 or older
+
+
+OS Support
+
+**Debian Stretch (tested on 9.4)**
+
+Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch.  You will not be prompted for any information.  It will take anywhere from 4-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
+
+
+
+
+**On CentOS 7.x:**
+
+- Kamailio needs to be installed with the default kamailio configuration directory
+- You will need your kamailio database credentials.
+
+
+
+Database Support
+
+- MariaDB 10.x
+
+
+
+Kamailio Versions
+- Kamailio 5.1 
+
+
+
+Supported Platforms:
+
+We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or [purchasing support](https://dopensource.com/shop) so that we can provide more officially supported platform variations and to add additional features to make Kamailio and RTPProxy much easier to learn and use.
+
+
+
+Non-Supported Platforms (but might work)
+
+**Debian Jessie 8.x:**
+
+- Kamailio will be automatically installed along with dSIPRouter.  Just click "enter" and "y" to not have a ROOT password on mysql and to accept all of the default settings. 
+
+
+
+                              Installing and Running It:
 
 There are three ways to install dSIPRouter:
 
@@ -75,53 +123,3 @@ Or the One Line Version: apt-get update;apt-get install -y git curl;cd /opt;git 
 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)
-   
-Starting dSIPRouter
-=====================
-  
-  .. toctree::
-   :maxdepth: 2
-   
-   starting.rst
-  
-  
-  
--->Login 
-
-Open a broswer and go to `http://[ip address of your server]:5000`
-
-The username and the dynamically generated password is displayed after the install
-
-
-
--->Starting dSIPRouter:
-
-./dsiprouter.sh start
-
-
-
--->Stopping dSIPRouter:
-
-./dsiprouter.sh stop
-
-
-
--->Restarting dSIPRouter:
-
-./dsiprouter.sh restart
-
-
-
--->Run At Startup:
-
-Put this line in /etc/rc.local
-
-
-<your directory>/dsiprouter.sh start
-
-* We will provide a systemctl startup/stop script in the near future
-
--->Uninstall
-
-./dsiprouter.sh uninstall
-
