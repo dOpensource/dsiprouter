@@ -1,8 +1,22 @@
 Installing dSIPRouter
 =====================
 
-Prerequisites:
+Install dSIPRouter takes approximately 9 minutes to install.  The following video shows you the install process:
 
+.. raw:: html
+
+        <object width="560" height="315"><param name="movie"
+        value="https://www.youtube.com/embed/Iu4BQkL1wGc"></param><param
+        name="allowFullScreen" value="true"></param><param
+        name="allowscriptaccess" value="always"></param><embed
+        src="https://www.youtube.com/embed/Iu4BQkL1wGc"
+        type="application/x-shockwave-flash" allowscriptaccess="always"
+        allowfullscreen="true" width=""
+        height="385"></embed></object>
+
+
+Prerequisites:
+^^^^^^^^^^^^^^
 
 - Must run this as the root user (you can use sudo)
 - git and curl needs to be installed
