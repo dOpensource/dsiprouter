@@ -18,7 +18,18 @@ Adding a Carrier
 
 After you have added the new group, the screen will return back to the List of Carriers Group page. Select the pencil in the blue box to the right to allow editing the Config and Endpoints. 
 
-Select Config if you need to edit/ change the Carrier group name.
+To update the Config, slecet the Config tab to edit/ change the Carrier group name. Then click Update.
 
 .. image:: images/config_pic.PNG
         :align: center
+        
+To add an endpoint, selct the blue pencil and click the Endpoint tab. Click ADD and enter the carrier details.  
+
+
+.. image:: images/add_endpoint.PNG
+        :align: center
+        
+        .. image:: images/add_carrier_details.PNG
+        :align: center
+        
+        
