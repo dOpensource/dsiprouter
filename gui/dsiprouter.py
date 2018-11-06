@@ -7,9 +7,9 @@ from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
-    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping
+    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher
 from modules import flowroute
 from modules.domain.domain_controller import domains
 import settings
@@ -52,8 +52,6 @@ def before_request():
     app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
-def showError(type="", code=500, msg=None):
-    return render_template('error.html', type=type), code
 
 
 @app.route('/')
@@ -154,7 +152,7 @@ def displayCarrierGroups(gwgroup=None):
                 res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                     GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
                     UAC.auth_username, UAC.auth_password, UAC.realm).all()
-
+            db.close()
             return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
         else:
@@ -226,8 +224,9 @@ def addUpdateCarrierGroups():
             if len(new_name) > 0:
                 Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
                 fields = strFieldsToDict(Gwgroup.description)
-                fields['name'] = name
+                fields['name'] = new_name
                 Gwgroup.description = dictToStrFields(fields)
+                db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).update({'description': Gwgroup.description},synchronize_session=False)
 
             # auth form
             else:
@@ -244,6 +243,7 @@ def addUpdateCarrierGroups():
                         synchronize_session=False)
 
         db.commit()
+        db.close()
         reload_required = True
         return displayCarrierGroups()
 
@@ -267,6 +267,7 @@ def addUpdateCarrierGroups():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/carriergroupdelete', methods=['POST'])
@@ -323,6 +324,7 @@ def deleteCarrierGroups():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/carriers')
@@ -471,6 +473,7 @@ def addUpdateCarriers():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/carrierdelete', methods=['POST'])
@@ -532,6 +535,7 @@ def deleteCarriers():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/pbx')
@@ -623,9 +627,11 @@ def addUpdatePBX():
             multi_tenant_domain_enabled = True
             multi_tenant_domain_type = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value
         # add any other single tenant pbx to this list as they are supported
-        elif int(form['freepbx_enabled']):
+        else:
             single_tenant_domain_enabled = True
-            single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_FREEPBX.value
+        #elif int(form['freepbx_enabled']):
+        #    single_tenant_domain_enabled = True
+        #    single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_FREEPBX.value
 
         # Adding
         if len(gwid) <= 0:
@@ -684,25 +690,24 @@ def addUpdatePBX():
 
             # enable domain routing for this pbx
             if single_tenant_domain_enabled:
-                # put required VALUES for all single tenant use cases here
-                PBXDomain = Domain(ip_addr)
-                PBXDomainAttr = DomainAttrs(ip_addr)
-                db.add(PBXDomain)
-                db.add(PBXDomainAttr)
-                db.flush()
+            #    # put required VALUES for all single tenant use cases here
+            #    PBXDomain = Domain(ip_addr)
+            #    PBXDomainAttr = DomainAttrs(ip_addr)
+            #    db.add(PBXDomain)
+            #    db.add(PBXDomainAttr)
+            #    db.flush()
 
-                PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
-                                               type=single_tenant_domain_type)
+                PBXMapping = dSIPDomainMapping(Gateway.gwid, '', '',type=single_tenant_domain_type)
             # create an entry for this pbx that is disabled (must not match any domain)
             else:
-                # put required DEFAULTS for all single tenant use cases here
-                PBXDomain = Domain(domain="", did="")
-                PBXDomainAttr = DomainAttrs(did="", value="")
-                db.add(PBXDomain)
-                db.add(PBXDomainAttr)
-                db.flush()
+            #    # put required DEFAULTS for all single tenant use cases here
+            #    PBXDomain = Domain(domain="", did="")
+            #    PBXDomainAttr = DomainAttrs(did="", value="")
+            #    db.add(PBXDomain)
+            #    db.add(PBXDomainAttr)
+            #    db.flush()
 
-                PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
+               PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
                                                enabled=dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value)
 
                 # specific use cases go here
@@ -738,34 +743,34 @@ def addUpdatePBX():
                     {'enabled': dSIPMultiDomainMapping.FLAGS.DOMAIN_DISABLED.value}, synchronize_session=False)
 
             # enable domain routing for this pbx
-            if single_tenant_domain_enabled:
-
+            #if single_tenant_domain_enabled:
+            #
                 # put required VALUES for all single tenant use cases here
-                PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
-                PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_ENABLED.value
+            #    PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
+            #    PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_ENABLED.value
 
-                # TODO: support adding / editing multiple domain attributes
-                db.query(Domain).filter(Domain.id == PBXMapping.domain_id).update(
-                    {'domain': ip_addr, 'did': ip_addr, 'last_modified': datetime.utcnow()}, synchronize_session=False)
+            #    # TODO: support adding / editing multiple domain attributes
+            #    db.query(Domain).filter(Domain.id == PBXMapping.domain_id).update(
+            #        {'domain': ip_addr, 'did': ip_addr, 'last_modified': datetime.utcnow()}, synchronize_session=False)
                 # make sure domain has attributes
-                if len(PBXMapping.attr_list) > 0:
-                    attr_list = list(map(int, filter(None, PBXMapping.attr_list.split(","))))
-                db.query(DomainAttrs).filter(DomainAttrs.id.in_(attr_list)).update(
-                    {'did': ip_addr, 'value': '', 'last_modified': datetime.utcnow()},
-                    synchronize_session=False)
+            #    if len(PBXMapping.attr_list) > 0:
+            #        attr_list = list(map(int, filter(None, PBXMapping.attr_list.split(","))))
+            #    db.query(DomainAttrs).filter(DomainAttrs.id.in_(attr_list)).update(
+            #        {'did': ip_addr, 'value': '', 'last_modified': datetime.utcnow()},
+            #        synchronize_session=False)
             # disable domain routing for this pbx
-            else:
-                # put required DEFAULTS for all single tenant use cases here
-                PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
-                PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value
+            #else:
+            #    # put required DEFAULTS for all single tenant use cases here
+            #    PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
+            #    PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value
 
-                db.query(Domain).filter(Domain.id == PBXMapping.domain_id).update(
-                    {'did': '', 'value': '', 'last_modified': datetime.utcnow()}, synchronize_session=False)
+            #    db.query(Domain).filter(Domain.id == PBXMapping.domain_id).update(
+            #        {'did': '', 'value': '', 'last_modified': datetime.utcnow()}, synchronize_session=False)
                 # make sure domain has attributes
-                if len(PBXMapping.attr_list) > 0:
-                    attr_list = list(map(int, filter(None, PBXMapping.attr_list.split(","))))
-                db.query(DomainAttrs).filter(DomainAttrs.id.in_(attr_list)).update(
-                    {'did': '', 'value': '', 'last_modified': datetime.utcnow()}, synchronize_session=False)
+            #    if len(PBXMapping.attr_list) > 0:
+            #        attr_list = list(map(int, filter(None, PBXMapping.attr_list.split(","))))
+            #    db.query(DomainAttrs).filter(DomainAttrs.id.in_(attr_list)).update(
+            #        {'did': '', 'value': '', 'last_modified': datetime.utcnow()}, synchronize_session=False)
 
             # specific use cases go here
             # if single_tenant_domain_type == dSIPDomainMapping.FLAGS.TYPE_FREEPBX.value:
@@ -828,6 +833,7 @@ def addUpdatePBX():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/pbxdelete', methods=['POST'])
@@ -904,6 +910,7 @@ def deletePBX():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/inboundmapping')
@@ -958,6 +965,7 @@ def displayInboundMapping():
         return showError(type=error)
     finally:
         db.close()
+        
 
 
 @app.route('/inboundmapping', methods=['POST'])
@@ -1022,6 +1030,7 @@ def addInboundMapping():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/inboundmappingdelete', methods=['POST'])
@@ -1068,6 +1077,7 @@ def deleteInboundMapping():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 def processInboundMappingImport(filename,groupid,pbxid,note,db):
     try:
@@ -1256,6 +1266,7 @@ def addUpdateTeleBlock():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/outboundroutes')
@@ -1484,6 +1495,7 @@ def addUpateOutboundRoutes():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/outboundroutesdelete', methods=['POST'])
@@ -1537,6 +1549,7 @@ def deleteOutboundRoute():
         return showError(type=error)
     finally:
         reload_required = False
+        db.close()
 
 
 @app.route('/reloadkam')

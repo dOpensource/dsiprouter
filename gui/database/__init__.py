@@ -264,6 +264,22 @@ class DomainAttrs(object):
 
     pass
 
+class Dispatcher(object):
+    """
+    Schema for dispatcher table\n
+    Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dispatcher>`_
+    """
+
+
+    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description=''):
+        self.setid = setid
+        self.destination = "sip:{}".format(destination)
+        self.flags = flags
+        self.priority = priority
+        self.attrs = attrs
+        self.description = description
+
+    pass
 
 def getDBURI():
     """
@@ -347,6 +363,7 @@ def loadSession():
     # dr_groups = Table('dr_groups', metadata, autoload=True)
     domain = Table('domain', metadata, autoload=True)
     domain_attrs = Table('domain_attrs', metadata, autoload=True)
+    dispatcher = Table('dispatcher', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -370,6 +387,7 @@ def loadSession():
     mapper(GatewayGroups, dr_gw_lists)
     mapper(Domain, domain)
     mapper(DomainAttrs, domain_attrs)
+    mapper(Dispatcher, dispatcher)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],

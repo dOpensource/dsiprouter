@@ -25,13 +25,14 @@
 
     <thead>
     <tr class='element-row'>
-      <th><input class="checkall " type="checkbox"/></th>
+      <th></th>
       <th data-field="ruleid">Rule ID</th>
       <th data-field="prefix">DID (or DID pattern)</th>
       <th data-field="gateway">PBX</th>
       <th data-field="notes">Notes</th>
       <th data-field="gwid" style='display:none;'>PBX ID</th>
-      <th colspan="2"></th>
+      <th></th>
+      <th></th>
     </tr>
     </thead>
     <tbody>
@@ -244,11 +245,18 @@
 {% endblock %}
 
 {% block custom_js %}
-  {% if imported_dids is not none %}
-    <script>
-      var DID_LIST = {{ imported_dids|safe if imported_dids != None else [] }};
-    </script>
-    {{ script_tag('combobox') }}
-    {{ script_tag('inboundmapping') }}
-  {% endif %}
+<script>
+$(document).ready(function() {
+    $('#inboundmapping').DataTable({
+    "columnDefs": [
+                { "orderable": false, "targets": 0 },
+                { "orderable": false, "targets": 5 },
+                { "orderable": false, "targets": 6 },
+                { "orderable": false, "targets": 7 }
+      ],
+    "order": [[ 1, 'asc' ]]
+  }
+    );
+    } );
+</script>
 {% endblock %}

@@ -1,5 +1,5 @@
 import settings, sys, os, re, socket, requests, logging, traceback, inspect, string, random
-from flask import request
+from flask import request, render_template
 
 
 # Used to grab network info dynamically at startup
@@ -328,3 +328,6 @@ def debugEndpoint(log_out=False, print_out=True, **kwargs):
 def allowed_file(filename,ALLOWED_EXTENSIONS=set(['csv','txt','pdf','png','jpg','jpeg','gif'])):
     return '.' in filename and \
             filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def showError(type="", code=500, msg=None):
+    return render_template('error.html', type=type), code

@@ -556,4 +556,5 @@ a.navlink {
 .modal-open.modal {
   overflow-x: hidden;
   overflow-y: auto;
+  z-index: 9999;
 }
