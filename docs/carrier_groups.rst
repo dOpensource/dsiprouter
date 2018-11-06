@@ -32,14 +32,6 @@ To update the Config, slecet the Config tab to edit/ change the Carrier group na
 
 
 To add an endpoint, click the Endpoint tab. Click ADD, enter the carrier details then click ADD again.  
-
-
-
-
-
-
-
-
 .. image:: images/add_endpoint.PNG
         :align: center
         
