@@ -59,19 +59,19 @@ The steps to install each configuration is below.  Note, there are one line vers
 
   Install (Don't Proxy audio (RTP) traffic)
 
-  .. code-block: console
+::
     apt-get update 
     apt-get install -y git curl
     cd /opt
     git clone https://github.com/dOpensource/dsiprouter.git
     cd dsiprouter
     ./dsiprouter.sh install
+:
 
-
-  One Line Version: 
-  .. code-block: console
+One Line Version: 
+::
     apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install
-
+:
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
 
