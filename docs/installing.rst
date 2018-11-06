@@ -59,7 +59,7 @@ The steps to install each configuration is below.  Note, there are one line vers
 
   Install (Don't Proxy audio (RTP) traffic)
 
-  .. code-block: bash
+  .. code-block: console
     apt-get update 
     apt-get install -y git curl
     cd /opt
@@ -69,7 +69,7 @@ The steps to install each configuration is below.  Note, there are one line vers
 
 
   One Line Version: 
-  .. code-block: bash
+  .. code-block: console
     apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install
 
 
