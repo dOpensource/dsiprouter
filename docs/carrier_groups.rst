@@ -36,14 +36,11 @@ To add an endpoint, click the Endpoint tab. Click ADD, enter the carrier details
 
 .. image:: images/add_endpoint.PNG
         :align: center
-        .. image:: images/add_carrier_details.PNG
+       
+.. image:: images/add_carrier_details.PNG
         :align: center
         
         
-       
-       
-       
- 
- 
+   
  
  You should now see your added carrier in the Carrier Group List.
