@@ -20,5 +20,5 @@ After you have added the new group, the screen will return back to the List of C
 
 Select Config if you need to edit/ change the Carrier group name.
 
-.. image:: C:\Users\Nicole Cannon\Documents\Image\config_pic.png
+.. image:: images/config_pic.png
         :align: center
