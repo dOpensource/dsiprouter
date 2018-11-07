@@ -7,6 +7,7 @@ To add a domain click on Domains then click the green add button.
         :align: center
 
 Fill in the domain name. (Note: You can create 1 or more domains by separating them with commas).
+
 - Select Realtime DB or Local Subscriber table. 
 Note: Details can be found in Realtime DB if you want to ensure that the Kamailio configuration file is setup to point to the Asterisk Realtime database configuration. Details on how to populate the table can be found in the Local Suscriber table if you want to use the built in subscriber table that's part of Kamailio.  
 
@@ -14,3 +15,9 @@ Note: Details can be found in Realtime DB if you want to ensure that the Kamaili
 .. image:: images/add_new_domain.PNG
         :align: center
 
+- For the List of backend PBX ID's you should use the ID assigned to each PBX that you want to be part of that domain. Such as naming an extention thats assigned to domainA.com for example.
+
+.. image:: images/add_new_domain2.PNG
+        :align: center
+        
+-  Click ADD
