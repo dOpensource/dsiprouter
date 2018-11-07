@@ -53,7 +53,7 @@ Click ADD, enter the Friendly name (optional, the )IP address of the endpoint/de
 
 hhhihhihhhhih
 
-.. image:: images/add_carrier_details.PNG 
+.. image:: images/new_carrier_details.PNG 
         :align: center
      
            
