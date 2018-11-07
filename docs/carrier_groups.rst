@@ -55,10 +55,6 @@ hhhihhihhhhih
 
 
 
-
-
-
-
 .. image:: images/new_carrier_details.PNG 
         :align: center
      
