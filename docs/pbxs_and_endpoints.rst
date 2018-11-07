@@ -28,7 +28,13 @@ To Import a DID from a CVS file:
         
         
        
-4) Click the Browse button and select the file that contains the DID numbers that you wish to use. Then click the green Add button. 
+4) 
+        a) Click the Browse button and select the file that contains the DID numbers that you wish to use. 
+        b) Click the green Add button. 
+
+5) Click on the blue Reload Kamailio button in order for the changes to be updated.
+
+
 
 
 To Manually import a DID:
@@ -54,3 +60,6 @@ To Manually import a DID:
         
 .. image:: images//dSIP_IN_Manual_Add.png
         :align: center
+
+
+4) Click on the blue Reload Kamailio button in order for the changes to be updated.
