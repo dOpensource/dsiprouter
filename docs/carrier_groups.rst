@@ -20,7 +20,8 @@ Select Username/Password Auth, fill in the username, password of your registrati
 .. image:: images/add_carrier_group.png
         :align: center
 
-For example:
+For example:   .. image:: images/username_password.png
+        :align: right
 
 
 After you have added the new group, the screen will return back to the List of Carriers Group page. Select the pencil in the blue box to the right to allow editing the Config and Endpoints. 
