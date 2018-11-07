@@ -55,7 +55,7 @@ hhhihhihhhhih
 
 
 
-.. image:: docs/new_carrier_details.PNG 
+.. image:: images/new_carrier_details.PNG 
         :align: center
      
            
