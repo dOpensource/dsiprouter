@@ -25,6 +25,9 @@ Select Username/Password Auth, fill in the appropiate fields. Then click ADD.
 
 After you have added the new group, the screen will return back to the List of Carriers Group page. Select the pencil in the blue box to the right to allow editing the Config and Endpoints. 
 
+.. image:: images/carrier_editing.png
+        :align: center
+
 Selcet the Config tab. The Config tab allows you to edit/ change the Carrier group name. Then click Update.
 
 .. image:: images/config_pic.PNG
