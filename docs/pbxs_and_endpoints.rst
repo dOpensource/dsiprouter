@@ -16,10 +16,16 @@ To add a PBX:
 
 3) Click on the green Add button.
 
+.. image:: images//dSIP_PBX_Add.png
+        :align: center
+
 4) 
         a) Enter in the PBX info.
         b) Click the green Add button.
         c) Click on the blue Reload Kamailio button in order for the changes to be updated.
+        
+.. image:: images//dSIP_PBX_ADD_New_PBX.png
+        :align: center
 
 
 
