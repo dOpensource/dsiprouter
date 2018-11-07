@@ -13,3 +13,4 @@ Note: Details can be found in Realtime DB if you want to ensure that the Kamaili
 
 .. image:: images/add_new_domain.PNG
         :align: center
+
