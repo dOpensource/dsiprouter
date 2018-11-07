@@ -1,7 +1,7 @@
 Carrier Groups
 ^^^^^^^^^^^^^^
 
-The Carrier Group section of dSIPRouter allows you to define which carriers will be used to provide Internet service (aka ISP) for your VOIP (voice over IP) services. Carrier groups support IP Authentication and Username/Password authentication.
+The Carrier Group section of dSIPRouter allows you to define which carriers will be used to provide Internet service (aka ISP) for your VOIP (Voice Over IP) services. Carrier groups support IP Authentication and Username/Password authentication. Below is ans example of a carrier groups list.
 
 .. image:: images/carrier_groups.png
         :align: center
@@ -9,9 +9,9 @@ The Carrier Group section of dSIPRouter allows you to define which carriers will
 Adding a Carrier
 ^^^^^^^^^^^^^^^^
 
--Log into dSIPRouter using proper username and password.
+- Log into dSIPRouter using proper username and password.
 
-- Click "Add" to create a Carrier Group.  A carrier group can contain 1 or more SIP endpoints provided by the carrier. A SIP Endpoint represents a device that makes or receives calls via your Gateway. This could be a physical IP phone, a softphone app such as Skype, on a PC or smartphone, an Analog Telephone Adapter (ATA), or even a PBX system. 
+- Click "Add" to create a Carrier Group.  A carrier group can contain 1 or more SIP endpoints provided by the carrier. A SIP Endpoint represents a device that makes or receives calls via your Gateway. This could be a physical IP phone, a softphone app such as Skype, on a PC or smartphone, an Analog Telephone Adapter (ATA) such as for fax machines, or even a PBX system. 
 Select Username/Password Auth, fill in the appropiate fields.
 
 
