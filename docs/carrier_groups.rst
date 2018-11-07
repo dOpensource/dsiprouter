@@ -12,7 +12,7 @@ Adding a Carrier
 - Log into dSIPRouter using proper username and password.
 
 - Click "Add" to create a Carrier Group.  A carrier group can contain 1 or more SIP endpoints provided by the carrier. A SIP Endpoint represents a device that makes or receives calls via your Gateway. This could be a physical IP phone, a softphone app such as Skype, on a PC or smartphone, an Analog Telephone Adapter (ATA) such as for fax machines, or even a PBX system. 
-Select Username/Password Auth, fill in the appropiate fields. Then click ADD.
+Select Username/Password Auth, fill in the username, password of your registration server and the registration server name. Then click ADD.
 
 
 
@@ -20,7 +20,7 @@ Select Username/Password Auth, fill in the appropiate fields. Then click ADD.
 .. image:: images/add_carrier_group.png
         :align: center
 
-
+For example:
 
 
 After you have added the new group, the screen will return back to the List of Carriers Group page. Select the pencil in the blue box to the right to allow editing the Config and Endpoints. 
