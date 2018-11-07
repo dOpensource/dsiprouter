@@ -5,6 +5,23 @@ Allows you to define a PBX or Endpoint that will send or receive calls from dSIP
 authentication or a username/password can be defined.
 
 
+To add a PBX:
+^^^^^^^^^^^^^^^^
+1) Go to the Dashboard screen.
+
+.. image:: images//dSIP_dashboard.png
+        :align: center
+        
+2) Click on PBX(s) and Endpoints.
+
+3) Click on the green Add button.
+
+4) 
+        a) Enter in the PBX info.
+        b) Click the green Add button.
+        c) Click on the blue Reload Kamailio button in order for the changes to be updated.
+
+
 
 Inbound DID Mapping
 ======================
