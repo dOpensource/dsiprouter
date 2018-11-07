@@ -52,7 +52,7 @@ To add an endpoint, click the Endpoint tab. Click ADD, enter the carrier details
 
 
 
-.. image:: images/add_carrier_details.PNG
+.. image:: images/add_carrier_details.PNG 
         :align: center
         
            
