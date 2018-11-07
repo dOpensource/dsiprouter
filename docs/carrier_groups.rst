@@ -43,14 +43,16 @@ Selcet the Config tab. The Config tab allows you to edit/ change the Carrier gro
 
 
 
-To add an endpoint, click the Endpoint tab. Click ADD, enter the carrier details then click ADD again.  
-
+To add an endpoint, click the Endpoint tab. 
 
 .. image:: images/add_endpoint.PNG
         :align: center
        
+Click ADD, enter the Friendly name (optional, the )IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again.  
 
 
+.. image:: images/add_carrier_details.PNG 
+        :align: center
      
            
  
