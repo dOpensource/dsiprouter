@@ -20,7 +20,7 @@ Select Username/Password Auth, fill in the username, password of your registrati
 .. image:: images/add_carrier_group.png
         :align: center
 
-For example:   .. image:: images/username_password.png
+For example:   .. image:: images/username_password.PNG
         :align: right
 
 
