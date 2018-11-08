@@ -26,7 +26,7 @@ You will then be returned back to the List of domains page and you should see yo
 
 
 .. image:: images/list_of_domains.PNG
-:align: center  
+ :align: center  
 
 
      
@@ -34,4 +34,4 @@ You will then be returned back to the List of domains page and you should see yo
    
 
 .. image:: images/reload_button.PNG
-:align: center
+ :align: center
