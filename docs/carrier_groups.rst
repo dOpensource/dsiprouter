@@ -51,7 +51,7 @@ To add an Endpoint, click the Endpoint tab.
 Click ADD, enter the Friendly name (optional), the IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again.  
 
 
-.. image:: images/add_new_carrier_details.JPG 
+.. image:: images/new_carrier_details.PNG
         :align: center
      
      
