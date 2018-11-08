@@ -30,3 +30,6 @@ You will then be returned back to the List of domains page and you should see yo
         
      
    Be sure to click the Reload Kamailio button to apply changes.
+   
+   .. image:: images/reload_button.PNG
+ :align: center
