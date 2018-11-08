@@ -51,7 +51,7 @@ Install (Don't Proxy audio (RTP) traffic)
         git clone https://github.com/dOpensource/dsiprouter.git
         cd dsiprouter
         ./dsiprouter.sh install
-:
+|
 
 One Line Version: 
 ::
