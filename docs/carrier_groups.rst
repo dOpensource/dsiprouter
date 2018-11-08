@@ -60,7 +60,7 @@ Click ADD, enter the Friendly name (optional), the IP address of the endpoint/de
 You should now see your added carrier in the Carrier Group List.
 
 .. image:: images/list_of_domains.PNG
-:align: center
+ :align: center
 
  
  
