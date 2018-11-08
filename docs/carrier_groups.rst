@@ -64,7 +64,7 @@ You should now see your added carrier in the Carrier Group List.
 
  
  
- Be sure to click the Reload Kamailio button to apply changes.
+Be sure to click the Reload Kamailio button to apply changes.
    
 
 .. image:: images/reload_button.PNG
