@@ -18,7 +18,7 @@ You can checkout our demo system by clicking the link below and enter the listed
 
 
 
-[http://demo.dsiprouter.org:5000]
+http://demo.dsiprouter.org:5000
 
 
 username: admin:: 
