@@ -3,7 +3,7 @@ Intro to dSIPRouter
 
 
 
-dSIPRouter allows you to quickly turn `Kamailio <http://https://www.kamailio.org/>`_ into an easy to use SIP Service Provider platform, which enables the following two basic use cases: 
+dSIPRouter allows you to quickly turn `Kamailio <http://http://www.kamailio.org/>`_ into an easy to use SIP Service Provider platform, which enables the following two basic use cases: 
        
        
 - **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
