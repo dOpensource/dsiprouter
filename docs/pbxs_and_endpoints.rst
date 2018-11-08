@@ -33,11 +33,11 @@ To add a PBX:
 
 
 4) 
-        a) Enter in the PBX info.
+        a)Enter in the PBX info.
         
         
         
-        b) Click the green Add button.
+        b)Click the green Add button.
         
           
         
@@ -88,11 +88,11 @@ To Import a DID from a CVS file:
         
        
 4) 
-        a) Click the Browse button and select the file that contains the DID numbers that you wish to use. 
+        a)Click the Browse button and select the file that contains the DID numbers that you wish to use. 
         
         
         
-        b) Click the green Add button. 
+        b)Click the green Add button. 
 
 
 
@@ -123,19 +123,19 @@ To Manually import a DID:
         
        
 3) 
-        a) Click on the green ADD button underneath List on Inbound Mappings. 
+        a)Click on the green ADD button underneath List on Inbound Mappings. 
    
    
    
-        b) On the next screen, enter the DID number in the DID field. 
+        b)On the next screen, enter the DID number in the DID field. 
         
         
         
-        c) Select the PBX from the PBX drop-down menu.
+        c)Select the PBX from the PBX drop-down menu.
         
         
         
-        d) Click the green Add button.
+        d)Click the green Add button.
         
         
         
