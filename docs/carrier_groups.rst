@@ -53,10 +53,11 @@ Click ADD, enter the Friendly name (optional), the IP address of the endpoint/de
 
 
 .. image:: images/new_carrier_details.PNG
+:align: center
 
      
      
-    You should now see your added carrier in the Carrier Group List.
+You should now see your added carrier in the Carrier Group List.
  
  
  
