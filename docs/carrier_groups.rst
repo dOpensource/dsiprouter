@@ -23,7 +23,7 @@ Select Username/Password Auth, fill in the username, password of your registrati
 For example:   
 
 .. image:: images/username_password.PNG
-        :align: right
+        :align: center
 
 
 After you have added the new group, the screen will return back to the List of Carriers Group page. Select the pencil in the blue box to the right to allow editing the Config and Endpoints. 
@@ -51,16 +51,13 @@ To add an endpoint, click the Endpoint tab.
 Click ADD, enter the Friendly name (optional, the )IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again.  
 
 
-hhhihhihhhhih
 
 
 
 .. image:: images/new_carrier_details.PNG 
         :align: center
      
-           
- 
- You should now see your added carrier in the Carrier Group List.
+    You should now see your added carrier in the Carrier Group List.
  
  
  
