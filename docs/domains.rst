@@ -15,9 +15,9 @@ Note: Details can be found in Realtime DB if you want to ensure that the Kamaili
 .. image:: images/add_new_domain.PNG
         :align: center
 
-- For the List of backend PBX ID's you should use the ID assigned to each PBX that you want to be part of that domain. Such as naming an extention thats assigned to domainA.com for example.
+- For the List of backend PBX ID's you should use the ID assigned to each PBX that you want to be part of that domain. Such as naming the ID number thats assigned to media-02.voipmuch.com for example.
 
-.. image:: images/add_new_domain2.PNG
+.. image:: images/add_new_domain3.PNG
         :align: center
         
 -  Click ADD
@@ -25,7 +25,7 @@ Note: Details can be found in Realtime DB if you want to ensure that the Kamaili
 You will then be returned back to the List of domains page and you should see your new domain added. You can delete this domain by clicking the red trash can to the right of the page.
 
 
-.. image:: images/list_of_domains.PNG
+.. image:: images/list_of_domains1.PNG
  :align: center  
 
 
