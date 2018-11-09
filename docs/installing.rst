@@ -79,7 +79,11 @@ If you need to proxy RTP traffic then add the -rtpengine parameter. The command 
 |
 
 
-Or the One Line Version: apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine
+Or the One Line Version: 
+
+::
+
+ apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine
 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)   
@@ -88,20 +92,21 @@ Once the install is complete, dSIPRouter will automatically start MySQL, Kamaili
 
 If you have a requirement where the PBX's and dSIPRouter are behind NAT then use the steps below, which are the same as above, but you will add a -servernat parameter.   
 
+::
 
-apt-get update
+ apt-get update
+ apt-get install -y git curl
+ cd /opt
+ git clone https://github.com/dOpensource/dsiprouter.git
+ cd dsiprouter
+ ./dsiprouter.sh install -rtpengine -servernat
+ 
+ |
 
-apt-get install -y git curl
+Or the One Line Version: 
 
-cd /opt
-
-git clone https://github.com/dOpensource/dsiprouter.git
-
-cd dsiprouter
-
-./dsiprouter.sh install -rtpengine -servernat
-
-Or the One Line Version: apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine -servernat
+:: 
+ 4apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine -servernat
 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.  But, you will need to reboot the physical server or virtual machine for the RTP Engine to start.  This is a known [issue](https://github.com/dOpensource/dsiprouter/issues/42)
