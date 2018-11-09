@@ -52,12 +52,12 @@ Click ADD, enter the Friendly name (optional), the IP address of the endpoint/de
 
 
 
-.. image:: images/new_carrier_details.PNG
+.. image:: images/add_new_carrier_details.PNG
  :align: center
 
+Edit and click ADD again to add addtional endpoints. Click the gray X in that box to save window and close.
 
-
-You should now see your added carrier in the Carrier Group List.
+You should now see your added carrier with endpoints in the Carrier Group List.
 
 .. image:: images/list_of_domains.PNG
  :align: center
