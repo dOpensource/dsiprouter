@@ -48,7 +48,7 @@ To add an Endpoint, click the Endpoint tab.
 .. image:: images/add_endpoint.PNG
         :align: center
        
-Click ADD, enter the Friendly name (optional), the IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again. RURI for example is when a number is dialed such as 9 plus the 1 and the number, a carrier may only want to see the phone number so the RURI would strip the "9" from in front of the telephone number. Some carriers request added digits, aka prefixes, in front of the phone number for validation that the call is from that carrier. In this example, the # of characters to strip from RURI is 0.
+Click ADD, enter the Friendly name (optional), the IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again. RURI is when a number is dialed such as 9 plus the 1 and the number, a carrier may only want to see the phone number so the RURI would strip the "9" from in front of the telephone number. Some carriers request added digits, aka prefixes, in front of the phone number for validation that the call is from that carrier. In this example, the # of characters to strip from RURI is 0 as in none.
 
 
 
