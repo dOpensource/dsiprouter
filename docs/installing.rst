@@ -67,18 +67,16 @@ Once the install is complete, dSIPRouter will automatically start MySQL, Kamaili
 If you need to proxy RTP traffic then add the -rtpengine parameter. The command to install dSIPRouter and the RTPEngine would be:
 
 
+::
+
 apt-get update
-
 apt-get install -y git curl
-
 cd /opt
-
 git clone https://github.com/dOpensource/dsiprouter.git
-
 cd dsiprouter
-
 ./dsiprouter.sh install -rtpengine
 
+|
 
 
 Or the One Line Version: apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine
