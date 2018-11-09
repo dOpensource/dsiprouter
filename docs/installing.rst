@@ -69,12 +69,12 @@ If you need to proxy RTP traffic then add the -rtpengine parameter. The command 
 
 ::
 
-apt-get update
-apt-get install -y git curl
-cd /opt
-git clone https://github.com/dOpensource/dsiprouter.git
-cd dsiprouter
-./dsiprouter.sh install -rtpengine
+ apt-get update
+ apt-get install -y git curl
+ cd /opt
+ git clone https://github.com/dOpensource/dsiprouter.git
+ cd dsiprouter
+ ./dsiprouter.sh install -rtpengine
 
 |
 
