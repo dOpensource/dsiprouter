@@ -15,7 +15,7 @@ Note: Details can be found in Realtime DB if you want to ensure that the Kamaili
 .. image:: images/add_new_domain.PNG
         :align: center
 
-- For the List of backend PBX ID's you should use the ID assigned to each PBX that you want to be part of that domain. Such as naming the ID number thats assigned to media-02.voipmuch.com for example.
+- For the List of backend PBX ID's you should use the ID assigned to each PBX that you want to be part of that domain. Such as naming the ID number thats assigned to media-02.voipmuch.com for example in PBX(s) and Enpoints.
 
 .. image:: images/add_new_domain3.PNG
         :align: center
