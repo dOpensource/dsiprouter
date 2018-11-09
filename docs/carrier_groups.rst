@@ -59,7 +59,7 @@ Edit and click ADD again to add addtional endpoints. Click the gray X in that bo
 
 You should now see your added carrier with endpoints in the Carrier Group List.
 
-.. image:: images/list_of_domains.PNG
+.. image:: images/carrier_group_list.PNG
  :align: center
 
  
