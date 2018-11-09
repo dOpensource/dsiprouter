@@ -101,7 +101,7 @@ If you have a requirement where the PBX's and dSIPRouter are behind NAT then use
  cd dsiprouter
  ./dsiprouter.sh install -rtpengine -servernat
  
- |
+|
 
 
 Or the One Line Version: 
