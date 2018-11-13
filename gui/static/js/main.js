@@ -210,6 +210,13 @@ function descendingSearch(selector, test) {
   descendingSearch(node_list, test)
 }
 
+$('#open-CarrierAdd').click(function() {
+
+
+  var modal = $('#add');
+  modal.css('z-index','1070');
+});
+
 $('#open-PbxAdd').click(function() {
   /** Clear out the modal */
   var modal_body = $('#add .modal-body');
@@ -314,6 +321,18 @@ $('#pbxs #open-Delete').click(function() {
   var modal_body = $('#delete .modal-body');
   modal_body.find(".gwid").val(gwid);
   modal_body.find(".name").val(name);
+});
+
+$('#domains #open-Delete').click(function() {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('domains');
+  var id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var domain = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+
+  /* update modal fields */
+  var modal_body = $('#delete .modal-body');
+  modal_body.find(".domainid").val(id);
+  modal_body.find(".domainname").val(domain);
 });
 
 $('#inboundmapping #open-Update').click(function() {

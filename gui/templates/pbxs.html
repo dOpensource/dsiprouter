@@ -10,35 +10,33 @@
     </button>
   </div>
 
-  <div class="navBarButtons">
-    <ul class="pagination pull-right">
-      <li class="disabled"><a href="#"><span class="glyphicon glyphicon-chevron-left"></span></a></li>
-      <li class="active"><a href="#">1</a></li>
-      <li><a href="#">2</a></li>
-      <li><a href="#">3</a></li>
-      <li><a href="#">4</a></li>
-      <li><a href="#">5</a></li>
-      <li><a href="#"><span class="glyphicon glyphicon-chevron-right"></span></a></li>
-    </ul>
-  </div>
-
 {% endblock %}
 
 
 {% block table %}
 
-  <table id="pbxs" class="table table-striped table-centered">
+  <table id="pbxs" class="table table-striped table-centered" style="width:100%;">
 
     <thead>
     <tr class='element-row'>
-      <th><input class="checkall " type="checkbox"/></th>
+      <th></th>
       <th data-field="id">PBX ID</th>
       <th data-field="name">Name</th>
       <th data-field="ip_addr">IP Address</th>
       <th data-field="strip">Strip</th>
       <th data-field="prefix">Prefix</th>
       <th data-field="pbx_domain_support">Domain Support</th>
-      <th colspan="2"></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
     </tr>
     </thead>
     <tbody>
@@ -50,10 +48,8 @@
         <td class='ip_addr'>{{ row.address }}</td>
         <td class='strip'>{{ row.strip }}</td>
         <td class='prefix'>{{ row.pri_prefix }}</td>
-        {% if fusionpbx_enabled %}
+        {% if row.fusionpbx_enabled %}
           <td class='pbx_domain_support'>FusionPBX</td>
-        {% elif row.freepbx_enabled %}
-          <td class='pbx_domain_support'>FreePBX</td>
         {% else %}
           <td class='pbx_domain_support'>None</td>
         {% endif %}
@@ -152,20 +148,6 @@
         </div>
         <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
       </div>
-
-      <div class="form-group">
-        <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggleFreePBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-freepbx'></span> Enabled"
-                   data-off="<span class='icon-freepbx'></span> Disabled"
-                   data-width="125px">
-            FreePBX Domain Support
-          </label>
-        </div>
-        <input class="freepbx_enabled " type="hidden" name="freepbx_enabled" value="0">
-      </div>
-
       <div class="FusionPBXDomainOptions form-group hidden">
         <div class="alert alert-warning pre-scrollable">
           <strong>
@@ -280,20 +262,6 @@ iptables-save</code></pre>
         </div>
         <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
       </div>
-
-      <div class="form-group">
-        <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggleFreePBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-freepbx'></span> Enabled"
-                   data-off="<span class='icon-freepbx'></span> Disabled"
-                   data-width="125px">
-            FreePBX Domain Support
-          </label>
-        </div>
-        <input class="freepbx_enabled " type="hidden" name="freepbx_enabled" value="0">
-      </div>
-
       <div class="FusionPBXDomainOptions form-group hidden">
         <div class="alert alert-warning pre-scrollable">
           <strong>
@@ -371,4 +339,29 @@ iptables-save</code></pre>
     </form>
   </div>
 
+{% endblock %}
+
+{% block custom_js %}
+  <script>
+$(document).ready(function() {
+    $('#pbxs').DataTable({
+    "columnDefs": [
+                { "orderable": false, "targets": 0 },
+                { "orderable": false, "targets": 7 },
+                { "orderable": false, "targets": 8 },
+                { "orderable": false, "targets": 9 },
+                { "orderable": false, "targets": 10 },
+                { "orderable": false, "targets": 11 },
+                { "orderable": false, "targets": 12 },
+                { "orderable": false, "targets": 13 },
+                { "orderable": false, "targets": 14 },
+                { "orderable": false, "targets": 15 },
+                { "orderable": false, "targets": 16 },
+                { "orderable": false, "targets": 17 }
+      ],
+    "order": [[ 1, 'asc' ]]
+  }
+    );
+    } );
+  </script>
 {% endblock %}
