@@ -26,6 +26,11 @@ We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for beli
 ![Skyetel Logo](/docs/images/skyetel_logo.png)
 
 
+### Documentation
+
+You can find our documentation here: [dSIPRouter Documentation](https://dsiprouter.readthedocs.io/en/v0.51/)
+
+
 ### Supported Platforms:
 
 We have to limit our offiical support to Debian Stretch with Kamailio 5.1 because we just implemented a new framework for supporting multiple operating systems and different versions of Kamailio and RTPProxy.  But, we only had time to really test Debian Stretch.  Please contribute to the install process by committing code to the project or [purchasing support](https://dopensource.com/shop) so that we can provide more officially supported platform variations and to add additional features to make Kamailio and RTPProxy much easier to learn and use.
