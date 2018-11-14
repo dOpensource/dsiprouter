@@ -1,4 +1,5 @@
-## dSIPRouter by dOpenSource | a Flyball Company [ Built in Detroit ]
+What is dSIPRouter?
+===================
 
 dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:
 
@@ -202,28 +203,6 @@ To change the configuration settings edit `gui/settings.py` file, e.g. `vi ./gui
 
 You will need to restart dSIPRouter for the changes to take effect.
 
-### Screenshots
-
-#### Carrier Management Screen
-![dSIPRouter Carrier Screen](/docs/images/dsiprouter-carriers.jpg)
-
-#### PBX(s) and Endpoint Management Screen
-![dSIPRouter PBX Screen](/docs/images/dsiprouter-pbxs.jpg)
-
-#### PBX and/or Endpoint IP or Credential Based Authentication Input Screen
-![dSIPRouter PBX Screen with Auth](/docs/images/dsiprouter-pbx-auth.jpg)
-
-#### FusionPBX Domain Support
-![dSIPRouter FusionPBX Domain Support Screen](/docs/images/dsiprouter-fusionpbx_domain_support.jpg)
-
-#### Inbound Mapping Screen
-![dSIPRouter Inbound Mapping Screen](/docs/images/dsiprouter-inboundmapping.jpg)
-
-#### Outbound Routing Screen
-![dSIPRouter Outbound Routing Screen](/docs/images/dsiprouter-outboundrouting.jpg)
-
-#### Gryphon Teleblock Support
-![dSIPRouter Gryphon Teleblock Support](/docs/images/dsiprouter-teleblock.jpg)
 
 ### License
 
