@@ -198,6 +198,10 @@ def update_nginx(sources):
        html_volume_path = script_dir + "/html"
        #host_volume_path = script_dir
        print(host_volume_path)
+       #remove the container with a name of dsiprouter-nginx to avoid conflicts if it already exists
+       container=client.containers.get('dsiprouter-nginx')
+       if container:
+           container.remove()
        client.containers.run(image='nginx:latest',
             name="dsiprouter-nginx",
             ports={'80/tcp':'80/tcp'},
