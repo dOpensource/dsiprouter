@@ -31,7 +31,7 @@ export DSIP_PROJECT_DIR="$(pwd)"
 #================== USER_CONFIG_SETTINGS ===================#
 
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 # Define some global variables
 SERVERNAT=0
