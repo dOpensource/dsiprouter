@@ -42,18 +42,17 @@ Install Options:
 
 The steps to install each configuration is below.  Note, there are one line versions of the install in each section below.  The average install time is between 4-9 minutes depending on the resources on your vm/server.
 
-Install (Don't Proxy audio (RTP) traffic)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-::
+    Install (Don't Proxy audio (RTP) traffic)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ::
  
- apt-get update 
- apt-get install -y git curl
- cd /opt
- git clone https://github.com/dOpensource/dsiprouter.git
- cd dsiprouter
- ./dsiprouter.sh install
- 
-|
+      apt-get update 
+      apt-get install -y git curl
+      cd /opt
+      git clone https://github.com/dOpensource/dsiprouter.git
+      cd dsiprouter
+      ./dsiprouter.sh install
+    |
 
 One Line Version: 
 ::
