@@ -261,25 +261,6 @@ function configureKamailio {
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \
         -e "GRANT ALL PRIVILEGES ON $MYSQL_KAM_DATABASE.* TO '$MYSQL_KAM_USERNAME'@'localhost' IDENTIFIED BY '$MYSQL_KAM_PASSWORD';"
 
-    # required if tables exist and we are updating
-    function resetIncrementers {
-        SQL_TABLES=$(
-            (for t in "$@"; do printf ",'$t'"; done) | cut -d ',' -f '2-'
-        )
-
-        # reset auto increment for related tables to max btwn the related tables
-        INCREMENT=$(
-            mysql --skip-column-names --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \ -e "\
-                SELECT MAX(AUTO_INCREMENT) FROM INFORMATION_SCHEMA.TABLES \
-                WHERE TABLE_SCHEMA = '$MYSQL_KAM_DATABASE' \
-                AND TABLE_NAME IN($SQL_TABLES);"
-        )
-        for t in "$@"; do
-            mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
-                -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
-        done
-    }
-
     # Check the username and password
     #mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE -e "select * from version limit 1" >/dev/null 2>&1
     #if [ $? -eq 1 ]; then
@@ -346,6 +327,25 @@ function configureKamailio {
         enableSERVERNAT
     fi
 }
+
+ # required if tables exist and we are updating
+    function resetIncrementers {
+        SQL_TABLES=$(
+            (for t in "$@"; do printf ",'$t'"; done) | cut -d ',' -f '2-'
+        )
+
+        # reset auto increment for related tables to max btwn the related tables
+        INCREMENT=$(
+            mysql --skip-column-names --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \ -e "\
+                SELECT MAX(AUTO_INCREMENT) FROM INFORMATION_SCHEMA.TABLES \
+                WHERE TABLE_SCHEMA = '$MYSQL_KAM_DATABASE' \
+                AND TABLE_NAME IN($SQL_TABLES);"
+        )
+        for t in "$@"; do
+            mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
+                -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
+        done
+    }
 
 function enableSERVERNAT {
 	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
