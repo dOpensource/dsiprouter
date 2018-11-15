@@ -33,7 +33,7 @@ OS Support
 Kamailio will be automatically installed along with dSIPRouter.  Must be installed on a fresh install of Debian Stretch or CentOS 7.  You will not be prompted for any information.  It will take anywhere from 4-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 
 
-Install Options:
+Install Options
 ^^^^^^^^^^^^^^^^
 
 - Proxy SIP Traffic Only (Don't Proxy audio (RTP) traffic) 
@@ -42,8 +42,8 @@ Install Options:
 
 The steps to install each configuration is below.  Note, there are one line versions of the install in each section below.  The average install time is between 4-9 minutes depending on the resources on your vm/server.
 
- Install (Don't Proxy audio (RTP) traffic)
- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Install (Don't Proxy audio (RTP) traffic)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  ::
  
   apt-get update 
