@@ -31,13 +31,14 @@ export DSIP_PROJECT_DIR="$(pwd)"
 #================== USER_CONFIG_SETTINGS ===================#
 
 # Uncomment if you want to debug this script.
-set -x
+#set -x
 
 # Define some global variables
 SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
-DEBUG=0 # By default debugging is turned off
+DEBUG=0     # By default debugging is turned off
+WITH_SSL=1
 export REQ_PYTHON_MAJOR_VER=3
 export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
 export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
@@ -55,6 +56,17 @@ MYSQL_ROOT_DEF_DATABASE="mysql"
 MYSQL_KAM_DEF_USERNAME="kamailio"
 MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
+
+# Default SSL options
+# If you created your own certs prior to installing set this to match your certs
+if [ ${WITH_SSL} -eq 1 ]; then
+    DSIP_SSL_CERT_DIR="/etc/ssl/certs"                                      # certs general location
+    DSIP_DSIP_SSL_CERT_DIR="${DSIP_SSL_CERT_DIR}/$(hostname -f)"            # domain specific cert dir
+    DSIP_SSL_KEY="${DSIP_DSIP_SSL_CERT_DIR}/key.pem"                        # private key
+    DSIP_SSL_CHAIN="${DSIP_DSIP_SSL_CERT_DIR}/chain.pem"                    # full chain cert
+    DSIP_SSL_CERT="${DSIP_DSIP_SSL_CERT_DIR}/cert.pem"                      # full chain + csr cert
+    DSIP_SSL_EMAIL="admin@$(hostname -f)"                                   # email in certs (for renewal)
+fi
 
 # Force the installation of a Kamailio version by uncommenting
 #KAM_VERSION=44 # Version 4.4.x
@@ -80,6 +92,7 @@ export INTERNAL_IP=$(hostname -I | awk '{print $1}')
 export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
 #===========================================================#
+DSIP_SERVER_DOMAIN="$(hostname -f)"    # DNS domain we are using
 
 # Get Linux Distro
 if [ -f /etc/redhat-release ]; then
@@ -192,6 +205,21 @@ function initialChecks {
     else
         export MYSQL_KAM_DATABASE
     fi
+
+    # SSL config checks if enabled
+    if [ ${WITH_SSL} -eq 1 ]; then
+        # check that hostname or fqdn  is set & not empty (must be set for SSL cert renewal to work)
+        if [ -z "$(hostname -f)" ]; then
+            echo "You must configure a host name or DNS domain name to enable SSL.. Either configure your server domain or disable SSL."
+            exit 1
+        fi
+
+        # make sure SSL options are set & not empty
+        if [ -z "$DSIP_SSL_KEY" ] || [ -z "$DSIP_SSL_CERT" ] || [ -z "$DSIP_SSL_EMAIL" ]; then
+            echo "SSL configs are invalid. Configure SSL options or disable SSL."
+            exit 1
+        fi
+    fi
 }
 
 # exported because its used throughout called scripts as well
@@ -218,11 +246,59 @@ export -f setPythonCmd
 function configurePythonSettings {
     setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
     setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_EMAIL = '${DSIP_SSL_EMAIL}'|g" gui/settings.py
+#    sed -i -r "s|(DOMAIN[[:space:]]?=.*)|DOMAIN = '${DSIP_SERVER_DOMAIN}'|g" gui/settings.py
+}
+
+function configureSSL {
+    ## configure lets encrypt / certbot renewal
+    # Install certbot
+    CERT_DIR="/etc/ssl/certs/"
+    CERTBOT_DIR="/etc/letsencrypt/"
+
+    wget https://dl.eff.org/certbot-auto
+    chmod -f 0755 certbot-auto
+    mv -f certbot-auto /usr/local/bin
+    certbot-auto --noninteractive --os-packages-only
+
+    mkdir -p ${CERT_DIR} ${CERTBOT_DIR}
+
+    # Create certbot config
+    (cat <<EOF
+# Use a 4096 bit RSA key instead of 2048
+rsa-key-size = 4096
+
+# Set email and domains
+email = ${DSIP_SSL_EMAIL}
+domains = $(hostname -f)
+
+# Text interface
+text = True
+# No prompts
+non-interactive = True
+# Suppress the Terms of Service agreement interaction.
+agree-tos = True
+
+# Set cert locations
+key-path = ${DSIP_SSL_KEY}
+chain-path = ${DSIP_SSL_CHAIN}
+fullchain-path = ${DSIP_SSL_CERT}
+EOF
+    ) > /etc/letsencrypt/cli.ini
+
+    # Obtain cert (if not already exists)
+    certbot-auto certonly
+
+    # Add cron job (weekly check)
+    (crontab -l 2>/dev/null; echo "0 0 * * 0 $(type -P certbot-auto) --no-self-upgrade certonly") | crontab -
+    service cron restart
 }
 
 function configureKamailio {
     # copy template of kamailio configuration to a working copy
-    cp ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg 
+    cp ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg
     # set kamailio version in kam config
     sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
 
@@ -287,7 +363,7 @@ function configureKamailio {
     mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONFIG_DIR}/domain_mapping.sql
 
     # reset auto incrementers for related tables
-    #resetIncrementers "dr_gw_lists" 
+    #resetIncrementers "dr_gw_lists"
     #resetIncrementers "uacreg"
 
     # Import Default Carriers
@@ -682,6 +758,11 @@ function install {
         # set some defaults in settings.py
         configurePythonSettings
 
+        # configure SSL
+        if [ ${WITH_SSL} -eq 1 ]; then
+            configureSSL
+        fi
+
         # Restart Kamailio with the new configurations
         systemctl restart kamailio
         if [ $? -eq 0 ]; then
@@ -714,7 +795,6 @@ function install {
     else
         echo "dSIPRouter is already installed"
         cleanupAndExit 1
-
     fi
 } #end of install
 

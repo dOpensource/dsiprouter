@@ -7,8 +7,10 @@ USERNAME = 'admin'
 PASSWORD = 'admin'
 
 # ssl key / cert paths
+# email for re-certification (must match certs)
 SSL_KEY = ""
 SSL_CERT = ""
+SSL_EMAIL = ""
 
 # dSIPRouter internal settings
 
