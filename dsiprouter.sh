@@ -26,12 +26,12 @@
 # Set project dir (where src and install files go)
 export DSIP_PROJECT_DIR="$(pwd)"
 # Import dsip_lib utility / shared functions
-. ${DSIP_PROJECT_DIR}/dsip_lib.sh
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
 #================== USER_CONFIG_SETTINGS ===================#
 
 # Uncomment if you want to debug this script.
-#set -x
+set -x
 
 # Define some global variables
 SERVERNAT=0
@@ -40,7 +40,7 @@ FLT_PBX=9
 DEBUG=0 # By default debugging is turned off
 export REQ_PYTHON_MAJOR_VER=3
 export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
-export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/dsiprouter.cfg"
+export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
 export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
 export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
 export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
@@ -74,7 +74,7 @@ export KAM_SIP_PORT=5060
 #================= DYNAMIC_CONFIG_SETTINGS =================#
 # updated dynamically!
 
-export DSIP_PORT=$(getPythonConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
+export DSIP_PORT=$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
 export EXTERNAL_IP=$(curl -s https://api.ipify.org)
 export INTERNAL_IP=$(hostname -I | awk '{print $1}')
 export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
@@ -216,21 +216,23 @@ export -f setPythonCmd
 
 # set dynamic python config settings
 function configurePythonSettings {
-    setPythonConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
-    setPythonConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
 }
 
 function configureKamailio {
+    # copy template of kamailio configuration to a working copy
+    cp ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg 
     # set kamailio version in kam config
     sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
 
     # get kam db connection settings
-    local KAM_DB_HOST=$(getPythonConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
-    local KAM_DB_TYPE=$(getPythonConfigAttrib 'KAM_DB_TYPE' ${DSIP_CONFIG_FILE})
-    local KAM_DB_PORT=$(getPythonConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})
-    local KAM_DB_NAME=$(getPythonConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})
-    local KAM_DB_USER=$(getPythonConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})
-    local KAM_DB_PASS=$(getPythonConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})
+    local KAM_DB_HOST=$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
+    local KAM_DB_TYPE=$(getConfigAttrib 'KAM_DB_TYPE' ${DSIP_CONFIG_FILE})
+    local KAM_DB_PORT=$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})
+    local KAM_DB_NAME=$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})
+    local KAM_DB_USER=$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})
+    local KAM_DB_PASS=$(getConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})
 
     # check for cluster db connection and set kam config settings appropriately
     if printf "$KAM_DB_HOST" | grep -q -oP '.*\[.*\]'; then
@@ -304,7 +306,8 @@ function configureKamailio {
     mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONFIG_DIR}/domain_mapping.sql
 
     # reset auto incrementers for related tables
-    resetIncrementers "dr_gw_lists" "uacreg"
+    #resetIncrementers "dr_gw_lists" 
+    #resetIncrementers "uacreg"
 
     # Import Default Carriers
     if [ -e `which mysqlimport` ]; then
