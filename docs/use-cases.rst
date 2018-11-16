@@ -31,6 +31,7 @@ default to the ip address of the dSIPRouter server.
         :align: center
 
 5. Click "Add"
+6. Click "Reload" to make the change active.
 
 
 
