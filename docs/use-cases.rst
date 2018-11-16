@@ -23,8 +23,8 @@ b) Username/Password Authentcation
 
 - Friendly Name
 - Click the "Username/Password Auth" radio button
-- Enter a username in the format of username@domainname.com.  Note, if you don't provide a domain then the domain will default
-to the ip address of the dSIPRouter server.
+- Enter a username in the format of username@domainname.com.  Note, if you don't provide a domain then the domain will 
+default to the ip address of the dSIPRouter server.
 - Enter a password
 
 .. image:: images/sip_trunking_credentials_auth.png
