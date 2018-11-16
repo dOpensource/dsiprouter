@@ -7,9 +7,10 @@ SIP Trunking
 dSIPRouter enables an organization to start supporting SIP Trunking within minutes.  Here are the steps to set it up
 
 1. Login to dSIPRouter
-2. Click on PBX's and Endpoints
-3. Click "Add" 
-4. Enter the following fields
+2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in the Carrier Groups(carrier_groups.html) and Global Outbound Routes documentation.  
+3. Click on PBX's and Endpoints
+4. Click "Add" 
+5. Enter the following fields
 
 a) IP Authentication
 
@@ -30,8 +31,8 @@ default to the ip address of the dSIPRouter server.
 .. image:: images/sip_trunking_credentials_auth.png
         :align: center
 
-5. Click "Add"
-6. Click "Reload" to make the change active.
+6. Click "Add"
+7. Click "Reload" to make the change active.
 
 
 
