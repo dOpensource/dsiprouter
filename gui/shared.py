@@ -34,7 +34,7 @@ def getDNSNames():
 def hostToIP(host):
     """ Returns ip of host, or None on failure"""
     try:
-         return socket.gethostbyaddr(host)[2][0]
+         return socket.gethostbyname(host)
     except:
         return None
 
@@ -331,3 +331,4 @@ def allowed_file(filename,ALLOWED_EXTENSIONS=set(['csv','txt','pdf','png','jpg',
 
 def showError(type="", code=500, msg=None):
     return render_template('error.html', type=type), code
+

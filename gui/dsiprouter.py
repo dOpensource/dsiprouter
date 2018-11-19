@@ -7,7 +7,7 @@ from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError,hostToIP
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher
 from modules import flowroute
@@ -31,27 +31,11 @@ reload_required = False
 def before_request():
 
     
-    #try:
-
-        #public_pages = ['/login','/logout','/static/']
-
-        #if 'logged_in' not in session:
-        #    if request.endpoint == '/': # Return the index page immediately
-        #        return 
-        #    for page in public_pages: # Otherwise, check for public URL's from list
-        #        if request.endpoint.startswith(page) == True:
-        #            return 
-         #   #return render_template('index.html', version=settings.VERSION)
-
-    #except Exception as ex:
-    #                return render_template('index.html', version=settings.VERSION)
-    
     session.permanent = True
     if not hasattr(settings,'GUI_INACTIVE_TIMEOUT'):
         settings.GUI_INACTIVE_TIMEOUT = 20 #20 minutes
     app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
-
 
 
 @app.route('/')
@@ -60,13 +44,21 @@ def index():
         if (settings.DEBUG):
             debugEndpoint()
 
-
         if not session.get('logged_in'):
+            checkDatabase()
             return render_template('index.html', version=settings.VERSION)
         else:
             action = request.args.get('action')
             return render_template('dashboard.html', show_add_onload=action, version=settings.VERSION)
 
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        db.rollback()
+        db.flush()
+        db.close()
+        return render_template('index.html', version=settings.VERSION)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
@@ -176,6 +168,8 @@ def displayCarrierGroups(gwgroup=None):
         db.rollback()
         db.flush()
         return showError(type=error)
+    finally:
+        db.close()
 
 
 @app.route('/carriergroups', methods=['POST'])
@@ -213,10 +207,14 @@ def addUpdateCarrierGroups():
             if authtype == "userpwd":
                 Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
                              settings.EXTERNAL_IP_ADDR, auth_domain)
+                #Add auth_domain(aka registration server) to the gateway list
+                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                db.add(Uacreg)
+                db.add(Addr)
+
             else:
                 Uacreg = UAC(gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
-
-            db.add(Uacreg)
+                db.add(Uacreg)
 
         # Updating
         else:
@@ -235,12 +233,18 @@ def addUpdateCarrierGroups():
                         {'l_username': auth_username, 'r_username': auth_username, 'auth_username': auth_username,
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
                          'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False)
+                    Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name)))
+                    Addr.delete(synchronize_session=False)
+                    Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    db.add(Addr)
 
                 else:
                     db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                         {'l_username': '', 'r_username': '', 'auth_username': '', 'auth_password': '', 'r_domain': '',
                          'realm': '', 'auth_proxy': '', 'flags': UAC.FLAGS.REG_DISABLED.value},
                         synchronize_session=False)
+                    Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name)))
+                    Addr.delete(synchronize_session=False)
 
         db.commit()
         db.close()
@@ -1713,6 +1717,14 @@ def init_app(flask_app):
     # start the server
     manager.run()
 
+def checkDatabase():
+   #Check database connection is still good
+    try:
+        db.execute('select 1')
+        db.flush()
+    except sql_exceptions.SQLAlchemyError as ex:
+    #If not, close DB connection so that the SQL engine can get another one from the pool
+        db.close()
 
 if __name__ == "__main__":
     init_app(app)

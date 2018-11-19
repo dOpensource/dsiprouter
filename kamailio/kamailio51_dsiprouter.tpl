@@ -762,13 +762,11 @@ route[NEXTHOP] {
 #!ifdef WITH_DROUTE
 
 	# Check if this is coming from carrier
-	if (allow_source_address(FLT_CARRIER) || isflagset(FLT_CARRIER_AUTH)) {
+	if (allow_source_address(FLT_CARRIER)) {
 
 		# DEBUG:
 		if (allow_source_address(FLT_CARRIER))
 			xlog("L_INFO", "allow_source_address(FLT_CARRIER)==TRUE");
-		if (isflagset(FLT_CARRIER_AUTH))
-			xlog("L_INFO", "isflagset(FLT_CARRIER_AUTH)==TRUE");
 
 		# Route to PBX
 		xlog("L_DEBUG","Logic for routing to PBX");
@@ -1350,21 +1348,6 @@ route[AUTH] {
 
 	}
 
-#!ifdef WITH_UAC
-	# try local auth first, try remote auth on fail
-	if (is_method("INVITE")) {
-		# l_uuid corresponds to $rU@$rd of carrier
-		$var(uac_status) = uac_reg_status("$rU@$rd");
-		xlog("L_DEBUG", "UAC Reg Status [$var(uac_status)]");
-
-		if ($var(uac_status) == 1) {
-			setflag(FLT_CARRIER_AUTH);
-			return;
-		}
-
-
-	}
-#!endif
 
 
 #!ifdef WITH_IPAUTH
