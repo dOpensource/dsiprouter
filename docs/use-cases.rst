@@ -18,7 +18,6 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 
   - Friendly Name
   - IP Address
-
 .. image:: images/sip_trunking_ip_auth.png
         :align: center
 
