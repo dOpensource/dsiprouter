@@ -14,7 +14,8 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 4. Click "Add" 
 5. Enter the following fields
 
-a) IP Authentication
+IP Authentication
+=================
 
 - Friendly Name
 - IP Address
@@ -22,12 +23,13 @@ a) IP Authentication
 .. image:: images/sip_trunking_ip_auth.png
         :align: center
 
-b) Username/Password Authentcation
+Username/Password Authentcation
+===============================
 
 - Friendly Name
 - Click the "Username/Password Auth" radio button
-- Enter a username in the format of username@domainname.com.  Note, if you don't provide a domain then the domain will 
-default to the ip address of the dSIPRouter server.
+- Enter a username  
+- Enter a domain. Note, you can make up the domain name.  If you don't specify one then the default domain will be used, which is sip.dsiprouter.org by default.
 - Enter a password
 
 .. image:: images/sip_trunking_credentials_auth.png
