@@ -12,7 +12,7 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in the Carrier Groups(carrier_groups.html) and Global Outbound Routes documentation.  
 3. Click on PBX's and Endpoints
 4. Click "Add" 
-5. Enter the following fields
+5. Select IP Authentication or Username/Password Authentication and fill in the fields specified below: 
 
 IP Authentication
 =================
@@ -23,7 +23,7 @@ IP Authentication
 .. image:: images/sip_trunking_ip_auth.png
         :align: center
 
-Username/Password Authentcation
+Username/Password Authentication
 ===============================
 
 - Friendly Name
