@@ -800,9 +800,9 @@ def addUpdatePBX():
                         db.flush()
                         return showError(type="db", code=400,
                                          msg="Entry for {}@{} already exists".format(auth_username, auth_domain))
-
-                Subscriber = Subscribers(auth_username, auth_password, auth_domain, gwid)
-                db.add(Subscriber)
+                    else:
+                        Subscriber = Subscribers(auth_username, auth_password, auth_domain, gwid)
+                        db.add(Subscriber)
             # Update the Address table with the new ip address
             else:
                 # remove pbx from subscriber table

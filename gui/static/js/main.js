@@ -252,11 +252,10 @@ $('#pbxs #open-Update').click(function() {
   var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
   var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
   var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var freepbx_enabled = parseInt($(c).find('tr:eq(' + row_index + ') td:eq(11)').text(), 10);
-  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
-  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
+  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
+  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
 
 
   /** Clear out the modal */
@@ -289,17 +288,10 @@ $('#pbxs #open-Update').click(function() {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
     modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
   }
-  else {
+/*  else {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
   }
-
-  if (freepbx_enabled) {
-    modal_body.find(".toggleFreePBXDomain").bootstrapToggle('on');
-    modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
-  }
-  else {
-    modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
-  }
+*/
 
   if (authtype !== "") {
     /* userpwd auth enabled, Set the radio button to true */
