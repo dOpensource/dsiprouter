@@ -44,7 +44,7 @@ SIP Trunking  - FreePBX Example
 
 The following screenshot(s) shows how to configure a PJSIP trunk within FreePBX for Username/Password Authentication.  
 
-The first screenshot shows the General tab of a "pjsip settings" page:
+The first screenshot shows the General tab of the  "pjsip settings" page:
 
 .. image:: images/sip_trunking_freepbx_pjsip_1.png
         :align: center
@@ -54,13 +54,23 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Username             username from dSIPRouter PBX Setup
-SIP Server           domain name defined in PBX Setup
+Username             Username from dSIPRouter PBX Setup
+SIP Server           Domain name defined in the dSIPRouter PBX Setup
 SIP Server           SIP port, which is 5060 in dSIPRouter
 ==================   ============
 
 .. image:: images/sip_trunking_freepbx_pjsip_2.png
         :align: center
+
+
+The following fields needs to be entered
+
+==================   ============
+Field                Value
+==================   ============
+Outbound Proxy       IP address of dSIPRouter - must include the "\;lr" at the end
+From Domain          The name of the domain defined in the dSIPRouter PBX Setup
+==================   ============
 
 ===========
 PBX Hosting
