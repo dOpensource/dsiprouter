@@ -42,11 +42,25 @@ Username/Password Authentication
 SIP Trunking  - FreePBX Example
 ===============================
 
-The following screenshot shows how to configure a PJSIP trunk within FreePBX for Username/Password Authentication.  Notice that the username field contains the username and domain name in username@domain format.
+The following screenshot(s) shows how to configure a PJSIP trunk within FreePBX for Username/Password Authentication.  
 
-.. image:: images/sip_trunking_freepbx_pjsip.png
+The first screenshot shows the General tab of a "pjsip settings" page:
+
+.. image:: images/sip_trunking_freepbx_pjsip_1.png
         :align: center
+        
+The following fields needs to be entered
 
+==================   ============
+Field                Value
+==================   ============
+Username             username from dSIPRouter PBX Setup
+SIP Server           domain name defined in PBX Setup
+SIP Server           SIP port, which is 5060 in dSIPRouter
+==================   ============
+
+.. image:: images/sip_trunking_freepbx_pjsip_2.png
+        :align: center
 
 ===========
 PBX Hosting
