@@ -72,6 +72,11 @@ Outbound Proxy       IP address of dSIPRouter - must include the "\;lr" at the e
 From Domain          The name of the domain defined in the dSIPRouter PBX Setup
 ==================   ============
 
+
+======================================
+Using SIP Trunking - FusionPBX Example
+======================================
+
 ===========
 PBX Hosting
 ===========
@@ -80,6 +85,3 @@ PBX Hosting
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^
  
-======================================
-Using SIP Trunking - FusionPBX Example
-======================================
