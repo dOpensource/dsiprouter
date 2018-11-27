@@ -1,4 +1,4 @@
-.. carrier_groups:
+.. _carrier_groups:
 
 Carrier Groups
 ^^^^^^^^^^^^^^
