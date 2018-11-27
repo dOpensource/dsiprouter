@@ -80,5 +80,6 @@ PBX Hosting
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^
  
- Using SIP Trunking - FusionPBX Example
- =====================================
+======================================
+Using SIP Trunking - FusionPBX Example
+======================================
