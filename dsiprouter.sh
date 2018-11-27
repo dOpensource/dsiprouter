@@ -65,8 +65,13 @@ if [ ${WITH_SSL} -eq 1 ]; then
     DSIP_SSL_KEY="${DSIP_DSIP_SSL_CERT_DIR}/key.pem"                        # private key
     DSIP_SSL_CHAIN="${DSIP_DSIP_SSL_CERT_DIR}/chain.pem"                    # full chain cert
     DSIP_SSL_CERT="${DSIP_DSIP_SSL_CERT_DIR}/cert.pem"                      # full chain + csr cert
-    DSIP_SSL_EMAIL="admin@$(hostname -f)"                                   # email in certs (for renewal)
+    DSIP_SSL_EMAIL="admin@$(hostname -f)"                                  # email in certs (for renewal)
+    DSIP_GUI_PROTOCOL="https"     
+else
+    DSIP_GUI_PROTOCOL="http"     
+	
 fi
+
 
 # Force the installation of a Kamailio version by uncommenting
 #KAM_VERSION=44 # Version 4.4.x
@@ -253,47 +258,14 @@ function configurePythonSettings {
 }
 
 function configureSSL {
-    ## configure lets encrypt / certbot renewal
-    # Install certbot
+    ## Configure self signed certificate
     CERT_DIR="/etc/ssl/certs/"
-    CERTBOT_DIR="/etc/letsencrypt/"
-
-    wget https://dl.eff.org/certbot-auto
-    chmod -f 0755 certbot-auto
-    mv -f certbot-auto /usr/local/bin
-    certbot-auto --noninteractive --os-packages-only
-
-    mkdir -p ${CERT_DIR} ${CERTBOT_DIR}
-
-    # Create certbot config
-    (cat <<EOF
-# Use a 4096 bit RSA key instead of 2048
-rsa-key-size = 4096
-
-# Set email and domains
-email = ${DSIP_SSL_EMAIL}
-domains = $(hostname -f)
-
-# Text interface
-text = True
-# No prompts
-non-interactive = True
-# Suppress the Terms of Service agreement interaction.
-agree-tos = True
-
-# Set cert locations
-key-path = ${DSIP_SSL_KEY}
-chain-path = ${DSIP_SSL_CHAIN}
-fullchain-path = ${DSIP_SSL_CERT}
-EOF
-    ) > /etc/letsencrypt/cli.ini
-
-    # Obtain cert (if not already exists)
-    certbot-auto certonly
-
-    # Add cron job (weekly check)
-    (crontab -l 2>/dev/null; echo "0 0 * * 0 $(type -P certbot-auto) --no-self-upgrade certonly") | crontab -
-    service cron restart
+  
+    mkdir -p ${DSIP_DSIP_SSL_CERT_DIR} 
+    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`" 
+    sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
+    sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
+   
 }
 
 function configureKamailio {
@@ -780,16 +752,18 @@ function install {
             start
 
             # Tell them how to access the URL
-            echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  http://$EXTERNAL_IP:$DSIP_PORT\n"
 
+	    
+            echo -e "You can access the dSIPRouter web gui by going to:\n"
+            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
+	
             if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP:  http://$INTERNAL_IP:$DSIP_PORT"
+                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
             fi
 
             #echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
-        else
-            echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
+    else
+	    echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
             cleanupAndExit 1
         fi
     else
@@ -1008,7 +982,7 @@ function processCMD {
 	while (( $# > 0 )); do
 		key="$1"
 		case $key in
-			install)
+		install)
                 shift
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
@@ -1091,6 +1065,10 @@ function processCMD {
                 configureKamailio
                 cleanupAndExit 0
                 ;;
+	    sslenable)
+		configureSSL
+		cleanupAndExit 0
+		;;
             installmodules)
 			    shift
                 if [ "$1" == "-debug" ]; then
