@@ -26,6 +26,7 @@ Select Username/Password Auth, fill in the username, password of your registrati
 
 NOTE: Click IP authenication to use only the IP address of your PBX/endpoint.
 
+
 .. image:: images/IP_authenication.png
        :align: center
 
