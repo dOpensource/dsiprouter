@@ -18,7 +18,7 @@ IP Authentication
 =================
 
 - Friendly Name
-- IP Address
+- IP Address of the PBX or Endpoint Device
 
 .. image:: images/sip_trunking_ip_auth.png
         :align: center
