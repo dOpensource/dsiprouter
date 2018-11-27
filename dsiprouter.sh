@@ -37,7 +37,8 @@ export DSIP_PROJECT_DIR="$(pwd)"
 SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
-DEBUG=0 # By default debugging is turned off
+DEBUG=0     # By default debugging is turned off
+WITH_SSL=1
 export REQ_PYTHON_MAJOR_VER=3
 export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
 export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
@@ -55,6 +56,22 @@ MYSQL_ROOT_DEF_DATABASE="mysql"
 MYSQL_KAM_DEF_USERNAME="kamailio"
 MYSQL_KAM_DEF_PASSWORD="kamailiorw"
 MYSQL_KAM_DEF_DATABASE="kamailio"
+
+# Default SSL options
+# If you created your own certs prior to installing set this to match your certs
+if [ ${WITH_SSL} -eq 1 ]; then
+    DSIP_SSL_CERT_DIR="/etc/ssl/certs"                                      # certs general location
+    DSIP_DSIP_SSL_CERT_DIR="${DSIP_SSL_CERT_DIR}/$(hostname -f)"            # domain specific cert dir
+    DSIP_SSL_KEY="${DSIP_DSIP_SSL_CERT_DIR}/key.pem"                        # private key
+    DSIP_SSL_CHAIN="${DSIP_DSIP_SSL_CERT_DIR}/chain.pem"                    # full chain cert
+    DSIP_SSL_CERT="${DSIP_DSIP_SSL_CERT_DIR}/cert.pem"                      # full chain + csr cert
+    DSIP_SSL_EMAIL="admin@$(hostname -f)"                                  # email in certs (for renewal)
+    DSIP_GUI_PROTOCOL="https"     
+else
+    DSIP_GUI_PROTOCOL="http"     
+	
+fi
+
 
 # Force the installation of a Kamailio version by uncommenting
 #KAM_VERSION=44 # Version 4.4.x
@@ -80,6 +97,7 @@ export INTERNAL_IP=$(hostname -I | awk '{print $1}')
 export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
 #===========================================================#
+DSIP_SERVER_DOMAIN="$(hostname -f)"    # DNS domain we are using
 
 # Get Linux Distro
 if [ -f /etc/redhat-release ]; then
@@ -192,6 +210,21 @@ function initialChecks {
     else
         export MYSQL_KAM_DATABASE
     fi
+
+    # SSL config checks if enabled
+    if [ ${WITH_SSL} -eq 1 ]; then
+        # check that hostname or fqdn  is set & not empty (must be set for SSL cert renewal to work)
+        if [ -z "$(hostname -f)" ]; then
+            echo "You must configure a host name or DNS domain name to enable SSL.. Either configure your server domain or disable SSL."
+            exit 1
+        fi
+
+        # make sure SSL options are set & not empty
+        if [ -z "$DSIP_SSL_KEY" ] || [ -z "$DSIP_SSL_CERT" ] || [ -z "$DSIP_SSL_EMAIL" ]; then
+            echo "SSL configs are invalid. Configure SSL options or disable SSL."
+            exit 1
+        fi
+    fi
 }
 
 # exported because its used throughout called scripts as well
@@ -218,11 +251,26 @@ export -f setPythonCmd
 function configurePythonSettings {
     setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
     setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_EMAIL = '${DSIP_SSL_EMAIL}'|g" gui/settings.py
+#    sed -i -r "s|(DOMAIN[[:space:]]?=.*)|DOMAIN = '${DSIP_SERVER_DOMAIN}'|g" gui/settings.py
+}
+
+function configureSSL {
+    ## Configure self signed certificate
+    CERT_DIR="/etc/ssl/certs/"
+  
+    mkdir -p ${DSIP_DSIP_SSL_CERT_DIR} 
+    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`" 
+    sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
+    sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
+   
 }
 
 function configureKamailio {
     # copy template of kamailio configuration to a working copy
-    cp ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg 
+    cp ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg
     # set kamailio version in kam config
     sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
 
@@ -287,7 +335,7 @@ function configureKamailio {
     mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONFIG_DIR}/domain_mapping.sql
 
     # reset auto incrementers for related tables
-    #resetIncrementers "dr_gw_lists" 
+    #resetIncrementers "dr_gw_lists"
     #resetIncrementers "uacreg"
 
     # Import Default Carriers
@@ -682,6 +730,11 @@ function install {
         # set some defaults in settings.py
         configurePythonSettings
 
+        # configure SSL
+        if [ ${WITH_SSL} -eq 1 ]; then
+            configureSSL
+        fi
+
         # Restart Kamailio with the new configurations
         systemctl restart kamailio
         if [ $? -eq 0 ]; then
@@ -699,22 +752,23 @@ function install {
             start
 
             # Tell them how to access the URL
-            echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  http://$EXTERNAL_IP:$DSIP_PORT\n"
 
+	    
+            echo -e "You can access the dSIPRouter web gui by going to:\n"
+            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
+	
             if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP:  http://$INTERNAL_IP:$DSIP_PORT"
+                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
             fi
 
             #echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
-        else
-            echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
+    else
+	    echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
             cleanupAndExit 1
         fi
     else
         echo "dSIPRouter is already installed"
         cleanupAndExit 1
-
     fi
 } #end of install
 
@@ -928,7 +982,7 @@ function processCMD {
 	while (( $# > 0 )); do
 		key="$1"
 		case $key in
-			install)
+		install)
                 shift
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
@@ -1011,6 +1065,10 @@ function processCMD {
                 configureKamailio
                 cleanupAndExit 0
                 ;;
+	    sslenable)
+		configureSSL
+		cleanupAndExit 0
+		;;
             installmodules)
 			    shift
                 if [ "$1" == "-debug" ]; then
