@@ -22,9 +22,9 @@ Select Username/Password Auth, fill in the username, password of your registrati
 .. image:: images/add_carrier_group.png
         :align: center
 
-Click IP authenication to use only the IP address of your PBX/endpoint.
+NOTE: Click IP authenication to use only the IP address of your PBX/endpoint.
 
-..image:: images/
+..image:: images/IP_authenication.png
 
 For example:   
 
