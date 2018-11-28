@@ -23,9 +23,11 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 6. Click "Add"
 7. Click "Reload" to make the change active.
 
+
 ===================================================
 SIP Trunking Using Username/Password Authentication
 ===================================================
+
 Here are the steps to set it up using Username/Password Authentication:
 
 1. Login to dSIPRouter
