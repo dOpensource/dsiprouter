@@ -20,9 +20,19 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 .. image:: images/sip_trunking_ip_auth.png
         :align: center
 
-Username/Password Authentication
-===============================
-Use the following if you want to use username/password authenication:
+6. Click "Add"
+7. Click "Reload" to make the change active.
+
+
+SIP Trunking Using Username/Password Authentication
+===================================================
+Here are the steps to set it up using Username/Password Authentication:
+
+1. Login to dSIPRouter
+2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or :ref:`global_outbound_routes`s documentation.  
+3. Click on PBX's and Endpoints
+4. Click "Add" 
+5. Select  Username/Password Authentication and fill in the fields specified below: 
 
 - Friendly Name
 - Click the "Username/Password Auth" radio button
