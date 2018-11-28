@@ -16,6 +16,7 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 
 IP Authentication
 =================
+Use the following if you want to use IP authenication:
 
 - Friendly Name
 - IP Address of the PBX or Endpoint Device
@@ -25,6 +26,7 @@ IP Authentication
 
 Username/Password Authentication
 ===============================
+Use the following if you want to use username/password authenication:
 
 - Friendly Name
 - Click the "Username/Password Auth" radio button
