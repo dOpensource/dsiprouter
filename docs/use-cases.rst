@@ -3,21 +3,16 @@ Use Cases
 #########
 This section contains a list of the common use cases that are implemented using dSIPRouter
 
-============
-SIP Trunking
-============
-dSIPRouter enables an organization to start supporting SIP Trunking within minutes.  Here are the steps to set it up
+====================================
+SIP Trunking Using IP Authentication
+====================================
+dSIPRouter enables an organization to start supporting SIP Trunking within minutes.  Here are the steps to set it up using IP Authenication:
 
 1. Login to dSIPRouter
-2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or :ref:`global_outbound_routes`s documentation.  
+2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or   :ref:`global_outbound_routes`s documentation.  
 3. Click on PBX's and Endpoints
 4. Click "Add" 
-5. Select IP Authentication or Username/Password Authentication and fill in the fields specified below: 
-
-IP Authentication
-=================
-Use the following if you want to use IP authenication:
-
+5. Select IP Authentication and fill in the fields specified below: 
 - Friendly Name
 - IP Address of the PBX or Endpoint Device
 
