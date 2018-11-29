@@ -87,7 +87,21 @@ From Domain          The name of the domain defined in the dSIPRouter PBX Setup
 ======================================
 Using SIP Trunking - FusionPBX Example
 ======================================
-Coming soon!
+The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authentication. 
+The only fields you will need to fill here are: 
+-Gateway= Name of the SIP Trunk
+-Proxy=IP address of the SIP trunk
+-Register= Change to False because you are using IP authenication.
+
+.. image:: images/sip_trunking_fusionpbx.png
+       :align: center
+       
+       
+.. image:: images/sip_trunking_fusionpbx_2.png
+        :align: center       
+
+
+
 
 ===========
 PBX Hosting
