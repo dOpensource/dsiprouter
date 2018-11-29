@@ -89,6 +89,7 @@ Using SIP Trunking - FusionPBX Example
 ======================================
 The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authentication. 
 The only fields you will need to fill here are: 
+
 -Gateway= Name of the SIP Trunk
 -Proxy=IP address of the SIP trunk
 -Register= Change to False because you are using IP authenication.
