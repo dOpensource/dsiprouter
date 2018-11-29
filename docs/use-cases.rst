@@ -129,6 +129,9 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 **NOTE** To make these changes global for ALL domains for this SIP Trunk: reopen outbound routes and change the Domain to Global and the Context to ${domain_name} as shown below. 
 
 
+.. image:: images/fusionpbx_global_dialplan.PNG
+        :align: center
+
 ===========
 PBX Hosting
 ===========
