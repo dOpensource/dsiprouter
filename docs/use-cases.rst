@@ -96,6 +96,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 - Proxy= IP address of the SIP trunk
 - Register= Change to False because you are using IP authenication.
 
+
+
 .. image:: images/sip_trunking_fusionpbx.PNG
         :align: center
 
