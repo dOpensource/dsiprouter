@@ -94,7 +94,7 @@ The only fields you will need to fill here are:
 - Proxy=IP address of the SIP trunk
 - Register= Change to False because you are using IP authenication.
 
-.. image:: images/sip_trunking_fusionpbx.png 
+.. image:: sip_trunking_fusionpbx.png 
         :align: center
 
 
