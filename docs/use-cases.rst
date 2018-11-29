@@ -90,7 +90,7 @@ Using SIP Trunking - FusionPBX Example
 The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authentication.
 
 1. Log into your FusionPBX. 
-2. Click Accounts --> Gateways. The only fields you will need to fill here are: 
+2. Click Accounts --> Gateways-->Click the + sign to add a gateway/SIP Trunk. The only fields you will need to fill here are: 
 
    - Gateway= Name of the SIP Trunk
    - Proxy= IP address of the SIP trunk
@@ -107,6 +107,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
         :align: center
 
 
+3. Click Save
+4. Click DialPlan-->Outboung Routes-->Click the + sign to add a outbound route.
 
 
 
