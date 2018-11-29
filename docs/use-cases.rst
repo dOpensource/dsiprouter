@@ -87,7 +87,7 @@ From Domain          The name of the domain defined in the dSIPRouter PBX Setup
 ======================================
 Using SIP Trunking - FusionPBX Example
 ======================================
-The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authentication.
+The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authenication.
 
 1. Log into your FusionPBX. 
 2. Click Accounts --> Gateways-->Click the + sign to add a gateway/SIP Trunk. The only fields you will need to fill here are: 
@@ -95,7 +95,7 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
    - Gateway= Name of the SIP Trunk
    - Proxy= IP address of the SIP trunk
    - Register= Change to False because you are using IP authenication.
-
+**NOTE**: If you are using Username/Password Authenication for your SIP trunk then add the Username, Password, Proxy and set Register to True.
 
 
 .. image:: images/sip_trunking_fusionpbx.PNG
@@ -108,7 +108,21 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 3. Click Save
-4. Click DialPlan-->Outboung Routes-->Click the + sign to add a outbound route.
+4. Click DialPlan-->Outboung Routes-->Click the + sign to add a outbound route. Here you will enter in the following fields:
+  - Gateway= Name of the SIP Trunk
+  - Alternate gateways (if applicable)
+  - DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says "Shortcut to create the outbound dialplan entries for this Gateway."
+  - Discription= (if desired)
+ 5. Click Save
+ 
+ 
+ 
+ .. image:: images/outbound_routes_fusionpbx.PNG
+         :align: center
+         
+         
+ .. image:: images/outbound_routes_fusionpbx_2.PNG
+         :align: center
 
 
 
