@@ -97,6 +97,8 @@ The only fields you will need to fill here are:
 .. image:: images/sip_trunking_fusionpbx.PNG
         :align: center
 
+
+
 .. image:: images/sip_trunking_fusionpbx_2.PNG
         :align: center
 
