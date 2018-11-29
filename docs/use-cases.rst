@@ -119,8 +119,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
  
  
  .. image:: images/outbound_routes_fusionpbx.PNG
- 
-         :align: center
+          :align: center
+          
          
          
  .. image:: images/outbound_routes_fusionpbx_2.PNG
