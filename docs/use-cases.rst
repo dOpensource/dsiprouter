@@ -26,7 +26,7 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 
 
 ===================================================
-SIP Trunking Using Username/Password Authentication
+SIP Trunking Using Username/Password Authentication 
 ===================================================
 
 Here are the steps to set it up using Username/Password Authentication:
@@ -135,19 +135,19 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 ===========================================
-Using SIP Trunking IP on- FusionPBX Example
+Using SIP Trunking IP Off- FusionPBX Example
 ===========================================
-The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for Username/Password Authenication.
+The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for Username/Password Authenication with IP Authenication off.
 
 1. Log into your FusionPBX. 
 2. Click Accounts --> Gateways-->Click the + sign to add a gateway/SIP Trunk. The following fields you will need to fill here are: 
 
    - Gateway= Name of the SIP Trunk
-   - Username
-   - Passoword
-   - From Domain
+   - Username= specified by dSIPRouter provider
+   - Password= specified by dSIPRouter provider
+   - From Domain= Specified or set by default
    - Proxy= IP address of the SIP trunk
-   - Register= Change set to True you are using Username/Password authenication.
+   - Register= set to True because you are using Username/Password authenication.
    
    
 
@@ -160,6 +160,9 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
         :align: center
 
 
+
+3. Click Save
+Complete steps 4 and 5 in :ref:`Using_ SIP_Trunking_IP_on-_FusionPBX_Example' to setup the outbound route.
 
 
 
