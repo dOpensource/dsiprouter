@@ -161,9 +161,14 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
-3. Click Save
+3. Click Save.
+4. Click DialPlan-->Outboung Routes-->Click the + sign to add a outbound route. Here you will enter in the following fields:
 
-Complete steps 4 and 5 in :ref:`Using_SIP_Trunking_IP_on-_FusionPBX_Example' to setup the outbound route.
+  - Gateway= Name of the SIP Trunk
+  - Alternate gateways (if applicable)
+  - DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says "Shortcut to create the outbound dialplan entries for this Gateway."
+  - Description= (if desired)
+ 5. Click Save
 
 
 
