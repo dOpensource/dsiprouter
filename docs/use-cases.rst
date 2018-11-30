@@ -162,7 +162,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 3. Click Save
-Complete steps 4 and 5 in :ref:`Using_ SIP_Trunking_IP_on-_FusionPBX_Example' to setup the outbound route.
+
+Complete steps 4 and 5 in :ref:`Using_SIP_Trunking_IP_on-_FusionPBX_Example' to setup the outbound route.
 
 
 
