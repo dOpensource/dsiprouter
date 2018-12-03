@@ -213,7 +213,7 @@ FusionPBX Hosting
 
 
 .. image:: images/fusionpbx_hosting2.PNG
-         :align: center    
+          :align: center    
 
 
  
