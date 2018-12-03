@@ -206,8 +206,12 @@ FusionPBX Hosting
   - FusionPBX Database IP or Hostname
   - Click ADD
   
-  .. image::images/ 
+.. image:: images/fusionpbx_hosting.PNG
           :align: center
+          
+
+.. image:: images/ fusionpbx_hosting2.PNG 
+         :align: center
  
  ^^^^^^^^^
  Asterisk or FreePBX
