@@ -169,6 +169,7 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
   - DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says "Shortcut to create the outbound dialplan entries for this Gateway."
   - Description= (if desired)
   
+  
 
 .. image:: images/11d_dialplan.PNG 
           :align: center  
@@ -177,7 +178,7 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 .. image:: images/11d_dialplan_2.PNG  
-          :align: center  
+         :align: center  
 
   
   
