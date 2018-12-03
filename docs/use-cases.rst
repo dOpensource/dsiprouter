@@ -209,9 +209,9 @@ FusionPBX Hosting
           :align: center
           
           
+.. image:: images/fusionpbx_hosting2.png
+        :align: center
 
-.. image:: images/fusionpbx_hosting2.PNG 
-          :align: center
  
  ^^^^^^^^^
  Asterisk or FreePBX
