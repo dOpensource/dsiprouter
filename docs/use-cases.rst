@@ -84,9 +84,9 @@ From Domain          The name of the domain defined in the dSIPRouter PBX Setup
 ==================   ============
 
 
-===========================================
-Using SIP Trunking IP on- FusionPBX Example
-===========================================
+===============================================
+Using SIP Trunking - FusionPBX IP Authenication
+===============================================
 The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authenication.
 
 1. Log into your FusionPBX. 
@@ -134,9 +134,9 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
-===========================================
-Using SIP Trunking IP Off- FusionPBX Example
-===========================================
+==============================================================
+Using SIP Trunking - FusionPBX Username/Password Authenication
+==============================================================
 The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for Username/Password Authenication with IP Authenication off.
 
 1. Log into your FusionPBX. 
