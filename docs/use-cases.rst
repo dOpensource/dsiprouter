@@ -211,7 +211,7 @@ FusionPBX Hosting
           
           
           
-.. image:: images/sip_trunking_ip_auth.png
+.. image:: images/fusionpbx_hosting2.png
         :align: center
 
 
