@@ -206,14 +206,14 @@ FusionPBX Hosting
   - Click ADD
   
 .. image:: images/fusionpbx_hosting.PNG
-          :align: center
+        :align: center
           
           
 
 
 
 .. image:: images/fusionpbx_hosting2.PNG
-          :align: center    
+         :align: center    
 
 
  
