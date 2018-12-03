@@ -193,7 +193,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 FusionPBX Hosting
 ===========
 
- Here we will demostrate how to setup dSIPRouter to enable hosting a PBX. In the following example we have multi domain support built-inPBX.
+ Here we will demostrate how to setup dSIPRouter to enable hosting a PBX. In the following example we have multi domain support built-in PBX.
+ 
  1. Login to dSIPRouter
  2. Click PBX(s) and EndPoints
  3. Click ADD; enter the following fields
