@@ -209,8 +209,11 @@ FusionPBX Hosting
           :align: center
           
           
+
+
+
 .. image:: images/fusionpbx_hosting.PNG
-          :align: center    
+        :align: center    
 
 
  
