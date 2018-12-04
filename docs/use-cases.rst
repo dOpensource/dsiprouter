@@ -171,34 +171,9 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
   
   
 
-
-
-
-
-
-
-
-
-
-
-
 .. image:: images/11d_dialplan.PNG 
           :align: center  
           
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -236,6 +211,9 @@ FusionPBX Hosting
         :align: center
           
           
+.. image:: images/fusionpbx_hosting1.png
+        :align: center          
+          
  **NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
 
 5. Access your FusionPBX database
@@ -245,7 +223,7 @@ sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgr
 
 Enter
 
-iptables -A INPUT -p tcp -s <ip address>/32 --dport 5432 -j ACCEPT
+iptables -A INPUT -p tcp -s 68.183.56.163/32 --dport 5432 -j ACCEPT
 
 Enter
 
@@ -254,12 +232,11 @@ iptables-save
 
 #Run the following command if your don't want to enter a password for the FusionPBX Database(DB) Password
 
-echo -e "host    all             all            <ip address>/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
+echo -e "host    all             all            68.183.56.163/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
 /etc/init.d/postgresql restart
 
 
-.. image:: images/fusionpbx_hosting1.png
-        :align: center
+
         
  =======================================
  How to configure a softphone via Zopier
