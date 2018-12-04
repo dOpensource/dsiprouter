@@ -226,8 +226,10 @@ iptables-save
 echo -e "host    all             all            209.97.148.48/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
 /etc/init.d/postgresql restart
 
+
 .. image:: images/fusionpbx_hosting1.png
         :align: center
+        
  
  ^^^^^^^^^
  Asterisk or FreePBX
