@@ -215,9 +215,13 @@ FusionPBX Hosting
 6.Run the following command as root on the FusionPBX server. Replace <ip address> with the IP address of the PBX server (not including the brackets) you're adding.
 
 sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
+
 Enter
+
 iptables -A INPUT -p tcp -s 209.97.148.48/32 --dport 5432 -j ACCEPT
+
 Enter
+
 iptables-save
 --- 
 
