@@ -211,8 +211,7 @@ FusionPBX Hosting
         :align: center
           
           
-.. image:: images/fusionpbx_hosting1.png
-        :align: center          
+       
           
  **NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
 
@@ -236,7 +235,8 @@ echo -e "host    all             all            68.183.56.163/32            trus
 /etc/init.d/postgresql restart
 
 
-
+.. image:: images/fusionpbx_hosting1.png
+        :align: center  
         
  =======================================
  How to configure a softphone via Zopier
