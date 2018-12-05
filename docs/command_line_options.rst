@@ -8,5 +8,4 @@ install [-rtpengine] [-servernat]    This is the command to install dSIPRouter a
 Start- ./dsiprouter.sh start         Starts dSIPRouter
 Stop- ./dsiprouter.sh stop           Stops dSIPRouter from running
 Restart- ./dsiprouter.sh restart     Restarts DSIPRouter after a stop
-Uninstall- ./dsiprouter.sh uninstall Uninstalls dSIPRouter 
 =================================    =================================================================================================
