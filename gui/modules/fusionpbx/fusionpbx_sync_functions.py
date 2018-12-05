@@ -85,6 +85,30 @@ def sync_db(source,dest):
 
 #Get a connection to Kamailio Server DB
     db=MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
+    c=db.cursor()
+    #Delete existing domain for the pbx
+    pbx_domain_list_str = ''.join(str(e) for e in pbx_domain_list)
+    if len(pbx_domain_list_str) > 0:
+        query = "delete from domain where id in ('{}')".format(pbx_domain_list_str)
+        c.execute(query)
+        pbx_domain_list=''
+    
+    #Delete existing domain attributes for the pbx
+    pbx_domain_list_str = ''.join(str(e) for e in pbx_domain_list)
+    if len(pbx_domain_list_str) > 0:
+        query = "delete from domain where id in ({})".format(pbx_domain_list_str)
+        print(query)
+        c.execute(query)
+        pbx_domain_list=''
+    
+    #Delete existing domain_attrs attributes for the pbx
+    pbx_attr_list_str = ''.join(str(e) for e in pbx_attr_list)
+    if len(pbx_attr_list_str) > 0:
+        query = "delete from domain_attrs where id in ({})".format(pbx_attr_list_str)
+        c.execute(query)
+        pbx_attr_list=''
+
+    #c.execute("""delete from domain_attrs where id in (%s)""", (pbx_attr_list))
 
     #Trying connecting to PostgresSQL database using a Trust releationship first
     try:
@@ -100,7 +124,7 @@ def sync_db(source,dest):
             
             for row in rows:
                 c.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""", (row[0],row[0]))
-                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_host',2,%s,NOW())""", (row[0],pbx_host))
+                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_ip',2,%s,NOW())""", (row[0],pbx_host))
                 c.execute("""SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN('domain','domain_attrs') ORDER BY FIND_IN_SET(TABLE_NAME, 'domain,domain_attrs')""")
                 rows = c.fetchall()
                 #domain_id_list.append(rows[0][0] - 1)
@@ -130,7 +154,7 @@ def sync_db(source,dest):
             print(pbx_domain_list)
             print(pbx_attr_list)
 
-            c.execute("""update dsip_multidomain_mapping set domain_list=%s, attr_list=%s, syncstatus=1, lastsync=NOW(),syncerror='',where pbx_id=%s""",(pbx_domain_list,pbx_attr_list,pbx_id))
+            c.execute("""update dsip_multidomain_mapping set domain_list=%s, attr_list=%s, syncstatus=1, lastsync=NOW(),syncerror='' where pbx_id=%s""",(pbx_domain_list,pbx_attr_list,pbx_id))
             db.commit()                
     except Exception as e:
         c=db.cursor()
@@ -199,8 +223,14 @@ def update_nginx(sources):
        #host_volume_path = script_dir
        print(host_volume_path)
        #remove the container with a name of dsiprouter-nginx to avoid conflicts if it already exists
-       container=client.containers.get('dsiprouter-nginx')
-       if container:
+       containerList=client.containers.list('dsiprouter-nginx')
+       containerFound=False
+       for c in containerList:
+           if c.name == "dsiprouter-nginx":
+               containerFound=True
+       if containerFound:
+           print("dsiprouter-nginx found...about to remove it and recreate")
+           container=client.containers.get('dsiprouter-nginx')
            container.remove()
        client.containers.run(image='nginx:latest',
             name="dsiprouter-nginx",
