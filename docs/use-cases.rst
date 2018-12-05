@@ -220,14 +220,11 @@ FusionPBX Hosting
 
 ```
 sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.com
-
-iptables -A INPUT -p tcp -s 68.183.56.163/32 --dport 5432 -j ACCEPT
-
+iptables -A INPUT -p tcp -s <ip address>/32 --dport 5432 -j ACCEPT
 iptables-save
 ---
-
 #Run the following command if your don't want to enter a password for the FusionPBX Database(DB) Password
-echo -e "host    all             all            68.183.56.163/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
+echo -e "host    all             all            <ip address>/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
 /etc/init.d/postgresql restart
 ```
 
