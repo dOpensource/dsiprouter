@@ -1,7 +1,7 @@
 .. toctree::
   :maxdepth: 3
 
-  uninstalling.rst
+  command_line_options.rst
   carrier_groups.rst
   pbxs_and_endpoints.rst
   domains.rst
