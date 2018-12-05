@@ -1,3 +1,5 @@
+.. _carrier_groups:
+
 Carrier Groups
 ^^^^^^^^^^^^^^
 
@@ -19,6 +21,15 @@ Select Username/Password Auth, fill in the username, password of your registrati
 
 .. image:: images/add_carrier_group.png
         :align: center
+
+
+
+NOTE: Click IP authenication to use only the IP address of your PBX/endpoint.
+
+
+.. image:: images/IP_authenication.PNG
+       :align: center
+
 
 For example:   
 

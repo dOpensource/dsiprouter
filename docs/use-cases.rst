@@ -3,28 +3,39 @@ Use Cases
 #########
 This section contains a list of the common use cases that are implemented using dSIPRouter
 
-============
-SIP Trunking
-============
-dSIPRouter enables an organization to start supporting SIP Trunking within minutes.  Here are the steps to set it up
+====================================
+SIP Trunking Using IP Authentication
+====================================
+dSIPRouter enables an organization to start supporting SIP Trunking within minutes.  Here are the steps to set it up using IP Authenication:
 
 1. Login to dSIPRouter
-2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in the Carrier Groups(carrier_groups.html) and Global Outbound Routes documentation.  
+2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or :ref:`global_outbound_routes` documentation.  
+
 3. Click on PBX's and Endpoints
 4. Click "Add" 
-5. Select IP Authentication or Username/Password Authentication and fill in the fields specified below: 
-
-IP Authentication
-=================
+5. Select **IP Authentication** and fill in the fields specified below: 
 
 - Friendly Name
-- IP Address
+- IP Address of the PBX or Endpoint Device
 
 .. image:: images/sip_trunking_ip_auth.png
         :align: center
 
-Username/Password Authentication
-===============================
+6. Click "Add"
+7. Click "Reload" to make the change active.
+
+
+===================================================
+SIP Trunking Using Username/Password Authentication 
+===================================================
+
+Here are the steps to set it up using Username/Password Authentication:
+
+1. Login to dSIPRouter
+2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or :ref:`global_outbound_routes` documentation.  
+3. Click on PBX's and Endpoints
+4. Click "Add" 
+5. Select  **Username/Password Authentication** and fill in the fields specified below: 
 
 - Friendly Name
 - Click the "Username/Password Auth" radio button
@@ -38,9 +49,9 @@ Username/Password Authentication
 6. Click "Add"
 7. Click "Reload" to make the change active.
 
-===============================
-SIP Trunking  - FreePBX Example
-===============================
+=====================================
+Using SIP Trunking  - FreePBX Example
+=====================================
 
 The following screenshot(s) shows how to configure a PJSIP trunk within FreePBX for Username/Password Authentication.  
 
@@ -72,12 +83,160 @@ Outbound Proxy       IP address of dSIPRouter - must include the "\;lr" at the e
 From Domain          The name of the domain defined in the dSIPRouter PBX Setup
 ==================   ============
 
+
+===============================================
+Using SIP Trunking - FusionPBX IP Authenication
+===============================================
+The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authenication.
+
+1. Log into your FusionPBX. 
+2. Click Accounts --> Gateways-->Click the + sign to add a gateway/SIP Trunk. The only fields you will need to fill here are: 
+
+   - Gateway= Name of the SIP Trunk
+   - Proxy= IP address of the SIP trunk
+   - Register= Change to False because you are using IP authenication.
+
+
+
+.. image:: images/sip_trunking_fusionpbx.PNG
+        :align: center
+
+
+
+.. image:: images/sip_trunking_fusionpbx_2.PNG
+        :align: center
+
+
+3. Click Save
+4. Click DialPlan-->Outboung Routes-->Click the + sign to add a outbound route. Here you will enter in the following fields:
+
+  - Gateway= Name of the SIP Trunk
+  - Alternate gateways (if applicable)
+  - DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says "Shortcut to create the outbound dialplan entries for this Gateway."
+  - Description= (if desired)
+ 5. Click Save
+ 
+ 
+ 
+ .. image:: images/outbound-routes_fusionpbx.PNG
+          :align: center
+          
+         
+.. image:: images/outbound-routes_fusionpbx_2.PNG
+        :align: center     
+
+
+**NOTE** To make these changes global for ALL domains for this SIP Trunk: reopen outbound routes and change the Domain to Global and the Context to ${domain_name} as shown below. 
+
+
+.. image:: images/fusionpbx_global_dialplan.PNG
+        :align: center
+
+
+
+==============================================================
+Using SIP Trunking - FusionPBX Username/Password Authenication
+==============================================================
+The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for Username/Password Authenication with IP Authenication off.
+
+1. Log into your FusionPBX. 
+2. Click Accounts --> Gateways-->Click the + sign to add a gateway/SIP Trunk. The following fields you will need to fill here are: 
+
+   - Gateway= Name of the SIP Trunk
+   - Username= specified by dSIPRouter provider
+   - Password= specified by dSIPRouter provider
+   - From Domain= Specified or set by default
+   - Proxy= IP address of the SIP trunk
+   - Register= set to True because you are using Username/Password authenication.
+   
+   
+
+.. image:: images/sip_trunking_fusionpbx_3.PNG
+        :align: center
+
+
+
+.. image:: images/sip_trunking_fusionpbx_4.PNG
+        :align: center
+
+
+
+3. Click Save.
+4. Click DialPlan-->Outboung Routes-->Click the + sign to add a outbound route. Here you will enter in the following fields:
+
+  - Gateway= Name of the SIP Trunk
+  - Alternate gateways (if applicable)
+  - DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says "Shortcut to create the outbound dialplan entries for this Gateway."
+  - Description= (if desired)
+  
+  
+
+.. image:: images/11d_dialplan.PNG 
+          :align: center  
+          
+
+
+
+
+.. image:: images/11d_dialplan2.PNG
+        :align: center
+
+  
+  
+ 5. Click Save
+
+
+
+
+
+
 ===========
-PBX Hosting
+FusionPBX Hosting
 ===========
- FusionPBX 
+
+ Here we will demostrate how to setup dSIPRouter to enable hosting a PBX. In the following example we have multi domain support built-in PBX.
+ 
+1. Login to dSIPRouter
+2. Click PBX(s) and EndPoints
+3. Click ADD; enter the following fields
+ 
+  - Friendly Name (opional)
+  - IP address
+  - IP Auth
+  - Click to enable FusionPBX Domain Support
+  - FusionPBX Database IP or Hostname
+4. Click ADD
+  
+.. image:: images/fusionpbx_hosting.PNG
+        :align: center
+          
+          
+       
+          
+ **NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
+
+5. Access your FusionPBX database
+6.Run the following command as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding.
+
+```
+sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.com
+iptables -A INPUT -p tcp -s <ip address>/32 --dport 5432 -j ACCEPT
+iptables-save
+---
+#Run the following command if your don't want to enter a password for the FusionPBX Database(DB) Password
+echo -e "host    all             all            <ip address>/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
+/etc/init.d/postgresql restart
+```
+
+.. image:: images/fusionpbx_hosting1.png
+        :align: center  
+        
+ =======================================
+ How to configure a softphone via Zopier
+ =======================================
+ 
+ 
  ^^^^^^^^^
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^
- 
  
