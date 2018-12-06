@@ -221,19 +221,6 @@ FusionPBX Hosting
 
 
 
-.. image:: images/fusionpbx_domain_support.PNG
-        :align: center
-        
-        
-
-
-
-
-
-
-
-
-
 .. image:: images/fusionpbx_hosting1.png
         :align: center  
         
