@@ -34,7 +34,7 @@ Here are the steps to set it up using Username/Password Authentication:
 1. Login to dSIPRouter
 2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or :ref:`global_outbound_routes` documentation.  
 3. Click on PBX's and Endpoints
-4. Click "Add" 
+4. Click "Add"  
 5. Select  **Username/Password Authentication** and fill in the fields specified below: 
 
 - Friendly Name
