@@ -217,10 +217,13 @@ FusionPBX Hosting
 
 6.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture.
 
+
 .. image:: images/fusionpbx_domain_support.PNG
         :align: center
         
+
 After the command is run you should now be able to see the domains of that PBX in dSIPRouter.
+
 
 .. image:: images/list_of_domain.PNG
         :align: center
