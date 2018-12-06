@@ -225,6 +225,7 @@ FusionPBX Hosting
 
 
 After the command is run you should now be able to see the domains of that PBX in dSIPRouter.
+
 .. image:: images/list_of_domain.PNG
         :align: center
 
