@@ -224,12 +224,21 @@ FusionPBX Hosting
 .. image:: images/fusionpbx_domain_support.PNG
         :align: center
         
+After the command is run you should noe be able to see the domains of that PBX in dSIPRouter.
+
+        
         
  =======================================
  How to configure a softphone via Zopier
  =======================================
+ Now that domains have been downloaded in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
+ Once you've downloaded Zopier appliaction on your PC or smart device you would add:
+ - username (extension)
+ - password (password of that extension)
+ -outbound proxy (ip address of the dSIPRouter)
  
- 
+ .. image:: images/zoiper_example.PNG
+        :align: center 
  ^^^^^^^^^
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^
