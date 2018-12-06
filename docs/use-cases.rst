@@ -231,7 +231,7 @@ After the command is run you should now be able to see the domains of that PBX i
  =======================================
  How to configure a softphone via Zopier
  =======================================
- Now that domains have been downloaded in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
+ Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
  Once you've downloaded Zopier appliaction on your PC or smart device you would add:
  - username (extension)
  - password (password of that extension)
