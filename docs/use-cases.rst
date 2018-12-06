@@ -178,11 +178,13 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
+
 .. image:: images/dialplan.PNG 
           :align: center
 
   
   
+ 
  5. Click Save
 
 
@@ -190,9 +192,9 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
-===========
+=================
 FusionPBX Hosting
-===========
+=================
 
  Here we will demostrate how to setup dSIPRouter to enable hosting a PBX. In the following example we have multi domain support built-in PBX.
  
