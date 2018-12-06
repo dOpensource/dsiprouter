@@ -217,7 +217,7 @@ FusionPBX Hosting
 
 5. Access your FusionPBX database
 
-6.Run the command as illustrated in the dSIPRouter window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. 
+6.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture.
 
 
 
@@ -225,6 +225,14 @@ FusionPBX Hosting
         :align: center
         
         
+
+
+
+
+
+
+
+
 
 .. image:: images/fusionpbx_hosting1.png
         :align: center  
