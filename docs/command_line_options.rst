@@ -13,7 +13,3 @@ restart                              Restarts DSIPRouter after a stop
 uninstall                            Uninstalls dSIPRouter 
 ===================================  ======================================================================================================
 
-One Line Version for Install **(Proxy audio (RTP) traffic)**: 
-::
-
- ./dsiprouter.sh install -rtpengine
