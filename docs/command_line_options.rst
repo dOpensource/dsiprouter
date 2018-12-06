@@ -16,4 +16,4 @@ uninstall                            Uninstalls dSIPRouter
 One Line Version for Install **(Proxy audio (RTP) traffic)**: 
 ::
 
- apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -rtpengine
+ ./dsiprouter.sh install -rtpengine
