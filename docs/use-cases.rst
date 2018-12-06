@@ -178,8 +178,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
-.. image:: images/dialplan_11.png 
-        :align: center
+.. image:: images/dialplan_11.PNG 
+          :align: center
 
   
   
