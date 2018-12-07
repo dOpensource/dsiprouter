@@ -23,3 +23,31 @@ To start dSIPRouter:
 
 |
 
+To stop dSIPRouter:
+
+::
+
+./dsiprouter sh stop
+
+|
+
+To restart dSIPRouter:
+
+::
+
+./dsiprouter sh restart
+
+|
+
+To uninstall dSIPRouter:
+
+::
+
+./dsiprouter sh unistall
+
+|
+
+
+
+
+
