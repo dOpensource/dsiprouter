@@ -219,7 +219,7 @@ FusionPBX Hosting
 
 
  .. image:: images/fusionpbx_domain_support.PNG
-         :align: center
+          :align: center
         
 
 
