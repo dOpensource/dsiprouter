@@ -13,7 +13,7 @@ restart                              Restarts DSIPRouter after a stop
 uninstall                            Uninstalls dSIPRouter 
 ===================================  ======================================================================================================
 
-Refer to `Install Options` to get the complete one line version of the command.
+Refer to ::ref: `Install Options` to get the complete one line version of the command.
 
 To start dSIPRouter:
 
