@@ -16,7 +16,9 @@ uninstall                            Uninstalls dSIPRouter
 Refer to :ref:'install options' to get the complete one line version of the command.
 
 To start dSIPRouter:
+
 ::
+
 ./dsiprouter sh start
 
 |
