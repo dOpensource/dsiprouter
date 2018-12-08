@@ -693,7 +693,7 @@ def addUpdatePBX():
             db.add(PBXMultiMapping)
 
             # enable domain routing for this pbx
-            if single_tenant_domain_enabled:
+            #if single_tenant_domain_enabled:
             #    # put required VALUES for all single tenant use cases here
             #    PBXDomain = Domain(ip_addr)
             #    PBXDomainAttr = DomainAttrs(ip_addr)
@@ -701,9 +701,9 @@ def addUpdatePBX():
             #    db.add(PBXDomainAttr)
             #    db.flush()
 
-                PBXMapping = dSIPDomainMapping(Gateway.gwid, '', '',type=single_tenant_domain_type)
+            #    PBXMapping = dSIPDomainMapping(Gateway.gwid, '', '',type=single_tenant_domain_type)
             # create an entry for this pbx that is disabled (must not match any domain)
-            else:
+            #else:
             #    # put required DEFAULTS for all single tenant use cases here
             #    PBXDomain = Domain(domain="", did="")
             #    PBXDomainAttr = DomainAttrs(did="", value="")
@@ -711,13 +711,13 @@ def addUpdatePBX():
             #    db.add(PBXDomainAttr)
             #    db.flush()
 
-               PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
-                                               enabled=dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value)
+            #   PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
+           #                                    enabled=dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value)
 
                 # specific use cases go here
 
             # required entries guranteed to be created
-            db.add(PBXMapping)
+            #db.add(PBXMapping)
 
         # Updating
         else:
