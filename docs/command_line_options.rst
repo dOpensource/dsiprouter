@@ -1,12 +1,53 @@
-Command Line Options Table
+Command Line Options 
 ==========================
 
-===================================  ===================================================================================================
-Option                               What does it do?
-install [-rtpengine] [-servernat]    This is the command to install dSIPRouter and the RTPEngine
-                                     if you need to proxy RTP traffic.
-Start- ./dsiprouter.sh start         Starts dSIPRouter
-Stop- ./dsiprouter.sh stop           Stops dSIPRouter from running
-Restart- ./dsiprouter.sh restart     Restarts DSIPRouter after a stop
-Uninstall-./dsiprouter.sh uninstall  Uninstalls dSIPRouter
-===================================  ===================================================================================================
+Implement "./dsiprouter sh" followed by one of the listed options for the dsiprouter command lines.
+
+===================================  ======================================================================================================
+Option                               What does it do?                                 
+install [-rtpengine]                 installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic.
+install  [-rtpengine] [-servernat]   installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic thats behind a NAT
+start                                Starts dSIPRouter 
+stop                                 Stops dSIPRouter from running                  
+restart                              Restarts DSIPRouter after a stop
+uninstall                            Uninstalls dSIPRouter 
+===================================  ======================================================================================================
+
+Refer to ::ref:`Installing dSIPRouter<installing.rst/install_option.rst>` to get the complete one line version of the command.
+
+To start dSIPRouter:
+
+::
+
+./dsiprouter sh start
+
+|
+
+To stop dSIPRouter:
+
+::
+
+./dsiprouter sh stop
+
+|
+
+To restart dSIPRouter:
+
+::
+
+./dsiprouter sh restart
+
+|
+
+To uninstall dSIPRouter:
+
+::
+
+./dsiprouter sh unistall
+
+|
+
+
+
+
+

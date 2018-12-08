@@ -34,7 +34,7 @@ Here are the steps to set it up using Username/Password Authentication:
 1. Login to dSIPRouter
 2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups` and/or :ref:`global_outbound_routes` documentation.  
 3. Click on PBX's and Endpoints
-4. Click "Add" 
+4. Click "Add"  
 5. Select  **Username/Password Authentication** and fill in the fields specified below: 
 
 - Friendly Name
@@ -171,18 +171,16 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
   
   
 
-.. image:: images/11d_dialplan.PNG 
-          :align: center  
+ .. image:: images/outbound-routes_fusionpbx.PNG
+          :align: center
           
-
-
-
-
-.. image:: images/11d_dialplan2.PNG
-        :align: center
+         
+.. image:: images/outbound-routes_fusionpbx_2.PNG
+        :align: center     
 
   
   
+ 
  5. Click Save
 
 
@@ -190,9 +188,9 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
-===========
+=================
 FusionPBX Hosting
-===========
+=================
 
  Here we will demostrate how to setup dSIPRouter to enable hosting a PBX. In the following example we have multi domain support built-in PBX.
  
@@ -216,26 +214,37 @@ FusionPBX Hosting
  **NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
 
 5. Access your FusionPBX database
-6.Run the following command as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding.
 
-```
-sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.com
-iptables -A INPUT -p tcp -s <ip address>/32 --dport 5432 -j ACCEPT
-iptables-save
----
-#Run the following command if your don't want to enter a password for the FusionPBX Database(DB) Password
-echo -e "host    all             all            <ip address>/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
-/etc/init.d/postgresql restart
-```
+6.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture.
 
-.. image:: images/fusionpbx_hosting1.png
-        :align: center  
+
+ .. image:: images/fusionpbx_domain_support.PNG
+          :align: center
         
- =======================================
- How to configure a softphone via Zopier
- =======================================
+
+
+
+After the command is run you should now be able to see the domains of that PBX in dSIPRouter.
+        
+
+.. image:: images/list_of_domain.PNG
+        :align: center
+        
+
+        
+========================================
+How to Configure a Softphone Via Zopier
+========================================
  
  
+ Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
+ Once you've downloaded Zopier appliaction on your PC or smart device you would add:
+ - username (extension)
+ - password (password of that extension)
+ -outbound proxy (ip address of the dSIPRouter)
+ 
+ .. image:: images/zoiper_example.PNG
+        :align: center 
  ^^^^^^^^^
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^
