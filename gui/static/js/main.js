@@ -288,10 +288,11 @@ $('#pbxs #open-Update').click(function() {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
     modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
   }
-/*  else {
+  else {
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+    modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
   }
-*/
+
 
   if (authtype !== "") {
     /* userpwd auth enabled, Set the radio button to true */
