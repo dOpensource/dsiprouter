@@ -1637,7 +1637,7 @@ def attrFilter(list, field):
 def domainTypeFilter(list):
     if list is None:
         return "Unknown"
-    if list == 0:
+    if list == "0":
         return "Static"
     else:
         return "Dynamic"

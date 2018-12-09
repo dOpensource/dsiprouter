@@ -93,22 +93,7 @@ def sync_db(source,dest):
         c.execute(query)
         pbx_domain_list=''
     
-    #Delete existing domain attributes for the pbx
-    pbx_domain_list_str = ''.join(str(e) for e in pbx_domain_list)
-    if len(pbx_domain_list_str) > 0:
-        query = "delete from domain where id in ({})".format(pbx_domain_list_str)
-        print(query)
-        c.execute(query)
-        pbx_domain_list=''
-    
-    #Delete existing domain_attrs attributes for the pbx
-    pbx_attr_list_str = ''.join(str(e) for e in pbx_attr_list)
-    if len(pbx_attr_list_str) > 0:
-        query = "delete from domain_attrs where id in ({})".format(pbx_attr_list_str)
-        c.execute(query)
-        pbx_attr_list=''
 
-    #c.execute("""delete from domain_attrs where id in (%s)""", (pbx_attr_list))
 
     #Trying connecting to PostgresSQL database using a Trust releationship first
     try:
@@ -124,7 +109,11 @@ def sync_db(source,dest):
             
             for row in rows:
                 c.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""", (row[0],row[0]))
+                #Delete all domain_attrs for the domain first
+                c.execute("""delete from domain_attrs where did=%s""", [row[0]])
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_ip',2,%s,NOW())""", (row[0],pbx_host))
+                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_type',2,%s,NOW())""", (row[0],dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value))
+                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'created_by',2,%s,NOW())""", (row[0],pbx_id))
                 c.execute("""SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN('domain','domain_attrs') ORDER BY FIND_IN_SET(TABLE_NAME, 'domain,domain_attrs')""")
                 rows = c.fetchall()
                 #domain_id_list.append(rows[0][0] - 1)

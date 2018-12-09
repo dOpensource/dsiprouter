@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect, abort, flash, sessi
 import settings
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
         stripDictVals
-from modules.domain.domain_service import addDomainService,getDomains,deleteDomainService
+from modules.domain.domain_service import addDomainService,getDomains,deleteDomainService,getPBXLookUp
 
 domains = Blueprint('domains', __name__)
 
@@ -15,7 +15,13 @@ def domainList():
         return render_template('index.html',version=settings.VERSION)
 
     res = getDomains()
-    return render_template('domains.html', rows=res,version=settings.VERSION)
+    lookup = getPBXLookUp()
+
+    #for x in lookup:
+    #    print(lookup[x][0])
+    #    print(lookup[x][1])
+
+    return render_template('domains.html', rows=res,pbxlookup=lookup,version=settings.VERSION)
 
 
 

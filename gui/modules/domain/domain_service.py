@@ -8,8 +8,9 @@ db = loadSession()
 
 def getDomains():
     try:
-        sql = "select domain.id,domain.domain,dsip_domain_mapping.type,dsip_domain_mapping.pbx_id,dr_gateways.description from domain left join dsip_domain_mapping on domain.id = dsip_domain_mapping.domain_id left join dr_gateways on dsip_domain_mapping.pbx_id = dr_gateways.gwid;"
+        #sql = "select domain.id,domain.domain,dsip_domain_mapping.type,dsip_domain_mapping.pbx_id,dr_gateways.description from domain left join dsip_domain_mapping on domain.id = dsip_domain_mapping.domain_id left join dr_gateways on dsip_domain_mapping.pbx_id = dr_gateways.gwid;"
 
+        sql = "select distinct domain.did as domain,domain.id, value as type from domain_attrs join domain on domain.did = domain_attrs.did where name='pbx_type';"
         res = db.execute(sql);
         return res 
 
@@ -35,6 +36,35 @@ def getDomains():
         reload_required = False
         db.close()
 
+def getPBXLookUp():
+
+    try:
+
+        sql = "select did, value as pbx_id, description from domain_attrs left join dr_gateways on domain_attrs.value = dr_gateways.gwid where name='created_by'"
+
+        res = db.execute(sql);
+        pbxLookup={}
+        for row in res:
+            if row['description'] is not None:
+                fields = strFieldsToDict(row['description'])
+                name = fields['name']
+            else:
+                name = "Manually Created"
+
+            pbxLookup[row['did']]=[row['pbx_id'],name]
+        return pbxLookup
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
+
+
+
 
 def addDomainService(domain,authtype,pbx):
     try:
@@ -47,20 +77,26 @@ def addDomainService(domain,authtype,pbx):
         # Serial folking will be used to forward registration info to multiple PBX's 
         PBXDomainAttr1 = DomainAttrs(did=domain, name='dispatcher_alg_reg',value="8")
         PBXDomainAttr2 = DomainAttrs(did=domain, name='dispatcher_alg_in',value="4")
+        #Attributes to specify that the domain was created manually
+        PBXDomainAttr3 = DomainAttrs(did=domain, name='pbx_type',value="0") 
+        PBXDomainAttr4 = DomainAttrs(did=domain, name='created_by',value="0") 
+        
         if len(pbx) > 1:
             #Create entry in dispatcher and set dispatcher_set_id in domain_attrs
             for p in pbx.split(','):
                 dispatcher = Dispatcher(setid=PBXDomain.id,destination=gatewayIdToIP(p))
                 db.add(dispatcher)
            
-            PBXDomainAttr3 = DomainAttrs(did=domain, name='dispatcher_set_id',value=PBXDomain.id)
-        else:
-            #Store the pbx_host if this is a single PBX 
-            PBXDomainAttr3 = DomainAttrs(did=domain, name='pbx_host',value=gatewayIdToIP(pbx))
+            PBXDomainAttr5 = DomainAttrs(did=domain, name='dispatcher_set_id',value=PBXDomain.id)
+        #else:
+        #    #Store the pbx_host if this is a single PBX 
+        #    PBXDomainAttr4 = DomainAttrs(did=domain, name='pbx_host',value=gatewayIdToIP(pbx))
 
         db.add(PBXDomainAttr1)
         db.add(PBXDomainAttr2)
         db.add(PBXDomainAttr3)
+        db.add(PBXDomainAttr4)
+        db.add(PBXDomainAttr5)
         db.flush()
         db.commit()
 
