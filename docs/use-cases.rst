@@ -233,9 +233,9 @@ After the command is run you should now be able to see the domains of that PBX i
         
 
         
-========================================
-How to Configure a Softphone Via Zopier
-========================================
+===================================
+Testing PBX Hosting via a Softphone 
+===================================
  
  
  Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
