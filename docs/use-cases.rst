@@ -241,7 +241,8 @@ You can test PBX Hosting is valid by configuring a Softphone as discribed in the
  
  - username (extension@domainname)
  - password (password of that extension)
- -outbound proxy (ip address of the dSIPRouter)
+ - outbound proxy (IP address of the dSIPRouter)
+ 
  
  .. image:: images/zoiper_example.PNG
         :align: center 
