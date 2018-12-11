@@ -233,10 +233,8 @@ After the command is run you should now be able to see the domains of that PBX i
         
 
         
-===================================
-Testing PBX Hosting via a Softphone 
-===================================
- 
+
+You can test PBX Hosting is valid by configuring a Softphone as discribed in the example below: 
  
  Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
  Once you've downloaded Zopier appliaction on your PC or smart device you would add:
