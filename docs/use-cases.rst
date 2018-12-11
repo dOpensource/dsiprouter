@@ -215,7 +215,8 @@ FusionPBX Hosting
 
 5. Access your FusionPBX database
 
-6.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture.
+6.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture. 
+**NOTE** After you have entered the first two lines of commands you will not see a form of reply. If command is entered correctly it will return back to your root line. If the command line is incorrect you will receive a "command not found" error message. Recheck the command line and IP address.
 
 
  .. image:: images/fusionpbx_domain_support.PNG
@@ -232,18 +233,18 @@ After the command is run you should now be able to see the domains of that PBX i
         
 
         
-========================================
-How to Configure a Softphone Via Zopier
-========================================
- 
+
+You can test PBX Hosting is valid by configuring a Softphone as discribed in the example below: 
  
  Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
  Once you've downloaded Zopier appliaction on your PC or smart device you would add:
- - username (extension)
- - password (password of that extension)
- -outbound proxy (ip address of the dSIPRouter)
  
- .. image:: images/zoiper_example.PNG
+ - username (extension@domainname)
+ - password (password of that extension)
+ - outbound proxy (IP address of the dSIPRouter)
+ 
+ 
+ .. image:: images/zoiper_screenshot.PNG
         :align: center 
  ^^^^^^^^^
  Asterisk or FreePBX
