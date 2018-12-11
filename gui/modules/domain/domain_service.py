@@ -80,6 +80,7 @@ def addDomainService(domain,authtype,pbx):
         #Attributes to specify that the domain was created manually
         PBXDomainAttr3 = DomainAttrs(did=domain, name='pbx_type',value="0") 
         PBXDomainAttr4 = DomainAttrs(did=domain, name='created_by',value="0") 
+        PBXDomainAttr5= DomainAttrs(did=domain, name='domain_auth',value=authtype) 
         
         if len(pbx) > 1:
             #Create entry in dispatcher and set dispatcher_set_id in domain_attrs
@@ -87,7 +88,7 @@ def addDomainService(domain,authtype,pbx):
                 dispatcher = Dispatcher(setid=PBXDomain.id,destination=gatewayIdToIP(p))
                 db.add(dispatcher)
            
-            PBXDomainAttr5 = DomainAttrs(did=domain, name='dispatcher_set_id',value=PBXDomain.id)
+            PBXDomainAttr6 = DomainAttrs(did=domain, name='dispatcher_set_id',value=PBXDomain.id)
         #else:
         #    #Store the pbx_host if this is a single PBX 
         #    PBXDomainAttr4 = DomainAttrs(did=domain, name='pbx_host',value=gatewayIdToIP(pbx))
@@ -97,6 +98,7 @@ def addDomainService(domain,authtype,pbx):
         db.add(PBXDomainAttr3)
         db.add(PBXDomainAttr4)
         db.add(PBXDomainAttr5)
+        db.add(PBXDomainAttr6)
         db.flush()
         db.commit()
 

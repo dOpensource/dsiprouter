@@ -867,28 +867,21 @@ def deletePBX():
         
         domainmultimapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwid)
         res = domainmultimapping.options(load_only("domain_list", "attr_list")).first()
-        # make sure mapping has domains
-        if len(res.domain_list) > 0:
-            domains = list(map(int, filter(None, res.domain_list.split(","))))
-            domain = db.query(Domain).filter(Domain.id.in_(domains))
-            domain.delete(synchronize_session=False)
-        # make sure mapping has attributes
-        if len(res.attr_list) > 0:
-            attrs = list(map(int, filter(None, res.attr_list.split(","))))
-            domainattrs = db.query(DomainAttrs).filter(DomainAttrs.id.in_(attrs))
-            domainattrs.delete(synchronize_session=False)
-        domainmultimapping.delete(synchronize_session=False)
+        if res is not None:
+            # make sure mapping has domains
+            if len(res.domain_list) > 0:
+                domains = list(map(int, filter(None, res.domain_list.split(","))))
+                domain = db.query(Domain).filter(Domain.id.in_(domains))
+                domain.delete(synchronize_session=False)
+            # make sure mapping has attributes
+            if len(res.attr_list) > 0:
+                attrs = list(map(int, filter(None, res.attr_list.split(","))))
+                domainattrs = db.query(DomainAttrs).filter(DomainAttrs.id.in_(attrs))
+                domainattrs.delete(synchronize_session=False)
 
-        domainmapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid)
-        res = domainmapping.options(load_only("domain_id", "attr_list")).first()
-        domain = db.query(Domain).filter(Domain.id == res.domain_id)
-        domain.delete(synchronize_session=False)
-        # make sure mapping has attributes
-        if len(res.attr_list) > 0:
-            attrs = list(map(int, filter(None, res.attr_list.split(","))))
-            domainattrs = db.query(DomainAttrs).filter(DomainAttrs.id.in_(attrs))
-            domainattrs.delete(synchronize_session=False)
-        domainmapping.delete(synchronize_session=False)
+            # delete the entry in the multi domain mapping table
+            domainmultimapping.delete(synchronize_session=False)
+
 
         db.commit()
         reload_required = True

@@ -88,8 +88,9 @@ def sync_db(source,dest):
     c=db.cursor()
     #Delete existing domain for the pbx
     pbx_domain_list_str = ''.join(str(e) for e in pbx_domain_list)
+    print(pbx_domain_list_str)
     if len(pbx_domain_list_str) > 0:
-        query = "delete from domain where id in ('{}')".format(pbx_domain_list_str)
+        query = "delete from domain where id in ({})".format(pbx_domain_list_str)
         c.execute(query)
         pbx_domain_list=''
     
@@ -99,7 +100,7 @@ def sync_db(source,dest):
     try:
         conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
         if conn is not None:
-            print("Connection to database was successful")
+            print("Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
         cur = conn.cursor()
         cur.execute("""select domain_name from v_domains where domain_enabled='true'""")
         rows = cur.fetchall()
@@ -109,17 +110,16 @@ def sync_db(source,dest):
             
             for row in rows:
                 c.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""", (row[0],row[0]))
+                print("row count {}".format(c.rowcount))
+                if c.rowcount > 0:
+                    c.execute("""SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN('domain') ORDER BY FIND_IN_SET(TABLE_NAME, 'domain')""")
+                    rows = c.fetchall()
+                    domain_id_list.append(str(rows[0][0] -1))
                 #Delete all domain_attrs for the domain first
                 c.execute("""delete from domain_attrs where did=%s""", [row[0]])
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_ip',2,%s,NOW())""", (row[0],pbx_host))
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_type',2,%s,NOW())""", (row[0],dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value))
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'created_by',2,%s,NOW())""", (row[0],pbx_id))
-                c.execute("""SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN('domain','domain_attrs') ORDER BY FIND_IN_SET(TABLE_NAME, 'domain,domain_attrs')""")
-                rows = c.fetchall()
-                #domain_id_list.append(rows[0][0] - 1)
-                domain_id_list.append(str(rows[0][0] -1))
-                attr_id_list.append(str(rows[1][0] - 1))
-                print("[row {}] adding domain_id: {}, adding attr_id: {}".format(counter,rows[0][0] - 1,rows[1][0] -1))
                 counter = counter+1
 
             for i in domain_id_list:
@@ -127,28 +127,24 @@ def sync_db(source,dest):
             
             # Convert to a string seperated by commas
             domain_id_list = ','.join(domain_id_list)
-            attr_id_list = ','.join(attr_id_list)
 
             if not pbx_domain_list: #if empty string then this is the first set of domains
                 pbx_domain_list = domain_id_list
             else:  #adding to an existing list of domains
                 pbx_domain_list = pbx_domain_list + "," + domain_id_list
 
-            if not pbx_attr_list: #if empty string then this is the first set of domains
-                pbx_attr_list = attr_id_list
-            else:  #adding to an existing list of domains
-                pbx_attr_list = pbx_attr_list + "," + attr_id_list
             
 
-            print(pbx_domain_list)
-            print(pbx_attr_list)
 
-            c.execute("""update dsip_multidomain_mapping set domain_list=%s, attr_list=%s, syncstatus=1, lastsync=NOW(),syncerror='' where pbx_id=%s""",(pbx_domain_list,pbx_attr_list,pbx_id))
+            c.execute("""update dsip_multidomain_mapping set domain_list=%s, syncstatus=1, lastsync=NOW(),syncerror='' where pbx_id=%s""",(pbx_domain_list,pbx_id))
             db.commit()                
     except Exception as e:
         c=db.cursor()
         c.execute("""update dsip_multidomain_mapping set syncstatus=0, lastsync=NOW(), syncerror=%s where pbx_id=%s""",(str(e),pbx_id))
         db.commit()
+        #Remove lock file
+        os.remove("./.sync-lock") 
+
         print(e)
 
 def reloadkam(kamcmd_path):
@@ -261,8 +257,8 @@ def run_sync(settings):
     sources = get_sources(dest)
     print(sources)
     #Remove all existing domain and domain_attrs entries
-    for key in sources:
-        drop_fusionpbx_domains(sources[key], dest)
+    #for key in sources:
+    #    drop_fusionpbx_domains(sources[key], dest)
  
     #Loop thru each FusionPBX system and start the sync
     for key in sources:

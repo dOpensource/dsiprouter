@@ -53,7 +53,7 @@
           <td class='pbx_domain_support'>None</td>
         {% endif %}
         <td class='fusionpbx_enabled hidden'>{{ row.fusionpbx_enabled or 0 }}</td>
-        <td class='fusion_db_server hidden'>{{ row.db_ip|noneFilter() }}</td>
+        <td class='fusion_db_server hidden'>{{ row.db_host|noneFilter() }}</td>
         <td class='fusion_db_username hidden'>{{ row.db_username|noneFilter() }}</td>
         <td class='fusion_db_password hidden'>{{ row.db_password|noneFilter() }}</td>
         <td class='authtype hidden'>{{ row.rpid|noneFilter() }}</td>
