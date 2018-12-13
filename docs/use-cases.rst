@@ -207,7 +207,7 @@ FusionPBX Hosting
 5. Click 
 
 .. image:: images/reload_button.PNG
-        :align: center
+        :align: left
         
         
   
