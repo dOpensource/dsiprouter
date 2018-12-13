@@ -285,11 +285,11 @@ $('#pbxs #open-Update').click(function() {
   modal_body.find(".auth_domain").val(auth_domain);
 
   if (fusionpbx_enabled) {
-    modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
+    //modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
     modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
   }
   else {
-    modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+    //modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
     modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
   }
 
@@ -451,7 +451,7 @@ $('.modal-body .toggleFusionPBXDomain').change(function() {
     modal_body.find('.fusionpbx_db_enabled').val(1);
 
     /* uncheck other toggles */
-    modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
+    //modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
   }
 
   else {
