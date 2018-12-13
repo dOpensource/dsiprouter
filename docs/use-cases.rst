@@ -205,16 +205,13 @@ FusionPBX Hosting
   - FusionPBX Database IP or Hostname
 4. Click ADD
 5. Click Reload Kamailio
-
-.. image:: images/reload_button.PNG
-        :align: center
-        
-        
-  
+   
 .. image:: images/fusionpbx_hosting.PNG
         :align: center
           
-          
+    
+.. image:: images/reload_button.PNG
+        :align: center    
        
           
 
