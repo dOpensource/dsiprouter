@@ -205,9 +205,8 @@ FusionPBX Hosting
   - FusionPBX Database IP or Hostname
 4. Click ADD
 5. Click  
-
 .. image:: images/reload_button.PNG
-        :align: right
+        :align: center
         
   
 .. image:: images/fusionpbx_hosting.PNG
