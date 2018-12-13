@@ -204,20 +204,18 @@ FusionPBX Hosting
   - Click to enable FusionPBX Domain Support
   - FusionPBX Database IP or Hostname
 4. Click ADD
-5. Click Reload Kamailio
+
    
 .. image:: images/fusionpbx_hosting.PNG
         :align: center
           
+5. Click Reload Kamailio          
     
 .. image:: images/reload_button.PNG
         :align: center    
        
           
-
-**NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
-
-6. Access your FusionPBX database
+6. Access your FusionPBX database via ? such as ssh
 
 7.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture. 
 **NOTE** After you have entered the first two lines of commands you will not see a form of reply. If command is entered correctly it will return back to your root line. If the command line is incorrect you will receive a "command not found" error message. Recheck the command line and IP address.
