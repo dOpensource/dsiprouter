@@ -215,7 +215,7 @@ FusionPBX Hosting
         :align: center    
        
           
-6. Access your FusionPBX database via ? such as ssh
+6. Access your FusionPBX database via ssh.
 
 7.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture. 
 **NOTE** After you have entered the first two lines of commands you will not see a form of reply. If command is entered correctly it will return back to your root line. If the command line is incorrect you will receive a "command not found" error message. Recheck the command line and IP address.
