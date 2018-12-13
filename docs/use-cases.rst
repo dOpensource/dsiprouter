@@ -209,7 +209,7 @@ FusionPBX Hosting
 .. image:: images/fusionpbx_hosting.PNG
         :align: center
           
-5. Click Reload Kamailio          
+5. Click Reload Kamailio. (when changes are made reload button will change to orange)          
     
 .. image:: images/reload_button.PNG
         :align: center    
