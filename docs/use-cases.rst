@@ -204,9 +204,10 @@ FusionPBX Hosting
   - Click to enable FusionPBX Domain Support
   - FusionPBX Database IP or Hostname
 4. Click ADD
-5. Click  
+5. Click 
+
 .. image:: images/reload_button.PNG
-        :align: center
+        :align: left
         
   
 .. image:: images/fusionpbx_hosting.PNG
