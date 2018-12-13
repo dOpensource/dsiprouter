@@ -94,6 +94,7 @@ To Import a DID from a CVS file:
         
         b)Click the green Add button. 
 
+Click here              to view a sample of the .CSV file
 
 
 5) Click on the blue Reload Kamailio button in order for the changes to be updated.
