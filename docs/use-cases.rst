@@ -217,7 +217,8 @@ FusionPBX Hosting
           
        
           
- **NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
+
+**NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
 
 6. Access your FusionPBX database
 
