@@ -206,7 +206,9 @@ FusionPBX Hosting
 4. Click ADD
 5. Click  
 
-.. image:: images/ 
+.. image:: images/reload_button.PNG
+        :align: right
+        
   
 .. image:: images/fusionpbx_hosting.PNG
         :align: center
