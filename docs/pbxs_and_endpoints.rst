@@ -94,7 +94,7 @@ To Import a DID from a CVS file:
         
         b)Click the green Add button. 
 
-Click `CSV Example <https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.51/docs/images/DID_test.csv>`_           to view a to view a sample of the .CSV file
+Click `CSV Example <https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.51/docs/images/DID_test.csv>`_ to view a sample of the .CSV file
 
 
 5) Click on the blue Reload Kamailio button in order for the changes to be updated.
