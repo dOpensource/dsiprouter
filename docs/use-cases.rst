@@ -204,18 +204,20 @@ FusionPBX Hosting
   - Click to enable FusionPBX Domain Support
   - FusionPBX Database IP or Hostname
 4. Click ADD
-  
+
+   
 .. image:: images/fusionpbx_hosting.PNG
         :align: center
           
-          
+5. Click Reload Kamailio. (when changes are made reload button will change to orange)          
+    
+.. image:: images/reload_button.PNG
+        :align: center    
        
           
- **NOTE:** If you receive an error message when attempting to enable fusionPBX domain support, click add while support is disabled then go back and click the editing tool on the PBX home screen to go back in hosting PBX to enable FusionPBX Domain Support, then click ADD.
+6. Access your FusionPBX database via ssh.
 
-5. Access your FusionPBX database
-
-6.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture. 
+7.Run the command as illustrated in the "Edit your PBX Detail" window as root on the FusionPBX server. Replace <ip address> (not including the brackets) with the IP address of the dSIPRouter server you're adding. Command line will look simulair to the following picture. 
 **NOTE** After you have entered the first two lines of commands you will not see a form of reply. If command is entered correctly it will return back to your root line. If the command line is incorrect you will receive a "command not found" error message. Recheck the command line and IP address.
 
 
@@ -234,7 +236,7 @@ After the command is run you should now be able to see the domains of that PBX i
 
         
 
-You can test PBX Hosting is valid by configuring a Softphone as discribed in the example below: 
+You can test PBX Hosting is valid by configuring a softphone or a hard phone. Below is an example using a softphone: 
  
  Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
  Once you've downloaded Zopier appliaction on your PC or smart device you would add:
@@ -246,6 +248,45 @@ You can test PBX Hosting is valid by configuring a Softphone as discribed in the
  
  .. image:: images/zoiper_screenshot.PNG
         :align: center 
+        
+================================================
+Provisioning and Registering a Polycom VVX Phone
+================================================
+ 
+ Now that domains have been synced in dSIPRouter you are able to register a endpoint/hard-phone. In this example we are using a Polycom VVX410 desk phone.
+ 
+1. Log into your FusionPBX box
+ 
+     a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter in the provisioning editor.
+     
+
+ .. image:: images/outbound_proxy.PNG
+         :align: center
+         
+2.  Assign the phone to a template.       
+ 
+ .. image:: images/assign_template.PNG
+         :align: center
+        
+3. Configuring the Provisioning Server section of the phone. Enter the appropriate information into the fields.
+
+ a) Server Type (dSIPRouter uses HTTP by default)
+ 
+ b) Server Address
+ 
+ c) Server Username (device provisioning server name)
+ 
+ d) Server Password
+ 
+4. Click Save 
+ 
+ .. image:: images/provisioning_server.PNG 
+          :align: center
+        
+5. Reboot the phone
+         
+          
+ 
  ^^^^^^^^^
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^

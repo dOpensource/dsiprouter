@@ -1,5 +1,5 @@
 Intro to dSIPRouter
-===================
+^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -26,8 +26,13 @@ username: admin::
 password: ZmIwMTdmY2I5NjE4::
 
 
+Credits
+=======
+
+I'd like to say Thank You to Nicole D., John O. and Courtney G. for their time in fufilling this document. I'd also like to give a hardy Thank You to dOpensource for their monetary support in funding this document.
+
 Installing dSIPRouter
-=====================
+^^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::
    :maxdepth: 2
@@ -36,18 +41,18 @@ Installing dSIPRouter
    
   
    
-Starting dSIPRouter
-=====================
+Command Line Options
+^^^^^^^^^^^^^^^^^^^^
   
   .. toctree::
    :maxdepth: 2
    
-   starting.rst
+   command_line_options.rst
   
   
   
 Configuring dSIPRouter
-======================
+^^^^^^^^^^^^^^^^^^^^^^
   
   .. toctree::
    :maxdepth: 2
@@ -56,16 +61,24 @@ Configuring dSIPRouter
   
    
 Implementing Use Cases
-======================
+^^^^^^^^^^^^^^^^^^^^^^
   
   .. toctree::
    :maxdepth: 2
    
    use-cases.rst
   
-       
+Resources
+^^^^^^^^^
+
+  ..toctree::
+   :maxdepth: 2
+   
+   resources.rst 
+
+
 Troubleshooting
-===============
+^^^^^^^^^^^^^^^
    
   .. toctree::
    :maxdepth: 2
