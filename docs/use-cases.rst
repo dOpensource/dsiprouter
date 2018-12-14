@@ -267,6 +267,11 @@ Provisioning and Registering a Polycom VVX Phone
  
  .. image:: images/assign_template.PNG
          :align: center
+        
+3. Configuring the Provisioning Server section of the phone.
+
+.. image:: images/provisioning_server.PNG
+        :align: center
          
          
  
