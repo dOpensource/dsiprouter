@@ -261,7 +261,7 @@ Provisioning and Registering a Polycom VVX Phone
      
 
 .. image:: images/outbound_proxy.PNG
-        :align: center
+         :align: center
  
  
  
