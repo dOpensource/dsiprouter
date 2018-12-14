@@ -270,7 +270,7 @@ Provisioning and Registering a Polycom VVX Phone
         
 3. Configuring the Provisioning Server section of the phone.
 
-.. image:: images/provisioning_server.PNG
+ .. image:: images/provisioning_server.PNG
         :align: center
          
          
