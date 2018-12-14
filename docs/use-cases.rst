@@ -268,8 +268,18 @@ Provisioning and Registering a Polycom VVX Phone
  .. image:: images/assign_template.PNG
          :align: center
         
-3. Configuring the Provisioning Server section of the phone.
+3. Configuring the Provisioning Server section of the phone. Enter the appropiate information into the fields.
 
+ a) server type (dSIP uses http by default)
+ 
+ b) server address
+ 
+ c) server username
+ 
+ d) server password
+ 
+4. Click save 
+ 
  .. image:: images/provisioning_server.PNG
         :align: center
          
