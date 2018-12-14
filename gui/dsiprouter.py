@@ -1469,6 +1469,7 @@ def addUpateOutboundRoutes():
                 })
                 db.commit()
 
+        db.commit()
         reload_required = True
         return displayOutboundRoutes()
 

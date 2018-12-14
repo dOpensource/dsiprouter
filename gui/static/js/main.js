@@ -232,8 +232,7 @@ $('#open-PbxAdd').click(function() {
   modal_body.find(".auth_username").val('');
   modal_body.find(".auth_password").val('');
   modal_body.find(".auth_domain").val('');
-  modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-  modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
+  modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
 
   /* make sure ip_addr not disabled */
   toggleElemDisabled(modal_body.find('.ip_addr'), false);
