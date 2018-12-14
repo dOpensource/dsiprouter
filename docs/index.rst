@@ -36,13 +36,13 @@ Installing dSIPRouter
    
   
    
-Starting dSIPRouter
+Command Line Options
 =====================
   
   .. toctree::
    :maxdepth: 2
    
-   starting.rst
+   command_line_options.rst
   
   
   
@@ -63,7 +63,15 @@ Implementing Use Cases
    
    use-cases.rst
   
-       
+Resources
+=========
+
+  ..toctree::
+   :maxdepth: 2
+   
+   resources.rst 
+
+
 Troubleshooting
 ===============
    
