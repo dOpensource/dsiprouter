@@ -274,7 +274,7 @@ Provisioning and Registering a Polycom VVX Phone
  
  b) Server address
  
- c) Server username
+ c) Server username (device provisioning server name)
  
  d) Server password
  
@@ -282,6 +282,8 @@ Provisioning and Registering a Polycom VVX Phone
  
  .. image:: images/provisioning_server.PNG
         :align: center
+        
+5. Reboot the phone
          
          
  
