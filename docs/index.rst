@@ -92,7 +92,7 @@ Upgrade
   .. toctree::
    :maxdepth: 2
  
- upgrade.rst
+   upgrade.rst
   
    
    
