@@ -260,7 +260,7 @@ Provisioning and Registering a Polycom VVX Phone
      a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter.
      
 
-.. image:: images/outbound_proxy.PNG
+ .. image:: images/outbound_proxy.PNG
          :align: center
  
  
