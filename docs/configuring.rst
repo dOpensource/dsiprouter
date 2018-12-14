@@ -1,10 +1,9 @@
 .. toctree::
   :maxdepth: 3
 
-  command_line_options.rst
   carrier_groups.rst
   pbxs_and_endpoints.rst
   domains.rst
   inbound_did_mapping.rst
   global_outbound_routes.rst
-  resources.rst
+ 
