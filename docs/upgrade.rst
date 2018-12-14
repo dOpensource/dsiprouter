@@ -70,7 +70,6 @@ After the install is complete and the dsiprouter service has been restarted, the
 
 
 
-(Once the database has been restored without any issues, you have successfully upgrade from v0.50 to v0.51)
 
 
 
