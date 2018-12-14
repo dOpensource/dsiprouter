@@ -86,6 +86,13 @@ Troubleshooting
    
    troubleshooting.rst
    
+Upgrade
+^^^^^^^
+
+  .. toctree::
+   :maxdepth: 2
+ 
+ upgrade.rst
   
    
    
