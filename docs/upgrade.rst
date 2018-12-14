@@ -51,4 +51,16 @@ After the install is complete your dSIPRouter login screen should now reflect v0
 
 
 
+After the install is completed you can now restore your kamailio database using the following command:
+
+cd /opt/
+
+mysql  kamailio < kamailio-bk.sql
+
+(Once the database has been restored without any issues, you have successfully upgrade from v0.50 to v0.51)
+
+
+
+
+
 
