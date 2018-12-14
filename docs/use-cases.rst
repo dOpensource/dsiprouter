@@ -236,7 +236,7 @@ After the command is run you should now be able to see the domains of that PBX i
 
         
 
-You can test PBX Hosting is valid by configuring a Softphone as discribed in the example below: 
+You can test PBX Hosting is valid by configuring a softphone or a hard phone. Below is an example using a softphone: 
  
  Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
  Once you've downloaded Zopier appliaction on your PC or smart device you would add:
@@ -248,6 +248,21 @@ You can test PBX Hosting is valid by configuring a Softphone as discribed in the
  
  .. image:: images/zoiper_screenshot.PNG
         :align: center 
+        
+ ================================================
+ Provisioning and Registering a Polycom VVX Phone
+ ================================================
+ 
+ Now that domains have been synced in dSIPRouter you are able to register a endpoint/hard-phone. In this example we are using a Polycom VVX410 desk phone.
+ 
+ 1. Log into your FusionPBX box
+ 
+     a) Update the outboundProxy.address of the template with the IP address or hostname of the dSIPRouter.
+     
+.. image:: images/     
+ 
+ 
+ 
  ^^^^^^^^^
  Asterisk or FreePBX
  ^^^^^^^^^^^^^^^^^^^
