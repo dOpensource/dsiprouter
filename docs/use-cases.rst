@@ -249,9 +249,9 @@ You can test PBX Hosting is valid by configuring a softphone or a hard phone. Be
  .. image:: images/zoiper_screenshot.PNG
         :align: center 
         
- ================================================
- Provisioning and Registering a Polycom VVX Phone
- ================================================
+================================================
+Provisioning and Registering a Polycom VVX Phone
+================================================
  
  Now that domains have been synced in dSIPRouter you are able to register a endpoint/hard-phone. In this example we are using a Polycom VVX410 desk phone.
  
