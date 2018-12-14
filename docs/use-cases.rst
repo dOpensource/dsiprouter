@@ -285,8 +285,7 @@ Provisioning and Registering a Polycom VVX Phone
         
 5. Reboot the phone
          
-         
- 
+          
  
  ^^^^^^^^^
  Asterisk or FreePBX
