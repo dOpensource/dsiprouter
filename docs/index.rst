@@ -72,7 +72,7 @@ Implementing Use Cases
 Resources
 ^^^^^^^^^
 
-  ..toctree::
+  .. toctree::
    :maxdepth: 2
    
    resources.rst 
