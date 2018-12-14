@@ -257,9 +257,10 @@ You can test PBX Hosting is valid by configuring a softphone or a hard phone. Be
  
  1. Log into your FusionPBX box
  
-     a) Update the outboundProxy.address of the template with the IP address or hostname of the dSIPRouter.
+     a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter.
      
-.. image:: images/     
+.. image:: images/outbound_proxy.PNG
+        :align: center
  
  
  
