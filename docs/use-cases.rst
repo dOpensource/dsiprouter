@@ -255,14 +255,20 @@ Provisioning and Registering a Polycom VVX Phone
  
  Now that domains have been synced in dSIPRouter you are able to register a endpoint/hard-phone. In this example we are using a Polycom VVX410 desk phone.
  
- 1. Log into your FusionPBX box
+1. Log into your FusionPBX box
  
-     a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter.
+     a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter in the provosioning editor.
      
 
  .. image:: images/outbound_proxy.PNG
          :align: center
+         
+2.  Assign the phone to a template.       
  
+ .. image:: images/assign_template.PNG
+         :align: center
+         
+         
  
  
  ^^^^^^^^^
