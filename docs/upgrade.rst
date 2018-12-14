@@ -43,19 +43,30 @@ Installing dsiprouter v0.51
   cd dsiprouter
   ./dsiprouter.sh install
 |
+**Note: please note of the credentials given after the script has completed.**
 
-After the install is complete your dSIPRouter login screen should now reflect v0.51.
+After the install is completed you can now restore your kamailio database using the following command:
+
+::
+  
+  cd /opt/
+
+  mysql  kamailio < kamailio-bk.sql
+|
+
+After the kamailio database is restored you need to restart dsiprouter using the following commands:
+
+cd /opt/disprouter/ 
+
+./dsiprouter.sh restart 
+
+After the install is complete and the dsiprouter service has been restarted login screen should now reflect v0.51 and you should be able to login with the dsiprouter credentials provided after the install completed.
 
 .. image:: images/dsip_v51.png
         :align: center
 
 
 
-After the install is completed you can now restore your kamailio database using the following command:
-
-cd /opt/
-
-mysql  kamailio < kamailio-bk.sql
 
 (Once the database has been restored without any issues, you have successfully upgrade from v0.50 to v0.51)
 
