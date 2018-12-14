@@ -6,4 +6,4 @@
   domains.rst
   inbound_did_mapping.rst
   global_outbound_routes.rst
- 
+  resources.rst 
