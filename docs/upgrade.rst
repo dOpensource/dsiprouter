@@ -46,6 +46,9 @@ Installing dsiprouter v0.51
 
 After the install is complete your dSIPRouter login screen should now reflect v0.51.
 
+.. image:: images/dsip_v51.png
+        :align: center
+
 
 
 
