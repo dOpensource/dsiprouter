@@ -6,6 +6,7 @@ In this section we will show you how to upgrading from 0.50 to 0.51.
 Before starting the upgrade process you will need to backup your kamailio database using the following command: 
 
 ::
+  
   cd /opt/
 
   mysqldump kamailio > kamailio-bk.sql
@@ -14,6 +15,7 @@ Before starting the upgrade process you will need to backup your kamailio databa
 After you've backed up your database you can now uninstall dsiprouter v0.50 by running the following commands: 
 
 ::
+  
   cd /opt/dsiprouter 
 
   ./dsiprouter.sh uninstall
@@ -22,6 +24,7 @@ After you've backed up your database you can now uninstall dsiprouter v0.50 by r
 Once the uninstall is complete you will need to either move or delete the /dsiprouter directory using the following command.
 
 ::
+  
   mv /dsiprouter /usr/local/src (moving directory)
   or 
   rm -r /dsiprouter (removing directory)
@@ -30,6 +33,7 @@ Once the uninstall is complete you will need to either move or delete the /dsipr
 Installing dsiprouter v0.51
 
 ::
+  
   cd /opt/ 
 
   apt-get update
