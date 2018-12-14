@@ -34,7 +34,7 @@ You can find our documentation here: [dSIPRouter Documentation](https://dsiprout
 
 Free Support: [dSIPRouter Question & Answer Forum](https://groups.google.com/forum/#!forum/dsiprouter)
 
-Paid Support: [dOpenSource] (https://dopensource.com/shop)
+Paid Support: [dOpenSource](https://dopensource.com/shop)
 
 ### Training
 
