@@ -280,7 +280,7 @@ Provisioning and Registering a Polycom VVX Phone
  
 4. Click Save 
  
- .. image:: images/provisioning_server.PNG
+ .. image:: images/provisioning_server.PNG 
         :align: center
         
 5. Reboot the phone
