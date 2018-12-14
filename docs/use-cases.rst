@@ -257,7 +257,7 @@ Provisioning and Registering a Polycom VVX Phone
  
 1. Log into your FusionPBX box
  
-     a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter in the provosioning editor.
+     a) Update the "outboundProxy.address" of the template with the IP address or hostname of the dSIPRouter in the provisioning editor.
      
 
  .. image:: images/outbound_proxy.PNG
@@ -268,9 +268,9 @@ Provisioning and Registering a Polycom VVX Phone
  .. image:: images/assign_template.PNG
          :align: center
         
-3. Configuring the Provisioning Server section of the phone. Enter the appropiate information into the fields.
+3. Configuring the Provisioning Server section of the phone. Enter the appropriate information into the fields.
 
- a) Server Type (dSIP uses HTTP by default)
+ a) Server Type (dSIPRouter uses HTTP by default)
  
  b) Server Address
  
