@@ -43,7 +43,7 @@ Installing dsiprouter v0.51
   cd dsiprouter
   ./dsiprouter.sh install
 |
-**Note: please note of the credentials given after the script has completed.**
+**Note: please take note of the credentials given after the script has completed.**
 
 After the install is completed you can now restore your kamailio database using the following command:
 
@@ -55,12 +55,14 @@ After the install is completed you can now restore your kamailio database using 
 |
 
 After the kamailio database is restored you need to restart dsiprouter using the following commands:
+::
+  
+  cd /opt/disprouter/ 
 
-cd /opt/disprouter/ 
+  ./dsiprouter.sh restart 
+|
 
-./dsiprouter.sh restart 
-
-After the install is complete and the dsiprouter service has been restarted login screen should now reflect v0.51 and you should be able to login with the dsiprouter credentials provided after the install completed.
+After the install is complete and the dsiprouter service has been restarted, the login screen should now reflect v0.51 and you should be able to login with the dsiprouter credentials provided after the install completed.
 
 .. image:: images/dsip_v51.png
         :align: center
