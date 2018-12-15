@@ -29,7 +29,14 @@ password: ZmIwMTdmY2I5NjE4::
 Credits
 =======
 
-I'd like to say Thank You to Nicole D., John O. and Courtney G. for their time in fufilling this document. I'd also like to give a hardy Thank You to dOpensource for their monetary support in funding this document.
+I'd like to say thank you to Nicole D., John O. and Courtney G. for their time in fulfilling this document. I'd also like to give a hardy thank you to dOpensource for their monetary support in funding this document.
+
+Support
+=======
+
+Free support is available via our `group <https://groups.google.com/forum/#!forum/dsiprouter/>`_
+
+Paid support is available `here <https://dOpensource.com/shop/>`_
 
 Installing dSIPRouter
 ^^^^^^^^^^^^^^^^^^^^^
