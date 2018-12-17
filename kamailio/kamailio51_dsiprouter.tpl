@@ -6,7 +6,7 @@
 #!define WITH_USRLOCDB
 #!define WITH_ACCDB
 #!define WITH_DROUTE
-##!define WITH_DEBUG
+#!define WITH_DEBUG
 #!define WITH_NAT
 #!define WITH_DISPATCHER
 ##!define WITH_SERVERNAT
@@ -1161,7 +1161,6 @@ failure_route[DISPATCHER_NEXT] {
         }
         # next DST - only for 500 or local timeout
         if (t_check_status("4[0-9][0-9]|5[0-9][0-9]") or (t_branch_timeout() and !t_branch_replied())) {
-		t_drop_replies();
                 if(ds_next_dst()) {
     			xlog("L_DEBUG", "[DISPATCHER_NEXT]: dispatcher selected $avp(dispatcher_dst)\n");
                         t_on_failure("DISPATCHER_NEXT");
@@ -1173,6 +1172,7 @@ failure_route[DISPATCHER_NEXT] {
 			#Drop the replies if this is a REGISTER
 			if (is_method('REGISTER')) {
 				t_drop_replies();
+				t_reply("401", "Registration Problems on 1 or more PBX's");
 			}
 		}
         }
@@ -1311,7 +1311,7 @@ route[AUTH] {
 				
 				setflag(FLT_EXTERNAL_AUTH);
 				
-				if ($avp(domain_auth_type) == 2) {
+				if ($avp(domain_auth) == "realtime") {
 			
 					# Load data needed for custom SIP headers
 					if ($avp(domain_enrich_headers) == 1)
@@ -1329,7 +1329,7 @@ route[AUTH] {
                 			}	
 					
 				}
-				if ($avp(domain_auth_type) == 1) {
+				if ($avp(domain_auth_type) == "local") {
 
 					if (!auth_check("$fd", "subscriber", "3")) {
         	         		       auth_challenge("$fd", "0");

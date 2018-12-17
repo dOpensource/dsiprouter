@@ -74,36 +74,58 @@ def addDomainService(domain,authtype,pbx):
         db.flush
         db.commit()
 
-        # Serial folking will be used to forward registration info to multiple PBX's 
-        PBXDomainAttr1 = DomainAttrs(did=domain, name='dispatcher_alg_reg',value="8")
-        PBXDomainAttr2 = DomainAttrs(did=domain, name='dispatcher_alg_in',value="4")
-        #Attributes to specify that the domain was created manually
-        PBXDomainAttr3 = DomainAttrs(did=domain, name='pbx_type',value="0") 
-        PBXDomainAttr4 = DomainAttrs(did=domain, name='created_by',value="0") 
-        PBXDomainAttr5= DomainAttrs(did=domain, name='domain_auth',value=authtype) 
-        
-        if len(pbx) > 1:
-            #Create entry in dispatcher and set dispatcher_set_id in domain_attrs
-            for p in pbx.split(','):
-                dispatcher = Dispatcher(setid=PBXDomain.id,destination=gatewayIdToIP(p))
-                db.add(dispatcher)
-           
-            PBXDomainAttr6 = DomainAttrs(did=domain, name='dispatcher_set_id',value=PBXDomain.id)
-        #else:
-        #    #Store the pbx_host if this is a single PBX 
-        #    PBXDomainAttr4 = DomainAttrs(did=domain, name='pbx_host',value=gatewayIdToIP(pbx))
+        # Implement Passthru authentication to the first PBX on the list.
+        # because Passthru Registration only works against one PBX
 
-        db.add(PBXDomainAttr1)
-        db.add(PBXDomainAttr2)
-        db.add(PBXDomainAttr3)
-        db.add(PBXDomainAttr4)
-        db.add(PBXDomainAttr5)
-        db.add(PBXDomainAttr6)
-        db.flush()
-        db.commit()
+        if authtype=="passthru":
 
-        #PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
-        #                                       enabled=dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value) 
+            # Check if list of PBX's
+            pbxs = pbx.split(',')
+            if pbxs is None:
+                #No list
+                pass
+            else:
+                #Grab the first entry out of the list
+                pbx=pbxs[0]
+            
+            PBXDomainAttr = DomainAttrs(did=domain, name='pbx_ip',value=gatewayIdToIP(pbx))
+            PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_type',value="0") 
+            PBXDomainAttr2 = DomainAttrs(did=domain, name='created_by',value="0") 
+            db.add(PBXDomainAttr)
+            db.add(PBXDomainAttr1)
+            db.add(PBXDomainAttr2)
+            db.flush()
+            db.commit()
+
+        # Implement external authentiction to either Realtime DB or Local Subscriber table
+
+        else:
+
+            # Serial folking will be used to forward registration info to multiple PBX's 
+            PBXDomainAttr1 = DomainAttrs(did=domain, name='dispatcher_alg_reg',value="8")
+            PBXDomainAttr2 = DomainAttrs(did=domain, name='dispatcher_alg_in',value="4")
+            #Attributes to specify that the domain was created manually
+            PBXDomainAttr3 = DomainAttrs(did=domain, name='pbx_type',value="0") 
+            PBXDomainAttr4 = DomainAttrs(did=domain, name='created_by',value="0") 
+            PBXDomainAttr5= DomainAttrs(did=domain, name='domain_auth',value=authtype) 
+            
+            if len(pbx) > 1:
+                #Create entry in dispatcher and set dispatcher_set_id in domain_attrs
+                for p in pbx.split(','):
+                    dispatcher = Dispatcher(setid=PBXDomain.id,destination=gatewayIdToIP(p))
+                    db.add(dispatcher)
+               
+                PBXDomainAttr6 = DomainAttrs(did=domain, name='dispatcher_set_id',value=PBXDomain.id)
+
+            db.add(PBXDomainAttr1)
+            db.add(PBXDomainAttr2)
+            db.add(PBXDomainAttr3)
+            db.add(PBXDomainAttr4)
+            db.add(PBXDomainAttr5)
+            db.add(PBXDomainAttr6)
+            db.flush()
+            db.commit()
+
     
     except sql_exceptions.SQLAlchemyError as ex:
         debugsException(ex, log_ex=False, print_ex=True, showstack=False)
