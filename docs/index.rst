@@ -23,7 +23,7 @@ http://demo.dsiprouter.org:5000
 
 username: admin:: 
 
-password: ZmIwMTdmY2I5NjE4::
+password: ZmIwMTdmY2I5NjE4
 
 
 Credits
