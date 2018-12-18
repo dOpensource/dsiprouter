@@ -69,6 +69,16 @@ install_mysql_community() {
     return 0
 }
 
+# $1 == command to test
+# returns: 0 == true, 1 == false
+cmdExists() {
+    if command -v "$1" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # $1 == attribute name
 # $2 == attribute value
 # $3 == whether to 'quote' value (use for strings)

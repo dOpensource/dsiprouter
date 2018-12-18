@@ -68,8 +68,7 @@ if [ ${WITH_SSL} -eq 1 ]; then
     DSIP_SSL_EMAIL="admin@$(hostname -f)"                                  # email in certs (for renewal)
     DSIP_GUI_PROTOCOL="https"     
 else
-    DSIP_GUI_PROTOCOL="http"     
-	
+    DSIP_GUI_PROTOCOL="http"
 fi
 
 
@@ -106,6 +105,11 @@ if [ -f /etc/redhat-release ]; then
 elif [ -f /etc/debian_version ]; then
 	export DISTRO="debian"
 	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+fi
+# Check if we are on AWS Instance
+AWS_ENABLED=0
+if cmdExists "ec2-metadata" || curl http://169.254.169.254 &>/dev/null; then
+    AWS_ENABLED=1
 fi
 
 function displayLogo {
@@ -554,6 +558,10 @@ EOF
         sed -i 's/RUN_RTPENGINE=no/RUN_RTPENGINE=yes/' /etc/default/ngcp-rtpengine-daemon
         #sed -i 's/# listen-udp = 12222/listen-udp = 7222/' /etc/rtpengine/rtpengine.conf
 
+        # Enable and start firewalld if not already running
+        systemctl enable firewalld
+        systemctl start firewalld
+
         # Setup Firewall rules for RTPEngine
         firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
         firewall-cmd --reload
@@ -595,7 +603,14 @@ EOF
         yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel &&
-        yum install -y "kernel-devel-uname-r == $(uname -r)"
+        # VPS kernel headers are generally custom-named or outdated
+        # so we have to grab them from archives (if on a VPS)
+        if (( $AWS_ENABLED == 0 )); then
+            yum install -y "kernel-devel-uname-r == $(uname -r)"
+        else
+            yum install -y https://rpmfind.net/linux/centos/$(cat /etc/redhat-release | cut -d ' ' -f 4)/updates/$(uname -m)/Packages/kernel-devel-$(uname -r).rpm ||
+            yum install -y https://rpmfind.net/linux/centos/$(cat /etc/redhat-release | cut -d ' ' -f 4)/os/$(uname -m)/Packages/kernel-devel-$(uname -r).rpm
+        fi
 
         if [ $? -ne 0 ]; then
             echo "Problem with installing the required libraries for RTPEngine"
@@ -663,6 +678,10 @@ EOF
             echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
             touch /var/log/rtpengine
             systemctl restart rsyslog
+
+            # Enable and start firewalld if not already running
+            systemctl enable firewalld
+            systemctl start firewalld
 
             # Setup Firewall rules for RTPEngine
             firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
@@ -752,18 +771,15 @@ function install {
             start
 
             # Tell them how to access the URL
-
-	    
             echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
-	
+            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}\n"
             if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
+                echo -e "Internal IP:  ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}\n"
             fi
 
             #echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
-    else
-	    echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
+        else
+            echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
             cleanupAndExit 1
         fi
     else
@@ -857,7 +873,7 @@ function start {
 function stop {
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
 		#kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
-        kill -9 $(pgrep -f runserver) 2>&1 >/dev/null
+        kill -9 $(pgrep -f runserver) &>/dev/null
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
 	else
@@ -892,7 +908,11 @@ function resetPassword {
 
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
 function generatePassword {
-    password=`date +%s | sha256sum | base64 | head -c 16`
+    if (( $AWS_ENABLED == 1 )); then
+        password=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+    else
+        password=$(date +%s | sha256sum | base64 | head -c 16)
+    fi
 
     # Add single quotes
     password1="'$password'"
@@ -982,7 +1002,7 @@ function processCMD {
 	while (( $# > 0 )); do
 		key="$1"
 		case $key in
-		install)
+			install)
                 shift
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
@@ -1065,10 +1085,10 @@ function processCMD {
                 configureKamailio
                 cleanupAndExit 0
                 ;;
-	    sslenable)
-		configureSSL
-		cleanupAndExit 0
-		;;
+            sslenable)
+                configureSSL
+                cleanupAndExit 0
+                ;;
             installmodules)
 			    shift
                 if [ "$1" == "-debug" ]; then
@@ -1094,7 +1114,7 @@ function processCMD {
                     set -x
                 fi
                 enableSERVERNAT
-	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by executing: systemctl restart kamailio"
 	   		    cleanupAndExit 0
                 ;;
             disableservernat)
@@ -1104,7 +1124,7 @@ function processCMD {
                     set -x
                 fi
                 disableSERVERNAT
-                echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+                echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by executing: systemctl restart kamailio"
                 cleanupAndExit 0
                 ;;
             resetpassword)
