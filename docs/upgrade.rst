@@ -25,16 +25,15 @@ Once the uninstall is complete you will need to either move or delete the /dsipr
 
 ::
   
-  mv /dsiprouter /usr/local/src (moving directory)
+  mv /opt/dsiprouter /usr/local/src (moving directory)
   or 
-  rm -r /dsiprouter (removing directory)
+  rm -r /opt/dsiprouter (removing directory)
 |  
 
 Installing dsiprouter v0.51
 
 ::
   
-  cd /opt/ 
 
   apt-get update
   apt-get install -y git curl
