@@ -311,3 +311,5 @@ Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using 
 
 7. Register a phone via dSIPRouter
 
+.. image:: images/freepbx-pt-setup-softphone
+          :align: center
