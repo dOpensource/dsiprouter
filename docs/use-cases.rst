@@ -295,9 +295,15 @@ Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using 
 
 . raw:: html
 
-        <iframe width="560" height="315" 
-        src="https://www.youtube.com/embed/OgTZLYYx1u8" 
-        frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>                </iframe>
+        
+        <object width="560" height="315"><param name="movie"
+        value="https://www.youtube.com/embed/OgTZLYYx1u8"></param><param
+        name="allowFullScreen" value="true"></param><param
+        name="allowscriptaccess" value="always"></param><embed
+        src="https://www.youtube.com/embed/OgTZLYYx1u8"
+        type="application/x-shockwave-flash" allowscriptaccess="always"
+        allowfullscreen="true" width=""
+        height="385"></embed></object>
 
 1. Click PBX and Endpoints
 2. Click Add
