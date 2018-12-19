@@ -309,7 +309,7 @@ Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using 
           
 6. Reload Kamailio
 
-7. Register a phone via dSIPRouter
+7. Register a phone via dSIPRouter - notice that we used the hostname of dSIPRouter as the Outbound Proxy.  This forces the registration thru the proxy.
 
 .. image:: images/freepbx-pt-setup-softphone.png
           :align: center
