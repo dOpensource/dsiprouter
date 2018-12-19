@@ -192,7 +192,7 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 FusionPBX Hosting
 =================
 
- Here we will demostrate how to setup dSIPRouter to enable hosting a PBX. In the following example we have multi domain support built-in PBX.
+ Here we will demostrate how to setup dSIPRouter to enable hosting FusionPBX. We have built-in support for FusionPBX that allows domains to be dynamically pulled from FusionPBX.
  
 1. Login to dSIPRouter
 2. Click PBX(s) and EndPoints
@@ -287,7 +287,30 @@ Provisioning and Registering a Polycom VVX Phone
          
           
  
- ^^^^^^^^^
- Asterisk or FreePBX
- ^^^^^^^^^^^^^^^^^^^
- 
+==========================================
+FreePBX Hosting - Pass Thru Authentication
+==========================================
+
+Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using Pass Thru Authentication. FreePBX is designed to be a single tenant system or in other words, it was built to handle one SIP Domain.  So, we use dSIPRouter to define a SIP Domain and we pass thru Registration info to the FreePBX server so that you don't have to change how authentication is done.  However, this will only work for one FreePBX server.  If you have a cluster of FreePBX servers then use "Local Subscriber Table" authentication.  The value of having dSIPRouter in front of FreePBX is to provide you with flexibility.  After setting this up you will have the ability upgrade or migrate users from one FreePBX instance to another without having to take an outage.  
+
+#. Click PBX and Endpoints
+#. Click Add
+
+.. image:: images/freepbx-pt-add-pbx.png
+          :align: center
+          
+#. Reload Kamailio
+
+#. Click Domains
+#. Click Add
+
+.. image:: images/freepbx-pt-add-domain.png
+          :align: center
+          
+#. Reload Kamailio
+
+#. Register a phone via dSIPRouter
+
+
+
+# 
