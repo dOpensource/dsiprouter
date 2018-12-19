@@ -293,24 +293,21 @@ FreePBX Hosting - Pass Thru Authentication
 
 Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using Pass Thru Authentication. FreePBX is designed to be a single tenant system or in other words, it was built to handle one SIP Domain.  So, we use dSIPRouter to define a SIP Domain and we pass thru Registration info to the FreePBX server so that you don't have to change how authentication is done.  However, this will only work for one FreePBX server.  If you have a cluster of FreePBX servers then use "Local Subscriber Table" authentication.  The value of having dSIPRouter in front of FreePBX is to provide you with flexibility.  After setting this up you will have the ability upgrade or migrate users from one FreePBX instance to another without having to take an outage.  
 
-#. Click PBX and Endpoints
-#. Click Add
+1. Click PBX and Endpoints
+2. Click Add
 
 .. image:: images/freepbx-pt-add-pbx.png
           :align: center
           
-#. Reload Kamailio
+3. Reload Kamailio
 
-#. Click Domains
-#. Click Add
+4. Click Domains
+5. Click Add
 
 .. image:: images/freepbx-pt-add-domain.png
           :align: center
           
-#. Reload Kamailio
+6. Reload Kamailio
 
-#. Register a phone via dSIPRouter
+7. Register a phone via dSIPRouter
 
-
-
-# 
