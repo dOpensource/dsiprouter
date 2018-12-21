@@ -63,6 +63,10 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl start firewalld
+
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent

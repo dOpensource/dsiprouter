@@ -609,6 +609,9 @@ EOF
             echo "FAILED: RTPEngine could not be installed!"
         fi
 
+    # TODO: need to find workaround for compiling rtpengine (building rpm's etc..)
+    # needing to compile requires updated kernel headers in some cases therefore mandatory restart
+    # which we want to avoid during install, it also causes issues with AWS AMI build process
     elif [[ $DISTRO == "centos" ]]; then
 
         function installKernelDevHeaders {
@@ -646,9 +649,18 @@ EOF
             else
                 # VPS kernel headers are generally custom, the headers MUST be updated
                 # in order to compile RTPengine, so we must restart for this case
+                # To accomodate AWS build process offload this to next startup on the AMI instance
                 printf '1' > ${DSIP_PROJECT_DIR}/.bootstrap
-                echo "Kernel headers have been updated to compile RTPEngine. Please restart system and run script again."
-                cleanupAndExit 2
+                echo "Kernel headers have been updated to compile RTPEngine. RTPEngine will be compiled and installed on next system restart."
+
+                # add to startup process before 'exit 0'
+                if grep 'exit 0' /etc/rc.local; then
+                    sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat\nexit 0|" /etc/rc.local
+                else
+                    printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat" "exit 0" >> /etc/rc.local
+                fi
+
+                return 0
             fi
         fi
 
@@ -744,6 +756,11 @@ EOF
                 cd ../..
                 touch ./.rtpengineinstalled
                 echo "RTPEngine has been installed!"
+
+                # remove bootstrap cmds from startup if on AMI image
+                if (( $AWS_ENABLED == 1 )); then
+                    sed -i -n '/dsiprouter\.sh rtpengineonly/!p' /etc/rc.local
+                fi
             else
                 echo "FAILED: RTPEngine could not be installed!"
             fi
@@ -803,7 +820,7 @@ function install {
         if (( $AWS_ENABLED == 1 )); then
             # add password reset right before exit 0
             if grep 'exit 0' /etc/rc.local; then
-                sed -ir "s|.*(exit 0).*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
+                sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
             else
                 printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword" "exit 0" >> /etc/rc.local
             fi

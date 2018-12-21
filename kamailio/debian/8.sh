@@ -59,6 +59,10 @@ function install {
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl start firewalld
+
     # Firewall settings
     firewall-cmd --zone=public --add-port=5060/udp --permanent
 
