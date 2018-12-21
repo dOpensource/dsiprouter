@@ -90,3 +90,13 @@ getConfigAttrib() {
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${DSIP_CONFIG_FILE})
     printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
 }
+
+# $1 == command to test
+# returns: 0 == true, 1 == false
+cmdExists() {
+    if command -v "$1" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}

@@ -636,12 +636,13 @@ EOF
             if [ -e ${DSIP_PROJECT_DIR}/.bootstrap ]; then
                 installKernelDevHeaders
                 rm -f ${DSIP_PROJECT_DIR}/.bootstrap
-            fi
             # VPS kernel headers are generally custom, the headers MUST be updated
             # in order to compile RTPengine, so we must restart for this case
-            touch ${DSIP_PROJECT_DIR}/.bootstrap
-            echo "Kernel headers have been updated to compile RTPEngine. Please restart system and run script again."
-            cleanupAndExit 2
+            else
+                touch ${DSIP_PROJECT_DIR}/.bootstrap
+                echo "Kernel headers have been updated to compile RTPEngine. Please restart system and run script again."
+                cleanupAndExit 2
+            fi
         fi
 
         if [ $? -ne 0 ]; then
