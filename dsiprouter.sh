@@ -632,13 +632,20 @@ EOF
         if (( $AWS_ENABLED == 0 )); then
             installKernelDevHeaders
         else
-            # VPS kernel headers updated, continue as normal
-            if [[ "$(cat ${DSIP_PROJECT_DIR}/.bootstrap)" == "1" ]]; then
-                installKernelDevHeaders
-                printf '0' > ${DSIP_PROJECT_DIR}/.bootstrap
-            # VPS kernel headers are generally custom, the headers MUST be updated
-            # in order to compile RTPengine, so we must restart for this case
+            if [ -e ${DSIP_PROJECT_DIR}/.bootstrap ]; then
+                BOOTSTRAP_MODE=$(cat ${DSIP_PROJECT_DIR}/.bootstrap)
+                if (( $BOOTSTRAP_MODE == 1 )); then
+                    # VPS kernel headers updated,
+                    # continue installing dev headers for this kernel
+                    installKernelDevHeaders
+                    printf '0' > ${DSIP_PROJECT_DIR}/.bootstrap
+                else
+                    # Bootstrap finished already, skip this
+                    echo "Kernel Dev Headers already updated."
+                fi
             else
+                # VPS kernel headers are generally custom, the headers MUST be updated
+                # in order to compile RTPengine, so we must restart for this case
                 printf '1' > ${DSIP_PROJECT_DIR}/.bootstrap
                 echo "Kernel headers have been updated to compile RTPEngine. Please restart system and run script again."
                 cleanupAndExit 2
