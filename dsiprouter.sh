@@ -68,8 +68,7 @@ if [ ${WITH_SSL} -eq 1 ]; then
     DSIP_SSL_EMAIL="admin@$(hostname -f)"                                  # email in certs (for renewal)
     DSIP_GUI_PROTOCOL="https"     
 else
-    DSIP_GUI_PROTOCOL="http"     
-	
+    DSIP_GUI_PROTOCOL="http"
 fi
 
 
@@ -106,6 +105,14 @@ if [ -f /etc/redhat-release ]; then
 elif [ -f /etc/debian_version ]; then
 	export DISTRO="debian"
 	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+elif [[ "$(cat /etc/os-release | grep '^ID=' 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2)" == "amzn" ]]; then
+	export DISTRO="amazon"
+	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+fi
+# Check if we are on AWS Instance
+AWS_ENABLED=0
+if cmdExists "ec2-metadata" || curl http://169.254.169.254 &>/dev/null; then
+    AWS_ENABLED=1
 fi
 
 function displayLogo {
@@ -152,15 +159,27 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "centos" ]]; then
         case "$DISTRO_VER" in
-        7)
-            if [[ -z "$KAM_VERSION" ]]; then
-                KAM_VERSION=51
-            fi
+            7)
+                if [[ -z "$KAM_VERSION" ]]; then
+                    KAM_VERSION=51
+                fi
+                ;;
+            *)
+                echo "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+                cleanupAndExit 1
             ;;
-        *)
-            echo "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-            cleanupAndExit 1
-            ;;
+        esac
+    elif [[ "$DISTRO" == "amazon" ]]; then
+        case "$DISTRO_VER" in
+            2)
+                if [[ -z "$KAM_VERSION" ]]; then
+                    KAM_VERSION=51
+                fi
+                ;;
+            *)
+                echo "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+                cleanupAndExit 1
+                ;;
         esac
     else
         echo "Your Operating System is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -497,6 +516,7 @@ function uninstallRTPEngine {
 
 # TODO: seperate source dir from install dir
 # makes upgrading / git merging much easier
+# TODO: add use case for amzn linux
 function installRTPEngine {
     cd ${DSIP_PROJECT_DIR}
 
@@ -554,6 +574,10 @@ EOF
         sed -i 's/RUN_RTPENGINE=no/RUN_RTPENGINE=yes/' /etc/default/ngcp-rtpengine-daemon
         #sed -i 's/# listen-udp = 12222/listen-udp = 7222/' /etc/rtpengine/rtpengine.conf
 
+        # Enable and start firewalld if not already running
+        systemctl enable firewalld
+        systemctl start firewalld
+
         # Setup Firewall rules for RTPEngine
         firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
         firewall-cmd --reload
@@ -587,6 +611,15 @@ EOF
 
     elif [[ $DISTRO == "centos" ]]; then
 
+        function installKernelDevHeaders {
+            yum install -y "kernel-devel-uname-r == $(uname -r)"
+            # if the headers for this kernel are not found try archives
+            if [ $? -ne 0 ]; then
+                yum install -y https://rpmfind.net/linux/centos/$(cat /etc/redhat-release | cut -d ' ' -f 4)/updates/$(uname -m)/Packages/kernel-devel-$(uname -r).rpm ||
+                yum install -y https://rpmfind.net/linux/centos/$(cat /etc/redhat-release | cut -d ' ' -f 4)/os/$(uname -m)/Packages/kernel-devel-$(uname -r).rpm
+            fi
+        }
+
         # Install required libraries
         yum install -y epel-release
         yum update -y
@@ -595,7 +628,21 @@ EOF
         yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel &&
-        yum install -y "kernel-devel-uname-r == $(uname -r)"
+
+        if (( $AWS_ENABLED == 0 )); then
+            installKernelDevHeaders
+        else
+            # VPS kernel headers updated, continue as normal
+            if [ -e ${DSIP_PROJECT_DIR}/.bootstrap ]; then
+                installKernelDevHeaders
+                rm -f ${DSIP_PROJECT_DIR}/.bootstrap
+            fi
+            # VPS kernel headers are generally custom, the headers MUST be updated
+            # in order to compile RTPengine, so we must restart for this case
+            touch ${DSIP_PROJECT_DIR}/.bootstrap
+            echo "Kernel headers have been updated to compile RTPEngine. Please restart system and run script again.\nCommands used (for your reference): $0 $*"
+            cleanupAndExit 2
+        fi
 
         if [ $? -ne 0 ]; then
             echo "Problem with installing the required libraries for RTPEngine"
@@ -663,6 +710,10 @@ EOF
             echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
             touch /var/log/rtpengine
             systemctl restart rsyslog
+
+            # Enable and start firewalld if not already running
+            systemctl enable firewalld
+            systemctl start firewalld
 
             # Setup Firewall rules for RTPEngine
             firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
@@ -735,6 +786,13 @@ function install {
             configureSSL
         fi
 
+        # for AMI images the instance-id may change (could be a clone)
+        # add to startup process a password reset to ensure its set correctly
+        if (( $AWS_ENABLED == 1 )); then
+            # add password reset right before exit 0
+             sed -r "s|.*(exit 0).*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
+        fi
+
         # Restart Kamailio with the new configurations
         systemctl restart kamailio
         if [ $? -eq 0 ]; then
@@ -752,18 +810,15 @@ function install {
             start
 
             # Tell them how to access the URL
-
-	    
             echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
-	
+            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}\n"
             if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
+                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}\n"
             fi
 
             #echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
-    else
-	    echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
+        else
+            echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
             cleanupAndExit 1
         fi
     else
@@ -857,7 +912,7 @@ function start {
 function stop {
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
 		#kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
-        kill -9 $(pgrep -f runserver) 2>&1 >/dev/null
+        kill -9 $(pgrep -f runserver) &>/dev/null
 		rm -rf /var/run/dsiprouter/dsiprouter.pid
 		echo "dSIPRouter was stopped"
 	else
@@ -892,7 +947,11 @@ function resetPassword {
 
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
 function generatePassword {
-    password=`date +%s | sha256sum | base64 | head -c 16`
+    if (( $AWS_ENABLED == 1 )); then
+        password=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+    else
+        password=$(date +%s | sha256sum | base64 | head -c 16)
+    fi
 
     # Add single quotes
     password1="'$password'"
@@ -982,7 +1041,7 @@ function processCMD {
 	while (( $# > 0 )); do
 		key="$1"
 		case $key in
-		install)
+			install)
                 shift
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
@@ -1065,10 +1124,10 @@ function processCMD {
                 configureKamailio
                 cleanupAndExit 0
                 ;;
-	    sslenable)
-		configureSSL
-		cleanupAndExit 0
-		;;
+            sslenable)
+                configureSSL
+                cleanupAndExit 0
+                ;;
             installmodules)
 			    shift
                 if [ "$1" == "-debug" ]; then
@@ -1094,7 +1153,7 @@ function processCMD {
                     set -x
                 fi
                 enableSERVERNAT
-	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by executing: systemctl restart kamailio"
 	   		    cleanupAndExit 0
                 ;;
             disableservernat)
@@ -1104,7 +1163,7 @@ function processCMD {
                     set -x
                 fi
                 disableSERVERNAT
-                echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by excuting: systemctl restart kamailio"
+                echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by executing: systemctl restart kamailio"
                 cleanupAndExit 0
                 ;;
             resetpassword)
