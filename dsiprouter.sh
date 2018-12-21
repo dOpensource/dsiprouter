@@ -802,7 +802,14 @@ function install {
         # add to startup process a password reset to ensure its set correctly
         if (( $AWS_ENABLED == 1 )); then
             # add password reset right before exit 0
-             sed -r "s|.*(exit 0).*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
+            if grep 'exit 0' /etc/rc.local; then
+                sed -ir "s|.*(exit 0).*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
+            else
+                printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword" "exit 0" >> /etc/rc.local
+            fi
+
+            # make sure rc.local is executable
+            chmod +x /etc/rc.local
         fi
 
         # Restart Kamailio with the new configurations
