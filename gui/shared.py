@@ -14,8 +14,8 @@ def getInternalIP():
 
 def getExternalIP():
     """ Returns external ip of system """
-
-    ip = requests.get("http://ipv4.myexternalip.com/raw").text.strip()
+    
+    ip = requests.get("http://myexternalip.com/raw").text.strip()
     if ip == None or ip == "":
         ip = requests.get("http://ipv4.icanhazip.com").text.strip()
     return ip
