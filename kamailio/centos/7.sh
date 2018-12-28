@@ -7,12 +7,16 @@ function install() {
     yum groupinstall -y 'core'
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim epel-release perl
+    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
+
+    # Start firewalld
+    systemctl start firewalld
+    systemctl enable firewalld
 
     # Start MySql
     systemctl start mariadb
@@ -40,7 +44,7 @@ EOF
 
 
     touch /etc/tmpfiles.d/kamailio.conf
-    echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
+    echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}

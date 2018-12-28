@@ -563,6 +563,7 @@ EOF
         touch /var/log/rtpengine
         systemctl restart rsyslog
 
+
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
         cp -f ./dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
@@ -594,8 +595,7 @@ EOF
         rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
         yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-            iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel &&
-        yum install -y "kernel-devel-uname-r == $(uname -r)"
+            iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb &&
 
         if [ $? -ne 0 ]; then
             echo "Problem with installing the required libraries for RTPEngine"
@@ -612,6 +612,9 @@ EOF
 
             # Copy binary to /usr/sbin
             cp -f ${DSIP_PROJECT_DIR}/rtpengine/daemon/rtpengine /usr/sbin/rtpengine
+
+	    # Make rtpengine config directory
+	    mkdir /etc/rtpengine
 
             # Remove RTPEngine kernel module if previously inserted
             if lsmod | grep 'xt_RTPENGINE'; then
@@ -630,62 +633,60 @@ EOF
                 cleanupAndExit 1
             fi
 
-            # Add startup script
-            (cat << EOF
-[Unit]
-Description=Kernel based rtp proxy
-After=syslog.target
-After=network.target
+        if [ "$SERVERNAT" == "0" ]; then
+            INTERFACE=$EXTERNAL_IP
+        else
+            INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
+        fi
 
-[Service]
-Type=forking
-PIDFile=/var/run/rtpengine.pid
-EnvironmentFile=-/etc/sysconfig/rtpengine
-ExecStart=/usr/sbin/rtpengine -p /var/run/rtpengine.pid \$OPTIONS
-
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+         (cat << EOF
+[rtpengine]
+table = -1
+interface = ${INTERFACE}
+listen-ng = 7722
+port-min = ${RTP_PORT_MIN}
+port-max = ${RTP_PORT_MAX}
+log-level = 7
+log-facility = local1
 EOF
-            ) > /etc/systemd/system/rtpengine.service
+         ) > /etc/rtpengine/rtpengine.conf
 
-            # Add Options File
-            (cat << EOF
-# Add extra options here
-# We dont support the NG protocol in this release
-#
-OPTIONS="-F -i ${INTERNAL_IP}!${EXTERNAL_IP} -u 127.0.0.1:7722 -m ${RTP_PORT_MIN} -M ${RTP_PORT_MAX} -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1"
-EOF
-            ) > /etc/sysconfig/rtpengine
+	# Setup Firewall rules for RTPEngine
+        firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+        firewall-cmd --reload
+        
+        # Setup RTPEngine Logging
+        echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
+        touch /var/log/rtpengine
+        systemctl restart rsyslog
 
-            # Setup RTPEngine Logging
-            echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
-            touch /var/log/rtpengine
-            systemctl restart rsyslog
+	# Create rtpengine user
+	useradd -U rtpengine
+        
+        # Setup tmp files
+        echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
+        cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.service /usr/lib/systemd/system/ngcp-rtpengine-daemon.service
+        cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-start /usr/sbin/
+        cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-stop-post /usr/sbin/
+        chmod +x /usr/sbin/rtpengine-*
 
-            # Setup Firewall rules for RTPEngine
-            firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
-            firewall-cmd --reload
+        # Enable the RTPEngine to start during boot
+        systemctl enable ngcp-rtpengine-daemon
+        # Start RTPEngine
+        systemctl start ngcp-rtpengine-daemon
+           
 
-            # Reload systemd configs
-            systemctl daemon-reload
-            # Enable the RTPEngine to start during boot
-            systemctl enable rtpengine
-            # Start RTPEngine
-            systemctl start rtpengine
+        # Start manually if the service fails to start
+        if [ $? -ne 0 ]; then
+              /usr/sbin/rtpengine --config-file=/etc/sysconfig/rtpengine --pidfile=/var/run/rtpengine.pid
+        fi
 
-            # Start manually if the service fails to start
-            if [ $? -ne 0 ]; then
-                /usr/sbin/rtpengine --config-file=/etc/sysconfig/rtpengine --pidfile=/var/run/rtpengine.pid
-            fi
-
-            # File to signify that the install happened
-            if [ $? -eq 0 ]; then
-                cd ../..
-                touch ./.rtpengineinstalled
-                echo "RTPEngine has been installed!"
-            fi
+        # File to signify that the install happened
+          if [ $? -eq 0 ]; then
+              cd ../..
+              touch ./.rtpengineinstalled
+              echo "RTPEngine has been installed!"
+          fi
         fi
     fi
 

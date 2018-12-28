@@ -1,0 +1,13 @@
+[Unit]
+Description= RTPEngine proxy for RTP and other media streams
+After=network.target iptables.service redis.service syslog.target
+# iptables.service is required only if the RTPEngine uses its kernel module. redis.service is required if the Redis server is working on the same machine along with the RTPEngine
+
+[Service]
+Type=simple
+PIDFile=/var/run/ngcp-rtpengine-daemon/ngcp-rtpengine-daemon.pid
+ExecStart=/usr/sbin/rtpengine-start /etc/default/ngcp-rtpengine-daemon
+# After systemd send kill signal to the daemon, clean the iptables stuffs (delete the forwarding table, remove the kernel module + delete iptables rules) 
+ExecStopPost=/usr/sbin/rtpengine-stop-post
+[Install]
+WantedBy=multi-user.target

@@ -6,7 +6,7 @@
 #!define WITH_USRLOCDB
 #!define WITH_ACCDB
 #!define WITH_DROUTE
-#!define WITH_DEBUG
+##!define WITH_DEBUG
 #!define WITH_NAT
 #!define WITH_DISPATCHER
 ##!define WITH_SERVERNAT
