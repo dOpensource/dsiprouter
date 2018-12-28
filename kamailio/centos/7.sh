@@ -72,6 +72,9 @@ EOF
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
 
+    #Make sure MariaDB starts before Kamailio
+    sed -i -E "s/(After=.*)/\1 mariadb.service/g" /lib/systemd/system/kamailio.service
+
     # TODO: add kamailio logrotate settings
 }
 
