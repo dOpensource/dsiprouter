@@ -12,8 +12,8 @@ Install (Don't Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ::
  
-  yum install -y epel-release
-  yum install -y git curl python36
+  
+  yum install -y git curl 
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
