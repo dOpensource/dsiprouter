@@ -622,16 +622,16 @@ EOF
             fi
 
             # Configure RTPEngine to support kernel packet forwarding
-            cd ${DSIP_PROJECT_DIR}/rtpengine/kernel-module && make && insmod xt_RTPENGINE.ko
-            if [ $? -ne 0 ]; then
-                echo "Problem installing RTPEngine kernel-module"
-                cleanupAndExit 1
-            fi
-            cd ${DSIP_PROJECT_DIR}/rtpengine/iptables-extension && make && cp -f libxt_RTPENGINE.so /lib64/xtables/
-            if [ $? -ne 0 ]; then
-                echo "Problem installing RTPEngine iptables-extension"
-                cleanupAndExit 1
-            fi
+            #cd ${DSIP_PROJECT_DIR}/rtpengine/kernel-module && make && insmod xt_RTPENGINE.ko
+            #if [ $? -ne 0 ]; then
+            #    echo "Problem installing RTPEngine kernel-module"
+            #    cleanupAndExit 1
+            #fi
+            #cd ${DSIP_PROJECT_DIR}/rtpengine/iptables-extension && make && cp -f libxt_RTPENGINE.so /lib64/xtables/
+            #if [ $? -ne 0 ]; then
+            #    echo "Problem installing RTPEngine iptables-extension"
+            #    cleanupAndExit 1
+            #fi
 
         if [ "$SERVERNAT" == "0" ]; then
             INTERFACE=$EXTERNAL_IP
@@ -666,6 +666,7 @@ EOF
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
         cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.service /usr/lib/systemd/system/ngcp-rtpengine-daemon.service
+        cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.default /etc/default/ngcp-rtpengine-daemon.conf
         cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-start /usr/sbin/
         cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-stop-post /usr/sbin/
         chmod +x /usr/sbin/rtpengine-*
