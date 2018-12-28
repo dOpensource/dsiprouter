@@ -707,6 +707,69 @@ function disableRTP {
 
 } #end of disableRTP
 
+function install_dsiprouter_ui {
+
+	echo -e "Attempting to install dSIPRouter...\n"
+        ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
+	
+ 	setPythonCmd
+	installModules
+
+	# set some defaults in settings.py
+        configurePythonSettings
+
+	# configure SSL
+        if [ ${WITH_SSL} -eq 1 ]; then
+            configureSSL
+        fi
+	
+	if [ $? -eq 0 ]; then
+            touch ./.installed
+            echo -e "\e[32m-------------------------\e[0m"
+            echo -e "\e[32mInstallation is complete! \e[0m"
+            echo -e "\e[32m-------------------------\e[0m\n"
+            displayLogo
+            echo -e "\n\nThe username and dynamically generated password are below:\n"
+
+            # Generate a unique admin password
+            generatePassword
+
+            # Start dSIPRouter
+            start
+
+            # Tell them how to access the URL
+
+
+            echo -e "You can access the dSIPRouter web gui by going to:\n"
+            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
+
+            if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
+                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
+            fi
+	fi
+
+}
+
+function uninstall_dsiprouter_ui {
+ if [ ! -f "./.installed" ]; then
+        echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
+    fi
+
+        # Stop dSIPRouter, remove ./.installed file, close firewall
+        stop
+
+    echo -e "Attempting to uninstall dSIPRouter UI...\n"
+    ./dsiprouter/$DISTRO/$DISTRO_VER.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
+
+    # Remove crontab entry
+    echo "Removing crontab entry"
+    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+
+    # Remove the hidden installed file, which denotes if it's installed or not
+        rm -f ./.installed
+
+    echo "dSIPRouter was uninstalled"
+}
 
 function install {
     if [ ! -f "./.installed" ]; then
@@ -723,6 +786,9 @@ function install {
         echo -e "Attempting to install dSIPRouter...\n"
         ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
 
+	# Setup PYTHON_CMD if it was just installed
+ 	setPythonCmd
+	
         # Configure Kamailio and Install dSIPRouter Modules
         if [ $? -eq 0 ]; then
             configureKamailio
@@ -751,7 +817,7 @@ function install {
             generatePassword
 
             # Start dSIPRouter
-            start
+            #start
 
             # Tell them how to access the URL
 
@@ -986,6 +1052,11 @@ function processCMD {
 		case $key in
 		install)
                 shift
+                if [ "$1" == "-ui" ]; then
+          	    install_dsiprouter_ui
+                    shift
+                fi
+		
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
                     set -x
@@ -1002,6 +1073,11 @@ function processCMD {
                 ;;
 			uninstall)
                 shift
+		if [ "$1" == "-ui" ]; then
+                    uninstall_dsiprouter_ui
+                    cleanupAndExit 0
+                    shift
+                fi
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
                     set -x
