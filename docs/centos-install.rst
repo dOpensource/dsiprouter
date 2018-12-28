@@ -25,7 +25,7 @@ One Line Version:
     yum install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install
 
 
-Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
+Once the install is complete, dSIPRouter will automatically start MariaDB, Kamailio and the UI.
 
 Install (Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
