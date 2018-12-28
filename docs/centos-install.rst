@@ -13,7 +13,7 @@ Install (Don't Proxy audio (RTP) traffic)
 ::
  
    
-  yum install -y git curl
+  yum install -y git curl python36u
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
