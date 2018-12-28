@@ -590,7 +590,7 @@ EOF
 
         # Install required libraries
         yum install -y epel-release
-        yum update -y
+        #yum update -y
         rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
         rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
         yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
