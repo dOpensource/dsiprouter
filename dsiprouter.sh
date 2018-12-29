@@ -817,7 +817,7 @@ function install {
             generatePassword
 
             # Start dSIPRouter
-            #start
+            start
 
             # Tell them how to access the URL
 
