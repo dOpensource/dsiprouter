@@ -194,6 +194,8 @@ function initialChecks {
     if [[ "$DISTRO" == "debian" ]]; then
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
+        # make sure we run package installs unattended
+        export DEBIAN_FRONTEND="noninteractive"
     fi
 
     # make sure root db settings set
