@@ -14,21 +14,38 @@ def getInternalIP():
 
 def getExternalIP():
     """ Returns external ip of system """
+    ip = None
+    externalip_services = ["http://ipv4.myexternalip.com/raw", "http://ipv4.icanhazip.com", "https://api.ipify.org"]
 
-    ip = requests.get("http://ipv4.myexternalip.com/raw").text.strip()
-    if ip == None or ip == "":
-        ip = requests.get("http://ipv4.icanhazip.com").text.strip()
+    for url in externalip_services:
+        try:
+            ip = requests.get(url).text.strip()
+        except:
+            pass
+        if ip != None and ip != "":
+            break
     return ip
 
 
 def getDNSNames():
     """ Returns ( hostname, domain ) of system """
 
-    host, domain = socket.getfqdn().split('.', 1)
+    host, domain = None, None
+
+    try:
+        host, domain = socket.getfqdn().split('.', 1)
+    except:
+        pass
     if host == None or host == "":
-        host, domain = socket.gethostbyaddr(socket.gethostname())[0].split('.', 1)
+        try:
+            host, domain = socket.gethostbyaddr(socket.gethostname())[0].split('.', 1)
+        except:
+            pass
     if host == None or host == "":
-        host, domain = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3].split('.', 1)
+        try:
+            host, domain = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3].split('.', 1)
+        except:
+            pass
     return host, domain
 
 def hostToIP(host):

@@ -1086,6 +1086,14 @@ function processCMD {
                     set -x
                     shift
                 fi
+                if [ "$1" == "-exip" ] || [ "$1" == "--external-ip" ]; then
+                    shift
+                    export EXTERNAL_IP="$1"
+                    shift
+                elif [ $(echo "$1" | cut -d '=' -f 1) == "--external-ip" ]; then
+                    export EXTERNAL_IP=$(echo "$1" | cut -d '=' -f 2)
+                    shift
+                fi
                 if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
                     SERVERNAT=1
                     installRTPEngine
