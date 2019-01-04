@@ -66,6 +66,8 @@ The following fields needs to be entered
 Field                Value
 ==================   ============
 Username             Username from dSIPRouter PBX Setup
+Authentication       Outbound
+Registration         Send 
 SIP Server           Domain name defined in the dSIPRouter PBX Setup
 SIP Server           SIP port, which is 5060 in dSIPRouter
 ==================   ============
