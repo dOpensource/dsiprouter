@@ -110,9 +110,9 @@ elif [[ "$(cat /etc/os-release | grep '^ID=' 2>/dev/null | cut -d '=' -f 2 | cut
 	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
 fi
 # Check if we are on AWS Instance
-AWS_ENABLED=0
+export AWS_ENABLED=0
 if cmdExists "ec2-metadata" || curl http://169.254.169.254 &>/dev/null; then
-    AWS_ENABLED=1
+    export AWS_ENABLED=1
 fi
 
 function displayLogo {
@@ -131,7 +131,7 @@ ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -
 # Cleanup exported variables on exit
 function cleanupAndExit {
     unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
-    unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD
+    unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD AWS_ENABLED
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE MYSQL_KAM_PASSWORD MYSQL_KAM_USERNAME MYSQL_KAM_DATABASE
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET
     unset -f setPythonCmd
@@ -655,9 +655,14 @@ EOF
                 printf '1' > ${DSIP_PROJECT_DIR}/.bootstrap
                 echo "Kernel headers have been updated to compile RTPEngine. RTPEngine will be compiled and installed on next system restart."
 
+                # make sure rc.local exists
+                if [ ! -e /etc/rc.local ]; then
+                    echo '#!/usr/bin/env bash' > /etc/rc.local
+                fi
+
                 # add to startup process before 'exit 0'
                 if grep 'exit 0' /etc/rc.local; then
-                    sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat\nexit 0|" /etc/rc.local
+                    sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat\nexit 0|" /etc/rc.local
                 else
                     printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat" "exit 0" >> /etc/rc.local
                 fi
@@ -820,9 +825,14 @@ function install {
         # for AMI images the instance-id may change (could be a clone)
         # add to startup process a password reset to ensure its set correctly
         if (( $AWS_ENABLED == 1 )); then
+            # make sure rc.local exists
+            if [ ! -e /etc/rc.local ]; then
+                echo '#!/usr/bin/env bash' > /etc/rc.local
+            fi
+
             # add password reset right before exit 0
             if grep 'exit 0' /etc/rc.local; then
-                sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|\.${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
+                sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
             else
                 printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword" "exit 0" >> /etc/rc.local
             fi
@@ -986,7 +996,7 @@ function resetPassword {
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
 function generatePassword {
     if (( $AWS_ENABLED == 1 )); then
-        password=$(curl http://169.254.169.254/latest/meta-data/instance-id)
+        password=$(curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null)
     else
         password=$(date +%s | sha256sum | base64 | head -c 16)
     fi

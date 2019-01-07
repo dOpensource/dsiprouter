@@ -35,6 +35,17 @@ function install {
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter.service
+
+    # Required changes if on an AMI instance
+    if (( $AWS_ENABLED == 1 )); then
+        # Change default password for debian-sys-maint
+        # if user is not used we don't worry if this fails
+        # we must however change the password in /etc/mysql/debian.cnf
+        # to comply with AWS AMI image standards
+        INSTANCE_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null)
+        mysql -e "SET PASSWORD FOR 'debian-sys-maint'@'localhost' = PASSWORD('$(INSTANCE_ID)')" 2>/dev/null
+        sed -i "s|password =.*|password = ${INSTANCE_ID}|g" /etc/mysql/debian.cnf
+    fi
 }
 
 function uninstall {
