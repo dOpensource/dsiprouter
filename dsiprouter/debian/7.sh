@@ -27,16 +27,6 @@ function install {
         exit 1
     fi
 
-    # Install dSIPRouter as a service
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-    sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-    sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp /lib/systemd/system/dsiprouter.service
-    chmod 644 /lib/systemd/system/dsiprouter.service
-    systemctl daemon-reload
-    systemctl enable dsiprouter.service
-
     # Required changes if on an AMI instance
     if (( $AWS_ENABLED == 1 )); then
         # Change default password for debian-sys-maint
@@ -47,6 +37,16 @@ function install {
         mysql -e "SET PASSWORD FOR 'debian-sys-maint'@'localhost' = PASSWORD('$(INSTANCE_ID)')" 2>/dev/null
         sed -i "s|password =.*|password = ${INSTANCE_ID}|g" /etc/mysql/debian.cnf
     fi
+
+    # Install dSIPRouter as a service
+    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
+    sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
+    sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
+
+    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp /lib/systemd/system/dsiprouter.service
+    chmod 644 /lib/systemd/system/dsiprouter.service
+    systemctl daemon-reload
+    systemctl enable dsiprouter.service
 }
 
 function uninstall {
