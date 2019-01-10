@@ -50,7 +50,6 @@ install_mysql_community() {
     fi
 
     # start mysql without password checking
-
     systemctl stop mysqld 2>/dev/null
     systemctl set-environment MYSQLD_OPTS="--skip-grant-tables" &&
     systemctl start mysqld
@@ -99,4 +98,10 @@ cmdExists() {
     else
         return 1
     fi
+}
+
+# returns: AMI instance ID || blank string
+getInstanceID() {
+    curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+    ec2-metadata -i 2>/dev/null
 }

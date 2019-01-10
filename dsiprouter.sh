@@ -250,14 +250,17 @@ function initialChecks {
 
 # exported because its used throughout called scripts as well
 function setPythonCmd {
-    if [[ -z "$PYTHON_CMD" ]]; then
+    # if local var is set just export
+    if [[ ! -z "$PYTHON_CMD" ]]; then
         export PYTHON_CMD="$PYTHON_CMD"
+        return 0
     fi
 
-    possible_python_versions=$(find /usr/bin -name "python$REQ_PYTHON_MAJOR_VER*" -type f -executable  2>/dev/null)
+    possible_python_versions=$(find /usr/bin /usr/local/bin -name "python$REQ_PYTHON_MAJOR_VER*" -type f -executable  2>/dev/null)
     for i in $possible_python_versions; do
         ver=$($i -V 2>&1)
-        if [ $? -eq 0 ]; then  #Check if the version parameter is working correctly
+        # validate command produces viable python version
+        if [ $? -eq 0 ]; then
             echo $ver | grep $REQ_PYTHON_MAJOR_VER >/dev/null
             if [ $? -eq 0 ]; then
                 export PYTHON_CMD="$i"
@@ -653,19 +656,17 @@ EOF
                 # in order to compile RTPengine, so we must restart for this case
                 # To accomodate AWS build process offload this to next startup on the AMI instance
                 printf '1' > ${DSIP_PROJECT_DIR}/.bootstrap
-                echo "Kernel headers have been updated to compile RTPEngine. RTPEngine will be compiled and installed on next system restart."
+                printf '%s\n%s\n'                                                                               \
+                    "Kernel packages have been updated to compile RTPEngine and will be installed on reboot."   \
+                    "RTPEngine will be compiled and installed on reboot after kernel headers are updated."
 
-                # make sure rc.local exists
-                if [ ! -e /etc/rc.local ]; then
-                    echo '#!/usr/bin/env bash' > /etc/rc.local
-                fi
-
-                # add to startup process before 'exit 0'
-                if grep 'exit 0' /etc/rc.local; then
-                    sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat\nexit 0|" /etc/rc.local
+                # add to startup process finishing rtpengine install (using cron)
+                if [ ${SERVERNAT:-0} -eq 1 ]; then
+                    OPTS='-servernat'
                 else
-                    printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh rtpengineonly -servernat" "exit 0" >> /etc/rc.local
+                    OPTS=''
                 fi
+                crontab -l | { cat; echo "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh rtpengineonly ${OPTS}"; } | crontab -
 
                 return 0
             fi
@@ -764,9 +765,9 @@ EOF
                 touch ./.rtpengineinstalled
                 echo "RTPEngine has been installed!"
 
-                # remove bootstrap cmds from startup if on AMI image
+                # remove bootstrap cmds from cron if on AMI image
                 if (( $AWS_ENABLED == 1 )); then
-                    sed -i -n '/dsiprouter\.sh rtpengineonly/!p' /etc/rc.local
+                    crontab -l | grep -v -F -w 'dsiprouter.sh rtpengineonly' | crontab -
                 fi
             else
                 echo "FAILED: RTPEngine could not be installed!"
@@ -825,20 +826,36 @@ function install {
         # for AMI images the instance-id may change (could be a clone)
         # add to startup process a password reset to ensure its set correctly
         if (( $AWS_ENABLED == 1 )); then
-            # make sure rc.local exists
-            if [ ! -e /etc/rc.local ]; then
-                echo '#!/usr/bin/env bash' > /etc/rc.local
-            fi
+            # add password reset to boot process (using cron)
+            crontab -l | { cat; echo "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"; } | crontab -
+            # Required changes for Debian AMI's
+            if [[ $DISTRO == "debian" ]]; then
+                # Remove debian-sys-maint password for initial AMI scan
+                sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
 
-            # add password reset right before exit 0
-            if grep 'exit 0' /etc/rc.local; then
-                sed -i "$(grep -n 'exit 0' /etc/rc.local | tail -1 | cut -d ':' -f 1)s|.*|${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword\nexit 0|" /etc/rc.local
-            else
-                printf '\n%s\n%s' "${DSIP_PROJECT_DIR}/dsiprouter\.sh resetpassword" "exit 0" >> /etc/rc.local
-            fi
+                # Change default password for debian-sys-maint to instance-id at next boot
+                # we must also change the corresponding password in /etc/mysql/debian.cnf
+                # to comply with AWS AMI image standards
+                # this must run at startup as well so create temp script & add to cron
+                (cat << EOF
+#!/usr/bin/env bash
 
-            # make sure rc.local is executable
-            chmod +x /etc/rc.local
+$(declare -f getInstanceID)
+
+INSTANCE_ID=\$(getInstanceID)
+mysql -e "CREATE USER IF NOT EXISTS 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}'"
+mysql -e "GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}'"
+sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
+crontab -l | grep -v -F -w '.reset_debiansys_user.sh' | crontab -
+rm -f ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
+
+exit 0
+EOF
+                ) > ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
+                # note that the script will remove itself after execution
+                chmod +x ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
+                crontab -l | { cat; echo "@reboot ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"; } | crontab -
+            fi
         fi
 
         # Restart Kamailio with the new configurations
@@ -863,8 +880,6 @@ function install {
             if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
                 echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}\n"
             fi
-
-            #echo -e "Your Kamailio configuration has been backed up and a new configuration has been installed.  Please restart Kamailio so that the changes can become active\n"
         else
             echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
             cleanupAndExit 1
@@ -923,9 +938,8 @@ function installModules {
 function start {
     # Check if the dSIPRouter process is already running
     if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
-        PID=`cat /var/run/dsiprouter/dsiprouter.pid`
-        ps -ef | grep $PID > /dev/null
-        if [ $? -eq 0 ]; then
+        PID=$(cat /var/run/dsiprouter/dsiprouter.pid)
+        if ps -p ${PID} &>/dev/null; then
             echo "dSIPRouter is already running under process id $PID"
             cleanupAndExit 1
         fi
@@ -943,11 +957,17 @@ function start {
         nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >/var/log/dsiprouter.log 2>&1 &
     fi
 
-    # Store the PID of the process
     PID=$!
+    # Make sure process is still running
+    if ! ps -p ${PID} &>/dev/null; then
+        echo "Unable to start dSIPRouter"
+        cleanupAndExit 1
+    fi
+
+    # Store the PID of the process
     if [ $PID -gt 0 ]; then
         if [ ! -e /var/run/dsiprouter ]; then
-            mkdir /var/run/dsiprouter/
+            mkdir -p /var/run/dsiprouter/
         fi
 
         echo $PID > /var/run/dsiprouter/dsiprouter.pid
@@ -996,7 +1016,7 @@ function resetPassword {
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
 function generatePassword {
     if (( $AWS_ENABLED == 1 )); then
-        password=$(curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null)
+        password=$(getInstanceID)
     else
         password=$(date +%s | sha256sum | base64 | head -c 16)
     fi
