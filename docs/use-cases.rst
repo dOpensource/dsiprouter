@@ -50,7 +50,7 @@ Here are the steps to set it up using Username/Password Authentication:
 7. Click "Reload" to make the change active.
 
 =====================================
-Using SIP Trunking  - FreePBX Example
+Using PJSIP Trunking  - FreePBX Example
 =====================================
 
 The following screenshot(s) shows how to configure a PJSIP trunk within FreePBX for Username/Password Authentication.  
@@ -66,6 +66,8 @@ The following fields needs to be entered
 Field                Value
 ==================   ============
 Username             Username from dSIPRouter PBX Setup
+Authentication       Outbound
+Registration         Send 
 SIP Server           Domain name defined in the dSIPRouter PBX Setup
 SIP Server           SIP port, which is 5060 in dSIPRouter
 ==================   ============
@@ -303,8 +305,6 @@ Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using 
         type="application/x-shockwave-flash" allowscriptaccess="always"
         allowfullscreen="true" width=""
         height="385"></embed></object>
-
-
 
 ------------------
 Steps to Implement

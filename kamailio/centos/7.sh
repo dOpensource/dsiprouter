@@ -7,12 +7,16 @@ function install() {
     yum groupinstall -y 'core'
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim epel-release perl
+    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
+
+    # Start firewalld
+    systemctl start firewalld
+    systemctl enable firewalld
 
     # Start MySql
     systemctl start mariadb
@@ -71,6 +75,9 @@ EOF
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
+
+    #Make sure MariaDB starts before Kamailio
+    sed -i -E "s/(After=.*)/\1 mariadb.service/g" /lib/systemd/system/kamailio.service
 
     # TODO: add kamailio logrotate settings
 }

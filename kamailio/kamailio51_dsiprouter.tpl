@@ -6,7 +6,7 @@
 #!define WITH_USRLOCDB
 #!define WITH_ACCDB
 #!define WITH_DROUTE
-#!define WITH_DEBUG
+##!define WITH_DEBUG
 #!define WITH_NAT
 #!define WITH_DISPATCHER
 ##!define WITH_SERVERNAT
@@ -723,7 +723,7 @@ route[NEXTHOP] {
 	xlog("L_DEBUG", "NEXTHOP-DOMAINROUTING: should be routed to $rd:$rp"); 
         
 	#We are going to pass this request on to the backend server
-        #record_route();
+        record_route();
 	
 	#Fix NAT'd contact so that calls are routed back correctly when a BYE occurs
 	#fix_nated_contact();

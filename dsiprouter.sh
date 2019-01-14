@@ -630,7 +630,6 @@ EOF
 
         # Install required libraries
         yum install -y epel-release
-        yum update -y
         rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
         rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
         yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
@@ -688,56 +687,43 @@ EOF
             # Copy binary to /usr/sbin
             cp -f ${DSIP_PROJECT_DIR}/rtpengine/daemon/rtpengine /usr/sbin/rtpengine
 
+            # Make rtpengine config directory
+            mkdir /etc/rtpengine
+
             # Remove RTPEngine kernel module if previously inserted
             if lsmod | grep 'xt_RTPENGINE'; then
                 rmmod xt_RTPENGINE
             fi
 
             # Configure RTPEngine to support kernel packet forwarding
-            cd ${DSIP_PROJECT_DIR}/rtpengine/kernel-module && make && insmod xt_RTPENGINE.ko
-            if [ $? -ne 0 ]; then
-                echo "Problem installing RTPEngine kernel-module"
-                cleanupAndExit 1
+            #cd ${DSIP_PROJECT_DIR}/rtpengine/kernel-module && make && insmod xt_RTPENGINE.ko
+            #if [ $? -ne 0 ]; then
+            #    echo "Problem installing RTPEngine kernel-module"
+            #    cleanupAndExit 1
+            #fi
+            #cd ${DSIP_PROJECT_DIR}/rtpengine/iptables-extension && make && cp -f libxt_RTPENGINE.so /lib64/xtables/
+            #if [ $? -ne 0 ]; then
+            #    echo "Problem installing RTPEngine iptables-extension"
+            #    cleanupAndExit 1
+            #fi
+
+            if [ "$SERVERNAT" == "0" ]; then
+                INTERFACE=$EXTERNAL_IP
+            else
+                INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
             fi
-            cd ${DSIP_PROJECT_DIR}/rtpengine/iptables-extension && make && cp -f libxt_RTPENGINE.so /lib64/xtables/
-            if [ $? -ne 0 ]; then
-                echo "Problem installing RTPEngine iptables-extension"
-                cleanupAndExit 1
-            fi
 
-            # Add startup script
             (cat << EOF
-[Unit]
-Description=Kernel based rtp proxy
-After=syslog.target
-After=network.target
-
-[Service]
-Type=forking
-PIDFile=/var/run/rtpengine.pid
-EnvironmentFile=-/etc/sysconfig/rtpengine
-ExecStart=/usr/sbin/rtpengine -p /var/run/rtpengine.pid \$OPTIONS
-
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+[rtpengine]
+table = -1
+interface = ${INTERFACE}
+listen-ng = 7722
+port-min = ${RTP_PORT_MIN}
+port-max = ${RTP_PORT_MAX}
+log-level = 7
+log-facility = local1
 EOF
-            ) > /etc/systemd/system/rtpengine.service
-
-            # Add Options File
-            (cat << EOF
-# Add extra options here
-# We dont support the NG protocol in this release
-#
-OPTIONS="-F -i ${INTERNAL_IP}!${EXTERNAL_IP} -u 127.0.0.1:7722 -m ${RTP_PORT_MIN} -M ${RTP_PORT_MAX} -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1"
-EOF
-            ) > /etc/sysconfig/rtpengine
-
-            # Setup RTPEngine Logging
-            echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
-            touch /var/log/rtpengine
-            systemctl restart rsyslog
+            ) > /etc/rtpengine/rtpengine.conf
 
             # Enable and start firewalld if not already running
             systemctl enable firewalld
@@ -747,12 +733,29 @@ EOF
             firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
             firewall-cmd --reload
 
+            # Setup RTPEngine Logging
+            echo "local1.*      -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
+            touch /var/log/rtpengine
+            systemctl restart rsyslog
+
+            # Create rtpengine user
+            useradd -U rtpengine
+
+            # Setup tmp files
+            echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
+            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.service /usr/lib/systemd/system/ngcp-rtpengine-daemon.service
+            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.default /etc/default/ngcp-rtpengine-daemon.conf
+            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-start /usr/sbin/
+            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-stop-post /usr/sbin/
+            chmod +x /usr/sbin/rtpengine-*
+
             # Reload systemd configs
             systemctl daemon-reload
             # Enable the RTPEngine to start during boot
-            systemctl enable rtpengine
+            systemctl enable ngcp-rtpengine-daemon
             # Start RTPEngine
-            systemctl start rtpengine
+            systemctl start ngcp-rtpengine-daemon
+
 
             # Start manually if the service fails to start
             if [ $? -ne 0 ]; then
@@ -772,8 +775,6 @@ EOF
             else
                 echo "FAILED: RTPEngine could not be installed!"
             fi
-        else
-            echo "FAILED: RTPEngine could not be installed!"
         fi
     fi
 
@@ -793,6 +794,69 @@ function disableRTP {
 
 } #end of disableRTP
 
+function install_dsiprouter_ui {
+
+	echo -e "Attempting to install dSIPRouter...\n"
+        ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
+
+ 	setPythonCmd
+	installModules
+
+	# set some defaults in settings.py
+        configurePythonSettings
+
+	# configure SSL
+        if [ ${WITH_SSL} -eq 1 ]; then
+            configureSSL
+        fi
+
+	if [ $? -eq 0 ]; then
+            touch ./.installed
+            echo -e "\e[32m-------------------------\e[0m"
+            echo -e "\e[32mInstallation is complete! \e[0m"
+            echo -e "\e[32m-------------------------\e[0m\n"
+            displayLogo
+            echo -e "\n\nThe username and dynamically generated password are below:\n"
+
+            # Generate a unique admin password
+            generatePassword
+
+            # Start dSIPRouter
+            start
+
+            # Tell them how to access the URL
+
+
+            echo -e "You can access the dSIPRouter web gui by going to:\n"
+            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
+
+            if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
+                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
+            fi
+	fi
+
+}
+
+function uninstall_dsiprouter_ui {
+ if [ ! -f "./.installed" ]; then
+        echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
+    fi
+
+        # Stop dSIPRouter, remove ./.installed file, close firewall
+        stop
+
+    echo -e "Attempting to uninstall dSIPRouter UI...\n"
+    ./dsiprouter/$DISTRO/$DISTRO_VER.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
+
+    # Remove crontab entry
+    echo "Removing crontab entry"
+    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+
+    # Remove the hidden installed file, which denotes if it's installed or not
+        rm -f ./.installed
+
+    echo "dSIPRouter was uninstalled"
+}
 
 function install {
     if [ ! -f "./.installed" ]; then
@@ -808,6 +872,9 @@ function install {
         fi
         echo -e "Attempting to install dSIPRouter...\n"
         ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
+
+        # Setup PYTHON_CMD if it was just installed
+        setPythonCmd
 
         # Configure Kamailio and Install dSIPRouter Modules
         if [ $? -eq 0 ]; then
@@ -1124,6 +1191,10 @@ function processCMD {
                     export EXTERNAL_IP=$(echo "$1" | cut -d '=' -f 2)
                     shift
                 fi
+                if [ "$1" == "-ui" ]; then
+          	        install_dsiprouter_ui
+                    shift
+                fi
                 if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
                     SERVERNAT=1
                     installRTPEngine
@@ -1138,6 +1209,11 @@ function processCMD {
                 if [ "$1" == "-debug" ]; then
                     DEBUG=1
                     set -x
+                    shift
+                fi
+                if [ "$1" == "-ui" ]; then
+                    uninstall_dsiprouter_ui
+                    cleanupAndExit 0
                     shift
                 fi
                 if [ "$1" == "-rtpengine" ]; then

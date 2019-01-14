@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-BUILD_VERSION="v0.52"
+BUILD_VERSION="feature-ami"
 
 cmdExists() {
     if command -v "$1" > /dev/null 2>&1; then

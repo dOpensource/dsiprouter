@@ -1,7 +1,7 @@
 Upgrade dSIPRouter
 ====================
 
-In this section we will show you how to upgrading from 0.50 to 0.51.
+In this section we will show you how to upgrade from 0.50 to 0.51.
 
 Before starting the upgrade process you will need to backup your kamailio database using the following command: 
 
@@ -25,15 +25,16 @@ Once the uninstall is complete you will need to either move or delete the /dsipr
 
 ::
   
-  mv /opt/dsiprouter /usr/local/src (moving directory)
+  mv /dsiprouter /usr/local/src (moving directory)
   or 
-  rm -r /opt/dsiprouter (removing directory)
+  rm -r /dsiprouter (removing directory)
 |  
 
 Installing dsiprouter v0.51
 
 ::
   
+  cd /opt/ 
 
   apt-get update
   apt-get install -y git curl
