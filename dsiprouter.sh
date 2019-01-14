@@ -24,7 +24,7 @@
 #===========================================================#
 
 # Set project dir (where src and install files go)
-export DSIP_PROJECT_DIR="$(pwd)"
+export DSIP_PROJECT_DIR="$(dirname $(readlink -f $0))"
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
@@ -665,7 +665,7 @@ EOF
                 else
                     OPTS=''
                 fi
-                cronAppend "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh rtpengineonly ${OPTS}"
+                cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh rtpengineonly ${OPTS}"
 
                 return 0
             fi
@@ -894,7 +894,7 @@ function install {
         # add to startup process a password reset to ensure its set correctly
         if (( $AWS_ENABLED == 1 )); then
             # add password reset to boot process (using cron)
-            cronAppend "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
+            cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
             # Required changes for Debian AMI's
             if [[ $DISTRO == "debian" ]]; then
                 # Remove debian-sys-maint password for initial AMI scan
@@ -923,7 +923,7 @@ EOF
                 ) > ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
                 # note that the script will remove itself after execution
                 chmod +x ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
-                cronAppend "@reboot ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"
+                cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"
             fi
         fi
 

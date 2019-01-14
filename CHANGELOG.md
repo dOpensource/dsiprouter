@@ -2,6 +2,21 @@
 
 
 
+### Install Script Fixes
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Mon, 14 Jan 2019 17:21:32 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Fix project path for absolute path resolution
+- Fix cron jobs for empty crontab use case
+
+
+---
+
+
 ### Install Script Improvement
 
 > Branches Affected: feature-ami  
