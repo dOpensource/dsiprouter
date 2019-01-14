@@ -105,3 +105,15 @@ getInstanceID() {
     curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
     ec2-metadata -i 2>/dev/null
 }
+
+# $1 == crontab entry to append
+cronAppend() {
+    local ENTRY="$1"
+    crontab -l | { cat; echo "$ENTRY"; } | crontab -
+}
+
+# $1 == crontab entry to remove
+cronRemove() {
+    local ENTRY="$1"
+    crontab -l | grep -v -F -w "$ENTRY" | crontab -
+}

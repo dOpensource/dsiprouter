@@ -665,7 +665,7 @@ EOF
                 else
                     OPTS=''
                 fi
-                crontab -l | { cat; echo "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh rtpengineonly ${OPTS}"; } | crontab -
+                cronAppend "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh rtpengineonly ${OPTS}"
 
                 return 0
             fi
@@ -770,7 +770,7 @@ EOF
 
                 # remove bootstrap cmds from cron if on AMI image
                 if (( $AWS_ENABLED == 1 )); then
-                    crontab -l | grep -v -F -w 'dsiprouter.sh rtpengineonly' | crontab -
+                    cronRemove 'dsiprouter.sh rtpengineonly'
                 fi
             else
                 echo "FAILED: RTPEngine could not be installed!"
@@ -850,7 +850,7 @@ function uninstall_dsiprouter_ui {
 
     # Remove crontab entry
     echo "Removing crontab entry"
-    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+    cronRemove 'dsiprouter_cron.py'
 
     # Remove the hidden installed file, which denotes if it's installed or not
         rm -f ./.installed
@@ -894,7 +894,7 @@ function install {
         # add to startup process a password reset to ensure its set correctly
         if (( $AWS_ENABLED == 1 )); then
             # add password reset to boot process (using cron)
-            crontab -l | { cat; echo "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"; } | crontab -
+            cronAppend "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
             # Required changes for Debian AMI's
             if [[ $DISTRO == "debian" ]]; then
                 # Remove debian-sys-maint password for initial AMI scan
@@ -907,13 +907,15 @@ function install {
                 (cat << EOF
 #!/usr/bin/env bash
 
+# declare imported functions from library
 $(declare -f getInstanceID)
+$(declare -f cronRemove)
 
 INSTANCE_ID=\$(getInstanceID)
 mysql -e "CREATE USER IF NOT EXISTS 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}'"
 mysql -e "GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}'"
 sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
-crontab -l | grep -v -F -w '.reset_debiansys_user.sh' | crontab -
+cronRemove '.reset_debiansys_user.sh'
 rm -f ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
 
 exit 0
@@ -921,7 +923,7 @@ EOF
                 ) > ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
                 # note that the script will remove itself after execution
                 chmod +x ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
-                crontab -l | { cat; echo "@reboot ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"; } | crontab -
+                cronAppend "@reboot ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"
             fi
         fi
 
@@ -979,7 +981,7 @@ function uninstall {
 
     # Remove crontab entry
     echo "Removing crontab entry"
-    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+    cronRemove 'dsiprouter_cron.py'
 
     # Remove the hidden installed file, which denotes if it's installed or not
 	rm -f ./.installed
@@ -997,8 +999,8 @@ function installModules {
     done
 
     # Setup dSIPRouter Cron scheduler
-    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
-    echo -e "*/1 * * * *  $PYTHON_CMD $(pwd)/gui/dsiprouter_cron.py" | crontab -
+    cronRemove 'dsiprouter_cron.py'
+    cronAppend "*/1 * * * *  ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py"
 }
 
 
