@@ -12,6 +12,7 @@
 ##!define WITH_SERVERNAT
 #!define WITH_MULTIDOMAIN
 #!define WITH_TELEBLOCK
+#!define WITH_ANTIFLOOD
 ##!define WITH_DBCLUSTER
 #
 #!substdef "!INTERNAL_IP_ADDR!198.211.102.60!g"
@@ -258,6 +259,8 @@ mpath="/usr/lib/x86_64-linux-gnu/kamailio/modules/"
 #!else
 mpath="/usr/lib/x86_64-linux-gnu/kamailio/modules/"
 #!endif
+
+server_signature=no
 
 #!ifdef WITH_MYSQL
 loadmodule "db_mysql.so"
