@@ -33,7 +33,7 @@ Global Outbound Routes
         
         
         
-        b)Click on the greed Add button.
+        b)Click on the green Add button.
         
         
 
