@@ -13,6 +13,7 @@ function install {
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     yum install -y https://centos7.iuscommunity.org/ius-release.rpm
     yum install -y python36u python36u-libs python36u-devel python36u-pip
+    yum install -y logrotate rsyslog
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -29,6 +30,14 @@ function install {
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
+
+    # Setup dSIPRouter Logging
+    echo "local2.*     -/var/log/dsiprouter.log" > /etc/rsyslog.d/dsiprouter.conf
+    touch /var/log/dsiprouter.log
+    systemctl restart rsyslog
+
+    # Setup logrotate
+    cp -f ${DSIP_PROJECT_DIR}/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
     cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tmp
@@ -56,6 +65,12 @@ function uninstall {
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
+
+    # Remove dSIPRouter Logging
+    rm -f /etc/rsyslog.d/dsiprouter.conf
+
+    # Remove logrotate settings
+    rm -f /etc/logrotate.d/dsiprouter
 
     # Remove dSIProuter as a service
     systemctl disable dsiprouter.service

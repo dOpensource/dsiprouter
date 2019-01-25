@@ -6,6 +6,11 @@ DSIP_PORT = 5000
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
+# dsiprouter logging settings
+# syslog log level: 0|1|2|3|4|5|6|7
+DSIP_LOG_LEVEL = 3
+DSIP_LOG_FACILITY = "local2"
+
 # ssl key / cert paths
 # email for re-certification (must match certs)
 SSL_KEY = ""

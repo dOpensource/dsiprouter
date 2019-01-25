@@ -7,6 +7,7 @@ set -x
 function install {
     # Install dependencies for dSIPRouter
     apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld sngrep
+    apt-get install -y logrotate rsyslog
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -23,6 +24,14 @@ function install {
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
+
+    # Setup dSIPRouter Logging
+    echo "local2.*     -/var/log/dsiprouter.log" > /etc/rsyslog.d/dsiprouter.conf
+    touch /var/log/dsiprouter.log
+    systemctl restart rsyslog
+
+    # Setup logrotate
+    cp -f ${DSIP_PROJECT_DIR}/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     #Install dSIPRouter as a service
     cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
@@ -42,6 +51,12 @@ function uninstall {
     #Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
+
+    # Remove dSIPRouter Logging
+    rm -f /etc/rsyslog.d/dsiprouter.conf
+
+    # Remove logrotate settings
+    rm -f /etc/logrotate.d/dsiprouter
 
     #Remove dSIProuter as a service
     systemctl disable dsiprouter.service

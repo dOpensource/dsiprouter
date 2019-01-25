@@ -8,6 +8,7 @@ function install() {
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
     yum install -y psmisc curl wget sed gawk vim epel-release perl
+    yum install -y logrotate rsyslog
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
@@ -68,7 +69,13 @@ EOF
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
 
-    # TODO: add kamailio logrotate settings
+    # Setup kamailio Logging
+    echo "local0.*     -/var/log/kamailio.log" > /etc/rsyslog.d/kamailio.conf
+    touch /var/log/kamailio.log
+    systemctl restart rsyslog
+
+    # Setup logrotate
+    cp -f ${DSIP_PROJECT_DIR}/logrotate/kamailio /etc/logrotate.d/kamailio
 }
 
 function uninstall {
@@ -93,7 +100,11 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
 
-    # TODO: remove kamailio logrotate settings
+    # Remove kamailio Logging
+    rm -f /etc/rsyslog.d/kamailio.conf
+
+    # Remove logrotate settings
+    rm -f /etc/logrotate.d/kamailio
 }
 
 case "$1" in

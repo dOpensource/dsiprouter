@@ -5,6 +5,7 @@ set -x
 function install {
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl
+    apt-get install -y logrotate rsyslog
 
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* jessie.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
@@ -68,6 +69,14 @@ function install {
 
     firewall-cmd --reload
 
+    # Setup kamailio Logging
+    echo "local0.*     -/var/log/kamailio.log" > /etc/rsyslog.d/kamailio.conf
+    touch /var/log/kamailio.log
+    systemctl restart rsyslog
+
+    # Setup logrotate
+    cp -f ${DSIP_PROJECT_DIR}/logrotate/kamailio /etc/logrotate.d/kamailio
+
     #Start Kamailio
     #systemctl start kamailio
     #return #?
@@ -99,6 +108,12 @@ function uninstall {
     fi
 
     firewall-cmd --reload
+
+    # Remove kamailio Logging
+    rm -f /etc/rsyslog.d/kamailio.conf
+
+    # Remove logrotate settings
+    rm -f /etc/logrotate.d/kamailio
 }
 
 case "$1" in

@@ -1,4 +1,6 @@
-import os, re, json, subprocess, urllib.parse, glob,datetime,csv
+import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging
+from logging.handlers import SysLogHandler
+from copy import copy
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
 from importlib import reload
@@ -1676,6 +1678,41 @@ class CustomServer(Server):
             self.processes = 1
 
 
+def init_loggers():
+    """ Handle configuration of dsiprouter loggers """
+
+    # close current file handlers
+    for handler in copy(logging.getLogger().handlers):
+        logging.getLogger().removeHandler(handler)
+        handler.close()
+    for handler in copy(logging.getLogger('werkzeug').handlers):
+        logging.getLogger('werkzeug').removeHandler(handler)
+        handler.close()
+    for handler in copy(logging.getLogger('sqlalchemy').handlers):
+        logging.getLogger('sqlalchemy').removeHandler(handler)
+        handler.close()
+
+    # create our own custom formatter and handler for syslog
+    log_formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] {%(pathname)s (%(lineno)d)}: %(message)s")
+    log_handler = logging.handlers.SysLogHandler(facility=settings.DSIP_LOG_FACILITY)
+    log_handler.setLevel(settings.DSIP_LOG_LEVEL)
+    log_handler.setFormatter(log_formatter)
+    
+    # set log handler for our dsiprouter app
+    logging.getLogger().setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger().addHandler(log_handler)
+    # replace vanilla werkzeug and sqlalchemy log handler
+    logging.getLogger('werkzeug').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('werkzeug').addHandler(log_handler)
+    logging.getLogger('sqlalchemy.engine').addHandler(log_handler)
+    logging.getLogger('sqlalchemy.engine').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('sqlalchemy.dialects').addHandler(log_handler)
+    logging.getLogger('sqlalchemy.dialects').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('sqlalchemy.pool').addHandler(log_handler)
+    logging.getLogger('sqlalchemy.pool').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('sqlalchemy.orm').addHandler(log_handler)
+    logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
+
 def init_app(flask_app):
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
@@ -1703,6 +1740,9 @@ def init_app(flask_app):
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
+
+    # setup syslog logging
+    init_loggers()
 
     # Flask App Manager configs
     manager = Manager(app)
