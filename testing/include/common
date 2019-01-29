@@ -1,0 +1,13 @@
+function process_result() {
+
+if [ $2 = 0 ]; then
+	echo -e "\e[32m$1\e[0m test was successful"
+	return 0
+else
+
+	echo -e "\e[31m$1\e[0m test was NOT successful"
+	return 1
+fi
+
+
+}

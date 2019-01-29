@@ -795,6 +795,9 @@ function install {
             installModules
         fi
 
+	# Install Sipsak for troubleshooting and smoketest
+	install_Sipsak
+
         # set some defaults in settings.py
         configurePythonSettings
 
@@ -845,8 +848,11 @@ function uninstall {
         echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
     fi
 
-	# Stop dSIPRouter, remove ./.installed file, close firewall
-	stop
+    # Uninstall Sipsak for troubleshooting and smoketest
+    uninstall_Sipsak
+
+     # Stop dSIPRouter, remove ./.installed file, close firewall
+     stop
 
     echo -e "Attempting to uninstall dSIPRouter...\n"
     ./dsiprouter/$DISTRO/$DISTRO_VER.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
@@ -1062,6 +1068,13 @@ function processCMD {
                     set -x
                     shift
                 fi
+                
+		if [ "$1" == "-smoketest" ]; then
+                    SMOKETEST=1
+                    shift
+                fi
+
+		
                 if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
                     SERVERNAT=1
                     installRTPEngine
