@@ -70,7 +70,7 @@ function install {
     firewall-cmd --reload
 
     # Setup kamailio Logging
-    echo "local0.*     -/var/log/kamailio.log" > /etc/rsyslog.d/kamailio.conf
+    cp -f ${DSIP_PROJECT_DIR}/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
     touch /var/log/kamailio.log
     systemctl restart rsyslog
 

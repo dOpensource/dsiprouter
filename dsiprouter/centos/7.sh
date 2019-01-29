@@ -32,7 +32,7 @@ function install {
     fi
 
     # Setup dSIPRouter Logging
-    echo "local2.*     -/var/log/dsiprouter.log" > /etc/rsyslog.d/dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
     touch /var/log/dsiprouter.log
     systemctl restart rsyslog
 

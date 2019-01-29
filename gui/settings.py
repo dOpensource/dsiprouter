@@ -7,9 +7,10 @@ USERNAME = 'admin'
 PASSWORD = 'admin'
 
 # dsiprouter logging settings
-# syslog log level: 0|1|2|3|4|5|6|7
+# syslog level and facility values based on:
+# <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>
 DSIP_LOG_LEVEL = 3
-DSIP_LOG_FACILITY = "local2"
+DSIP_LOG_FACILITY = 18
 
 # ssl key / cert paths
 # email for re-certification (must match certs)

@@ -561,6 +561,8 @@ port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
 log-level = 7
 log-facility = local1
+log-facility-cdr = local1
+log-facility-rtcp = local1
 EOF
          ) > /etc/rtpengine/rtpengine.conf
 
@@ -574,7 +576,7 @@ EOF
         firewall-cmd --reload
 
         # Setup RTPEngine Logging
-        echo "local1.*     -/var/log/rtpengine.log" > /etc/rsyslog.d/rtpengine.conf
+        cp -f ${DSIP_PROJECT_DIR}/syslog/rtpengine.conf /etc/rsyslog.d/rtpengine.conf
         touch /var/log/rtpengine.log
         systemctl restart rsyslog
 
@@ -679,7 +681,7 @@ EOF
             ) > /etc/sysconfig/rtpengine
 
             # Setup RTPEngine Logging
-            echo "local1.*     -/var/log/rtpengine.log" > /etc/rsyslog.d/rtpengine.conf
+            cp -f ${DSIP_PROJECT_DIR}/syslog/rtpengine.conf /etc/rsyslog.d/rtpengine.conf
             touch /var/log/rtpengine.log
             systemctl restart rsyslog
 
@@ -859,11 +861,12 @@ function start {
     fi
 
     # Start the process
-    if [ $DEBUG -eq 0 ]; then
-        nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >/dev/null 2>&1 &
+    if [ $DEBUG -eq 1 ]; then
+        # keep it in the foreground, only used for debugging issues
+        ${PYTHON_CMD} ./gui/dsiprouter.py runserver
     else
-        # we have to append to log in case errors occur before app starts sys logger
-        nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >>/var/log/dsiprouter.log 2>&1 &
+        # normal startup, background process
+        ${PYTHON_CMD} ./gui/dsiprouter.py runserver >/dev/null 2>&1 &
     fi
 
     # Store the PID of the process

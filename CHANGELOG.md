@@ -2,6 +2,27 @@
 
 
 
+### Syslog Logging Fixes
+
+> Branches Affected: docs  
+> Tags Affected:   
+> Date: Tue, 29 Jan 2019 10:44:44 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fixed syslog config files
+- seperate syslog configs in install process
+- redirect rtpengine daemon output to syslog
+- move syslog log handler to top of imports
+- support redirecting stdout / sterr to syslog
+- fix function naming to match
+- add signal handler func
+- add nohup signal handling to python app
+
+
+---
+
+
 ### Update Logging
 
 > Branches Affected: docs  
@@ -18,6 +39,26 @@
 - add syslog support for dsiprouter app
 - add script header in comments
 - update app DEBUG variable dynamically
+
+
+---
+
+
+### Create troubleshooting.rst.txt
+
+> Branches Affected: docs  
+> Tags Affected:   
+> Date: Fri, 25 Jan 2019 16:12:07 -0500  
+> Author: Nicole (ncannon@goflyball.com)  
+> Committer: Nicole (ncannon@goflyball.com)  
+
+- Created documentation for troubeshooting  dSIPRouter, Kamailio and rtpengine when turning logging on and off.
+- Includes information:
+1 how to turn it on
+2. how do to turn it off
+3. location of the log files
+4. how do i configure it
+5. References
 
 
 ---
