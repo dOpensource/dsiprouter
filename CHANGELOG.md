@@ -2,6 +2,131 @@
 
 
 
+### AMI Startup Fixes and General Maintenance
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Wed, 30 Jan 2019 05:07:37 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #103
+- change rtpengine install to be last
+- update usage options
+- update command line options
+- misc formatting improvements
+- fix centos ami kam repo issue
+- fix centos kamilio startup issue
+- fix rtpengine startup issue
+- fix debian ami sources issue
+- separate rtpengine source repo from project dir
+- fix rtpengine kernel packet forwarding issue
+- add location dependent redundancy checks in dsiprouter.sh
+- improve reliability of dynamic ip resolution
+- general cleanup in dsiprouter.sh
+- overhaul of arg / option parsing
+- improve usage readability
+- update usage options
+
+
+---
+
+
+### Syslog Logging Fixes
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Tue, 29 Jan 2019 10:44:44 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fixed syslog config files
+- seperate syslog configs in install process
+- redirect rtpengine daemon output to syslog
+- move syslog log handler to top of imports
+- support redirecting stdout / sterr to syslog
+- fix function naming to match
+- add signal handler func
+- add nohup signal handling to python app
+
+
+---
+
+
+### Update Logging
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Fri, 25 Jan 2019 17:13:50 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- move all logging to syslog
+- move all log rotation to logrotate
+- add syslog and logrotate as dependencies
+- update and create syslog configs for each service
+- add werkzurg and sqlalchemy log handlers from pull #36
+- add syslog support for dsiprouter app
+- add script header in comments
+- update app DEBUG variable dynamically
+
+
+---
+
+
+### Create troubleshooting.rst.txt
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Fri, 25 Jan 2019 16:12:07 -0500  
+> Author: Nicole (ncannon@goflyball.com)  
+> Committer: Nicole (ncannon@goflyball.com)  
+
+- Created documentation for troubeshooting  dSIPRouter, Kamailio and rtpengine when turning logging on and off.
+- Includes information:
+1 how to turn it on
+2. how do to turn it off
+3. location of the log files
+4. how do i configure it
+5. References
+
+
+---
+
+
+### ChanSIP Documentation
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Thu, 17 Jan 2019 13:33:50 -0500  
+> Author: Nicole (ncannon@goflyball.com)  
+> Committer: Nicole (ncannon@goflyball.com)  
+
+- added images for chan sip
+- added work flow for chan sip
+
+
+---
+
+
+### Install Compatibility Updates
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Tue, 15 Jan 2019 18:44:52 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- INITIAL CHANGES AMMEND THIS COMMIT++++
+- add centos 6 support
+- add amazon linux 2 support
+- add amazon linux support
+- cross-distro service manager updates
+
+
+---
+
+
 ### Install Script Fixes
 
 > Branches Affected: feature-ami  
@@ -144,6 +269,19 @@
 ---
 
 
+### Fixed the hostname of the service that provides the external ip of the server
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Thu, 27 Dec 2018 20:23:43 +0000  
+> Author: root (mack@dopensource.com)  
+> Committer: root (mack@dopensource.com)  
+
+
+
+---
+
+
 ### AMI build updates
 
 > Branches Affected: feature-ami  
@@ -261,6 +399,188 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
 - Update install script to support AMI images
+
+
+---
+
+
+### Add files via upload
+
+> Branches Affected:   
+> Tags Affected: v0.511-rel  
+> Date: Wed, 19 Dec 2018 15:03:28 -0600  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 10:18:24 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 10:12:58 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 10:11:58 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 10:10:04 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 10:07:45 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 10:05:32 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 09:59:21 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 09:57:55 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 09:57:05 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 06:59:11 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 06:57:51 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Fixed the BYE issue #56 for FusionPBX as well
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 19:05:34 +0000  
+> Author: root (root@debian-post51.localdomain)  
+> Committer: root (root@debian-post51.localdomain)  
+
+
+
+---
+
+
+### Fixed issue #56
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 19 Dec 2018 17:40:05 +0000  
+> Author: root (root@demo-dsiprouter.localdomain)  
+> Committer: root (root@demo-dsiprouter.localdomain)  
+
 
 
 ---
@@ -453,6 +773,19 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Branches Affected: feature-ami  
 > Tags Affected:   
 > Date: Wed, 19 Dec 2018 05:53:52 -0600  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update index.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Tue, 18 Dec 2018 05:43:29 -0500  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 

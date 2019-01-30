@@ -289,12 +289,13 @@ function configureSSL {
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`" 
     sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
     sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
-   
 }
 
 function configureKamailio {
+    cd ${DSIP_PROJECT_DIR}
+
     # copy template of kamailio configuration to a working copy
-    cp ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg
+    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg
     # set kamailio version in kam config
     sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
 
@@ -358,12 +359,32 @@ function configureKamailio {
     # Install schema for single & multi tenant pbx domain mapping
     mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_KAMAILIO_CONFIG_DIR}/domain_mapping.sql
 
-    # reset auto incrementers for related tables
-    #resetIncrementers "dr_gw_lists"
-    #resetIncrementers "uacreg"
+    # TODO: we need to test and re-implement this.
+#    # required if tables exist and we are updating
+#    function resetIncrementers {
+#        SQL_TABLES=$(
+#            (for t in "$@"; do printf ",'$t'"; done) | cut -d ',' -f '2-'
+#        )
+#
+#        # reset auto increment for related tables to max btwn the related tables
+#        INCREMENT=$(
+#            mysql --skip-column-names --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \ -e "\
+#                SELECT MAX(AUTO_INCREMENT) FROM INFORMATION_SCHEMA.TABLES \
+#                WHERE TABLE_SCHEMA = '$MYSQL_KAM_DATABASE' \
+#                AND TABLE_NAME IN($SQL_TABLES);"
+#        )
+#        for t in "$@"; do
+#            mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
+#                -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
+#        done
+#    }
+#
+#    # reset auto incrementers for related tables
+#    resetIncrementers "dr_gw_lists"
+#    resetIncrementers "uacreg"
 
     # Import Default Carriers
-    if [ -e `which mysqlimport` ]; then
+    if [ -e $(type -P mysqlimport) ]; then
         mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
 
         # sub in dynamic values
@@ -400,34 +421,21 @@ function configureKamailio {
     fi
 }
 
- # required if tables exist and we are updating
-    function resetIncrementers {
-        SQL_TABLES=$(
-            (for t in "$@"; do printf ",'$t'"; done) | cut -d ',' -f '2-'
-        )
-
-        # reset auto increment for related tables to max btwn the related tables
-        INCREMENT=$(
-            mysql --skip-column-names --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \ -e "\
-                SELECT MAX(AUTO_INCREMENT) FROM INFORMATION_SCHEMA.TABLES \
-                WHERE TABLE_SCHEMA = '$MYSQL_KAM_DATABASE' \
-                AND TABLE_NAME IN($SQL_TABLES);"
-        )
-        for t in "$@"; do
-            mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
-                -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
-        done
-    }
-
 function enableSERVERNAT {
 	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
 	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
 	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
 	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
+
+	echo "SERVERNAT is enabled - Restarting Kamailio is required"
+	echo "You can restart it by executing: systemctl restart kamailio"
 }
 
 function disableSERVERNAT {
 	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
+
+	echo "SERVERNAT is disabled - Restarting Kamailio is required"
+	echo "You can restart it by executing: systemctl restart kamailio"
 }
 
 # Try to locate the Kamailio modules directory.  It will use the last modules directory found
@@ -475,6 +483,8 @@ function stopRTPEngine {
 
 # Remove RTPEngine
 function uninstallRTPEngine {
+    cd ${DSIP_PROJECT_DIR}
+
     if [ ! -e ./.rtpengineinstalled ]; then
         echo -e "RTPEngine is not installed!"
     else
@@ -516,14 +526,11 @@ function uninstallRTPEngine {
 } #end of uninstallRTPEngine
 
 # Install the RTPEngine from sipwise
-# We are going to install it by default, but will users the ability to
-# to disable it if needed
-
-# TODO: seperate source dir from install dir
-# makes upgrading / git merging much easier
 # TODO: add use case for amzn linux
 function installRTPEngine {
-    cd ${DSIP_PROJECT_DIR}
+    local RTPENGINE_VER="mr6.1.1.1"
+    local SRC_DIR="/usr/local/src"
+    local RTPENGINE_SRC_DIR="${SRC_DIR}/rtpengine"
 
     if [[ $DISTRO == "debian" ]]; then
 
@@ -545,16 +552,15 @@ function installRTPEngine {
         apt-get install -y libmariadbclient-dev
         apt-get install -y default-libmysqlclient-dev
 
-        rm -rf rtpengine.bak
-        mv -f rtpengine rtpengine.bak
-        git clone -b mr6.1.1.1 https://github.com/sipwise/rtpengine
+        cd ${SRC_DIR}
+        rm -rf rtpengine.bak 2>/dev/null
+        mv -f rtpengine rtpengine.bak 2>/dev/null
+        git clone https://github.com/sipwise/rtpengine.git --branch ${RTPENGINE_VER} --depth 1
         cd rtpengine
         ./debian/flavors/no_ngcp
         dpkg-buildpackage
         cd ..
         dpkg -i ngcp-rtpengine-daemon_*
-
-        #cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
 
         if [ "$SERVERNAT" == "0" ]; then
             INTERFACE=$EXTERNAL_IP
@@ -562,7 +568,15 @@ function installRTPEngine {
             INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
         fi
 
-         (cat << EOF
+        # create rtpengine user and group
+        mkdir -p /var/run/ngcp-rtpengine-daemon
+        groupadd rtpengine
+        useradd -d /var/run/ngcp-rtpengine-daemon -M -s /bin/false rtpengine
+        chown -R rtpengine:rtpengine /var/run/ngcp-rtpengine-daemon
+
+        # rtpengine config file
+        # set table = 0 for kernel packet forwarding
+        (cat << EOF
 [rtpengine]
 table = -1
 interface = ${INTERFACE}
@@ -571,13 +585,23 @@ port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
 log-level = 7
 log-facility = local1
+log-facility-cdr = local1
+log-facility-rtcp = local1
 EOF
-         ) > /etc/rtpengine/rtpengine.conf
+        ) > /etc/rtpengine/rtpengine.conf
 
-
-        #sed -i -r  "s/# interface = [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/interface = "$EXTERNAL_IP"/" /etc/rtpengine/rtpengine.conf
-        sed -i 's/RUN_RTPENGINE=no/RUN_RTPENGINE=yes/' /etc/default/ngcp-rtpengine-daemon
-        #sed -i 's/# listen-udp = 12222/listen-udp = 7222/' /etc/rtpengine/rtpengine.conf
+        # setup rtpengine defaults file
+        (cat << 'EOF'
+RUN_RTPENGINE=yes
+CONFIG_FILE=/etc/rtpengine/rtpengine.conf
+# CONFIG_SECTION=rtpengine
+PIDFILE=/var/run/ngcp-rtpengine-daemon/ngcp-rtpengine-daemon.pid
+MANAGE_IPTABLES=yes
+TABLE=0
+SET_USER=rtpengine
+SET_GROUP=rtpengine
+EOF
+        ) > /etc/default/ngcp-rtpengine-daemon.conf
 
         # Enable and start firewalld if not already running
         systemctl enable firewalld
@@ -594,7 +618,7 @@ EOF
 
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-        cp -f ./dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
+        cp -f ${DSIP_PROJECT_DIR}/dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
 
         # Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
@@ -608,7 +632,7 @@ EOF
 
         # File to signify that the install happened
         if [ $? -eq 0 ]; then
-           touch ./.rtpengineinstalled
+           touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
            echo "RTPEngine has been installed!"
         else
             echo "FAILED: RTPEngine could not be installed!"
@@ -677,35 +701,44 @@ EOF
         fi
 
         # Make and Configure RTPEngine
-        rm -rf rtpengine.bak
-        mv -f rtpengine rtpengine.bak
-        git clone -b mr6.1.1.1 https://github.com/sipwise/rtpengine
+        cd ${SRC_DIR}
+        rm -rf rtpengine.bak 2>/dev/null
+        mv -f rtpengine rtpengine.bak 2>/dev/null
+        git clone https://github.com/sipwise/rtpengine.git --branch ${RTPENGINE_VER} --depth 1
         cd rtpengine/daemon && make
 
         if [ $? -eq 0 ]; then
-
             # Copy binary to /usr/sbin
-            cp -f ${DSIP_PROJECT_DIR}/rtpengine/daemon/rtpengine /usr/sbin/rtpengine
+            cp -f ${SRC_DIR}/rtpengine/daemon/rtpengine /usr/sbin/rtpengine
 
             # Make rtpengine config directory
-            mkdir /etc/rtpengine
+            mkdir -p /etc/rtpengine
+
+            cd ${SRC_DIR}/rtpengine/iptables-extension &&
+            make &&
+            cp -f libxt_RTPENGINE.so $(pkg-config xtables --variable=xtlibdir 2>/dev/null)/
+            if [ $? -ne 0 ]; then
+                echo "Problem installing RTPEngine iptables-extension"
+                cleanupAndExit 1
+            fi
+
+            # Configure RTPEngine to support kernel packet forwarding
+            cd ${SRC_DIR}/rtpengine/kernel-module &&
+            make &&
+            cp -f xt_RTPENGINE.ko /lib/modules/$(uname -r)/updates/ &&
+            if [ $? -ne 0 ]; then
+                echo "Problem installing RTPEngine kernel-module"
+                cleanupAndExit 1
+            fi
 
             # Remove RTPEngine kernel module if previously inserted
             if lsmod | grep 'xt_RTPENGINE'; then
                 rmmod xt_RTPENGINE
             fi
-
-            # Configure RTPEngine to support kernel packet forwarding
-            #cd ${DSIP_PROJECT_DIR}/rtpengine/kernel-module && make && insmod xt_RTPENGINE.ko
-            #if [ $? -ne 0 ]; then
-            #    echo "Problem installing RTPEngine kernel-module"
-            #    cleanupAndExit 1
-            #fi
-            #cd ${DSIP_PROJECT_DIR}/rtpengine/iptables-extension && make && cp -f libxt_RTPENGINE.so /lib64/xtables/
-            #if [ $? -ne 0 ]; then
-            #    echo "Problem installing RTPEngine iptables-extension"
-            #    cleanupAndExit 1
-            #fi
+            # Load new RTPEngine kernel module
+            depmod -a &&
+            modprobe xt_RTPENGINE
+            #insmod xt_RTPENGINE.ko
 
             if [ "$SERVERNAT" == "0" ]; then
                 INTERFACE=$EXTERNAL_IP
@@ -713,6 +746,14 @@ EOF
                 INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
             fi
 
+            # create rtpengine user and group
+            mkdir -p /var/run/rtpengine
+            groupadd rtpengine
+            useradd -d /var/run/rtpengine -M -s /bin/false rtpengine
+            chown -R rtpengine:rtpengine /var/run/rtpengine
+
+            # rtpengine config file
+            # set table = 0 for kernel packet forwarding
             (cat << EOF
 [rtpengine]
 table = -1
@@ -722,8 +763,23 @@ port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
 log-level = 7
 log-facility = local1
+log-facility-cdr = local1
+log-facility-rtcp = local1
 EOF
             ) > /etc/rtpengine/rtpengine.conf
+
+            # setup rtpengine defaults file
+            (cat << 'EOF'
+RUN_RTPENGINE=yes
+CONFIG_FILE=/etc/rtpengine/rtpengine.conf
+# CONFIG_SECTION=rtpengine
+PIDFILE=/var/run/rtpengine/rtpengine.pid
+MANAGE_IPTABLES=yes
+TABLE=0
+SET_USER=rtpengine
+SET_GROUP=rtpengine
+EOF
+            ) > /etc/default/rtpengine.conf
 
             # Enable and start firewalld if not already running
             systemctl enable firewalld
@@ -738,13 +794,9 @@ EOF
             touch /var/log/rtpengine
             systemctl restart rsyslog
 
-            # Create rtpengine user
-            useradd -U rtpengine
-
             # Setup tmp files
             echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.service /usr/lib/systemd/system/ngcp-rtpengine-daemon.service
-            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/ngcp-rtpengine-daemon.default /etc/default/ngcp-rtpengine-daemon.conf
+            cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine.service /etc/systemd/system/rtpengine.service
             cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-start /usr/sbin/
             cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-stop-post /usr/sbin/
             chmod +x /usr/sbin/rtpengine-*
@@ -752,20 +804,18 @@ EOF
             # Reload systemd configs
             systemctl daemon-reload
             # Enable the RTPEngine to start during boot
-            systemctl enable ngcp-rtpengine-daemon
+            systemctl enable rtpengine
             # Start RTPEngine
-            systemctl start ngcp-rtpengine-daemon
-
+            systemctl start rtpengine
 
             # Start manually if the service fails to start
             if [ $? -ne 0 ]; then
-                /usr/sbin/rtpengine --config-file=/etc/sysconfig/rtpengine --pidfile=/var/run/rtpengine.pid
+                /usr/sbin/rtpengine --config-file=/etc/rtpengine/rtpengine.conf --pidfile=/var/run/rtpengine/rtpengine.pid
             fi
 
             # File to signify that the install happened
             if [ $? -eq 0 ]; then
-                cd ../..
-                touch ./.rtpengineinstalled
+                touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
                 echo "RTPEngine has been installed!"
 
                 # remove bootstrap cmds from cron if on AMI image
@@ -782,68 +832,64 @@ EOF
 
 # Enable RTP within the Kamailio configuration so that it uses the RTPEngine
 function enableRTP {
-
-    sed -i 's/#!define WITH_NAT/##!define WITH_NAT/' ./kamailio_dsiprouter.cfg
-
+    sed -i 's/#!define WITH_NAT/##!define WITH_NAT/' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg
 } #end of enableRTP
 
 # Disable RTP within the Kamailio configuration so that it doesn't use the RTPEngine
 function disableRTP {
-
-    sed -i 's/##!define WITH_NAT/#!define WITH_NAT/' ./kamailio_dsiprouter.cfg
-
+    sed -i 's/##!define WITH_NAT/#!define WITH_NAT/' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg
 } #end of disableRTP
 
 function install_dsiprouter_ui {
+    cd ${DSIP_PROJECT_DIR}
 
 	echo -e "Attempting to install dSIPRouter...\n"
-        ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
+    ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
 
  	setPythonCmd
 	installModules
 
 	# set some defaults in settings.py
-        configurePythonSettings
+    configurePythonSettings
 
 	# configure SSL
-        if [ ${WITH_SSL} -eq 1 ]; then
-            configureSSL
-        fi
+    if [ ${WITH_SSL} -eq 1 ]; then
+        configureSSL
+    fi
 
 	if [ $? -eq 0 ]; then
-            touch ./.installed
-            echo -e "\e[32m-------------------------\e[0m"
-            echo -e "\e[32mInstallation is complete! \e[0m"
-            echo -e "\e[32m-------------------------\e[0m\n"
-            displayLogo
-            echo -e "\n\nThe username and dynamically generated password are below:\n"
+        touch ./.installed
+        echo -e "\e[32m-------------------------\e[0m"
+        echo -e "\e[32mInstallation is complete! \e[0m"
+        echo -e "\e[32m-------------------------\e[0m\n"
+        displayLogo
+        echo -e "\n\nThe username and dynamically generated password are below:\n"
 
-            # Generate a unique admin password
-            generatePassword
+        # Generate a unique admin password
+        generatePassword
 
-            # Start dSIPRouter
-            start
+        # Start dSIPRouter
+        start
 
-            # Tell them how to access the URL
+        # Tell them how to access the URL
+        echo -e "You can access the dSIPRouter web gui by going to:\n"
+        echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
 
-
-            echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
-
-            if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
-            fi
+        if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
+            echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
+        fi
 	fi
-
 }
 
 function uninstall_dsiprouter_ui {
- if [ ! -f "./.installed" ]; then
+    cd ${DSIP_PROJECT_DIR}
+
+    if [ ! -f "./.installed" ]; then
         echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
     fi
 
-        # Stop dSIPRouter, remove ./.installed file, close firewall
-        stop
+    # Stop dSIPRouter, remove ./.installed file, close firewall
+    stop
 
     echo -e "Attempting to uninstall dSIPRouter UI...\n"
     ./dsiprouter/$DISTRO/$DISTRO_VER.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
@@ -853,15 +899,15 @@ function uninstall_dsiprouter_ui {
     cronRemove 'dsiprouter_cron.py'
 
     # Remove the hidden installed file, which denotes if it's installed or not
-        rm -f ./.installed
+    rm -f ./.installed
 
     echo "dSIPRouter was uninstalled"
 }
 
 function install {
-    if [ ! -f "./.installed" ]; then
-        cd ${DSIP_PROJECT_DIR}
+    cd ${DSIP_PROJECT_DIR}
 
+    if [ ! -f "./.installed" ]; then
         echo -e "Attempting to install Kamailio...\n"
         ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
         if [ $? -eq 0 ]; then
@@ -960,6 +1006,8 @@ EOF
 } #end of install
 
 function uninstall {
+    cd ${DSIP_PROJECT_DIR}
+
     if [ ! -f "./.installed" ]; then
         echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
     fi
@@ -991,6 +1039,8 @@ function uninstall {
 
 
 function installModules {
+    cd ${DSIP_PROJECT_DIR}
+
     # Install / Uninstall dSIPModules
     for dir in ./gui/modules/*; do
         if [[ -e ${dir}/install.sh ]]; then
@@ -1005,6 +1055,8 @@ function installModules {
 
 
 function start {
+    cd ${DSIP_PROJECT_DIR}
+
     # Check if the dSIPRouter process is already running
     if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
         PID=$(cat /var/run/dsiprouter/dsiprouter.pid)
@@ -1047,6 +1099,8 @@ function start {
 
 
 function stop {
+    cd ${DSIP_PROJECT_DIR}
+
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
 		#kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
         kill -9 $(pgrep -f runserver) &>/dev/null
@@ -1064,12 +1118,6 @@ function stop {
 	else
 		echo "RTPEngine was not installed"
 	fi
-}
-
-function restart {
-	stop
-	start
-	cleanupAndExit 0
 }
 
 function resetPassword {
@@ -1154,195 +1202,441 @@ function upgrade {
     # TODO: restart services, check for good startup
 }
 
-# TODO: update usage options
 function usageOptions {
-    echo -e "\nUsage: $0 install|uninstall [-rtpengine [-servernat]]"
-    echo -e "Usage: $0 start|stop|restart"
-    echo -e "Usage: $0 resetpassword"
-    echo -e "\ndSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases.This means that we aren’t a general purpose GUI for Kamailio."
-    echo -e "If that's required then use Siremis, which is located at http://siremis.asipto.com/."
-    echo -e "\nThis script is used for installing and uninstalling dSIPRouter, which includes installing the Web GUI portion, Kamailio Configuration file and optionally for installing the RTPEngine by SIPwise"
-    echo -e "This script can also be used to start, stop and restart dSIPRouter.  It will not restart Kamailio."
-    echo -e "\nSupport is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
-    echo -e "\n\ndOpenSource | A Flyball Company\nMade in Detroit, MI USA\n"
+    linebreak() {
+        printf '_%.0s\n' $(seq 1 ${COLUMNS-100}) && echo ''
+    }
 
-    cleanupAndExit 1
+    linebreak
+    printf '\n%s\n%s\n' \
+        "USAGE:" \
+        "$0 <command> [options]"
+
+    linebreak
+    printf "\n%-30s %s\n" \
+        "COMMAND" "OPTIONS"
+    printf "%-30s %s\n" \
+        "install" "-debug|-exip <ip>|--external-ip=<ip>|-servernat|-rtpengine|-ui"
+    printf "%-30s %s\n" \
+        "uninstall" "-debug|-rtpengine|-ui"
+    printf "%-30s %s\n" \
+        "start" "-debug"
+    printf "%-30s %s\n" \
+        "stop" "-debug"
+    printf "%-30s %s\n" \
+        "restart" "-debug"
+    printf "%-30s %s\n" \
+        "rtpengineonly" "-debug|-servernat"
+    printf "%-30s %s\n" \
+        "configurekam" "-debug"
+    printf "%-30s %s\n" \
+        "sslenable" "-debug"
+    printf "%-30s %s\n" \
+        "installmodules" "-debug"
+    printf "%-30s %s\n" \
+        "fixmpath" "-debug"
+    printf "%-30s %s\n" \
+        "enableservernat" "-debug"
+    printf "%-30s %s\n" \
+        "disableservernat" "-debug"
+    printf "%-30s %s\n" \
+        "resetpassword" "-debug"
+    printf "%-30s %s\n" \
+        "help|-h|--help"
+
+    linebreak
+    printf '\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' \
+        "SUMMARY:" \
+        "dSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases." \
+        "This means that we aren’t a general purpose GUI for Kamailio." \
+        "If that's required then use Siremis, which is located at http://siremis.asipto.com/" \
+        "This script is used for installing, uninstalling, managing, and configuring dSIPRouter." \
+        "That includes installing the Web GUI portion, Kamailio Configuration file and optionally for installing the RTPEngine by SIPwise" \
+        "This script can also be used to start, stop and restart dSIPRouter.  It will not restart Kamailio."
+
+    linebreak
+    printf '\n%s\n%s\n%s\n\n' \
+        "MORE INFO:" \
+        "Full documentation is available online: https://dsiprouter.readthedocs.io" \
+        "Support is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
+
+    linebreak
+    printf '\n%s\n%s\n%s\n\n' \
+        "PROVIDED BY:" \
+        "dOpenSource | A Flyball Company" \
+        "Made in Detroit, MI USA"
+
+    linebreak
 }
 
 
+# TODO: make dsip, rtpengine, kamailio installs independent functions
+# TODO: uninstall_dsiprouter_ui() and install_dsiprouter_ui() are blocking functions
+# meaning that they block processing of cmdline options and execute
+# this means that some cmdline options may not be processed yet
+# we can't fix this until the install functions are all independent of each other
+# until then use this option with extreme caution
+# TODO: add help options for each command w/ subsection usage info for that command
 function processCMD {
     # prep before processing commands
     initialChecks
     setPythonCmd # may be overridden in distro install script
 
-	while (( $# > 0 )); do
-		key="$1"
-		case $key in
-			install)
-                shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                    shift
-                fi
-                if [ "$1" == "-exip" ] || [ "$1" == "--external-ip" ]; then
-                    shift
-                    export EXTERNAL_IP="$1"
-                    shift
-                elif [ $(echo "$1" | cut -d '=' -f 1) == "--external-ip" ]; then
-                    export EXTERNAL_IP=$(echo "$1" | cut -d '=' -f 2)
-                    shift
-                fi
-                if [ "$1" == "-ui" ]; then
-          	        install_dsiprouter_ui
-                    shift
-                fi
-                if [ "$1" == "-rtpengine" ] && [ "$2" == "-servernat" ]; then
-                    SERVERNAT=1
-                    installRTPEngine
-                elif [ "$1" == "-rtpengine" ]; then
-                    installRTPEngine
-                fi
-                install
-                cleanupAndExit 0
-                ;;
-			uninstall)
-                shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                    shift
-                fi
-                if [ "$1" == "-ui" ]; then
-                    uninstall_dsiprouter_ui
-                    cleanupAndExit 0
-                    shift
-                fi
-                if [ "$1" == "-rtpengine" ]; then
-                    uninstallRTPEngine
-                fi
-                uninstall
-                cleanupAndExit 0
-                ;;
-            start)
-                shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                    shift
-                fi
-                if [ "$1" == "-rtpengine" ]; then
-                    startRTPEngine
-                fi
-                start
-                cleanupAndExit 0
-                ;;
-			stop)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                    shift
-                fi
-                stop
-                cleanupAndExit 0
-                ;;
-            restart)
-                shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                stop
-                start
-                cleanupAndExit 0
-                ;;
-			rtpengineonly)
-                shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                if [ "$1" == "-servernat" ]; then
-                    SERVERNAT=1
-                fi
-                installRTPEngine
-                cleanupAndExit 0
-                ;;
-			configurekam)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                configureKamailio
-                cleanupAndExit 0
-                ;;
-            sslenable)
-                configureSSL
-                cleanupAndExit 0
-                ;;
-            installmodules)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                installModules
-                cleanupAndExit 0
-                ;;
-            fixmpath)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                fixMPATH
-                cleanupAndExit 0
-                ;;
-            enableservernat)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                enableSERVERNAT
-	    		echo "SERVERNAT is enabled - Restarting Kamailio is required.  You can restart it by executing: systemctl restart kamailio"
-	   		    cleanupAndExit 0
-                ;;
-            disableservernat)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                disableSERVERNAT
-                echo "SERVERNAT is disabled - Restarting Kamailio is required.  You can restart it by executing: systemctl restart kamailio"
-                cleanupAndExit 0
-                ;;
-            resetpassword)
-			    shift
-                if [ "$1" == "-debug" ]; then
-                    DEBUG=1
-                    set -x
-                fi
-                resetPassword
-                cleanupAndExit 0
-                ;;
-			-h)
-                usageOptions
-                cleanupAndExit 0
-                ;;
-			*)
-                usageOptions
-                cleanupAndExit 0
-                ;;
-		esac
-	done
-
 	# Display usage options if no options are specified
-	usageOptions
+	if (( $# == 0 )); then
+        usageOptions
+        cleanupAndExit 1
+	fi
 
+    # process all options before running commands
+    declare -a RUN_COMMANDS
+    ARG="$1"
+    case $ARG in
+        install)
+            # install kamailio and dsiprouter
+            RUN_COMMANDS+=(install)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -exip)
+                        shift
+                        export EXTERNAL_IP="$1"
+                        shift
+                        ;;
+                    --external-ip=*)
+                        export EXTERNAL_IP=$(echo "$1" | cut -d '=' -f 2)
+                        shift
+                        ;;
+                    -servernat)
+                        SERVERNAT=1
+                        shift
+                        ;;
+                    -ui) # install only dsiprouter gui (blocking)
+                        install_dsiprouter_ui
+                        cleanupAndExit 0
+                        ;;
+                    -rtpengine)
+                        RUN_COMMANDS+=(installRTPEngine)
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        uninstall)
+            # uninstall kamailio and dsiprouter
+            RUN_COMMANDS+=(uninstall)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -ui) # uninstall only dsiprouter gui (blocking)
+                        uninstall_dsiprouter_ui
+                        cleanupAndExit 0
+                        ;;
+                    -rtpengine)
+                        RUN_COMMANDS+=(uninstallRTPEngine)
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        start)
+            # start all the installed services
+            RUN_COMMANDS+=(start)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        stop)
+            # stop all the installed services
+            RUN_COMMANDS+=(stop)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        restart)
+            # restart all the installed services
+            RUN_COMMANDS+=(stop start)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        rtpengineonly)
+            # install rtpengine only
+            RUN_COMMANDS+=(installRTPEngine)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -servernat)
+                        SERVERNAT=1
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        configurekam)
+            # reconfigure kamailio configs
+            RUN_COMMANDS+=(configureKamailio)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        sslenable)
+            # reconfigure ssl configs
+            RUN_COMMANDS+=(configureSSL)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        installmodules)
+            # reconfigure dsiprouter modules
+            RUN_COMMANDS+=(installModules)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        fixmpath)
+            # reconfigure kamailio modules
+            RUN_COMMANDS+=(fixMPATH)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        enableservernat)
+            # enable serverside nat settings for kamailio
+            RUN_COMMANDS+=(enableSERVERNAT)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        disableservernat)
+            # disable serverside nat settings for kamailio
+            RUN_COMMANDS+=(disableSERVERNAT)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        resetpassword)
+            # reset dsiprouter gui password
+            RUN_COMMANDS+=(resetPassword)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        -h|--help|help)
+            usageOptions
+            cleanupAndExit 1
+            ;;
+        *)
+            echo "Invalid command [$ARG]"
+            usageOptions
+            cleanupAndExit 1
+            ;;
+    esac
+
+    # Options are processed... run commands. Processing Notes below.
+    # default priority of install (with rtpengine):
+    # 1. kamailio
+    # 2. dsiprouter
+    # 3. rtpengine
+    # default order of install (without rtpengine):
+    # 1. kamailio
+    # 2. dsiprouter
+    # default order of install (without dsiprouter):
+    # 1. kamailio
+    # 2. rtpengine
+    for RUN_COMMAND in ${RUN_COMMANDS[@]}; do
+        $RUN_COMMAND
+    done
+    cleanupAndExit 0
 } #end of processCMD
 
 processCMD "$@"
