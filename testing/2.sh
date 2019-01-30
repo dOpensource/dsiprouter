@@ -6,7 +6,7 @@ unitname="PBX and Endpoint Registration"
 
 #username
 
-username="test"
+username="smoketest"
 password="90dsip2432x"
 
 # Create a new user
@@ -14,7 +14,7 @@ mysql kamailio -e "insert into subscriber values (null,'$username','localhost','
 
 
 # Register User
-sipsak -U -C sip:client@sip.dsiprouter.org  -s sip:test@localhost -a $password -vvv -i > /dev/null
+sipsak -U -C sip:client@sip.dsiprouter.org  -s sip:$username@localhost -a $password -vvv -i > /dev/null
 ret=$?
 
 # Clean up
