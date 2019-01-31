@@ -1258,6 +1258,9 @@ if ($(rU{s.len}) > $var(pbx_max_local_digits))
 	#Set the INVITE timeout for sending calls to invites
 	t_set_fr(120000,10000);
 
+	#Add record_route to ensure that extensions know how to route back thru the proxy
+        record_route();
+	
 	route(RELAY);
 	exit;
 }
