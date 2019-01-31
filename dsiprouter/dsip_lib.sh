@@ -125,4 +125,3 @@ uninstall_Sipsak() {
 
 }
 
-install_Sipsak
