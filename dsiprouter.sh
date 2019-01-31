@@ -528,8 +528,9 @@ function installRTPEngine {
         dpkg-buildpackage
         cd ..
         dpkg -i ngcp-rtpengine-daemon_*
-
-        #cp /etc/rtpengine/rtpengine.sample.conf /etc/rtpengine/rtpengine.conf
+	
+	# Stop the service after it's installed.  We need to configure it fist
+        systemctl stop ngcp-rtpengine-daemon
 
         if [ "$SERVERNAT" == "0" ]; then
             INTERFACE=$EXTERNAL_IP
@@ -764,6 +765,7 @@ function uninstall_dsiprouter_ui {
     # Remove crontab entry
     echo "Removing crontab entry"
     crontab -l | grep -v -F -w dsiprouter_cron | crontab -
+
 
     # Remove the hidden installed file, which denotes if it's installed or not
         rm -f ./.installed
