@@ -691,6 +691,35 @@ route[REFORMATRURI] {
     }
 }
 
+# Will deal with rewriting 7 digits numbers to 10 digit numbers based on 3 or 4 digit prefix of the
+# FROM number.  Hence, we are assuming that the 7 digit number being dialed is in the same
+# area code as the FROM number.  This has been tested with US based dialing only.
+ 
+route[REFORMATRURI7] {
+
+
+   #This is to deal with those who are used to dialing 7 digits.
+   if ($(rU{s.len}) == 7) {
+
+     if ($(fU{s.len}) == 10) {
+
+        xlog("L_DEBUG", "7 Digit Fix: Orginal: $rU to $(fU{s.substr,0,3})$rU");
+        $rU = $(fU{s.substr,0,3}) + $rU;
+
+     } else {
+
+        xlog("L_DEBUG", "7 Digit Fix: Orginal: $rU to $(fU{s.substr,0,4})$rU");
+        $rU = $(fU{s.substr,0,4}) + $rU;
+
+     }
+
+ remove_hf("To");
+        insert_hf("To: sip:$rU@$rd\r\n");
+
+   }
+
+}
+
 route[ENRICH_SIPHEADER]
 {
         if (!strempty($xavp(ra=>sipdomain))) {
