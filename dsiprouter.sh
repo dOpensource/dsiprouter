@@ -798,6 +798,9 @@ function install {
 	# Install Sipsak for troubleshooting and smoketest
 	install_Sipsak
 
+	# Make sure we are back in the dSIPRouter Project Dir
+	cd ${DSIP_PROJECT_DIR}
+
         # set some defaults in settings.py
         configurePythonSettings
 
