@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+#set -x
 
 # NOTES:
 # contains utility functions and shared variables
