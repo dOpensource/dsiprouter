@@ -19,13 +19,6 @@ username: admin
 
 password: ZmIwMTdmY2I5NjE4
 
-### Sponsors
-
-We would like to say thank you to [Skyetel](http://skye.tel/dsiprouter) for believing in us and becoming our first sponsor. 
-
-![Skyetel Logo](/docs/images/skyetel_logo.png)
-
-
 ### Documentation
 
 You can find our documentation here: [dSIPRouter Documentation](https://dsiprouter.readthedocs.io/en/v0.51/)
@@ -34,7 +27,7 @@ You can find our documentation here: [dSIPRouter Documentation](https://dsiprout
 
 Free Support: [dSIPRouter Question & Answer Forum](https://groups.google.com/forum/#!forum/dsiprouter)
 
-Paid Support: [dOpenSource](https://dopensource.com/shop)
+Paid Support: [dSIPRouter Support](http://dsiprouter.org/#fh5co-support-section)
 
 ### Training
 
