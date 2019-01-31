@@ -332,7 +332,6 @@ loadmodule "tls.so"
 #!endif
 
 #!ifdef WITH_ANTIFLOOD
-loadmodule "htable.so"
 loadmodule "pike.so"
 #!endif
 
@@ -1663,7 +1662,7 @@ failure_route[MANAGE_FAILURE] {
         			$avp(apass) = $xavp(rb=>auth_password);
         			uac_auth();
         			t_relay();
-        			exit;`
+        			exit;
 			}
    		}	
 	}
