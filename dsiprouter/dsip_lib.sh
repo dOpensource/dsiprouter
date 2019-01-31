@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 # NOTES:
 # contains utility functions and shared variables
@@ -90,3 +91,38 @@ getConfigAttrib() {
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${DSIP_CONFIG_FILE})
     printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
 }
+
+# Install Sipsak
+# Used for testing and troubleshooting
+install_Sipsak() {
+	
+	git clone https://github.com/nils-ohlmeier/sipsak.git /usr/src/sipsak
+
+	cd /usr/src/sipsak
+	autoreconf --install
+	./configure
+	make
+	make install
+	ret=$?
+
+	if [ $ret -eq 0 ]; then
+		echo "SipSak was installed"
+	else
+		echo "SipSak install failed"
+	fi
+
+
+}
+
+# Remove Sipsak from the machine completely
+uninstall_Sipsak() {
+
+	if [ -d /usr/src/sipsak ]; then
+		cd /usr/src/sipsak
+		make uninstall
+		rm -rf /usr/src/sipsak
+	fi
+
+}
+
+install_Sipsak

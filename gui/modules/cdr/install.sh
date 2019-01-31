@@ -16,7 +16,7 @@ function installSQL {
 
     # Replace the CDR tables and add some Kamailio stored procedures
     echo "Adding/Replacing the tables needed for CDR's within dSIPRouter..."
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ./cdrs.sql
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ./gui/modules/cdr/cdrs.sql
 }
 
 function install {

@@ -554,9 +554,9 @@ modparam("uac", "reg_timer_interval", 60)
 modparam("uac", "reg_retry_interval", 120)
 modparam("uac", "reg_keep_callid", 1)
 modparam("uac", "credential", "username:domain:password")
-modparam("uac", "auth_realm_avp", "$avp(i:10)")
-modparam("uac", "auth_username_avp", "$avp(i:11)")
-modparam("uac", "auth_password_avp", "$avp(i:12)")
+modparam("uac", "auth_realm_avp", "$avp(arealm)")
+modparam("uac", "auth_username_avp", "$avp(auser)")
+modparam("uac", "auth_password_avp", "$avp(apass)")
 modparam("uac", "reg_contact_addr", "EXTERNAL_IP_ADDR:5060")
 #!endif
 
@@ -1378,20 +1378,10 @@ route[AUTH] {
 	return;
 }
 
-#failure_route[REMOTE_AUTH] {
-#	if (t_is_canceled()) {
-#		exit;
-#	}
-#
-#	if (t_check_status("401|407")) {
-#		xlog("L_INFO", "Attempting client UAC auth\n");
-#		uac_auth();
-#	}
-#}
-#
-#event_route[uac:reply] {
-#	xlog("L_INFO", "Request sent to $uac_req(ruri) [$uac_req(evcode)]\n");
-#}
+
+event_route[uac:reply] {
+	xlog("L_INFO", "Request sent to $uac_req(ruri) [$uac_req(evcode)]\n");
+}
 
 # Caller NAT detection
 route[NATDETECT] {
@@ -1616,6 +1606,30 @@ failure_route[MANAGE_FAILURE] {
 	if (t_is_canceled()) {
 		exit;
 	}
+
+        # Only lookup and see if AUTH credentials exits if the call is going to a carrier
+	if(t_check_status("401|407") && !strempty($avp(carrier_groupid))) {
+		xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: Will try to Auth using username/password based on this source ip from the carrier $T_rpl($si)");
+                $var(gwgroup_query) = "select substring_index(substring_index(description,',',-1),':',-1) as gwgroup from dr_gateways where address='" + $T_rpl($si) + "'";
+		xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: $var(gwgroup_query)");
+		sql_xquery("cb","$var(gwgroup_query)","rb");
+                # If the Gateway Group is defined then try to grab the username and password from the uacreg table
+                if (!strempty($xavp(rb=>gwgroup))) {			
+		        xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: Number of DB Rows: $dbr(rb=>rows)");
+			$var(query)="select auth_username,auth_password from uacreg where id='" + $xavp(rb=>gwgroup) + "'";
+			sql_xquery("cb","$var(query)","rb");
+                        # Try the INVITE agian if the username is not empty
+                        if (!strempty($xavp(rb=>auth_username))) {			
+				xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: The query is $var(gwgroup_query) and the user name is $xavp(rb=>auth_username)");
+				$avp(auser) = $xavp(rb=>auth_username);
+        			$avp(apass) = $xavp(rb=>auth_password);
+        			uac_auth();
+        			t_relay();
+        			exit;`
+			}
+   		}	
+	}
+
 
 #!ifdef WITH_DROUTE
 	if (t_check_status("[0-6][0-9][0-9]")) {
