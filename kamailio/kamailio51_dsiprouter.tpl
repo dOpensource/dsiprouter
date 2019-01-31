@@ -209,6 +209,10 @@ enable_tls=yes
 # - a bit higher than registration expires to cope with UA behind NAT
 tcp_connection_lifetime=3605
 
+# this parameter controls the “Server” header in any locally generated message.
+# we disable it by default
+server_signature=no
+
 ####### Custom Parameters #########
 
 # These parameters can be modified runtime via RPC interface
@@ -260,7 +264,6 @@ mpath="/usr/lib/x86_64-linux-gnu/kamailio/modules/"
 mpath="/usr/lib/x86_64-linux-gnu/kamailio/modules/"
 #!endif
 
-server_signature=no
 
 #!ifdef WITH_MYSQL
 loadmodule "db_mysql.so"
