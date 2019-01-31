@@ -12,6 +12,7 @@
 ##!define WITH_SERVERNAT
 #!define WITH_MULTIDOMAIN
 #!define WITH_TELEBLOCK
+#!define WITH_ANTIFLOOD
 ##!define WITH_DBCLUSTER
 #
 #!substdef "!INTERNAL_IP_ADDR!198.211.102.60!g"
@@ -208,6 +209,10 @@ enable_tls=yes
 # - a bit higher than registration expires to cope with UA behind NAT
 tcp_connection_lifetime=3605
 
+# this parameter controls the “Server” header in any locally generated message.
+# we disable it by default
+server_signature=no
+
 ####### Custom Parameters #########
 
 # These parameters can be modified runtime via RPC interface
@@ -258,6 +263,7 @@ mpath="/usr/lib/x86_64-linux-gnu/kamailio/modules/"
 #!else
 mpath="/usr/lib/x86_64-linux-gnu/kamailio/modules/"
 #!endif
+
 
 #!ifdef WITH_MYSQL
 loadmodule "db_mysql.so"
