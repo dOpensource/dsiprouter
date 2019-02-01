@@ -41,7 +41,7 @@ CREATE TABLE `acc` (
   `calltype` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `acc_callid` (`callid`)
-) ENGINE=InnoDB AUTO_INCREMENT=93 DEFAULT CHARSET=latin1;
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -69,8 +69,8 @@ CREATE TABLE `cdrs` (
   `created` datetime NOT NULL,
   `calltype` varchar(20) DEFAULT NULL,
   `fraud` bool NOT NULL DEFAULT '0',
-  PRIMARY KEY (`cdr_id`),
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+  PRIMARY KEY (`cdr_id`)
+);
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
