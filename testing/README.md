@@ -23,3 +23,5 @@ Unittest Number | Test Description
 ================|=====================
 1|Used for testing if Kamailio is started
 2|Testing PBX and Endpoint Registration
+3|Send a call thru a carrier that we use Username/Password Auth (still is dev)
+4|Denial of Service (DoS) using the Pike module with a Htable to store the banned ip's
