@@ -1,0 +1,13 @@
+/var/log/rtpengine*.log  {
+    daily
+    missingok
+    rotate 5
+    size 50M
+    compress
+    delaycompress
+    create 640 root root
+    sharedscripts
+    postrotate
+        /bin/kill -HUP $(cat /var/run/rsyslogd.pid 2> /dev/null) 2> /dev/null || true
+    endscript
+}
