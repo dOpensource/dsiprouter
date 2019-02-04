@@ -179,7 +179,7 @@ Context=             from-trunk
 
 
 
-.. image:: images/sip_settings.PNG
+.. image:: images/chansip_incoming.PNG
         :align: center
 		
 9. Click Submit.
