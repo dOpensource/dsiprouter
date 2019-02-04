@@ -70,12 +70,12 @@ function install {
     firewall-cmd --reload
 
     # Setup kamailio Logging
-    cp -f ${DSIP_PROJECT_DIR}/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
+    cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
     touch /var/log/kamailio.log
     systemctl restart rsyslog
 
     # Setup logrotate
-    cp -f ${DSIP_PROJECT_DIR}/logrotate/kamailio /etc/logrotate.d/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
 
     #Start Kamailio
     #systemctl start kamailio

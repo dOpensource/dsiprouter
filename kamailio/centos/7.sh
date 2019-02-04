@@ -77,12 +77,12 @@ EOF
     sed -i -E "s/(After=.*)/\1 mariadb.service/g" /lib/systemd/system/kamailio.service
 
     # Setup kamailio Logging
-    cp -f ${DSIP_PROJECT_DIR}/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
+    cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
     touch /var/log/kamailio.log
     systemctl restart rsyslog
 
     # Setup logrotate
-    cp -f ${DSIP_PROJECT_DIR}/logrotate/kamailio /etc/logrotate.d/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
 }
 
 function uninstall {
