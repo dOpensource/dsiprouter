@@ -96,9 +96,11 @@ The following screenshot(s) shows how to configure a chanSIP trunk within FreePB
 2. Click Connectivity→Trunks
 3. Select Add SIP (chan_sip) Trunk
 
+
 .. image:: images/add_trunk.png
         :align: center
 		
+
 		
 4. Under General tab enter 
    The following fields needs to be entered
@@ -113,7 +115,7 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
    
       
 
-.. image:: images/sipchan__general.PNG
+.. image:: images/sipchan_general.PNG
         :align: center
 		
 		
