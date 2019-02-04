@@ -138,7 +138,7 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
 
 You will now be able to see the new chanSIP added in the truck.	
 
-.. image:: images/sipchan__added.PNG
+.. image:: images/sipchan_added.PNG
         :align: center
 	
 		
@@ -148,11 +148,11 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host=                dsiprouter 
-Username=            <Provided by carrier>
-Secret=              <Provided by carrier>
-Type=                peer
-Context=             from-trunk
+Host                 <ip address of dsiprouter> 
+Username             <Provided by carrier>
+Secret               <Provided by carrier>
+Type                 peer
+Context              from-trunk
 ==================   ============
 
 
