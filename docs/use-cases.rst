@@ -157,7 +157,7 @@ Context              from-trunk
 
 
 
-.. image:: images/sipchan_outgoing.PNG
+.. image:: images/chansip_outgoing.PNG
         :align: center
 
 
