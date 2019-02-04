@@ -97,7 +97,7 @@ The following screenshot(s) shows how to configure a chanSIP trunk within FreePB
 3. Select Add SIP (chan_sip) Trunk
 
 
-.. image:: images/add_trunk.png
+.. image:: images/add_trunk.PNG
          :align: center
 		
 
@@ -159,6 +159,7 @@ Context              from-trunk
 
 .. image:: images/sipchan_outgoing.PNG
         :align: center
+
 
 NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
 
