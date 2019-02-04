@@ -148,7 +148,7 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host                 <ip address of dsiprouter> 
+Host                 <host name or IP address of dsiprouter> 
 Username             <Provided by carrier>
 Secret               <Provided by carrier>
 Type                 peer
@@ -170,7 +170,7 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host=                <ip address of dsiprouter>
+Host=                <host name or IP address of dsiprouter>
 Insecure=            port,invite
 Type=                peer
 Context=             from-trunk
