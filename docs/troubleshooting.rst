@@ -1,5 +1,5 @@
 Troubleshooting
-^^^^^^^^^^^^^^^
+================
 
 Here you can troubleshoot logs for dSIPRouter, Kamailio and rtpengine:
 
