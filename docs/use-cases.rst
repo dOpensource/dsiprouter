@@ -157,7 +157,7 @@ Context              from-trunk
 
 
 
-.. image:: images/sipchan__outgoing.PNG
+.. image:: images/sipchan_outgoing.PNG
         :align: center
 
 NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
@@ -169,7 +169,7 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host=                dsiprouter 
+Host=                <ip address of dsiprouter>
 Insecure=            port,invite
 Type=                peer
 Context=             from-trunk
@@ -178,7 +178,7 @@ Context=             from-trunk
 
 
 
-.. image:: images/sip__settings.PNG
+.. image:: images/sip_settings.PNG
         :align: center
 		
 9. Click Submit.
