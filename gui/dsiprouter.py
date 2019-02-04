@@ -1,4 +1,5 @@
-import os, re, json, subprocess, urllib.parse, glob,datetime,csv
+import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, signal
+from copy import copy
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
 from importlib import reload
@@ -6,8 +7,9 @@ from sqlalchemy import case, func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
+from sysloginit import *
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError,hostToIP
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher
 from modules import flowroute
@@ -23,20 +25,15 @@ reload_required = False
 
 
 # TODO: unit testing per component
-# TODO: set up logging / log handlers
-
 
 
 @app.before_request
 def before_request():
-
-    
     session.permanent = True
     if not hasattr(settings,'GUI_INACTIVE_TIMEOUT'):
         settings.GUI_INACTIVE_TIMEOUT = 20 #20 minutes
     app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
-
 
 @app.route('/')
 def index():
@@ -1675,8 +1672,36 @@ class CustomServer(Server):
             self.threaded = True
             self.processes = 1
 
+def sigHandler(signum=None, frame=None):
+    """ Logic for trapped signals """
+    # ignore SIGHUP
+    if signum == 1:
+        IO.logwarn("Received SIGHUP.. ignoring signal")
 
-def init_app(flask_app):
+def replaceAppLoggers():
+    """ Handle configuration of web server loggers """
+
+    # close current log handlers
+    for handler in copy(logging.getLogger('werkzeug').handlers):
+        logging.getLogger('werkzeug').removeHandler(handler)
+        handler.close()
+    for handler in copy(logging.getLogger('sqlalchemy').handlers):
+        logging.getLogger('sqlalchemy').removeHandler(handler)
+        handler.close()
+        
+    # replace vanilla werkzeug and sqlalchemy log handler
+    logging.getLogger('werkzeug').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('werkzeug').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.engine').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.engine').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('sqlalchemy.dialects').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.dialects').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('sqlalchemy.pool').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.pool').setLevel(settings.DSIP_LOG_LEVEL)
+    logging.getLogger('sqlalchemy.orm').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
+
+def initApp(flask_app):
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
 
@@ -1708,17 +1733,23 @@ def init_app(flask_app):
     manager = Manager(app)
     manager.add_command('runserver', CustomServer())
 
+    # replace werkzeug and sqlalchemy loggers
+    replaceAppLoggers()
+
+    # trap SIGHUP signals
+    signal.signal(signal.SIGHUP, sigHandler)
+
     # start the server
     manager.run()
 
 def checkDatabase():
-   #Check database connection is still good
+   # Check database connection is still good
     try:
         db.execute('select 1')
         db.flush()
     except sql_exceptions.SQLAlchemyError as ex:
-    #If not, close DB connection so that the SQL engine can get another one from the pool
+    # If not, close DB connection so that the SQL engine can get another one from the pool
         db.close()
 
 if __name__ == "__main__":
-    init_app(app)
+    initApp(app)

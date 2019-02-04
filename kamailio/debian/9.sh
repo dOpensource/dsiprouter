@@ -5,6 +5,7 @@ set -x
 function install {
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl
+    apt-get install -y logrotate rsyslog
 
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* stretch.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
@@ -66,8 +67,13 @@ function install {
 
     firewall-cmd --reload
 
-    #Setup logrotate
-    cp ./dsiprouter/debian/logrotate/* /etc/logrotate.d
+    # Setup kamailio Logging
+    cp -f ${DSIP_PROJECT_DIR}/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
+    touch /var/log/kamailio.log
+    systemctl restart rsyslog
+
+    # Setup logrotate
+    cp -f ${DSIP_PROJECT_DIR}/logrotate/kamailio /etc/logrotate.d/kamailio
 
     # Start Kamailio
     #systemctl start kamailio
@@ -101,9 +107,11 @@ function uninstall {
 
     firewall-cmd --reload
 
-    #Remove logrotate settings
+    # Remove kamailio Logging
+    rm -f /etc/rsyslog.d/kamailio.conf
+
+    # Remove logrotate settings
     rm -f /etc/logrotate.d/kamailio
-    rm -f /etc/logrotate.d/rtpengine
 }
 
 case "$1" in

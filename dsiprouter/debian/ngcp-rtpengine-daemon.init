@@ -10,6 +10,9 @@
 # Description:       Proxy for RTP and other media streams
 ### END INIT INFO
 
+# redirect daemon output to syslog
+exec 1> >(logger -p local1.warning -t $(basename $0)) 2>&1
+
 set -e
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin

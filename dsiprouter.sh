@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+#=============== dSIPRouter Management Script ==============#
+#
+# install, configure, and manage dsiprouter
+#
 #========================== NOTES ==========================#
 #
 # Supported OS:
@@ -249,12 +253,22 @@ export -f setPythonCmd
 
 # set dynamic python config settings
 function configurePythonSettings {
-    setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)"
+    setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE"
     sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
     sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
     sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_EMAIL = '${DSIP_SSL_EMAIL}'|g" gui/settings.py
 #    sed -i -r "s|(DOMAIN[[:space:]]?=.*)|DOMAIN = '${DSIP_SERVER_DOMAIN}'|g" gui/settings.py
+}
+
+# update settings file based on cmdline args
+# should be used prior to app execution
+function updatePythonRuntimeSettings {
+    if (( ${DEBUG} == 1 )); then
+        setConfigAttrib 'DEBUG' 'True'
+    else
+        setConfigAttrib 'DEBUG' 'False'
+    fi
 }
 
 function configureSSL {
@@ -473,8 +487,8 @@ function uninstallRTPEngine {
             echo "Removing RTPEngine for $DISTRO"
             systemctl stop rtpengine
             rm -f /usr/sbin/rtpengine
-            rm -f /etc/syslog.d/rtpengine
             rm -f /etc/rsyslog.d/rtpengine.conf
+            rm -f /etc/logrotate.d/rtpengine
             rm -f ./.rtpengineinstalled
             echo "Removed RTPEngine for $DISTRO"
         fi
@@ -483,7 +497,7 @@ function uninstallRTPEngine {
             echo "Removing RTPEngine for $DISTRO"
             systemctl stop rtpengine
             rm -f /usr/sbin/rtpengine
-            rm -f /etc/syslog.d/rtpengine
+            rm -f /etc/rsyslog.d/rtpengine.conf
             rm -f /etc/rsyslog.d/rtpengine.conf
             rm -f ./.rtpengineinstalled
             echo "Removed RTPEngine for $DISTRO"
@@ -503,6 +517,7 @@ function installRTPEngine {
     if [[ $DISTRO == "debian" ]]; then
 
         # Install required libraries
+        apt-get install -y logrotate rsyslog
         apt-get install -y firewalld
         apt-get install -y debhelper
         apt-get install -y iptables-dev
@@ -547,6 +562,8 @@ port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
 log-level = 7
 log-facility = local1
+log-facility-cdr = local1
+log-facility-rtcp = local1
 EOF
          ) > /etc/rtpengine/rtpengine.conf
 
@@ -560,10 +577,12 @@ EOF
         firewall-cmd --reload
 
         # Setup RTPEngine Logging
-        echo "local1.*     -/var/log/rtpengine" >> /etc/rsyslog.d/rtpengine.conf
-        touch /var/log/rtpengine
+        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rtpengine.conf /etc/rsyslog.d/rtpengine.conf
+        touch /var/log/rtpengine.log
         systemctl restart rsyslog
 
+        # Setup logrotate
+        cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/rtpengine /etc/logrotate.d/rtpengine
 
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
@@ -591,7 +610,7 @@ EOF
 
         # Install required libraries
         yum install -y epel-release
-        #yum update -y
+        yum install -y logrotate rsyslog
         rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
         rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
         yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
@@ -672,11 +691,38 @@ EOF
         cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-stop-post /usr/sbin/
         chmod +x /usr/sbin/rtpengine-*
 
-        # Enable the RTPEngine to start during boot
-        systemctl enable ngcp-rtpengine-daemon
-        # Start RTPEngine
-        systemctl start ngcp-rtpengine-daemon
-           
+            # Add Options File
+            (cat << EOF
+# Add extra options here
+# We dont support the NG protocol in this release
+#
+OPTIONS="-F -i ${INTERNAL_IP}!${EXTERNAL_IP} -u 127.0.0.1:7722 -m ${RTP_PORT_MIN} -M ${RTP_PORT_MAX} -p /var/run/rtpengine.pid --log-level=7 --log-facility=local1"
+EOF
+            ) > /etc/sysconfig/rtpengine
+
+            # Setup RTPEngine Logging
+            cp -f ${DSIP_PROJECT_DIR}/syslog/rtpengine.conf /etc/rsyslog.d/rtpengine.conf
+            touch /var/log/rtpengine.log
+            systemctl restart rsyslog
+
+            # Setup logrotate
+            cp -f ${DSIP_PROJECT_DIR}/logrotate/rtpengine /etc/logrotate.d/rtpengine
+
+            # Setup Firewall rules for RTPEngine
+            firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+            firewall-cmd --reload
+
+            # Reload systemd configs
+            systemctl daemon-reload
+            # Enable the RTPEngine to start during boot
+            systemctl enable rtpengine
+            # Start RTPEngine
+            systemctl start rtpengine
+
+            # Start manually if the service fails to start
+            if [ $? -ne 0 ]; then
+                /usr/sbin/rtpengine --config-file=/etc/sysconfig/rtpengine --pidfile=/var/run/rtpengine.pid
+            fi
 
         # Start manually if the service fails to start
         if [ $? -ne 0 ]; then
@@ -897,6 +943,9 @@ function installModules {
 
 
 function start {
+    # propagate settings to the app config
+    updatePythonRuntimeSettings
+
     # Check if the dSIPRouter process is already running
     if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
         PID=`cat /var/run/dsiprouter/dsiprouter.pid`
@@ -913,10 +962,12 @@ function start {
     fi
 
     # Start the process
-    if [ $DEBUG -eq 0 ]; then
-        nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >/dev/null 2>&1 &
+    if [ $DEBUG -eq 1 ]; then
+        # keep it in the foreground, only used for debugging issues
+        ${PYTHON_CMD} ./gui/dsiprouter.py runserver
     else
-        nohup $PYTHON_CMD ./gui/dsiprouter.py runserver >/var/log/dsiprouter.log 2>&1 &
+        # normal startup, background process
+        ${PYTHON_CMD} ./gui/dsiprouter.py runserver >/dev/null 2>&1 &
     fi
 
     # Store the PID of the process
@@ -934,6 +985,9 @@ function start {
 
 
 function stop {
+    # propagate settings to the app config
+    updatePythonRuntimeSettings
+
 	if [ -e /var/run/dsiprouter/dsiprouter.pid ]; then
 		#kill -9 `cat /var/run/dsiprouter/dsiprouter.pid`
         kill -9 $(pgrep -f runserver) 2>&1 >/dev/null

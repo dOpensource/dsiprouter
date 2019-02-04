@@ -86,6 +86,148 @@ From Domain          The name of the domain defined in the dSIPRouter PBX Setup
 ==================   ============
 
 
+
+=====================================
+Using chanSIP Trunking  - FreePBX Example
+=====================================
+The following screenshot(s) shows how to configure a chanSIP trunk within FreePBX for Username/Password Authentication.
+
+1. Log into FreePBX server
+2. Click Connectivity→Trunks
+3. Select Add SIP (chan_sip) Trunk
+
+.. image:: images/add_trunk.png
+        :align: center
+		
+		
+4. Under General tab enter 
+   The following fields needs to be entered
+
+==================   ============
+Field                Value
+==================   ============
+Trunk Name           Type Desired name
+Outbound Caller ID   Phone# that you want to appear during a outbound call (if applicable)
+==================   ============
+   
+   
+      
+
+.. image:: images/sipchan__general.PNG
+        :align: center
+		
+		
+5. Click Submit
+
+**NOTE**  If messsage box appears, click Cancel to return back or click OK to continue.
+
+
+.. image:: images/sipchan_outbound.PNG
+        :align: center 		
+
+
+		
+6. Be sure to click the **Apply Config** button after submitting to confirm.
+
+.. image:: images/apply_config_button.PNG
+        :align: center
+
+You will now be able to see the new chanSIP added in the truck.	
+
+.. image:: images/sipchan__added.PNG
+        :align: center
+	
+		
+Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls. You will need the following information:
+The following fields needs to be entered
+
+==================   ============
+Field                Value
+==================   ============
+Host=                dsiprouter 
+Username=            <Provided by carrier>
+Secret=              <Provided by carrier>
+Type=                peer
+Context=             from-trunk
+==================   ============
+
+
+
+.. image:: images/sipchan__outgoing.PNG
+        :align: center
+
+NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
+
+8. Next you will enter the configurations for incoming under the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
+
+The following fields needs to be entered
+
+==================   ============
+Field                Value
+==================   ============
+Host=                dsiprouter 
+Insecure=            port,invite
+Type=                peer
+Context=             from-trunk
+==================   ============
+
+
+
+
+.. image:: images/sip__settings.PNG
+        :align: center
+		
+9. Click Submit.
+
+10. Next you will need to setup an outbound route.  Select Connectivity→ Outbound Routes. Click the “+” sign to add a outbound route. In this tab you will need to enter:
+
+==================   ============
+Field                Value
+==================   ============
+Route Name           Type desired name
+Route CID            Outbound
+Trunk Sequence for
+  Matched Routes     Trunk name
+==================   ============
+
+
+
+
+.. image:: images/outbound_routes_chansip.PNG
+        :align: center
+		
+11. Click the Dial Patterns tab to set the dial patterns.
+		
+.. image:: images/dialpla_chansip.PNG
+        :align: center
+		
+	Dial pattern is set to your preference. Prefixes are optional, not required.	
+
+
+.. image:: images/chansip_dial_pattern.PNG
+        :align: center
+
+12. Click Submit and Apply Config button.
+
+You can test chanSIP is valid by configuring a softphone or a hard phone. Below is an example using a softphone:
+In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter:
+		
+==================   ============
+Field                Value
+==================   ============
+Username             extension@<siptrunkipaddress
+secret               Password of that extension
+==================   ============
+
+
+
+.. image:: images/chansip_zoiper.PNG
+        :align: center
+		
+		You should now be able to make a inbound and outbound call successfully!
+		
+		
+
 ===============================================
 Using SIP Trunking - FusionPBX IP Authenication
 ===============================================
@@ -136,7 +278,8 @@ The following screenshot(s) shows how to configure a SIP trunk within FusionPBX 
 
 
 
-==============================================================
+		
+============================================================
 Using SIP Trunking - FusionPBX Username/Password Authenication
 ==============================================================
 The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for Username/Password Authenication with IP Authenication off.

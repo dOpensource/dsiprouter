@@ -6,6 +6,12 @@ DSIP_PORT = 5000
 USERNAME = 'admin'
 PASSWORD = 'admin'
 
+# dsiprouter logging settings
+# syslog level and facility values based on:
+# <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>
+DSIP_LOG_LEVEL = 3
+DSIP_LOG_FACILITY = 18
+
 # ssl key / cert paths
 # email for re-certification (must match certs)
 SSL_KEY = ""
