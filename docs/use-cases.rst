@@ -98,7 +98,7 @@ The following screenshot(s) shows how to configure a chanSIP trunk within FreePB
 
 
 .. image:: images/add_trunk.png
-        :align: center
+         :align: center
 		
 
 		
@@ -131,8 +131,10 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
 		
 6. Be sure to click the **Apply Config** button after submitting to confirm.
 
+
 .. image:: images/apply_config_button.PNG
         :align: center
+
 
 You will now be able to see the new chanSIP added in the truck.	
 
