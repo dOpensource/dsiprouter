@@ -66,6 +66,7 @@ The following fields needs to be entered
 Field                Value
 ==================   ============
 Username             Username from dSIPRouter PBX Setup
+Secret		     Password from dSIPRouter PBX Setup
 Authentication       Outbound
 Registration         Send 
 SIP Server           Domain name defined in the dSIPRouter PBX Setup
@@ -149,8 +150,8 @@ The following fields needs to be entered
 Field                Value
 ==================   ============
 Host                 <host name or IP address of dsiprouter> 
-Username             <Provided by carrier>
-Secret               <Provided by carrier>
+Username             <Specified in dsiprouter>
+Secret               <Specified in dsiprouter>
 Type                 peer
 Context              from-trunk
 ==================   ============
@@ -170,10 +171,10 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host=                <host name or IP address of dsiprouter>
-Insecure=            port,invite
-Type=                peer
-Context=             from-trunk
+Host                 <host name or IP address of dsiprouter>
+Insecure             port,invite
+Type                 peer
+Context              from-trunk
 ==================   ============
 
 
@@ -214,14 +215,15 @@ Trunk Sequence for
 
 12. Click Submit and Apply Config button.
 
-You can test chanSIP is valid by configuring a softphone or a hard phone. Below is an example using a softphone:
+You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example using a softphone:
 In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter:
 		
 ==================   ============
 Field                Value
 ==================   ============
-Username             extension@<siptrunkipaddress
-secret               Password of that extension
+Username             <extension>@<siptrunkipaddress>
+secret               <Password of that extension>
+Proxy		     <IP address of your dsiprouter>
 ==================   ============
 
 
