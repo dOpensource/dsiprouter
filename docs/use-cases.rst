@@ -215,8 +215,7 @@ Trunk Sequence for
 
 12. Click Submit and Apply Config button.
 
-You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example using a softphone:
-In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter:
+You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:
 		
 ==================   ============
 Field                Value
