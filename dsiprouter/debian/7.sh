@@ -27,7 +27,7 @@ function install {
     fi
 
     # Setup dSIPRouter Logging
-    cp -f ${DSIP_PROJECT_DIR}/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/resources/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
     touch /var/log/dsiprouter.log
     systemctl restart rsyslog
 
