@@ -19,9 +19,11 @@ function install {
     # Reset python cmd in case it was just installed
     setPythonCmd
 
-    # Setup Firewall for DSIP_PORT
-    systemctl start firewalld
+    # Enable and start firewalld if not already running
     systemctl enable firewalld
+    systemctl start firewalld
+
+    # Setup Firewall for DSIP_PORT
     firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
