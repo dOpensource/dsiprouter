@@ -111,7 +111,11 @@ elif [[ "$(cat /etc/os-release | grep '^ID=' 2>/dev/null | cut -d '=' -f 2 | cut
 fi
 # Check if we are on AWS Instance
 export AWS_ENABLED=0
-if cmdExists "ec2-metadata" || curl http://169.254.169.254 &>/dev/null; then
+# Will try to access the AWS metadata URL and will return an exit code of 22 if it fails
+# The -f flag enables this feature
+curl -s -f http://169.254.169.254 
+ret=$?
+if (( $ret != 22 )); then
     export AWS_ENABLED=1
 fi
 
@@ -1132,7 +1136,7 @@ function resetPassword {
 
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
 function generatePassword {
-    if (( $AWS_ENABLED == 1 )); then
+    if (( $AWS_ENABLED == 1)); then
         password=$(getInstanceID)
     else
         password=$(date +%s | sha256sum | base64 | head -c 16)
