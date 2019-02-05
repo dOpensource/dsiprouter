@@ -66,6 +66,7 @@ The following fields needs to be entered
 Field                Value
 ==================   ============
 Username             Username from dSIPRouter PBX Setup
+Secret		     Password from dSIPRouter PBX Setup
 Authentication       Outbound
 Registration         Send 
 SIP Server           Domain name defined in the dSIPRouter PBX Setup
@@ -96,9 +97,11 @@ The following screenshot(s) shows how to configure a chanSIP trunk within FreePB
 2. Click Connectivity→Trunks
 3. Select Add SIP (chan_sip) Trunk
 
-.. image:: images/add_trunk.png
-        :align: center
+
+.. image:: images/add_trunk.PNG
+         :align: center
 		
+
 		
 4. Under General tab enter 
    The following fields needs to be entered
@@ -113,7 +116,7 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
    
       
 
-.. image:: images/sipchan__general.PNG
+.. image:: images/sipchan_general.PNG
         :align: center
 		
 		
@@ -129,12 +132,14 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
 		
 6. Be sure to click the **Apply Config** button after submitting to confirm.
 
+
 .. image:: images/apply_config_button.PNG
         :align: center
 
+
 You will now be able to see the new chanSIP added in the truck.	
 
-.. image:: images/sipchan__added.PNG
+.. image:: images/sipchan_added.PNG
         :align: center
 	
 		
@@ -144,17 +149,18 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host=                dsiprouter 
-Username=            <Provided by carrier>
-Secret=              <Provided by carrier>
-Type=                peer
-Context=             from-trunk
+Host                 <host name or IP address of dsiprouter> 
+Username             <Specified in dsiprouter>
+Secret               <Specified in dsiprouter>
+Type                 peer
+Context              from-trunk
 ==================   ============
 
 
 
-.. image:: images/sipchan__outgoing.PNG
+.. image:: images/chansip_outgoing.PNG
         :align: center
+
 
 NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
 
@@ -165,16 +171,16 @@ The following fields needs to be entered
 ==================   ============
 Field                Value
 ==================   ============
-Host=                dsiprouter 
-Insecure=            port,invite
-Type=                peer
-Context=             from-trunk
+Host                 <host name or IP address of dsiprouter>
+Insecure             port,invite
+Type                 peer
+Context              from-trunk
 ==================   ============
 
 
 
 
-.. image:: images/sip__settings.PNG
+.. image:: images/chansip_incoming.PNG
         :align: center
 		
 9. Click Submit.
@@ -209,14 +215,15 @@ Trunk Sequence for
 
 12. Click Submit and Apply Config button.
 
-You can test chanSIP is valid by configuring a softphone or a hard phone. Below is an example using a softphone:
+You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example using a softphone:
 In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter:
 		
 ==================   ============
 Field                Value
 ==================   ============
-Username             extension@<siptrunkipaddress
-secret               Password of that extension
+Username             <extension>@<siptrunkipaddress>
+secret               <Password of that extension>
+Proxy		     <IP address of your dsiprouter>
 ==================   ============
 
 
