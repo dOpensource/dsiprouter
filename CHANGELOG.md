@@ -2,6 +2,23 @@
 
 
 
+### Inbound DID Mapping Sort By Name
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Wed, 6 Feb 2019 17:36:14 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #76
+- sort pbx select list on pbx name
+- enable combobox for imported did's
+- fix autoselect on add / import did modal
+
+
+---
+
+
 ### Remove Carrier From gwlist On Delete
 
 > Branches Affected: gui-improvements  
@@ -34,6 +51,19 @@
 ---
 
 
+### Fixed testing scripts
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Tue, 5 Feb 2019 06:49:27 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
 ### Added support for NOTIFY messages from PBX - which is used to update MWI
 
 > Branches Affected: gui-improvements  
@@ -41,6 +71,149 @@
 > Date: Mon, 4 Feb 2019 21:30:19 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 12:34:41 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 12:13:28 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 12:09:52 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 12:01:54 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 11:44:21 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 11:34:10 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 11:31:59 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 11:29:01 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 11:11:38 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Rename troubleshooting.rst.txt to troubleshooting.rst
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 10:27:07 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update troubleshooting.rst.txt
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 4 Feb 2019 10:25:11 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
 
 
 

@@ -100,13 +100,13 @@
       <div class="form-group">
         <select class="gwid form-control" name="gwid" title="gwid">
           {% for gw in gwlist %}
-            <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
+            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="form-group">
-	     <input class="form-control" type="text" name="note" placeholder="Notes about DID(s)" autofocus="autofocus">
+	     <input class="form-control" type="text" name="note" placeholder="Notes about DID(s)">
      </div>
 
       <div class="modal-footer ">
@@ -154,13 +154,13 @@
       <div class="form-group">
         <select class="gwid form-control" name="gwid" title="gwid">
           {% for gw in gwlist %}
-            <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
+            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
       
       <div class="form-group">
-	     <input class="form-control" type="text" name="note" placeholder="Notes about DID(s)" autofocus="autofocus">
+	     <input class="form-control" type="text" name="note" placeholder="Notes about DID(s)">
      </div>
 
       <div class="modal-footer ">
@@ -206,7 +206,7 @@
 
 {% block import_modal %}
   
-<div class="modal-header">
+  <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
     <h4 class="modal-title custom_align" id="Heading">Import DID's</h4>
@@ -217,20 +217,20 @@
       <input class="ruleid " type="hidden" name="ruleid">
       
       <div class="form-group">
-	<label for="exampleFormControlFile1">CSV File with DID's</label>
-	<input type="file" name="file" class="form-control-file" id="importFile">
+        <label for="importFile">CSV File with DID's</label>
+        <input type="file" name="file" class="form-control-file" id="importFile">
       </div>
       
       <div class="form-group">
         <select class="gwid form-control" name="gwid" title="gwid">
           {% for gw in gwlist %}
-            <option value='{{ gw['gwid'] }}'>{{ gw['description']|attrFilter('name') }}</option>
+            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="form-group">
-	     <input class="form-control" type="text" name="note" placeholder="Notes about DID(s)" autofocus="autofocus">
+	     <input class="form-control" type="text" name="note" placeholder="Notes about DID(s)">
      </div>
 
       <div class="modal-footer ">
@@ -246,17 +246,7 @@
 
 {% block custom_js %}
 <script>
-$(document).ready(function() {
-    $('#inboundmapping').DataTable({
-    "columnDefs": [
-                { "orderable": false, "targets": 0 },
-                { "orderable": false, "targets": 5 },
-                { "orderable": false, "targets": 6 },
-                { "orderable": false, "targets": 7 }
-      ],
-    "order": [[ 1, 'asc' ]]
-  }
-    );
-    } );
+  var DID_LIST = "{{ imported_dids }}";
 </script>
+  {{ script_tag('inboundmapping') }}
 {% endblock %}

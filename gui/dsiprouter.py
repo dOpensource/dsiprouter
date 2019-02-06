@@ -973,6 +973,9 @@ def displayInboundMapping():
             res = db.execute(
                 'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(groupid))
             gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
+            # sort gateways by name
+            gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
+
             dids = None
             if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
                 try:
