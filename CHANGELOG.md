@@ -2,6 +2,22 @@
 
 
 
+### Remove Carrier From gwlist On Delete
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Wed, 6 Feb 2019 15:17:34 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #7
+- carriers removed from all related dr_rules gwlists on delete
+- create alert and warn user that related rules will be updated
+
+
+---
+
+
 ### Fix Carrier Modal Actions
 
 > Branches Affected: gui-improvements  

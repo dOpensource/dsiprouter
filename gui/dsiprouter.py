@@ -126,6 +126,8 @@ def displayCarrierGroups(gwgroup=None):
     :param gwgroup:
     """
 
+    # TODO: track related dr_rules and update lists on delete
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
@@ -336,28 +338,58 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     Display the carriers table
     :param gwid:
     :param gwgroup:
+    :param newgwid:
     """
+
+    carrier_groupid = 8000
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
         if session.get('logged_in'):
-            # res must be a list()
-            if gwgroup is not None:
+            # carriers is a list of carriers matching query
+            # carrier_routes is a list of associated rules for each carrier
+            carriers = []
+            carrier_rules = []
+
+            # get carrier by id
+            if gwid is not None:
+                carriers = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == carrier_groupid).all()
+                gateway_rules = {}
+                for rule in rules:
+                    if str(gwid) in filter(None, rule.gwlist.split(',')):
+                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
+
+            # get carriers by carrier group
+            elif gwgroup is not None:
                 Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
                 # check if any endpoints in group b4 converting to list(int)
                 if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
-                    gwlist = list(map(int, filter(None, Gatewaygroup.gwlist.split(","))))
-                    res = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
-                else:
-                    res = []
-            elif gwid is not None:
-                res = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
-            else:
-                res = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+                    gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
+                    carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
+                    rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == carrier_groupid).all()
+                    for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
+                        gateway_rules = {}
+                        for rule in rules:
+                            if gateway_id in filter(None, rule.gwlist.split(',')):
+                                gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                        carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
-            return render_template('carriers.html', rows=res, gwgroup=gwgroup, new_gwid=newgwid)
+            # get all carriers
+            else:
+                carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == carrier_groupid).all()
+                for gateway in carriers:
+                    gateway_rules = {}
+                    for rule in rules:
+                        if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
+                            gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                    carrier_rules.append(json.dumps(gateway_rules, separators=(',',':')))
+
+            return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
 
         else:
             return index()
@@ -485,6 +517,8 @@ def deleteCarriers():
 
     global reload_required
 
+    carrier_groupid = 8000
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
@@ -494,6 +528,7 @@ def deleteCarriers():
         gwid = form['gwid']
         gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
         name = form['name']
+        related_rules = json.loads(form['related_rules']) if 'related_rules' in form else ''
 
         Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
         # make the extra query to find associated gwgroup if needed
@@ -501,16 +536,28 @@ def deleteCarriers():
             Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
             fields = strFieldsToDict(Gateway.first().description)
             gwgroup = fields['gwgroup']
+        # grab associated address entry as well
         Addr = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(name)))
+        # grab any related carrier groups
+        Gatewaygroups = db.execute('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET({}, dr_gw_lists.gwlist)'.format(gwid))
 
+        # remove gateway and address
         Gateway.delete(synchronize_session=False)
         Addr.delete(synchronize_session=False)
-        Gatewaygroups = db.execute('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET({}, dr_gw_lists.gwlist)'.format(gwid))
+        # remove carrier from gwlist in carrier group
         for Gatewaygroup in Gatewaygroups:
             gwlist = list(filter(None, Gatewaygroup[1].split(",")))
             gwlist.remove(gwid)
             db.query(GatewayGroups).filter(GatewayGroups.id == str(Gatewaygroup[0])).update(
                 {'gwlist': ','.join(gwlist)}, synchronize_session=False)
+        # remove carrier from gwlist in carrier rules
+        if len(related_rules) > 0:
+            rule_ids = related_rules.keys()
+            rules = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid.in_(rule_ids)).all()
+            for rule in rules:
+                gwlist = list(filter(None, rule.gwlist.split(",")))
+                gwlist.remove(gwid)
+                rule.gwlist = ','.join(gwlist)
 
         db.commit()
         reload_required = True
@@ -1705,12 +1752,15 @@ def initApp(flask_app):
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
 
-    # Add jinga2 filter
+    # Add jinja2 filters
     flask_app.jinja_env.filters["attrFilter"] = attrFilter
     flask_app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
     flask_app.jinja_env.filters["noneFilter"] = noneFilter
     flask_app.jinja_env.filters["imgFilter"] = imgFilter
     flask_app.jinja_env.filters["domainTypeFilter"] = domainTypeFilter
+
+    # Add jinja2 functions
+    flask_app.jinja_env.globals.update(zip=zip)
 
     # db.init_app(flask_app)
     # db.app = app
