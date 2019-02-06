@@ -97,6 +97,7 @@ EOF
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
+    systemctl restart dbus
     systemctl start firewalld
 
     # Setup firewall rules
