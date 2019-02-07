@@ -8,6 +8,7 @@
 #!define WITH_DROUTE
 ##!define WITH_DEBUG
 #!define WITH_NAT
+#!define WITH_PROXY_ALL_RTP
 #!define WITH_DISPATCHER
 ##!define WITH_SERVERNAT
 #!define WITH_MULTIDOMAIN
@@ -1425,21 +1426,39 @@ event_route[uac:reply] {
 # Caller NAT detection
 route[NATDETECT] {
 #!ifdef WITH_NAT
-	if (nat_uac_test("19")) {
-		fix_nated_contact();
+	#!ifdef WITH_PROXY_ALL_RTP
+
 		force_rport();
-
+                
 		if (is_method("REGISTER")) {
-			fix_nated_register();
-		}
-		else {
-			if (is_first_hop()) {
-				set_contact_alias();
-			}
-		}
+                        fix_nated_register();
+                } else {
+                        if (is_first_hop()) {
+                                set_contact_alias();
+                        }
+                }
 
-		setflag(FLT_NATS);
-	}
+                setflag(FLT_NATS);
+
+	#!else
+
+  	if (nat_uac_test("19")) {
+  		fix_nated_contact();
+  		force_rport();
+  
+  		if (is_method("REGISTER")) {
+  			fix_nated_register();
+  		}
+  		else {
+  			if (is_first_hop()) {
+  				set_contact_alias();
+  			}
+  		}
+  
+  		setflag(FLT_NATS);
+  	}
+  	
+  #!endif
 #!endif
 #!ifdef WITH_SERVERNAT
 	setflag(FLT_NATS);
