@@ -113,7 +113,7 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
        
 
 
-5. Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls. You will need the following information:
+5. Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls by selecting the **Outbound** tab. You will need the following information:
 The following fields needs to be entered
 
 ==================   ============
@@ -134,7 +134,7 @@ Context              from-trunk
 
 NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
 
-6. Next you will enter the configurations for incoming under the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
+6. Next you will enter the configurations for incoming by selecting the **Inbound** tab in the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
 
 The following fields needs to be entered
 
@@ -151,6 +151,9 @@ Context              from-trunk
 .. image:: images/chansip_incoming.PNG
         :align: center
 
+Most VoIP providers require your system to REGISTER with theirs. Enter the registration line in the Register String field. It consist of 
+"username:password@switch.voipprovider.com". In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@*****.**********.com
+
 
 7. Click Submit
 
@@ -162,15 +165,13 @@ Context              from-trunk
 
 You will now be able to see the new chanSIP added in the truck.	
 
-.. image:: images/sipchan_added.PNG
-        :align: center
-
 
 .. image:: images/add_trunk.PNG
         :align: center
 		
 
-**NOTE**  If messsage box appears, click Cancel to return back or click OK to continue.
+
+
 
 
 .. image:: images/sipchan_outbound.PNG
@@ -178,13 +179,7 @@ You will now be able to see the new chanSIP added in the truck.
 
 
 		
-
-	
-
-		
-9. Click Submit.
-
-10. Next you will need to setup an outbound route.  Select Connectivity→ Outbound Routes. Click the “+” sign to add a outbound route. In this tab you will need to enter:
+9. Next you will need to setup an outbound route. If previous configurations were accurate a outbound route will automatically be  generated. You can validate this by selecting Connectivity→ Outbound Routes. If an outbound route has not beed established Click the “+” sign to add a outbound route. In this tab you will need to enter:
 
 ==================   ============
 Field                Value
@@ -195,6 +190,8 @@ Trunk Sequence for
   Matched Routes     Trunk name
 ==================   ============
 
+		
+10. Click Submit.
 
 
 
@@ -203,6 +200,7 @@ Trunk Sequence for
 		
 11. Click the Dial Patterns tab to set the dial patterns.
 		
+
 .. image:: images/dialpla_chansip.PNG
         :align: center
 		
