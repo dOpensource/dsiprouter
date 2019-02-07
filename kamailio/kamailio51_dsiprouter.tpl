@@ -8,6 +8,7 @@
 #!define WITH_DROUTE
 ##!define WITH_DEBUG
 #!define WITH_NAT
+##!define WITH_MULTI_HOMED
 #!define WITH_DISPATCHER
 ##!define WITH_SERVERNAT
 #!define WITH_MULTIDOMAIN
@@ -254,6 +255,11 @@ teleblock.media_port = "" desc "Teleblock media port"
 # inout - inbound and outbound only - no domain routing
 # "" - default behavior
 server.role = "" desc "Role of the server in the topology"
+
+#!ifdef WITH_MULTI_HOMED
+# Make Kamailio Multi-Homed
+mhomed=1
+#!endif
 
 ####### Modules Section ########
 
@@ -1480,9 +1486,34 @@ route[NATMANAGE] {
                 rtpengine_manage("media-address=INTERNAL_IP_ADDR");
         else
                 rtpengine_manage();
-#!else
-                rtpengine_manage();
+
 #!endif		
+
+
+#!ifdef WITH_MULTI_HOMED
+
+        if (!allow_source_address(FLT_PBX) || allow_source_address(FLT_CARRIER)) {
+
+                xlog("L_INFO", "Call Flow: $rm from $fu (IP:$si:$sp subnet $rd) in route[RTPPROXY] RTPproxy with EI Flags\n");
+                xlog("L_INFO", "Call Flow: Extension To Extension Call. Flow: External to Internal. PBX: $var(INTERNAL_PBX). Allowed IP: FLT_CARRIER");
+                rtpengine_manage("direction=external direction=internal");
+
+        } else {
+
+                xlog("L_INFO", "Call Flow: Internal to External\n");
+                xlog("L_INFO", "Call Information: $rm from $fu (IP:$si:$sp) in route[RTPPROXY] RTPproxy with IE Flags\n");
+                rtpengine_manage("direction=internal direction=external");
+
+        }
+
+#!endif
+
+
+#!ifdef !WITH_SERVERNAT && !WITH_MULTI_HOMED
+
+	rtpengine_manage();
+
+#!endif	
 
 	if (is_request()) {
 		if (!has_totag()) {
