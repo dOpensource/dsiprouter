@@ -14,6 +14,7 @@
 #!define WITH_TELEBLOCK
 #!define WITH_ANTIFLOOD
 ##!define WITH_DBCLUSTER
+##!define WITH_HOMER
 #
 #!substdef "!INTERNAL_IP_ADDR!198.211.102.60!g"
 #!substdef "!INTERNAL_IP_NET!198.211.102.*!g"
@@ -587,7 +588,16 @@ modparam("sqlops", "sqlcon", "cb=>mysql://kamailio:kamailiorw@localhost/kamailio
 # Asterisk Realtime
 modparam("sqlops", "sqlcon", "asterisk_realtime=>mysql://kamailio:kamailiorw@localhost/kamailio")
 
-
+# ----- HOMER params -----
+#!ifdef WITH_HOMER
+# check IP and port of your capture node
+modparam("siptrace", "duplicate_uri","sip:172.16.10.26:9060");
+modparam("siptrace", "hep_mode_on", 1);
+modparam("siptrace", "trace_to_database", 0);
+modparam("siptrace", "trace_flag", 22);
+modparam("siptrace", "trace_on", 1);
+modparam("siptrace", "hep_version", 3)
+#!endif
 
 ####### Routing Logic ########
 
@@ -596,6 +606,12 @@ modparam("sqlops", "sqlcon", "asterisk_realtime=>mysql://kamailio:kamailiorw@loc
 # - processing of any incoming SIP request starts with this route
 # - note: this is the same as route { ... }
 request_route {
+
+	#!ifdef WITH_HOMER
+		#start duplicate the SIP message now
+		sip_trace();
+		setflag(22);
+ 	 #!endif	
 
 	# per request initial checks
 	route(REQINIT);
