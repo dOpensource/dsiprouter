@@ -16,8 +16,8 @@ function install() {
     rm -f ~/.my.cnf
 
     # Start firewalld
-    systemctl start firewalld
-    systemctl enable firewalld
+    #systemctl start firewalld
+    #systemctl enable firewalld
 
     # Start MySql
     systemctl start mariadb
@@ -95,15 +95,14 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
+    # Setup firewall rules
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+    firewall-offline-cmd --reload
+    
     # Enable and start firewalld if not already running
     systemctl enable firewalld
-    systemctl restart dbus
     systemctl start firewalld
-
-    # Setup firewall rules
-    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
-    firewall-cmd --reload
 
     #Make sure MariaDB starts before Kamailio
     sed -i -E "s/(After=.*)/\1 mariadb.service/g" /lib/systemd/system/kamailio.service
