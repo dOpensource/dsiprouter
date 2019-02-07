@@ -7,7 +7,7 @@ from sqlalchemy import case, func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
-from sysloginit import *
+from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
@@ -26,6 +26,11 @@ reload_required = False
 
 # TODO: unit testing per component
 
+@app.before_first_request
+def before_first_request():
+    log_handler = initSyslogLogger()
+    # replace werkzeug and sqlalchemy loggers
+    replaceAppLoggers(log_handler)
 
 @app.before_request
 def before_request():
@@ -1678,7 +1683,7 @@ def sigHandler(signum=None, frame=None):
     if signum == 1:
         IO.logwarn("Received SIGHUP.. ignoring signal")
 
-def replaceAppLoggers():
+def replaceAppLoggers(log_handler):
     """ Handle configuration of web server loggers """
 
     # close current log handlers
@@ -1690,15 +1695,15 @@ def replaceAppLoggers():
         handler.close()
         
     # replace vanilla werkzeug and sqlalchemy log handler
+    logging.getLogger('werkzeug').addHandler(log_handler)
     logging.getLogger('werkzeug').setLevel(settings.DSIP_LOG_LEVEL)
-    logging.getLogger('werkzeug').addHandler(syslog_handler)
-    logging.getLogger('sqlalchemy.engine').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.engine').addHandler(log_handler)
     logging.getLogger('sqlalchemy.engine').setLevel(settings.DSIP_LOG_LEVEL)
-    logging.getLogger('sqlalchemy.dialects').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.dialects').addHandler(log_handler)
     logging.getLogger('sqlalchemy.dialects').setLevel(settings.DSIP_LOG_LEVEL)
-    logging.getLogger('sqlalchemy.pool').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.pool').addHandler(log_handler)
     logging.getLogger('sqlalchemy.pool').setLevel(settings.DSIP_LOG_LEVEL)
-    logging.getLogger('sqlalchemy.orm').addHandler(syslog_handler)
+    logging.getLogger('sqlalchemy.orm').addHandler(log_handler)
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 def initApp(flask_app):
@@ -1732,9 +1737,6 @@ def initApp(flask_app):
     # Flask App Manager configs
     manager = Manager(app)
     manager.add_command('runserver', CustomServer())
-
-    # replace werkzeug and sqlalchemy loggers
-    replaceAppLoggers()
 
     # trap SIGHUP signals
     signal.signal(signal.SIGHUP, sigHandler)

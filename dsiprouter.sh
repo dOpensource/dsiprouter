@@ -50,6 +50,7 @@ export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
 export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
 export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
 export SYSTEM_KAMAILIO_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg" # will be symlinked
+export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
 
 # Default MYSQL db root user values
 MYSQL_ROOT_DEF_USERNAME="root"
@@ -139,7 +140,7 @@ ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" | base64 -
 # Cleanup exported variables on exit
 function cleanupAndExit {
     unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
-    unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD AWS_ENABLED
+    unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD AWS_ENABLED PATH_UPDATE_FILE
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE MYSQL_KAM_PASSWORD MYSQL_KAM_USERNAME MYSQL_KAM_DATABASE
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET
     unset -f setPythonCmd
@@ -254,6 +255,15 @@ function initialChecks {
             exit 1
         fi
     fi
+
+    # fix PATH if needed
+    # we are using the default install paths but these may change in the future
+    # - sipsak, and future use
+    pathCheck /usr/local/bin || echo 'export PATH="/usr/local/bin${PATH:+:$PATH}"' >> ${PATH_UPDATE_FILE} && . ${PATH_UPDATE_FILE}
+    # - rtpengine
+    pathCheck /usr/sbin || echo 'export PATH="${PATH:+$PATH:}/usr/sbin"' >> ${PATH_UPDATE_FILE} && . ${PATH_UPDATE_FILE}
+    # - kamailio
+    pathCheck /sbin || echo 'export PATH="${PATH:+$PATH:}/sbin"' >> ${PATH_UPDATE_FILE} && . ${PATH_UPDATE_FILE}
 }
 
 # exported because its used throughout called scripts as well
@@ -307,6 +317,15 @@ function configureSSL {
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`" 
     sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
     sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
+}
+
+# updates and settings in kam config that may change
+# should be run after reboot or change in network configurations
+# TODO: we should support templating for the config instead
+function updateKamailioConfig {
+    setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}"
+    setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}"
+    setKamailioConfigIP 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}"
 }
 
 function configureKamailio {
@@ -571,6 +590,18 @@ function installRTPEngine {
         apt-get install -y libmariadbclient-dev
         apt-get install -y default-libmysqlclient-dev
 
+        # try upgrading debhelper with backports if lower ver than 10
+        CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
+        if (( ${CURRENT_VERSION:-0} < 10 )); then
+            CODENAME=$(cat /etc/os-release | grep '^VERSION=' | cut -d '(' -f 2 | cut -d ')' -f 1)
+            BACKPORT_REPO="${CODENAME}-backports"
+            apt-get install -y -t ${BACKPORT_REPO} debhelper
+            printf '%s\n%s\n%s\n' \
+                "Package: debhelper" \
+                "Pin: release n=${BACKPORT_REPO}" \
+                "Pin-Priority: 750" > /etc/apt/preferences.d/debhelper
+        fi
+
         cd ${SRC_DIR}
         rm -rf rtpengine.bak 2>/dev/null
         mv -f rtpengine rtpengine.bak 2>/dev/null
@@ -592,8 +623,9 @@ function installRTPEngine {
 
         # create rtpengine user and group
         mkdir -p /var/run/ngcp-rtpengine-daemon
-        groupadd rtpengine
-        useradd -d /var/run/ngcp-rtpengine-daemon -M -s /bin/false rtpengine
+        adduser --quiet --system --group --disabled-password \
+            --shell /bin/false --gecos "RTPengine RTP Proxy" \
+            --home /var/run/ngcp-rtpengine-daemon rtpengine
         chown -R rtpengine:rtpengine /var/run/ngcp-rtpengine-daemon
 
         # rtpengine config file
@@ -623,7 +655,7 @@ TABLE=0
 SET_USER=rtpengine
 SET_GROUP=rtpengine
 EOF
-        ) > /etc/default/ngcp-rtpengine-daemon.conf
+        ) > /etc/default/ngcp-rtpengine-daemon
 
         # Enable and start firewalld if not already running
         systemctl enable firewalld
@@ -774,8 +806,9 @@ EOF
 
             # create rtpengine user and group
             mkdir -p /var/run/rtpengine
-            groupadd rtpengine
-            useradd -d /var/run/rtpengine -M -s /bin/false rtpengine
+            adduser --quiet --system --group --disabled-password \
+                --shell /bin/false --gecos "RTPengine RTP Proxy" \
+                --home /var/run/rtpengine rtpengine
             chown -R rtpengine:rtpengine /var/run/rtpengine
 
             # rtpengine config file
@@ -811,23 +844,29 @@ EOF
             systemctl enable firewalld
             systemctl start firewalld
 
+            # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+            if (( $? != 0 )); then
+                systemctl restart dbus
+                systemctl restart firewalld
+            fi
+
             # Setup Firewall rules for RTPEngine
             firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
             firewall-cmd --reload
 
             # Setup RTPEngine Logging
-            cp -f ${DSIP_PROJECT_DIR}/syslog/rtpengine.conf /etc/rsyslog.d/rtpengine.conf
+            cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rtpengine.conf /etc/rsyslog.d/rtpengine.conf
             touch /var/log/rtpengine.log
             systemctl restart rsyslog
 
             # Setup logrotate
-            cp -f ${DSIP_PROJECT_DIR}/logrotate/rtpengine /etc/logrotate.d/rtpengine
+            cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/rtpengine /etc/logrotate.d/rtpengine
 
             # Setup Firewall rules for RTPEngine
             firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
             firewall-cmd --reload
 
-	    # Setup tmp files
+	        # Setup tmp files
             echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
             cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine.service /etc/systemd/system/rtpengine.service
             cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-start /usr/sbin/
@@ -874,82 +913,20 @@ function disableRTP {
 } #end of disableRTP
 
 function install_dsiprouter_ui {
-    cd ${DSIP_PROJECT_DIR}
-
 	echo -e "Attempting to install dSIPRouter...\n"
     ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
-
-function install_dsiprouter_ui {
-
-	echo -e "Attempting to install dSIPRouter...\n"
-        ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
 	
  	setPythonCmd
 	installModules
 
 	# set some defaults in settings.py
-        configurePythonSettings
-
-	# configure SSL
-        if [ ${WITH_SSL} -eq 1 ]; then
-            configureSSL
-        fi
-	
-	if [ $? -eq 0 ]; then
-            touch ./.installed
-            echo -e "\e[32m-------------------------\e[0m"
-            echo -e "\e[32mInstallation is complete! \e[0m"
-            echo -e "\e[32m-------------------------\e[0m\n"
-            displayLogo
-            echo -e "\n\nThe username and dynamically generated password are below:\n"
-
-            # Generate a unique admin password
-            generatePassword
-
-            # Start dSIPRouter
-            start
-
-            # Tell them how to access the URL
-
-
-            echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
-
-            if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
-            fi
-	fi
-
-}
-
-function uninstall_dsiprouter_ui {
- if [ ! -f "./.installed" ]; then
-        echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
-    fi
-
-        # Stop dSIPRouter, remove ./.installed file, close firewall
-        stop
-
-    echo -e "Attempting to uninstall dSIPRouter UI...\n"
-    ./dsiprouter/$DISTRO/$DISTRO_VER.sh uninstall ${DSIP_PORT} ${PYTHON_CMD}
-
-    # Remove crontab entry
-    echo "Removing crontab entry"
-    crontab -l | grep -v -F -w dsiprouter_cron | crontab -
-
-
-    # Remove the hidden installed file, which denotes if it's installed or not
-        rm -f ./.installed
-
-    echo "dSIPRouter was uninstalled"
-}
     configurePythonSettings
 
 	# configure SSL
     if [ ${WITH_SSL} -eq 1 ]; then
         configureSSL
     fi
-
+	
 	if [ $? -eq 0 ]; then
         touch ./.installed
         echo -e "\e[32m-------------------------\e[0m"
@@ -965,6 +942,8 @@ function uninstall_dsiprouter_ui {
         start
 
         # Tell them how to access the URL
+
+
         echo -e "You can access the dSIPRouter web gui by going to:\n"
         echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT\n"
 
@@ -1000,56 +979,60 @@ function uninstall_dsiprouter_ui {
 function install {
     cd ${DSIP_PROJECT_DIR}
 
-    if [ ! -f "./.installed" ]; then
-        echo -e "Attempting to install Kamailio...\n"
-        ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
-        if [ $? -eq 0 ]; then
-            echo "Kamailio was installed!"
-        else
-            echo "dSIPRouter install failed: Couldn't install Kamailio"
-            cleanupAndExit 1
-        fi
-        echo -e "Attempting to install dSIPRouter...\n"
-        ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
+    if [ -f "./.installed" ]; then
+        echo "dSIPRouter is already installed"
+        cleanupAndExit 1
+    fi
+    
+    echo -e "Attempting to install Kamailio...\n"
+    ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
+    if [ $? -eq 0 ]; then
+        echo "Kamailio was installed!"
+    else
+        echo "dSIPRouter install failed: Couldn't install Kamailio"
+        cleanupAndExit 1
+    fi
+    echo -e "Attempting to install dSIPRouter...\n"
+    ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install ${DSIP_PORT} ${PYTHON_CMD}
 
 	# Setup PYTHON_CMD if it was just installed
  	setPythonCmd
 	
-        # Configure Kamailio and Install dSIPRouter Modules
-        if [ $? -eq 0 ]; then
-            configureKamailio
-            installModules
-        fi
+    # Configure Kamailio and Install dSIPRouter Modules
+    if [ $? -eq 0 ]; then
+        configureKamailio
+        installModules
+    fi
 
 	# Install Sipsak for troubleshooting and smoketest
-	install_Sipsak
+	installSipsak
 
-	# Make sure we are back in the dSIPRouter Project Dir
-	cd ${DSIP_PROJECT_DIR}
+    # set some defaults in settings.py
+    configurePythonSettings
 
-        # set some defaults in settings.py
-        configurePythonSettings
+    # configure SSL
+    if [ ${WITH_SSL} -eq 1 ]; then
+        configureSSL
+    fi
 
-        # configure SSL
-        if [ ${WITH_SSL} -eq 1 ]; then
-            configureSSL
-        fi
+    # update kam configs on reboot
+    cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
 
-        # for AMI images the instance-id may change (could be a clone)
-        # add to startup process a password reset to ensure its set correctly
-        if (( $AWS_ENABLED == 1 )); then
-            # add password reset to boot process (using cron)
-            cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
-            # Required changes for Debian AMI's
-            if [[ $DISTRO == "debian" ]]; then
-                # Remove debian-sys-maint password for initial AMI scan
-                sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
+    # for AMI images the instance-id may change (could be a clone)
+    # add to startup process a password reset to ensure its set correctly
+    if (( $AWS_ENABLED == 1 )); then
+        # add password reset to boot process (using cron)
+        cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
+        # Required changes for Debian AMI's
+        if [[ $DISTRO == "debian" ]]; then
+            # Remove debian-sys-maint password for initial AMI scan
+            sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
 
-                # Change default password for debian-sys-maint to instance-id at next boot
-                # we must also change the corresponding password in /etc/mysql/debian.cnf
-                # to comply with AWS AMI image standards
-                # this must run at startup as well so create temp script & add to cron
-                (cat << EOF
+            # Change default password for debian-sys-maint to instance-id at next boot
+            # we must also change the corresponding password in /etc/mysql/debian.cnf
+            # to comply with AWS AMI image standards
+            # this must run at startup as well so create temp script & add to cron
+            (cat << EOF
 #!/usr/bin/env bash
 
 # declare imported functions from library
@@ -1065,41 +1048,37 @@ rm -f ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
 
 exit 0
 EOF
-                ) > ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
-                # note that the script will remove itself after execution
-                chmod +x ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
-                cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"
-            fi
+            ) > ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
+            # note that the script will remove itself after execution
+            chmod +x ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh
+            cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/.reset_debiansys_user.sh"
         fi
+    fi
 
-        # Restart Kamailio with the new configurations
-        systemctl restart kamailio
-        if [ $? -eq 0 ]; then
-            touch ./.installed
-            echo -e "\e[32m-------------------------\e[0m"
-            echo -e "\e[32mInstallation is complete! \e[0m"
-            echo -e "\e[32m-------------------------\e[0m\n"
-            displayLogo
-            echo -e "\n\nThe username and dynamically generated password are below:\n"
+    # Restart Kamailio with the new configurations
+    systemctl restart kamailio
+    if [ $? -eq 0 ]; then
+        touch ./.installed
+        echo -e "\e[32m-------------------------\e[0m"
+        echo -e "\e[32mInstallation is complete! \e[0m"
+        echo -e "\e[32m-------------------------\e[0m\n"
+        displayLogo
+        echo -e "\n\nThe username and dynamically generated password are below:\n"
 
-            # Generate a unique admin password
-            generatePassword
+        # Generate a unique admin password
+        generatePassword
 
-            # Start dSIPRouter
-            start
+        # Start dSIPRouter
+        start
 
-            # Tell them how to access the URL
-            echo -e "You can access the dSIPRouter web gui by going to:\n"
-            echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}\n"
-            if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-                echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}\n"
-            fi
-        else
-            echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
-            cleanupAndExit 1
+        # Tell them how to access the URL
+        echo -e "You can access the dSIPRouter web gui by going to:\n"
+        echo -e "External IP:  ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}\n"
+        if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
+            echo -e "Internal IP: ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}\n"
         fi
     else
-        echo "dSIPRouter is already installed"
+        echo "dSIPRouter install failed: Couldn't configure Kamailio correctly"
         cleanupAndExit 1
     fi
 } #end of install
@@ -1109,10 +1088,11 @@ function uninstall {
 
     if [ ! -f "./.installed" ]; then
         echo "dSIPRouter is not installed or failed during install - uninstalling anyway to be safe"
+        cleanupAndExit 1
     fi
 
     # Uninstall Sipsak for troubleshooting and smoketest
-    uninstall_Sipsak
+    uninstallSipsak
 
      # Stop dSIPRouter, remove ./.installed file, close firewall
      stop
@@ -1132,6 +1112,9 @@ function uninstall {
     # Remove crontab entry
     echo "Removing crontab entry"
     cronRemove 'dsiprouter_cron.py'
+
+    # remove kam update crontab entry
+    cronRemove 'updatekamconfig'
 
     # Remove the hidden installed file, which denotes if it's installed or not
 	rm -f ./.installed
@@ -1182,7 +1165,7 @@ function start {
         ${PYTHON_CMD} ./gui/dsiprouter.py runserver
     else
         # normal startup, background process
-        ${PYTHON_CMD} ./gui/dsiprouter.py runserver >/dev/null 2>&1 &
+        ${PYTHON_CMD} ./gui/dsiprouter.py runserver &>/dev/null &
     fi
 
     PID=$!
@@ -1314,7 +1297,7 @@ function upgrade {
 
 function usageOptions {
     linebreak() {
-        printf '_%.0s\n' $(seq 1 ${COLUMNS-100}) && echo ''
+        printf '_%.0s\n' $(seq 1 ${COLUMNS:-100}) && echo ''
     }
 
     linebreak
@@ -1381,6 +1364,7 @@ function usageOptions {
 
 
 # TODO: make dsip, rtpengine, kamailio installs independent functions
+# we should also make the ,installed file seperate for each service
 # TODO: uninstall_dsiprouter_ui() and install_dsiprouter_ui() are blocking functions
 # meaning that they block processing of cmdline options and execute
 # this means that some cmdline options may not be processed yet
@@ -1394,7 +1378,7 @@ function processCMD {
 
     # Display usage options if no options are specified
     if (( $# == 0 )); then
-   	 usageOptions
+   	    usageOptions
     	cleanupAndExit 1
     fi
 
@@ -1702,6 +1686,28 @@ function processCMD {
         resetpassword)
             # reset dsiprouter gui password
             RUN_COMMANDS+=(resetPassword)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        updatekamconfig)
+            # reset dsiprouter gui password
+            RUN_COMMANDS+=(updateKamailioConfig)
             shift
 
             while (( $# > 0 )); do
