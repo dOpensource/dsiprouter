@@ -111,34 +111,9 @@ Outbound Caller ID   Phone# that you want to appear during a outbound call (if a
  .. image:: images/sipchan_general.PNG
          :align: center
        
-5. Click Submit
-
-.. image:: images/add_trunk.PNG
-        :align: center
-		
-
-**NOTE**  If messsage box appears, click Cancel to return back or click OK to continue.
 
 
-.. image:: images/sipchan_outbound.PNG
-        :align: center 		
-
-
-		
-6. Be sure to click the **Apply Config** button after submitting to confirm.
-
-
-.. image:: images/apply_config_button.PNG
-        :align: center
-
-
-You will now be able to see the new chanSIP added in the truck.	
-
-.. image:: images/sipchan_added.PNG
-        :align: center
-	
-		
-Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls. You will need the following information:
+5. Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls. You will need the following information:
 The following fields needs to be entered
 
 ==================   ============
@@ -159,7 +134,7 @@ Context              from-trunk
 
 NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
 
-8. Next you will enter the configurations for incoming under the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
+6. Next you will enter the configurations for incoming under the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
 
 The following fields needs to be entered
 
@@ -173,10 +148,39 @@ Context              from-trunk
 ==================   ============
 
 
-
-
 .. image:: images/chansip_incoming.PNG
         :align: center
+
+
+7. Click Submit
+
+8. Be sure to click the **Apply Config** button after submitting to confirm.
+
+
+.. image:: images/apply_config_button.PNG
+        :align: center
+
+You will now be able to see the new chanSIP added in the truck.	
+
+.. image:: images/sipchan_added.PNG
+        :align: center
+
+
+.. image:: images/add_trunk.PNG
+        :align: center
+		
+
+**NOTE**  If messsage box appears, click Cancel to return back or click OK to continue.
+
+
+.. image:: images/sipchan_outbound.PNG
+        :align: center 		
+
+
+		
+
+	
+
 		
 9. Click Submit.
 
