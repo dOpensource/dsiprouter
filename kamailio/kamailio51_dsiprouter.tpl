@@ -255,6 +255,9 @@ teleblock.media_port = "" desc "Teleblock media port"
 # "" - default behavior
 server.role = "" desc "Role of the server in the topology"
 
+# Rename who we are
+server_header="dSIPRouter Project"
+
 ####### Modules Section ########
 
 # set paths to location of modules (to sources or installation folders)
