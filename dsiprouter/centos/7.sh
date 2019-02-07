@@ -19,13 +19,13 @@ function install {
     # Reset python cmd in case it was just installed
     setPythonCmd
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl start firewalld
 
     # Setup Firewall for DSIP_PORT
-    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-    firewall-cmd --reload
+    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp 
+    
+   # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl restart firewalld
 
     PIP_CMD="pip"
     $PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
