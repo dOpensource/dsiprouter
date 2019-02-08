@@ -2,6 +2,49 @@
 
 
 
+### Inbound DID and Fail2Ban Update
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Thu, 7 Feb 2019 22:31:55 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #100
+- Resolves #54
+- add support for secondary pbx inbound route
+- DID failover is supported by adding another rule
+- add fail2ban instructions to domain and pbx pages
+- small syntax fixes
+- update combobox and fix issues
+- update inboundroutes routing and DB model
+
+
+---
+
+
+### AMI Provisioning Fixes
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Thu, 7 Feb 2019 14:30:28 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix PATH on install
+- dynamic kam config update
+- add updatekamconfig cli option
+- fix for debian 8 debhelper issue
+- fix kamailio and rtpengine user creation
+- fix rtpengine default conf file location
+- fix firewalld centos ami issue
+- fix merge issues (install,installSipsak)
+- minor improvements to syslog handler
+
+
+---
+
+
 ### Inbound DID Mapping Sort By Name
 
 > Branches Affected: gui-improvements  
@@ -46,6 +89,45 @@
 - Resolves #96
 - replace data-tables ver w/ standalone library
 - rename imports
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Wed, 6 Feb 2019 10:41:58 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Fixed a regression that caused the password not to be set correct when installed on a non-AMI
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Tue, 5 Feb 2019 19:30:53 +0000  
+> Author: root (root@dSIPRouterMackAMI.localdomain)  
+> Committer: root (root@dSIPRouterMackAMI.localdomain)  
+
+
+
+---
+
+
+### Update use-cases.rst
+
+> Branches Affected:   
+> Tags Affected:   
+> Date: Tue, 5 Feb 2019 10:23:59 -0500  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
 
 
 ---

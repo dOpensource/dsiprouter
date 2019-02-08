@@ -211,8 +211,6 @@ function descendingSearch(selector, test) {
 }
 
 $('#open-CarrierAdd').click(function() {
-
-
   var modal = $('#add');
   modal.css('z-index','1070');
 });
@@ -330,11 +328,19 @@ $('#domains #open-Delete').click(function() {
 $('#inboundmapping #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('inboundmapping');
+  /* we only want the TEXT nodes value w/o other inline tags */
   var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
   var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var gwname = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  // var gwname = $(c).find('tr:eq(' + row_index + ') td:eq(3)').contents().filter(function() {
+  //   return this.nodeType === Node.TEXT_NODE;
+  // }).text();
   var notes = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+  var gwlist = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+
+  /* we only support 2 pbx's so format accordingly */
+  gwlist_arr = gwlist.replace(/(^\s+|\s+$)/g,'').split(',');
+  gwid = gwlist_arr.length > 0 ? gwlist_arr[0] : '';
+  alt_gwid = gwlist_arr.length > 1 ? gwlist_arr[1] : '';
 
   /** Clear out the modal */
   var modal_body = $('#edit .modal-body');
@@ -342,12 +348,26 @@ $('#inboundmapping #open-Update').click(function() {
   modal_body.find(".prefix").val('');
   modal_body.find(".notes").val('');
   modal_body.find(".gwid").val('');
+  modal_body.find(".alt_gwid").val('');
 
   /* update modal fields */
   modal_body.find(".ruleid").val(ruleid);
   modal_body.find(".prefix").val(prefix);
   modal_body.find(".notes").val(notes);
-  modal_body.find(".gwid").val(gwid);
+  modal_body.find("input.gwid").val(gwid);
+  modal_body.find("input.alt_gwid").val(alt_gwid);
+
+  /* update options selected */
+  var selects = modal_body.find("select").get();
+  for (var i = 0; i < selects.length; i++) {
+    var options = $(selects[i]).find("option").get();
+    for (var j = 0; j < options.length; j++) {
+      if (gwlist_arr[i] === options[j].value) {
+        $(options[j]).attr('selected', true);
+        break;
+      }
+    }
+  }
 });
 
 $('#inboundmapping #open-Delete').click(function() {
@@ -405,7 +425,6 @@ $('#outboundmapping #open-Delete').click(function() {
 
   /* update modal fields */
   var modal_body = $('#delete .modal-body');
-  modal_body.find(".ruleid").val(ruleid);
   modal_body.find(".ruleid").val(ruleid);
 });
 

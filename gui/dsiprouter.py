@@ -976,7 +976,7 @@ def displayInboundMapping():
             # sort gateways by name
             gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
 
-            dids = None
+            dids = []
             if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
                 try:
                     dids = numbers_api.getNumbers()
@@ -1013,7 +1013,7 @@ def displayInboundMapping():
 
 
 @app.route('/inboundmapping', methods=['POST'])
-def addInboundMapping():
+def addUpdateInboundMapping():
     """
     Adding and Updating of dr_rules table (inbound routes only)\n
     Partially Supports rule definitions for Kamailio Drouting module\n
@@ -1038,17 +1038,27 @@ def addInboundMapping():
 
         # get form data
         gwid = form['gwid']
+        alt_gwid = form['alt_gwid']
         prefix = form['prefix']
-        note = form['note']
+        notes = form['notes']
+
+        # we only support 2 pbx's so format gwlist accordingly
+        gateways = []
+        for gw in gwid, alt_gwid:
+            if len(gw) > 0:
+                gateways.append(gw)
+        gwlist = ','.join(gateways)
+
 
         # Adding
         if not ruleid:
-            IMap = InboundMapping(groupid, prefix, gwid, note)
+            IMap = InboundMapping(groupid, prefix, gwlist, notes)
             db.add(IMap)
 
         # Updating
         else:
-            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update({'prefix': prefix, 'gwlist': gwid, 'description': note})
+            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
+                {'prefix': prefix, 'gwlist': gwlist, 'description': notes}, synchronize_session=False)
 
         db.commit()
         reload_required = True
@@ -1123,7 +1133,7 @@ def deleteInboundMapping():
         reload_required = False
         db.close()
 
-def processInboundMappingImport(filename,groupid,pbxid,note,db):
+def processInboundMappingImport(filename,groupid,pbxid,notes,db):
     try:
 
         # Adding
@@ -1134,8 +1144,8 @@ def processInboundMappingImport(filename,groupid,pbxid,note,db):
             if len(row) > 1:
                 pbxid=row[1]
             if len(row) > 2:
-                note=row[2]
-            IMap = InboundMapping(groupid, row[0], pbxid, note)
+                notes=row[2]
+            IMap = InboundMapping(groupid, row[0], pbxid, notes)
             db.add(IMap)
         
         db.commit()
@@ -1181,7 +1191,7 @@ def importInboundMapping():
 
         # get form data
         gwid = form['gwid']
-        note = form['note']
+        notes = form['notes']
 
         if 'file' not in request.files:
             flash('No file part')
@@ -1195,7 +1205,7 @@ def importInboundMapping():
         if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename,groupid,gwid,note,db)
+            processInboundMappingImport(filename,groupid,gwid,notes,db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
     
@@ -1696,7 +1706,7 @@ def imgFilter(name):
 
 # custom jinja context processors
 @app.context_processor
-def injectReloadRquired():
+def injectReloadRequired():
     return dict(reload_required=reload_required)
 
 

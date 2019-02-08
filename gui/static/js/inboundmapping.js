@@ -1,3 +1,12 @@
+/**
+ * @namespace aria
+ */
+var aria = aria || {};
+
+/**
+ * @global
+ * @type {Array}
+ */
 var DID_LIST = DID_LIST || [];
 
 /**
@@ -47,11 +56,12 @@ function comboboxInit(parent_selector) {
 
 /* any handlers depending on DOM elems go here */
 $(document).ready(function() {
-
-
-  /* init the combobox's */
-  comboboxInit('#add .modal-body');
-  comboboxInit('#edit .modal-body');
+  /* only created if we have DID's */
+  if (DID_LIST.length > 0) {
+    /* init the combobox's */
+    comboboxInit('#add .modal-body');
+    comboboxInit('#edit .modal-body');
+  }
 
   /* init datatable */
   $('#inboundmapping').DataTable({
@@ -62,5 +72,21 @@ $(document).ready(function() {
       { "orderable": false, "targets": 7 }
     ],
     "order": [[ 1, 'asc' ]]
+  });
+
+  /* make sure we don't have duplicate selects */
+  var add_modal = $('#add .modal-body');
+  var edit_modal = $('#edit .modal-body');
+  add_modal.find("select").change(function() {
+    var options = add_modal.find("select").not(this).find("option").get();
+    for (var i = 0; i < options.length; i++) {
+      options[i].value === $(this).val() ? $(options[i]).attr('disabled', true) : $(options[i]).removeAttr('disabled')
+    }
+  });
+  edit_modal.find("select").change(function() {
+    var options = add_modal.find("select").not(this).find("option").get();
+    for (var i = 0; i < options.length; i++) {
+      options[i].value === $(this).val() ? $(options[i]).attr('disabled', true) : $(options[i]).removeAttr('disabled')
+    }
   });
 });
