@@ -191,7 +191,9 @@ Trunk Sequence for
 .. image:: images/chansip_dial_pattern.PNG
         :align: center
 
+
 Dial pattern is set to your preference. Prefixes are optional, not required.
+
 
 
 .. image:: images/dialpla_chansip.PNG
