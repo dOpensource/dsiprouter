@@ -196,8 +196,14 @@ Dial pattern is set to your preference. Prefixes are optional, not required.
 
 
 
+
+
+
 .. image:: images/dialpla_chansip.PNG
-        :align: center
+         :align: center
+
+
+
 
 
 11. Click Submit and Apply Config button.
