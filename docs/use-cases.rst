@@ -179,14 +179,14 @@ Field                               Value
 =================================   ============
 Route Name                          Type desired name
 Route CID                           Outbound
-Trunk Sequence for Matched Routes   Trunk name
+Trunk Sequence for Matched Routes   Trunk name (select from drop down box)
 =================================   ============
 
 .. image:: images/outbound_routes_chansip.PNG
         :align: center
 
 10. Click the Dial Patterns tab to set the dial patterns. 
-If you are familiar with dial patterns, you can enter the dial patterns manually or you can click the Dial Patterans Wizard to auto create dial patterens if you like. You can choose 7, 10 or 11 digit patterns.
+If you are familiar with dial patterns, you can enter the dial patterns manually or you can click the Dial Patterans Wizard to auto create dial patterns if you like. You can choose 7, 10 or 11 digit patterns.
 
 
 .. image:: images/chansip_dial_wizard.PNG
