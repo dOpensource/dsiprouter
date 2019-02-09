@@ -183,30 +183,22 @@ Trunk Sequence for
   Matched Routes     Trunk name
 ==================   ============
 
-
-
-10. Click the Dial Patterens tab. 
-
-11. Click Submit.
-
-12. Apply.
-
 .. image:: images/outbound_routes_chansip.PNG
         :align: center
-		
-11. Click the Dial Patterns tab to set the dial patterns.
-		
 
-.. image:: images/dialpla_chansip.PNG
-        :align: center
-		
-	Dial pattern is set to your preference. Prefixes are optional, not required.	
-
+10. Click the Dial Patterns tab to set the dial patterns
 
 .. image:: images/chansip_dial_pattern.PNG
         :align: center
 
-12. Click Submit and Apply Config button.
+Dial pattern is set to your preference. Prefixes are optional, not required.
+
+
+.. image:: images/dialpla_chansip.PNG
+        :align: center
+
+
+11. Click Submit and Apply Config button.
 
 You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:
 		
