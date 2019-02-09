@@ -174,14 +174,13 @@ You will now be able to see the new chanSIP added in the truck.
 		
 9. Next you will need to setup an outbound route. Select Connectivity→ Outbound Routes. Click the “+” sign to add a outbound route. In this tab you will need to enter:
 
-==================   ============
-Field                Value
-==================   ============
-Route Name           Type desired name
-Route CID            Outbound
-Trunk Sequence for
-  Matched Routes     Trunk name
-==================   ============
+==================                  ============
+Field                               Value
+==================                  ============
+Route Name                          Type desired name
+Route CID                           Outbound
+Trunk Sequence for Matched Routes   Trunk name
+=================================   ============
 
 .. image:: images/outbound_routes_chansip.PNG
         :align: center
@@ -193,15 +192,6 @@ Trunk Sequence for
 
 
 Dial pattern is set to your preference. Prefixes are optional, not required.
-
-
-
-
-
-
-.. image:: images/dialpla_chansip.PNG
-         :align: center
-
 
 
 
