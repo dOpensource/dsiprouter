@@ -28,10 +28,10 @@
       <th data-field="gwlist">Carriers</th>
       <th></th>
       <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
     </tr>
     </thead>
     <tbody>
@@ -394,22 +394,18 @@
   <script>
     var API_URL = "{{ API_URL }}";
   </script>
+
   {{ script_tag('carriergroups') }}
- <script>
-  $(document).ready(function() {
-    $('#carrier-groups').DataTable({
-    "columnDefs": [
-                { "orderable": false, "targets": 0 },
-                { "orderable": false, "targets": 4 },
-                { "orderable": false, "targets": 5 },
-                { "orderable": false, "targets": 6 },
-                { "orderable": false, "targets": 7 },
-                { "orderable": false, "targets": 8 },
-                { "orderable": false, "targets": 9 }
-      ],
-    "order": [[ 1, 'asc' ]]
-  }
-    );
-    } );
+
+  <script>
+    $(document).ready(function() {
+      $('#carrier-groups').DataTable({
+        "columnDefs": [
+          { "orderable": true, "targets": [1,2,3] },
+          { "orderable": false, "targets": [0,4,5,6,7,8,9] },
+        ],
+        "order": [[ 1, 'asc' ]]
+      });
+    });
   </script>
 {% endblock %}

@@ -41,6 +41,8 @@ export DSIP_PROJECT_DIR="$(pwd)"
 SERVERNAT=0
 FLT_CARRIER=8
 FLT_PBX=9
+FLT_OUTBOUND=8000
+FLT_INBOUND=9000
 DEBUG=0     # By default debugging is turned off
 WITH_SSL=0
 export REQ_PYTHON_MAJOR_VER=3
@@ -359,6 +361,8 @@ function configureKamailio {
         # sub in dynamic values
         sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DSIP_DEFAULTS_DIR}/address.csv
         sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DSIP_DEFAULTS_DIR}/dr_gateways.csv
+        sed -i s/FLT_OUTBOUND/$FLT_OUTBOUND/g ${DSIP_DEFAULTS_DIR}/dr_rules.csv
+        sed -i s/FLT_INBOUND/$FLT_INBOUND/g ${DSIP_DEFAULTS_DIR}/dr_rules.csv
         sed -i s/EXTERNAL_IP/$EXTERNAL_IP/g ${DSIP_DEFAULTS_DIR}/uacreg.csv
 
         # import default carriers
@@ -370,11 +374,9 @@ function configureKamailio {
             -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/uacreg.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
             -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_gateways.csv
+        mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
+            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_rules.csv
     fi
-
-    # Setup Outbound Rules to use Skyetel by default
-    mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
-        -e "insert into dr_rules values (null,8000,'','','','','1,2','Default Outbound Route');"
 
     # Backup kamcfg and link the dsiprouter kamcfg
     cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)

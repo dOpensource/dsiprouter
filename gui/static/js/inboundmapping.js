@@ -66,10 +66,8 @@ $(document).ready(function() {
   /* init datatable */
   $('#inboundmapping').DataTable({
     "columnDefs": [
-      { "orderable": false, "targets": 0 },
-      { "orderable": false, "targets": 5 },
-      { "orderable": false, "targets": 6 },
-      { "orderable": false, "targets": 7 }
+      { "orderable": true, "targets": [1,2,3,4,5] },
+      { "orderable": false, "targets": [0,6,7] },
     ],
     "order": [[ 1, 'asc' ]]
   });

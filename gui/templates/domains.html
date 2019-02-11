@@ -272,16 +272,14 @@ systemctl restart fail2ban</code></pre>
 
 {% block custom_js %}
 <script>
-$(document).ready(function() {
+  $(document).ready(function() {
     $('#domains').DataTable({
-    "columnDefs": [
-	        { "orderable": false, "targets": 0 },
-	        { "orderable": false, "targets": 5 },
-	        { "orderable": false, "targets": 6 }
-      ],
-    "order": [[ 1, 'asc' ]]
-  }	    		    
-    );
-    } );
+      "columnDefs": [
+        { "orderable": true, "targets": [1,2,3,4,5] },
+        { "orderable": false, "targets": [0,5,6] },
+        ],
+      "order": [[ 1, 'asc' ]]
+    });
+  });
 </script>
 {% endblock %}

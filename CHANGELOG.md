@@ -2,6 +2,22 @@
 
 
 
+### Fix Bugs in GUI
+
+> Branches Affected: gui-improvements  
+> Tags Affected:   
+> Date: Mon, 11 Feb 2019 17:28:28 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix datatable auto width resolution issue
+- fix db connection issue
+- add dsiprouter flag definitions
+
+
+---
+
+
 ### Inbound DID and Fail2Ban Update
 
 > Branches Affected: gui-improvements  

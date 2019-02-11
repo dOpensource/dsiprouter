@@ -341,8 +341,6 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     :param newgwid:
     """
 
-    carrier_groupid = 8000
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
@@ -356,7 +354,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             # get carrier by id
             if gwid is not None:
                 carriers = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
-                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == carrier_groupid).all()
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                 gateway_rules = {}
                 for rule in rules:
                     if str(gwid) in filter(None, rule.gwlist.split(',')):
@@ -370,7 +368,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
                     gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
                     carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
-                    rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == carrier_groupid).all()
+                    rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                     for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
                         gateway_rules = {}
                         for rule in rules:
@@ -381,7 +379,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             # get all carriers
             else:
                 carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
-                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == carrier_groupid).all()
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                 for gateway in carriers:
                     gateway_rules = {}
                     for rule in rules:
@@ -516,8 +514,6 @@ def deleteCarriers():
     """
 
     global reload_required
-
-    carrier_groupid = 8000
 
     try:
         if (settings.DEBUG):
@@ -962,16 +958,13 @@ def displayInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    # group for inbound routes
-    groupid = 9000
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
         if session.get('logged_in'):
             res = db.execute(
-                'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(groupid))
+                'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(settings.FLT_INBOUND))
             gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
             # sort gateways by name
             gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
@@ -1028,9 +1021,6 @@ def addUpdateInboundMapping():
 
         form = stripDictVals(request.form.to_dict())
 
-        # group for inbound routes
-        groupid = 9000
-
         # id in dr_rules table
         ruleid = None
         if form['ruleid']:
@@ -1052,7 +1042,7 @@ def addUpdateInboundMapping():
 
         # Adding
         if not ruleid:
-            IMap = InboundMapping(groupid, prefix, gwlist, notes)
+            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
             db.add(IMap)
 
         # Updating
@@ -1186,9 +1176,6 @@ def importInboundMapping():
 
         form = stripDictVals(request.form.to_dict())
 
-        # group for inbound routes
-        groupid = 9000
-
         # get form data
         gwid = form['gwid']
         notes = form['notes']
@@ -1205,7 +1192,7 @@ def importInboundMapping():
         if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename,groupid,gwid,notes,db)
+            processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,notes,db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
     
@@ -1331,16 +1318,13 @@ def displayOutboundRoutes():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    # group for outbound routes
-    groupid = 8000
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
         if session.get('logged_in'):
             rows = db.query(OutboundRoutes).filter(
-                (OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(
+                (OutboundRoutes.groupid == settings.FLT_OUTBOUND) | (OutboundRoutes.groupid >= 10000)).outerjoin(
                 dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
                 dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid, OutboundRoutes.prefix,
                 OutboundRoutes.routeid, OutboundRoutes.gwlist, OutboundRoutes.timerec, OutboundRoutes.priority,
@@ -1395,7 +1379,7 @@ def addUpateOutboundRoutes():
     gwlist = ""
     description = ""
     # group for the default outbound routes
-    default_gwgroup = 8000
+    default_gwgroup = settings.FLT_OUTBOUND
     # id in dr_rules table
     ruleid = None
     from_prefix = None
@@ -1417,7 +1401,7 @@ def addUpateOutboundRoutes():
         groupid = form.get('groupid', default_gwgroup)
         if isinstance(groupid, str):
             if len(groupid) == 0 or (groupid == 'None'):
-                groupid = 8000
+                groupid = settings.FLT_OUTBOUND
 
         # get form data
         if form['from_prefix']:
@@ -1467,7 +1451,7 @@ def addUpateOutboundRoutes():
             if (from_prefix is None) and (prefix is not None):
                 oldgroupid = groupid
                 if (groupid is None) or (groupid == "None"):
-                    groupid = 8000
+                    groupid = settings.FLT_OUTBOUND
 
                 # Convert the dr_rule back to a default carrier rule
                 db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
@@ -1490,7 +1474,7 @@ def addUpateOutboundRoutes():
                 if exists:
                     return displayOutboundRoutes()
 
-                elif (prefix is not None) and (groupid == 8000):  # Adding a From prefix to an existing To
+                elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
                     # Create a new groupid
                     mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(
                         dSIPLCR.dr_groupid.desc()).first()

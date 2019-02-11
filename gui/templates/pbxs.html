@@ -28,14 +28,14 @@
       <th data-field="pbx_domain_support">Domain Support</th>
       <th></th>
       <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
     </tr>
     </thead>
     <tbody>
@@ -356,22 +356,12 @@ systemctl restart fail2ban</code></pre>
   <script>
     $(document).ready(function() {
       $('#pbxs').DataTable({
-          "columnDefs": [
-            {"orderable": false, "targets": 0},
-            {"orderable": false, "targets": 7},
-            {"orderable": false, "targets": 8},
-            {"orderable": false, "targets": 9},
-            {"orderable": false, "targets": 10},
-            {"orderable": false, "targets": 11},
-            {"orderable": false, "targets": 12},
-            {"orderable": false, "targets": 13},
-            {"orderable": false, "targets": 14},
-            {"orderable": false, "targets": 15},
-            {"orderable": false, "targets": 16}
-          ],
-          "order": [[1, 'asc']]
-        }
-      );
+        "columnDefs": [
+          { "orderable": true, "targets": [1,2,3] },
+          { "orderable": false, "targets": [0,7,8,9,10,11,12,13,14,15,16] },
+        ],
+        "order": [[1, 'asc']]
+      });
     });
   </script>
 
