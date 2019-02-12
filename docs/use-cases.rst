@@ -96,15 +96,9 @@ The following screenshot(s) shows how to configure a chanSIP trunk within FreePB
 1. Log into FreePBX server
 2. Click Connectivity→Trunks
 3. Select Add SIP (chan_sip) Trunk
-
-
-.. image:: images/add_trunk.PNG
-         :align: center
-		
-
-		
 4. Under General tab enter 
-   The following fields needs to be entered
+  
+  The following fields needs to be entered
 
 ==================   ============
 Field                Value
@@ -112,15 +106,16 @@ Field                Value
 Trunk Name           Type Desired name
 Outbound Caller ID   Phone# that you want to appear during a outbound call (if applicable)
 ==================   ============
-   
-   
-      
+ 
+ 
+ .. image:: images/sipchan_general.PNG
+         :align: center
+       
+5. Click Submit
 
-.. image:: images/sipchan_general.PNG
+.. image:: images/add_trunk.PNG
         :align: center
 		
-		
-5. Click Submit
 
 **NOTE**  If messsage box appears, click Cancel to return back or click OK to continue.
 
@@ -215,8 +210,7 @@ Trunk Sequence for
 
 12. Click Submit and Apply Config button.
 
-You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example using a softphone:
-In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter:
+You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:
 		
 ==================   ============
 Field                Value

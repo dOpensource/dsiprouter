@@ -2,11 +2,46 @@ import settings, sys, os, re, socket, requests, logging, traceback, inspect, str
 from flask import request, render_template
 
 
-# Used to grab network info dynamically at startup
-# TODO: we need to dynamically set this info for kamailio.cfg file
+def ipv4Test(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:  # no inet_pton here, sorry
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            return False
+        return address.count('.') == 3
+    except socket.error:  # not a valid address
+        return False
+    return True
+
+
+def ipv6Test(address):
+    try:
+        socket.inet_pton(socket.AF_INET6, address)
+    except socket.error:  # not a valid address
+        return False
+    return True
+
+def isValidIP(address, tcp_proto=''):
+    """
+    Determine if ip address is valid
+    :address:       str
+    :tcp_proto:     str
+    :ref:           <https://stackoverflow.com/questions/319279/how-to-validate-ip-address-in-python>
+    """
+    if tcp_proto == '4':
+        return ipv4Test(address)
+    elif tcp_proto == '6':
+        return ipv6Test(address)
+    else:
+        if not ipv4Test(address) and not ipv6Test(address):
+            return False
+        return True
+
+# TODO: we need to dynamically set network info for kamailio.cfg file
 def getInternalIP():
     """ Returns current ip of system """
-
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.connect(("8.8.8.8", 80))
         return s.getsockname()[0]
@@ -14,21 +49,43 @@ def getInternalIP():
 
 def getExternalIP():
     """ Returns external ip of system """
-    
-    ip = requests.get("http://myexternalip.com/raw").text.strip()
-    if ip == None or ip == "":
-        ip = requests.get("http://ipv4.icanhazip.com").text.strip()
+    ip = None
+    # redundancy in case a service provider goes down
+    externalip_services = [
+        "https://ipv4.icanhazip.com",
+        "https://api.ipify.org",
+        "https://myexternalip.com/raw",
+        "https://ipecho.net/plain",
+        "https://bot.whatismyipaddress.com"
+    ]
+    for url in externalip_services:
+        try:
+            ip = requests.get(url).text.strip()
+        except:
+            pass
+        if ip is not None and isValidIP(ip) == True:
+            break
     return ip
 
 
 def getDNSNames():
     """ Returns ( hostname, domain ) of system """
+    host, domain = None, None
 
-    host, domain = socket.getfqdn().split('.', 1)
+    try:
+        host, domain = socket.getfqdn().split('.', 1)
+    except:
+        pass
     if host == None or host == "":
-        host, domain = socket.gethostbyaddr(socket.gethostname())[0].split('.', 1)
+        try:
+            host, domain = socket.gethostbyaddr(socket.gethostname())[0].split('.', 1)
+        except:
+            pass
     if host == None or host == "":
-        host, domain = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3].split('.', 1)
+        try:
+            host, domain = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3].split('.', 1)
+        except:
+            pass
     return host, domain
 
 def hostToIP(host):

@@ -27,6 +27,12 @@ function install() {
     # Disable SELinux
     sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
 
+    # create kam user and group
+    mkdir -p /var/run/kamailio
+    groupadd kamailio
+    useradd -d /var/run/kamailio -M -s /bin/false kamailio
+    chown -R kamailio:kamailio /var/run/kamailio
+
     # Add the Kamailio repos to yum
     (cat << 'EOF'
 [home_kamailio_v5.1.x-rpms]
@@ -43,9 +49,30 @@ EOF
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
         kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress
 
+    # workaround for kamailio rpm transaction failures
+    if (( $? != 0 )); then
+        rpm --import $(grep 'gpgkey' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)
+        REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
+        for REPO in $REPOS; do
+            yum install -y $(grep 'baseurl' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
+        done
+    fi
 
     touch /etc/tmpfiles.d/kamailio.conf
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
+ 
+    # create kamailio defaults config
+    (cat << 'EOF'
+ RUN_KAMAILIO=yes
+ USER=kamailio
+ GROUP=kamailio
+ SHM_MEMORY=64
+ PKG_MEMORY=8
+ PIDFILE=/var/run/kamailio/kamailio.pid
+ CFGFILE=/etc/kamailio/kamailio.cfg
+ #DUMP_CORE=yes
+EOF
+    ) > /etc/default/kamailio
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
@@ -67,6 +94,10 @@ EOF
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
+
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl start firewalld
 
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent

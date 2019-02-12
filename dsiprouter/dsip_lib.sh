@@ -51,7 +51,6 @@ install_mysql_community() {
     fi
 
     # start mysql without password checking
-
     systemctl stop mysqld 2>/dev/null
     systemctl set-environment MYSQLD_OPTS="--skip-grant-tables" &&
     systemctl start mysqld
@@ -125,3 +124,30 @@ uninstall_Sipsak() {
 
 }
 
+# $1 == command to test
+# returns: 0 == true, 1 == false
+cmdExists() {
+    if command -v "$1" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# returns: AMI instance ID || blank string
+getInstanceID() {
+    curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+    ec2-metadata -i 2>/dev/null
+}
+
+# $1 == crontab entry to append
+cronAppend() {
+    local ENTRY="$1"
+    crontab -l | { cat; echo "$ENTRY"; } | crontab -
+}
+
+# $1 == crontab entry to remove
+cronRemove() {
+    local ENTRY="$1"
+    crontab -l | grep -v -F -w "$ENTRY" | crontab -
+}
