@@ -30,7 +30,7 @@ create_changelog() {
     # add the branch and tag info changelog
     for HASH in $COMMIT_HASHES; do
         # safe formatting needed for sed / bash expansion throughout
-        BRANCHES=$(git branch --contains "${HASH}" | cut -d ' ' -f 2 | tr -d '\n')
+        BRANCHES=$(git branch --contains "${HASH}" | perl -pe 's/.+?(?=[\w\d])(.*)/\1/gm' | tr '\n' ',' | rev | cut -d ',' -f 2- | rev)
         TAGS=$(git show-ref --tags -d | grep "^${HASH}" | sed -e 's,.* refs/tags/,,' -e 's/\^{}//' | tr -d '\n')
         # label the pertinent data
         REFERENCE_INFO="> Branches Affected: ${BRANCHES}  \n> Tags Affected: ${TAGS}  "

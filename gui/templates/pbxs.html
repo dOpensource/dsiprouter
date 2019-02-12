@@ -28,14 +28,14 @@
       <th data-field="pbx_domain_support">Domain Support</th>
       <th></th>
       <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
+      <th class="hidden"></th>
     </tr>
     </thead>
     <tbody>
@@ -154,10 +154,13 @@
           </strong>
           <pre><code class="bash">sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
 iptables -A INPUT -p tcp -s &lt;ip address&gt;/32 --dport 5432 -j ACCEPT
-iptables-save
-#Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
+iptables-save > /etc/iptables/rules.v4
+# Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
 echo -e "host    all             all            &lt;ip address&gt;/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
-/etc/init.d/postgresql restart</code></pre>
+/etc/init.d/postgresql restart
+# Run this command if your using fail2ban
+sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
+systemctl restart fail2ban</code></pre>
         </div>
 
         <div class="form-group">
@@ -181,7 +184,10 @@ echo -e "host    all             all            &lt;ip address&gt;/32           
             Replace values within angle brackets '&lt;value&gt;' with your own values.
           </strong>
           <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
-iptables-save</code></pre>
+iptables-save
+# Run this command if your using fail2ban
+sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
+systemctl restart fail2ban</code></pre>
         </div>
       </div>
 
@@ -269,9 +275,12 @@ iptables-save</code></pre>
           <pre><code class="bash">sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
 iptables -A INPUT -p tcp -s &lt;ip address&gt;/32 --dport 5432 -j ACCEPT
 iptables-save > /etc/iptables/rules.v4
-#Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
+# Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
 echo -e "host    all             all            &lt;ip address&gt;/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
-/etc/init.d/postgresql restart</code></pre>
+/etc/init.d/postgresql restart
+# Run this command if your using fail2ban
+sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
+systemctl restart fail2ban</code></pre>
         </div>
         <div class="form-group">
           <input class="fusionpbx_db_server form-control" type="text" name="fusionpbx_db_server"
@@ -294,7 +303,10 @@ echo -e "host    all             all            &lt;ip address&gt;/32           
             Replace values within angle brackets '&lt;value&gt;' with your own values.
           </strong>
           <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
-iptables-save</code></pre>
+iptables-save
+# Run this command if your using fail2ban
+sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
+systemctl restart fail2ban</code></pre>
         </div>
       </div>
 
@@ -342,27 +354,15 @@ iptables-save</code></pre>
 {% block custom_js %}
 
   <script>
-$(document).ready(function() {
-    $('#pbxs').DataTable({
-    "columnDefs": [
-                { "orderable": false, "targets": 0 },
-                { "orderable": false, "targets": 7 },
-                { "orderable": false, "targets": 8 },
-                { "orderable": false, "targets": 9 },
-                { "orderable": false, "targets": 10 },
-                { "orderable": false, "targets": 11 },
-                { "orderable": false, "targets": 12 },
-                { "orderable": false, "targets": 13 },
-                { "orderable": false, "targets": 14 },
-                { "orderable": false, "targets": 15 },
-                { "orderable": false, "targets": 16 }
-      ],
-    "order": [[ 1, 'asc' ]]
-  }
-    );
-
-    
-
-    } );
+    $(document).ready(function() {
+      $('#pbxs').DataTable({
+        "columnDefs": [
+          { "orderable": true, "targets": [1,2,3] },
+          { "orderable": false, "targets": [0,7,8,9,10,11,12,13,14,15,16] },
+        ],
+        "order": [[1, 'asc']]
+      });
+    });
   </script>
+
 {% endblock %}

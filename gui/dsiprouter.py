@@ -126,6 +126,8 @@ def displayCarrierGroups(gwgroup=None):
     :param gwgroup:
     """
 
+    # TODO: track related dr_rules and update lists on delete
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
@@ -336,6 +338,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     Display the carriers table
     :param gwid:
     :param gwgroup:
+    :param newgwid:
     """
 
     try:
@@ -343,21 +346,48 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             debugEndpoint()
 
         if session.get('logged_in'):
-            # res must be a list()
-            if gwgroup is not None:
+            # carriers is a list of carriers matching query
+            # carrier_routes is a list of associated rules for each carrier
+            carriers = []
+            carrier_rules = []
+
+            # get carrier by id
+            if gwid is not None:
+                carriers = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+                gateway_rules = {}
+                for rule in rules:
+                    if str(gwid) in filter(None, rule.gwlist.split(',')):
+                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
+
+            # get carriers by carrier group
+            elif gwgroup is not None:
                 Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
                 # check if any endpoints in group b4 converting to list(int)
                 if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
-                    gwlist = list(map(int, filter(None, Gatewaygroup.gwlist.split(","))))
-                    res = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
-                else:
-                    res = []
-            elif gwid is not None:
-                res = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
-            else:
-                res = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+                    gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
+                    carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
+                    rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+                    for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
+                        gateway_rules = {}
+                        for rule in rules:
+                            if gateway_id in filter(None, rule.gwlist.split(',')):
+                                gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                        carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
-            return render_template('carriers.html', rows=res, gwgroup=gwgroup, new_gwid=newgwid)
+            # get all carriers
+            else:
+                carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+                for gateway in carriers:
+                    gateway_rules = {}
+                    for rule in rules:
+                        if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
+                            gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                    carrier_rules.append(json.dumps(gateway_rules, separators=(',',':')))
+
+            return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
 
         else:
             return index()
@@ -494,6 +524,7 @@ def deleteCarriers():
         gwid = form['gwid']
         gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
         name = form['name']
+        related_rules = json.loads(form['related_rules']) if 'related_rules' in form else ''
 
         Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
         # make the extra query to find associated gwgroup if needed
@@ -501,16 +532,28 @@ def deleteCarriers():
             Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
             fields = strFieldsToDict(Gateway.first().description)
             gwgroup = fields['gwgroup']
+        # grab associated address entry as well
         Addr = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(name)))
+        # grab any related carrier groups
+        Gatewaygroups = db.execute('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET({}, dr_gw_lists.gwlist)'.format(gwid))
 
+        # remove gateway and address
         Gateway.delete(synchronize_session=False)
         Addr.delete(synchronize_session=False)
-        Gatewaygroups = db.execute('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET({}, dr_gw_lists.gwlist)'.format(gwid))
+        # remove carrier from gwlist in carrier group
         for Gatewaygroup in Gatewaygroups:
             gwlist = list(filter(None, Gatewaygroup[1].split(",")))
             gwlist.remove(gwid)
             db.query(GatewayGroups).filter(GatewayGroups.id == str(Gatewaygroup[0])).update(
                 {'gwlist': ','.join(gwlist)}, synchronize_session=False)
+        # remove carrier from gwlist in carrier rules
+        if len(related_rules) > 0:
+            rule_ids = related_rules.keys()
+            rules = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid.in_(rule_ids)).all()
+            for rule in rules:
+                gwlist = list(filter(None, rule.gwlist.split(",")))
+                gwlist.remove(gwid)
+                rule.gwlist = ','.join(gwlist)
 
         db.commit()
         reload_required = True
@@ -915,18 +958,18 @@ def displayInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    # group for inbound routes
-    groupid = 9000
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
         if session.get('logged_in'):
             res = db.execute(
-                'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(groupid))
+                'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(settings.FLT_INBOUND))
             gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
-            dids = None
+            # sort gateways by name
+            gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
+
+            dids = []
             if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
                 try:
                     dids = numbers_api.getNumbers()
@@ -963,7 +1006,7 @@ def displayInboundMapping():
 
 
 @app.route('/inboundmapping', methods=['POST'])
-def addInboundMapping():
+def addUpdateInboundMapping():
     """
     Adding and Updating of dr_rules table (inbound routes only)\n
     Partially Supports rule definitions for Kamailio Drouting module\n
@@ -978,9 +1021,6 @@ def addInboundMapping():
 
         form = stripDictVals(request.form.to_dict())
 
-        # group for inbound routes
-        groupid = 9000
-
         # id in dr_rules table
         ruleid = None
         if form['ruleid']:
@@ -988,17 +1028,27 @@ def addInboundMapping():
 
         # get form data
         gwid = form['gwid']
+        alt_gwid = form['alt_gwid']
         prefix = form['prefix']
-        note = form['note']
+        notes = form['notes']
+
+        # we only support 2 pbx's so format gwlist accordingly
+        gateways = []
+        for gw in gwid, alt_gwid:
+            if len(gw) > 0:
+                gateways.append(gw)
+        gwlist = ','.join(gateways)
+
 
         # Adding
         if not ruleid:
-            IMap = InboundMapping(groupid, prefix, gwid, note)
+            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
             db.add(IMap)
 
         # Updating
         else:
-            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update({'prefix': prefix, 'gwlist': gwid, 'description': note})
+            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
+                {'prefix': prefix, 'gwlist': gwlist, 'description': notes}, synchronize_session=False)
 
         db.commit()
         reload_required = True
@@ -1073,7 +1123,7 @@ def deleteInboundMapping():
         reload_required = False
         db.close()
 
-def processInboundMappingImport(filename,groupid,pbxid,note,db):
+def processInboundMappingImport(filename,groupid,pbxid,notes,db):
     try:
 
         # Adding
@@ -1084,8 +1134,8 @@ def processInboundMappingImport(filename,groupid,pbxid,note,db):
             if len(row) > 1:
                 pbxid=row[1]
             if len(row) > 2:
-                note=row[2]
-            IMap = InboundMapping(groupid, row[0], pbxid, note)
+                notes=row[2]
+            IMap = InboundMapping(groupid, row[0], pbxid, notes)
             db.add(IMap)
         
         db.commit()
@@ -1126,12 +1176,9 @@ def importInboundMapping():
 
         form = stripDictVals(request.form.to_dict())
 
-        # group for inbound routes
-        groupid = 9000
-
         # get form data
         gwid = form['gwid']
-        note = form['note']
+        notes = form['notes']
 
         if 'file' not in request.files:
             flash('No file part')
@@ -1145,7 +1192,7 @@ def importInboundMapping():
         if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename,groupid,gwid,note,db)
+            processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,notes,db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
     
@@ -1271,16 +1318,13 @@ def displayOutboundRoutes():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    # group for outbound routes
-    groupid = 8000
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
         if session.get('logged_in'):
             rows = db.query(OutboundRoutes).filter(
-                (OutboundRoutes.groupid == groupid) | (OutboundRoutes.groupid >= 10000)).outerjoin(
+                (OutboundRoutes.groupid == settings.FLT_OUTBOUND) | (OutboundRoutes.groupid >= 10000)).outerjoin(
                 dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
                 dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid, OutboundRoutes.prefix,
                 OutboundRoutes.routeid, OutboundRoutes.gwlist, OutboundRoutes.timerec, OutboundRoutes.priority,
@@ -1335,7 +1379,7 @@ def addUpateOutboundRoutes():
     gwlist = ""
     description = ""
     # group for the default outbound routes
-    default_gwgroup = 8000
+    default_gwgroup = settings.FLT_OUTBOUND
     # id in dr_rules table
     ruleid = None
     from_prefix = None
@@ -1357,7 +1401,7 @@ def addUpateOutboundRoutes():
         groupid = form.get('groupid', default_gwgroup)
         if isinstance(groupid, str):
             if len(groupid) == 0 or (groupid == 'None'):
-                groupid = 8000
+                groupid = settings.FLT_OUTBOUND
 
         # get form data
         if form['from_prefix']:
@@ -1407,7 +1451,7 @@ def addUpateOutboundRoutes():
             if (from_prefix is None) and (prefix is not None):
                 oldgroupid = groupid
                 if (groupid is None) or (groupid == "None"):
-                    groupid = 8000
+                    groupid = settings.FLT_OUTBOUND
 
                 # Convert the dr_rule back to a default carrier rule
                 db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
@@ -1430,7 +1474,7 @@ def addUpateOutboundRoutes():
                 if exists:
                     return displayOutboundRoutes()
 
-                elif (prefix is not None) and (groupid == 8000):  # Adding a From prefix to an existing To
+                elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
                     # Create a new groupid
                     mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(
                         dSIPLCR.dr_groupid.desc()).first()
@@ -1646,7 +1690,7 @@ def imgFilter(name):
 
 # custom jinja context processors
 @app.context_processor
-def injectReloadRquired():
+def injectReloadRequired():
     return dict(reload_required=reload_required)
 
 
@@ -1705,12 +1749,15 @@ def initApp(flask_app):
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
 
-    # Add jinga2 filter
+    # Add jinja2 filters
     flask_app.jinja_env.filters["attrFilter"] = attrFilter
     flask_app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
     flask_app.jinja_env.filters["noneFilter"] = noneFilter
     flask_app.jinja_env.filters["imgFilter"] = imgFilter
     flask_app.jinja_env.filters["domainTypeFilter"] = domainTypeFilter
+
+    # Add jinja2 functions
+    flask_app.jinja_env.globals.update(zip=zip)
 
     # db.init_app(flask_app)
     # db.app = app
