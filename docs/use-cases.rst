@@ -214,10 +214,11 @@ Hostname	     <IP address of your FreePBX> (should autofill)
 **Note** Skip Authenication and Outbound Proxy
 
 
+
 .. image:: images/chansip_zoiper.PNG
         :align: center
 		
-		You should now be able to make a inbound and outbound call successfully!
+You should now be able to make a inbound and outbound call successfully!
 		
 		
 
