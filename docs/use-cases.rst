@@ -186,7 +186,7 @@ Trunk Sequence for Matched Routes   Trunk name (select from drop down box)
         :align: center
 
 10. Click the Dial Patterns tab to set the dial patterns. 
-If you are familiar with dial patterns, you can enter the dial patterns manually or you can click the Dial Patterans Wizard to auto create dial patterns if you like. You can choose 7, 10 or 11 digit patterns.
+If you are familiar with dial patterns, you can enter the dial patterns manually or you can click the Dial Patterans Wizard to auto create dial patterns if you like. You can choose 7, 10 or 11 digit patterns. Click Generate Routes.
 
 
 .. image:: images/chansip_dial_wizard.PNG
@@ -202,16 +202,16 @@ Dial pattern is set to your preference. Prefixes are optional, not required.
 
 11. Click Submit and Apply Config button.
 
-You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:
+Assuming you already have an extention created in your FreePBX, you can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:
 		
 ==================   ============
 Field                Value
 ==================   ============
 Username             <extension>@<siptrunkipaddress>
 secret               <Password of that extension>
-Proxy		     <IP address of your dsiprouter>
+Hostname	     <IP address of your FreePBX> (should autofill)
 ==================   ============
-
+**Note** Skip Authenication and Outbound Proxy
 
 
 .. image:: images/chansip_zoiper.PNG
