@@ -136,7 +136,7 @@ NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details
 
 6. Next you will enter the configurations for incoming by selecting the **Incoming** tab in the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
 
-User Context: This is most often the account name or number your provider expects. In this example we named it "inbound calls".
+User Context: This is most often the account name or number your provider expects. In this example we named it "inbound".
 The following User Details needs to be entered:
 
 ==================   ============
@@ -152,7 +152,11 @@ Context              from-trunk
 .. image:: images/chansip_incoming.PNG
         :align: center
 
-In the Register String enter: <username>:<password>@<hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@*****.**********.org
+In the Register String enter: <username>:<password>@<hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@demo.dsiprouter.org. **The domain name has to be included and correct.**
+
+.. image:: images/register_string.PNG
+        :align: center
+
 
 
 7. Click Submit
