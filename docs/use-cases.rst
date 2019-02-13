@@ -152,7 +152,7 @@ Context              from-trunk
 .. image:: images/chansip_incoming.PNG
         :align: center
 
-In the Register String enter: <username>:<password>@<hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@demo.dsiprouter.org. **The domain name has to be included and correct.**
+In the Register String enter: <username@domainname>:<password>@<ip address **or** hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@demo.dsiprouter.org. **The domain name has to be included and correct.**
 
 .. image:: images/register_string.PNG
         :align: center
