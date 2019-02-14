@@ -120,12 +120,14 @@ The following fields needs to be entered
 Field                Value
 ==================   ============
 Host                 <host name or IP address of dsiprouter> 
-Username             <Specified in dsiprouter>
+Username             <Specified in dsiprouter@domainname>
 Secret               <Specified in dsiprouter>
 Type                 peer
 Context              from-trunk
 ==================   ============
 
+
+**The domain name has to be included and correct.**
 
 
 .. image:: images/chansip_outgoing.PNG
@@ -152,7 +154,7 @@ Context              from-trunk
 .. image:: images/chansip_incoming.PNG
         :align: center
 
-In the Register String enter: <username@domainname>:<password>@<ip address **or** hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@demo.dsiprouter.org. **The domain name has to be included and correct.**
+In the **Register String** enter: <username@domainname>:<password>@<ip address **or** hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@demo.dsiprouter.org. **The domain name has to be included and correct.**
 
 .. image:: images/register_string.PNG
         :align: center
@@ -182,7 +184,7 @@ You will now be able to see the new chanSIP added in the truck.
 Field                               Value
 =================================   ============
 Route Name                          Type desired name
-Route CID                           Outbound
+Route CID                           Number you want to appear on caller ID
 Trunk Sequence for Matched Routes   Trunk name (select from drop down box)
 =================================   ============
 
