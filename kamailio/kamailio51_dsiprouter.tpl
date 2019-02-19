@@ -8,6 +8,8 @@
 #!define WITH_DROUTE
 ##!define WITH_DEBUG
 #!define WITH_NAT
+#!define WITH_PROXY_ALL_RTP
+#!define WITH_MULTI_HOMED
 #!define WITH_DISPATCHER
 ##!define WITH_SERVERNAT
 #!define WITH_MULTIDOMAIN
