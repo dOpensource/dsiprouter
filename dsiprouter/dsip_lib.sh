@@ -124,6 +124,17 @@ setKamailioConfigIP() {
     sed -i -r -e "s|(#!substdef.*!$NAME!).*(!.*)|\1$VALUE\2|g" ${CONFIG_FILE}
 }
 
+# $1 == attribute name
+# $2 == value of attribute
+# $3 == rtpengine config file
+setRtpengineConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+}
+
 # Install Sipsak
 # Used for testing and troubleshooting
 installSipsak() {

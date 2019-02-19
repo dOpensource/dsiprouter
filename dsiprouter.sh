@@ -291,12 +291,12 @@ export -f setPythonCmd
 
 # set dynamic python config settings
 function configurePythonSettings {
-    setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)"
-    setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE"
-    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
-    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
-    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_EMAIL = '${DSIP_SSL_EMAIL}'|g" gui/settings.py
-#    sed -i -r "s|(DOMAIN[[:space:]]?=.*)|DOMAIN = '${DSIP_SERVER_DOMAIN}'|g" gui/settings.py
+    setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_KEY = '${DSIP_SSL_KEY}'|g" ${DSIP_CONFIG_FILE}
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_CERT = '${DSIP_SSL_CERT}'|g" ${DSIP_CONFIG_FILE}
+    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_EMAIL = '${DSIP_SSL_EMAIL}'|g" ${DSIP_CONFIG_FILE}
+#    sed -i -r "s|(DOMAIN[[:space:]]?=.*)|DOMAIN = '${DSIP_SERVER_DOMAIN}'|g" ${DSIP_CONFIG_FILE}
 }
 
 # update settings file based on cmdline args
@@ -315,17 +315,28 @@ function configureSSL {
   
     mkdir -p ${DSIP_DSIP_SSL_CERT_DIR} 
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`" 
-    sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" gui/settings.py
-    sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" gui/settings.py
+    sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" ${DSIP_CONFIG_FILE}
+    sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" ${DSIP_CONFIG_FILE}
 }
 
 # updates and settings in kam config that may change
 # should be run after reboot or change in network configurations
 # TODO: we should support templating for the config instead
 function updateKamailioConfig {
-    setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}"
-    setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}"
-    setKamailioConfigIP 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}"
+    setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigIP 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
+}
+
+# updates and settings in rtpengine config that may change
+# should be run after reboot or change in network configurations
+function updateRtpengineConfig {
+    if (( ${SERVERNAT:-0} == 0 )); then
+        INTERFACE="${EXTERNAL_IP}"
+    else
+        INTERFACE="${INTERNAL_IP}!${EXTERNAL_IP}"
+    fi
+    setRtpengineConfigAttrib 'interface' "$INTERFACE"
 }
 
 function configureKamailio {
@@ -559,6 +570,9 @@ function uninstallRTPEngine {
             rm -f ./.rtpengineinstalled
             echo "Removed RTPEngine for $DISTRO"
         fi
+
+        # remove rtp update crontab entry
+        cronRemove 'updatertpconfig'
     fi
 } #end of uninstallRTPEngine
 
@@ -568,6 +582,7 @@ function installRTPEngine {
     local RTPENGINE_VER="mr6.1.1.1"
     local SRC_DIR="/usr/local/src"
     local RTPENGINE_SRC_DIR="${SRC_DIR}/rtpengine"
+    local RTP_UPDATE_OPTS=""
 
     if [[ $DISTRO == "debian" ]]; then
 
@@ -612,7 +627,7 @@ function installRTPEngine {
         cd ..
         dpkg -i ngcp-rtpengine-daemon_*
 	
-	# Stop the service after it's installed.  We need to configure it fist
+	    # Stop the service after it's installed.  We need to configure it fist
         systemctl stop ngcp-rtpengine-daemon
 
         if [ "$SERVERNAT" == "0" ]; then
@@ -623,9 +638,7 @@ function installRTPEngine {
 
         # create rtpengine user and group
         mkdir -p /var/run/ngcp-rtpengine-daemon
-        adduser --quiet --system --group --disabled-password \
-            --shell /bin/false --gecos "RTPengine RTP Proxy" \
-            --home /var/run/ngcp-rtpengine-daemon rtpengine
+        useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
         chown -R rtpengine:rtpengine /var/run/ngcp-rtpengine-daemon
 
         # rtpengine config file
@@ -676,6 +689,12 @@ EOF
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
         cp -f ${DSIP_PROJECT_DIR}/dsiprouter/debian/ngcp-rtpengine-daemon.init /etc/init.d/ngcp-rtpengine-daemon
+
+        # update kam configs on reboot
+        if (( ${SERVERNAT} == 1 )); then
+            RTP_UPDATE_OPTS="-servernat"
+        fi
+        cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig ${RTP_UPDATE_OPTS}"
 
         # Enable the RTPEngine to start during boot
         systemctl enable ngcp-rtpengine-daemon
@@ -806,9 +825,7 @@ EOF
 
             # create rtpengine user and group
             mkdir -p /var/run/rtpengine
-            adduser --quiet --system --group --disabled-password \
-                --shell /bin/false --gecos "RTPengine RTP Proxy" \
-                --home /var/run/rtpengine rtpengine
+            useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
             chown -R rtpengine:rtpengine /var/run/rtpengine
 
             # rtpengine config file
@@ -872,6 +889,12 @@ EOF
             cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-start /usr/sbin/
             cp -f ${DSIP_PROJECT_DIR}/dsiprouter/centos/rtpengine-stop-post /usr/sbin/
             chmod +x /usr/sbin/rtpengine-*
+
+            # update kam configs on reboot
+            if (( ${SERVERNAT} == 1 )); then
+                RTP_UPDATE_OPTS="-servernat"
+            fi
+            cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig ${RTP_UPDATE_OPTS}"
 
             # Reload systemd configs
             systemctl daemon-reload
@@ -1706,7 +1729,7 @@ function processCMD {
             done
             ;;
         updatekamconfig)
-            # reset dsiprouter gui password
+            # reset dynamic
             RUN_COMMANDS+=(updateKamailioConfig)
             shift
 
@@ -1716,6 +1739,32 @@ function processCMD {
                     -debug)
                         DEBUG=1
                         set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        echo "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        updatertpconfig)
+            # reset dsiprouter gui password
+            RUN_COMMANDS+=(updateRtpengineConfig)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -servernat)
+                        SERVERNAT=1
                         shift
                         ;;
                     *)  # fail on unknown option

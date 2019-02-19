@@ -9,9 +9,7 @@ function install {
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
-    adduser --quiet --system --group --disabled-password \
-        --shell /bin/false --gecos "Kamailio SIP Proxy" \
-        --home /var/run/kamailio kamailio
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* wheezy.*' /etc/apt/sources.list > /dev/null

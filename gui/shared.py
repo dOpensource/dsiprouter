@@ -300,7 +300,7 @@ class IO():
             logging.getLogger().log(logging.NOTSET, str(message).strip())
 
 
-def debugException(ex, log_ex=True, print_ex=False, showstack=True):
+def debugException(ex=None, log_ex=True, print_ex=False, showstack=True):
     """
     Debugging of an exception: print and/or log frame and/or stacktrace
     :param ex:          The exception object
@@ -314,9 +314,10 @@ def debugException(ex, log_ex=True, print_ex=False, showstack=True):
 
     text = "((( EXCEPTION )))\n[CLASS]: {}\n[VALUE]: {}\n".format(exc_type, exc_value)
     # get detailed exception info
-    if vars(ex):
-        for k, v in vars(ex).items():
-            text += "[{}]: {}\n".format(k.upper(), str(v))
+    if ex is None:
+        ex = exc_value
+    for k,v in vars(ex).items():
+        text += "[{}]: {}\n".format(k.upper(), str(v))
 
     # determine how far we trace it back
     tb_list = None
