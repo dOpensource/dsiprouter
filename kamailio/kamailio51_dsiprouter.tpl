@@ -1425,6 +1425,23 @@ event_route[uac:reply] {
 # Caller NAT detection
 route[NATDETECT] {
 #!ifdef WITH_NAT
+
+	#!ifdef WITH_PROXY_ALL_RTP
+
+		force_rport();
+                
+		if (is_method("REGISTER")) {
+                        fix_nated_register();
+                } else {
+                        if (is_first_hop()) {
+                                set_contact_alias();
+                        }
+                }
+
+                setflag(FLT_NATS);
+
+	#!else
+
 	if (nat_uac_test("19")) {
 		fix_nated_contact();
 		force_rport();
@@ -1440,6 +1457,8 @@ route[NATDETECT] {
 
 		setflag(FLT_NATS);
 	}
+	
+#!endif
 #!endif
 #!ifdef WITH_SERVERNAT
 	setflag(FLT_NATS);
@@ -1480,9 +1499,63 @@ route[NATMANAGE] {
                 rtpengine_manage("media-address=INTERNAL_IP_ADDR");
         else
                 rtpengine_manage();
-#!else
-                rtpengine_manage();
+
 #!endif		
+
+
+#!ifdef WITH_MULTI_HOMED
+
+	#Build a regular expression for figuring out if the request is going towards a local machine
+        $var(local_subnet) = "INTERNAL_IP_NET";
+        # Replace the dots with \.
+        $var(local_subnet) = $(var(local_subnet){s.replace,.,\.});
+        # Repace the 0 with .*
+        $var(local_subnet) = $(var(local_subnet){s.replace,*,.*});
+
+
+	if (allow_source_address(FLT_CARRIER) && ($fd=~$var(local_subnet) || $rd=~$var(local_subnet))){
+
+        xlog("L_INFO", "Call Flow: From Carrier to Internal PBX.\n");
+        rtpengine_manage("direction=external direction=internal");
+
+	} else if (allow_source_address(FLT_CARRIER) && ($rd!=~$var(local_subnet))){
+
+        xlog("L_INFO", "Call Flow: From Carrier to External PBX.\n");
+        rtpengine_manage("direction=external direction=external");
+
+	} else if (allow_source_address(FLT_PBX) && $si!=0){
+
+        xlog("L_INFO", "Call Flow: From External PBX to Carrier\n");
+        rtpengine_manage("direction=external direction=external");
+
+	} else if ($si!=~$var(local_subnet) && $rd=~$var(local_subnet)){
+
+        xlog("L_INFO", "Call Flow: From External PBX Extension to Internal PBX.\n");
+        rtpengine_manage("direction=external direction=internal");
+
+	} else if (allow_source_address(FLT_PBX) && $si=~$var(local_subnet)){
+
+        xlog("L_INFO", "Call Flow: From Internal PBX to Carrier\n");
+        rtpengine_manage("direction=internal direction=external");
+
+	} else if ($avp(domain_pbx_ip)=$var(local_subnet) && !allow_source_address(FLT_CARRIER)){
+
+				xlog("L_INFO", "Call Flow: From Internal PBX to External Extension.\n");
+        rtpengine_manage("direction=external direction=internal");
+
+	} else {
+
+				xlog("L_INFO", "If your seeing this one of the rules didn't catch you!\n");
+
+	}
+
+#!endif
+
+#!ifdef !WITH_SERVERNAT && !WITH_MULTI_HOMED
+
+	rtpengine_manage();
+
+#!endif
 
 	if (is_request()) {
 		if (!has_totag()) {
