@@ -19,7 +19,7 @@ elif cmdExists "apt"; then
         if ! grep -q -E '(ftp|deb)\.debian.org/debian' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
             # add debian main repo
             [ -e /etc/debian_version ] && CODENAME=$(cat /etc/os-release | grep '^VERSION=' | cut -d '(' -f 2 | cut -d ')' -f 1)
-            echo "deb http://ftp.debian.org/debian ${CODENAME-stable} main contrib non-free" >>/etc/apt/sources.list
+            echo "deb http://ftp.debian.org/debian ${CODENAME:-stable} main contrib non-free" >>/etc/apt/sources.list
             apt-get update -y
             apt-get install -y debian-keyring debian-archive-keyring
         fi

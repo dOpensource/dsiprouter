@@ -19,6 +19,12 @@ function install() {
     #systemctl start firewalld
     #systemctl enable firewalld
 
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
+
     # Start MySql
     systemctl start mariadb
     systemctl enable mariadb
@@ -27,10 +33,9 @@ function install() {
     # Disable SELinux
     sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
 
-    # create kam user and group
+    # create kamailio user and group
     mkdir -p /var/run/kamailio
-    groupadd kamailio
-    useradd -d /var/run/kamailio -M -s /bin/false kamailio
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
     # Add the Kamailio repos to yum

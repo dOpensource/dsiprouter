@@ -7,6 +7,11 @@ function install {
     apt-get install -y curl wget sed gawk vim perl
     apt-get install -y logrotate rsyslog
 
+    # create kamailio user and group
+    mkdir -p /var/run/kamailio
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
+    chown -R kamailio:kamailio /var/run/kamailio
+
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* stretch.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
     if [ $? -eq 1 ]; then

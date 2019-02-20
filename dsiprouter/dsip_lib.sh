@@ -71,33 +71,79 @@ install_mysql_community() {
 
 # $1 == attribute name
 # $2 == attribute value
-# $3 == whether to 'quote' value (use for strings)
+# $3 == python config file
+# $4 == whether to 'quote' value (use for strings)
 setConfigAttrib() {
     local NAME="$1"
     local VALUE="$2"
+    local CONFIG_FILE="$3"
 
-    if (( $# >= 3 )); then
+    if (( $# >= 4 )); then
         VALUE="'${VALUE}'"
     fi
-    sed -i -r -e "s|($NAME[[:space:]]?=.*)|$NAME = $VALUE|g" ${DSIP_CONFIG_FILE}
+    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # $1 == attribute name
+# $2 == python config file
 # returns: attribute value
 getConfigAttrib() {
     local NAME="$1"
+    local CONFIG_FILE="$2"
 
-    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${DSIP_CONFIG_FILE})
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
     printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
+}
+
+# $1 == attribute name
+# $2 == kamailio config file
+enableKamailioConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    sed -i -r -e "s/#+(!(define|trydef|redefine)[[:space:]]? $NAME)/#\1/g" ${CONFIG_FILE}
+}
+
+# $1 == attribute name
+# $2 == kamailio config file
+disableKamailioConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    sed -i -r -e "s/#+(!(define|trydef|redefine)[[:space:]]? $NAME)/##\1/g" ${CONFIG_FILE}
+}
+
+# $1 == name of ip to change
+# $2 == value to change ip to
+# $3 == kamailio config file
+setKamailioConfigIP() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    sed -i -r -e "s|(#!substdef.*!$NAME!).*(!.*)|\1$VALUE\2|g" ${CONFIG_FILE}
+}
+
+# $1 == attribute name
+# $2 == value of attribute
+# $3 == rtpengine config file
+setRtpengineConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # Install Sipsak
 # Used for testing and troubleshooting
-install_Sipsak() {
-	
-	git clone https://github.com/nils-ohlmeier/sipsak.git /usr/src/sipsak
+installSipsak() {
+    local START_DIR="$(pwd)"
+    local SRC_DIR="/usr/local/src"
 
-	cd /usr/src/sipsak
+	git clone https://github.com/nils-ohlmeier/sipsak.git ${SRC_DIR}/sipsak
+
+	cd ${SRC_DIR}/sipsak
 	autoreconf --install
 	./configure
 	make
@@ -110,18 +156,21 @@ install_Sipsak() {
 		echo "SipSak install failed"
 	fi
 
-
+	cd ${START_DIR}
 }
 
 # Remove Sipsak from the machine completely
-uninstall_Sipsak() {
+uninstallSipsak() {
+    local START_DIR="$(pwd)"
+    local SRC_DIR="/usr/local/src"
 
-	if [ -d /usr/src/sipsak ]; then
-		cd /usr/src/sipsak
+	if [ -d ${SRC_DIR}/sipsak ]; then
+		cd ${SRC_DIR}/sipsak
 		make uninstall
-		rm -rf /usr/src/sipsak
+		rm -rf ${SRC_DIR}/sipsak
 	fi
 
+	cd ${START_DIR}
 }
 
 # $1 == command to test
@@ -132,6 +181,19 @@ cmdExists() {
     else
         return 1
     fi
+}
+
+# $1 == directory to check for in PATH
+# returns: 0 == found, 1 == not found
+pathCheck() {
+    case ":${PATH-}:" in
+        *:"$1":*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 # returns: AMI instance ID || blank string
