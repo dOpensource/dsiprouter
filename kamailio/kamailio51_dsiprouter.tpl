@@ -491,7 +491,7 @@ modparam("speeddial", "use_domain", MULTIDOMAIN)
 #!ifdef WITH_MULTIDOMAIN
 modparam("domain", "db_url", DBURL)
 # register callback to match myself condition with domains list
-modparam("domain", "register_myself", 1)
+modparam("domain", "register_myself", 0)
 #!endif
 
 
@@ -1133,7 +1133,7 @@ route[REGISTRAR] {
 		$rp = $var(rp);
 
 		#Add the Path header - so that we know how to route back
-		add_path_received();
+		add_path_received($fU);
 
 		#Rewrite Contact based on the domain being routed to
 		if ( subst('/^Contact: <sip:([0-9]+)@(.*)$/Contact: <sip:\1@$fd>\r/ig') ) {
