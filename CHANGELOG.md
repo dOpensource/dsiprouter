@@ -2,6 +2,38 @@
 
 
 
+### Bug Fixes
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Tue, 5 Mar 2019 16:02:37 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- add curl timeout on AWS check
+- make PBX local digit length check globalls configurable
+- fix typos
+- fix line breaks
+- automate merging table data during install
+
+
+---
+
+
+### Update kamailio51_dsiprouter.tpl
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Thu, 21 Feb 2019 16:43:09 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+Set the domain flag: register_myself to 0.  This flag was causing Kamailio to get stuck in a continuous loop  when receiving an ACK from an endpoint.  This is due to the fact that Kamailio sees the domains in the domains table reside on the Kamailio server with the register_myself flag being set to 1
+
+
+---
+
+
 ### Add Useful Scripts To Resources
 
 > Branches Affected: dev  

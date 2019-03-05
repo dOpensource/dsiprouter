@@ -120,9 +120,9 @@ fi
 export AWS_ENABLED=0
 # Will try to access the AWS metadata URL and will return an exit code of 22 if it fails
 # The -f flag enables this feature
-curl -s -f http://169.254.169.254 
+curl -s -f --connect-timeout 2 http://169.254.169.254
 ret=$?
-if (( $ret != 22 )); then
+if (( $ret != 22 )) && (( $ret != 28 )); then
     export AWS_ENABLED=1
 fi
 
@@ -1267,10 +1267,10 @@ function upgrade {
     # TODO: set / handle parsed args
     UPGRADE_RELEASE="v0.51"
 
-    BACKUP_DIR="/var/opt/dsip/backups"
+    BACKUP_DIR="/var/backups"
     CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
     mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
-    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR"),$(dirname "$DSIP_PROJECT_DIR")}
+    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
 
     mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
         --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" > ${CURR_BACKUP_DIR}/mysql_full.sql
@@ -1322,7 +1322,7 @@ function upgrade {
 
 function usageOptions {
     linebreak() {
-        printf '_%.0s\n' $(seq 1 ${COLUMNS:-100}) && echo ''
+        printf '_%.0s' $(seq 1 ${COLUMNS:-100}) && echo ''
     }
 
     linebreak

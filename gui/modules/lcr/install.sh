@@ -4,19 +4,22 @@ ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstal
 
 function installSQL {
     # Check to see if the acc table or cdr tables are in use
+    MERGE_DATA=0
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE -e "select count(*) from dsip_lcr limit 10" > /dev/null 2>&1
     if [ "$?" -eq 0 ]; then
-        echo -e "The dSIPRouter LCR Support (dsip_lcr)  table already exists.  Please backup this table before moving forward if you want the data."
-        echo -e "Would you like to install the FusionPBX LCR module now [y/n]:\c"
-        read ANSWER
-        if [ "$ANSWER" == "n" ]; then
-            return
-        fi
+        MERGE_DATA=1
     fi
 
     # Replace the dSIPRouter LCR tables and add some optional Kamailio stored procedures
     echo "Adding/Replacing the tables needed for LCR  within dSIPRouter..."
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ./gui/modules/lcr/lcr.sql
+
+    if [ ${MERGE_DATA} -eq 0 ]; then
+        echo -e "The dSIPRouter LCR Support (dsip_lcr) table already exists. Dumping table data"
+        mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
+            --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} dsip_lcr \
+            | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
+    fi
 }
 
 function install {

@@ -39,7 +39,6 @@ def isValidIP(address, tcp_proto=''):
             return False
         return True
 
-# TODO: we need to dynamically set network info for kamailio.cfg file
 def getInternalIP():
     """ Returns current ip of system """
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -114,7 +113,7 @@ def objToDict(obj):
 
 def rowToDict(row):
     """
-    convertings sqlalchemy row object to python dict
+    converts sqlalchemy row object to python dict
     does not recurse through relationships
     tries table data, then _asdict() method, then objToDict()
     """

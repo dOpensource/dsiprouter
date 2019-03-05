@@ -255,6 +255,9 @@ teleblock.media_port = "" desc "Teleblock media port"
 # "" - default behavior
 server.role = "" desc "Role of the server in the topology"
 
+# Local calling maximum digits for the initiating PBX - PBX sending the INVITE
+server.pbx_max_local_digits = 5;
+
 ####### Modules Section ########
 
 # set paths to location of modules (to sources or installation folders)
@@ -1222,11 +1225,8 @@ route[LOCATION] {
 if !(allow_source_address(FLT_PBX))
 	return;
 
-#Local calling maximum digits for the initialting PBX - PBX sending the INVITE.  Hardcoding for now.  TODO: make dynamic
-$var(pbx_max_local_digits) = 5;
-
 #Return if the rU is more then local calling maximum digits for the initiating PBX
-if ($(rU{s.len}) > $var(pbx_max_local_digits))
+if ($(rU{s.len}) > $sel(cfg_get.server.pbx_max_local_digits))
 	return;
 
 #!ifdef WITH_SPEEDDIAL
