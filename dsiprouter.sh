@@ -28,7 +28,8 @@
 #===========================================================#
 
 # Set project dir (where src and install files go)
-export DSIP_PROJECT_DIR="$(dirname $(readlink -f $0))"
+DSIP_PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 

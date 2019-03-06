@@ -2,6 +2,20 @@
 
 
 
+### Make Project root more reliable
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 6 Mar 2019 16:05:08 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- add redundancy checking for project root dir
+
+
+---
+
+
 ### Update Internal IP Resolution
 
 > Branches Affected: dev  
