@@ -393,9 +393,9 @@ function configureKamailio {
 
     # Install schema for drouting module
     mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
-        -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_rules')"
+        -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_custom_rules','dr_rules')"
     mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE \
-        -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_rules"
+        -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_custom_rules,dr_rules"
     if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
         mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < /usr/share/kamailio/mysql/drouting-create.sql
     else
@@ -640,6 +640,8 @@ function installRTPEngine {
 
         # create rtpengine user and group
         mkdir -p /var/run/ngcp-rtpengine-daemon
+        # sometimes locks aren't properly removed (this seems to happen often on VM's)
+        rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
         useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
         chown -R rtpengine:rtpengine /var/run/ngcp-rtpengine-daemon
 
@@ -827,6 +829,8 @@ EOF
 
             # create rtpengine user and group
             mkdir -p /var/run/rtpengine
+            # sometimes locks aren't properly removed (this seems to happen often on VM's)
+            rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
             useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
             chown -R rtpengine:rtpengine /var/run/rtpengine
 

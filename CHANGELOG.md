@@ -2,6 +2,21 @@
 
 
 
+### Fix kamailio configure Bugs
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Tue, 5 Mar 2019 19:25:15 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- drop dr_custom_rules on fresh kam configure
+- remove hung locks when adding user
+
+
+---
+
+
 ### Bug Fixes
 
 > Branches Affected: dev  
