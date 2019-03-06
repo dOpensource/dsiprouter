@@ -41,7 +41,7 @@ KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
-
+RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # SQLAlchemy Settings
 

@@ -2,6 +2,22 @@
 
 
 
+### Update Internal IP Resolution
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Tue, 5 Mar 2019 23:19:55 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- changed internal ip resolution based on default route
+- fix rtpengine config update function
+- add rtpcfg variable for later use
+
+
+---
+
+
 ### Fix kamailio configure Bugs
 
 > Branches Affected: dev  
