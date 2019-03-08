@@ -255,6 +255,9 @@ teleblock.media_port = "" desc "Teleblock media port"
 #   "" 			- default behavior
 server.role = "" desc "Role of the server in the topology"
 
+# Rename who we are
+server_header="dSIPRouter Project"
+
 # Local calling maximum digits for the initiating PBX - PBX sending the INVITE
 server.pbx_max_local_digits = 5 desc "Maximum digits for local pbx extensions"
 
