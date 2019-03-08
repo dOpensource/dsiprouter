@@ -1,27 +1,7 @@
-import logging, sys, functools
+import logging
 import settings
 from logging.handlers import SysLogHandler
 from copy import copy
-
-class StreamLogger():
-    """
-    Redirect stream to logger
-    Inspired from the following:
-    <https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python>
-    <http://techies-world.com/how-to-redirect-stdout-and-stderr-to-a-logger-in-python/>
-    """
-    def __init__(self, logger=logging.getLogger(), level=logging.getLogger().level):
-        self.logger = logger
-        self.level = level
-        self.buff = ""
-
-    def write(self, message):
-        if message != '\n':
-            self.buff += message.strip()
-
-    def flush(self):
-        self.logger.log(self.level, '{}\n'.format(self.buff))
-        self.buff = ""
 
 def initSyslogLogger():
     """
@@ -45,17 +25,12 @@ def initSyslogLogger():
     logging.getLogger().addHandler(log_handler)
 
     # redirect stderr and stdout to syslog
-    if settings.DEBUG:
-        sys.stderr = StreamLogger(level=logging.WARNING)
-        sys.stdout = StreamLogger(level=logging.DEBUG)
+    # if not settings.DEBUG:
+    #     sys.stderr = StreamLogger(level=logging.WARNING)
+    #     sys.stdout = StreamLogger(level=logging.DEBUG)
 
     return log_handler
 
 # import this file to setup logging
 # syslog handler created globally
-syslog_handler = initSyslogLogger()
-
-# change print to default unbuffered
-# set if your redirecting stdout or stderr to syslog
-if settings.DEBUG:
-    print = functools.partial(print, flush=True)
+# syslog_handler = initSyslogLogger()

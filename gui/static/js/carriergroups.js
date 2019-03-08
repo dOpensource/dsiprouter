@@ -183,7 +183,6 @@ function setCarrierHandlers() {
     var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
     var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
 
-
     /** Clear out the modal */
     var modal_body = $('#edit .modal-body');
     modal_body.find(".gwid").val('');
@@ -205,11 +204,34 @@ function setCarrierHandlers() {
     var c = document.getElementById('carriers');
     var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
     var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+    var related_rules = JSON.parse($(c).find('tr:eq(' + row_index + ') td:eq(6)').text());
+
+    var modal_body = $('#delete .modal-body');
+
+    /* remove previous rules if they were created */
+    modal_body.find('div.alert.alert-warning').remove();
+
+    /* check if related dr_rules exist */
+    if (Object.keys(related_rules).length > 0) {
+      /* create an alert and append it to the DOM */
+      var html_string = '<div class="alert alert-warning centered" role="alert">' +
+        '<h4>This record will also be removed from the following rules</h4>' +
+        '<hr>' + '<div class="table-responsive">'+
+        '<table class="table table-centered" style="margin-bottom: 0;">' +
+        '<thead><tr><th>RULE ID</th><th>NAME</th></tr></thead><tbody>';
+      for (var key in related_rules) {
+        html_string += '<tr><td>' + key + '</td><td>' + related_rules[key] + '</td></tr>';
+      }
+      html_string += '</tbody></table></div></div>';
+      /* let jquery parse the string as html */
+      var html_nodes = jQuery.parseHTML(html_string);
+      modal_body.find("div.alert.alert-danger").after(html_nodes);
+    }
 
     /* update modal fields */
-    var modal_body = $('#delete .modal-body');
     modal_body.find(".gwid").val(gwid);
     modal_body.find(".name").val(name);
+    modal_body.find(".related_rules").val(JSON.stringify(related_rules));
   });
 }
 

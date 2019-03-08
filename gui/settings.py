@@ -41,7 +41,7 @@ KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
-
+RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # SQLAlchemy Settings
 
@@ -51,6 +51,8 @@ SQLALCHEMY_SQL_DEBUG = False
 
 FLT_CARRIER = 8
 FLT_PBX = 9
+FLT_OUTBOUND = 8000
+FLT_INBOUND = 9000
 
 # The domain used to create user accounts for PBX and Endpoint registrations
 

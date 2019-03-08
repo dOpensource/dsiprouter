@@ -7,6 +7,13 @@ function install {
     apt-get install -y curl wget sed gawk vim perl
     apt-get install -y logrotate rsyslog
 
+    # create kamailio user and group
+    mkdir -p /var/run/kamailio
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
+    chown -R kamailio:kamailio /var/run/kamailio
+
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* jessie.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
     if [ $? -eq 1 ]; then
@@ -38,6 +45,21 @@ function install {
     # Start MySQL
     systemctl start mysql
 
+    # create kamailio defaults config
+    (cat << 'EOF'
+ RUN_KAMAILIO=yes
+ USER=kamailio
+ GROUP=kamailio
+ SHM_MEMORY=64
+ PKG_MEMORY=8
+ PIDFILE=/var/run/kamailio/kamailio.pid
+ CFGFILE=/etc/kamailio/kamailio.cfg
+ #DUMP_CORE=yes
+EOF
+    ) > /etc/default/kamailio
+    # create kamailio tmp files
+    echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
+
     # Configure Kamailio and Required Database Modules
     sed -i -e 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
@@ -59,6 +81,10 @@ function install {
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
+
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl start firewalld
 
     # Firewall settings
     firewall-cmd --zone=public --add-port=5060/udp --permanent

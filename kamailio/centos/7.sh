@@ -16,8 +16,14 @@ function install() {
     rm -f ~/.my.cnf
 
     # Start firewalld
-    systemctl start firewalld
-    systemctl enable firewalld
+    #systemctl start firewalld
+    #systemctl enable firewalld
+
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
 
     # Start MySql
     systemctl start mariadb
@@ -26,6 +32,13 @@ function install() {
 
     # Disable SELinux
     sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
+
+    # create kamailio user and group
+    mkdir -p /var/run/kamailio
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
+    chown -R kamailio:kamailio /var/run/kamailio
 
     # Add the Kamailio repos to yum
     (cat << 'EOF'
@@ -43,9 +56,30 @@ EOF
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
         kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress
 
+    # workaround for kamailio rpm transaction failures
+    if (( $? != 0 )); then
+        rpm --import $(grep 'gpgkey' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)
+        REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
+        for REPO in $REPOS; do
+            yum install -y $(grep 'baseurl' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
+        done
+    fi
 
     touch /etc/tmpfiles.d/kamailio.conf
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
+ 
+    # create kamailio defaults config
+    (cat << 'EOF'
+ RUN_KAMAILIO=yes
+ USER=kamailio
+ GROUP=kamailio
+ SHM_MEMORY=64
+ PKG_MEMORY=8
+ PIDFILE=/var/run/kamailio/kamailio.pid
+ CFGFILE=/etc/kamailio/kamailio.cfg
+ #DUMP_CORE=yes
+EOF
+    ) > /etc/default/kamailio
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
@@ -69,9 +103,13 @@ EOF
     kamdbctl create
 
     # Setup firewall rules
-    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
-    firewall-cmd --reload
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp 
+    firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp 
+    firewall-offline-cmd --reload
+    
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl start firewalld
 
     #Make sure MariaDB starts before Kamailio
     sed -i -E "s/(After=.*)/\1 mariadb.service/g" /lib/systemd/system/kamailio.service
