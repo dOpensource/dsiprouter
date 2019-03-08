@@ -249,14 +249,17 @@ teleblock.media_ip = "" desc "Teleblock media ip"
 teleblock.media_port = "" desc "Teleblock media port"
 #!endif
 
-#define the role of the server
-# outbound - outbound only - no domain routing
-# inout - inbound and outbound only - no domain routing
-# "" - default behavior
+# Define the role of the server
+#   outbound 	- outbound only (no domain routing)
+#   inout 		- inbound and outbound only (no domain routing)
+#   "" 			- default behavior
 server.role = "" desc "Role of the server in the topology"
 
 # Local calling maximum digits for the initiating PBX - PBX sending the INVITE
-server.pbx_max_local_digits = 5;
+server.pbx_max_local_digits = 5 desc "Maximum digits for local pbx extensions"
+
+# LCR routing minimum digits to match for each prefix (to and from prefix)
+server.lcr_min_prefix_digits = 3 desc "Minimum digits for LCR prefix matching"
 
 ####### Modules Section ########
 
@@ -702,7 +705,6 @@ route[REFORMATRURI] {
 # Will deal with rewriting 7 digits numbers to 10 digit numbers based on 3 or 4 digit prefix of the
 # FROM number.  Hence, we are assuming that the 7 digit number being dialed is in the same
 # area code as the FROM number.  This has been tested with US based dialing only.
- 
 route[REFORMATRURI7] {
 
 
@@ -737,16 +739,16 @@ route[ENRICH_SIPHEADER]
 
 }
 
-#Route the call to the next hop, which can be a PBX or Carrier
+# Route the call to the next hop, which can be a PBX or Carrier
 route[NEXTHOP] {
 
 
-######################################
-# Endpoint to PBX via Domain Routing #
-######################################
+    ######################################
+    # Endpoint to PBX via Domain Routing #
+    ######################################
 
-    #Route to a single PBX with PASS THRU AUTH (aka Acting as a Location Server only)
- 
+    # Route to a single PBX with PASS THRU AUTH (aka Acting as a Location Server only)
+
    if (isflagset(FLT_DOMAINROUTING) && !isflagset(FLT_EXTERNAL_AUTH)) {
         #Grab the value of the avp that contains the domain_pbx_ip.
         #This is where requests for that domain should be routed
@@ -757,42 +759,37 @@ route[NEXTHOP] {
         $rd = $var(rd);
         $rp = $var(rp);
 
-	xlog("L_DEBUG", "NEXTHOP-DOMAINROUTING: should be routed to $rd:$rp"); 
+	    xlog("L_DEBUG", "NEXTHOP-DOMAINROUTING: should be routed to $rd:$rp");
         
-	#We are going to pass this request on to the backend server
+	    #We are going to pass this request on to the backend server
         record_route();
 	
-	#Fix NAT'd contact so that calls are routed back correctly when a BYE occurs
-	#fix_nated_contact();
-	#subst_hf("Contact", "/@.*;/@$si:$sp;/", "f");       
- 
-	route(RELAY);
-        exit;
+        #Fix NAT'd contact so that calls are routed back correctly when a BYE occurs
+        #fix_nated_contact();
+        #subst_hf("Contact", "/@.*;/@$si:$sp;/", "f");
+
+        route(RELAY);
+            exit;
     }
     
     #Route to one PBX using an alogorithm with External Authentication 
     #(aka We are acting as a Registration and Location Server)
    
-   else if (isflagset(FLT_DOMAINROUTING) && isflagset(FLT_EXTERNAL_AUTH)) {
+    else if (isflagset(FLT_DOMAINROUTING) && isflagset(FLT_EXTERNAL_AUTH)) {
 
-	if (!strempty($avp(domain_dispatcher_set_id))) {
+        if (!strempty($avp(domain_dispatcher_set_id))) {
+             #Set the algoritm to load balancing if not set
+             if (strempty($avp(domain_dispatcher_alg))) {
+                   $avp(domain_dispatcher_alg)=4;
+             }
 
-                 #Set the algoritm to load balancing if not set
+            record_route();
 
-       		 if (strempty($avp(domain_dispatcher_alg))) {
-
-                       $avp(domain_dispatcher_alg)=4;
-                 }
-
-		record_route();
-
-		route(ENRICH_SIPHEADER);
-                route(DISPATCHER_SELECT);
-                route(RELAY);
-
+            route(ENRICH_SIPHEADER);
+            route(DISPATCHER_SELECT);
+            route(RELAY);
         }
         exit;
-
    }
 
 
@@ -850,21 +847,51 @@ route[NEXTHOP] {
 		$avp(calltype) = "outbound";
 
 		# LCR Routing (US Based)
-		# the from number has to have 3 digits
-		# the to number has to have 3 digits
-		# TODO: we should store and retrieve the # of digits dynamically,
-		# thus allowing variable-length prefixes
+		#   - route based on from prefix and to prefix
+		#   - number of digits are configurable by setting server.lcr_min_prefix_digits
+		#   - match selection is similar to dRouting module from longest to shortest match
+		# Logic Summary:
+		#   1. create lookup using minimum prefix digits
+		#   2. iterate through htable matching entries starting with prefixes
+		#   3. find diff between match and lookup (must be absolute value)
+		#   4. if diff is less than previous overwrite match
+		#   5. if a match is present attempt set carrier group and relay
+		# TODO:
+		#   we could store and iterate through all matches if we use dispatcher instead
+		#   this would allow failover in LCR Routing to shorter prefixes (if we wanted that)
 
-		$avp(from)=$(fU{s.substr,0,3});
-		$avp(to)=$(rU{s.substr,0,3});
+        $var(prefix_len) = (int)$sel(cfg_get.server.lcr_min_prefix_digits);
+		$var(from) = $(fU{s.substr,0,$var(prefix_len)});
+		$var(to) = $(rU{s.substr,0,$var(prefix_len)});
+		$var(lookup) = $fU + "-" + $tU;
+        xlog("L_DEBUG", "LCR Prefix Lookup: $var(lookup)");
 
-		$avp(lookup) = $avp(from) + "-" + $avp(to);
-		
-		xlog("L_DEBUG", "***Lookup: $avp(lookup)***"); 
-		
-		if ($sht(tofromprefix=>$avp(lookup)) != $null) {
-			$avp(carrier_groupid) = $sht(tofromprefix=>$avp(lookup));
-		}
+        $avp(lcr_match_group) = $null;
+        $avp(lcr_match_diff) = 100;
+        $avp(diff) = 100;
+        sht_iterator_start("iter", "tofromprefix");
+        while(sht_iterator_next("iter")) {
+            $var(regex) = $(shtitkey(iter){s.select,0,-}) + "([0-9])*-" + $(shtitkey(iter){s.select,-1,-}) + "([0-9])*" ;
+            if ($var(lookup) =~ $var(regex)) {
+                xlog("L_DEBUG", "LCR match on $shtitkey(iter)\n");
+                $avp(diff) = $(var(lookup){s.len}) - $(shtitkey(iter){s.len});
+                # bitwise absolute value: ( mask = n>>31; (mask^n) - mask )
+                # we are assuming 32 bit integers
+                $var(mask) = $avp(diff) >> 31;
+                $avp(diff) = ($var(mask) ^ $avp(diff)) - $var(mask);
+                xlog("L_DEBUG", "LCR match diff $avp(diff)\n");
+                if ($avp(diff) < $avp(lcr_match_diff)) {
+                    $avp(lcr_match_group) = $shtitval(iter);
+                    $avp(lcr_match_diff) = $avp(diff);
+                }
+            }
+        }
+        sht_iterator_end("iter");
+
+
+        if ($avp(lcr_match_len) > 0) {
+            $avp(carrier_groupid) = $avp(lcr_match_group);
+        }
 		else {
 			 $avp(carrier_groupid) = "8000";
 		}
@@ -875,8 +902,9 @@ route[NEXTHOP] {
 			exit;
 		}
 	}
-	else
+	else {
 		sl_send_reply("407", "Proxy Authentication Required. Add the PBX or Carrier IP using GUI");
+    }
 
 #!endif 
 
@@ -1112,7 +1140,7 @@ route[REGISTRAR] {
 		xlog("L_DEBUG","update the gwid $avp(gatewayid) to use the register ip:port:transport of $su");
                 # Remove the sip: from the front of the $su
 		$var(su) = $(su{s.substr,4,0});
-		sql_query("cb","update dr_gateways set address='$var(su)' where gwid=$avp(gatewayid)","rb");	
+		sql_query("cb","update dr_gateways set address='$var(su)' where gwid=$avp(gatewayid)","rb");
 		jsonrpc_exec('{"jsonrpc": "2.0", "method": "drouting.reload", "id": 1}');
 		exit;
 
@@ -1141,7 +1169,7 @@ route[REGISTRAR] {
 		#Rewrite Contact based on the domain being routed to
 		if ( subst('/^Contact: <sip:([0-9]+)@(.*)$/Contact: <sip:\1@$fd>\r/ig') ) {
 			xlog("L_INFO", "[REGISTRAR] changed contact to match From domain");
-		};		
+		};
 
 		#We are going to pass this request on to the backend server
 		route(RELAY);
@@ -1152,7 +1180,7 @@ route[REGISTRAR] {
 		if (!save("location"))
 			sl_reply_error();
 
-		#Forward the registration onto one of the servers in the cluster		
+		#Forward the registration onto one of the servers in the cluster
 
 		if (!strempty($avp(domain_dispatcher_set_id))) {
 			if (!strempty($avp(domain_dispatcher_reg_alg))) {
@@ -1164,20 +1192,20 @@ route[REGISTRAR] {
 			else {
 				#Set the dispatcher algorthim to round robin by default
 				$avp(domain_dispatcher_alg)=4;
-			}			
+			}
 			route(DISPATCHER_SELECT);
-                         
+
                   	route(RELAY);
 
 		}
 		exit;
-		
+
 	}
 }
 
 # Dispatcher request load balancing (we don't route here)
 route[DISPATCHER_SELECT] {
-        # round robin dispatching on dispatcher gateways set
+    # round robin dispatching on dispatcher gateways set
     if (!ds_select_dst($avp(domain_dispatcher_set_id),$avp(domain_dispatcher_alg))) {
 	 xlog("L_INFO", "[DISPATCHER_SELECT]: no destination selected for domain: $fd\n");
          send_reply("404", "No destination");
@@ -1195,39 +1223,39 @@ route[DISPATCHER_SELECT] {
 
 failure_route[DISPATCHER_NEXT] {
     # try next destionations in failure route
-        if (t_is_canceled()) {
-                exit;
+    if (t_is_canceled()) {
+            exit;
+    }
+    # next DST - only for 500 or local timeout
+    if (t_check_status("4[0-9][0-9]|5[0-9][0-9]") or (t_branch_timeout() and !t_branch_replied())) {
+        if(ds_next_dst()) {
+            xlog("L_DEBUG", "[DISPATCHER_NEXT]: dispatcher selected $avp(dispatcher_dst)\n");
+            t_on_failure("DISPATCHER_NEXT");
+            t_reset_retr();
+            route(RELAY);
+            return;
         }
-        # next DST - only for 500 or local timeout
-        if (t_check_status("4[0-9][0-9]|5[0-9][0-9]") or (t_branch_timeout() and !t_branch_replied())) {
-                if(ds_next_dst()) {
-    			xlog("L_DEBUG", "[DISPATCHER_NEXT]: dispatcher selected $avp(dispatcher_dst)\n");
-                        t_on_failure("DISPATCHER_NEXT");
-                        t_reset_retr();
-            		route(RELAY);
-			return;
-                }
-		else {
-			#Drop the replies if this is a REGISTER
-			if (is_method('REGISTER')) {
-				t_drop_replies();
-				t_reply("401", "Registration Problems on 1 or more PBX's");
-			}
-		}
+        else {
+            #Drop the replies if this is a REGISTER
+            if (is_method('REGISTER')) {
+                t_drop_replies();
+                t_reply("401", "Registration Problems on 1 or more PBX's");
+            }
         }
+    }
 }
 
 
 # User location service
 route[LOCATION] {
 
-#Return immediately if the source address if not a PBX.  Only PBX's should be trying to route to endpoints
-if !(allow_source_address(FLT_PBX))
-	return;
+	#Return immediately if the source address if not a PBX.  Only PBX's should be trying to route to endpoints
+	if !(allow_source_address(FLT_PBX))
+		return;
 
-#Return if the rU is more then local calling maximum digits for the initiating PBX
-if ($(rU{s.len}) > $sel(cfg_get.server.pbx_max_local_digits))
-	return;
+	#Return if the rU is more then local calling maximum digits for the initiating PBX
+	if ($(rU{s.len}) > $sel(cfg_get.server.pbx_max_local_digits))
+		return;
 
 #!ifdef WITH_SPEEDDIAL
 	# search for short dialing - 2-digit extension
@@ -1266,8 +1294,8 @@ if ($(rU{s.len}) > $sel(cfg_get.server.pbx_max_local_digits))
 	t_set_fr(120000,10000);
 
 	#Add record_route to ensure that extensions know how to route back thru the proxy
-        record_route();
-	
+	record_route();
+
 	route(RELAY);
 	exit;
 }
@@ -1316,14 +1344,14 @@ route[AUTH] {
 	# 1) attempt domain auth
 	# 3) Check if request is coming from a carrier that's using username/password auth (remote or local)
 	# 3) attempt IP auth
-        # 4) attemp username/password auth against local subscriber database
+    # 4) attempt username/password auth against local subscriber database
 
-###############
-# Domain AUTH #
-###############
+    ###############
+    # Domain AUTH #
+    ###############
 	# Check if this is any type of SIP request from a known domain only if the role of the server is not "inout".
 	# The role of "inout" means that the role of this Kamailio instance is to just route calls inbound and outbound
-        # using only IP auth or username/password auth
+    # using only IP auth or username/password auth
 	
 	if (lookup_domain("$fd", "domain_")&& ($sel(cfg_get.server.role) != 'inout')) {
 		# Turn on domain routing by setting the FLT_DOMAINROUTING flag
@@ -1336,17 +1364,17 @@ route[AUTH] {
 		}
 
 		#Check if the domain is configured to route to a cluster of PBX's by checking if the dsipatcher set_id is set
-                #If so, we need to auth the user against an external database or local subscriber database
-                #This will allow INVITE requests to be sent to any backend PBX's because we have validated the user
-                #Hence, the backend PBX's should be setup only to trust SIP connections from dSIPRouter instances
-		
+        #If so, we need to auth the user against an external database or local subscriber database
+        #This will allow INVITE requests to be sent to any backend PBX's because we have validated the user
+        #Hence, the backend PBX's should be setup only to trust SIP connections from dSIPRouter instances
+
 		else if (!strempty($avp(domain_dispatcher_set_id))) {
 
 			if (is_method("REGISTER|INVITE") || from_uri==myself) {
 				
 				# Each domain has a auth type thats external to the backend destination server
-                                # 1 = Kamailo Subscriber table
-                                # 2 = Asterisk DB
+                # 1 = Kamailo Subscriber table
+                # 2 = Asterisk DB
 				
 				setflag(FLT_EXTERNAL_AUTH);
 				
@@ -1359,29 +1387,29 @@ route[AUTH] {
 						$var(query) = "select sippasswd from sipusers where name=$fU";
 
 					#Let's auth against the database defined by the domain attributes
-					sql_xquery("asterisk_realtime","$var(query)","ra");			
+					sql_xquery("asterisk_realtime","$var(query)","ra");
 					xlog("L_DEBUG","[AUTH: DOMAIN AUTH]: The password for user $fU@$fd is $xavp(ra=>sippasswd)");
-		 
+
 					if (!pv_auth_check("$fd", "$xavp(ra=>sippasswd)", "2","0")) {
                         			auth_challenge("$fd", "0");
                         			exit;
-                			}	
-					
+                			}
+
 				}
 				if ($avp(domain_auth_type) == "local") {
 
 					if (!auth_check("$fd", "subscriber", "3")) {
-        	         		       auth_challenge("$fd", "0");
-                		               exit;
-                			 }
+                       auth_challenge("$fd", "0");
+                       exit;
+                    }
 				}
 			}
 			# user authenticated - remove auth header
-                	if(!is_method("REGISTER|PUBLISH")) {
+            if(!is_method("REGISTER|PUBLISH")) {
 				xlog("L_INFO","[AUTH: DOMAIN AUTH]: The user $tU@$fd was authenticated using asterisk realtime");
-                        	consume_credentials();
+                consume_credentials();
 			}
-		
+
 			return;
 		}
 
@@ -1443,7 +1471,7 @@ route[NATDETECT] {
 #!endif
 #!ifdef WITH_SERVERNAT
 	setflag(FLT_NATS);
-#!endif 
+#!endif
 
 	return;
 }
@@ -1482,7 +1510,7 @@ route[NATMANAGE] {
                 rtpengine_manage();
 #!else
                 rtpengine_manage();
-#!endif		
+#!endif
 
 	if (is_request()) {
 		if (!has_totag()) {
@@ -1625,11 +1653,11 @@ onreply_route[MANAGE_REPLY] {
 	}
 #!ifdef WITH_SERVERNAT
 	if (status=="200" && allow_source_address(FLT_CARRIER)) {
-			subst_hf("Record-Route","/EXTERNAL_IP_ADDR/INTERNAL_IP_ADDR/","f");		
+			subst_hf("Record-Route","/EXTERNAL_IP_ADDR/INTERNAL_IP_ADDR/","f");
 	}
 	if (status=="200" && allow_source_address(FLT_PBX)) {
-			subst_hf("Record-Route","/INTERNAL_IP_ADDR/EXTERNAL_IP_ADDR/","f");		
-		
+			subst_hf("Record-Route","/INTERNAL_IP_ADDR/EXTERNAL_IP_ADDR/","f");
+
 	}
 #!endif
 
@@ -1653,12 +1681,12 @@ failure_route[MANAGE_FAILURE] {
 		xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: $var(gwgroup_query)");
 		sql_xquery("cb","$var(gwgroup_query)","rb");
                 # If the Gateway Group is defined then try to grab the username and password from the uacreg table
-                if (!strempty($xavp(rb=>gwgroup))) {			
+                if (!strempty($xavp(rb=>gwgroup))) {
 		        xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: Number of DB Rows: $dbr(rb=>rows)");
 			$var(query)="select auth_username,auth_password from uacreg where id='" + $xavp(rb=>gwgroup) + "'";
 			sql_xquery("cb","$var(query)","rb");
                         # Try the INVITE agian if the username is not empty
-                        if (!strempty($xavp(rb=>auth_username))) {			
+                        if (!strempty($xavp(rb=>auth_username))) {
 				xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: The query is $var(gwgroup_query) and the user name is $xavp(rb=>auth_username)");
 				$avp(auser) = $xavp(rb=>auth_username);
         			$avp(apass) = $xavp(rb=>auth_password);
@@ -1666,7 +1694,7 @@ failure_route[MANAGE_FAILURE] {
         			t_relay();
         			exit;
 			}
-   		}	
+   		}
 	}
 
 

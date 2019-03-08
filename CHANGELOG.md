@@ -2,6 +2,27 @@
 
 
 
+### LCR Dynamic Prefix Routing
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Fri, 8 Mar 2019 18:07:06 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #122
+- add dynamic routing for LCR module (similar to dRouting matches)
+- make LCR prefix length configurable in kam config
+- update both kamailio template and config files
+- general cleanup on kam configs
+- update internal IP resolution
+- update PATH resolution (fix logic bug)
+- fix dsiprouter logrotate path
+
+
+---
+
+
 ### Make Project root more reliable
 
 > Branches Affected: dev  

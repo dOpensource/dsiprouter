@@ -46,7 +46,7 @@ function install {
     systemctl restart rsyslog
 
     # Setup logrotate
-    cp -f ${DSIP_PROJECT_DIR}/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
+    cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
     cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tmp

@@ -75,7 +75,7 @@ if [ ${WITH_SSL} -eq 1 ]; then
     DSIP_SSL_KEY="${DSIP_DSIP_SSL_CERT_DIR}/key.pem"                        # private key
     DSIP_SSL_CHAIN="${DSIP_DSIP_SSL_CERT_DIR}/chain.pem"                    # full chain cert
     DSIP_SSL_CERT="${DSIP_DSIP_SSL_CERT_DIR}/cert.pem"                      # full chain + csr cert
-    DSIP_SSL_EMAIL="admin@$(hostname -f)"                                  # email in certs (for renewal)
+    DSIP_SSL_EMAIL="admin@$(hostname -f)"                                   # email in certs (for renewal)
     DSIP_GUI_PROTOCOL="https"     
 else
     DSIP_GUI_PROTOCOL="http"
@@ -102,7 +102,7 @@ export KAM_SIP_PORT=5060
 
 export DSIP_PORT=$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
 export EXTERNAL_IP=$(curl -s https://api.ipify.org)
-export INTERNAL_IP=$(ip route get 8.8.8.8 | awk '{print $7}')
+export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
 export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
 #===========================================================#
@@ -263,12 +263,15 @@ function initialChecks {
 
     # fix PATH if needed
     # we are using the default install paths but these may change in the future
+    mkdir -p $(dirname ${PATH_UPDATE_FILE})
     # - sipsak, and future use
-    pathCheck /usr/local/bin || echo 'export PATH="/usr/local/bin${PATH:+:$PATH}"' >> ${PATH_UPDATE_FILE} && . ${PATH_UPDATE_FILE}
+    pathCheck /usr/local/bin || echo 'export PATH="/usr/local/bin${PATH:+:$PATH}"' >> ${PATH_UPDATE_FILE}
     # - rtpengine
-    pathCheck /usr/sbin || echo 'export PATH="${PATH:+$PATH:}/usr/sbin"' >> ${PATH_UPDATE_FILE} && . ${PATH_UPDATE_FILE}
+    pathCheck /usr/sbin || echo 'export PATH="${PATH:+$PATH:}/usr/sbin"' >> ${PATH_UPDATE_FILE}
     # - kamailio
-    pathCheck /sbin || echo 'export PATH="${PATH:+$PATH:}/sbin"' >> ${PATH_UPDATE_FILE} && . ${PATH_UPDATE_FILE}
+    pathCheck /sbin || echo 'export PATH="${PATH:+$PATH:}/sbin"' >> ${PATH_UPDATE_FILE}
+    # import new path definition
+    . ${PATH_UPDATE_FILE}
 }
 
 # exported because its used throughout called scripts as well
