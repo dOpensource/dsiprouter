@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
-
-# mysql active active group replication
+#
+# Summary:      mysql active active group replication
 # Supported OS: debian
+# Author:       DevOpSec <tmoore@goflyball.com>
+# Date:         Feb-2019
 # Notes:        uses mysql community db
+#
 
 # TODO: configure from remote server using ssh keys
+# TODO: add support for centos
+
+# set project root, if not a git repo must be run from top level
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(readlink -f $0))}
+# import shared library functions
+. ${PROJECT_ROOT}/shared_lib.sh
 
 # install requirements on all nodes
 MYSQL_APT_CONFIG_VER="0.8.10-1"
