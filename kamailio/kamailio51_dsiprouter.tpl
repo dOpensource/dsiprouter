@@ -1186,6 +1186,11 @@ route[LOCATION] {
 if !(allow_source_address(FLT_PBX))
 	return;
 
+# Emergency calls should return immedidately so that it can be routed to a carrier
+# The regular expression will call the North American (911), UK(999) and any number in between
+if($rU=~"^9[1-9][1-9]$")
+        return;
+
 #Local calling maximum digits for the initialting PBX - PBX sending the INVITE.  Hardcoding for now.  TODO: make dynamic
 $var(pbx_max_local_digits) = 5;
 
