@@ -1576,6 +1576,25 @@ route[NATMANAGE] {
 	return;
 }
 
+# URI update for dialog requests
+route[DLGURI] {
+#!ifdef WITH_NAT
+        if(!isdsturiset()) {
+                handle_ruri_alias();
+        }
+#!endif
+        return;
+}
+
+# Routing to foreign domains
+route[SIPOUT] {
+        if (uri==myself) return;
+
+        append_hf("P-hint: outbound\r\n");
+        route(RELAY);
+        exit;
+}
+
 # PSTN GW routing
 route[PSTN] {
 #!ifdef WITH_PSTN
