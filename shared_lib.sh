@@ -146,6 +146,11 @@ checkSSH() {
     bash -c "${SSH_CMD}" 2>&1 > /dev/null; return $?
 }
 
+# Notes: prints generated password
+createPass() {
+    date +%s | sha256sum | base64 | head -c 16
+}
+
 # usage: getPkgVer [--opt] <arg>
 # opt == what version(s) to show (default --installed)
 #       -i|--installed:    get installed package version
@@ -225,7 +230,90 @@ getPkgVer() {
     esac
 }
 
-# Notes: prints generated password
-createPass() {
-    date +%s | sha256sum | base64 | head -c 16
+# usage: dumpMysqlDatabases [options]
+# options:  -a|--all
+#           -f|--full
+#           -m|--merge
+#           -g|--grants
+#           --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+# notes: redirect output sql as needed
+dumpMysqlDatabases() {
+    local OPT=""
+    local KEY=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+
+    while (( $# > 0 )); do
+        OPT="$1"
+        case $OPT in
+            -a|--all)
+                KEY="all"
+                shift
+                ;;
+            -f|--full)
+                KEY="full"
+                shift
+                ;;
+            -m|--merge)
+                KEY="merge"
+                shift
+                ;;
+            -g|--grants)
+                KEY="grants"
+                shift
+                ;;
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # no valid args skip
+                shift
+                ;;
+        esac
+    done
+
+    # let calling shell redirect output
+    case $KEY in
+        all|full)
+            # for all databases
+            mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
+                --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}"
+                ####> ${MYSQL_BACKUP_DIR}/dumps/full.sql
+            ;;
+        all|merge)
+            # for merging non system databases
+            local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+                -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')")
+            mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
+                --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} \
+                | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs'
+                ####> ${MYSQL_BACKUP_DIR}/dumps/merge.sql
+            ;;
+        all|grants)
+            # for copying privileges
+            mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+                -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" \
+                | mysql -sN -A \
+                | sed 's/$/;/g' \
+                | awk '!x[$0]++'
+                ####> ${MYSQL_BACKUP_DIR}/dumps/grants.sql
+            ;;
+    esac
 }

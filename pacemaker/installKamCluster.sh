@@ -4,7 +4,7 @@
 # Notes:    more than 2 nodes may require fencing settings
 #           you must be able to ssh to every node in the cluster from where script is run
 #           supported ssh authentication methods: password, pubkey
-# Usage:    ./installKamCluster.sh [-vip <virtual ip> | -net <subnet cidr>] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
+# Usage:    ./installKamCluster.sh [-vip <virtual ip>|-net <subnet cidr>|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
 #
 ### log file locations:
 # /var/log/pcsd/pcsd.log
@@ -23,7 +23,7 @@ PACEMAKER_TCP_PORTS=(2224 3121 5403 21064)
 PACEMAKER_UDP_PORTS=(5404 5405)
 CLUSTER_NAME="kamcluster"
 CLUSTER_PASS="$(createPass)"
-CLUSTER_RESOURCE_TIMEOUT=30
+CLUSTER_RESOURCE_TIMEOUT=45
 KAM_VIP=""
 CIDR_NETMASK="24"
 DSIP_PROJECT_DIR="/opt/dsiprouter"
@@ -31,15 +31,24 @@ DSIP_SCRIPT="${DSIP_PROJECT_DIR}/dsiprouter.sh"
 SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
 
 printUsage() {
-    pprint "Usage: $0 <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
+    pprint "Usage: $0 [-vip <virtual ip>|-net <subnet cidr>|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
 }
+
+if ! isRoot; then
+    printerr "Must be run with root privileges" && exit 1
+fi
+
+if (( $# < 2 )) || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    printerr "At least 2 nodes are required to setup kam cluster" && printUsage && exit 1
+fi
 
 # $1 == cidr subnet
 # returns: 0 == success, 1 == failure
 # notes: prints first available ip in subnet
+# notes: assumes .1 is used as default gw in net
 findAvailableIP() {
     local NET_TAKEN_LIST=$(nmap -n -sP -T 5 "$1" -oG - | awk '/Up$/{print $2}')
-    local NET_ADDR_LIST=$(nmap -n -sL "$1" | grep "Nmap scan report" | awk '{print $NF}' | tail -n +2 | sed '$ d')
+    local NET_ADDR_LIST=$(nmap -n -sL "$1" | grep "Nmap scan report" | awk '{print $NF}' | tail -n +3 | sed '$ d')
     for IP in ${NET_ADDR_LIST[@]}; do
         for ip in ${NET_TAKEN_LIST[@]}; do
             if [[ "$IP" != "$ip" ]]; then
@@ -192,6 +201,7 @@ for NODE in ${ARGS[@]}; do
     $(typeset -f printdbg)
     $(typeset -f printerr)
     $(typeset -f cmdExists)
+    $(typeset -f join)
     $(typeset -f setOSInfo)
     HOST_LIST=( ${HOST_LIST[@]} )
     NODE_NAMES=( ${NODE_NAMES[@]} )
@@ -261,11 +271,13 @@ for NODE in ${ARGS[@]}; do
         { printerr "could not change hacluster user password"; exit 1; }
 
     # hostnames are required even if not DNS resolvable (on each node)
-    i=0
-    while (( \$i < \${#HOST_LIST[@]} )); do
-        printf '%s\n' "\${HOST_LIST[\$i]}    \${NODE_NAMES[\$i]}" >> /etc/hosts
-        i=\$((i+1))
-    done
+    if ! grep -q -E \$(join '|' \${HOST_LIST[@]}) /etc/hosts; then
+        i=0
+        while (( \$i < \${#HOST_LIST[@]} )); do
+            printf '%s\n' "\${HOST_LIST[\$i]}    \${NODE_NAMES[\$i]}" >> /etc/hosts
+            i=\$((i+1))
+        done
+    fi
     printf '%s\n' "\${NODE_NAMES[$i]}" > /etc/hostname
     hostname \${NODE_NAMES[$i]}
 
@@ -276,17 +288,19 @@ for NODE in ${ARGS[@]}; do
     # change kamcfg and rtpenginecfg to use floating ip (on each node)
     if [ -e "${DSIP_SCRIPT}" ]; then
         printdbg 'updating kamailio and rtpengine settings'
+
         # manually add default route to vip before updating settings
         VIP_CIDR="${KAM_VIP}/${CIDR_NETMASK}"
-        DEF_IF=\$(ip route get 8.8.8.8 | awk 'NR == 1 {print \$5}')
-        ip addr add \$VIP_CIDR dev \$DEF_IF
-        ROUTE=\$(ip route get 8.8.8.8 | awk -v kam_vip="$KAM_VIP" 'NR == 1 {print \$2 " " \$3 " " \$4 " " \$5 " " \$6 " " kam_vip}')
-        ip route add 0.0.0.0/1 \$ROUTE
+        ROUTE_INFO=\$(ip route get 8.8.8.8 | head -1)
+        DEF_IF=\$(printf '%s' "\${ROUTE_INFO}" | grep -oP 'dev \K\w+')
+        VIP_ROUTE_INFO=\$(printf '%s' "\${ROUTE_INFO}" | sed -r "s|8.8.8.8|0.0.0.0/1|; s|dev [\w\d]+|dev \${DEF_IF}|; s|src [\w\d]+|src ${KAM_VIP}|")
+        ip address add \$VIP_CIDR dev \$DEF_IF
+        ip route add \$VIP_ROUTE_INFO
 
         ${DSIP_SCRIPT} updatekamconfig
         ${DSIP_SCRIPT} updatertpconfig
 
-        ip addr del \$VIP_CIDR dev \$DEF_IF
+        ip address del \$VIP_CIDR dev \$DEF_IF
         ip route del 0.0.0.0/1
 
         # TODO: enable kamailio to listen to both ip's (maybe??)
@@ -376,8 +390,9 @@ for NODE in ${ARGS[@]}; do
         # Now setup the cluster (on first node)
         FLAT_NAMES=\${NODE_NAMES[@]}
         pcs cluster auth --force -u hacluster -p ${CLUSTER_PASS} \$FLAT_NAMES
+        (( \$? != 0 )) && { printerr "Cluster auth failed" && exit 1; }
         pcs cluster setup --force --enable --name ${CLUSTER_NAME} \$FLAT_NAMES
-
+        (( \$? != 0 )) && { printerr "Cluster creation failed" && exit 1; }
         # Start the cluster (on first node)
         pcs cluster start --all
 

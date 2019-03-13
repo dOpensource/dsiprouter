@@ -2,6 +2,23 @@
 
 
 
+### Tighten Install for Release
+
+> Branches Affected: HA  
+> Tags Affected:   
+> Date: Wed, 13 Mar 2019 10:24:40 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix cluster resource waiting stability
+- fix intermittent route editing issue
+- add centos support for galera replication
+- fix centos plugin auth issues
+
+
+---
+
+
 ### Add 2 new HA Features
 
 > Branches Affected: HA  

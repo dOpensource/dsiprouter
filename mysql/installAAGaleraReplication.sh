@@ -5,10 +5,11 @@
 # Notes:        uses mariadb
 #               you must be able to ssh to every node in the cluster from where script is run
 #               supported ssh authentication methods: password, pubkey
-# Usage:        ./installAAGaleraReplication.sh <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
+#               if quorum is lost between 2-node cluster you must reset the quorum, bootstrap the non-primary:
+#               mysql -e "SET GLOBAL wsrep_provider_options='pc.bootstrap=YES';"
+#               ref: <http://galeracluster.com/documentation-webpages/quorumreset.html>
+# Usage:        ./installAAGaleraReplication.sh [-remotedb|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
 #
-
-# TODO: fix SELINUX issues for centos support
 
 # set project root, if not a git repo must be run from top level
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -22,6 +23,7 @@ MYSQL_USER="root"
 MYSQL_PASS="$(createPass)"
 MYSQL_PORT="3306"
 BACKUPS_DIR="/var/backups"
+WITH_REMOTE_DB=0
 MYSQL_BACKUP_DIR="${BACKUPS_DIR}/mysql"
 GALERA_REPL_PORT="4567"
 GALERA_INCR_PORT="4568"
@@ -34,14 +36,14 @@ MYSQL_REQ_VER="10.1"
 
 
 printUsage() {
-    pprint "Usage: $0 <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
+    pprint "Usage: $0 [-remotedb|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
 }
 
 if ! isRoot; then
     printerr "Must be run with root privileges" && exit 1
 fi
 
-if (( $# < 2 )); then
+if (( $# < 2 )) || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     printerr "At least 2 nodes are required to setup replication" && printUsage && exit 1
 fi
 
@@ -92,85 +94,6 @@ getClusterSize() {
         -e "select VARIABLE_VALUE from information_schema.GLOBAL_STATUS where VARIABLE_NAME='wsrep_cluster_size'"
 }
 
-# dumps mysql databases
-dumpDatabases() {
-    local OPT=""
-    local KEY=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
-
-    while (( $# > 0 )); do
-        OPT="$1"
-        case $OPT in
-            -a|--all)
-                KEY="all"
-                shift
-                ;;
-            -f|--full)
-                KEY="full"
-                shift
-                ;;
-            -m|--merge)
-                KEY="merge"
-                shift
-                ;;
-            -g|--grants)
-                KEY="grants"
-                shift
-                ;;
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            *)  # no valid args skip
-                shift
-                ;;
-        esac
-    done
-
-    # let calling shell redirect output
-    case $KEY in
-        all|full)
-            # for all databases
-            mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
-                --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}"
-                ####> ${MYSQL_BACKUP_DIR}/dumps/full.sql
-            ;;
-        all|merge)
-            # for merging non system databases
-            local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-                -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')")
-            mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
-                --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} \
-                | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs'
-                ####> ${MYSQL_BACKUP_DIR}/dumps/merge.sql
-            ;;
-        all|grants)
-            # for copying privileges
-            mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-                -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" \
-                | mysql -sN -A \
-                | sed 's/$/;/g' \
-                | awk '!x[$0]++'
-                ####> ${MYSQL_BACKUP_DIR}/dumps/grants.sql
-            ;;
-    esac
-}
-
 # $1 == ipv4 persistent rules file
 # $2 == ipv6 persistent rules file
 setFirewallRules() {
@@ -198,18 +121,31 @@ setFirewallRules() {
     ip6tables-save | awk '!x[$0]++' > ${IP6RESTORE_FILE}
 }
 
-
-
+# loop through args and evaluate any options
+ARGS=()
+while (( $# > 0 )); do
+    ARG="$1"
+    case $ARG in
+        -remotedb)
+            WITH_REMOTE_DB=1
+            shift
+            ;;
+        *)  # add to list of args
+            ARGS+=( "$ARG" )
+            shift
+            ;;
+    esac
+done
 
 # loop through args and grab hosts
 HOST_LIST=()
-for NODE in "$@"; do
+for NODE in ${ARGS[@]}; do
     HOST_LIST+=( $(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1) )
 done
 
 # loop through args and run setup commands
 i=0
-for NODE in "$@"; do
+for NODE in ${ARGS[@]}; do
     USER=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
     PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
     HOST=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1)
@@ -266,7 +202,7 @@ for NODE in "$@"; do
     $(typeset -f setOSInfo)
     $(typeset -f getPkgVer)
     $(typeset -f getClusterSize)
-    $(typeset -f dumpDatabases)
+    $(typeset -f dumpMysqlDatabases)
     $(typeset -f setFirewallRules)
     MYSQL_USER="$MYSQL_USER"
     MYSQL_PASS="$MYSQL_PASS"
@@ -290,13 +226,13 @@ for NODE in "$@"; do
                 ;;
             1)
                 printdbg 'overwriting databases on ${HOST}'
-                dumpDatabases --full --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
-                dumpDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
+                dumpMysqlDatabases --full --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
+                dumpMysqlDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
                 ;;
             2)
                 printdbg 'merging databases on ${HOST}'
-                dumpDatabases --merge --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
-                dumpDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
+                dumpMysqlDatabases --merge --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
+                dumpMysqlDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' >> ${MYSQL_BACKUP_DIR}/dumps/primary.sql
                 ;;
         esac
     }
@@ -319,7 +255,7 @@ for NODE in "$@"; do
         IP6RESTORE_FILE="/etc/iptables/rules.v6"
         export DEBIAN_FRONTEND=noninteractive
 
-        apt-get install -y curl perl sed gawk rsync dirmngr
+        apt-get install -y curl perl sed gawk rsync dirmngr bc
 
         # install or upgrade mysql if needed
         # debian has multiple packages for mariadb-server, easier to find version with dpkg
@@ -340,7 +276,7 @@ for NODE in "$@"; do
                 mv -f /var/lib/mysql ${MYSQL_BACKUP_DIR}/var/lib/
                 cp -f /etc/my.cnf* ${MYSQL_BACKUP_DIR}/etc/
                 cp -rf /etc/my.cnf* ${MYSQL_BACKUP_DIR}/etc/
-                cp -rf /etc/mysql ${MYSQL_BACKUP_DIR}/etc/
+                cp -rf /etc/mysql* ${MYSQL_BACKUP_DIR}/etc/
                 cp -f \${HOME}/.my.cnf* ${MYSQL_BACKUP_DIR}/\${HOME}/
 
                 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
@@ -416,52 +352,56 @@ for NODE in "$@"; do
         IP4RESTORE_FILE="/etc/sysconfig/iptables"
         IP6RESTORE_FILE="/etc/sysconfig/ip6tables"
 
-        yum install -y curl perl sed gawk rsync
+        yum install -y curl perl sed gawk rsync bc
 
-########################################################
 #        # centos SELINUX
-#        if sestatus | head -1 | grep -qi 'enabled'; then
-#            semanage port -a -t mysqld_port_t -p tcp 3306
-#            semanage port -a -t mysqld_port_t -p tcp 4567
-#            semanage port -a -t mysqld_port_t -p tcp 4568
-#            semanage port -a -t mysqld_port_t -p tcp 4444
-#            semanage port -a -t mysqld_port_t -p udp 4567
-#
-#            # semanage permissive -a mysqld_t
-#            setsebool -P daemons_enable_cluster_mode 1
-#
-#            mkdir -p selinux && cd selinux
-#
-#            cat > galera.te << EOF
-#            module galera 1.0;
-#
-#            require {
-#                    type unconfined_t;
-#                    type initrc_tmp_t;
-#                    type rsync_exec_t;
-#                    type init_t;
-#                    type mysqld_t;
-#                    class process setpgid;
-#                    class file { execute execute_no_trans getattr open read };
-#                    class service enable;
-#            }
-#
-#            #============= mysqld_t ==============
-#            allow mysqld_t initrc_tmp_t:file open;
-#            allow mysqld_t rsync_exec_t:file { execute execute_no_trans getattr open read };
-#            allow mysqld_t self:process { getattr setpgid };
-#            allow mysqld_t self:netlink_tcpdiag_socket { bind create };
-#
-#            #============= unconfined_t ==============
-#            allow unconfined_t init_t:service enable;
-#            EOF
-#
-#            checkmodule -M -m galera.te -o galera.mod
-#            semodule_package -m galera.mod -o galera.pp
-#            semodule -i galera.pp
-#            semanage permissive -d mysql_t
-#        fi
-########################################################
+        if sestatus | head -1 | grep -qi 'enabled'; then
+            semanage permissive -a mysqld_t
+            semanage port -a -t mysqld_port_t -p tcp 3306
+            semanage port -a -t mysqld_port_t -p tcp 4567
+            semanage port -a -t mysqld_port_t -p tcp 4568
+            semanage port -a -t mysqld_port_t -p tcp 4444
+            semanage port -a -t mysqld_port_t -p udp 4567
+
+            setsebool -P daemons_enable_cluster_mode 1
+
+            mkdir -p /tmp/selinux
+
+            (cat <<'EOF'
+module galera 1.0;
+
+require {
+    type mysqld_t;
+    type rsync_exec_t;
+    type anon_inodefs_t;
+    type proc_net_t;
+    type kerberos_port_t;
+    class file { read execute execute_no_trans getattr open };
+    class tcp_socket { name_bind name_connect };
+    class process { setpgid siginh rlimitinh noatsecure };
+    type unconfined_t;
+    type initrc_tmp_t;
+    type init_t;
+    class service enable;
+}
+
+#============= mysqld_t ==============
+allow mysqld_t initrc_tmp_t:file open;
+allow mysqld_t self:process setpgid;
+allow mysqld_t rsync_exec_t:file { read execute execute_no_trans getattr open };
+allow mysqld_t anon_inodefs_t:file getattr;
+allow mysqld_t proc_net_t:file { read open };
+allow mysqld_t kerberos_port_t:tcp_socket { name_bind name_connect };
+
+#============= unconfined_t ==============
+allow unconfined_t init_t:service enable;
+EOF
+            ) > /tmp/selinux/galera.te
+
+            checkmodule -M -m /tmp/selinux/galera.te -o /tmp/selinux/galera.mod
+            semodule_package -m /tmp/selinux/galera.mod -o /tmp/selinux/galera.pp
+            semodule -i /tmp/selinux/galera.pp
+        fi
 
         # install or upgrade mysql if needed
         MYSQL_VER=\$(getPkgVer 'mariadb-server')
@@ -479,11 +419,42 @@ for NODE in "$@"; do
                 mv -f /var/lib/mysql ${MYSQL_BACKUP_DIR}/var/lib/
                 cp -f /etc/my.cnf* ${MYSQL_BACKUP_DIR}/etc/
                 cp -rf /etc/my.cnf* ${MYSQL_BACKUP_DIR}/etc/
-                cp -rf /etc/mysql ${MYSQL_BACKUP_DIR}/etc/
+                cp -rf /etc/mysql* ${MYSQL_BACKUP_DIR}/etc/
                 cp -f \${HOME}/.my.cnf* ${MYSQL_BACKUP_DIR}/\${HOME}/
 
                 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
-                yum install -y mariadb-client mariadb-server
+                yum install -y MariaDB-client MariaDB-server
+
+                # on CentOS mariadb fresh install doesn't have socket connection
+                # we need this to allow unix socket as fallback (parsed last in configs)
+                if ! grep -q '\[mysqld\]' /etc/my.cnf; then
+                    (cat <<'EOF'
+[mysqld]
+user                = mysql
+pid-file            = /var/lib/mysql/mysql.pid
+socket              = /var/lib/mysql/mysql.sock
+port                = 3306
+basedir             = /usr
+datadir             = /var/lib/mysql
+bind-address        = 127.0.0.1
+tmpdir              = /tmp
+log_error           = /var/log/mysql/error.log
+expire_logs_days    = 10
+max_binlog_size     = 100M
+plugin-load-add     = auth_socket.so
+skip-external-locking
+
+[mysqld_safe]
+log-error           = /var/log/mysql/error.log
+pid-file            = /var/lib/mysql/mysql.pid
+
+EOF
+                    ) > /etc/my.cnf.d/server.cnf
+
+                    # make other configs lower priority
+                    mv -f /etc/my.cnf.d/server.cnf /etc/my.cnf.d/50-server.cnf
+                    mv -f /etc/my.cnf.d/mysql-clients.cnf /etc/my.cnf.d/50-mysql-clients.cnf
+                fi
 
                 systemctl enable \${MYSQL_SERVICE}
                 systemctl start \${MYSQL_SERVICE}
@@ -493,11 +464,14 @@ for NODE in "$@"; do
                 # automate mysql_secure_install cmds
                 mysql --user='root' --password='temp' mysql \\
                     -e 'CREATE USER IF NOT EXISTS "root"@"%";' \\
-                    -e 'UPDATE user SET Password=PASSWORD("${MYSQL_PASS}") WHERE User="root";' \\
                     -e 'GRANT ALL PRIVILEGES ON *.* TO "root"@"%" WITH GRANT OPTION;' \\
+                    -e 'UPDATE user SET Password=PASSWORD("${MYSQL_PASS}") WHERE User="root";' \\
+                    -e 'UPDATE user SET plugin="unix_socket" WHERE Host="localhost";' \\
+                    -e 'UPDATE user SET plugin="" WHERE Host<>"localhost";' \\
                     -e 'DELETE FROM db WHERE Db="test" or Db="test\_%";' \\
                     -e 'DELETE FROM user WHERE User="";' \\
                     -e 'FLUSH PRIVILEGES;'
+
 
                 # allow auto login for root
                 printf '%s\n%s\n%s\n' '[client]' 'user = root' 'password = ${MYSQL_PASS}' > ~/.my.cnf
@@ -508,8 +482,10 @@ for NODE in "$@"; do
                 # make sure root can login remotely
                 mysql --user='root' --password='${MYSQL_PASS}' mysql \\
                     -e 'CREATE USER IF NOT EXISTS "root"@"%";' \\
-                    -e 'UPDATE user SET Password=PASSWORD("${MYSQL_PASS}") WHERE User="root";' \\
                     -e 'GRANT ALL PRIVILEGES ON *.* TO "root"@"%" WITH GRANT OPTION;' \\
+                    -e 'UPDATE user SET Password=PASSWORD("${MYSQL_PASS}") WHERE User="root";' \\
+                    -e 'UPDATE user SET plugin="unix_socket" WHERE Host="localhost";' \\
+                    -e 'UPDATE user SET plugin="" WHERE Host<>"localhost";' \\
                     -e 'FLUSH PRIVILEGES;'
 
                 # dump primary node databases
@@ -522,7 +498,38 @@ for NODE in "$@"; do
             if (( \$(echo "\${MYSQL_VER:-0} < ${MYSQL_REQ_VER}" | bc -l) )); then
                 curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
             fi
-            yum install -y mariadb-client mariadb-server
+            yum install -y MariaDB-client MariaDB-server
+
+            # on CentOS mariadb fresh install doesn't have socket connection
+            # we need this to allow unix socket as fallback (parsed last in configs)
+            if ! grep -q '\[mysqld\]' /etc/my.cnf; then
+                (cat <<'EOF'
+[mysqld]
+user                = mysql
+pid-file            = /var/lib/mysql/mysql.pid
+socket              = /var/lib/mysql/mysql.sock
+port                = 3306
+basedir             = /usr
+datadir             = /var/lib/mysql
+bind-address        = 127.0.0.1
+tmpdir              = /tmp
+log_error           = /var/log/mysql/error.log
+expire_logs_days    = 10
+max_binlog_size     = 100M
+plugin-load-add     = auth_socket.so
+skip-external-locking
+
+[mysqld_safe]
+log-error           = /var/log/mysql/error.log
+pid-file            = /var/lib/mysql/mysql.pid
+
+EOF
+                ) > /etc/my.cnf.d/server.cnf
+
+                # make other configs lower priority
+                mv -f /etc/my.cnf.d/server.cnf /etc/my.cnf.d/50-server.cnf
+                mv -f /etc/my.cnf.d/mysql-clients.cnf /etc/my.cnf.d/50-mysql-clients.cnf
+            fi
 
             systemctl enable \${MYSQL_SERVICE}
             systemctl start \${MYSQL_SERVICE}
@@ -532,8 +539,10 @@ for NODE in "$@"; do
             # automate mysql_secure_install cmds
             mysql --user='root' --password='temp' mysql \\
                 -e 'CREATE USER IF NOT EXISTS "root"@"%";' \\
-                -e 'UPDATE user SET Password=PASSWORD("${MYSQL_PASS}") WHERE User="root";' \\
                 -e 'GRANT ALL PRIVILEGES ON *.* TO "root"@"%" WITH GRANT OPTION;' \\
+                -e 'UPDATE user SET Password=PASSWORD("${MYSQL_PASS}") WHERE User="root";' \\
+                -e 'UPDATE user SET plugin="unix_socket" WHERE Host="localhost";' \\
+                -e 'UPDATE user SET plugin="" WHERE Host<>"localhost";' \\
                 -e 'DELETE FROM db WHERE Db="test" or Db="test\_%";' \\
                 -e 'DELETE FROM user WHERE User="";' \\
                 -e 'FLUSH PRIVILEGES;'
@@ -550,6 +559,16 @@ for NODE in "$@"; do
         printerr 'Failed to install requirements' && exit 1
     fi
 
+    # if mysql is not local to kamailio allow remote auth for kamailio user
+    if (( ${WITH_REMOTE_DB} == 1 )); then
+         mysql -sN -A -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>'' AND host='localhost' AND user LIKE 'kamailio%';" \\
+            | mysql -sN -A \\
+            | sed 's/$/;/g' \\
+            | awk '!x[\$0]++' \\
+            | sed 's/localhost/%/g' \\
+            | mysql
+    fi
+
     # merge databases if needed
     if (( $i == 0 )) && (( \$MYSQL_MERGE_ACTION != 0 )); then
         printdbg 'merging databases on primary node'
@@ -558,17 +577,17 @@ for NODE in "$@"; do
         case \$MYSQL_MERGE_ACTION in
             0)
                 printdbg 'merging database grants on ${HOST}'
-                dumpDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
+                dumpMysqlDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
                 ;;
             1)
                 printdbg 'overwriting databases on ${HOST}'
-                dumpDatabases --full --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
-                dumpDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
+                dumpMysqlDatabases --full --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
+                dumpMysqlDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
                 ;;
             2)
                 printdbg 'merging databases on ${HOST}'
-                dumpDatabases --merge --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
-                dumpDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
+                dumpMysqlDatabases --merge --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
+                dumpMysqlDatabases --grants --user='${MYSQL_USER}' --password='${MYSQL_PASS}' --port='${MYSQL_PORT}' --host='${HOST_LIST[0]}' | mysql
                 ;;
         esac
     fi
@@ -580,10 +599,11 @@ for NODE in "$@"; do
     # configure cluster settings
     ( cat << EOF
 [\${MYSQL_SECTION}]
-binlog_format=ROW
+binlog_format=row
 default-storage-engine=innodb
 innodb_autoinc_lock_mode=2
 bind-address=0.0.0.0
+log_error=/var/log/mysql/error.log
 
 # Galera Provider Configuration
 wsrep_on=ON
