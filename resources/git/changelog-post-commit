@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-
 #
-# Summary: Create a changelog on commit
-# Author:  DevOpSec <https://github.com/devopsec>
-# Notes:   Original idea from Martin Seeler <https://github.com/MartinSeeler>
-# Usage:   Copy to your repo in <repo>/.git/hooks/post-commit
-#          Alternatively the create_changelog function can be used independently (-c option)
+# Summary:  Create a changelog on commit
+# Author:   DevOpSec <https://github.com/devopsec>
+# Notes:    Original idea from Martin Seeler <https://github.com/MartinSeeler>
+# Usage:    Copy to your repo in <repo>/.git/hooks/post-commit
+#           Alternatively the create_changelog function can be used independently (-c option)
 #
 
 # project root

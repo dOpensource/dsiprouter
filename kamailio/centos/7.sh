@@ -16,8 +16,8 @@ function install() {
     rm -f ~/.my.cnf
 
     # Start firewalld
-    #systemctl start firewalld
-    #systemctl enable firewalld
+    systemctl start firewalld
+    systemctl enable firewalld
 
     # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
     if (( $? != 0 )); then

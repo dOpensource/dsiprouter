@@ -22,7 +22,7 @@ function install {
     firewall-cmd --reload
 
     PIP_CMD="pip"
-    $PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
+    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
     if [ $? -eq 1 ]; then
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
@@ -37,11 +37,8 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-    sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-    sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp /lib/systemd/system/dsiprouter.service
+    sed "s+PYTHON_CMD+$PYTHON_CMD+g; s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g;" \
+        ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tpl > /lib/systemd/system/dsiprouter.service
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter.service

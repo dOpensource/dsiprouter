@@ -175,8 +175,8 @@ def getCustomRoutes():
         regex = r"CUSTOM_ROUTING_START.*CUSTOM_ROUTING_END"
         custom_routes_str = re.search(regex, kamcfg_str, flags=re.MULTILINE | re.DOTALL).group(0)
 
-        regex = r"route\[(\w+)\]"
-        matches = re.finditer(regex, custom_routes_str, flags=re.MULTILINE | re.DOTALL)
+        regex = r"^route\[(\w+)\]"
+        matches = re.finditer(regex, custom_routes_str, flags=re.MULTILINE)
 
         for matchnum, match in enumerate(matches):
             if len(match.groups()) > 0:

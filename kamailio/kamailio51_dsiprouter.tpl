@@ -1732,3 +1732,8 @@ failure_route[MANAGE_FAILURE] {
 #!endif
 }
 
+
+####### CUSTOM_ROUTING_START #########
+# add custom routes here
+
+####### CUSTOM_ROUTING_END #########
