@@ -69,13 +69,13 @@ findResource() {
 }
 
 # $1 == timeout
-# returns: 0 == resources up within timeout, 1 == resources not up within timeout
+# returns: 0 == resources up within timeout, else == resources not up within timeout
 # notes: block while waiting for resources to come online until timeout
 waitResources() {
     timeout "$1" bash <<'EOF' 2> /dev/null
 RESOURCES_DOWN=0
 while (( $RESOURCES_DOWN == 0 )); do
-    RESOURCES_DOWN=$(pcs status resources | grep -q 'Stopped'; echo $?)
+    RESOURCES_DOWN=$(pcs status resources 2>/dev/null | grep -q 'Stopped'; echo $?)
     sleep 1
 done
 EOF
@@ -427,7 +427,7 @@ for NODE in ${ARGS[@]}; do
         PREVIOUS_RESOURCE_LOCATIONS=()
 
         # wait on resources to come online (last node)
-        waitResources ${CLUSTER_RESOURCE_TIMEOUT} || { printerr "Cluster resource failed to start within ${CLUSTER_RESOURCE_TIMEOUT}" && exit 1; }
+        waitResources ${CLUSTER_RESOURCE_TIMEOUT} || { printerr "Cluster resource failed to start within ${CLUSTER_RESOURCE_TIMEOUT} sec" && exit 1; }
 
         # grab operation data for tests (last node)
         for RESOURCE in \${RESOURCES[@]}; do
@@ -435,8 +435,8 @@ for NODE in ${ARGS[@]}; do
         done
 
         pcs cluster standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
-        sleep 5
-        waitResources ${CLUSTER_RESOURCE_TIMEOUT} || { printerr "Cluster resource failed to start within ${CLUSTER_RESOURCE_TIMEOUT}" && exit 1; }
+        sleep 10 # wait for transfer to start
+        waitResources ${CLUSTER_RESOURCE_TIMEOUT} || { printerr "Cluster resource failed to start within ${CLUSTER_RESOURCE_TIMEOUT} sec" && exit 1; }
 
         for RESOURCE in \${RESOURCES[@]}; do
             CURRENT_RESOURCE_LOCATIONS+=( \$(findResource \${RESOURCE}) )

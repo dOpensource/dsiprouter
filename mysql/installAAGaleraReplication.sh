@@ -354,7 +354,7 @@ for NODE in ${ARGS[@]}; do
 
         yum install -y curl perl sed gawk rsync bc
 
-#        # centos SELINUX
+        # centos SELINUX
         if sestatus | head -1 | grep -qi 'enabled'; then
             semanage permissive -a mysqld_t
             semanage port -a -t mysqld_port_t -p tcp 3306

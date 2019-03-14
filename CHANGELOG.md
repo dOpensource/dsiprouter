@@ -2,6 +2,20 @@
 
 
 
+### Kam Cluster Stability Improvements
+
+> Branches Affected: HA  
+> Tags Affected:   
+> Date: Thu, 14 Mar 2019 10:48:56 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update resource wait times for pcs
+
+
+---
+
+
 ### Tighten Install for Release
 
 > Branches Affected: HA  
