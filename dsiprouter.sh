@@ -49,7 +49,7 @@ export SERVERNAT=0
 export REQ_PYTHON_MAJOR_VER=3
 export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
 export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
-export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
+export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
 export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
 export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
 export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
@@ -441,24 +441,32 @@ function configureKamailio {
     if [ -e $(type -P mysqlimport) ]; then
         mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE -e "delete from address where grp=$FLT_CARRIER"
 
+        # use a tmp dir so we don't have to change repo
+        mkdir -p /tmp/defaults
+
         # sub in dynamic values
-        sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DSIP_DEFAULTS_DIR}/address.csv
-        sed -i s/FLT_CARRIER/$FLT_CARRIER/g ${DSIP_DEFAULTS_DIR}/dr_gateways.csv
-        sed -i s/FLT_OUTBOUND/$FLT_OUTBOUND/g ${DSIP_DEFAULTS_DIR}/dr_rules.csv
-        sed -i s/FLT_INBOUND/$FLT_INBOUND/g ${DSIP_DEFAULTS_DIR}/dr_rules.csv
-        sed -i s/EXTERNAL_IP/$EXTERNAL_IP/g ${DSIP_DEFAULTS_DIR}/uacreg.csv
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
+            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
+            ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
+        sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
+            ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
+        sed "s/EXTERNAL_IP/$EXTERNAL_IP/g" \
+            ${DSIP_DEFAULTS_DIR}/uacreg.csv > /tmp/defaults/uacreg.csv
 
         # import default carriers
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/address.csv
+            -L $MYSQL_KAM_DATABASE /tmp/defaults/address.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
+            -L $MYSQL_KAM_DATABASE /tmp/defaults/dr_gw_lists.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=',' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/uacreg.csv
+            -L $MYSQL_KAM_DATABASE /tmp/defaults/uacreg.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_gateways.csv
+            -L $MYSQL_KAM_DATABASE /tmp/defaults/dr_gateways.csv
         mysqlimport --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" --fields-terminated-by=';' --ignore-lines=0  \
-            -L $MYSQL_KAM_DATABASE ${DSIP_DEFAULTS_DIR}/dr_rules.csv
+            -L $MYSQL_KAM_DATABASE /tmp/defaults/dr_rules.csv
+
+        rm -rf /tmp/defaults
     fi
 
     # Backup kamcfg and link the dsiprouter kamcfg
@@ -738,6 +746,8 @@ function installKamailio {
     printdbg "Attempting to install Kamailio..."
     ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
+        # configure kamailio settings
+        configureKamailio
         echo "Kamailio was installed!"
     else
         printerr "kamailio install failed"

@@ -2,6 +2,22 @@
 
 
 
+### Fix Regressions
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Thu, 14 Mar 2019 21:55:41 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- re-add configureKamailio command to install
+- fix DSIP_KAMAILIO_CONFIG_FILE path
+- remove uneeded kam code from hotfix
+
+
+---
+
+
 ### Fix DID Notes DB Update
 
 > Branches Affected: dev  
