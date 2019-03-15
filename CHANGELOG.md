@@ -2,6 +2,21 @@
 
 
 
+### Fix DID Notes DB Update
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Thu, 14 Mar 2019 21:27:03 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #123
+- set form defaults on db update for inbound did route
+
+
+---
+
+
 ### General Updates Cleanup Repo
 
 > Branches Affected: dev  
@@ -18,6 +33,19 @@
 - update requirements.txt install for stability
 - add mysql imports for pipreqs pre-commit updates
 - update module sql merging
+
+
+---
+
+
+### Added support for emergency numbers 911-999 Fixes: #121
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Sun, 10 Mar 2019 23:06:11 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
 
 
 ---

@@ -1032,10 +1032,10 @@ def addUpdateInboundMapping():
             ruleid = form['ruleid']
 
         # get form data
-        gwid = form['gwid']
-        alt_gwid = form['alt_gwid']
-        prefix = form['prefix']
-        notes = form['notes']
+        gwid = form['gwid'] if 'gwid' in form else ''
+        alt_gwid = form['alt_gwid'] if 'alt_gwid' in form else ''
+        prefix = form['prefix'] if 'prefix' in form else ''
+        notes = form['notes'] if 'notes' in form else ''
 
         # we only support 2 pbx's so format gwlist accordingly
         gateways = []
