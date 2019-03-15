@@ -434,11 +434,11 @@ def addUpdateCarriers():
         form = stripDictVals(request.form.to_dict())
 
         gwid = form['gwid']
-        gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
-        name = form['name']
-        ip_addr = form['ip_addr']
-        strip = form['strip']
-        prefix = form['prefix']
+        gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
+        name = form['name'] if len(form['name']) > 0 else ''
+        ip_addr = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
+        strip = form['strip'] if len(form['strip']) > 0 else '0'
+        prefix = form['prefix'] if len(form['prefix']) > 0 else ''
 
         # Adding
         if len(gwid) <= 0:

@@ -12,17 +12,11 @@ if settings.KAM_DB_TYPE == "mysql":
         try:
             import _mysql as db_driver
         except ImportError:
-            try:
-                import pymysql as db_driver
-            except ImportError:
-                try:
-                    import mysql.connector as db_driver
-                except ImportError:
-                    raise
-                except Exception as ex:
-                    if settings.DEBUG:
-                        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-                    raise
+            raise
+        except Exception as ex:
+            if settings.DEBUG:
+                debugException(ex, log_ex=False, print_ex=True, showstack=False)
+            raise
 
 
 class Gateways(object):

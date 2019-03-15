@@ -2,6 +2,22 @@
 
 
 
+### Fix for Google Cloud Mysql
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Fri, 15 Mar 2019 16:15:22 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #47
+- add defaults for carrier form
+- remove uneeded DB drivers
+
+
+---
+
+
 ### Fix Regressions
 
 > Branches Affected: dev  
