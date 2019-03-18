@@ -8,7 +8,6 @@
 #           to add dirs to recursively search, change INCLUDE_DIRS (its an array)
 #
 
-START_DIR=$(pwd)
 # project root
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 # where are the python projects for this repo?
@@ -18,14 +17,13 @@ REQUIREMENTS_FILE="requirements.txt"
 
 create_requirements() {
     for PYTHON_PROJECT in ${INCLUDE_DIRS[@]}; do
-        cd ${PYTHON_PROJECT}
+        OUT_FILE="${PYTHON_PROJECT}/${REQUIREMENTS_FILE}"
 
-        pipreqs --print $(pwd) 2>/dev/null | sed -r '/^\s*$/d' | sort -u | cut -d '=' -f 1 > ${REQUIREMENTS_FILE}
+        pipreqs --print ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | sort -u | cut -d '=' -f 1 > ${OUT_FILE}
 
-        git add ${REQUIREMENTS_FILE}
+        git add ${OUT_FILE}
     done
 }
 
 create_requirements
-cd ${START_DIR}
 exit 0

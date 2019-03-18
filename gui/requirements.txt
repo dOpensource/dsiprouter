@@ -2,10 +2,8 @@ docker_py
 Flask
 Flask_Script
 mysqlclient
-mysql_connector_repackaged
 psycopg2
 psycopg2_binary
-PyMySQL
 pyspark
 requests
 SQLAlchemy

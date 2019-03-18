@@ -13,7 +13,7 @@ from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, 
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher
 from modules import flowroute
-from modules.domain.domain_controller import domains
+from modules.domain.domain_routes import domains
 import settings
 
 # global variables
@@ -251,7 +251,6 @@ def addUpdateCarrierGroups():
                     Addr.delete(synchronize_session=False)
 
         db.commit()
-        db.close()
         reload_required = True
         return displayCarrierGroups()
 

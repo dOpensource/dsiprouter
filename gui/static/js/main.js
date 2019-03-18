@@ -313,16 +313,51 @@ $('#pbxs #open-Delete').click(function() {
   modal_body.find(".name").val(name);
 });
 
+$('#domains #open-Update').click(function() {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('domains');
+  var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var domain_type = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  var pbx_name = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
+  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+  var pbx_list = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
+  var notes = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
+
+
+  /** Clear out the modal */
+  var modal_body = $('#edit .modal-body');
+  modal_body.find(".domain_id").val('');
+  modal_body.find(".domain_name").val('');
+  modal_body.find(".domain_type").val('');
+  modal_body.find(".pbx_name").val('');
+  modal_body.find(".pbx_list").val('');
+  modal_body.find(".notes").val('');
+
+  /* update modal fields */
+  modal_body.find(".domain_id").val(domain_id);
+  modal_body.find(".domain_name").val(domain_name);
+  modal_body.find(".domain_type").val(domain_type);
+  modal_body.find(".pbx_name").val(pbx_name);
+  modal_body.find(".pbx_list").val(pbx_list);
+  modal_body.find(".notes").val(notes);
+
+  if (authtype !== "") {
+    /* Set the radio button if authtype is given */
+    modal_body.find('.authtype[data-toggle="' + authtype + '"]').trigger('click');
+  }
+});
+
 $('#domains #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('domains');
-  var id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var domain = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
 
   /* update modal fields */
   var modal_body = $('#delete .modal-body');
-  modal_body.find(".domainid").val(id);
-  modal_body.find(".domainname").val(domain);
+  modal_body.find(".domain_id").val(domain_id);
+  modal_body.find(".domain_name").val(domain_name);
 });
 
 $('#inboundmapping #open-Update').click(function() {
