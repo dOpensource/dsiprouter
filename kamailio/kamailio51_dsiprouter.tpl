@@ -1670,7 +1670,10 @@ onreply_route[MANAGE_REPLY] {
 #!endif
 
 	if (status=~"[12][0-9][0-9]") {
-		route(NATMANAGE);
+	 # Invoke NATMANAGE when it's not a UPDATE
+                if (!is_method("UPDATE")) {
+			route(NATMANAGE);
+		}
 	}
 }
 
