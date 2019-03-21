@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -x
+
+. include/common
+
+unitname="Call Detail Records"
+
+# settings
+username="smoketest"
+host="localhost"
+port="5060"
+
+# TODO: send invite to generate CDR's
+# we should be using a template INVITE and replacing values with sed
+#sipsak -f INVITE.sip -s sip:$username@$host:$port -H $host -vvv >/dev/null
+
+# check acc table
+mysql kamailio -sN -e "select * from acc;"
+
+# check cdrs table
+mysql kamailio -sN -e "select * from cdrs;"
+
+process_result "$unitname" $ret 

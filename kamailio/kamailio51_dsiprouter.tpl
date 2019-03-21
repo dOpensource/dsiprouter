@@ -14,6 +14,7 @@
 #!define WITH_TELEBLOCK
 #!define WITH_ANTIFLOOD
 ##!define WITH_DBCLUSTER
+##!define WITH_LCR
 #
 #!substdef "!INTERNAL_IP_ADDR!198.211.102.60!g"
 #!substdef "!INTERNAL_IP_NET!198.211.102.*!g"
@@ -195,6 +196,7 @@ children=1
    bind on a specific interface/port/proto (default bind on all available) */
 #!ifdef WITH_SERVERNAT
 listen=udp:INTERNAL_IP_ADDR:5060 advertise EXTERNAL_IP_ADDR:5060
+listen=udp:127.0.0.1:5060
 #!endif
 
 /* port to listen to
@@ -583,9 +585,11 @@ modparam("drouting", "use_domain", 0)
 modparam("drouting", "force_dns", 0) #Do not resolve DNS names during load
 #!endif
 
+#!ifdef WITH_LCR
 # ----- htable params for from/to prefix lookup -----
 modparam("htable", "db_url", DBURL)
 modparam("htable", "htable", "tofromprefix=>size=8;autoexpire=0;dbtable=dsip_lcr;cols='pattern,dr_groupid';")
+#!endif
 
 # ----- rtimer params -----
 modparam("rtimer", "timer", "name=cdr;interval=300;mode=1;")
@@ -844,6 +848,7 @@ route[NEXTHOP] {
 		if (isflagset(FLT_PBX_AUTH))
 			xlog("L_INFO", "isflagset(FLT_PBX_AUTH)==TRUE");
 
+#!ifdef WITH_LCR
 		# Route to Carrier
 		xlog("L_DEBUG","Logic for routing to Carriers");
 		append_hf("P-hint: outbound\r\n");
@@ -898,7 +903,11 @@ route[NEXTHOP] {
 		else {
 			 $avp(carrier_groupid) = "8000";
 		}
-		
+
+#!else
+        $avp(carrier_groupid) = "8000";
+#!endif
+
 		if (do_routing($avp(carrier_groupid))) {
 			record_route();
    			route(RELAY);
@@ -1210,15 +1219,15 @@ route[REGISTRAR] {
 route[DISPATCHER_SELECT] {
     # round robin dispatching on dispatcher gateways set
     if (!ds_select_dst($avp(domain_dispatcher_set_id),$avp(domain_dispatcher_alg))) {
-	 xlog("L_INFO", "[DISPATCHER_SELECT]: no destination selected for domain: $fd\n");
-         send_reply("404", "No destination");
-         exit;
+	    xlog("L_INFO", "[DISPATCHER_SELECT]: no destination selected for domain: $fd\n");
+        send_reply("404", "No destination");
+        exit;
     }
     
     if (strempty($avp(dispatcher_dst)) && $avp(domain_dispatcher_alg) == 12)
     	xlog("L_DEBUG", "[DISPATCHER_SELECT]: sending to multiple servers in parallel\n");
     else if (!strempty($avp(dispatcher_dst)))
-	xlog("L_DEBUG", "[DISPATCHER_SELECT]: dispatcher selected $avp(dispatcher_dst)\n");
+	    xlog("L_DEBUG", "[DISPATCHER_SELECT]: dispatcher selected $avp(dispatcher_dst)\n");
 	
     t_on_failure("DISPATCHER_NEXT");
     return;
@@ -1231,7 +1240,7 @@ failure_route[DISPATCHER_NEXT] {
     }
     # next DST - only for 500 or local timeout
     if (t_check_status("4[0-9][0-9]|5[0-9][0-9]") or (t_branch_timeout() and !t_branch_replied())) {
-        if(ds_next_dst()) {
+        if (ds_next_dst()) {
             xlog("L_DEBUG", "[DISPATCHER_NEXT]: dispatcher selected $avp(dispatcher_dst)\n");
             t_on_failure("DISPATCHER_NEXT");
             t_reset_retr();
@@ -1258,7 +1267,7 @@ route[LOCATION] {
 
     # Emergency calls should return immedidately so that it can be routed to a carrier
     # The regular expression will call the North American (911), UK(999) and any number in between
-    if($rU=~"^9[1-9][1-9]$")
+    if ($rU=~"^9[1-9][1-9]$")
             return;
 
 	# Return if the rU is more then local calling maximum digits for the initiating PBX
@@ -1267,14 +1276,14 @@ route[LOCATION] {
 
 #!ifdef WITH_SPEEDDIAL
 	# search for short dialing - 2-digit extension
-	if($rU=~"^[0-9][0-9]$")
+	if ($rU=~"^[0-9][0-9]$")
 		if(sd_lookup("speed_dial"))
 			route(SIPOUT);
 #!endif
 
 #!ifdef WITH_ALIASDB
 	# search in DB-based aliases
-	if(alias_db_lookup("dbaliases"))
+	if (alias_db_lookup("dbaliases"))
 		route(SIPOUT);
 #!endif
 	$avp(oexten) = $rU;
@@ -1645,7 +1654,7 @@ route[TOVOICEMAIL] {
 route[CDRS] {
 	sql_query("cb","call kamailio_cdrs()","rb");
 	sql_query("cb","call kamailio_rating('default')","rb");
-	}
+}
 
 # Manage outgoing branches
 branch_route[MANAGE_BRANCH] {
@@ -1670,8 +1679,8 @@ onreply_route[MANAGE_REPLY] {
 #!endif
 
 	if (status=~"[12][0-9][0-9]") {
-	 # Invoke NATMANAGE when it's not a UPDATE
-                if (!is_method("UPDATE")) {
+	    # Invoke NATMANAGE when it's not a UPDATE
+        if (!is_method("UPDATE")) {
 			route(NATMANAGE);
 		}
 	}
@@ -1685,8 +1694,8 @@ failure_route[MANAGE_FAILURE] {
 		exit;
 	}
 
-        # Only lookup and see if AUTH credentials exits if the call is going to a carrier
-	if(t_check_status("401|407") && !strempty($avp(carrier_groupid))) {
+    # Only lookup and see if AUTH credentials exits if the call is going to a carrier
+	if (t_check_status("401|407") && !strempty($avp(carrier_groupid))) {
 		xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: Will try to Auth using username/password based on this source ip from the carrier $T_rpl($si)");
                 $var(gwgroup_query) = "select substring_index(substring_index(description,',',-1),':',-1) as gwgroup from dr_gateways where address='" + $T_rpl($si) + "'";
 		xlog("L_DEBUG","[MANAGE_FAILURE: Proxy Auth]: $var(gwgroup_query)");

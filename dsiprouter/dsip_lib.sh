@@ -5,9 +5,9 @@
 # contains utility functions and shared variables
 # should be sourced by an external script
 
-###################
-# Color constants #
-###################
+######################
+# Imported Constants #
+######################
 
 # Ansi Colors
 ESC_SEQ="\033["
@@ -16,6 +16,9 @@ ANSI_RED="${ESC_SEQ}1;31m"
 ANSI_GREEN="${ESC_SEQ}1;32m"
 ANSI_YELLOW="${ESC_SEQ}1;33m"
 ANSI_CYAN="${ESC_SEQ}1;36m"
+
+# Constants for imported functions
+DSIP_INIT_FILE="/etc/systemd/system/dsip-init.service"
 
 ##############################################
 # Printing functions and String Manipulation #
@@ -167,4 +170,72 @@ cronAppend() {
 cronRemove() {
     local ENTRY="$1"
     crontab -l | grep -v -F -w "$ENTRY" | crontab -
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+ipv4Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        local IFS='.'
+        IP=($IP)
+        if (( ${IP[0]} <= 255 && ${IP[1]} <= 255 && ${IP[2]} <= 255 && ${IP[3]} <= 255 )); then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# notes: prints external ip, or empty string if not available
+getExternalIP() {
+    local EXTERNAL_IP=""
+    local URLS=(
+        "https://ipv4.icanhazip.com"
+        "https://api.ipify.org"
+        "https://myexternalip.com/raw"
+        "https://ipecho.net/plain"
+        "https://bot.whatismyipaddress.com"
+    )
+
+    for URL in ${URLS[@]}; do
+        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break
+    done
+
+    printf '%s' "$EXTERNAL_IP"
+}
+
+# $1 == cmd as executed in systemd by ExecStart=
+addInitCmd() {
+    local CMD="$1"
+
+    sed -i "\|^ExecStart\=/bin/true|a ExecStart=${CMD}" ${DSIP_INIT_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == string to match for removal (after ExecStart=)
+removeInitCmd() {
+    local STR="$1"
+
+    sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${DSIP_INIT_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == path to service to add dependency on bootstrap service
+addDependsOnInit() {
+    local SERVICE_FILE="$1"
+    local TMP_FILE="${SERVICE_FILE}.tmp"
+
+    tac ${SERVICE_FILE} | sed -r "0,\|^After\=.*|{s|^After\=.*|After=dsip-init.service\n&|}" | tac > ${TMP_FILE}
+    mv -f ${TMP_FILE} ${SERVICE_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == path to service to remove dependency on bootstrap service
+removeDependsOnInit() {
+    local SERVICE_FILE="$1"
+
+    sed -i "\|^After=dsip-init.service|d" ${SERVICE_FILE}
+    systemctl daemon-reload
 }

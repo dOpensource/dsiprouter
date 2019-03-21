@@ -2,7 +2,7 @@
 #
 TESTS_FILES ?= $(wildcard *.sh)
 TESTS_EXCLUDE ?=
-TESTS ?= $(filter-out $(patsubst %,%.sh,$(TESTS_EXCLUDE)), $(TESTS_FILES))
+TESTS ?= $(sort $(filter-out $(patsubst %,%.sh,$(TESTS_EXCLUDE)), $(TESTS_FILES)))
 
 # run all tests
 all:

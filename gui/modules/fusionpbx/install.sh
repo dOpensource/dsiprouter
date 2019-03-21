@@ -2,6 +2,9 @@
 #set -x
 ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
 
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
 function install {
 
     if [[ "$DISTRO" == "debian" ]]; then
@@ -21,7 +24,7 @@ function install {
 
         apt-get install -y docker-ce
         if [ $? == 0 ]; then
-            echo "Docker is installed"
+            printdbg "Docker is installed"
         fi
 
     elif [[ "$DISTRO" == "centos" ]]; then
@@ -56,7 +59,7 @@ function install {
     docker create nginx
     #docker run --name docker-nginx -p 80:80  -v ${abspath}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
 
-    echo "FusionPBX module installed"
+    printdbg "FusionPBX module installed"
 }
 
 function uninstall {
@@ -65,9 +68,9 @@ function uninstall {
 	docker ps -a -q > /dev/null
 	if [ $? == 1 ]; then
 		docker rm -f $(docker ps -a -q) > /dev/null
-		echo "Stopped and removed all docker containers"
+		printdbg "Stopped and removed all docker containers"
 	else
-		echo "No docker containers to remove"
+		printwarn "No docker containers to remove"
 	fi
 
     if [[ "$DISTRO" == "debian" ]]; then
@@ -111,7 +114,7 @@ function uninstall {
     firewall-cmd --permanent --zone=public --remove-port=443/tcp
     firewall-cmd --reload
 
-    echo "FusionPBX module uninstalled"
+    printdbg "FusionPBX module uninstalled"
 }
 
 function main {

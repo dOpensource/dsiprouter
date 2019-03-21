@@ -2,17 +2,20 @@
 #set -x
 ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
 
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
 function installSQL {
     echo ""
 }
 
 function install {
     installSQL
-    echo "Fraud Detection module installed"
+    printdbg "Fraud Detection module installed"
 }
 
 function uninstall {
-    echo "Fraud Detection module uninstalled"
+    printdbg "Fraud Detection module uninstalled"
 }
 
 function main {

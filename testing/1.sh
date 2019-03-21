@@ -1,13 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . include/common
 
-test="Kamailio Started"
+test="Mysql Started"
 
-# Is Kam started
-pidof kamailio >> /dev/null
-ret=$?
+# Is service started
+systemctl is-active --quiet mysql; ret=$?
 
 process_result "$test" $ret 
-
-

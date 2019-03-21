@@ -144,18 +144,12 @@ function uninstall {
 
 case "$1" in
     uninstall|remove)
-        #Remove Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        uninstall
         ;;
     install)
-        #Install Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        install
         ;;
     *)
-        echo "usage $0 [install <kamailio version> <dsip_port> | uninstall <kamailio version> <dsip_port>]"   
-	    ;;
+        echo "usage $0 [install | uninstall]"
+        ;;
 esac
