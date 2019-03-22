@@ -445,7 +445,7 @@ function configureKamailio {
         mkdir -p /tmp/defaults
 
 	# copy over default gateway lists
-	cp ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv > /tmp/defaults/dr_gw_lists.csv
+	cp ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv  /tmp/defaults/dr_gw_lists.csv
         
 	# sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
