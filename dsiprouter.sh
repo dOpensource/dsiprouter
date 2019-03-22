@@ -444,7 +444,10 @@ function configureKamailio {
         # use a tmp dir so we don't have to change repo
         mkdir -p /tmp/defaults
 
-        # sub in dynamic values
+	# copy over default gateway lists
+	cp ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv > /tmp/defaults/dr_gw_lists.csv
+        
+	# sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
