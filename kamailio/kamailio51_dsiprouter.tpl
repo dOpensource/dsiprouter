@@ -296,6 +296,7 @@ loadmodule "sanity.so"
 loadmodule "ctl.so"
 loadmodule "cfg_rpc.so"
 loadmodule "acc.so"
+loadmodule "xhttp.so"
 loadmodule "jsonrpcs.so"
 loadmodule "htable.so"
 
@@ -393,7 +394,8 @@ modparam("db_cluster", "inactive_interval", 180)
 # ----- jsonrpcs params -----
 modparam("jsonrpcs", "pretty_format", 1)
 modparam("jsonrpcs", "fifo_name", "/var/run/kamailio/kamailio_rpc.fifo")
-#modparam("jsonrpcs", "dgram_socket", "/var/run/kamailio/kamailio_rpc.sock")
+modparam("jsonrpcs", "transport", 3)
+#modparam#("jsonrpcs", "dgram_socket", "/var/run/kamailio/kamailio_rpc.sock")
 
 
 # ----- ctl params -----
@@ -1456,6 +1458,21 @@ route[AUTH] {
 
 event_route[uac:reply] {
 	xlog("L_INFO", "Request sent to $uac_req(ruri) [$uac_req(evcode)]\n");
+}
+
+event_route[xhttp:request] {
+    if(dst_ip!=127.0.0.1) {
+        xhttp_reply("403", "Forbidden", "text/html",
+            "<html><body>Will only communicate on the local interface</body></html>");
+        exit;
+	}
+	if ($hu =~ "^/api/kamailio") {
+		jsonrpc_dispatch();
+	} else {
+        xhttp_reply("200", "OK", "text/html",
+            "<html><body>Wrong URL $hu</body></html>");
+    }
+    return;
 }
 
 # Caller NAT detection
