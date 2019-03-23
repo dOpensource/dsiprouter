@@ -413,6 +413,9 @@ function configureKamailio {
         mysql --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" $MYSQL_KAM_DATABASE < $sqlscript
     fi
 
+    # Install schema for custom LCR logic
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/lcr.sql
+
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
 #    function resetIncrementers {

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 #set -x
-ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
+ENABLED=0 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
+
+#############################################################################
+# This is now deprecated because it's now part of the core dSIPRouter install
+# It will be removed in upcoming releases
+#############################################################################
+
 
 function installSQL {
     # Check to see if the acc table or cdr tables are in use
