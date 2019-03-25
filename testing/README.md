@@ -19,9 +19,21 @@ make run UNIT=1.sh
 
 Contains the Unittest number and a description of what the tests validates
 
-Unittest Number | Test Description
-================|=====================
-1|Used for testing if Kamailio is started
-2|Testing PBX and Endpoint Registration
-3|Send a call thru a carrier that we use Username/Password Auth (still is dev)
-4|Denial of Service (DoS) using the Pike module with a Htable to store the banned ip's
+|      Unittest Number      |             Test Description             |
+|:-------------------------:|:----------------------------------------:|
+|0|syslog is started|
+|1|mysql is started|
+|2|dsip-init is started|
+|3|kamailio is started|
+|4|dsiprouter is started|
+|5|rtpengine is started|
+|6|PBX and Endpoint Registration|
+|7|SIP INVITE with Username/Password Auth|
+|8|Denial of Service (DoS) using the Pike module bans ip's|
+|9|CDR data is stored on SIP INVITE **(dev)**|
+|10|AWS instance deployment requirements satisfied|
+|11|dSIPRouter GUI login|
+|12|dSIP Custom Routing|
+|13|FusionPBX Sync Module|
+|14|Domain Auth|
+|15|Flowroute DID Sync Module|

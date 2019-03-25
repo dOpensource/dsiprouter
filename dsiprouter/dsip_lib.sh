@@ -5,9 +5,9 @@
 # contains utility functions and shared variables
 # should be sourced by an external script
 
-###################
-# Color constants #
-###################
+######################
+# Imported Constants #
+######################
 
 # Ansi Colors
 ESC_SEQ="\033["
@@ -16,6 +16,9 @@ ANSI_RED="${ESC_SEQ}1;31m"
 ANSI_GREEN="${ESC_SEQ}1;32m"
 ANSI_YELLOW="${ESC_SEQ}1;33m"
 ANSI_CYAN="${ESC_SEQ}1;36m"
+
+# Constants for imported functions
+DSIP_INIT_FILE="/etc/systemd/system/dsip-init.service"
 
 ##############################################
 # Printing functions and String Manipulation #
@@ -85,7 +88,7 @@ getConfigAttrib() {
     local CONFIG_FILE="$2"
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
-    printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
+    printf "$VALUE" | sed -r 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
 }
 
 # $1 == attribute name
@@ -167,4 +170,74 @@ cronAppend() {
 cronRemove() {
     local ENTRY="$1"
     crontab -l | grep -v -F -w "$ENTRY" | crontab -
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+ipv4Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        local IFS='.'
+        IP=($IP)
+        if (( ${IP[0]} <= 255 && ${IP[1]} <= 255 && ${IP[2]} <= 255 && ${IP[3]} <= 255 )); then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# notes: prints external ip, or empty string if not available
+getExternalIP() {
+    local EXTERNAL_IP=""
+    local URLS=(
+        "https://ipv4.icanhazip.com"
+        "https://api.ipify.org"
+        "https://myexternalip.com/raw"
+        "https://ipecho.net/plain"
+        "https://bot.whatismyipaddress.com"
+    )
+
+    for URL in ${URLS[@]}; do
+        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break
+    done
+
+    printf '%s' "$EXTERNAL_IP"
+}
+
+# $1 == cmd as executed in systemd (by ExecStart=)
+addInitCmd() {
+    local CMD="$1"
+
+    sed -i "\|^ExecStart\=/bin/true|a ExecStart=${CMD}" ${DSIP_INIT_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == string to match for removal (after ExecStart=)
+removeInitCmd() {
+    local STR="$1"
+
+    sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${DSIP_INIT_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == service name (full name with target) to add dependency on dsip-init service
+# notes: only adds startup ordering dependency (service continues if init fails)
+# notes: the Before= section of init will link to an After= dependency on daemon-reload
+addDependsOnInit() {
+    local SERVICE="$1"
+    local TMP_FILE="${DSIP_INIT_FILE}.tmp"
+
+    tac ${DSIP_INIT_FILE} | sed -r "0,\|^Before\=.*|{s|^Before\=.*|Before=${SERVICE}\n&|}" | tac > ${TMP_FILE}
+    mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == service name (full name with target) to remove dependency on dsip-init service
+removeDependsOnInit() {
+    local SERVICE="$1"
+
+    sed -i "\|^Before=${SERVICE}|d" ${DSIP_INIT_FILE}
+    systemctl daemon-reload
 }

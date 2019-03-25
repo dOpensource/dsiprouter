@@ -15,20 +15,38 @@ function install() {
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
 
-    # Start firewalld
-    systemctl start firewalld
-    systemctl enable firewalld
+    # allow symlinks in mariadb service
+    sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
-    if (( $? != 0 )); then
-        systemctl restart dbus
-        systemctl restart firewalld
-    fi
+    # alias mariadb.service to mysql.service and mysqld.service as in debian repo
+    # allowing us to use same service name across platforms
+    (cat << 'EOF'
+# Add mysql Aliases by including distro script
+# as recommended in /lib/systemd/system/mariadb.service
+.include /lib/systemd/system/mariadb.service
 
-    # Start MySql
-    systemctl start mariadb
-    systemctl enable mariadb
-    alias mysql="mariadb"
+[Install]
+Alias=mysql.service
+Alias=mysqld.service
+EOF
+    ) > /etc/systemd/system/mariadb.service
+    chmod 0644 /etc/systemd/system/mariadb.service
+
+    # link the services so we can use the mysql namespace from systemctl
+    ln -s /etc/systemd/system/mariadb.service /etc/systemd/system/mysql.service
+    ln -s /etc/systemd/system/mariadb.service /etc/systemd/system/mysqld.service
+    systemctl daemon-reload
+
+    # create mysql user and group
+    mkdir -p /var/run/mariadb
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
+    chown -R mysql:mysql /var/run/mariadb /var/lib/mysql /var/log/mariadb /usr/share/mysql
+
+    # Enable and Start MySql service
+    systemctl enable mysql
+    systemctl start mysql
 
     # Disable SELinux
     sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
@@ -102,17 +120,25 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
-    # Setup firewall rules
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp 
-    firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp 
-    firewall-offline-cmd --reload
-    
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
+    # Start firewalld
     systemctl start firewalld
+    systemctl enable firewalld
 
-    #Make sure MariaDB starts before Kamailio
-    sed -i -E "s/(After=.*)/\1 mariadb.service/g" /lib/systemd/system/kamailio.service
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
+
+    # Setup firewall rules
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
+    firewall-cmd --reload
+
+    # Make sure MariaDB starts before Kamailio
+    sed -i -E "s/(After=.*)/\1 mysql.service/g" /lib/systemd/system/kamailio.service
+    systemctl daemon-reload
 
     # Setup kamailio Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
@@ -126,7 +152,7 @@ EOF
 function uninstall {
     # Stop servers
     systemctl stop kamailio
-    systemctl stop mariadb
+    systemctl stop mysql
 
     # Backup kamailio configuration directory
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
@@ -154,18 +180,12 @@ function uninstall {
 
 case "$1" in
     uninstall|remove)
-        #Remove Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        uninstall
         ;;
     install)
-        #Install Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        install
         ;;
     *)
-        echo "usage $0 [install <kamailio version> <dsip_port> | uninstall <kamailio version> <dsip_port>]"
+        echo "usage $0 [install | uninstall]"
         ;;
 esac

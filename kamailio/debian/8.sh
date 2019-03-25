@@ -87,12 +87,9 @@ EOF
     systemctl start firewalld
 
     # Firewall settings
-    firewall-cmd --zone=public --add-port=5060/udp --permanent
-
-    if [ -n "$DSIP_PORT" ]; then
-        firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-    fi
-
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Setup kamailio Logging
@@ -144,18 +141,12 @@ function uninstall {
 
 case "$1" in
     uninstall|remove)
-        #Remove Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        uninstall
         ;;
     install)
-        #Install Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        install
         ;;
     *)
-        echo "usage $0 [install <kamailio version> <dsip_port> | uninstall <kamailio version> <dsip_port>]"
+        echo "usage $0 [install | uninstall]"
         ;;
 esac

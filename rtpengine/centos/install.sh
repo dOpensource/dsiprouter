@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
 # TODO: need to find workaround for compiling rtpengine (building rpm's etc..)
 # needing to compile requires updated kernel headers in some cases therefore mandatory restart
 # which we want to avoid during install, it also causes issues with AWS AMI build process
 function install {
     local RTPENGINE_SRC_DIR="${SRC_DIR}/rtpengine"
-    local RTP_UPDATE_OPTS=""
 
 
     function installKernelDevHeaders {
@@ -24,7 +26,14 @@ function install {
     rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb &&
+        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb
+
+    # alias and link rsyslog to syslog service as in debian
+    # allowing rsyslog to be accessible via syslog namespace
+    # the settings are already there just commented out by default
+    sed -i -r 's|^[;#](.*)|\1|g' /usr/lib/systemd/system/rsyslog.service
+    ln -s /usr/lib/systemd/system/rsyslog.service /etc/systemd/system/syslog.service
+    systemctl daemon-reload
 
     if (( $AWS_ENABLED == 0 )); then
         installKernelDevHeaders
@@ -38,16 +47,15 @@ function install {
                 printf '0' > ${DSIP_SYSTEM_CONFIG_DIR}/.bootstrap
             else
                 # Bootstrap finished already, skip this
-                echo "Kernel Dev Headers already updated."
+                printdbg "Kernel Dev Headers already updated."
             fi
         else
             # VPS kernel headers are generally custom, the headers MUST be updated
             # in order to compile RTPengine, so we must restart for this case
             # To accomodate AWS build process offload this to next startup on the AMI instance
             printf '1' > ${DSIP_SYSTEM_CONFIG_DIR}/.bootstrap
-            printf '%s\n%s\n'                                                                               \
-                "Kernel packages have been updated to compile RTPEngine and will be installed on reboot."   \
-                "RTPEngine will be compiled and installed on reboot after kernel headers are updated."
+            printwarn "Kernel packages have been updated to compile RTPEngine and will be installed on reboot."
+            printwarn "RTPEngine will be compiled and installed on reboot after kernel headers are updated."
 
             # add to startup process finishing rtpengine install (using cron)
             if [ ${SERVERNAT:-0} -eq 1 ]; then
@@ -55,9 +63,9 @@ function install {
             else
                 OPTS=''
             fi
-            cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh rtpengineonly ${OPTS}"
+            addInitCmd "$(type -P bash) -c '${DSIP_PROJECT_DIR}/dsiprouter.sh install --rtpengine $OPTS >> ${CLOUD_INSTALL_LOG} 2>&1'"
 
-            return 0
+            exit 2
         fi
     fi
 
@@ -70,7 +78,7 @@ function install {
     cd ${SRC_DIR}
     rm -rf rtpengine.bak 2>/dev/null
     mv -f rtpengine rtpengine.bak 2>/dev/null
-    git clone https://github.com/sipwise/rtpengine.git --branch ${RTPENGINE_VER} --depth 1
+    git clone https://github.com/sipwise/rtpengine.git --branch ${RTPENGINE_VER}
     cd rtpengine/daemon && make
 
     if [ $? -eq 0 ]; then
@@ -145,6 +153,7 @@ MANAGE_IPTABLES=yes
 TABLE=0
 SET_USER=rtpengine
 SET_GROUP=rtpengine
+LOG_STDERR=yes
 EOF
         ) > /etc/default/rtpengine.conf
 
@@ -176,16 +185,10 @@ EOF
 
         # Setup tmp files
         echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-        cp -f ${DSIP_PROJECT_DIR}/rtpengine/centos/rtpengine.service /etc/systemd/system/rtpengine.service
-        cp -f ${DSIP_PROJECT_DIR}/rtpengine/centos/rtpengine-start /usr/sbin/
-        cp -f ${DSIP_PROJECT_DIR}/rtpengine/centos/rtpengine-stop-post /usr/sbin/
-        chmod +x /usr/sbin/rtpengine-*
-
-        # update kam configs on reboot
-        if (( ${SERVERNAT} == 1 )); then
-            RTP_UPDATE_OPTS="-servernat"
-        fi
-        cronAppend "@reboot $(type -P bash) ${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig ${RTP_UPDATE_OPTS}"
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine.service /etc/systemd/system/rtpengine.service
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
+        chmod +x /usr/sbin/rtpengine*
 
         # Reload systemd configs
         systemctl daemon-reload
@@ -206,7 +209,7 @@ EOF
 
             # remove bootstrap cmds from cron if on AMI image
             if (( $AWS_ENABLED == 1 )); then
-                cronRemove 'dsiprouter.sh rtpengineonly'
+                removeDependsOnInit 'dsiprouter.sh install --rtpengine'
             fi
         else
             echo "FAILED: RTPEngine could not be installed!"
@@ -216,7 +219,6 @@ EOF
 
 # Remove RTPEngine
 function uninstall {
-    echo "Removing RTPEngine for $DISTRO"
     systemctl stop rtpengine
     rm -f /usr/sbin/rtpengine
     rm -f /etc/rsyslog.d/rtpengine.conf
@@ -232,6 +234,6 @@ case "$1" in
         install && exit 0
         ;;
     *)
-        echo "usage $0 [install | uninstall]" && exit 1
+        printerr "usage $0 [install | uninstall]" && exit 1
         ;;
 esac

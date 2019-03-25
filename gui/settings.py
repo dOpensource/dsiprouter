@@ -1,6 +1,7 @@
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
 
+DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
@@ -14,9 +15,9 @@ DSIP_LOG_FACILITY = 18
 
 # ssl key / cert paths
 # email for re-certification (must match certs)
-SSL_KEY = ""
-SSL_CERT = ""
-SSL_EMAIL = ""
+DSIP_SSL_KEY = ""
+DSIP_SSL_CERT = ""
+DSIP_SSL_EMAIL = ""
 
 # dSIPRouter internal settings
 

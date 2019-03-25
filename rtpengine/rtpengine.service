@@ -1,0 +1,21 @@
+[Unit]
+Description=RTPEngine proxy for RTP and other media streams
+After=network.target iptables.service redis.service syslog.target
+# iptables.service is required only if the RTPEngine uses its kernel module.
+# redis.service is required if the Redis server is working on the same machine along with the RTPEngine
+
+[Service]
+Type=simple
+Environment='CFGFILE=/etc/default/rtpengine.conf'
+Environment='RUNDIR=/var/run/rtpengine'
+EnvironmentFile=-$RUNDIR/daemon.conf
+PIDFile=$RUNDIR/rtpengine.pid
+ExecStartPre=-/bin/mkdir -p $RUNDIR
+ExecStartPre=-/bin/chown -R rtpengine:rtpengine $RUNDIR
+ExecStartPre=/usr/sbin/rtpengine-start-pre $CFGFILE
+ExecStart=/usr/sbin/rtpengine -f $OPTIONS
+ExecStopPost=/usr/sbin/rtpengine-stop-post $CFGFILE
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
