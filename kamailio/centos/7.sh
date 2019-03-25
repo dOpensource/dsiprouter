@@ -15,16 +15,6 @@ function install() {
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
 
-    # Start firewalld
-    systemctl start firewalld
-    systemctl enable firewalld
-
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
-    if (( $? != 0 )); then
-        systemctl restart dbus
-        systemctl restart firewalld
-    fi
-
     # allow symlinks in mariadb service
     sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
 
@@ -130,14 +120,21 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
-    # Setup firewall rules
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp 
-    firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp 
-    firewall-offline-cmd --reload
-    
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
+    # Start firewalld
     systemctl start firewalld
+    systemctl enable firewalld
+
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
+
+    # Setup firewall rules
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
+    firewall-cmd --reload
 
     # Make sure MariaDB starts before Kamailio
     sed -i -E "s/(After=.*)/\1 mysql.service/g" /lib/systemd/system/kamailio.service

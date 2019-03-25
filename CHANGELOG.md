@@ -2,6 +2,21 @@
 
 
 
+### Fixup Firewalld Commands
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Mon, 25 Mar 2019 15:01:28 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- add tcp port for jsonrpc access
+- cleanup centos commands
+
+
+---
+
+
 ###   - fix mariadb centos startup regression   - fix module sql install username conflict   - set default for ssl variables to avoid errors   - move displaying login info back to after logo   - update a few sed cmds to be more reliable
 
 > Branches Affected: feature-ami  
