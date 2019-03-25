@@ -2,6 +2,21 @@
 
 
 
+### Merge feature-ami Branch Into dev Branch
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Mon, 25 Mar 2019 15:41:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- rename JSONRPC test to `16.sh`
+- merge feature-ami commits onto dev branch
+
+
+---
+
+
 ### Fixup Firewalld Commands
 
 > Branches Affected: dev,feature-ami  

@@ -37,3 +37,4 @@ Contains the Unittest number and a description of what the tests validates
 |13|FusionPBX Sync Module|
 |14|Domain Auth|
 |15|Flowroute DID Sync Module|
+|16|Sending JSONRPC Commands to Kamailio|
