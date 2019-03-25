@@ -2,6 +2,7 @@
 
 BUILD_VERSION="feature-ami"
 BUILD_DIR="/opt/dsiprouter"
+CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
 
 cmdExists() {
     if command -v "$1" > /dev/null 2>&1; then
@@ -11,10 +12,12 @@ cmdExists() {
     fi
 }
 
+# update caches and install dependencies for repo
 if cmdExists "yum"; then
     yum update -y
     yum install -y git curl
 elif cmdExists "apt"; then
+    apt-get update -y
     apt-get install -y --fix-missing git curl
     # recommendations from https://debgen.simplylinux.ch
     apt-get install -y --fix-missing wget apt-transport-https
@@ -46,6 +49,6 @@ fi
 
 git clone --depth 1 https://github.com/dOpensource/dsiprouter.git -b ${BUILD_VERSION} ${BUILD_DIR}
 cd ${BUILD_DIR}
-./dsiprouter.sh install -all -servernat
+./dsiprouter.sh install -debug -all -servernat | tee -ia ${CLOUD_INSTALL_LOG}  2>&1
 
 exit $?

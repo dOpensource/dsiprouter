@@ -1,7 +1,6 @@
 [Unit]
 Description=dSIPRouter Service
-After=network.target
-After=mysql.service
+After=network.target mysql.service
 
 [Service]
 Type=simple

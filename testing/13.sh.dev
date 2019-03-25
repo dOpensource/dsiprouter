@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -x
+
+. include/common
+
+unitname="FusionPBX Sync Module"
+
+# static settings
+username="smoketest"
+host="localhost"
+port="5060"
+
+# TODO: check that cron entry exists
+
+# TODO: check that nginx server is running and accepts requests
+
+# TODO: test fusionpbx db syncing
+# - create new local db
+# - add some date
+# - add pbx to kamailio db w/ fusionpbx enabled
+# - check that db tables synced
+
+process_result "$unitname" $ret

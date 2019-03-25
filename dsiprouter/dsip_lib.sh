@@ -206,7 +206,7 @@ getExternalIP() {
     printf '%s' "$EXTERNAL_IP"
 }
 
-# $1 == cmd as executed in systemd by ExecStart=
+# $1 == cmd as executed in systemd (by ExecStart=)
 addInitCmd() {
     local CMD="$1"
 
@@ -222,20 +222,22 @@ removeInitCmd() {
     systemctl daemon-reload
 }
 
-# $1 == path to service to add dependency on bootstrap service
+# $1 == service name (full name with target) to add dependency on dsip-init service
+# notes: only adds startup ordering dependency (service continues if init fails)
+# notes: the Before= section of init will link to an After= dependency on daemon-reload
 addDependsOnInit() {
-    local SERVICE_FILE="$1"
-    local TMP_FILE="${SERVICE_FILE}.tmp"
+    local SERVICE="$1"
+    local TMP_FILE="${DSIP_INIT_FILE}.tmp"
 
-    tac ${SERVICE_FILE} | sed -r "0,\|^After\=.*|{s|^After\=.*|After=dsip-init.service\n&|}" | tac > ${TMP_FILE}
-    mv -f ${TMP_FILE} ${SERVICE_FILE}
+    tac ${DSIP_INIT_FILE} | sed -r "0,\|^Before\=.*|{s|^Before\=.*|Before=${SERVICE}\n&|}" | tac > ${TMP_FILE}
+    mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
     systemctl daemon-reload
 }
 
-# $1 == path to service to remove dependency on bootstrap service
+# $1 == service name (full name with target) to remove dependency on dsip-init service
 removeDependsOnInit() {
-    local SERVICE_FILE="$1"
+    local SERVICE="$1"
 
-    sed -i "\|^After=dsip-init.service|d" ${SERVICE_FILE}
+    sed -i "\|^Before=${SERVICE}|d" ${DSIP_INIT_FILE}
     systemctl daemon-reload
 }

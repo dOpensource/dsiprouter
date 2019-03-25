@@ -2,6 +2,30 @@
 
 
 
+### AMI Feature Fixes
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Mon, 25 Mar 2019 10:53:34 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update AMI funtions to run with systemd
+- add seperate log file for dsip cloud installs
+- fix broken paths
+- make kam cfg actual readable (spaces not tabs)
+- add test for syslog service
+- add test for AMI requirements
+- add test for dsip GUI login
+- add dev files for next tests to make
+- fix test sorting to work past 10
+- add work on custom redirection function
+- fix login logic in routes and HTTP return codes
+
+
+---
+
+
 ### dSIPRouter Installation Overhaul
 
 > Branches Affected: feature-ami  

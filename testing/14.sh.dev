@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -x
+
+. include/common
+
+unitname="Domain Auth"
+
+# static settings
+username="smoketest"
+host="localhost"
+port="5060"
+
+# TODO: add some domain entries
+
+# TODO: send invite with domain auth
+# we should be using a template INVITE and replacing values with sed
+#sipsak -f INVITE.sip -s sip:$username@$host:$port -H $host -vvv >/dev/null
+
+process_result "$unitname" $ret

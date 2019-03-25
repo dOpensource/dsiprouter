@@ -67,7 +67,7 @@ export SERVERNAT=0
 export REQ_PYTHON_MAJOR_VER=3
 export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
 export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
-export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
+export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
 export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
 export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
 export DSIP_RUN_DIR="/var/run/dsiprouter"
@@ -79,6 +79,7 @@ export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
 export RTPENGINE_VER="mr6.1.1.1"
 export SRC_DIR="/usr/local/src"
 export BACKUPS_DIR="/var/backups"
+export CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
 
 # Default MYSQL db root user values
 MYSQL_ROOT_DEF_USERNAME="root"
@@ -95,9 +96,9 @@ MYSQL_KAM_DEF_DATABASE="kamailio"
 if [ ${WITH_SSL} -eq 1 ]; then
     DSIP_SSL_CERT_DIR="/etc/ssl/certs"                                      # certs general location
     DSIP_DSIP_SSL_CERT_DIR="${DSIP_SSL_CERT_DIR}/$(hostname -f)"            # domain specific cert dir
-    DSIP_SSL_KEY="${DSIP_DSIP_SSL_CERT_DIR}/key.pem"                        # private key
-    DSIP_SSL_CHAIN="${DSIP_DSIP_SSL_CERT_DIR}/chain.pem"                    # full chain cert
-    DSIP_SSL_CERT="${DSIP_DSIP_SSL_CERT_DIR}/cert.pem"                      # full chain + csr cert
+    DSIP_SSL_KEY="${DSIP_SSL_CERT_DIR}/key.pem"                             # private key
+    DSIP_SSL_CHAIN="${DSIP_SSL_CERT_DIR}/chain.pem"                         # full chain cert
+    DSIP_SSL_CERT="${DSIP_SSL_CERT_DIR}/cert.pem"                           # full chain + csr cert
     DSIP_SSL_EMAIL="admin@$(hostname -f)"                                   # email in certs (for renewal)
     DSIP_GUI_PROTOCOL="https"     
 else
@@ -171,7 +172,7 @@ ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" \
 function cleanupAndExit {
     unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
     unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD AWS_ENABLED PATH_UPDATE_FILE SYSTEM_RTPENGINE_CONFIG_DIR SYSTEM_RTPENGINE_CONFIG_FILE SERVERNAT
-    unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION
+    unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE MYSQL_KAM_PASSWORD MYSQL_KAM_USERNAME MYSQL_KAM_DATABASE
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET
     unset -f setPythonCmd
@@ -357,10 +358,10 @@ function configurePythonSettings {
     setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
     setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
     setConfigAttrib -q 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
-    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_KEY = '${DSIP_SSL_KEY}'|g" ${DSIP_CONFIG_FILE}
-    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_CERT = '${DSIP_SSL_CERT}'|g" ${DSIP_CONFIG_FILE}
-    sed -i -r "s|(DSIP_SSL_KEY[[:space:]]?=.*)|DSIP_SSL_EMAIL = '${DSIP_SSL_EMAIL}'|g" ${DSIP_CONFIG_FILE}
-#    sed -i -r "s|(DOMAIN[[:space:]]?=.*)|DOMAIN = '${DSIP_SERVER_DOMAIN}'|g" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE}
+    setConfigAttrib -q 'DSIP_PROTO' "$DSIP_GUI_PROTOCOL" ${DSIP_CONFIG_FILE}
 }
 
 # update settings file based on cmdline args
@@ -378,14 +379,11 @@ function configureSSL {
     CERT_DIR="/etc/ssl/certs/"
   
     mkdir -p ${DSIP_DSIP_SSL_CERT_DIR} 
-    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`" 
-    sed -i -r "s|(SSL_KEY[[:space:]]?=.*)|SSL_KEY = '${DSIP_SSL_KEY}'|g" ${DSIP_CONFIG_FILE}
-    sed -i -r "s|(SSL_CERT[[:space:]]?=.*)|SSL_CERT = '${DSIP_SSL_CERT}'|g" ${DSIP_CONFIG_FILE}
+    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
 }
 
 # updates and settings in kam config that may change
 # should be run after reboot or change in network configurations
-# TODO: we should support templating for the config instead
 function updateKamailioConfig {
     setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
     setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
@@ -594,7 +592,7 @@ function installRTPEngine {
         RTP_UPDATE_OPTS="-servernat"
     fi
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig $RTP_UPDATE_OPTS"
-    addDependsOnInit "/etc/systemd/system/rtpengine.service"
+    addDependsOnInit "rtpengine.service"
 
     # Restart RTPEngine with the new configurations
     systemctl restart rtpengine
@@ -626,8 +624,8 @@ function uninstallRTPEngine {
     fi
 
     # remove rtpengine service dependencies
-    removeInitCmd "updatertpconfig"
-    removeDependsOnInit "/etc/systemd/system/rtpengine.service"
+    removeInitCmd "dsiprouter.sh updatertpconfig"
+    removeDependsOnInit "rtpengine.service"
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
@@ -683,7 +681,7 @@ function installDsiprouter {
     if (( $AWS_ENABLED == 1 )); then
         # add password reset to boot process (for AMI depends on network)
         addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
-        addDependsOnInit "/etc/systemd/system/dsiprouter.service"
+        addDependsOnInit "dsiprouter.service"
         # Required changes for Debian AMI's
         if [[ $DISTRO == "debian" ]]; then
             # Remove debian-sys-maint password for initial AMI scan
@@ -692,42 +690,23 @@ function installDsiprouter {
             # Change default password for debian-sys-maint to instance-id at next boot
             # we must also change the corresponding password in /etc/mysql/debian.cnf
             # to comply with AWS AMI image standards
-            # this must run at startup as well so create temp script & add to cron
+            # this must run at startup as well so create temp script and add to dsip-init
             (cat << EOF
 #!/usr/bin/env bash
 
+# declare any constants imported functions rely on
+DSIP_INIT_FILE="$DSIP_INIT_FILE"
+
 # declare imported functions from library
 $(declare -f getInstanceID)
-$(declare -f cronRemove)
+$(declare -f removeInitCmd)
 
-# rudimentary way to wait for services on startup
-# in this case we are waiting on network and mysql
-serviceWait() {
-    timeout \$1 bash -c '
-        while ! (ping -c 1 -W 2 8.8.8.8 &>/dev/null || mysqladmin ping &>/dev/null); do
-            sleep 1
-        done
-    '
-    return \$?
-}
-
-# try restarting mysql on failure
-if ! serviceWait 20; then
-    systemctl restart mysql
-    sleep 2
-    # second failure try again
-    if ! serviceWait 10; then
-        systemctl restart mysql
-        sleep 3
-    fi
-fi
-
-# reset debian user password and remove script from cron
+# reset debian user password and remove dsip-init startup cmd
 INSTANCE_ID=\$(getInstanceID)
-mysql -e "CREATE USER IF NOT EXISTS 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}'"
-mysql -e "GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}'"
+mysql -e "CREATE USER IF NOT EXISTS 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';"
+mysql -e "GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';"
 sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
-cronRemove '.reset_debiansys_user.sh'
+removeInitCmd '.reset_debiansys_user.sh'
 rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
 
 exit 0
@@ -735,7 +714,7 @@ EOF
             ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
             # note that the script will remove itself after execution
             chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-            cronAppend "@reboot ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
+            addInitCmd "$(type -P bash) -c '${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh >> ${CLOUD_INSTALL_LOG} 2>&1'"
         fi
     fi
 
@@ -782,6 +761,12 @@ function uninstallDsiprouter {
         cleanupAndExit 1
     fi
 
+    # for AMI images remove dsip-init service dependency
+    if (( $AWS_ENABLED == 1 )); then
+        removeInitCmd "dsiprouter.sh resetpassword"
+        removeDependsOnInit "dsiprouter.service"
+    fi
+
     # Remove crontab entry
     echo "Removing crontab entry"
     cronRemove 'dsiprouter_cron.py'
@@ -813,7 +798,7 @@ function installKamailio {
 
     # update kam configs on reboot
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
-    addDependsOnInit "/lib/systemd/system/kamailio.service"
+    addDependsOnInit "kamailio.service"
 
     # Restart Kamailio with the new configurations
     systemctl restart kamailio
@@ -847,8 +832,8 @@ function uninstallKamailio {
     fi
 
     # remove kam service dependencies
-    removeInitCmd "updatekamconfig"
-    removeDependsOnInit "/lib/systemd/system/kamailio.service"
+    removeInitCmd "dsiprouter.sh updatekamconfig"
+    removeDependsOnInit "kamailio.service"
 
     # Remove the hidden installed file, which denotes if it's installed or not
 	rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
@@ -1034,7 +1019,7 @@ function resetPassword {
     generatePassword
 
     #dSIPRouter will be restarted to make the new password active
-    printwarn "Restart dSIPRouter to make the password active!\n"
+    printwarn "Restart dSIPRouter to make the password active!"
 }
 
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
@@ -1053,10 +1038,19 @@ function generatePassword {
     pprint "password: $password"
 }
 
-# Initially the init service does nothing
-# we add startup commands for network services on reboot
-# The init service can then be used as a requirement
-# for other services depending on these startup scripts
+# =================
+# dsip-init service
+# =================
+#
+# Initially the init service does nothing but startup required services on boot
+#
+# 1. Primary usage is to ensure required services are started for dependent services
+# 2. Secondary usage is to add startup commands to run on reboot (init cmds for services)
+#
+# This service will ensure the following services are started:
+# - networking
+# - syslog
+# - mysql
 function createInitService {
     # imported from dsip_lib.sh
     local DSIP_INIT_FILE="$DSIP_INIT_FILE"
@@ -1069,30 +1063,31 @@ function createInitService {
         printdbg "creating dsip-init service"
     fi
 
-    (cat <<EOF
+    (cat << 'EOF'
 [Unit]
-Description=dSIPRouter Bootstrap Configuration
-Wants=network-online.target
-After=network.target network-online.target
+Description=dSIPRouter Init Service
+Wants=network-online.target syslog.service mysql.service
+After=network.target network-online.target syslog.service mysql.service
+Before=
 
 [Service]
 Type=oneshot
 ExecStart=/bin/true
-TimeoutSec=30
 RemainAfterExit=true
+TimeoutSec=0
 
 [Install]
-WantedBy=default.target
+WantedBy=default.target multi-user.target
 EOF
     ) > ${DSIP_INIT_FILE}
 
     # set default permissions
     chmod 0644 ${DSIP_INIT_FILE}
 
-    # enable on boot
+    # enable service and start on boot
     systemctl daemon-reload
     systemctl enable dsip-init
-    # startup allowing dependent services
+    # startup with required services
     systemctl start dsip-init
 }
 

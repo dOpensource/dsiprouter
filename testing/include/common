@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Ansi Colors
 ESC_SEQ="\033["
 ANSI_NONE="${ESC_SEQ}39;49;00m" # Reset colors
@@ -32,10 +34,10 @@ process_result() {
     [ $((${#1}%2)) -eq 0 ] && desc="$1" || desc="$1 "
 
     if [ $2 -eq 0 ]; then
-        printf "%-*s %s %*s\n" $(((100-${#desc})/2)) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(((100-${#desc})/2)) "[$(printdbg 'PASS')]"
+        printf "%-*s %s %*s\n" $(( (100-${#desc}) / 2 )) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(( (100-${#desc}) / 2 )) "[$(printdbg 'PASS')]"
         return 0
     else
-        printf "%-*s %s %*s\n" $(((100-${#desc})/2)) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(((100-${#desc})/2)) "[$(printerr 'FAIL')]"
+        printf "%-*s %s %*s\n" $(( (100-${#desc}) / 2 )) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(( (100-${#desc}) / 2 )) "[$(printerr 'FAIL')]"
         return 1
     fi
 }
@@ -72,4 +74,38 @@ getExternalIP() {
     done
 
     printf '%s' "$EXTERNAL_IP"
+}
+
+# $1 == attribute name
+# $2 == python config file
+# returns: attribute value
+getConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    local VALUE=$(grep -oP '^(?!#)'${NAME}'[ \t]*=[ \t]*\K(\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
+    printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
+}
+
+# notes: try to access the AWS metadata URL to determine if this is an AMI instance
+# returns: 0 == success, 1 == failure
+isInstanceAMI() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254 &>/dev/null
+    ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# notes: prints the AMI instance ID || blank string
+getInstanceID() {
+    curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+    ec2-metadata -i 2>/dev/null
+}
+
+# $* == string to encode (prevent splitting by slurping all the args)
+# notes: print URI encoded string
+uriEncode() {
+    perl -MURI::Escape -e 'print uri_escape shift, , q{^A-Za-z0-9\-._~/}' -- "$*"
 }

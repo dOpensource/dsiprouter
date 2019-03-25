@@ -26,7 +26,14 @@ function install {
     rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb &&
+        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb
+
+    # alias and link rsyslog to syslog service as in debian
+    # allowing rsyslog to be accessible via syslog namespace
+    # the settings are already there just commented out by default
+    sed -i -r 's|^[;#](.*)|\1|g' /usr/lib/systemd/system/rsyslog.service
+    ln -s /usr/lib/systemd/system/rsyslog.service /etc/systemd/system/syslog.service
+    systemctl daemon-reload
 
     if (( $AWS_ENABLED == 0 )); then
         installKernelDevHeaders
@@ -56,7 +63,7 @@ function install {
             else
                 OPTS=''
             fi
-            cronAppend "@reboot ${DSIP_PROJECT_DIR}/dsiprouter.sh install --rtpengine $OPTS"
+            addInitCmd "$(type -P bash) -c '${DSIP_PROJECT_DIR}/dsiprouter.sh install --rtpengine $OPTS >> ${CLOUD_INSTALL_LOG} 2>&1'"
 
             exit 2
         fi
@@ -202,7 +209,7 @@ EOF
 
             # remove bootstrap cmds from cron if on AMI image
             if (( $AWS_ENABLED == 1 )); then
-                cronRemove 'dsiprouter.sh install --rtpengine'
+                removeDependsOnInit 'dsiprouter.sh install --rtpengine'
             fi
         else
             echo "FAILED: RTPEngine could not be installed!"

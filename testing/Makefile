@@ -1,8 +1,13 @@
 # Makefile for running test unit
 #
+
+# Our own sorting function
+sort-files = $(shell echo -e $1 | tr ' ' '\n' | sort -V)
+
+
 TESTS_FILES ?= $(wildcard *.sh)
 TESTS_EXCLUDE ?=
-TESTS ?= $(sort $(filter-out $(patsubst %,%.sh,$(TESTS_EXCLUDE)), $(TESTS_FILES)))
+TESTS ?= $(call sort-files,$(filter-out $(patsubst %,%.sh,$(TESTS_EXCLUDE)), $(TESTS_FILES)))
 
 # run all tests
 all:
