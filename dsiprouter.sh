@@ -94,15 +94,20 @@ MYSQL_KAM_DEF_DATABASE="kamailio"
 # Default SSL options
 # If you created your own certs prior to installing set this to match your certs
 if [ ${WITH_SSL} -eq 1 ]; then
-    DSIP_SSL_CERT_DIR="/etc/ssl/certs"                                      # certs general location
-    DSIP_DSIP_SSL_CERT_DIR="${DSIP_SSL_CERT_DIR}/$(hostname -f)"            # domain specific cert dir
+    SYSTEM_SSL_CERT_DIR="/etc/ssl/certs"                                    # certs general location
+    DSIP_SSL_CERT_DIR="${SYSTEM_SSL_CERT_DIR}/$(hostname -f)"               # domain specific cert dir
     DSIP_SSL_KEY="${DSIP_SSL_CERT_DIR}/key.pem"                             # private key
     DSIP_SSL_CHAIN="${DSIP_SSL_CERT_DIR}/chain.pem"                         # full chain cert
     DSIP_SSL_CERT="${DSIP_SSL_CERT_DIR}/cert.pem"                           # full chain + csr cert
     DSIP_SSL_EMAIL="admin@$(hostname -f)"                                   # email in certs (for renewal)
-    DSIP_GUI_PROTOCOL="https"     
+    DSIP_GUI_PROTOCOL="https"                                               # protocol GUI is served on
 else
-    DSIP_GUI_PROTOCOL="http"
+    DSIP_SSL_CERT_DIR=""                                                    # domain specific cert dir
+    DSIP_SSL_KEY=""                                                         # private key
+    DSIP_SSL_CHAIN=""                                                       # full chain cert
+    DSIP_SSL_CERT=""                                                        # full chain + csr cert
+    DSIP_SSL_EMAIL=""                                                       # email in certs (for renewal)
+    DSIP_GUI_PROTOCOL="http"                                                # protocol GUI is served on
 fi
 
 
@@ -312,17 +317,17 @@ EOF
 
     # - sipsak, and future use
     if ! pathCheck /usr/local/bin; then
-        sed -i -r 's|^#(export PATH="/usr/local/bin\${PATH:\+:\$PATH}")$|\1|' ${PATH_UPDATE_FILE}
+        sed -i -r 's|^#(export PATH="/usr/local/bin\$\{PATH:\+:\$PATH\}")$|\1|' ${PATH_UPDATE_FILE}
         PATH_UPDATED=1
     fi
     # - rtpengine
     if ! pathCheck /usr/sbin; then
-        sed -i -r 's|^#(export PATH="\${PATH:\+\$PATH:}/usr/sbin")$|\1|' ${PATH_UPDATE_FILE}
+        sed -i -r 's|^#(export PATH="\$\{PATH:\+\$PATH:\}/usr/sbin")$|\1|' ${PATH_UPDATE_FILE}
         PATH_UPDATED=1
     fi
     # - kamailio
     if ! pathCheck /sbin; then
-        sed -i -r 's|^#(export PATH="\${PATH:\+\$PATH:}/sbin")$|\1|' ${PATH_UPDATE_FILE}
+        sed -i -r 's|^#(export PATH="\$\{PATH:\+\$PATH:\}/sbin")$|\1|' ${PATH_UPDATE_FILE}
         PATH_UPDATED=1
     fi
 
@@ -376,9 +381,8 @@ function updatePythonRuntimeSettings {
 
 function configureSSL {
     ## Configure self signed certificate
-    CERT_DIR="/etc/ssl/certs/"
   
-    mkdir -p ${DSIP_DSIP_SSL_CERT_DIR} 
+    mkdir -p ${DSIP_SSL_CERT_DIR}
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
 }
 
@@ -718,26 +722,16 @@ EOF
         fi
     fi
 
-    # Start dSIPRouter
+    # Generate a unique admin password
+    generatePassword
+
+    # Restart dSIPRouter with new configurations
     systemctl restart dsiprouter
     if [ $? -eq 0 ]; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
         printdbg "-------------------------------------"
         pprint "dSIPRouter Installation is complete! "
         printdbg "-------------------------------------"
-        printf '\n\n'
-        printdbg "The username and dynamically generated password are below:"
-
-        # Generate a unique admin password
-        generatePassword
-
-        # Tell them how to access the URL
-        printdbg "You can access the dSIPRouter web gui by going to:"
-        pprint "External IP:  ${DSIP_GUI_PROTOCOL}://$EXTERNAL_IP:$DSIP_PORT"
-
-        if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-            pprint "Internal IP: ${DSIP_GUI_PROTOCOL}://$INTERNAL_IP:$DSIP_PORT"
-        fi
     else
         printerr "dSIPRouter install failed" && cleanupAndExit 1
     fi
@@ -1012,13 +1006,33 @@ function stop {
     fi
 }
 
-function resetPassword {
-    printdbg "The admin account has been reset to the following:"
-
-    #Call the bash function that generates the password
+function displayLoginInfo {
+    # Generate a unique admin password
     generatePassword
 
-    #dSIPRouter will be restarted to make the new password active
+    printf '\n'
+    printdbg "The username and dynamically generated password are below:"
+
+    pprint "Username: $(getConfigAttrib 'USERNAME' ${DSIP_CONFIG_FILE})"
+    pprint "Password: $(getConfigAttrib 'PASSWORD' ${DSIP_CONFIG_FILE})"
+
+    # Tell them how to access the URL
+    printdbg "You can access the dSIPRouter web gui by going to:"
+    pprint "External IP: ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}"
+
+    if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
+        pprint "Internal IP: ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}"
+    fi
+    printf '\n'
+}
+
+function resetPassword {
+    printwarn "The admin account password has been reset"
+
+    # generate the new password and display login info
+    generatePassword
+    displayLoginInfo
+
     printwarn "Restart dSIPRouter to make the password active!"
 }
 
@@ -1030,12 +1044,7 @@ function generatePassword {
         password=$(date +%s | sha256sum | base64 | head -c 16)
     fi
 
-    # Add single quotes
-    password1="'$password'"
-    sed -i 's/PASSWORD[[:space:]]\?=[[:space:]]\?.*/PASSWORD = '$password1'/g' ${DSIP_CONFIG_FILE}
-
-    pprint "username: admin"
-    pprint "password: $password"
+    setConfigAttrib 'PASSWORD' "$password" ${DSIP_CONFIG_FILE} -q
 }
 
 # =================
@@ -1237,8 +1246,10 @@ function processCMD {
     	cleanupAndExit 1
     fi
 
-    # for install / uninstall default to kamailio and dsiprouter services
+    # use options to add commands in any order needed
     # 1 == defaults on, 0 == defaults off
+    local DISPLAY_LOGIN_INFO=0
+    # for install / uninstall default to kamailio and dsiprouter services
     local DEFAULT_SERVICES=1
 
     # process all options before running commands
@@ -1278,6 +1289,7 @@ function processCMD {
                         ;;
                     -dsip|--dsiprouter)
                         DEFAULT_SERVICES=0
+                        DISPLAY_LOGIN_INFO=1
                         RUN_COMMANDS+=(installDsiprouter)
                         shift
                         ;;
@@ -1288,6 +1300,7 @@ function processCMD {
                         ;;
                     -all|--all)
                         DEFAULT_SERVICES=0
+                        DISPLAY_LOGIN_INFO=1
                         RUN_COMMANDS+=(installKamailio installDsiprouter installRTPEngine)
                         shift
                         ;;
@@ -1307,6 +1320,11 @@ function processCMD {
 
             # display logo after install / uninstall commands
             RUN_COMMANDS+=(displayLogo)
+
+            # display login info at the very end for user
+            if (( ${DISPLAY_LOGIN_INFO} == 1 )); then
+                RUN_COMMANDS+=(displayLoginInfo)
+            fi
             ;;
         uninstall)
             shift

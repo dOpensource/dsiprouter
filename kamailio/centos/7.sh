@@ -25,6 +25,9 @@ function install() {
         systemctl restart firewalld
     fi
 
+    # allow symlinks in mariadb service
+    sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
+
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name across platforms
     (cat << 'EOF'
@@ -37,12 +40,19 @@ Alias=mysql.service
 Alias=mysqld.service
 EOF
     ) > /etc/systemd/system/mariadb.service
-
     chmod 0644 /etc/systemd/system/mariadb.service
+
     # link the services so we can use the mysql namespace from systemctl
     ln -s /etc/systemd/system/mariadb.service /etc/systemd/system/mysql.service
     ln -s /etc/systemd/system/mariadb.service /etc/systemd/system/mysqld.service
     systemctl daemon-reload
+
+    # create mysql user and group
+    mkdir -p /var/run/mariadb
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
+    chown -R mysql:mysql /var/run/mariadb /var/lib/mysql /var/log/mariadb /usr/share/mysql
 
     # Enable and Start MySql service
     systemctl enable mysql

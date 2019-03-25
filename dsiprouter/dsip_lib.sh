@@ -88,7 +88,7 @@ getConfigAttrib() {
     local CONFIG_FILE="$2"
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
-    printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
+    printf "$VALUE" | sed -r 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
 }
 
 # $1 == attribute name

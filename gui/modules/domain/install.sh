@@ -17,7 +17,7 @@ function installSQL {
         printwarn "The dSIPRouter tables ${TABLES[@]} already exists. Merging table data"
         (cat ${DSIP_PROJECT_DIR}/gui/modules/domain/domain_mapping.sql;
             mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-                --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} ${TABLES[@]};
+                --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${MYSQL_KAM_DATABASE} ${TABLES[@]};
         ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
     else
         echo -e "Installing schema for Domain Mapping"

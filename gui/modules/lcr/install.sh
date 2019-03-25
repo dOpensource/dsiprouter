@@ -20,7 +20,7 @@ function installSQL {
     if [ ${MERGE_DATA} -eq 0 ]; then
         printwarn "The dSIPRouter LCR Support (dsip_lcr) table already exists. Dumping table data"
         mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-            --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} dsip_lcr \
+            --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${MYSQL_KAM_DATABASE} dsip_lcr \
             | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
     fi
 }

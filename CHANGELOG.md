@@ -2,6 +2,19 @@
 
 
 
+###   - fix mariadb centos startup regression   - fix module sql install username conflict   - set default for ssl variables to avoid errors   - move displaying login info back to after logo   - update a few sed cmds to be more reliable
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Mon, 25 Mar 2019 14:49:38 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### AMI Feature Fixes
 
 > Branches Affected: feature-ami  

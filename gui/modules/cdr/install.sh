@@ -9,7 +9,7 @@ function installSQL {
     # Check to see if the acc table or cdr tables are in use
     MERGE_DATA=0
     acc_row_count=$(mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE -e "select count(*) from acc limit 10")
-    if [ "$acc_row_count" -gt 0 ]; then
+    if [ ${acc_row_count:-0} -gt 0 ]; then
         MERGE_DATA=1
     fi
 
@@ -20,7 +20,7 @@ function installSQL {
     if [ ${MERGE_DATA} -eq 0 ]; then
         printwarn "The accounting table (acc) in Kamailio already exists. Merging table data"
         mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-            --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} dsip_lcr \
+            --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${MYSQL_KAM_DATABASE} dsip_lcr \
             | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
     fi
 }
