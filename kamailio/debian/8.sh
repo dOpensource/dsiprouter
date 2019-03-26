@@ -18,8 +18,8 @@ function install {
     # If repo is not installed
     if [ $? -eq 1 ]; then
         echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
-        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
-        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
+        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main" >> /etc/apt/sources.list
+        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main" >> /etc/apt/sources.list
     fi
 
     # Add Key for Kamailio Repo
@@ -29,13 +29,13 @@ function install {
     apt-get update
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated kamailio kamailio-mysql-modules mysql-server
+    apt-get install -q -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
 
     # Enable MySQL and Kamailio for system startup
     systemctl enable mysql
 
     # Make sure mysql starts before Kamailio
-    sed -i s/After=.*/After=mysqld.service/g /lib/systemd/system/kamailio.service
+#    sed -i s/After=.*/After=mysqld.service/g /lib/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
 
@@ -61,9 +61,7 @@ EOF
     echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
-    sed -i -e 's/# DBENGINE=MYSQL/DBENGINE=MYSQL/' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-
-    mkdir ${SYSTEM_KAMAILIO_CONFIG_DIR}
+    mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
     echo "DBENGINE=MYSQL" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     echo "INSTALL_EXTRA_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     echo "INSTALL_PRESENCE_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
@@ -75,8 +73,8 @@ EOF
         echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     fi
 
-    #Will hardcode lation1 as the database character set used to create the Kamailio schema due to
-    #a potential bug in how Kamailio additional tables are created
+    # Will hardcode lation1 as the database character set used to create the Kamailio schema due to
+    # a potential bug in how Kamailio additional tables are created
     echo "CHARSET=latin1" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
@@ -100,7 +98,7 @@ EOF
     # Setup logrotate
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
 
-    #Start Kamailio
+    # Start Kamailio
     #systemctl start kamailio
     #return #?
     return 0

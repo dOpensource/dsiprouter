@@ -4,8 +4,6 @@
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
 function install {
-    local RTPENGINE_SRC_DIR="${SRC_DIR}/rtpengine"
-
     # Install required libraries
     apt-get install -y logrotate rsyslog
     apt-get install -y firewalld
@@ -38,10 +36,15 @@ function install {
             "Pin-Priority: 750" > /etc/apt/preferences.d/debhelper
     fi
 
+    # create rtpengine user and group
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
+
     cd ${SRC_DIR}
     rm -rf rtpengine.bak 2>/dev/null
     mv -f rtpengine rtpengine.bak 2>/dev/null
-    git clone https://github.com/sipwise/rtpengine.git --branch ${RTPENGINE_VER}
+    git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
     cd rtpengine
     ./debian/flavors/no_ngcp
     dpkg-buildpackage
@@ -51,21 +54,23 @@ function install {
     dpkg -i ngcp-rtpengine-kernel-source_*
     dpkg -i ngcp-rtpengine-kernel-dkms_*
 
-    # Stop the service after it's installed.  We need to configure it fist
+    if [ $? -ne 0 ]; then
+        echo "Problem installing RTPEngine DEB's"
+        exit 1
+    fi
+
+    # Stop the service after it's installed.  We need to configure it first
     systemctl stop ngcp-rtpengine-daemon
+
+    # ensure config dirs exist
+    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    chown -R rtpengine:rtpengine /var/run/rtpengine
 
     if [ "$SERVERNAT" == "0" ]; then
         INTERFACE=$EXTERNAL_IP
     else
         INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
     fi
-
-    # create rtpengine user and group
-    mkdir -p /var/run/rtpengine
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
-    useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
-    chown -R rtpengine:rtpengine /var/run/rtpengine
 
     # rtpengine config file
     # set table = 0 for kernel packet forwarding

@@ -208,18 +208,21 @@ getExternalIP() {
 
 # $1 == cmd as executed in systemd (by ExecStart=)
 addInitCmd() {
-    local CMD="$1"
+    local CMD=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
+    local TMP_FILE="${DSIP_INIT_FILE}.tmp"
 
-    sed -i "\|^ExecStart\=/bin/true|a ExecStart=${CMD}" ${DSIP_INIT_FILE}
-    systemctl daemon-reload
+    tac ${DSIP_INIT_FILE} | sed -r "0,\|^ExecStart\=.*|{s|^ExecStart\=.*|ExecStart=${CMD}\n&|}" | tac > ${TMP_FILE}
+    mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
+
+    systemctl --no-block daemon-reload
 }
 
 # $1 == string to match for removal (after ExecStart=)
 removeInitCmd() {
-    local STR="$1"
+    local STR=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
 
     sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${DSIP_INIT_FILE}
-    systemctl daemon-reload
+    systemctl --no-block daemon-reload
 }
 
 # $1 == service name (full name with target) to add dependency on dsip-init service
@@ -231,7 +234,7 @@ addDependsOnInit() {
 
     tac ${DSIP_INIT_FILE} | sed -r "0,\|^Before\=.*|{s|^Before\=.*|Before=${SERVICE}\n&|}" | tac > ${TMP_FILE}
     mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
-    systemctl daemon-reload
+    systemctl --no-block daemon-reload
 }
 
 # $1 == service name (full name with target) to remove dependency on dsip-init service
@@ -239,5 +242,5 @@ removeDependsOnInit() {
     local SERVICE="$1"
 
     sed -i "\|^Before=${SERVICE}|d" ${DSIP_INIT_FILE}
-    systemctl daemon-reload
+    systemctl --no-block daemon-reload
 }

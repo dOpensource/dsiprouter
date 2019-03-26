@@ -29,7 +29,7 @@ function install {
     apt-get update
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
+    apt-get install -q -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
 
     # Enable MySQL and Kamailio for system startup
     systemctl enable mysql

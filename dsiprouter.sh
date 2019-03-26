@@ -8,8 +8,6 @@
 #
 # Supported OS:
 # Debian 9 (stretch)
-# Debian 8 (jessie)
-# Debian 7 (wheezy)
 # CentOS 7
 #
 # Notes:
@@ -179,8 +177,9 @@ function cleanupAndExit {
     unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD AWS_ENABLED PATH_UPDATE_FILE SYSTEM_RTPENGINE_CONFIG_DIR SYSTEM_RTPENGINE_CONFIG_FILE SERVERNAT
     unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE MYSQL_KAM_PASSWORD MYSQL_KAM_USERNAME MYSQL_KAM_DATABASE
-    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET
+    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT
     unset -f setPythonCmd
+    rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     exit $1
 }
 
@@ -188,15 +187,14 @@ function cleanupAndExit {
 function validateOSInfo {
     if [[ "$DISTRO" == "debian" ]]; then
         case "$DISTRO_VER" in
-            8|9)
+            9)
                 if [[ -z "$KAM_VERSION" ]]; then
                    KAM_VERSION=51
                 fi
                 ;;
-            7)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=44
-                fi
+            7|8)
+                printerr "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
+                cleanupAndExit 1
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -248,7 +246,18 @@ function initialChecks {
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
         # make sure we run package installs unattended
         export DEBIAN_FRONTEND="noninteractive"
+        # default dpkg to noninteractive modes for install
+        (echo << 'EOF'
+Dpkg::Options {
+"--force-confdef";
+"--force-confold";
+}
+EOF
+        ) > /etc/apt/apt.conf.d/local
     fi
+
+    # make perl CPAN installs non interactive
+    export PERL_MM_USE_DEFAULT=1
 
     # make sure root db settings set
     if [[ "$MYSQL_ROOT_PASSWORD" == "" ]]; then
@@ -588,7 +597,7 @@ function installRTPEngine {
     ./rtpengine/${DISTRO}/install.sh install
     ret=$?
     if [ $ret -eq 0 ]; then
-        printdbg "RTPEngine was installed!"
+        printdbg "configuring RTPEngine service"
     elif [ $ret -eq 2 ]; then
         printwarn "RTPEngine install waiting on reboot"
         cleanupAndExit 0
@@ -1092,7 +1101,7 @@ RemainAfterExit=true
 TimeoutSec=0
 
 [Install]
-WantedBy=default.target multi-user.target
+WantedBy=multi-user.target
 EOF
     ) > ${DSIP_INIT_FILE}
 
