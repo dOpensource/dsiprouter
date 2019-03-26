@@ -60,7 +60,7 @@ function uninstall {
 
     apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 
-    #Remove Firewall for DSIP_PORT
+    # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
@@ -70,7 +70,7 @@ function uninstall {
     # Remove logrotate settings
     rm -f /etc/logrotate.d/dsiprouter
 
-    #Remove dSIProuter as a service
+    # Remove dSIProuter as a service
     systemctl disable dsiprouter.service
     rm -f /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload

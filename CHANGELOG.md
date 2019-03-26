@@ -2,10 +2,23 @@
 
 
 
+###   - Fixes #103   - deprecate Debian v7   - deprecate Debian v8   - change CentOS RTPEngine install to RPM build   - fix startup issues with dsip-init service on AWS   - added dpkg defaults during script execution
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Tue, 26 Mar 2019 08:12:01 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### Merge feature-ami Branch Into dev Branch
 
-> Branches Affected: dev  
-> Tags Affected:   
+> Branches Affected: dev,feature-ami  
+> Tags Affected: v0.52  
 > Date: Mon, 25 Mar 2019 15:41:44 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -71,7 +84,7 @@
 
 ### Added a unit test to validate that JSON over HTTP access to Kamailio RPC Commands is working correctly
 
-> Branches Affected: dev  
+> Branches Affected: dev,feature-ami  
 > Tags Affected:   
 > Date: Sat, 23 Mar 2019 12:01:01 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -84,7 +97,7 @@
 
 ### Added supported jsonrpc over http on tcp port 5060
 
-> Branches Affected: dev  
+> Branches Affected: dev,feature-ami  
 > Tags Affected:   
 > Date: Sat, 23 Mar 2019 03:48:17 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -97,7 +110,7 @@
 
 ### Moved the creation of the LCR schema to the main install script and deprecated the LCR module
 
-> Branches Affected: dev  
+> Branches Affected: dev,feature-ami  
 > Tags Affected:   
 > Date: Sat, 23 Mar 2019 00:10:40 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -110,7 +123,7 @@
 
 ### Fixed a regression with the gateway list import
 
-> Branches Affected: dev  
+> Branches Affected: dev,feature-ami  
 > Tags Affected:   
 > Date: Fri, 22 Mar 2019 23:36:42 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -123,7 +136,7 @@
 
 ### Fixed a regression with dr_gw_lists not being copied over to the /tmp/defaults directory
 
-> Branches Affected: dev  
+> Branches Affected: dev,feature-ami  
 > Tags Affected:   
 > Date: Fri, 22 Mar 2019 22:47:42 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
