@@ -2,6 +2,19 @@
 
 
 
+### Update Version Number for Release v0.52
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Tue, 26 Mar 2019 09:59:59 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ###   - Fixes #103   - deprecate Debian v7   - deprecate Debian v8   - change CentOS RTPEngine install to RPM build   - fix startup issues with dsip-init service on AWS   - added dpkg defaults during script execution
 
 > Branches Affected: feature-ami  
