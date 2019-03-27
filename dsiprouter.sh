@@ -1022,9 +1022,7 @@ function stop {
 }
 
 function displayLoginInfo {
-    # Generate a unique admin password
-    generatePassword
-
+    
     printf '\n'
     printdbg "The username and dynamically generated password are below:"
 
