@@ -25,19 +25,35 @@ DSIP_INIT_FILE="/etc/systemd/system/dsip-init.service"
 ##############################################
 
 printerr() {
-    printf "%b%s%b\n" "${ANSI_RED}" "$*" "${ANSI_NONE}"
+    if [[ "$1" == "-n" ]]; then
+        shift; printf "%b%s%b" "${ANSI_RED}" "$*" "${ANSI_NONE}"
+    else
+        printf "%b%s%b\n" "${ANSI_RED}" "$*" "${ANSI_NONE}"
+    fi
 }
 
 printwarn() {
-    printf "%b%s%b\n" "${ANSI_YELLOW}" "$*" "${ANSI_NONE}"
+    if [[ "$1" == "-n" ]]; then
+        shift; printf "%b%s%b" "${ANSI_YELLOW}" "$*" "${ANSI_NONE}"
+    else
+        printf "%b%s%b\n" "${ANSI_YELLOW}" "$*" "${ANSI_NONE}"
+    fi
 }
 
 printdbg() {
-    printf "%b%s%b\n" "${ANSI_GREEN}" "$*" "${ANSI_NONE}"
+    if [[ "$1" == "-n" ]]; then
+        shift; printf "%b%s%b" "${ANSI_GREEN}" "$*" "${ANSI_NONE}"
+    else
+        printf "%b%s%b\n" "${ANSI_GREEN}" "$*" "${ANSI_NONE}"
+    fi
 }
 
 pprint() {
-    printf "%b%s%b\n" "${ANSI_CYAN}" "$*" "${ANSI_NONE}"
+    if [[ "$1" == "-n" ]]; then
+        shift; printf "%b%s%b" "${ANSI_CYAN}" "$*" "${ANSI_NONE}"
+    else
+        printf "%b%s%b\n" "${ANSI_CYAN}" "$*" "${ANSI_NONE}"
+    fi
 }
 
 ######################################
@@ -64,6 +80,11 @@ setErrorTracing() {
 #######################################
 # Reusable / Shared Utility functions #
 #######################################
+
+# TODO: we need to change the config getter/setter functions to use options parsing:
+# - when the value to set variable to is the empty string our functions error out
+# - ordering of filename and other options can be easily mistaken, which can set wrong values in config
+# - input validation would also be much easier if we switched added option parsing
 
 # $1 == attribute name
 # $2 == attribute value
@@ -129,6 +150,11 @@ setRtpengineConfigAttrib() {
     local CONFIG_FILE="$3"
 
     sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+}
+
+# notes: prints out Linux Distro name
+getDisto() {
+    cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2
 }
 
 # $1 == command to test
@@ -207,6 +233,8 @@ getExternalIP() {
 }
 
 # $1 == cmd as executed in systemd (by ExecStart=)
+# notes: take precaution when adding long running functions as they will block startup in boot order
+# notes: adding init commands on an AMI instance must not be long running processes, otherwise they will fail
 addInitCmd() {
     local CMD=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
     local TMP_FILE="${DSIP_INIT_FILE}.tmp"
@@ -214,7 +242,7 @@ addInitCmd() {
     tac ${DSIP_INIT_FILE} | sed -r "0,\|^ExecStart\=.*|{s|^ExecStart\=.*|ExecStart=${CMD}\n&|}" | tac > ${TMP_FILE}
     mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
 
-    systemctl --no-block daemon-reload
+    systemctl daemon-reload
 }
 
 # $1 == string to match for removal (after ExecStart=)
@@ -222,7 +250,7 @@ removeInitCmd() {
     local STR=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
 
     sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${DSIP_INIT_FILE}
-    systemctl --no-block daemon-reload
+    systemctl daemon-reload
 }
 
 # $1 == service name (full name with target) to add dependency on dsip-init service
@@ -234,7 +262,7 @@ addDependsOnInit() {
 
     tac ${DSIP_INIT_FILE} | sed -r "0,\|^Before\=.*|{s|^Before\=.*|Before=${SERVICE}\n&|}" | tac > ${TMP_FILE}
     mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
-    systemctl --no-block daemon-reload
+    systemctl daemon-reload
 }
 
 # $1 == service name (full name with target) to remove dependency on dsip-init service
@@ -242,5 +270,5 @@ removeDependsOnInit() {
     local SERVICE="$1"
 
     sed -i "\|^Before=${SERVICE}|d" ${DSIP_INIT_FILE}
-    systemctl --no-block daemon-reload
+    systemctl daemon-reload
 }

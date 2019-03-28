@@ -2,6 +2,32 @@
 
 
 
+### Final AMI Updates for Release v0.52
+
+> Branches Affected: feature-ami  
+> Tags Affected:   
+> Date: Wed, 27 Mar 2019 21:29:11 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix double password reset issue
+- cleanup unneeded extra files
+- update dsiprouter service
+- allow color printing function use inline
+- added and updated comments / TODO's
+- allow DB driver selection
+- fix uninstall dsiprouter to not fail on pip cmd
+- fix configurePythonSettings issue
+- add support for debian8 (jessie)
+- add support for ubuntu 16.04 (xenial)
+- add support for amazon linux 2
+- fix false negatives on install starting services
+- add color to usage cmd output
+
+
+---
+
+
 ### Update Version Number for Release v0.52
 
 > Branches Affected: feature-ami  

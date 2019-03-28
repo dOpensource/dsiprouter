@@ -26,17 +26,13 @@ function install {
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
     # Update the repo
-    apt-get update
+    apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -q -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
+    apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
 
     # Enable MySQL and Kamailio for system startup
     systemctl enable mysql
-
-    # Make sure mysql starts before Kamailio
-#    sed -i s/After=.*/After=mysqld.service/g /lib/systemd/system/kamailio.service
-    systemctl daemon-reload
     systemctl enable kamailio
 
     # Make sure no extra configs present on fresh install
@@ -68,6 +64,7 @@ EOF
     echo "INSTALL_DBUID_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
         echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
+        echo "PWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
         echo "DBROOTPWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     else
         echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc

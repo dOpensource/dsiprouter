@@ -23,6 +23,7 @@ function install {
     apt-get install -y libmariadbclient-dev
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
+    apt-get install -y dkms
 
     # try upgrading debhelper with backports if lower ver than 10
     CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
@@ -30,6 +31,20 @@ function install {
         CODENAME=$(cat /etc/os-release | grep '^VERSION=' | cut -d '(' -f 2 | cut -d ')' -f 1)
         BACKPORT_REPO="${CODENAME}-backports"
         apt-get install -y -t ${BACKPORT_REPO} debhelper
+
+        # if current backports fail (again aws repo's are not very reliable) try and older repo
+        if [ $? -ne 0 ]; then
+            printf '%s\n%s\n' \
+                "deb http://archive.debian.org/debian-archive/debian/ ${CODENAME}-backports main" \
+                "deb-src http://archive.debian.org/debian-archive/debian/ ${CODENAME}-backports main" \
+                > /etc/apt/sources.list.d/tmp-backports.list
+            apt-get -o Acquire::Check-Valid-Until=false update -y
+
+            apt-get -o Acquire::Check-Valid-Until=false install -y -t ${BACKPORT_REPO} debhelper
+            rm -f /etc/apt/sources.list.d/tmp-backports.list
+        fi
+
+        # pin debhelper package to stay on backports repo
         printf '%s\n%s\n%s\n' \
             "Package: debhelper" \
             "Pin: release n=${BACKPORT_REPO}" \
@@ -58,9 +73,6 @@ function install {
         echo "Problem installing RTPEngine DEB's"
         exit 1
     fi
-
-    # Stop the service after it's installed.  We need to configure it first
-    systemctl stop ngcp-rtpengine-daemon
 
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}

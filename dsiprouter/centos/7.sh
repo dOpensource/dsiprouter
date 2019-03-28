@@ -62,7 +62,7 @@ function uninstall {
     # Uninstall dependencies for dSIPRouter
     PIP_CMD="pip"
 
-    /usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
+    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
     if [ $? -eq 1 ]; then
         echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
         exit 1

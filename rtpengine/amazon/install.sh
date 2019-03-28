@@ -18,14 +18,19 @@ function install {
     }
 
     # Install required libraries
-    yum install -y epel-release
-    yum install -y logrotate rsyslog
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    yum-config-manager -y --add-repo https://negativo17.org/repos/epel-multimedia.repo
+    sed -i 's|$releasever|7|g' /etc/yum.repos.d/epel-multimedia.repo
     rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
     rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
+
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb iptables-ipv6 nc dkms
-    yum install -y redhat-rpm-config rpm-build pkgconfig
+        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel gperf redhat-lsb iptables-ipv6 redhat-rpm-config rpm-build pkgconfig \
+        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog
+
+    yum --disablerepo='*' --enablerepo='epel-multimedia' install -y libbluray libbluray-devel
+    yum install -y ffmpeg ffmpeg-devel
 
     installKernelDevHeaders
 

@@ -30,10 +30,13 @@ ROLE = ''
 # MySQL settings for kamailio
 
 # Database cluster
-# KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11','50.237.20.12']
+#KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11','50.237.20.12']
 # Single Host
 KAM_DB_HOST = 'localhost'
-
+# Database Engine Driver to connect with (leave empty for default)
+# supported drivers:    mysqldb | pymysql
+# see sqlalchemy docs for more info: <https://docs.sqlalchemy.org/en/latest/core/engines.html>
+KAM_DB_DRIVER = ''
 KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'

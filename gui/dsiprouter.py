@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, signal
 from copy import copy
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
