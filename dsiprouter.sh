@@ -8,7 +8,10 @@
 #
 # Supported OS:
 # Debian 9 (stretch)
+# Debian 8 (jessie)
 # CentOS 7
+# Amazon Linux 2
+# Ubuntu 16.04 (xenial)
 #
 # Notes:
 # In general exported variables & functions
@@ -19,9 +22,11 @@
 # allow user to move carriers freely between carrier groups
 # allow a carrier to be in more than one carrier group
 # add ncurses selection menu for enabling / disabling modules
-# improve templating schema for changing kam config values on install
 # seperate kam config into smaller sections and import from main cfg
 # seperate gui routes into smaller sections and import as blueprints
+# allow loading python configs and kam configs from db
+# track, organize, and better manage dependencies
+# allow hot-reloading password from python configs while dsiprouter running
 #
 #===========================================================#
 
@@ -135,17 +140,25 @@ export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 #===========================================================#
 DSIP_SERVER_DOMAIN="$(hostname -f)"    # DNS domain we are using
 
-# Get Linux Distro
-if [ -f /etc/redhat-release ]; then
- 	export DISTRO="centos"
- 	export DISTRO_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
-elif [ -f /etc/debian_version ]; then
-	export DISTRO="debian"
-	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
-elif [[ "$(cat /etc/os-release | grep '^ID=' 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2)" == "amzn" ]]; then
+# Get Linux Distro and Version, and normalize values for later use
+DISTRO=$(getDisto)
+# check downstream Distro's first, then check upstream Distro's if no match
+if [[ "$DISTRO" == "amzn" ]]; then
 	export DISTRO="amazon"
 	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+elif [[ "$DISTRO" == "ubuntu" ]]; then
+	export DISTRO="ubuntu"
+	export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+else
+    if [ -f /etc/redhat-release ]; then
+        export DISTRO="centos"
+        export DISTRO_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
+    elif [ -f /etc/debian_version ]; then
+        export DISTRO="debian"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    fi
 fi
+
 # Check if we are on AWS Instance
 export AWS_ENABLED=0
 # Will try to access the AWS metadata URL and will return an exit code of 22 if it fails
@@ -187,12 +200,12 @@ function cleanupAndExit {
 function validateOSInfo {
     if [[ "$DISTRO" == "debian" ]]; then
         case "$DISTRO_VER" in
-            9)
+            9|8)
                 if [[ -z "$KAM_VERSION" ]]; then
                    KAM_VERSION=51
                 fi
                 ;;
-            7|8)
+            7)
                 printerr "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
                 cleanupAndExit 1
                 ;;
@@ -225,6 +238,18 @@ function validateOSInfo {
                 cleanupAndExit 1
                 ;;
         esac
+    elif [[ "$DISTRO" == "ubuntu" ]]; then
+        case "$DISTRO_VER" in
+            16.04)
+                if [[ -z "$KAM_VERSION" ]]; then
+                    KAM_VERSION=51
+                fi
+                ;;
+            *)
+                printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+                cleanupAndExit 1
+                ;;
+        esac
     else
         printerr "Your Operating System is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
         cleanupAndExit 1
@@ -241,17 +266,19 @@ function initialChecks {
     # make sure dirs exist (ones that may not yet exist)
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR}
 
-    if [[ "$DISTRO" == "debian" ]]; then
+    if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
         # make sure we run package installs unattended
         export DEBIAN_FRONTEND="noninteractive"
         # default dpkg to noninteractive modes for install
-        (echo << 'EOF'
+        (cat << 'EOF'
 Dpkg::Options {
 "--force-confdef";
-"--force-confold";
+"--force-confnew";
 }
+
+APT::Get::Fix-Missing "1";
 EOF
         ) > /etc/apt/apt.conf.d/local
     fi
@@ -369,22 +396,22 @@ export -f setPythonCmd
 
 # set dynamic python config settings
 function configurePythonSettings {
-    setConfigAttrib -q 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE}
-    setConfigAttrib -q 'DSIP_PROTO' "$DSIP_GUI_PROTOCOL" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PROTO' "$DSIP_GUI_PROTOCOL" ${DSIP_CONFIG_FILE} -q
 }
 
 # update settings file based on cmdline args
 # should be used prior to app execution
 function updatePythonRuntimeSettings {
     if (( ${DEBUG} == 1 )); then
-        setConfigAttrib 'DEBUG' 'True'
+        setConfigAttrib 'DEBUG' 'True' ${DSIP_CONFIG_FILE}
     else
-        setConfigAttrib 'DEBUG' 'False'
+        setConfigAttrib 'DEBUG' 'False' ${DSIP_CONFIG_FILE}
     fi
 }
 
@@ -417,8 +444,8 @@ function updateRtpengineConfig {
 function configureKamailio {
     cd ${DSIP_PROJECT_DIR}
 
-    # copy template of kamailio configuration to a working copy
-    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.tpl ${DSIP_KAMAILIO_CONFIG_FILE}
+    # copy of template kamailio configuration to dsiprouter system config dir
+    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     # set kamailio version in kam config
     sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
 
@@ -615,7 +642,7 @@ function installRTPEngine {
 
     # Restart RTPEngine with the new configurations
     systemctl restart rtpengine
-    if [ $? -eq 0 ]; then
+    if systemctl is-active --quiet rtpengine; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
         printdbg "------------------------------------"
         pprint "RTPEngine Installation is complete!"
@@ -680,15 +707,19 @@ function installDsiprouter {
 	if [ $? -ne 0 ]; then
 	    printerr "dSIPRouter install failed"
 	    cleanupAndExit 1
+	else
+	    printdbg "Configuring dSIPRouter settings"
 	fi
 
  	setPythonCmd
-    if [ $? -eq 0 ]; then
-        # configure dsiprouter modules
-	    installModules
-        # set some defaults in settings.py
-        configurePythonSettings
+    if [ $? -ne 0 ]; then
+        printerr "dSIPRouter install failed"
+        cleanupAndExit 1
     fi
+    # configure dsiprouter modules
+    installModules
+    # set some defaults in settings.py
+    configurePythonSettings
 
 	# configure SSL
     if [ ${WITH_SSL} -eq 1 ]; then
@@ -701,8 +732,8 @@ function installDsiprouter {
         # add password reset to boot process (for AMI depends on network)
         addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
         addDependsOnInit "dsiprouter.service"
-        # Required changes for Debian AMI's
-        if [[ $DISTRO == "debian" ]]; then
+        # Required changes for Debian-based AMI's
+        if [[ $DISTRO == "debian" ]] || [[ $DISTRO == "ubuntu" ]]; then
             # Remove debian-sys-maint password for initial AMI scan
             sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
 
@@ -742,7 +773,7 @@ EOF
 
     # Restart dSIPRouter with new configurations
     systemctl restart dsiprouter
-    if [ $? -eq 0 ]; then
+    if systemctl is-active --quiet dsiprouter; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
         printdbg "-------------------------------------"
         pprint "dSIPRouter Installation is complete! "
@@ -766,7 +797,7 @@ function uninstallDsiprouter {
     ./dsiprouter/$DISTRO/$DISTRO_VER.sh uninstall
 
     if [ $? -ne 0 ]; then
-        echo "dsiprouter uninstall failed"
+        printerr "dsiprouter uninstall failed"
         cleanupAndExit 1
     fi
 
@@ -799,7 +830,7 @@ function installKamailio {
     if [ $? -eq 0 ]; then
         # configure kamailio settings
         configureKamailio
-        echo "Kamailio was installed!"
+        echo "Configuring Kamailio service"
     else
         printerr "kamailio install failed"
         cleanupAndExit 1
@@ -811,7 +842,7 @@ function installKamailio {
 
     # Restart Kamailio with the new configurations
     systemctl restart kamailio
-    if [ $? -eq 0 ]; then
+    if systemctl is-active --quiet kamailio; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
         printdbg "-----------------------------------"
         pprint "Kamailio Installation is complete!"
@@ -871,20 +902,29 @@ function installModules {
 installSipsak() {
     local START_DIR="$(pwd)"
 
-    if cmdExists 'sipsak'; then
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled" ]; then
         printwarn "SipSak is already installed"
         return
     else
         printdbg "Attempting to install SipSak"
     fi
 
-    # Install requirements
-    if [[ "$DISTRO" == "debian" ]]; then
+    # Install sipsak requirements
+    if cmdExists 'apt'; then
         apt-get install -y make gcc g++ automake autoconf openssl check git dirmngr pkg-config dh-autoreconf
-    elif [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "amazon" ]]; then
+    elif cmdExists 'yum'; then
         yum install -y make gcc gcc-c++ automake autoconf openssl check git
     fi
 
+    # Install testing requirements (will move this in the future)
+    if cmdExists 'apt'; then
+        apt-get install -y perl perl-CPAN
+    elif cmdExists 'yum'; then
+        yum install -y perl perl-CPAN
+    fi
+    perl -MCPAN -e 'install URI::Escape'
+
+    # compile and install from src
     rm -rf ${SRC_DIR}/sipsak 2>/dev/null
 	git clone https://github.com/nils-ohlmeier/sipsak.git ${SRC_DIR}/sipsak
 
@@ -897,6 +937,7 @@ installSipsak() {
 
 	if [ $ret -eq 0 ]; then
 		pprint "SipSak was installed"
+		touch ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
 	else
 		printerr "SipSak install failed.. continuing without it"
 	fi
@@ -908,11 +949,18 @@ installSipsak() {
 uninstallSipsak() {
     local START_DIR="$(pwd)"
 
+    if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled" ]; then
+	    printwarn "sipsak is not installed or failed during install - uninstalling anyway to be safe"
+	fi
+
 	if [ -d ${SRC_DIR}/sipsak ]; then
 		cd ${SRC_DIR}/sipsak
 		make uninstall
 		rm -rf ${SRC_DIR}/sipsak
 	fi
+
+	# Remove the hidden installed file, which denotes if it's installed or not
+	rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
 
 	cd ${START_DIR}
 }
@@ -1022,7 +1070,6 @@ function stop {
 }
 
 function displayLoginInfo {
-    
     printf '\n'
     printdbg "The username and dynamically generated password are below:"
 
@@ -1188,12 +1235,12 @@ function usageOptions {
 
     linebreak
     printf '\n%s\n%s\n' \
-        "USAGE:" \
+        "$(pprint -n USAGE:)" \
         "$0 <command> [options]"
 
     linebreak
-    printf "\n%-30s %s\n" \
-        "COMMAND" "OPTIONS"
+    printf "\n%-s%24s%s\n" \
+        "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n" \
         "install" "-debug|-exip <ip>|--external-ip=<ip>|-servernat|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine"
     printf "%-30s %s\n" \
@@ -1223,7 +1270,7 @@ function usageOptions {
 
     linebreak
     printf '\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' \
-        "SUMMARY:" \
+        "$(pprint -n SUMMARY:)" \
         "dSIPRouter is a Web Management GUI for Kamailio based on use case design, with a focus on ITSP and Carrier use cases." \
         "This means that we aren’t a general purpose GUI for Kamailio." \
         "If that's required then use Siremis, which is located at http://siremis.asipto.com/" \
@@ -1233,13 +1280,13 @@ function usageOptions {
 
     linebreak
     printf '\n%s\n%s\n%s\n\n' \
-        "MORE INFO:" \
+        "$(pprint -n MORE INFO:)" \
         "Full documentation is available online: https://dsiprouter.readthedocs.io" \
         "Support is available from dOpenSource.  Visit us at https://dopensource.com/dsiprouter or call us at 888-907-2085"
 
     linebreak
     printf '\n%s\n%s\n%s\n\n' \
-        "PROVIDED BY:" \
+        "$(pprint -n PROVIDED BY:)" \
         "dOpenSource | A Flyball Company" \
         "Made in Detroit, MI USA"
 

@@ -4,6 +4,7 @@ Flask_Script
 mysqlclient
 psycopg2
 psycopg2_binary
+PyMySQL
 pyspark
 requests
 SQLAlchemy

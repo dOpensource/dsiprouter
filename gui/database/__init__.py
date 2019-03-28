@@ -12,11 +12,14 @@ if settings.KAM_DB_TYPE == "mysql":
         try:
             import _mysql as db_driver
         except ImportError:
-            raise
-        except Exception as ex:
-            if settings.DEBUG:
-                debugException(ex, log_ex=False, print_ex=True, showstack=False)
-            raise
+            try:
+                import pymysql as db_driver
+            except ImportError:
+                raise
+            except Exception as ex:
+                if settings.DEBUG:
+                    debugException(ex, log_ex=False, print_ex=True, showstack=False)
+                raise
 
 
 class Gateways(object):
@@ -301,13 +304,17 @@ def getDBURI():
     uri_list = []
 
     if settings.KAM_DB_TYPE != "":
-        sql_uri = settings.KAM_DB_TYPE + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + "{host}" + "/" + settings.KAM_DB_NAME
+        sql_uri = settings.KAM_DB_TYPE + "{driver}" + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + "{host}" + "/" + settings.KAM_DB_NAME
+
+        driver = ""
+        if len(settings.KAM_DB_DRIVER) > 0:
+            driver = '+{}'.format(settings.KAM_DB_DRIVER)
 
         if isinstance(settings.KAM_DB_HOST, list):
-            for db_host in settings.KAM_DB_HOST:
-                uri_list.append(sql_uri.format(host=db_host))
+            for host in settings.KAM_DB_HOST:
+                uri_list.append(sql_uri.format(host=host, driver=driver))
         else:
-            uri_list.append(sql_uri.format(host=settings.KAM_DB_HOST))
+            uri_list.append(sql_uri.format(host=settings.KAM_DB_HOST, driver=driver))
 
     if settings.DEBUG:
         IO.printdbg('getDBURI() returned: [{}]'.format(','.join('"{0}"'.format(uri) for uri in uri_list)))

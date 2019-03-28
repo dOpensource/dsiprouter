@@ -1,16 +1,11 @@
 #!/usr/bin/env bash
 
-# import library functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
-
 set -x 
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get install -y --allow-unauthenticated libmysqlclient-dev libmariadb-client-lgpl-dev
-    apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
-    apt-get install -y logrotate rsyslog perl pandoc
-    easy_install3 pip
+    apt-get install -y build-essential curl python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+    apt-get install -y logrotate rsyslog perl
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -29,9 +24,6 @@ function install {
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
-
-    # debian v8 fails using mysqldb connector, set pymysql as default driver
-    setConfigAttrib 'KAM_DB_DRIVER' 'pymysql' ${DSIP_CONFIG_FILE} -q
 
     # Setup dSIPRouter Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf

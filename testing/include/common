@@ -9,6 +9,11 @@ ANSI_YELLOW="${ESC_SEQ}1;33m"
 ANSI_CYAN="${ESC_SEQ}1;36m"
 ANSI_WHITE="${ESC_SEQ}1;37m"
 
+# Configured by install script
+PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh"
+# Import path updates so we don't have to reload shell to test
+. ${PATH_UPDATE_FILE}
+
 # Portable Printing functions (no newline by default)
 printerr() {
     printf "%b%s%b" "${ANSI_RED}" "$*" "${ANSI_NONE}"

@@ -6,9 +6,12 @@ set -x
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+    apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld sngrep
     apt-get install -y logrotate rsyslog perl
     easy_install3 pip
+
+    # perl module needed for testing functions
+    perl -MCPAN -e 'install URI::Escape'
 
     # Reset python cmd in case it was just installed
     setPythonCmd

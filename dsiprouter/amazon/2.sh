@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
 
-# import library functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+#PYTHON_CMD=python3.5
 
-set -x 
+set -x
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get install -y --allow-unauthenticated libmysqlclient-dev libmariadb-client-lgpl-dev
-    apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
-    apt-get install -y logrotate rsyslog perl pandoc
-    easy_install3 pip
+    yum remove -y rs-epel-release*
+
+    yum install -y yum-utils
+    yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
+    yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+    yum install -y firewalld
+    yum install -y python36u python36u-libs python36u-devel python36u-pip
+    yum install -y logrotate rsyslog perl
 
     # Reset python cmd in case it was just installed
     setPythonCmd
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl start firewalld
+
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
 
     # Setup Firewall for DSIP_PORT
-    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-    firewall-cmd --reload
+    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp 
+    
+   # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl restart firewalld
 
     PIP_CMD="pip"
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
@@ -29,9 +38,6 @@ function install {
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
-
-    # debian v8 fails using mysqldb connector, set pymysql as default driver
-    setConfigAttrib 'KAM_DB_DRIVER' 'pymysql' ${DSIP_CONFIG_FILE} -q
 
     # Setup dSIPRouter Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
@@ -45,18 +51,18 @@ function install {
     perl -p -e "s|^(ExecStart\=).+?([ \t].*)|\1$PYTHON_CMD\2|;" \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
-        -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
-    chmod 644 /etc/systemd/system/dsiprouter.service
+    chmod 0644 /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
-    systemctl enable dsiprouter.service
+    systemctl enable dsiprouter
 }
+
 
 function uninstall {
     # Uninstall dependencies for dSIPRouter
     PIP_CMD="pip"
 
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
+    /usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
     if [ $? -eq 1 ]; then
         echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
         exit 1
@@ -65,7 +71,14 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+    yum remove -y python36u\*
+    yum remove -y ius-release
+    yum groupremove -y "Development Tools"
+
+    # Remove the repos
+    rm -f /etc/yum.repos.d/ius*
+    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
+    yum clean all
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
@@ -82,6 +95,7 @@ function uninstall {
     rm -f /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
 }
+
 
 case "$1" in
     uninstall|remove)
