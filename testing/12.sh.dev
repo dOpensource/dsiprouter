@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -x
+
+. include/common
+
+unitname="dSIP Custom Routing"
+
+# static settings
+username="smoketest"
+host="localhost"
+port="5060"
+
+# TODO: add custom routes to db
+# - locality prefix matching
+# - custom kamailio route matching
+# mysql -e 'insert into custom_routing ...'
+# mysql -e 'insert into dr_rules ...'
+
+# TODO: send invite to test routes
+# we should be using a template INVITE and replacing values with sed
+#sipsak -f INVITE.sip -s sip:$username@$host:$port -H $host -vvv >/dev/null
+
+process_result "$unitname" $ret

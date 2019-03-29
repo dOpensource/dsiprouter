@@ -96,66 +96,38 @@ The following screenshot(s) shows how to configure a chanSIP trunk within FreePB
 1. Log into FreePBX server
 2. Click Connectivity→Trunks
 3. Select Add SIP (chan_sip) Trunk
-
-
-.. image:: images/add_trunk.PNG
-         :align: center
-		
-
-		
 4. Under General tab enter 
-   The following fields needs to be entered
+  
+  The following fields needs to be entered
 
 ==================   ============
 Field                Value
 ==================   ============
-Trunk Name           Type Desired name
+Trunk Name           Labeled in dsiprouter
 Outbound Caller ID   Phone# that you want to appear during a outbound call (if applicable)
 ==================   ============
-   
-   
-      
-
-.. image:: images/sipchan_general.PNG
-        :align: center
-		
-		
-5. Click Submit
-
-**NOTE**  If messsage box appears, click Cancel to return back or click OK to continue.
+ 
+ 
+ .. image:: images/sipchan_general.PNG
+         :align: center
+       
 
 
-.. image:: images/sipchan_outbound.PNG
-        :align: center 		
-
-
-		
-6. Be sure to click the **Apply Config** button after submitting to confirm.
-
-
-.. image:: images/apply_config_button.PNG
-        :align: center
-
-
-You will now be able to see the new chanSIP added in the truck.	
-
-.. image:: images/sipchan_added.PNG
-        :align: center
-	
-		
-Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls. You will need the following information:
+5. Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls by selecting the **Outbound** tab. You will need the following information:
 The following fields needs to be entered
 
 ==================   ============
 Field                Value
 ==================   ============
 Host                 <host name or IP address of dsiprouter> 
-Username             <Specified in dsiprouter>
+Username             <Specified in dsiprouter@domainname>
 Secret               <Specified in dsiprouter>
 Type                 peer
 Context              from-trunk
 ==================   ============
 
+
+**The domain name has to be included and correct.**
 
 
 .. image:: images/chansip_outgoing.PNG
@@ -164,9 +136,10 @@ Context              from-trunk
 
 NOTE:** Type <context=from-trunk> underneath the <type=peer> in the Peer Details box if it does not appear.
 
-8. Next you will enter the configurations for incoming under the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
+6. Next you will enter the configurations for incoming by selecting the **Incoming** tab in the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:
 
-The following fields needs to be entered
+User Context: This is most often the account name or number your provider expects. In this example we named it "inbound".
+The following User Details needs to be entered:
 
 ==================   ============
 Field                Value
@@ -178,60 +151,80 @@ Context              from-trunk
 ==================   ============
 
 
-
-
 .. image:: images/chansip_incoming.PNG
         :align: center
+
+In the **Register String** enter: <username@domainname>:<password>@<ip address **or** hostname>. In this example it would be sipchantest@sip.dsiprouter.org:HFmx9u9N@demo.dsiprouter.org. **The domain name has to be included and correct.**
+
+.. image:: images/register_string.PNG
+        :align: center
+
+
+
+7. Click Submit
+
+8. Be sure to click the **Apply Config** button after submitting to confirm.
+
+
+.. image:: images/apply_config_button.PNG
+        :align: center
+
+You will now be able to see the new chanSIP added in the truck.	
+
+
+.. image:: images/add_trunk.PNG
+        :align: center
 		
-9. Click Submit.
-
-10. Next you will need to setup an outbound route.  Select Connectivity→ Outbound Routes. Click the “+” sign to add a outbound route. In this tab you will need to enter:
-
-==================   ============
-Field                Value
-==================   ============
-Route Name           Type desired name
-Route CID            Outbound
-Trunk Sequence for
-  Matched Routes     Trunk name
-==================   ============
 
 
+		
+9. Next you will need to setup an outbound route. Select Connectivity→ Outbound Routes. Click the “+” sign to add a outbound route. In this tab you will need to enter:
 
+=================================   ============
+Field                               Value
+=================================   ============
+Route Name                          Type desired name
+Route CID                           Number you want to appear on caller ID
+Trunk Sequence for Matched Routes   Trunk name (select from drop down box)
+=================================   ============
 
 .. image:: images/outbound_routes_chansip.PNG
         :align: center
-		
-11. Click the Dial Patterns tab to set the dial patterns.
-		
-.. image:: images/dialpla_chansip.PNG
+
+10. Click the Dial Patterns tab to set the dial patterns. 
+If you are familiar with dial patterns, you can enter the dial patterns manually or you can click the Dial Patterans Wizard to auto create dial patterns if you like. You can choose 7, 10 or 11 digit patterns. Click Generate Routes.
+
+
+.. image:: images/chansip_dial_wizard.PNG
         :align: center
-		
-	Dial pattern is set to your preference. Prefixes are optional, not required.	
+
+
+Dial pattern is set to your preference. Prefixes are optional, not required.
 
 
 .. image:: images/chansip_dial_pattern.PNG
         :align: center
 
-12. Click Submit and Apply Config button.
 
-You can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example using a softphone:
-In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter:
+11. Click Submit and Apply Config button.
+
+Assuming you already have an extention created in your FreePBX, you can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:
 		
 ==================   ============
 Field                Value
 ==================   ============
 Username             <extension>@<siptrunkipaddress>
 secret               <Password of that extension>
-Proxy		     <IP address of your dsiprouter>
+Hostname	     <IP address of your FreePBX> (should autofill)
 ==================   ============
+**Note** Skip Authenication and Outbound Proxy
 
 
 
 .. image:: images/chansip_zoiper.PNG
         :align: center
 		
-		You should now be able to make a inbound and outbound call successfully!
+You should now be able to make a inbound and outbound call successfully!
 		
 		
 

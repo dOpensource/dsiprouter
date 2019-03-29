@@ -1,7 +1,8 @@
 Command Line Options 
 ==========================
 
-Implement "./dsiprouter sh" followed by one of the listed options for the dsiprouter command lines.
+Execute "./dsiprouter.sh" followed by one of the listed options for the dsiprouter command lines. 
+**NOTE** You must be in the directory where dSIPRouter was installed, which is /opt/dsiprouter to execute these commands.
 
 ===================================  ======================================================================================================
 Option                               What does it do?                                 
@@ -19,7 +20,7 @@ To start dSIPRouter:
 
 ::
 
-./dsiprouter sh start
+./dsiprouter.sh start
 
 |
 
@@ -27,7 +28,7 @@ To stop dSIPRouter:
 
 ::
 
-./dsiprouter sh stop
+./dsiprouter.sh stop
 
 |
 
@@ -35,7 +36,7 @@ To restart dSIPRouter:
 
 ::
 
-./dsiprouter sh restart
+./dsiprouter.sh restart
 
 |
 
@@ -43,7 +44,7 @@ To uninstall dSIPRouter:
 
 ::
 
-./dsiprouter sh unistall
+./dsiprouter.sh unistall
 
 |
 

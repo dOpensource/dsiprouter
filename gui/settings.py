@@ -1,6 +1,7 @@
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
 
+DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
@@ -14,13 +15,13 @@ DSIP_LOG_FACILITY = 18
 
 # ssl key / cert paths
 # email for re-certification (must match certs)
-SSL_KEY = ""
-SSL_CERT = ""
-SSL_EMAIL = ""
+DSIP_SSL_KEY = ""
+DSIP_SSL_CERT = ""
+DSIP_SSL_EMAIL = ""
 
 # dSIPRouter internal settings
 
-VERSION = 0.51
+VERSION = 0.52
 DEBUG = False
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
@@ -29,10 +30,13 @@ ROLE = ''
 # MySQL settings for kamailio
 
 # Database cluster
-# KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11','50.237.20.12']
+#KAM_DB_HOST = ['64.129.84.11','64.129.84.12','50.237.20.11','50.237.20.12']
 # Single Host
 KAM_DB_HOST = 'localhost'
-
+# Database Engine Driver to connect with (leave empty for default)
+# supported drivers:    mysqldb | pymysql
+# see sqlalchemy docs for more info: <https://docs.sqlalchemy.org/en/latest/core/engines.html>
+KAM_DB_DRIVER = ''
 KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
@@ -41,7 +45,7 @@ KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
-
+RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # SQLAlchemy Settings
 
@@ -51,6 +55,8 @@ SQLALCHEMY_SQL_DEBUG = False
 
 FLT_CARRIER = 8
 FLT_PBX = 9
+FLT_OUTBOUND = 8000
+FLT_INBOUND = 9000
 
 # The domain used to create user accounts for PBX and Endpoint registrations
 

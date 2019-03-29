@@ -6,21 +6,26 @@ set -x
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
-    apt-get install -y logrotate rsyslog
+    apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld sngrep
+    apt-get install -y logrotate rsyslog perl
     easy_install3 pip
+
+    # perl module needed for testing functions
+    perl -MCPAN -e 'install URI::Escape'
 
     # Reset python cmd in case it was just installed
     setPythonCmd
 
-    # Setup Firewall for DSIP_PORT
-    systemctl start firewalld
+    # Enable and start firewalld if not already running
     systemctl enable firewalld
+    systemctl start firewalld
+
+    # Setup Firewall for DSIP_PORT
     firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
     PIP_CMD="pip"
-    $PYTHON_CMD -m ${PIP_CMD} install -r ./gui/requirements.txt
+    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
     if [ $? -eq 1 ]; then
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
@@ -32,21 +37,31 @@ function install {
     systemctl restart rsyslog
 
     # Setup logrotate
-    cp -f ${DSIP_PROJECT_DIR}/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
+    cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-    sed -i s+PYTHON_CMD+$PYTHON_CMD+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-    sed -i s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp
-
-    cp -f ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/debian/dsiprouter.service.tmp /lib/systemd/system/dsiprouter.service
-    chmod 644 /lib/systemd/system/dsiprouter.service
+    perl -p -e "s|^(ExecStart\=).+?([ \t].*)|\1$PYTHON_CMD\2|;" \
+        -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
+        -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
+        ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
+    chmod 644 /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter.service
 }
 
 function uninstall {
     # Uninstall dependencies for dSIPRouter
+    PIP_CMD="pip"
+
+    /usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
+    if [ $? -eq 1 ]; then
+        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
+        exit 1
+    else
+        echo "DSIPRouter uninstall was successful"
+        exit 0
+    fi
+
     apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
 
     # Remove Firewall for DSIP_PORT
@@ -61,35 +76,18 @@ function uninstall {
 
     # Remove dSIProuter as a service
     systemctl disable dsiprouter.service
-    rm /lib/systemd/system/dsiprouter.service
+    rm -f /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
-
-    PIP_CMD="pip"
-
-    /usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
-    if [ $? -eq 1 ]; then
-        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
-        exit 1
-    else
-        echo "DSIPRouter uninstall was successful"
-        exit 0
-    fi
 }
 
 case "$1" in
     uninstall|remove)
-        #Remove
-        PYTHON_CMD=$3
-        DSIP_PORT=$2
-        $1
+        uninstall
         ;;
     install)
-        #Install
-        PYTHON_CMD=$3
-        DSIP_PORT=$2
-        $1
+        install
         ;;
     *)
-        echo "usage $0 [install <dsip_port> <python_cmd> | uninstall <dsip_port> <python_cmd>]"
+        echo "usage $0 [install | uninstall]"
         ;;
 esac

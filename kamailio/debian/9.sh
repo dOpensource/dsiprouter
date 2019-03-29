@@ -7,6 +7,13 @@ function install {
     apt-get install -y curl wget sed gawk vim perl
     apt-get install -y logrotate rsyslog
 
+    # create kamailio user and group
+    mkdir -p /var/run/kamailio
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
+    chown -R kamailio:kamailio /var/run/kamailio
+
     grep -ioP '.*deb.kamailio.org/kamailio[0-9]* stretch.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
     if [ $? -eq 1 ]; then
@@ -19,7 +26,7 @@ function install {
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
     # Update the repo
-    apt-get update
+    apt-get update -y
 
     # Install Kamailio packages
     apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server
@@ -37,6 +44,21 @@ function install {
 
     # Start MySQL
     systemctl start mysql
+
+    # create kamailio defaults config
+    (cat << 'EOF'
+ RUN_KAMAILIO=yes
+ USER=kamailio
+ GROUP=kamailio
+ SHM_MEMORY=64
+ PKG_MEMORY=8
+ PIDFILE=/var/run/kamailio/kamailio.pid
+ CFGFILE=/etc/kamailio/kamailio.cfg
+ #DUMP_CORE=yes
+EOF
+    ) > /etc/default/kamailio
+    # create kamailio tmp files
+    echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
@@ -58,13 +80,14 @@ function install {
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl start firewalld
+
     # Firewall settings
-    firewall-cmd --zone=public --add-port=5060/udp --permanent
-
-    if [ -n "$DSIP_PORT" ]; then
-        firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-    fi
-
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Setup kamailio Logging
@@ -116,18 +139,12 @@ function uninstall {
 
 case "$1" in
     uninstall|remove)
-        #Remove Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        uninstall
         ;;
     install)
-        #Install Kamailio
-        DSIP_PORT=$3
-        KAM_VERSION=$2
-        $1
+        install
         ;;
     *)
-        echo "usage $0 [install <kamailio version> <dsip_port> | uninstall <kamailio version> <dsip_port>]"
+        echo "usage $0 [install | uninstall]"
         ;;
 esac

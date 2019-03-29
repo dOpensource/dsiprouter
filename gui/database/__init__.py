@@ -5,6 +5,21 @@ from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy import exc as sql_exceptions
 import settings
 from shared import IO, debugException, hostToIP
+if settings.KAM_DB_TYPE == "mysql":
+    try:
+        import MySQLdb as db_driver
+    except ImportError:
+        try:
+            import _mysql as db_driver
+        except ImportError:
+            try:
+                import pymysql as db_driver
+            except ImportError:
+                raise
+            except Exception as ex:
+                if settings.DEBUG:
+                    debugException(ex, log_ex=False, print_ex=True, showstack=False)
+                raise
 
 
 class Gateways(object):
@@ -64,12 +79,11 @@ class InboundMapping(object):
 
     gwname = Column(String)
 
-    def __init__(self, groupid, prefix, gateway,description=''):
+    def __init__(self, groupid, prefix, gwlist, notes=''):
         self.groupid = groupid
         self.prefix = prefix
-        self.gwlist = gateway
-        if description is not None:
-            self.description=description
+        self.gwlist = gwlist
+        self.description = notes
         self.timerec = ''
         self.routeid = ''
 
@@ -290,13 +304,17 @@ def getDBURI():
     uri_list = []
 
     if settings.KAM_DB_TYPE != "":
-        sql_uri = settings.KAM_DB_TYPE + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + "{host}" + "/" + settings.KAM_DB_NAME
+        sql_uri = settings.KAM_DB_TYPE + "{driver}" + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + "{host}" + "/" + settings.KAM_DB_NAME
+
+        driver = ""
+        if len(settings.KAM_DB_DRIVER) > 0:
+            driver = '+{}'.format(settings.KAM_DB_DRIVER)
 
         if isinstance(settings.KAM_DB_HOST, list):
-            for db_host in settings.KAM_DB_HOST:
-                uri_list.append(sql_uri.format(host=db_host))
+            for host in settings.KAM_DB_HOST:
+                uri_list.append(sql_uri.format(host=host, driver=driver))
         else:
-            uri_list.append(sql_uri.format(host=settings.KAM_DB_HOST))
+            uri_list.append(sql_uri.format(host=settings.KAM_DB_HOST, driver=driver))
 
     if settings.DEBUG:
         IO.printdbg('getDBURI() returned: [{}]'.format(','.join('"{0}"'.format(uri) for uri in uri_list)))
@@ -330,7 +348,10 @@ def createValidEngine(uri_list):
         for ex in errors:
             debugException(ex, log_ex=False, print_ex=True, showstack=False)
 
-    raise sql_exceptions.SQLAlchemyError(errors)
+    try:
+        raise sql_exceptions.SQLAlchemyError(errors)
+    except:
+        raise Exception(errors)
 
 # TODO: we should be creating a queue of the valid db_engines
 # from there we can perform round connections and more advanced clustering
