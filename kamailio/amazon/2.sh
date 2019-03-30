@@ -4,10 +4,11 @@ set -x
 
 function install() {
     # Install Dependencies
-    yum groupinstall -y 'core'
-    yum groupinstall -y 'base'
-    yum groupinstall -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld
+    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'core'
+    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'base'
+    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    yum install -y psmisc curl wget sed gawk vim perl firewalld
     yum install -y logrotate rsyslog
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server

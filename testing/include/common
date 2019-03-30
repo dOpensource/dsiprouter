@@ -1,13 +1,116 @@
-function process_result() {
+#!/usr/bin/env bash
 
-if [ $2 = 0 ]; then
-	echo -e "\e[32m$1\e[0m test was successful"
-	return 0
-else
+# Ansi Colors
+ESC_SEQ="\033["
+ANSI_NONE="${ESC_SEQ}39;49;00m" # Reset colors
+ANSI_RED="${ESC_SEQ}1;31m"
+ANSI_GREEN="${ESC_SEQ}1;32m"
+ANSI_YELLOW="${ESC_SEQ}1;33m"
+ANSI_CYAN="${ESC_SEQ}1;36m"
+ANSI_WHITE="${ESC_SEQ}1;37m"
 
-	echo -e "\e[31m$1\e[0m test was NOT successful"
-	return 1
-fi
+# Configured by install script
+PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh"
+# Import path updates so we don't have to reload shell to test
+. ${PATH_UPDATE_FILE}
 
+# Portable Printing functions (no newline by default)
+printerr() {
+    printf "%b%s%b" "${ANSI_RED}" "$*" "${ANSI_NONE}"
+}
 
+printwarn() {
+    printf "%b%s%b" "${ANSI_YELLOW}" "$*" "${ANSI_NONE}"
+}
+
+printdbg() {
+    printf "%b%s%b" "${ANSI_GREEN}" "$*" "${ANSI_NONE}"
+}
+
+printinfo() {
+    printf "%b%s%b" "${ANSI_WHITE}" "$*" "${ANSI_NONE}"
+}
+
+pprint() {
+    printf "%b%s%b" "${ANSI_CYAN}" "$*" "${ANSI_NONE}"
+}
+
+process_result() {
+    [ $((${#1}%2)) -eq 0 ] && desc="$1" || desc="$1 "
+
+    if [ $2 -eq 0 ]; then
+        printf "%-*s %s %*s\n" $(( (100-${#desc}) / 2 )) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(( (100-${#desc}) / 2 )) "[$(printdbg 'PASS')]"
+        return 0
+    else
+        printf "%-*s %s %*s\n" $(( (100-${#desc}) / 2 )) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(( (100-${#desc}) / 2 )) "[$(printerr 'FAIL')]"
+        return 1
+    fi
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+ipv4Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        local IFS='.'
+        IP=($IP)
+        if (( ${IP[0]} <= 255 && ${IP[1]} <= 255 && ${IP[2]} <= 255 && ${IP[3]} <= 255 )); then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# notes: prints external ip, or empty string if not available
+getExternalIP() {
+    local EXTERNAL_IP=""
+    local URLS=(
+        "https://ipv4.icanhazip.com"
+        "https://api.ipify.org"
+        "https://myexternalip.com/raw"
+        "https://ipecho.net/plain"
+        "https://bot.whatismyipaddress.com"
+    )
+
+    for URL in ${URLS[@]}; do
+        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break
+    done
+
+    printf '%s' "$EXTERNAL_IP"
+}
+
+# $1 == attribute name
+# $2 == python config file
+# returns: attribute value
+getConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    local VALUE=$(grep -oP '^(?!#)'${NAME}'[ \t]*=[ \t]*\K(\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
+    printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
+}
+
+# notes: try to access the AWS metadata URL to determine if this is an AMI instance
+# returns: 0 == success, 1 == failure
+isInstanceAMI() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254 &>/dev/null
+    ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# notes: prints the AMI instance ID || blank string
+getInstanceID() {
+    curl -s http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+    ec2-metadata -i 2>/dev/null
+}
+
+# $* == string to encode (prevent splitting by slurping all the args)
+# notes: print URI encoded string
+uriEncode() {
+    perl -MURI::Escape -e 'print uri_escape shift, , q{^A-Za-z0-9\-._~/}' -- "$*"
 }

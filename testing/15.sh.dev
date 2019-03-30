@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -x
+
+. include/common
+
+unitname="Flowroute DID Sync Module"
+
+# static settings
+username="smoketest"
+host="localhost"
+port="5060"
+
+# TODO: create some DID's using flowroute's API (not ours)
+
+# TODO: test flowroute module's python functions (verify we get data we sent to flowroute)
+
+# TODO: check DB and see if those DID's were synced
+
+process_result "$unitname" $ret

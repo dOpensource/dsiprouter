@@ -14,19 +14,19 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
-    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* wheezy.*' /etc/apt/sources.list > /dev/null
+    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* xenial.*' /etc/apt/sources.list > /dev/null
     # If repo is not installed
     if [ $? -eq 1 ]; then
         echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
-        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
-        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} wheezy main" >> /etc/apt/sources.list
+        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} xenial main" >> /etc/apt/sources.list
+        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} xenial  main" >> /etc/apt/sources.list
     fi
 
     # Add Key for Kamailio Repo
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
     # Update the repo
-    apt-get update
+    apt-get update -y
 
     # Install Kamailio packages
     apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server

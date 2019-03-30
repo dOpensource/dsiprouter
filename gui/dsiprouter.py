@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, signal
 from copy import copy
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
@@ -92,7 +94,7 @@ def login():
             session['username'] = form['username']
         else:
             flash('wrong username or password!')
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION), 403
         return redirect(url_for('index'))
         
 
@@ -113,7 +115,8 @@ def logout():
             debugEndpoint()
 
         session.pop('logged_in', None)
-        return index()
+        session.pop('username', None)
+        return redirect(url_for('index'))
 
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -136,25 +139,24 @@ def displayCarrierGroups(gwgroup=None):
     # TODO: track related dr_rules and update lists on delete
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        if session.get('logged_in'):
-            # res must be a list()
-            if gwgroup is not None and gwgroup != "":
-                res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
-                    GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                    UAC.auth_username, UAC.auth_password, UAC.realm).filter(
-                    GatewayGroups.id == gwgroup).first()]
-            else:
-                res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
-                    GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                    UAC.auth_username, UAC.auth_password, UAC.realm).all()
-            db.close()
-            return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
-
+        # res must be a list()
+        if gwgroup is not None and gwgroup != "":
+            res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
+                GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
+                UAC.auth_username, UAC.auth_password, UAC.realm).filter(
+                GatewayGroups.id == gwgroup).first()]
         else:
-            return index()
+            res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
+                GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
+                UAC.auth_username, UAC.auth_password, UAC.realm).all()
+        db.close()
+        return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -187,6 +189,9 @@ def addUpdateCarrierGroups():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -288,6 +293,9 @@ def deleteCarrierGroups():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -348,55 +356,54 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     """
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        if session.get('logged_in'):
-            # carriers is a list of carriers matching query
-            # carrier_routes is a list of associated rules for each carrier
-            carriers = []
-            carrier_rules = []
+        # carriers is a list of carriers matching query
+        # carrier_routes is a list of associated rules for each carrier
+        carriers = []
+        carrier_rules = []
 
-            # get carrier by id
-            if gwid is not None:
-                carriers = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
+        # get carrier by id
+        if gwid is not None:
+            carriers = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
+            rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+            gateway_rules = {}
+            for rule in rules:
+                if str(gwid) in filter(None, rule.gwlist.split(',')):
+                    gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+            carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
+
+        # get carriers by carrier group
+        elif gwgroup is not None:
+            Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
+            # check if any endpoints in group b4 converting to list(int)
+            if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
+                gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
+                carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
                 rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
-                gateway_rules = {}
-                for rule in rules:
-                    if str(gwid) in filter(None, rule.gwlist.split(',')):
-                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-                carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-
-            # get carriers by carrier group
-            elif gwgroup is not None:
-                Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-                # check if any endpoints in group b4 converting to list(int)
-                if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
-                    gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
-                    carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
-                    rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
-                    for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
-                        gateway_rules = {}
-                        for rule in rules:
-                            if gateway_id in filter(None, rule.gwlist.split(',')):
-                                gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-                        carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-
-            # get all carriers
-            else:
-                carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
-                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
-                for gateway in carriers:
+                for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
                     gateway_rules = {}
                     for rule in rules:
-                        if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
+                        if gateway_id in filter(None, rule.gwlist.split(',')):
                             gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-                    carrier_rules.append(json.dumps(gateway_rules, separators=(',',':')))
+                    carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
-            return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
-
+        # get all carriers
         else:
-            return index()
+            carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+            rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+            for gateway in carriers:
+                gateway_rules = {}
+                for rule in rules:
+                    if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
+                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                carrier_rules.append(json.dumps(gateway_rules, separators=(',',':')))
+
+        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -429,6 +436,9 @@ def addUpdateCarriers():
     newgwid = None
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -522,6 +532,9 @@ def deleteCarriers():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -594,29 +607,28 @@ def displayPBX():
     Display PBX / Endpoints in the view
     """
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        if session.get('logged_in'):
-            res = db.query(Gateways).outerjoin(
-                dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
-                dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
-                Subscribers, Gateways.gwid == Subscribers.rpid).add_columns(
-                Gateways.gwid, Gateways.description,
-                Gateways.address, Gateways.strip,
-                Gateways.pri_prefix,
-                dSIPMultiDomainMapping.enabled.label('fusionpbx_enabled'),
-                dSIPMultiDomainMapping.db_host,
-                dSIPMultiDomainMapping.db_username,
-                dSIPMultiDomainMapping.db_password,
-                Subscribers.rpid, Subscribers.username,
-                Subscribers.password, Subscribers.domain,
-                dSIPDomainMapping.enabled.label('freepbx_enabled')
-            ).filter(Gateways.type == settings.FLT_PBX).all()
-            return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
-
-        else:
-            return index()
+        res = db.query(Gateways).outerjoin(
+            dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
+            dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
+            Subscribers, Gateways.gwid == Subscribers.rpid).add_columns(
+            Gateways.gwid, Gateways.description,
+            Gateways.address, Gateways.strip,
+            Gateways.pri_prefix,
+            dSIPMultiDomainMapping.enabled.label('fusionpbx_enabled'),
+            dSIPMultiDomainMapping.db_host,
+            dSIPMultiDomainMapping.db_username,
+            dSIPMultiDomainMapping.db_password,
+            Subscribers.rpid, Subscribers.username,
+            Subscribers.password, Subscribers.domain,
+            dSIPDomainMapping.enabled.label('freepbx_enabled')
+        ).filter(Gateways.type == settings.FLT_PBX).all()
+        return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -647,6 +659,9 @@ def addUpdatePBX():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -895,6 +910,9 @@ def deletePBX():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -965,28 +983,27 @@ def displayInboundMapping():
     """
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        if session.get('logged_in'):
-            res = db.execute(
-                'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(settings.FLT_INBOUND))
-            gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
-            # sort gateways by name
-            gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
+        res = db.execute(
+            'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(settings.FLT_INBOUND))
+        gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
+        # sort gateways by name
+        gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
 
-            dids = []
-            if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
-                try:
-                    dids = numbers_api.getNumbers()
-                except http_exceptions.HTTPException as ex:
-                    debugException(ex, log_ex=False, print_ex=True, showstack=False)
-                    return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
+        dids = []
+        if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
+            try:
+                dids = numbers_api.getNumbers()
+            except http_exceptions.HTTPException as ex:
+                debugException(ex, log_ex=False, print_ex=True, showstack=False)
+                return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
 
-            return render_template('inboundmapping.html', rows=res, gwlist=gateways, imported_dids=dids)
-
-        else:
-            return index()
+        return render_template('inboundmapping.html', rows=res, gwlist=gateways, imported_dids=dids)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1022,6 +1039,9 @@ def addUpdateInboundMapping():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1094,6 +1114,9 @@ def deleteInboundMapping():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1173,9 +1196,8 @@ def importInboundMapping():
     global reload_required
     
     try:
-        
         if not session.get('logged_in'):
-            return render_template('index.html', version=settings.VERSION)
+            return redirect(url_for('index'))
         
         if (settings.DEBUG):
             debugEndpoint()
@@ -1231,18 +1253,20 @@ def displayTeleBlock():
     """
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        if session.get('logged_in'):
-            teleblock = {}
-            teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
-            teleblock["gw_ip"] = settings.TELEBLOCK_GW_IP
-            teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
-            teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
-            teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
+        teleblock = {}
+        teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
+        teleblock["gw_ip"] = settings.TELEBLOCK_GW_IP
+        teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
+        teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
+        teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-            return render_template('teleblock.html', teleblock=teleblock)
+        return render_template('teleblock.html', teleblock=teleblock)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1273,25 +1297,27 @@ def addUpdateTeleBlock():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
         form = stripDictVals(request.form.to_dict())
 
-        if session.get('logged_in'):
-            # Update the teleblock settings
-            teleblock = {}
-            teleblock['TELEBLOCK_GW_ENABLED'] = form.get('gw_enabled', 0)
-            teleblock['TELEBLOCK_GW_IP'] = form['gw_ip']
-            teleblock['TELEBLOCK_GW_PORT'] = form['gw_port']
-            teleblock['TELEBLOCK_MEDIA_IP'] = form['media_ip']
-            teleblock['TELEBLOCK_MEDIA_PORT'] = form['media_port']
+        # Update the teleblock settings
+        teleblock = {}
+        teleblock['TELEBLOCK_GW_ENABLED'] = form.get('gw_enabled', 0)
+        teleblock['TELEBLOCK_GW_IP'] = form['gw_ip']
+        teleblock['TELEBLOCK_GW_PORT'] = form['gw_port']
+        teleblock['TELEBLOCK_MEDIA_IP'] = form['media_ip']
+        teleblock['TELEBLOCK_MEDIA_PORT'] = form['media_port']
 
-            updateConfig(settings, teleblock)
-            reload(settings)
+        updateConfig(settings, teleblock)
+        reload(settings)
 
-            reload_required = True
-            return displayTeleBlock()
+        reload_required = True
+        return displayTeleBlock()
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1325,28 +1351,27 @@ def displayOutboundRoutes():
     """
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        if session.get('logged_in'):
-            rows = db.query(OutboundRoutes).filter(
-                (OutboundRoutes.groupid == settings.FLT_OUTBOUND) | (OutboundRoutes.groupid >= 10000)).outerjoin(
-                dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
-                dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid, OutboundRoutes.prefix,
-                OutboundRoutes.routeid, OutboundRoutes.gwlist, OutboundRoutes.timerec, OutboundRoutes.priority,
-                OutboundRoutes.description)
+        rows = db.query(OutboundRoutes).filter(
+            (OutboundRoutes.groupid == settings.FLT_OUTBOUND) | (OutboundRoutes.groupid >= 10000)).outerjoin(
+            dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
+            dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid, OutboundRoutes.prefix,
+            OutboundRoutes.routeid, OutboundRoutes.gwlist, OutboundRoutes.timerec, OutboundRoutes.priority,
+            OutboundRoutes.description)
 
-            teleblock = {}
-            teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
-            teleblock["gw_ip"] = settings.TELEBLOCK_GW_IP
-            teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
-            teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
-            teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
+        teleblock = {}
+        teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
+        teleblock["gw_ip"] = settings.TELEBLOCK_GW_IP
+        teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
+        teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
+        teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-            return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
-
-        else:
-            return index()
+        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1393,13 +1418,13 @@ def addUpateOutboundRoutes():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
         form = stripDictVals(request.form.to_dict())
-
-        if session.get('logged_in') is None:
-            return index()
 
         if form['ruleid']:
             ruleid = form['ruleid']
@@ -1554,6 +1579,9 @@ def deleteOutboundRoute():
     global reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1607,6 +1635,9 @@ def reloadkam():
     prev_reload_val = reload_required
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1709,9 +1740,9 @@ class CustomServer(Server):
             port=settings.DSIP_PORT
         )
 
-        if len(settings.SSL_CERT) > 0 and len(settings.SSL_KEY) > 0:
-            self.ssl_crt = settings.SSL_CERT
-            self.ssl_key = settings.SSL_KEY
+        if len(settings.DSIP_SSL_CERT) > 0 and len(settings.DSIP_SSL_KEY) > 0:
+            self.ssl_crt = settings.DSIP_SSL_CERT
+            self.ssl_key = settings.DSIP_SSL_KEY
 
         if settings.DEBUG == True:
             self.use_debugger = True

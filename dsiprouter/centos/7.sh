@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 #PYTHON_CMD=python3.5
-DSIP_KAMAILIO_CONF_DIR=$(pwd)
 
 set -x
 
@@ -14,7 +13,7 @@ function install {
     yum install -y https://centos7.iuscommunity.org/ius-release.rpm
     yum install -y firewalld
     yum install -y python36u python36u-libs python36u-devel python36u-pip
-    yum install -y logrotate rsyslog
+    yum install -y logrotate rsyslog perl
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -49,16 +48,29 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
-    sed "s+PYTHON_CMD+$PYTHON_CMD+g; s+DSIP_KAMAILIO_CONF_DIR+$DSIP_KAMAILIO_CONF_DIR+g;" \
-        ${DSIP_KAMAILIO_CONF_DIR}/dsiprouter/centos/dsiprouter.service.tpl > /etc/systemd/system/dsiprouter.service
-    chmod 644 /etc/systemd/system/dsiprouter.service
+    perl -p -e "s|^(ExecStart\=).+?([ \t].*)|\1$PYTHON_CMD\2|;" \
+        -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
+        -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
+        ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
+    chmod 0644 /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
-    systemctl enable dsiprouter.service
+    systemctl enable dsiprouter
 }
 
 
 function uninstall {
     # Uninstall dependencies for dSIPRouter
+    PIP_CMD="pip"
+
+    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
+    if [ $? -eq 1 ]; then
+        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
+        exit 1
+    else
+        echo "DSIPRouter uninstall was successful"
+        exit 0
+    fi
+
     yum remove -y python36u\*
     yum remove -y ius-release
     yum groupremove -y "Development Tools"
@@ -82,34 +94,17 @@ function uninstall {
     systemctl disable dsiprouter.service
     rm -f /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
-
-    PIP_CMD="pip"
-
-    /usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
-    if [ $? -eq 1 ]; then
-        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
-        exit 1
-    else
-        echo "DSIPRouter uninstall was successful"
-        exit 0
-    fi
 }
 
 
 case "$1" in
     uninstall|remove)
-        #Remove
-        PYTHON_CMD=$3
-        DSIP_PORT=$2
-        $1
+        uninstall
         ;;
     install)
-        #Install
-        PYTHON_CMD=$3
-        DSIP_PORT=$2
-        $1
+        install
         ;;
     *)
-        echo "usage $0 [install <dsip_port> <python_cmd> | uninstall <dsip_port> <python_cmd>]"
+        echo "usage $0 [install | uninstall]"
         ;;
 esac

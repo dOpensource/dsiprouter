@@ -2,9 +2,9 @@
 
 . include/common
 
-test="dsip-init Service Started"
+test="Kamailio Started"
 
 # Is service started
-systemctl is-active --quiet dsip-init; ret=$?
+systemctl is-active --quiet kamailio; ret=$?
 
 process_result "$test" $ret 

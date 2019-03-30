@@ -2,19 +2,22 @@
 #set -x
 ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
 
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
 function installSQL {
     local TABLES=(dsip_multidomain_mapping dsip_domain_mapping)
 
-    echo "Adding/Replacing the tables needed for Domain Mapping within dSIPRouter..."
+    printwarn "Adding/Replacing the tables needed for Domain Mapping within dSIPRouter..."
 
     # Check to see if table exists
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE -e "select count(*) from ${TABLES[0]} limit 1" > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
-        echo -e "The dSIPRouter tables ${TABLES[@]} already exists. Merging table data"
+        printwarn "The dSIPRouter tables ${TABLES[@]} already exists. Merging table data"
         (cat ${DSIP_PROJECT_DIR}/gui/modules/domain/domain_mapping.sql;
             mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-                --user="$MYSQL_KAM_USERNAME" --password="$MYSQL_KAM_PASSWORD" ${MYSQL_KAM_DATABASE} ${TABLES[@]};
+                --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${MYSQL_KAM_DATABASE} ${TABLES[@]};
         ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
     else
         echo -e "Installing schema for Domain Mapping"
@@ -25,11 +28,11 @@ function installSQL {
 
 function install {
     installSQL
-    echo "Domain module installed"
+    printdbg "Domain module installed"
 }
 
 function uninstall {
-    echo "Domain module uninstalled"
+    printdbg "Domain module uninstalled"
 }
 
 function main {
