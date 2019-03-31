@@ -29,7 +29,7 @@ Once the install is complete, dSIPRouter will automatically start MySQL, Kamaili
 Install (Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you need to proxy RTP traffic then add the -rtpengine parameter. The command to install dSIPRouter and the RTPEngine would be:
+If you need to proxy RTP traffic then use -all install option. The command to install dSIPRouter and the RTPEngine would be:
 
 
 ::
