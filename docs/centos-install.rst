@@ -17,12 +17,12 @@ Install (Don't Proxy audio (RTP) traffic)
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
-  ./dsiprouter.sh install
+  ./dsiprouter.sh install -kam -dsip
 |
 
 One Line Version: 
 ::
-   yum install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install
+   yum install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install -kam -dsip
 
 
 Once the install is complete, dSIPRouter will automatically start MariaDB, Kamailio and the UI.
