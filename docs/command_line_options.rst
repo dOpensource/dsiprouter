@@ -20,7 +20,7 @@ resetpassword                         Resets dSIPRouter admin account and displa
 help|-h|--help                        List all of the options
 ===================================   ======================================================================
 
-Refer to :ref:`installing.rst` to get the complete one line version of the command.
+Refer to :ref:`installing_dsiprouter` to get the complete one line version of the command.
 
 
 To start dSIPRouter:
