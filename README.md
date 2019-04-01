@@ -31,7 +31,7 @@ Paid Support: [dSIPRouter Support](http://dsiprouter.org/#fh5co-support-section)
 
 ### Training
 
-Details on training can found [here](https://dopensource.com/product/dsiprouter-admin-course/)
+Details on training can be found [here](https://dopensource.com/product/dsiprouter-admin-course/)
 
 ### License
 
