@@ -47,4 +47,4 @@ Kamailio will be automatically installed along with dSIPRouter.  Must be install
 Amazon AMI's
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-We now provide Amazon AMI's (pre-built images) which allows you to get up and going even faster.  You can find a list of the images `here <https://aws.amazon.com/marketplace/search/results?x=0&y=0&searchTerms=dsiprouter/>`.  The images are a nominal fee, which goes toward supporting the project.
+We now provide Amazon AMI's (pre-built images) which allows you to get up and going even faster.  You can find a list of the images `here <https://aws.amazon.com/marketplace/search/results?x=0&y=0&searchTerms=dsiprouter/>`_.  The images are a nominal fee, which goes toward supporting the project.
