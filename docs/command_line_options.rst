@@ -4,20 +4,20 @@ Command Line Options
 Execute "./dsiprouter.sh" followed by one of the listed options for the dsiprouter command lines. 
 **NOTE** You must be in the directory where dSIPRouter was installed, which is /opt/dsiprouter to execute these commands.
 
-===================================  ======================================================================================================
-Option                               What does it do?                                 
-install [-debug|-exip <ip>|--external-ip=<ip>|-servernat|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]                 installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic.
-uninstall [-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]                           Uninstalls dSIPRouter 
-start   [-debug]                     Starts dSIPRouter 
-stop                                 Stops dSIPRouter from running                  
-restart [-debug]                     Restarts dSIPRouter after a stop
-configurekam                         Reconfigures the Kamailio configuration file based on dSIPRouter Settings 
-sslenable                            Enables SSL Support
-enableservernat                      Enable Server NAT
-disableservernet                     Disable Server NAT
-resetpassword                        Resets dSIPRouter admin account and displays the password
-help|-h|--help                       Will display the list of command line options
-===================================  ======================================================================================================
+===================================   ======================================================================
+Option                                What does it do?                                 
+===================================   ======================================================================
+install                               Installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic.
+uninstall                             Uninstall dSIPRouter 
+start                                 Starts dSIPRouter 
+stop                                  Stops dSIPRouter from running                  
+restart                               Restarts dSIPRouter after a stop
+configurekam                          Reconfigures the Kamailio configuration file based on dSIPRouter Settings 
+sslenable                             Enables SSL Support
+enableservernat                       Enable Server NAT
+disableservernet                      Disable Server NAT
+resetpassword                         Resets dSIPRouter admin account and displays the password
+===================================   ======================================================================
 
 Refer to ::ref:`Installing dSIPRouter<installing.rst/install_option.rst>` to get the complete one line version of the command.
 
