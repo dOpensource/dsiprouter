@@ -1,4 +1,5 @@
-..  installing_dsiprouter:
+.. _installing_dsiprouter:
+
 
 Installing dSIPRouter
 =====================
