@@ -6,12 +6,17 @@ Execute "./dsiprouter.sh" followed by one of the listed options for the dsiprout
 
 ===================================  ======================================================================================================
 Option                               What does it do?                                 
-install [-rtpengine]                 installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic.
-install  [-rtpengine] [-servernat]   installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic thats behind a NAT
-start                                Starts dSIPRouter 
+install [-debug|-exip <ip>|--external-ip=<ip>|-servernat|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]                 installs dSIPRouter and the RTPEngine if you need to proxy RTP traffic.
+uninstall [-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]                           Uninstalls dSIPRouter 
+start   [-debug]                     Starts dSIPRouter 
 stop                                 Stops dSIPRouter from running                  
-restart                              Restarts DSIPRouter after a stop
-uninstall                            Uninstalls dSIPRouter 
+restart [-debug]                     Restarts dSIPRouter after a stop
+configurekam                         Reconfigures the Kamailio configuration file based on dSIPRouter Settings 
+sslenable                            Enables SSL Support
+enableservernat                      Enable Server NAT
+disableservernet                     Disable Server NAT
+resetpassword                        Resets dSIPRouter admin account and displays the password
+help|-h|--help                       Will display the list of command line options
 ===================================  ======================================================================================================
 
 Refer to ::ref:`Installing dSIPRouter<installing.rst/install_option.rst>` to get the complete one line version of the command.
