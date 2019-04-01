@@ -17,9 +17,10 @@ sslenable                             Enables SSL Support
 enableservernat                       Enable Server NAT
 disableservernet                      Disable Server NAT
 resetpassword                         Resets dSIPRouter admin account and displays the password
+help|-h|--help                        List all of the options
 ===================================   ======================================================================
 
-Refer to ::ref:`Installing dSIPRouter<installing.rst/install_option.rst>` to get the complete one line version of the command.
+Refer to ::ref:`Installing dSIPRouter <installing.rst/install_option.rst>` to get the complete one line version of the command.
 
 To start dSIPRouter:
 
