@@ -167,14 +167,13 @@ curl -s --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-ident
 ret=$?
 #AWS Instance
 if (( $ret == 0 )); then
-    export AWS_ENABLED=0
+    export AWS_ENABLED=1
     setConfigAttrib 'CLOUD_PLATFORM' 'AWS' ${DSIP_CONFIG_FILE} -q
 #Native Install or some other cloud platform that's not supported as of yet
 else
     setConfigAttrib 'CLOUD_PLATFORM' '' ${DSIP_CONFIG_FILE} -q
 
 fi
-echo $AWS_ENABLED
 
 function displayLogo {
 echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
