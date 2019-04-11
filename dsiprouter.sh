@@ -175,7 +175,6 @@ else
 
 fi
 echo $AWS_ENABLED
-exit
 
 function displayLogo {
 echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
