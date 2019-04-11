@@ -95,12 +95,14 @@ getConfigAttrib() {
 # notes: try to access the AWS metadata URL to determine if this is an AMI instance
 # returns: 0 == success, 1 == failure
 isInstanceAMI() {
-    curl -s -f --connect-timeout 2 http://169.254.169.254 &>/dev/null
+    curl -s --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
     ret=$?
-    if (( $ret != 22 )) && (( $ret != 28 )); then
-        return 0
+    #AWS Instance
+    if (( $ret == 0 )); then
+	return 0
+    else
+	return 1
     fi
-    return 1
 }
 
 # notes: prints the AMI instance ID || blank string
