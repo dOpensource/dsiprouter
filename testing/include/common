@@ -116,3 +116,26 @@ getInstanceID() {
 uriEncode() {
     perl -MURI::Escape -e 'print uri_escape shift, , q{^A-Za-z0-9\-._~/}' -- "$*"
 }
+
+
+# Add PBX
+# return the PBX ID
+addPBX() {
+
+	mysql kamailio -e "insert into dr_gateways values (null,9,'18.191.20.204',0,null,null,'name:Smoketest PBX');"
+	pbxid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest PBX%';"`
+
+	return $pbxid
+}
+
+addDomain() {
+
+	
+	mysql kamailio -e "insert into domain values (null,'smoktest.com','smoketest.com',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','pbx_list',2,'64',now())";
+	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','pbx_type',2,'0',now())"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','created_by',2,'0',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','domain_auth',2,'passthru',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','description',2,'notes:Smoketest Domain',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','pbx_ip',2,'18.191.20.204',now());"
+}
