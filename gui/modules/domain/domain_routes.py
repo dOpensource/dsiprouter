@@ -5,6 +5,8 @@ from werkzeug import exceptions as http_exceptions
 from database import loadSession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways
 from shared import *
 import settings
+import globals
+import re
 
 db = loadSession()
 domains = Blueprint('domains', __name__)
@@ -22,8 +24,13 @@ def addDomain(domain, authtype, pbxs, notes):
     db.flush()
 
     # Check if list of PBX's
-    pbx_list = pbxs.split(',')
-    pbx_id = pbxs[0] or 0
+    pbx_list = re.split(' |,',pbxs)
+    # If no list is found
+    if len(pbx_list) > 1 and authtype == "passthru":
+        pbx_id=pbx_list[0]
+    else:
+        #Single value was submitted
+        pbx_id = pbxs
 
     # Implement Passthru authentication to the first PBX on the list.
     # because Passthru Registration only works against one PBX
@@ -33,16 +40,19 @@ def addDomain(domain, authtype, pbxs, notes):
         PBXDomainAttr3 = DomainAttrs(did=domain, name='created_by', value="0")
         PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
         PBXDomainAttr5 = DomainAttrs(did=domain, name='description', value="notes:{}".format(notes))
+        PBXDomainAttr6 = DomainAttrs(did=domain, name='pbx_ip', value=gatewayIdToIP(pbx_id))
+        
         db.add(PBXDomainAttr1)
         db.add(PBXDomainAttr2)
         db.add(PBXDomainAttr3)
         db.add(PBXDomainAttr4)
         db.add(PBXDomainAttr5)
+        db.add(PBXDomainAttr6)
 
     # Implement external authentiction to either Realtime DB or Local Subscriber table
     else:
         # Attributes to specify that the domain was created manually
-        PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value=pbxs)
+        PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value=str(pbx_list))
         PBXDomainAttr2 = DomainAttrs(did=domain, name='pbx_type', value="0")
         PBXDomainAttr3 = DomainAttrs(did=domain, name='created_by', value="0")
         PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
@@ -99,7 +109,7 @@ def displayDomains():
                 name = "Manually Created"
 
             pbx_lookup[row['did']] = {
-                'pbx_list': row['pbx_list'],
+                'pbx_list': str(row['pbx_list']).strip('[]').replace("'",""),
                 'domain_auth': row['domain_auth'],
                 'name': name,
                 'notes': notes
@@ -130,7 +140,6 @@ def displayDomains():
 
 @domains.route("/domains", methods=['POST'])
 def addUpdateDomain():
-    global reload_required
 
     try:
         if (settings.DEBUG):
@@ -171,11 +180,11 @@ def addUpdateDomain():
             addDomain(domainlist.split(",")[0].strip(), authtype, pbxs, notes)
 
         db.commit()
-        reload_required = True 
+        globals.reload_required = True 
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex, log_ex=True, print_ex=True, showstack=False)
         error = "db"
         db.rollback()
         db.flush()
@@ -187,7 +196,7 @@ def addUpdateDomain():
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex, log_ex=True, print_ex=True, showstack=False)
         error = "server"
         db.rollback()
         db.flush()
@@ -198,7 +207,6 @@ def addUpdateDomain():
 @domains.route("/domainsdelete", methods=['POST'])
 def deleteDomain():
 
-    global reload_required
 
     try:
         if (settings.DEBUG):
@@ -209,8 +217,8 @@ def deleteDomain():
         
         form = stripDictVals(request.form.to_dict())
 
-        domainid = form['domainid'] if 'domainid' in form else ''
-        domainname = form['domainname'] if 'domainname' in form else ''
+        domainid = form['domain_id'] if 'domain_id' in form else ''
+        domainname = form['domain_name'] if 'domain_name' in form else ''
 
         dispatcherEntry = db.query(Dispatcher).filter(Dispatcher.setid == domainid)
         domainAttrs = db.query(DomainAttrs).filter(DomainAttrs.did == domainname)
@@ -221,8 +229,8 @@ def deleteDomain():
         domainEntry.delete(synchronize_session=False)
 
         db.commit()
-        reload_required = True 
-        return redirect(url_for('domains.displayDomains'))
+        globals.reload_required = True 
+        return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
