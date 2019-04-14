@@ -9,3 +9,4 @@ pyspark
 requests
 SQLAlchemy
 Werkzeug
+docker
