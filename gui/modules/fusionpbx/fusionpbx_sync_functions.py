@@ -179,7 +179,9 @@ def update_nginx(sources):
                     print("Stopped nginx container")
             return
     except Exception as e:
+        os.remove("./.sync-lock") 
         print(e)
+    
     #Create the Nginx file
 
     serverList = ""
@@ -234,51 +236,53 @@ def update_nginx(sources):
             detach=True)
        print("created a container")
     except Exception as e:
-
-           print(e)
+        os.remove("./.sync-lock") 
+        print(e)
                 
 
 
 def run_sync(settings):
-    
-    #Set the system where sync'd data will be stored.  
-    #The Kamailio DB in our case
+    try: 
+        #Set the system where sync'd data will be stored.  
+        #The Kamailio DB in our case
 
-    #If already running - don't run
-    if os.path.isfile("./.sync-lock"):
-        print("Already running")
-        return
+        #If already running - don't run
+        if os.path.isfile("./.sync-lock"):
+            print("Already running")
+            return
 
-    else:
-        f=open("./.sync-lock","w+")
-        f.close()
+        else:
+            f=open("./.sync-lock","w+")
+            f.close()
 
-    
-    dest={}
-    dest['hostname']=settings.KAM_DB_HOST
-    dest['username']=settings.KAM_DB_USER
-    dest['password']=settings.KAM_DB_PASS
-    dest['database']=settings.KAM_DB_NAME
+        
+        dest={}
+        dest['hostname']=settings.KAM_DB_HOST
+        dest['username']=settings.KAM_DB_USER
+        dest['password']=settings.KAM_DB_PASS
+        dest['database']=settings.KAM_DB_NAME
 
-    #Get the list of FusionPBX's that needs to be sync'd
-    sources = get_sources(dest)
-    print(sources)
-    #Remove all existing domain and domain_attrs entries
-    #for key in sources:
-    #    drop_fusionpbx_domains(sources[key], dest)
- 
-    #Loop thru each FusionPBX system and start the sync
-    for key in sources:
-        sync_db(sources[key],dest)
+        #Get the list of FusionPBX's that needs to be sync'd
+        sources = get_sources(dest)
+        print(sources)
+        #Remove all existing domain and domain_attrs entries
+        #for key in sources:
+        #    drop_fusionpbx_domains(sources[key], dest)
      
-    #Reload Kamailio
-    reloadkam(settings.KAM_KAMCMD_PATH)
+        #Loop thru each FusionPBX system and start the sync
+        for key in sources:
+            sync_db(sources[key],dest)
+         
+        #Reload Kamailio
+        reloadkam(settings.KAM_KAMCMD_PATH)
 
-    #Update Nginx configuration file for HTTP Provisioning and start docker container if we have FusionPBX systems
-    #update_nginx(sources[key])
-    if sources is not None:
-        sources = list(sources.keys())
-        update_nginx(sources)
-
-    #Remove lock file
-    os.remove("./.sync-lock") 
+        #Update Nginx configuration file for HTTP Provisioning and start docker container if we have FusionPBX systems
+        #update_nginx(sources[key])
+        if sources is not None:
+            sources = list(sources.keys())
+            update_nginx(sources)
+    except Exception as e:
+        print(e)
+    finally:
+        #Remove lock file
+        os.remove("./.sync-lock") 
