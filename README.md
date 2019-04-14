@@ -9,6 +9,10 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 
 **Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
+### Project Web Site
+
+http://dsiprouter.org
+
 ### Demo System
 
 You can checkout our demo system, which is located here:
@@ -21,7 +25,7 @@ password: ZmIwMTdmY2I5NjE4
 
 ### Documentation
 
-You can find our documentation here: [dSIPRouter Documentation](https://dsiprouter.readthedocs.io/en/v0.51/)
+You can find our documentation here: [dSIPRouter Documentation](https://dsiprouter.readthedocs.io/en/latest)
 
 ### Support
 
