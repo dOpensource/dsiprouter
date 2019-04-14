@@ -120,6 +120,9 @@ def sync_db(source,dest):
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_ip',2,%s,NOW())""", (row[0],pbx_host))
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_type',2,%s,NOW())""", (row[0],dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value))
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'created_by',2,%s,NOW())""", (row[0],pbx_id))
+                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'domain_auth',2,%s,NOW())""", (row[0],'passthru'))
+                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_list',2,%s,NOW())""", (row[0],pbx_id))
+                c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'description',2,%s,NOW())""", (row[0],'notes:'))
                 counter = counter+1
 
             for i in domain_id_list:
@@ -159,20 +162,24 @@ def reloadkam(kamcmd_path):
 def update_nginx(sources):
 
     print("Updating Nginx")
+    
     #Connect to docker
     client = docker.from_env()
-    
-    # If there isn't any FusionPBX sources then just shutdown the container
-    if len(sources) < 1:
-        containers = client.containers.list()
-        for container in containers:
-            if container.name == "dsiprouter-nginx":
-                #Stop the container
-                container.stop()
-                container.remove(force=True)
-                print("Stopped nginx container")
-        return
-       
+
+    try:
+        
+        # If there isn't any FusionPBX sources then just shutdown the container
+        if len(sources) < 1:
+            containers = client.containers.list()
+            for container in containers:
+                if container.name == "dsiprouter-nginx":
+                    #Stop the container
+                    container.stop()
+                    container.remove(force=True)
+                    print("Stopped nginx container")
+            return
+    except Exception as e:
+        print(e)
     #Create the Nginx file
 
     serverList = ""

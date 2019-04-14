@@ -104,7 +104,7 @@ def displayDomains():
         for row in res2:
             notes = strFieldsToDict(row['description'])['notes'] or ''
             if row['creator'] is not None:
-                name = strFieldsToDict(row['description'])['name']
+                name = strFieldsToDict(row['creator'])['name'] or ''
             else:
                 name = "Manually Created"
 
@@ -130,7 +130,7 @@ def displayDomains():
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex, log_ex=True, print_ex=True, showstack=True)
         error = "server"
         db.rollback()
         db.flush()
