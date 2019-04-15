@@ -2,7 +2,7 @@
 
 . include/common
 
-unitname="DoS and SIP Security"
+unitname="DoS and SIP Security - Block Unknown IP"
 
 # settings
 source_ip="127.0.0.10"

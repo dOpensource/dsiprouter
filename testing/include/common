@@ -128,14 +128,26 @@ addPBX() {
 	return $pbxid
 }
 
+deletePBX() {
+
+	mysql kamailio -e "delete from dr_gateways where description like '%Smoketest PBX%';"
+}
+
 addDomain() {
 
 	
-	mysql kamailio -e "insert into domain values (null,'smoktest.com','smoketest.com',now());"
-	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','pbx_list',2,'64',now())";
-	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','pbx_type',2,'0',now())"
-	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','created_by',2,'0',now());"
-	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','domain_auth',2,'passthru',now());"
-	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','description',2,'notes:Smoketest Domain',now());"
-	mysql kamailio -e "insert into domain_attrs values (null,'smoktest.com','pbx_ip',2,'18.191.20.204',now());"
+	mysql kamailio -e "insert into domain values (null,'smoketest.com','smoketest.com',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_list',2,'64',now())";
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_type',2,'0',now())"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','created_by',2,'0',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','domain_auth',2,'passthru',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','description',2,'notes:Smoketest Domain',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_ip',2,'18.191.20.204',now());"
+}
+
+deleteDomain() {
+
+	mysql kamailio -e "delete from domain where did='smoketest.com';"
+	mysql kamailio -e "delete from domain_attrs where did='smoketest.com';"
+
 }
