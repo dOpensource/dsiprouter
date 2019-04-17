@@ -15,14 +15,14 @@ DSIP_LOG_FACILITY = 18
 
 # ssl key / cert paths
 # email for re-certification (must match certs)
-DSIP_SSL_KEY = ""
-DSIP_SSL_CERT = ""
-DSIP_SSL_EMAIL = ""
+DSIP_SSL_KEY = ''
+DSIP_SSL_CERT = ''
+DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
 VERSION = 0.52
-DEBUG = False
+DEBUG = True
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
@@ -45,13 +45,13 @@ KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
-RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
+RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # SQLAlchemy Settings
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = False
+SQLALCHEMY_SQL_DEBUG = True
 
 FLT_CARRIER = 8
 FLT_PBX = 9
@@ -75,9 +75,17 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '167.99.159.98'
-INTERNAL_IP_NET = '167.99.159.*'
-EXTERNAL_IP_ADDR = '167.99.159.98'
+INTERNAL_IP_ADDR = '68.183.140.81'
+INTERNAL_IP_NET = '68.183.140.*'
+EXTERNAL_IP_ADDR = '68.183.140.81'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
+
+# Cloud Platform
+# The cloud platform the dSIPRouter is installed on
+# The installer will update this
+# '' = other or native install 
+# AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
+CLOUD_PLATFORM = ''
+

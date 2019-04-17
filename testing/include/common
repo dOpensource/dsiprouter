@@ -95,12 +95,14 @@ getConfigAttrib() {
 # notes: try to access the AWS metadata URL to determine if this is an AMI instance
 # returns: 0 == success, 1 == failure
 isInstanceAMI() {
-    curl -s -f --connect-timeout 2 http://169.254.169.254 &>/dev/null
+    curl -s --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
     ret=$?
-    if (( $ret != 22 )) && (( $ret != 28 )); then
-        return 0
+    #AWS Instance
+    if (( $ret == 0 )); then
+	return 0
+    else
+	return 1
     fi
-    return 1
 }
 
 # notes: prints the AMI instance ID || blank string
@@ -113,4 +115,39 @@ getInstanceID() {
 # notes: print URI encoded string
 uriEncode() {
     perl -MURI::Escape -e 'print uri_escape shift, , q{^A-Za-z0-9\-._~/}' -- "$*"
+}
+
+
+# Add PBX
+# return the PBX ID
+addPBX() {
+
+	mysql kamailio -e "insert into dr_gateways values (null,9,'18.191.20.204',0,null,null,'name:Smoketest PBX');"
+	pbxid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest PBX%';"`
+
+	return $pbxid
+}
+
+deletePBX() {
+
+	mysql kamailio -e "delete from dr_gateways where description like '%Smoketest PBX%';"
+}
+
+addDomain() {
+
+	
+	mysql kamailio -e "insert into domain values (null,'smoketest.com','smoketest.com',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_list',2,'64',now())";
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_type',2,'0',now())"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','created_by',2,'0',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','domain_auth',2,'passthru',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','description',2,'notes:Smoketest Domain',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_ip',2,'18.191.20.204',now());"
+}
+
+deleteDomain() {
+
+	mysql kamailio -e "delete from domain where did='smoketest.com';"
+	mysql kamailio -e "delete from domain_attrs where did='smoketest.com';"
+
 }

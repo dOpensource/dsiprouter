@@ -4,7 +4,7 @@
 
 ### Final AMI Updates for Release v0.52
 
-> Branches Affected: feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Wed, 27 Mar 2019 21:29:11 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -28,9 +28,23 @@
 ---
 
 
+### Update dsiprouter.sh
+
+> Branches Affected: dev,feature-ami,master  
+> Tags Affected:   
+> Date: Wed, 27 Mar 2019 03:27:16 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+Removed generatePassword from the displayLoginInfo function
+
+
+---
+
+
 ### Update Version Number for Release v0.52
 
-> Branches Affected: feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Tue, 26 Mar 2019 09:59:59 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -43,7 +57,7 @@
 
 ###   - Fixes #103   - deprecate Debian v7   - deprecate Debian v8   - change CentOS RTPEngine install to RPM build   - fix startup issues with dsip-init service on AWS   - added dpkg defaults during script execution
 
-> Branches Affected: feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Tue, 26 Mar 2019 08:12:01 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -56,7 +70,7 @@
 
 ### Merge feature-ami Branch Into dev Branch
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected: v0.52  
 > Date: Mon, 25 Mar 2019 15:41:44 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -71,7 +85,7 @@
 
 ### Fixup Firewalld Commands
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Mon, 25 Mar 2019 15:01:28 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -86,7 +100,7 @@
 
 ###   - fix mariadb centos startup regression   - fix module sql install username conflict   - set default for ssl variables to avoid errors   - move displaying login info back to after logo   - update a few sed cmds to be more reliable
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Mon, 25 Mar 2019 14:49:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -99,7 +113,7 @@
 
 ### AMI Feature Fixes
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Mon, 25 Mar 2019 10:53:34 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -123,7 +137,7 @@
 
 ### Added a unit test to validate that JSON over HTTP access to Kamailio RPC Commands is working correctly
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Sat, 23 Mar 2019 12:01:01 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -136,7 +150,7 @@
 
 ### Added supported jsonrpc over http on tcp port 5060
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Sat, 23 Mar 2019 03:48:17 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -149,7 +163,7 @@
 
 ### Moved the creation of the LCR schema to the main install script and deprecated the LCR module
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Sat, 23 Mar 2019 00:10:40 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -162,7 +176,7 @@
 
 ### Fixed a regression with the gateway list import
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Fri, 22 Mar 2019 23:36:42 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -175,7 +189,7 @@
 
 ### Fixed a regression with dr_gw_lists not being copied over to the /tmp/defaults directory
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Fri, 22 Mar 2019 22:47:42 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
@@ -188,7 +202,7 @@
 
 ### dSIPRouter Installation Overhaul
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Thu, 21 Mar 2019 12:31:35 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -232,7 +246,7 @@
 
 ### Allow Domain Editing
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Mon, 18 Mar 2019 18:21:32 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -249,7 +263,7 @@
 
 ### Update kamailio51_dsiprouter.tpl
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Mon, 18 Mar 2019 11:57:38 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -262,7 +276,7 @@
 
 ### Fix for Google Cloud Mysql
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Fri, 15 Mar 2019 16:15:22 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -278,7 +292,7 @@
 
 ### Fix Regressions
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Thu, 14 Mar 2019 21:55:41 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -294,7 +308,7 @@
 
 ### Fix DID Notes DB Update
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Thu, 14 Mar 2019 21:27:03 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -309,7 +323,7 @@
 
 ### General Updates Cleanup Repo
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Thu, 14 Mar 2019 10:42:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -330,7 +344,7 @@
 
 ### Added support for emergency numbers 911-999 Fixes: #121
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Sun, 10 Mar 2019 23:06:11 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -343,7 +357,7 @@
 
 ### LCR Dynamic Prefix Routing
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Fri, 8 Mar 2019 18:07:06 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -364,7 +378,7 @@
 
 ### Make Project root more reliable
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Wed, 6 Mar 2019 16:05:08 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -378,7 +392,7 @@
 
 ### Update Internal IP Resolution
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Tue, 5 Mar 2019 23:19:55 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -394,7 +408,7 @@
 
 ### Fix kamailio configure Bugs
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Tue, 5 Mar 2019 19:25:15 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -409,7 +423,7 @@
 
 ### Bug Fixes
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Tue, 5 Mar 2019 16:02:37 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -427,7 +441,7 @@
 
 ### Update kamailio51_dsiprouter.tpl
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Thu, 21 Feb 2019 16:43:09 -0500  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -441,7 +455,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Add Useful Scripts To Resources
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Wed, 20 Feb 2019 15:12:14 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -456,7 +470,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Update RTPengine On Reload and Install Fixes
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Tue, 19 Feb 2019 10:50:46 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -474,7 +488,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 14 Feb 2019 09:55:09 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -487,7 +501,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 13 Feb 2019 17:48:32 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -500,7 +514,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Add files via upload
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 13 Feb 2019 17:42:30 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -513,7 +527,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 13 Feb 2019 17:37:18 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -526,7 +540,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 13 Feb 2019 15:25:06 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -539,7 +553,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 13 Feb 2019 15:23:49 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -553,7 +567,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 ### Update ngcp-rtpengine-daemon.init
 
 > Branches Affected: master  
-> Tags Affected:   
+> Tags Affected: v0.52-rel  
 > Date: Wed, 13 Feb 2019 13:41:59 -0500  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -566,7 +580,7 @@ Fixed an issue with a redirect
 
 ### Fix Bugs in GUI
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Mon, 11 Feb 2019 17:28:28 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -582,7 +596,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 23:17:40 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -595,7 +609,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 23:09:57 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -608,7 +622,7 @@ Fixed an issue with a redirect
 
 ### Add files via upload
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 23:03:28 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -621,7 +635,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 23:01:39 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -634,7 +648,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 22:31:24 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -647,7 +661,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 22:22:15 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -660,7 +674,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 22:20:05 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -673,7 +687,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 22:18:12 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -686,7 +700,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 8 Feb 2019 14:47:59 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -699,7 +713,7 @@ Fixed an issue with a redirect
 
 ### Inbound DID and Fail2Ban Update
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 22:31:55 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -720,7 +734,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 16:02:44 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -733,7 +747,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 15:24:47 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -746,7 +760,7 @@ Fixed an issue with a redirect
 
 ### AMI Provisioning Fixes
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 14:30:28 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -768,7 +782,7 @@ Fixed an issue with a redirect
 
 ### Update command_line_options.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 10:01:48 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -781,7 +795,7 @@ Fixed an issue with a redirect
 
 ### Adds the ability to change the name of the server presented to clients
 
-> Branches Affected: dev,feature-ami  
+> Branches Affected: dev,feature-ami,master  
 > Tags Affected:   
 > Date: Wed, 6 Feb 2019 21:28:15 -0700  
 > Author: matmurdock (mat.murdock@gmail.com)  
@@ -794,7 +808,7 @@ Fixed an issue with a redirect
 
 ### Fixed firewall issues
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 01:18:41 +0000  
 > Author: root (root@ip-172-31-11-14.us-east-2.compute.internal)  
@@ -807,7 +821,7 @@ Fixed an issue with a redirect
 
 ### Changed order that firewalld rules are being added.  This is workaround for cloud-init
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 7 Feb 2019 00:31:15 +0000  
 > Author: root (root@ip-172-31-31-55.us-east-2.compute.internal)  
@@ -820,7 +834,7 @@ Fixed an issue with a redirect
 
 ### Added fix to the centos 7 kamailio install so that firewall rules can be added
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 6 Feb 2019 23:33:58 +0000  
 > Author: root (root@ip-172-31-38-36.us-east-2.compute.internal)  
@@ -833,7 +847,7 @@ Fixed an issue with a redirect
 
 ### Inbound DID Mapping Sort By Name
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 6 Feb 2019 17:36:14 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -850,7 +864,7 @@ Fixed an issue with a redirect
 
 ### Remove Carrier From gwlist On Delete
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 6 Feb 2019 15:17:34 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -866,7 +880,7 @@ Fixed an issue with a redirect
 
 ### Fix Carrier Modal Actions
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Tue, 5 Feb 2019 12:28:13 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -882,7 +896,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 6 Feb 2019 10:41:58 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -895,7 +909,7 @@ Fixed an issue with a redirect
 
 ### Fixed a regression that caused the password not to be set correct when installed on a non-AMI
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Tue, 5 Feb 2019 19:30:53 +0000  
 > Author: root (root@dSIPRouterMackAMI.localdomain)  
@@ -908,7 +922,7 @@ Fixed an issue with a redirect
 
 ### Update use-cases.rst
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Tue, 5 Feb 2019 10:23:59 -0500  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -1324,7 +1338,7 @@ Fixed an issue with a redirect
 
 ### AMI Startup Fixes and General Maintenance
 
-> Branches Affected: dev,feature-ami,origin/dev  
+> Branches Affected: dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 30 Jan 2019 05:07:37 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1540,7 +1554,7 @@ Fixed an issue with a redirect
 
 ### Install Script Fixes
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Mon, 14 Jan 2019 17:21:32 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1555,7 +1569,7 @@ Fixed an issue with a redirect
 
 ### Install Script Improvement
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Mon, 14 Jan 2019 15:19:01 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1571,7 +1585,7 @@ Fixed an issue with a redirect
 
 ### Merge with Master
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Mon, 14 Jan 2019 14:29:25 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1586,7 +1600,7 @@ Fixed an issue with a redirect
 
 ### AMI updates
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Thu, 10 Jan 2019 13:12:12 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1619,7 +1633,7 @@ Fixed an issue with a redirect
 
 ### Add Changelog
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 9 Jan 2019 09:27:47 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1635,7 +1649,7 @@ Fixed an issue with a redirect
 
 ### Update to Commit 2e7acf4
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Mon, 7 Jan 2019 16:42:13 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1650,7 +1664,7 @@ Fixed an issue with a redirect
 
 ### AWS Image Debian Support
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Mon, 7 Jan 2019 16:34:28 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1665,7 +1679,7 @@ Fixed an issue with a redirect
 
 ### External IP BUG fix
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 4 Jan 2019 15:35:12 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -1694,7 +1708,7 @@ Fixed an issue with a redirect
 
 ### Updates for AMI install
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Wed, 2 Jan 2019 09:21:48 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2033,7 +2047,7 @@ Fixed an issue with a redirect
 
 ### AMI build updates
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 16:35:14 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2052,7 +2066,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 ### AMI image pw reset fix
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 13:50:05 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2066,7 +2080,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 ### Fix AMI bootstrap file
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 13:32:35 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2080,7 +2094,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 ### Updates for AMI image install
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 12:34:30 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2096,7 +2110,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 ### Fixes to AMI image support
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 11:50:49 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2111,7 +2125,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 ### Updated restart message for AMI instances.
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 11:34:04 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -2124,7 +2138,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 ### Add support for AMI images
 
-> Branches Affected: ami-amzn-linux,dev,feature-ami,origin/dev  
+> Branches Affected: ami-amzn-linux,dev,feature-ami,master,origin/dev  
 > Tags Affected:   
 > Date: Fri, 21 Dec 2018 11:21:36 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
