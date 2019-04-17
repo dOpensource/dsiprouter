@@ -9,7 +9,7 @@ function install {
     # Install dependencies for dSIPRouter
     apt-get install -y --allow-unauthenticated libmysqlclient-dev libmariadb-client-lgpl-dev
     apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
-    apt-get install -y logrotate rsyslog perl pandoc
+    apt-get install -y logrotate rsyslog perl pandoc sngrep
     easy_install3 pip
 
     # Reset python cmd in case it was just installed

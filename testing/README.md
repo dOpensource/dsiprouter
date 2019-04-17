@@ -29,7 +29,7 @@ Contains the Unittest number and a description of what the tests validates
 |5|rtpengine is started|
 |6|PBX and Endpoint Registration|
 |7|SIP INVITE with Username/Password Auth|
-|8|Denial of Service (DoS) using the Pike module bans ip's|
+|8|DoS and SIP Security - Block Unknown IP|
 |9|CDR data is stored on SIP INVITE **(dev)**|
 |10|AWS instance deployment requirements satisfied|
 |11|dSIPRouter GUI login|
@@ -38,3 +38,5 @@ Contains the Unittest number and a description of what the tests validates
 |14|Domain Auth|
 |15|Flowroute DID Sync Module|
 |16|Sending JSONRPC Commands to Kamailio|
+|17|Domain Pass-Thru using FreePBX|
+|18|DoS and SIP Security - Doesn't Block Known Carrier IP(s)|

@@ -16,6 +16,7 @@ from database import loadSession, Gateways, Address, InboundMapping, OutboundRou
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher
 from modules import flowroute
 from modules.domain.domain_routes import domains
+import globals
 import settings
 
 # global variables
@@ -23,7 +24,6 @@ app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 db = loadSession()
 numbers_api = flowroute.Numbers()
-reload_required = False
 
 
 # TODO: unit testing per component
@@ -184,7 +184,6 @@ def addUpdateCarrierGroups():
     Add or Update a group of carriers
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -222,7 +221,7 @@ def addUpdateCarrierGroups():
                 db.add(Addr)
 
             else:
-                Uacreg = UAC(gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
+                Uacreg = UAC(gwgroup, username=gwgroup,local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
                 db.add(Uacreg)
 
         # Updating
@@ -256,7 +255,7 @@ def addUpdateCarrierGroups():
                     Addr.delete(synchronize_session=False)
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -278,7 +277,6 @@ def addUpdateCarrierGroups():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -288,7 +286,6 @@ def deleteCarrierGroups():
     Delete a group of carriers
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -316,7 +313,7 @@ def deleteCarrierGroups():
         Uac.delete(synchronize_session=False)
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -338,7 +335,6 @@ def deleteCarrierGroups():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -429,7 +425,6 @@ def addUpdateCarriers():
     Add or Update a carrier
     """
 
-    global reload_required
 
     newgwid = None
 
@@ -495,7 +490,7 @@ def addUpdateCarriers():
             Addr.tag = dictToStrFields(fields)
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -517,7 +512,6 @@ def addUpdateCarriers():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -527,7 +521,6 @@ def deleteCarriers():
     Delete a carrier
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -573,7 +566,7 @@ def deleteCarriers():
                 rule.gwlist = ','.join(gwlist)
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayCarriers(gwgroup=gwgroup)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -595,7 +588,6 @@ def deleteCarriers():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -654,7 +646,6 @@ def addUpdatePBX():
     Add or Update a PBX / Endpoint
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -873,7 +864,7 @@ def addUpdatePBX():
                     {'ip_addr': ip_addr}, synchronize_session=False)
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayPBX()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -895,7 +886,6 @@ def addUpdatePBX():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -905,7 +895,6 @@ def deletePBX():
     Delete a PBX / Endpoint
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -946,7 +935,7 @@ def deletePBX():
 
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayPBX()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -968,7 +957,6 @@ def deletePBX():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -1034,7 +1022,6 @@ def addUpdateInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -1075,7 +1062,7 @@ def addUpdateInboundMapping():
                 {'prefix': prefix, 'gwlist': gwlist, 'description': notes}, synchronize_session=False)
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1097,7 +1084,6 @@ def addUpdateInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -1109,7 +1095,6 @@ def deleteInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -1125,7 +1110,7 @@ def deleteInboundMapping():
         d.delete(synchronize_session=False)
         db.commit()
 
-        reload_required = True
+        globals.reload_required = True
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1147,7 +1132,6 @@ def deleteInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 def processInboundMappingImport(filename,groupid,pbxid,notes,db):
@@ -1191,7 +1175,6 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
 @app.route('/inboundmappingimport',methods=['POST'])
 def importInboundMapping():
     
-    global reload_required
     
     try:
         if not session.get('logged_in'):
@@ -1241,7 +1224,6 @@ def importInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = True
         db.close()
 
 @app.route('/teleblock')
@@ -1292,7 +1274,6 @@ def addUpdateTeleBlock():
     Update teleblock config file settings
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -1314,7 +1295,7 @@ def addUpdateTeleBlock():
         updateConfig(settings, teleblock)
         reload(settings)
 
-        reload_required = True
+        globals.reload_required = True
         return displayTeleBlock()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1336,7 +1317,6 @@ def addUpdateTeleBlock():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -1413,7 +1393,6 @@ def addUpateOutboundRoutes():
     ruleid = None
     from_prefix = None
     pattern = None
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -1540,7 +1519,7 @@ def addUpateOutboundRoutes():
                 db.commit()
 
         db.commit()
-        reload_required = True
+        globals.reload_required = True
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1562,7 +1541,6 @@ def addUpateOutboundRoutes():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -1574,7 +1552,6 @@ def deleteOutboundRoute():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
-    global reload_required
 
     try:
         if not session.get('logged_in'):
@@ -1597,7 +1574,7 @@ def deleteOutboundRoute():
 
         db.commit()
 
-        reload_required = True
+        globals.reload_required = True
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1619,7 +1596,6 @@ def deleteOutboundRoute():
         db.flush()
         return showError(type=error)
     finally:
-        reload_required = False
         db.close()
 
 
@@ -1629,8 +1605,7 @@ def reloadkam():
     Reload kamailio modules
     """
 
-    global reload_required
-    prev_reload_val = reload_required
+    prev_reload_val = globals.reload_required
 
     try:
         if not session.get('logged_in'):
@@ -1641,6 +1616,7 @@ def reloadkam():
 
         return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
         return_code += subprocess.call(['kamcmd', 'drouting.reload'])
+        return_code += subprocess.call(['kamcmd', 'domain.reload'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
         return_code += subprocess.call(
@@ -1661,10 +1637,10 @@ def reloadkam():
 
         if return_code == 0:
             status_code = 1
-            reload_required = False
+            globals.reload_required = False
         else:
             status_code = 0
-            reload_required = prev_reload_val
+            globals.reload_required = prev_reload_val
         return json.dumps({"status": status_code})
 
     except http_exceptions.HTTPException as ex:
@@ -1726,7 +1702,7 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectReloadRequired():
-    return dict(reload_required=reload_required)
+    return dict(reload_required=globals.reload_required)
 
 
 class CustomServer(Server):
@@ -1781,6 +1757,9 @@ def replaceAppLoggers(log_handler):
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 def initApp(flask_app):
+    
+    globals.initialize()
+    
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
 

@@ -282,12 +282,12 @@ $('#pbxs #open-Update').click(function() {
   modal_body.find(".auth_domain").val(auth_domain);
 
   if (fusionpbx_enabled) {
-    //modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
-    modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
+      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
+	  //modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
   }
   else {
-    //modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-    modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+	  //modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
   }
 
 
