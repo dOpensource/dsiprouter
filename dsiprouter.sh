@@ -163,17 +163,17 @@ fi
 export AWS_ENABLED=0
 # Will try to access the AWS metadata URL and will return an exit code of 22 if it fails
 # The -f flag enables this feature
-curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
-ret=$?
+#curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
+#ret=$?
 #AWS Instance
-if (( $ret == 0 )); then
-    export AWS_ENABLED=1
-    setConfigAttrib 'CLOUD_PLATFORM' 'AWS' ${DSIP_CONFIG_FILE} -q
+#f (( $ret == 0 )); then
+#    export AWS_ENABLED=1
+#    setConfigAttrib 'CLOUD_PLATFORM' 'AWS' ${DSIP_CONFIG_FILE} -q
 #Native Install or some other cloud platform that's not supported as of yet
-else
-    setConfigAttrib 'CLOUD_PLATFORM' '' ${DSIP_CONFIG_FILE} -q
-
-fi
+#else
+#    setConfigAttrib 'CLOUD_PLATFORM' '' ${DSIP_CONFIG_FILE} -q
+#
+#fi
 
 function displayLogo {
 echo "CiAgICAgXyAgX19fX18gX19fX18gX19fX18gIF9fX19fICAgICAgICAgICAgIF8gCiAgICB8IHwv
