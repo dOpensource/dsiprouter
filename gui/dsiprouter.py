@@ -17,11 +17,13 @@ from database import loadSession, Gateways, Address, InboundMapping, OutboundRou
 from modules import flowroute
 from modules.domain.domain_routes import domains
 import globals
+from modules.api.api_routes import api
 import settings
 
 # global variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
+app.register_blueprint(api)
 db = loadSession()
 numbers_api = flowroute.Numbers()
 

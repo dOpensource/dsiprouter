@@ -163,7 +163,7 @@ fi
 export AWS_ENABLED=0
 # Will try to access the AWS metadata URL and will return an exit code of 22 if it fails
 # The -f flag enables this feature
-curl -s --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
+curl -s  --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
 ret=$?
 #AWS Instance
 if (( $ret == 0 )); then
