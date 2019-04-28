@@ -10,13 +10,11 @@ db = loadSession()
 api = Blueprint('api', __name__)
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
+@api_security
 def getKamailioStats():
     try:
         if (settings.DEBUG):
             debugEndpoint()
-
-        #if not session.get('logged_in'):
-        #    return render_template('index.html', version=settings.VERSION)
 
         payload = {"jsonrpc": "2.0", "method": "tm.stats","id": 1}
         #r = requests.get('https://www.google.com',data=payload)

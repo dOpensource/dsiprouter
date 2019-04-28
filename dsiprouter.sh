@@ -774,8 +774,12 @@ EOF
         fi
     fi
 
+    # Generate the API token
+    generateAPIToken
+    
     # Generate a unique admin password
     generatePassword
+
 
     # Restart dSIPRouter with new configurations
     systemctl restart dsiprouter
@@ -1096,7 +1100,7 @@ function resetPassword {
     printwarn "The admin account password has been reset"
 
     # generate the new password and display login info
-    generatePassword
+    generatePassword 
     displayLoginInfo
 
     printwarn "Restart dSIPRouter to make the password active!"
@@ -1111,6 +1115,14 @@ function generatePassword {
     fi
 
     setConfigAttrib 'PASSWORD' "$password" ${DSIP_CONFIG_FILE} -q
+}
+
+
+function generateAPIToken {
+
+	dsip_api_token=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
+    	setConfigAttrib 'DSIP_API_TOKEN' "$dsip_api_token" ${DSIP_CONFIG_FILE} -q
+
 }
 
 # =================

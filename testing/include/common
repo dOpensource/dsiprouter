@@ -92,6 +92,22 @@ getConfigAttrib() {
     printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
 }
 
+
+# $1 == attribute name
+# $2 == attribute value
+# $3 == python config file
+# $4 == whether to 'quote' value (use for strings)
+setConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    if (( $# >= 4 )); then
+        VALUE="'${VALUE}'"
+    fi
+    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+}
+
 # notes: try to access the AWS metadata URL to determine if this is an AMI instance
 # returns: 0 == success, 1 == failure
 isInstanceAMI() {
