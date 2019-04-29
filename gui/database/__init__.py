@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String, join, Integer, ForeignKey, select
 from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy import exc as sql_exceptions
@@ -209,6 +209,19 @@ class Subscribers(object):
 
     pass
 
+class Leases(object):
+    """
+    Schema for dsip_endpoint_leases table\n
+    Documentation: `maintains a list of active leases based on seconds`_
+    """
+
+    def __init__(self, gwid, sid, ttl): 
+        self.gwid = gwid
+        self.sid = sid
+        t = datetime.now() + timedelta(seconds=ttl)
+        self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
+    pass
+
 
 class UAC(object):
     """
@@ -385,6 +398,7 @@ def loadSession():
     domain = Table('domain', metadata, autoload=True)
     domain_attrs = Table('domain_attrs', metadata, autoload=True)
     dispatcher = Table('dispatcher', metadata, autoload=True)
+    dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -409,6 +423,7 @@ def loadSession():
     mapper(Domain, domain)
     mapper(DomainAttrs, domain_attrs)
     mapper(Dispatcher, dispatcher)
+    mapper(Leases, dsip_endpoint_lease)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
