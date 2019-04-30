@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 . include/common
-set -x
 
 test="dSIPRouter API Test"
 
