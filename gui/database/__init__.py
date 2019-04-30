@@ -199,13 +199,14 @@ class Subscribers(object):
     Documentation: `subscriber table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-subscriber>`_
     """
 
-    def __init__(self, username, password, domain, gwid):
+    def __init__(self, username, password, domain, gwid, email_address=None):
         self.username = username
         self.password = password
         self.domain = domain
         self.ha1 = ''
         self.ha1b = ''
         self.rpid = gwid
+        self.email_address = email_address
 
     pass
 

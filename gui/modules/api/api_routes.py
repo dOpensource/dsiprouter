@@ -78,17 +78,19 @@ def getEndpointLease():
         strip=''
         prefix=''
         
-        #Add the gateway
+        #Add the Gateways table
 
         Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
         db.add(Gateway)
         db.flush()
 
-        #Add the subscriber
+        #Add the Subscribers table
 
-        Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid)
+        Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid, email)
         db.add(Subscriber)
         db.flush()
+
+        #Add to the Leases table
 
         Lease = Leases(Gateway.gwid, Subscriber.id, int(ttl))
         db.add(Lease)
@@ -104,6 +106,57 @@ def getEndpointLease():
 
         #Commit transactions to database
 
+        db.commit()
+        return json.dumps(payload)
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        #db.rollback()
+        #db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        #db.rollback()
+        #db.flush()
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        #db.rollback()
+        #db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
+
+@api.route("/api/v1/endpoint/lease/<int:leaseid>/revoke", methods=['PUT'])
+@api_security
+def revokeEndpointLease(leaseid):
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+       
+        # Query the Lease ID
+        Lease = db.query(Leases).filter(Leases.id == leaseid).first()
+
+        # Remove the entry in the Subscribers table
+               
+        Subscriber = db.query(Subscribers).filter(Subscribers.id == Lease.sid).first()
+        db.delete(Subscriber)
+        # Remove the entry in the Gateway table
+        
+        Gateway = db.query(Gateways).filter(Gateways.gwid == Lease.gwid).first()
+        db.delete(Gateway)
+
+        # Remove the entry in the Lease table
+        
+        db.delete(Lease)
+        
+        payload = {}
+        payload['leaseid'] = leaseid
+        payload['status'] = 'revoked'
+        
         db.commit()
         return json.dumps(payload)
 
