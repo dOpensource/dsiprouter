@@ -180,3 +180,54 @@ def revokeEndpointLease(leaseid):
         return showError(type=error)
     finally:
         db.close()
+
+
+@api.route("/api/v1/endpoint/<int:id>", methods=['PUT'])
+@api_security
+def updateEndpoint(id):
+
+    # Define a dictionary object that represents the payload 
+    payload = {}
+    # Set the status to 0, update it to 1 if the update is successful
+    payload['status'] = 0
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+       
+        #Read JSON Message
+
+        # Query the Gateway
+        Gateway = db.query(Gateways).filter(Gateways.gwid == id).first()
+
+        # Update Gateway by adding the maintmode attribute
+        fields = strFieldsToDict(Gateway.description)
+        fields['maintmode'] = 1
+        Gateway.description = dictToStrFields(fields)
+        
+        payload = {}
+        payload['status'] = 1
+        
+        db.commit()
+        return json.dumps(payload)
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return json.dumps(payload)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return json.dumps(payload)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return json.dumps(payload)
+    finally:
+        db.close()

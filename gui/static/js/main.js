@@ -494,6 +494,63 @@ function reloadkam(elmnt) {
   });
 }
 
+function enableMaintenanceMode() {
+
+	var table=document.getElementById("pbxs");
+	r=1;
+	while(row=table.rows[r++]) {
+	    checkbox=row.cells[0].getElementsByClassName('checkthis');
+	    if (checkbox[0].checked) {
+		    updateEndpoint(row,'maintmode',1);
+	    }
+	}	
+
+}
+
+function disableMaintenanceMode() {
+
+	var table=document.getElementById("pbxs");
+	r=1;
+	while(row=table.rows[r++]) {
+	    checkbox=row.cells[0].getElementsByClassName('checkthis');
+	    if (checkbox[0].checked) {
+		    updateEndpoint(row,'maintmode',0);
+	    }
+	}	
+
+}
+
+/* Update an attribute of an endpoint 
+/* row - Javascript DOM that contains the row of the PBX
+ * attr - is the attribute that we want to update
+ */
+function updateEndpoint(row,attr,attrvalue) {
+
+	checkbox=row.cells[0].getElementsByClassName('checkthis');
+        pbxid = checkbox[0].value;
+
+	$.ajax({
+		type: "PUT",
+		url: "/api/v1/endpoint/" + pbxid,
+		dataType: "json",
+		success: function(msg) {
+			if (msg.status === 1) {
+				//Uncheck the Checkbox
+				if (attr === 'maintmode') {
+				$('#checkbox_' + pbxid )[0].checked=false;
+				if (attrvalue == 1)
+					$('#maintmode_' + pbxid ).html("<span class='glyphicon glyphicon-wrench'>");
+				else
+
+					$('#maintmode_' + pbxid ).html("");
+
+				}
+			}
+		
+		}
+	});
+}
+
 /* listener for fusionPBX toggle */
 $('.modal-body .toggleFusionPBXDomain').change(function() {
   var modal = $(this).closest('div.modal');
