@@ -59,7 +59,12 @@
     {% for row in rows %}
       <tr class='element-row'>
 	      <td><input type="checkbox" id='checkbox_{{ row.gwid }}' class="checkthis" value="{{ row.gwid }}"/></td>
-	<td class='maintmode' id='maintmode_{{ row.gwid }}'></td> 
+	<td class='maintmode' id='maintmode_{{ row.gwid }}'>
+        {% if row.maintmode %}
+		<span class='glyphicon glyphicon-wrench'>		
+	{% endif %}
+
+	</td> 
 	<td class='gwid'>{{ row.gwid }}</td>
         <td class='name'>{{ row.description|attrFilter('name') }}</td>
         <td class='ip_addr'>{{ row.address }}</td>

@@ -92,7 +92,7 @@ def getEndpointLease():
 
         #Add to the Leases table
 
-        Lease = Leases(Gateway.gwid, Subscriber.id, int(ttl))
+        Lease = dSIPLeases(Gateway.gwid, Subscriber.id, int(ttl))
         db.add(Lease)
         db.flush()
 
@@ -138,7 +138,7 @@ def revokeEndpointLease(leaseid):
             debugEndpoint()
        
         # Query the Lease ID
-        Lease = db.query(Leases).filter(Leases.id == leaseid).first()
+        Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
 
         # Remove the entry in the Subscribers table
                
@@ -185,31 +185,37 @@ def revokeEndpointLease(leaseid):
 @api.route("/api/v1/endpoint/<int:id>", methods=['PUT'])
 @api_security
 def updateEndpoint(id):
-
-    # Define a dictionary object that represents the payload 
-    payload = {}
-    # Set the status to 0, update it to 1 if the update is successful
-    payload['status'] = 0
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
        
-        #Read JSON Message
 
-        # Query the Gateway
-        Gateway = db.query(Gateways).filter(Gateways.gwid == id).first()
+        # Covert JSON message to Dictionary Object
+        requestPayload = request.
 
-        # Update Gateway by adding the maintmode attribute
-        fields = strFieldsToDict(Gateway.description)
-        fields['maintmode'] = 1
-        Gateway.description = dictToStrFields(fields)
-        
-        payload = {}
-        payload['status'] = 1
+
+        # Define a dictionary object that represents the payload 
+        responsePayload = {}
+   
+        # Set the status to 0, update it to 1 if the update is successful
+        responsePayload['status'] = 0
+
+        # Only handling the maintmode attribute on this release
+
+        if requestPayload['maintmode'] != None:
+            if requestPayload['maintmode'] == 0:
+                MaintMode = db.query(dSIPMaintModes).filter(dSIPMaintModes.gwid == id)
+                if MaintMode:
+                    db.delete(MaintMode)
+            elseif requestPayload['maintmode'] == 1:
+                MaintMode = dSIPMaintmodes(Gateway.ipaddr,id)
+                db.add(MaintMode)
+
         
         db.commit()
-        return json.dumps(payload)
+        responsePayload['status'] = 1
+
+        return json.dumps(responsePayload)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)

@@ -529,6 +529,8 @@ function updateEndpoint(row,attr,attrvalue) {
 	checkbox=row.cells[0].getElementsByClassName('checkthis');
         pbxid = checkbox[0].value;
 
+        requestPayload = "{'maintmode': " + "'" + attrvalue + "'}";  
+
 	$.ajax({
 		type: "PUT",
 		url: "/api/v1/endpoint/" + pbxid,
@@ -546,8 +548,10 @@ function updateEndpoint(row,attr,attrvalue) {
 
 				}
 			}
+
+		},
+		data: requestPayload
 		
-		}
 	});
 }
 

@@ -608,7 +608,7 @@ def displayPBX():
         res = db.query(Gateways).outerjoin(
             dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
             dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
-            Subscribers, Gateways.gwid == Subscribers.rpid).add_columns(
+            Subscribers, Gateways.gwid == Subscribers.rpid).outjoin(dSIPMaintMode, Gateways.gwid == dSIPMaintMode.gwid).add_columns(
             Gateways.gwid, Gateways.description,
             Gateways.address, Gateways.strip,
             Gateways.pri_prefix,
@@ -618,7 +618,8 @@ def displayPBX():
             dSIPMultiDomainMapping.db_password,
             Subscribers.rpid, Subscribers.username,
             Subscribers.password, Subscribers.domain,
-            dSIPDomainMapping.enabled.label('freepbx_enabled')
+            dSIPDomainMapping.enabled.label('freepbx_enabled'),
+            dSIPMaintMode.status.label('maintmode')
         ).filter(Gateways.type == settings.FLT_PBX).all()
         return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 

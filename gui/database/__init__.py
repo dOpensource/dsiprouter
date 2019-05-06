@@ -223,6 +223,19 @@ class Leases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
     pass
 
+class Maintmodes(object):
+    """
+    Schema for dsip_maintmode table\n
+    Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
+    """
+
+    def __init__(self, ipaddr, gwid, status=1): 
+        self.ipaddr = ipaddr
+	self.gwid = gwid
+        self.status = status
+        self.date = datetime.now()
+    pass
+
 
 class UAC(object):
     """
@@ -400,6 +413,7 @@ def loadSession():
     domain_attrs = Table('domain_attrs', metadata, autoload=True)
     dispatcher = Table('dispatcher', metadata, autoload=True)
     dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
+    dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -424,7 +438,8 @@ def loadSession():
     mapper(Domain, domain)
     mapper(DomainAttrs, domain_attrs)
     mapper(Dispatcher, dispatcher)
-    mapper(Leases, dsip_endpoint_lease)
+    mapper(dSIPLeases, dsip_endpoint_lease)
+    mapper(dSIPMaintModes, dsip_maintmode)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
