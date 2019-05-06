@@ -25,8 +25,8 @@ Note: Details can be found in Realtime DB if you want to ensure that the Kamaili
 You will then be returned back to the List of domains page and you should see your new domain added. You can delete this domain by clicking the red trash can to the right of the page.
 
 
-.. image:: images/list_of_domains1.PNG
- :align: center  
+ .. image:: images/list_of_domains1.PNG
+  :align: center  
 
 
 Be sure to click the Reload Kamailio button to apply changes.
