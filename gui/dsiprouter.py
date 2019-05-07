@@ -13,7 +13,7 @@ from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
-    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher
+    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes
 from modules import flowroute
 from modules.domain.domain_routes import domains
 import globals
@@ -608,7 +608,7 @@ def displayPBX():
         res = db.query(Gateways).outerjoin(
             dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
             dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
-            Subscribers, Gateways.gwid == Subscribers.rpid).outjoin(dSIPMaintMode, Gateways.gwid == dSIPMaintMode.gwid).add_columns(
+            Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).add_columns(
             Gateways.gwid, Gateways.description,
             Gateways.address, Gateways.strip,
             Gateways.pri_prefix,
@@ -619,7 +619,7 @@ def displayPBX():
             Subscribers.rpid, Subscribers.username,
             Subscribers.password, Subscribers.domain,
             dSIPDomainMapping.enabled.label('freepbx_enabled'),
-            dSIPMaintMode.status.label('maintmode')
+            dSIPMaintModes.status.label('maintmode')
         ).filter(Gateways.type == settings.FLT_PBX).all()
         return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
@@ -1621,6 +1621,7 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'drouting.reload'])
         return_code += subprocess.call(['kamcmd', 'domain.reload'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
         return_code += subprocess.call(
             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])

@@ -210,7 +210,7 @@ class Subscribers(object):
 
     pass
 
-class Leases(object):
+class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
     Documentation: `maintains a list of active leases based on seconds`_
@@ -223,7 +223,7 @@ class Leases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
     pass
 
-class Maintmodes(object):
+class dSIPMaintModes(object):
     """
     Schema for dsip_maintmode table\n
     Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
@@ -231,9 +231,9 @@ class Maintmodes(object):
 
     def __init__(self, ipaddr, gwid, status=1): 
         self.ipaddr = ipaddr
-	self.gwid = gwid
+        self.gwid = gwid
         self.status = status
-        self.date = datetime.now()
+        self.createdate = datetime.now()
     pass
 
 

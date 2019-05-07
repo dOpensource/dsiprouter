@@ -504,6 +504,9 @@ function configureKamailio {
 
     # Install schema for custom LCR logic
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/lcr.sql
+    
+    # Install schema for custom MaintMode logic
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_maintmode.sql
 
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
