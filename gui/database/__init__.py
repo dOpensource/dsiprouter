@@ -255,10 +255,15 @@ class UAC(object):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
-        self.r_username = username
+        if flags == self.FLAGS.REG_DISABLED.value:
+            self.r_username =""
+            self.auth_username=""
+        else:
+            self.r_username = username
+            self.auth_username= username
+
         self.r_domain = remote_domain
         self.realm = realm
-        self.auth_username = username
         self.auth_password = password
         self.auth_ha1 = ""
         self.auth_proxy = proxy
