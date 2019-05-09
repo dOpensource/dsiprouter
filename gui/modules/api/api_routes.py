@@ -47,6 +47,69 @@ def getKamailioStats():
         db.close()
 
 
+@api.route("/api/v1/kamailio/reload", methods=['GET'])
+@api_security
+def reloadKamailio():
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+        
+        payloadResponse = {}
+        configParameters = {}
+        reloadCommands = {}
+        reloadCommands['permissions.addressReload'] = ''
+        reloadCommands['drouting.reload'] = ''
+        reloadCommands['domain.reload'] = ''
+        reloadCommands['htable.reload'] = '"htable": "maintmode"'
+        reloadCommands['htable.reload'] = '"htable": "tofromprefix"'
+        reloadCommands['uac.reg_reload'] = ''
+        configParameters['cfg.sets:teleblock-gw_up'] = '"teleblock", "gw_ip",' + str(settings.TELEBLOCK_GW_IP)
+        configParameters['cfg.sets:teleblock-media_ip'] ='"teleblock", "media_ip",' +  str(settings.TELEBLOCK_MEDIA_IP)
+        configParameters['cfg.seti:teleblock-gw_enabled'] ='"teleblock", "gw_enabled",' +  str(settings.TELEBLOCK_GW_ENABLED)
+        configParameters['cfg.seti:teleblock-gw_port'] ='"teleblock", "gw_port",' +  str(settings.TELEBLOCK_GW_PORT)
+        configParameters['cfg.seti:teleblock-media_port'] ='"teleblock", "gw_media_port,' +  str(settings.TELEBLOCK_MEDIA_PORT)
+
+        for key in reloadCommands:
+            payload = '{{"jsonrpc": "2.0", "method": {}, "params" : {},"id": 1}}'.format(key,reloadCommands[key])
+            r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
+            payloadResponse[key]=r.status_code
+
+
+        for key in configParameters:
+            if "cfgs.sets" in key:
+                payload = '{{"jsonrpc": "2.0", "method": "cfg.sets", "params" : {},"id": 1}}'.format(key,configParameters[key])
+            elif "cfgi.seti" in key:
+                payload = '{{"jsonrpc": "2.0", "method": "cfg.seti", "params" : {},"id": 1}}'.format(key,configParameters[key])
+
+            r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
+            #payloadResponse[key]=json.dumps({"status":r.status_code,"message":r.json()})
+            payloadResponse[key]=r.status_code
+
+        
+        return json.dumps({"results": payloadResponse})
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
+
+
 @api.route("/api/v1/endpoint/lease", methods=['GET'])
 @api_security
 def getEndpointLease():
