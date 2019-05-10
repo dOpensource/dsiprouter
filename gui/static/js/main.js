@@ -463,6 +463,15 @@ $('#outboundmapping #open-Delete').click(function() {
   modal_body.find(".ruleid").val(ruleid);
 });
 
+function reloadkamrequired() {
+  var reload_button = $('#reloadkam');
+  
+  reload_button.removeClass('btn-primary');
+  reload_button.addClass('btn-warning');
+
+
+}
+
 function reloadkam(elmnt) {
   //elmnt.style.backgroundColor = "red";
   //elmnt.style.borderColor = "red"
@@ -541,12 +550,15 @@ function updateEndpoint(row,attr,attrvalue) {
 				//Uncheck the Checkbox
 				if (attr === 'maintmode') {
 				$('#checkbox_' + pbxid )[0].checked=false;
-				if (attrvalue == 1)
+				if (attrvalue == 1) {
 					$('#maintmode_' + pbxid ).html("<span class='glyphicon glyphicon-wrench'>");
-				else
+					reloadkamrequired();
+				}
+				else {
 
 					$('#maintmode_' + pbxid ).html("");
-
+					reloadkamrequired();
+				}
 				}
 			}
 

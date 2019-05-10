@@ -725,6 +725,9 @@ function installDsiprouter {
         printerr "dSIPRouter install failed"
         cleanupAndExit 1
     fi
+
+    # add dsiprouter.sh to the path
+    ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
     # configure dsiprouter modules
     installModules
     # set some defaults in settings.py
@@ -1088,6 +1091,7 @@ function displayLoginInfo {
 
     pprint "Username: $(getConfigAttrib 'USERNAME' ${DSIP_CONFIG_FILE})"
     pprint "Password: $(getConfigAttrib 'PASSWORD' ${DSIP_CONFIG_FILE})"
+    pprint "API Token: $(getConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})"
 
     # Tell them how to access the URL
     printdbg "You can access the dSIPRouter web gui by going to:"
