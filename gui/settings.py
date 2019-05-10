@@ -5,8 +5,8 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'NDIyYzQwMGI3ODVl'
-DSIP_API_TOKEN = 'IRlNINSBtXqZILXXzj9Wnl6VupzTeYVTcATtjXm6uMhLsnrVhuXNqKPgpSXQHEU0'
+PASSWORD = 'MWQ4NGNlZDMxYjZl'
+DSIP_API_TOKEN = 'XIDwSSz77ct5FQHiS1HT9seJ1MiG5lb1Ls2p841lxRraAnes0Nr7KLgssgfBx8lk'
 DSIP_API_HOST = ''
 
 # dsiprouter logging settings
@@ -77,9 +77,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '142.93.201.92'
-INTERNAL_IP_NET = '142.93.201.*'
-EXTERNAL_IP_ADDR = '142.93.201.92'
+INTERNAL_IP_ADDR = '104.248.60.163'
+INTERNAL_IP_NET = '104.248.60.*'
+EXTERNAL_IP_ADDR = '104.248.60.163'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
