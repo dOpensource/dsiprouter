@@ -226,20 +226,20 @@ def revokeEndpointLease(leaseid):
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
-        #db.rollback()
-        #db.flush()
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
-        #db.rollback()
-        #db.flush()
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
-        #db.rollback()
-        #db.flush()
+        db.rollback()
+        db.flush()
         return showError(type=error)
     finally:
         db.close()
