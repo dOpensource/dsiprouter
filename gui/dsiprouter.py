@@ -1461,7 +1461,7 @@ def addUpateOutboundRoutes():
         else:  # Handle the simple case of a To prefix being updated
             if (from_prefix is None) and (prefix is not None):
                 oldgroupid = groupid
-                if (groupid is None) or (groupid == "None"):
+                if (groupid is None) and (groupid == "None"):
                     groupid = settings.FLT_OUTBOUND
 
                 # Convert the dr_rule back to a default carrier rule
@@ -1483,6 +1483,10 @@ def addUpateOutboundRoutes():
                 # Check if pattern already exists
                 exists = db.query(dSIPLCR).filter(dSIPLCR.pattern == pattern).scalar()
                 if exists:
+                    db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+                    'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
+                    'routeid': routeid, 'gwlist': gwlist, 'description': description
+                })
                     return displayOutboundRoutes()
 
                 elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
