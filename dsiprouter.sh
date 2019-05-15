@@ -1122,6 +1122,7 @@ function displayLoginInfo {
     pprint "API Token: $(getConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})"
 
     # Tell them how to access the URL
+    printf '\n'
     printdbg "You can access the dSIPRouter web gui by going to:"
     pprint "External IP: ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}"
 

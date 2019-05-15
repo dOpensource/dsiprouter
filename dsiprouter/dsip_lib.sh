@@ -187,6 +187,7 @@ isInstanceAMI() {
     if (( $ret != 22 )) && (( $ret != 28 )); then
         return 0
     fi
+    return 1
 }
 
 # returns: 0 == success, 1 == failure
