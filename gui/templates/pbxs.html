@@ -2,14 +2,30 @@
 
 
 {% block table_headers %}
-
-  <div class="tableAddButton">
-    <h4>List of PBX(s)</h4>
-    <button id='open-PbxAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add">
-      Add
-    </button>
+ <div class="container">
+  <div class="pageTitle row">
+      <h4>List of PBX(s)</h4>
   </div>
-
+  <div class="row">
+  	<div class="btn-group mr-2">
+    		<button id='open-PbxAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add">
+      		Add
+    		</button>
+  	</div>
+  	<div class="btn-group">
+		<div class="dropdown">
+    			<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+				Batch Actions<span class="caret"></span>
+    			</button>
+  	
+    			<div class="dropdown-menu" style="width:190px;padding:5px" aria-labelledby="dropdownMenuButton">
+				<a class="dropdown-item" href="#" onclick='enableMaintenanceMode()'>Enable Maintenance Mode</a>
+				<a class="dropdown-item" href="#" onclick='disableMaintenanceMode()'>Disable Maintenance Mode</a>
+    			</div>
+		</div>
+  	</div>
+  </div>
+</div>
 {% endblock %}
 
 
@@ -19,6 +35,7 @@
 
     <thead>
     <tr class='element-row'>
+      <th></th>
       <th></th>
       <th data-field="id">PBX ID</th>
       <th data-field="name">Name</th>
@@ -41,8 +58,14 @@
     <tbody>
     {% for row in rows %}
       <tr class='element-row'>
-        <td><input type="checkbox" class="checkthis" value="1"/></td>
-        <td class='gwid'>{{ row.gwid }}</td>
+	      <td><input type="checkbox" id='checkbox_{{ row.gwid }}' class="checkthis" value="{{ row.gwid }}"/></td>
+	<td class='maintmode' id='maintmode_{{ row.gwid }}'>
+        {% if row.maintmode %}
+		<span class='glyphicon glyphicon-wrench'>		
+	{% endif %}
+
+	</td> 
+	<td class='gwid'>{{ row.gwid }}</td>
         <td class='name'>{{ row.description|attrFilter('name') }}</td>
         <td class='ip_addr'>{{ row.address }}</td>
         <td class='strip'>{{ row.strip }}</td>
@@ -357,10 +380,10 @@ systemctl restart fail2ban</code></pre>
     $(document).ready(function() {
       $('#pbxs').DataTable({
         "columnDefs": [
-          { "orderable": true, "targets": [1,2,3] },
-          { "orderable": false, "targets": [0,7,8,9,10,11,12,13,14,15,16] },
+          { "orderable": true, "targets": [2,3] },
+          { "orderable": false, "targets": [0,1,7,8,9,10,11,12,13,14,15,16] },
         ],
-        "order": [[1, 'asc']]
+        "order": [[2, 'asc']]
       });
     });
   </script>

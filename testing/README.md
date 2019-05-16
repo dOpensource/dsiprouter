@@ -40,3 +40,5 @@ Contains the Unittest number and a description of what the tests validates
 |16|Sending JSONRPC Commands to Kamailio|
 |17|Domain Pass-Thru using FreePBX|
 |18|DoS and SIP Security - Doesn't Block Known Carrier IP(s)|
+|19|dSIPRouter API|
+**More to come

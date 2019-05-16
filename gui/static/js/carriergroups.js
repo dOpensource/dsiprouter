@@ -215,7 +215,7 @@ function setCarrierHandlers() {
     if (Object.keys(related_rules).length > 0) {
       /* create an alert and append it to the DOM */
       var html_string = '<div class="alert alert-warning centered" role="alert">' +
-        '<h4>This record will also be removed from the following rules</h4>' +
+        '<h4>Deleting this rule will cause the following Global Outbound Routes to be deleted</h4>' +
         '<hr>' + '<div class="table-responsive">'+
         '<table class="table table-centered" style="margin-bottom: 0;">' +
         '<thead><tr><th>RULE ID</th><th>NAME</th></tr></thead><tbody>';

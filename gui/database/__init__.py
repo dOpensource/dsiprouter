@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String, join, Integer, ForeignKey, select
 from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy import exc as sql_exceptions
@@ -199,14 +199,41 @@ class Subscribers(object):
     Documentation: `subscriber table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-subscriber>`_
     """
 
-    def __init__(self, username, password, domain, gwid):
+    def __init__(self, username, password, domain, gwid, email_address=None):
         self.username = username
         self.password = password
         self.domain = domain
         self.ha1 = ''
         self.ha1b = ''
         self.rpid = gwid
+        self.email_address = email_address
 
+    pass
+
+class dSIPLeases(object):
+    """
+    Schema for dsip_endpoint_leases table\n
+    Documentation: `maintains a list of active leases based on seconds`_
+    """
+
+    def __init__(self, gwid, sid, ttl): 
+        self.gwid = gwid
+        self.sid = sid
+        t = datetime.now() + timedelta(seconds=ttl)
+        self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
+    pass
+
+class dSIPMaintModes(object):
+    """
+    Schema for dsip_maintmode table\n
+    Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
+    """
+
+    def __init__(self, ipaddr, gwid, status=1): 
+        self.ipaddr = ipaddr
+        self.gwid = gwid
+        self.status = status
+        self.createdate = datetime.now()
     pass
 
 
@@ -228,10 +255,15 @@ class UAC(object):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
-        self.r_username = username
+        if flags == self.FLAGS.REG_DISABLED.value:
+            self.r_username =""
+            self.auth_username=""
+        else:
+            self.r_username = username
+            self.auth_username= username
+
         self.r_domain = remote_domain
         self.realm = realm
-        self.auth_username = username
         self.auth_password = password
         self.auth_ha1 = ""
         self.auth_proxy = proxy
@@ -385,6 +417,8 @@ def loadSession():
     domain = Table('domain', metadata, autoload=True)
     domain_attrs = Table('domain_attrs', metadata, autoload=True)
     dispatcher = Table('dispatcher', metadata, autoload=True)
+    dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
+    dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -409,6 +443,8 @@ def loadSession():
     mapper(Domain, domain)
     mapper(DomainAttrs, domain_attrs)
     mapper(Dispatcher, dispatcher)
+    mapper(dSIPLeases, dsip_endpoint_lease)
+    mapper(dSIPMaintModes, dsip_maintmode)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],

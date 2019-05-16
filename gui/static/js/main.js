@@ -240,19 +240,19 @@ $('#open-PbxAdd').click(function() {
 $('#pbxs #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('pbxs');
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-  var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-  var fusionpbx_enabled = parseInt($(c).find('tr:eq(' + row_index + ') td:eq(7)').text(), 10);
-  var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
-  var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-  var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
+  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
+  var strip = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
+  var fusionpbx_enabled = parseInt($(c).find('tr:eq(' + row_index + ') td:eq(8)').text(), 10);
+  var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+  var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
+  var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
+  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
+  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
 
 
   /** Clear out the modal */
@@ -304,8 +304,8 @@ $('#pbxs #open-Update').click(function() {
 $('#pbxs #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('pbxs');
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
 
   /* update modal fields */
   var modal_body = $('#delete .modal-body');
@@ -463,6 +463,15 @@ $('#outboundmapping #open-Delete').click(function() {
   modal_body.find(".ruleid").val(ruleid);
 });
 
+function reloadkamrequired() {
+  var reload_button = $('#reloadkam');
+  
+  reload_button.removeClass('btn-primary');
+  reload_button.addClass('btn-warning');
+
+
+}
+
 function reloadkam(elmnt) {
   //elmnt.style.backgroundColor = "red";
   //elmnt.style.borderColor = "red"
@@ -492,6 +501,71 @@ function reloadkam(elmnt) {
       //elmnt.style.borderColor = "#2e6da4";
     }
   });
+}
+
+function enableMaintenanceMode() {
+
+	var table=document.getElementById("pbxs");
+	r=1;
+	while(row=table.rows[r++]) {
+	    checkbox=row.cells[0].getElementsByClassName('checkthis');
+	    if (checkbox[0].checked) {
+		    updateEndpoint(row,'maintmode',1);
+	    }
+	}	
+
+}
+
+function disableMaintenanceMode() {
+
+	var table=document.getElementById("pbxs");
+	r=1;
+	while(row=table.rows[r++]) {
+	    checkbox=row.cells[0].getElementsByClassName('checkthis');
+	    if (checkbox[0].checked) {
+		    updateEndpoint(row,'maintmode',0);
+	    }
+	}	
+
+}
+
+/* Update an attribute of an endpoint 
+/* row - Javascript DOM that contains the row of the PBX
+ * attr - is the attribute that we want to update
+ */
+function updateEndpoint(row,attr,attrvalue) {
+
+	checkbox=row.cells[0].getElementsByClassName('checkthis');
+        pbxid = checkbox[0].value;
+
+        requestPayload = '{"maintmode":' +  attrvalue + '}';  
+
+	$.ajax({
+		type: "POST",
+		url: "/api/v1/endpoint/" + pbxid,
+		dataType: "json",
+		contentType: "application/json; charset=utf-8",
+		success: function(msg) {
+			if (msg.status === 1) {
+				//Uncheck the Checkbox
+				if (attr === 'maintmode') {
+				$('#checkbox_' + pbxid )[0].checked=false;
+				if (attrvalue == 1) {
+					$('#maintmode_' + pbxid ).html("<span class='glyphicon glyphicon-wrench'>");
+					reloadkamrequired();
+				}
+				else {
+
+					$('#maintmode_' + pbxid ).html("");
+					reloadkamrequired();
+				}
+				}
+			}
+
+		},
+		data: requestPayload
+		
+	});
 }
 
 /* listener for fusionPBX toggle */

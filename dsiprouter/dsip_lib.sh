@@ -180,8 +180,66 @@ pathCheck() {
     esac
 }
 
-# returns: AMI instance ID || blank string
+# returns: 0 == success, 1 == failure
+# notes: try to access the AWS metadata URL to determine if this is an AMI instance
+isInstanceAMI() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the DO metadata URL to determine if this is an Digital Ocean instance
+isInstanceDO() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/ &>/dev/null; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the GCE metadata URL to determine if this is an Google instance
+isInstanceGCE() {
+    curl -s -f --connect-timeout 2 http://metadata.google.internal/computeMetadata/v1/; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the MS Azure metadata URL to determine if this is an Azure instance
+isInstanceAZURE() {
+    curl -s -f --connect-timeout 2 -H Metadata:true "http://169.254.169.254/metadata/instance?api-version=2018-10-01"; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# TODO: support digital ocean and google cloud and microsoft azure
+# $1 == -aws | -do | -gce | -azure
+# returns: instance ID || blank string
 getInstanceID() {
+#    # TODO: find out what we use as id for each provider (will be set to password)
+#    # TODO: find out how to query that information for that provider
+#    case "$1" in
+#        -aws)
+#            ;;
+#        -do)
+#            ;;
+#        -gce)
+#            ;;
+#        -azure)
+#            ;;
+#        *)
+#            printf ''
+#            ;;
+#    esac
+
     curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
     ec2-metadata -i 2>/dev/null
 }
@@ -200,15 +258,24 @@ cronRemove() {
 
 # $1 == ip to test
 # returns: 0 == success, 1 == failure
+# notes: regex credit to <https://helloacm.com>
 ipv4Test() {
     local IP="$1"
 
-    if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        local IFS='.'
-        IP=($IP)
-        if (( ${IP[0]} <= 255 && ${IP[1]} <= 255 && ${IP[2]} <= 255 && ${IP[3]} <= 255 )); then
-            return 0
-        fi
+    if [[ $IP =~ ^([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+# notes: regex credit to <https://helloacm.com>
+ipv6Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$ ]]; then
+        return 0
     fi
     return 1
 }
@@ -217,7 +284,7 @@ ipv4Test() {
 getExternalIP() {
     local EXTERNAL_IP=""
     local URLS=(
-        "https://ipv4.icanhazip.com"
+        "https://icanhazip.com"
         "https://api.ipify.org"
         "https://myexternalip.com/raw"
         "https://ipecho.net/plain"
@@ -227,6 +294,7 @@ getExternalIP() {
     for URL in ${URLS[@]}; do
         EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
         ipv4Test "$EXTERNAL_IP" && break
+        ipv6Test "$EXTERNAL_IP" && break
     done
 
     printf '%s' "$EXTERNAL_IP"

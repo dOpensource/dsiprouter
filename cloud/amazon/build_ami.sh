@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
+#
+# Summary: build dsiprouter for an AWS Deployable Image
+#
 
 BUILD_VERSION="feature-ami"
 BUILD_DIR="/opt/dsiprouter"
+REPO_URL="https://github.com/dOpensource/dsiprouter.git"
 CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
 
 cmdExists() {
@@ -51,8 +55,10 @@ EOF
     fi
 fi
 
-git clone --depth 1 https://github.com/dOpensource/dsiprouter.git -b ${BUILD_VERSION} ${BUILD_DIR}
-cd ${BUILD_DIR}
-./dsiprouter.sh install -debug -all -servernat | tee -ia ${CLOUD_INSTALL_LOG}  2>&1
+git clone --depth 1 ${REPO_URL} -b ${BUILD_VERSION} ${BUILD_DIR}
+${BUILD_DIR}/dsiprouter.sh install -debug -all -servernat | tee -i ${CLOUD_INSTALL_LOG}  2>&1
+res=$?
 
-exit $?
+${BUILD_DIR}/cloud/pre-snapshot.sh
+
+exit $res

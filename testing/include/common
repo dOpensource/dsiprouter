@@ -92,17 +92,59 @@ getConfigAttrib() {
     printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
 }
 
-# notes: try to access the AWS metadata URL to determine if this is an AMI instance
-# returns: 0 == success, 1 == failure
-isInstanceAMI() {
-    curl -s --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
-    ret=$?
-    #AWS Instance
-    if (( $ret == 0 )); then
-	return 0
-    else
-	return 1
+# $1 == attribute name
+# $2 == attribute value
+# $3 == python config file
+# $4 == whether to 'quote' value (use for strings)
+setConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    if (( $# >= 4 )); then
+        VALUE="'${VALUE}'"
     fi
+    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the AWS metadata URL to determine if this is an AMI instance
+isInstanceAMI() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the DO metadata URL to determine if this is an Digital Ocean instance
+isInstanceDO() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/ &>/dev/null; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the GCE metadata URL to determine if this is an Google instance
+isInstanceGCE() {
+    curl -s -f --connect-timeout 2 http://metadata.google.internal/computeMetadata/v1/; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the MS Azure metadata URL to determine if this is an Azure instance
+isInstanceAZURE() {
+    curl -s -f --connect-timeout 2 -H Metadata:true "http://169.254.169.254/metadata/instance?api-version=2018-10-01"; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
 }
 
 # notes: prints the AMI instance ID || blank string
@@ -117,11 +159,9 @@ uriEncode() {
     perl -MURI::Escape -e 'print uri_escape shift, , q{^A-Za-z0-9\-._~/}' -- "$*"
 }
 
-
 # Add PBX
 # return the PBX ID
 addPBX() {
-
 	mysql kamailio -e "insert into dr_gateways values (null,9,'18.191.20.204',0,null,null,'name:Smoketest PBX');"
 	pbxid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest PBX%';"`
 
@@ -129,13 +169,10 @@ addPBX() {
 }
 
 deletePBX() {
-
 	mysql kamailio -e "delete from dr_gateways where description like '%Smoketest PBX%';"
 }
 
 addDomain() {
-
-	
 	mysql kamailio -e "insert into domain values (null,'smoketest.com','smoketest.com',now());"
 	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_list',2,'64',now())";
 	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_type',2,'0',now())"
@@ -146,8 +183,6 @@ addDomain() {
 }
 
 deleteDomain() {
-
 	mysql kamailio -e "delete from domain where did='smoketest.com';"
 	mysql kamailio -e "delete from domain_attrs where did='smoketest.com';"
-
 }

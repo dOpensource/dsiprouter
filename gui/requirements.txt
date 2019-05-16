@@ -1,3 +1,4 @@
+docker_py
 Flask
 Flask_Script
 mysqlclient
@@ -8,4 +9,3 @@ pyspark
 requests
 SQLAlchemy
 Werkzeug
-docker

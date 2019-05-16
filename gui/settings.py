@@ -5,7 +5,9 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'admin'
+PASSWORD = 'MWQ4NGNlZDMxYjZl'
+DSIP_API_TOKEN = 'XIDwSSz77ct5FQHiS1HT9seJ1MiG5lb1Ls2p841lxRraAnes0Nr7KLgssgfBx8lk'
+DSIP_API_HOST = ''
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -21,8 +23,8 @@ DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
-VERSION = 0.521
-DEBUG = True
+VERSION = 0.522
+DEBUG = False
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
@@ -51,7 +53,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = True
+SQLALCHEMY_SQL_DEBUG = False
 
 FLT_CARRIER = 8
 FLT_PBX = 9
@@ -75,9 +77,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '68.183.140.81'
-INTERNAL_IP_NET = '68.183.140.*'
-EXTERNAL_IP_ADDR = '68.183.140.81'
+INTERNAL_IP_ADDR = '104.248.60.163'
+INTERNAL_IP_NET = '104.248.60.*'
+EXTERNAL_IP_ADDR = '104.248.60.163'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
