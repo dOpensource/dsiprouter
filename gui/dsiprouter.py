@@ -642,7 +642,7 @@ def displayPBX():
         db.flush()
         return showError(type=error)
 
-
+#########################################################################
 @app.route('/pbx', methods=['POST'])
 def addUpdatePBX():
     """
@@ -701,8 +701,9 @@ def addUpdatePBX():
                 db.add(Addr)
             else:
                 # verify we won't break (username,domain) unique key constraint
-                if db.query(Subscribers).filter(Subscribers.username == auth_username,
-                                                Subscribers.domain == auth_domain).scalar():
+                if db.query(Gateways).filter(Gateways.gwid == gwid).scalar(): 
+                #if db.query(Subscribers).filter(Subscribers.username == auth_username,
+                #                               Subscribers.domain == auth_domain).scalar():
                     db.rollback()
                     db.flush()
                     return showError(type="db", code=400,
@@ -776,10 +777,11 @@ def addUpdatePBX():
         else:
             # Update the Gateway table
             db.query(Gateways).filter(Gateways.gwid == gwid).update(
-                {'description': "name:" + name, 'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
+                    {'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
                 synchronize_session=False)
-
-            # enable domain routing for all pbx in multi tenant db
+            Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+            db.add(Addr)
+                   # enable domain routing for all pbx in multi tenant db
             if multi_tenant_domain_enabled:
                 pass
                 # put required VALUES for all multi tenant use cases here
@@ -836,7 +838,10 @@ def addUpdatePBX():
             if authtype == "userpwd":
                 # Remove ip address from address table
                 Addr = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
-                Addr.delete(synchronize_session=False)
+                #Addr.delete(synchronize_session=False)
+                #Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+                #db.add(Addr)
+                
 
                 # Add the username and password that will be used for authentication
                 # Check if the entry in the subscriber table already exists
@@ -863,9 +868,10 @@ def addUpdatePBX():
                 if Subscriber:
                     Subscriber.delete(synchronize_session=False)
 
-                db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
-                    {'ip_addr': ip_addr}, synchronize_session=False)
+                    db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
+                        {'ip_addr': ip_addr}, synchronize_session=False)
 
+           
         db.commit()
         globals.reload_required = True
         return displayPBX()
@@ -891,7 +897,7 @@ def addUpdatePBX():
     finally:
         db.close()
 
-
+###########################################################
 @app.route('/pbxdelete', methods=['POST'])
 def deletePBX():
     """
