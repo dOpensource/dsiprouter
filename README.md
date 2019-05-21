@@ -23,6 +23,8 @@ username: admin
 
 password: ZmIwMTdmY2I5NjE4
 
+API Token: 9lyrny3HOtwgjR6JIMwRaMej9LijIS835zhVbD8ywHDzXT07Xm6vem1sgfvWkFz3
+
 ### Documentation
 
 You can find our documentation here: [dSIPRouter Documentation](https://dsiprouter.readthedocs.io/en/latest)
