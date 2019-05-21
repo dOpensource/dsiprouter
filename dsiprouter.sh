@@ -159,20 +159,36 @@ else
     fi
 fi
 
-# Check if we are on AWS Instance
+# Check if we are on a VPS Cloud Instance
+# 0 == not enabled, 1 == enabled
 export AWS_ENABLED=0
-# Will try to access the AWS metadata URL and will return an exit code of 22 if it fails
-# The -f flag enables this feature
-curl -s  --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/document|grep ami &>/dev/null
-ret=$?
-#AWS Instance
-if (( $ret == 0 )); then
+export DO_ENABLED=0
+export GCE_ENABLED=0
+export AZURE_ENABLED=0
+# -- amazon web service check --
+if isInstanceAMI; then
     export AWS_ENABLED=1
     setConfigAttrib 'CLOUD_PLATFORM' 'AWS' ${DSIP_CONFIG_FILE} -q
-#Native Install or some other cloud platform that's not supported as of yet
 else
-    setConfigAttrib 'CLOUD_PLATFORM' '' ${DSIP_CONFIG_FILE} -q
-
+    # -- digital ocean check --
+    if isInstanceDO; then
+        export DO_ENABLED=1
+        setConfigAttrib 'CLOUD_PLATFORM' 'DO' ${DSIP_CONFIG_FILE} -q
+    else
+        # -- google compute engine check --
+        if isInstanceGCE; then
+            export GCE_ENABLED=1
+            setConfigAttrib 'CLOUD_PLATFORM' 'GCE' ${DSIP_CONFIG_FILE} -q
+        else
+            # -- microsoft azure check --
+            if isInstanceAZURE; then
+                export AZURE_ENABLED=1
+                setConfigAttrib 'CLOUD_PLATFORM' 'AZURE' ${DSIP_CONFIG_FILE} -q
+            else
+                setConfigAttrib 'CLOUD_PLATFORM' '' ${DSIP_CONFIG_FILE} -q
+            fi
+        fi
+    fi
 fi
 
 function displayLogo {
@@ -277,6 +293,7 @@ function initialChecks {
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
         # make sure we run package installs unattended
         export DEBIAN_FRONTEND="noninteractive"
+        export DEBIAN_PRIORITY="critical"
         # default dpkg to noninteractive modes for install
         (cat << 'EOF'
 Dpkg::Options {
@@ -728,6 +745,9 @@ function installDsiprouter {
 
     # add dsiprouter.sh to the path
     ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
+    # make sure current python version is in the path
+    # required in dsiprouter.py shebang (will fail startup without)
+    ln -s ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
     # configure dsiprouter modules
     installModules
     # set some defaults in settings.py
@@ -786,6 +806,8 @@ EOF
     # Generate a unique admin password
     generatePassword
 
+    # custom dsiprouter MOTD banner for ssh logins
+    updateBanner
 
     # Restart dSIPRouter with new configurations
     systemctl restart dsiprouter
@@ -826,6 +848,12 @@ function uninstallDsiprouter {
     # Remove crontab entry
     echo "Removing crontab entry"
     cronRemove 'dsiprouter_cron.py'
+
+    # revert to previous MOTD ssh login banner
+    revertBanner
+
+    # remove dsiprouter.sh from the path
+    rm -f /usr/local/bin/dsiprouter
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -1094,6 +1122,7 @@ function displayLoginInfo {
     pprint "API Token: $(getConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})"
 
     # Tell them how to access the URL
+    printf '\n'
     printdbg "You can access the dSIPRouter web gui by going to:"
     pprint "External IP: ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}"
 
@@ -1107,7 +1136,7 @@ function resetPassword {
     printwarn "The admin account password has been reset"
 
     # generate the new password and display login info
-    generatePassword 
+    generatePassword
     displayLoginInfo
 
     printwarn "Restart dSIPRouter to make the password active!"
@@ -1124,12 +1153,78 @@ function generatePassword {
     setConfigAttrib 'PASSWORD' "$password" ${DSIP_CONFIG_FILE} -q
 }
 
-
 function generateAPIToken {
-
 	dsip_api_token=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
-    	setConfigAttrib 'DSIP_API_TOKEN' "$dsip_api_token" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_API_TOKEN' "$dsip_api_token" ${DSIP_CONFIG_FILE} -q
+}
 
+# update MOTD banner for ssh login
+function updateBanner {
+    mkdir -p /etc/update-motd.d
+
+    # don't write multiple times
+    if [ -f /etc/update-motd.d/00-dsiprouter ]; then
+        return
+    fi
+
+    # move old banner files
+    cp -f /etc/motd ${DSIP_SYSTEM_CONFIG_DIR}/motd.bak
+    cat /dev/null > /etc/motd
+    chmod -x /etc/update-motd.d/*
+
+    # add our custom banner
+    (cat << EOF
+#!/usr/bin/env bash
+
+# redefine variables and functions here
+ESC_SEQ="$ESC_SEQ"
+ANSI_NONE="$ANSI_NONE"
+ANSI_GREEN="$ANSI_GREEN"
+$(declare -f printdbg)
+$(declare -f getConfigAttrib)
+$(declare -f displayLogo)
+
+# updated variables on login
+DSIP_PORT=\$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
+EXTERNAL_IP=\$(getConfigAttrib 'EXTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})
+INTERNAL_IP=\$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})
+DSIP_GUI_PROTOCOL=\$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
+VERSION=\$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
+
+# displaying information to user
+clear
+displayLogo
+printdbg "Version: \$VERSION"
+printf '\n'
+printdbg "You can access the dSIPRouter GUI by going to:"
+printdbg "External IP: \${DSIP_GUI_PROTOCOL}://\${EXTERNAL_IP}:\${DSIP_PORT}"
+if [ "\$EXTERNAL_IP" != "\$INTERNAL_IP" ];then
+    printdbg "Internal IP: \${DSIP_GUI_PROTOCOL}://\${INTERNAL_IP}:\${DSIP_PORT}"
+fi
+printf '\n'
+
+exit 0
+EOF
+    ) > /etc/update-motd.d/00-dsiprouter
+
+    chmod +x /etc/update-motd.d/00-dsiprouter
+
+    # for centos7 and debian < v9 we have to update it 'manually'
+    if [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
+        cronAppend "0 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
+    fi
+}
+
+# revert to old MOTD banner for ssh logins
+function revertBanner {
+    mv -f ${DSIP_SYSTEM_CONFIG_DIR}/motd.bak /etc/motd
+    rm -f /etc/update-motd.d/00-dsiprouter
+    chmod +x /etc/update-motd.d/*
+
+    # remove cron entry for centos7 and debian < v9
+    if [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
+        cronRemove '/etc/update-motd.d/00-dsiprouter'
+    fi
 }
 
 # =================
