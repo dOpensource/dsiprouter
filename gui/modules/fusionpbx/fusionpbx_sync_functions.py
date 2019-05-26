@@ -278,7 +278,7 @@ def run_sync(settings):
 
         #Update Nginx configuration file for HTTP Provisioning and start docker container if we have FusionPBX systems
         #update_nginx(sources[key])
-        if sources is not None:
+        if sources is not None and len(sources) > 0:
             sources = list(sources.keys())
             update_nginx(sources)
     except Exception as e:
