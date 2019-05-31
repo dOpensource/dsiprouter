@@ -7,6 +7,7 @@ from shared import *
 import  urllib.parse as parse
 import json
 import settings
+import globals
 
 db = loadSession()
 api = Blueprint('api', __name__)
@@ -57,35 +58,39 @@ def reloadKamailio():
         payloadResponse = {}
         configParameters = {}
         reloadCommands = {}
-        reloadCommands['permissions.addressReload'] = ''
-        reloadCommands['drouting.reload'] = ''
-        reloadCommands['domain.reload'] = ''
-        reloadCommands['htable.reload'] = '"htable": "maintmode"'
-        reloadCommands['htable.reload'] = '"htable": "tofromprefix"'
-        reloadCommands['uac.reg_reload'] = ''
-        configParameters['cfg.sets:teleblock-gw_up'] = '"teleblock", "gw_ip",' + str(settings.TELEBLOCK_GW_IP)
-        configParameters['cfg.sets:teleblock-media_ip'] ='"teleblock", "media_ip",' +  str(settings.TELEBLOCK_MEDIA_IP)
-        configParameters['cfg.seti:teleblock-gw_enabled'] ='"teleblock", "gw_enabled",' +  str(settings.TELEBLOCK_GW_ENABLED)
-        configParameters['cfg.seti:teleblock-gw_port'] ='"teleblock", "gw_port",' +  str(settings.TELEBLOCK_GW_PORT)
-        configParameters['cfg.seti:teleblock-media_port'] ='"teleblock", "gw_media_port,' +  str(settings.TELEBLOCK_MEDIA_PORT)
+        #TODO: Get the configuration parameters to be updatable via the API
+        #configParameters['cfg.sets:teleblock-gw_up'] = 'teleblock, gw_ip' + str(settings.TELEBLOCK_GW_IP)
+        #configParameters['cfg.sets:teleblock-media_ip'] ='"teleblock", "media_ip",' +  str(settings.TELEBLOCK_MEDIA_IP)
+        #configParameters['cfg.seti:teleblock-gw_enabled'] ='"teleblock", "gw_enabled",' +  str(settings.TELEBLOCK_GW_ENABLED)
+        #configParameters['cfg.seti:teleblock-gw_port'] ='"teleblock", "gw_port",' +  str(settings.TELEBLOCK_GW_PORT)
+        #configParameters['cfg.seti:teleblock-media_port'] ='"teleblock", "gw_media_port,' +  str(settings.TELEBLOCK_MEDIA_PORT)
 
-        for key in reloadCommands:
-            payload = '{{"jsonrpc": "2.0", "method": {}, "params" : {},"id": 1}}'.format(key,reloadCommands[key])
+        reloadCommands[0] = {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1}
+        reloadCommands[1] = {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1}
+        reloadCommands[2] = {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1}
+        reloadCommands[3] = {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]}
+        reloadCommands[4] = {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]}
+        reloadCommands[5] = {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1}
+
+
+        for element in reloadCommands:
+            payload = reloadCommands[element]
             r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
-            payloadResponse[key]=r.status_code
+            payloadResponse[payload['method']]=r.status_code
 
 
-        for key in configParameters:
-            if "cfgs.sets" in key:
-                payload = '{{"jsonrpc": "2.0", "method": "cfg.sets", "params" : {},"id": 1}}'.format(key,configParameters[key])
-            elif "cfgi.seti" in key:
-                payload = '{{"jsonrpc": "2.0", "method": "cfg.seti", "params" : {},"id": 1}}'.format(key,configParameters[key])
 
-            r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
-            #payloadResponse[key]=json.dumps({"status":r.status_code,"message":r.json()})
-            payloadResponse[key]=r.status_code
+        #for key in configParameters:
+        #    if "cfgs.sets" in key:
+        #        payload = '{{"jsonrpc": "2.0", "method": "cfg.sets", "params" : [{}],"id": 1}}'.format(key,configParameters[key])
+        #    elif "cfgi.seti" in key:
+        #        payload = '{{"jsonrpc": "2.0", "method": "cfg.seti", "params" : {},"id": 1}}'.format(key,configParameters[key])
+        #
+        #    r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
+        #   payloadResponse[key]=json.dumps({"status":r.status_code,"message":r.json()})
+        #    payloadResponse[key]=r.status_code
 
-        
+        globals.reload_required = False 
         return json.dumps({"results": payloadResponse})
 
     except sql_exceptions.SQLAlchemyError as ex:
