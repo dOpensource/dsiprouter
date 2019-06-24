@@ -2,6 +2,34 @@
 
 
 
+### Update kamailio51_dsiprouter.cfg
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Mon, 24 Jun 2019 13:02:29 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+Changing the INVITE timer to a more standard timeout of 32 secs
+
+
+---
+
+
+### Update kamailio51_dsiprouter.cfg
+
+> Branches Affected: master  
+> Tags Affected:   
+> Date: Mon, 24 Jun 2019 13:02:29 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+Changing the INVITE timer to a more standard timeout of 32 secs
+
+
+---
+
+
 ### Cloud Config Security Updates
 
 > Branches Affected: v0.522  
@@ -72,9 +100,22 @@
 ---
 
 
+### Fixed an error that occurs when there are no FusionPBX sources to sync domain info
+
+> Branches Affected: master  
+> Tags Affected:   
+> Date: Sun, 26 May 2019 17:14:31 +0000  
+> Author: root (root@demo-dsiprouter-0.localdomain)  
+> Committer: root (root@demo-dsiprouter-0.localdomain)  
+
+
+
+---
+
+
 ### Fixed a typo
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Sat, 25 May 2019 10:01:48 +0000  
 > Author: root (root@demo-dsiprouter-0.localdomain)  
@@ -87,7 +128,7 @@
 
 ### Fixed an issue with listening on udp and tcp ports
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Sat, 25 May 2019 09:29:37 +0000  
 > Author: root (root@demo-dsiprouter-0.localdomain)  
@@ -100,7 +141,7 @@
 
 ### Explicitly added a listen attribute for tcp. Fixed issue #170
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected: v0.522-rel  
 > Date: Wed, 22 May 2019 15:54:05 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -113,7 +154,7 @@
 
 ### Fixed a regression from Primary/Secondary Failover Enhancement
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Fri, 17 May 2019 17:59:45 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -126,7 +167,7 @@
 
 ### Update README.md
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Thu, 16 May 2019 13:39:24 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -139,7 +180,7 @@
 
 ### - The admin password is now being set properly on Debian - non AWS - Fixed the spacing when displaying the password info
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Wed, 15 May 2019 07:57:23 +0000  
 > Author: root (root@dSIPRouterJenkins-0.localdomain)  
@@ -152,7 +193,7 @@
 
 ### Added the ability to clean up expired leases to our system wide cron script
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Tue, 14 May 2019 11:23:07 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -165,7 +206,7 @@
 
 ### Startup and General Fixes
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Tue, 14 May 2019 07:16:21 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -186,7 +227,7 @@
 
 ### Fixed LCR bug, Added a configuration parameter that allows the PBX INVITE timer to be changed globally during runtime
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Fri, 10 May 2019 21:57:14 +0000  
 > Author: root (root@dSIPRouterMackTest-0.localdomain)  
@@ -199,7 +240,7 @@
 
 ### Updated the .gitignore file
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Fri, 10 May 2019 21:54:48 +0000  
 > Author: root (root@dSIPRouterMackTest-0.localdomain)  
@@ -212,7 +253,7 @@
 
 ### Removed old files
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Fri, 10 May 2019 21:50:09 +0000  
 > Author: root (root@dSIPRouterMackTest-0.localdomain)  
@@ -225,7 +266,7 @@
 
 ### Edits to carriergroups.js
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Fri, 10 May 2019 17:08:55 +0000  
 > Author: root (root@OmariDev-0.localdomain)  
@@ -238,7 +279,7 @@
 
 ### Added initial support for a Kamailio Reload API
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Thu, 9 May 2019 02:17:14 +0000  
 > Author: root (root@dSIPRouterMackTest-0.localdomain)  
@@ -251,7 +292,7 @@
 
 ### Enabled the reload button when enabling and disabling an endpoint for maintenance
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Wed, 8 May 2019 10:02:25 +0000  
 > Author: root (root@dSIPRouterMackTest-0.localdomain)  
@@ -264,7 +305,7 @@
 
 ### Added dsiprouter.sh to /usr/local/bin via a symbolic link
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Wed, 8 May 2019 08:37:26 +0000  
 > Author: root (root@dSIPRouterJenkins-0.localdomain)  
@@ -277,7 +318,7 @@
 
 ### Fixed an issue with creating new carriergroups
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Wed, 8 May 2019 07:50:00 +0000  
 > Author: root (root@dSIPRouterJenkins-0.localdomain)  
@@ -290,7 +331,7 @@
 
 ### Added final logic to support gui and backend support for PBX failover and Endpoint Maintence
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Tue, 7 May 2019 02:17:34 +0000  
 > Author: root (root@dSIPRouterMack0522-0.localdomain)  
@@ -303,7 +344,7 @@
 
 ### Update domains.rst
 
-> Branches Affected: v0.522  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Mon, 6 May 2019 13:30:04 -0400  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -316,7 +357,7 @@
 
 ### Add files via upload
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 6 May 2019 13:16:21 -0400  
 > Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
@@ -329,7 +370,7 @@
 
 ### Added logic to update the endpoint api, added logic to display an indicator when a pbx is in maintenance mode
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 6 May 2019 16:22:22 +0200  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -342,7 +383,7 @@
 
 ### Added API for updating an endpoint and ability to put an endpoint in maintenance mode
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Fri, 3 May 2019 18:54:00 +0000  
 > Author: root (root@dSIPRouterMack0522-0.localdomain)  
@@ -355,7 +396,7 @@
 
 ### Added the ability to REVOKE a lease
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Tue, 30 Apr 2019 08:24:14 +0000  
 > Author: root (root@dSIPRouterMack0522-0.localdomain)  
@@ -368,7 +409,7 @@
 
 ### Turned off debugging
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Tue, 30 Apr 2019 06:29:05 +0000  
 > Author: root (root@dSIPRouterMack0522-0.localdomain)  
@@ -381,7 +422,7 @@
 
 ### Initial commit of the install script for the API module
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 29 Apr 2019 21:24:59 +0000  
 > Author: root (root@dSIPRouterMack0.522-0)  
@@ -394,7 +435,7 @@
 
 ### Removed dashboard.js from root directory
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 29 Apr 2019 21:07:31 +0000  
 > Author: root (root@dSIPRouterMack0.522-0)  
@@ -407,7 +448,7 @@
 
 ### Inbound DID's will try the Primary and then the Secondary PBX.  The user will receive a 502 Service not available if both fail
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 29 Apr 2019 21:04:03 +0000  
 > Author: root (root@dSIPRouterMack0.522-0)  
@@ -420,7 +461,7 @@
 
 ### Initial commit of the Endpoint API
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 29 Apr 2019 20:42:45 +0000  
 > Author: root (root@dSIPRouterMack0.522-0)  
@@ -433,7 +474,7 @@
 
 ### Added a security model for our API framework
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 28 Apr 2019 03:53:21 +0000  
 > Author: root (root@dSIPRouterMack0522-0.localdomain)  
@@ -446,7 +487,7 @@
 
 ### Removed AMI changes that were made - going back to the orig
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 22 Apr 2019 00:04:46 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -459,7 +500,7 @@
 
 ### Temporarily Removing AMI Checks to get Jenkins working
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 21 Apr 2019 23:59:38 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -472,7 +513,7 @@
 
 ### Adding parameter to curl command for AMI check
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 21 Apr 2019 23:49:26 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -485,7 +526,7 @@
 
 ### Update README.md
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 21 Apr 2019 23:00:16 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -498,7 +539,7 @@
 
 ### Update settings.py
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Wed, 17 Apr 2019 07:19:41 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -511,7 +552,7 @@
 
 ### Fixed #130 - l_username field of the uac_reg table will be populated with the gateway group id.  This will get rid of the error messages in the Kamailio log
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Tue, 16 Apr 2019 11:18:50 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -524,7 +565,7 @@
 
 ### Added the default value for l_username so that the system has it during bootup
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Tue, 16 Apr 2019 11:08:55 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -537,7 +578,7 @@
 
 ### Added unit test to test if known carrier ip's are being blocked by the PIKE module Fixed #148
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 15 Apr 2019 19:19:47 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -550,7 +591,7 @@
 
 ### Working unit test for Domain Pass-Thru using FreePBX
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 15 Apr 2019 10:49:32 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -563,7 +604,7 @@
 
 ### Update README.md
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 14 Apr 2019 18:57:49 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -576,7 +617,7 @@
 
 ### Added basic exception handling
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 14 Apr 2019 19:07:11 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -589,7 +630,7 @@
 
 ### Removed the old docker-py python library
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 14 Apr 2019 18:46:04 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -602,7 +643,7 @@
 
 ### Fixed #144 and fixed a regression with the FusionPBX Enable/Disable button in the PBX section
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 14 Apr 2019 18:16:36 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -615,7 +656,7 @@
 
 ### Removed the old docker-py library and added the docker
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 14 Apr 2019 03:41:11 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -628,7 +669,7 @@
 
 ### Initial commit of unit test 17, which will be used for testing Domain Pass-Thru
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sat, 13 Apr 2019 23:49:13 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -641,7 +682,7 @@
 
 ### Fixed the Reload Kamailio button so that it reload the Domain module when pressed
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sat, 13 Apr 2019 21:58:02 +0000  
 > Author: root (root@dSIPRouterMack-0.localdomain)  
@@ -654,7 +695,7 @@
 
 ### Fixed #145, Fixed #139, Fixed #142 - The Domain functionality has been fixed.  Adding, Removing and Deleting DDomains has been fixed.  Also, the parameter needed to route traffic when using pass-thru authentication has been fixed
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sat, 13 Apr 2019 17:24:37 +0000  
 > Author: root (root@dSIPRouterNicole2.localdomain)  
@@ -667,7 +708,7 @@
 
 ### Added sngrep back to Debian 8 and 9 installs.  Fixed #147
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Thu, 11 Apr 2019 14:44:47 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -680,7 +721,7 @@
 
 ### Fixed the AWS test
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Thu, 11 Apr 2019 09:59:33 +0000  
 > Author: root (root@ip-172-31-18-84.ec2.internal)  
@@ -693,7 +734,7 @@
 
 ### Removed the test exit command from the install script
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Thu, 11 Apr 2019 09:50:05 +0000  
 > Author: root (root@ip-172-31-18-84.ec2.internal)  
@@ -706,7 +747,7 @@
 
 ### Fixed the function in the testing harness that's responsible for validating if an instance is an EC2 instance on Amazon
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Thu, 11 Apr 2019 03:54:00 +0000  
 > Author: Mack Hendricks (mack@dopensource.comm)  
@@ -719,7 +760,7 @@
 
 ### Fixed the URL endpont used to validate if the instance is an EC2 instancing running on Amazon
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Thu, 11 Apr 2019 03:52:47 +0000  
 > Author: Mack Hendricks (mack@dopensource.comm)  
@@ -732,7 +773,7 @@
 
 ### Update README.md
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 07:11:11 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -745,7 +786,7 @@
 
 ### Update README.md
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 07:10:32 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -758,7 +799,7 @@
 
 ### Update README.md
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 07:10:04 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -771,7 +812,7 @@
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:47:40 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -784,7 +825,7 @@
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:45:55 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -797,7 +838,7 @@
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:45:31 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -810,7 +851,7 @@
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:42:59 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -823,7 +864,7 @@
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:40:42 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -836,7 +877,7 @@
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:38:38 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -849,7 +890,7 @@
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:35:20 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -862,7 +903,7 @@
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:25:09 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -875,7 +916,7 @@
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:55:36 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -888,7 +929,7 @@
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:52:35 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -901,7 +942,7 @@
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:49:43 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -914,7 +955,7 @@
 
 ### Update centos-install.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:31:37 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -927,7 +968,7 @@
 
 ### Update debian_install.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 31 Mar 2019 10:55:37 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -940,7 +981,7 @@
 
 ### Updated Debian Install Docs
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 31 Mar 2019 10:54:02 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -954,7 +995,7 @@ Modified the docs to reflect the new install options
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:47:40 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -967,7 +1008,7 @@ Modified the docs to reflect the new install options
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:45:55 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -980,7 +1021,7 @@ Modified the docs to reflect the new install options
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:45:31 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -993,7 +1034,7 @@ Modified the docs to reflect the new install options
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:42:59 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1006,7 +1047,7 @@ Modified the docs to reflect the new install options
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:40:42 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1019,7 +1060,7 @@ Modified the docs to reflect the new install options
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:38:38 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1032,7 +1073,7 @@ Modified the docs to reflect the new install options
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:35:20 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1045,7 +1086,7 @@ Modified the docs to reflect the new install options
 
 ### Update command_line_options.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 06:25:09 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1058,7 +1099,7 @@ Modified the docs to reflect the new install options
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:55:36 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1071,7 +1112,7 @@ Modified the docs to reflect the new install options
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:52:35 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1084,7 +1125,7 @@ Modified the docs to reflect the new install options
 
 ### Update installing.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:49:43 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1097,7 +1138,7 @@ Modified the docs to reflect the new install options
 
 ### Update centos-install.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Mon, 1 Apr 2019 05:31:37 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1110,7 +1151,7 @@ Modified the docs to reflect the new install options
 
 ### Update debian_install.rst
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 31 Mar 2019 10:55:37 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1123,7 +1164,7 @@ Modified the docs to reflect the new install options
 
 ### Updated Debian Install Docs
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sun, 31 Mar 2019 10:54:02 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -1137,7 +1178,7 @@ Modified the docs to reflect the new install options
 
 ### Initial commit of an active Dashboard
 
-> Branches Affected: feature-ami,v0.522  
+> Branches Affected: feature-ami,master,v0.522  
 > Tags Affected:   
 > Date: Sat, 30 Mar 2019 23:48:14 +0000  
 > Author: root (root@dSIPRouterMackDev-0.localdomain)  
