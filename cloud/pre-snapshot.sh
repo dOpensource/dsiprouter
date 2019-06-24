@@ -16,11 +16,19 @@ getDisto() {
 
 # make sure all security updates are installed
 if cmdExists 'apt'; then
+    # grub updates adhere to ucf not debconf
+    # make sure ucf defaults to unattended upgrade
+    unset UCF_FORCE_CONFFOLD
+    export UCF_FORCE_CONFFNEW=YES
+    ucf --purge /boot/grub/menu.lst
+
+    apt-get -y install perl
     apt-get -y update
     apt-get -y upgrade
     apt-get -y autoremove
     apt-get -y autoclean
 elif cmdExists 'yum'; then
+    yum -y install perl
     yum -y update
     yum -y upgrade
     yum -y autoremove
@@ -72,7 +80,7 @@ IgnoreRhosts yes
 RhostsRSAAuthentication no
 # Don't allow remote host auth protocol v2
 HostbasedAuthentication no
-# PAM is needed for some 2-facter auth solutions
+# PAM is needed for some 2-factor auth solutions
 UsePAM yes
 # Some exploits have been published using X11 offsets
 # so we disable it just in case
@@ -89,10 +97,13 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 EOF
 ) > /etc/ssh/sshd_config
 
+# don't aalow cloud-init's initial ssh module to overwrite our settings
+perl -0777 -i -pe 's|(cloud_init_modules:.*?)\s-\sssh\s*\n(\n)|\1\2|gs' /etc/cloud/cloud.cfg
+
 # remove logs and any information from build process
 rm -rf /tmp/* /var/tmp/*
 history -c
-cat /dev/null > /root/.bash_history
+cat /dev/null > /root/.*history
 unset HISTFILE
 find /var/log -mtime -1 -type f -exec truncate -s 0 {} \;
 rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
@@ -100,6 +111,9 @@ rm -rf /var/lib/cloud/instances/*
 rm -f /root/.ssh/authorized_keys /etc/ssh/*key*
 dd if=/dev/zero of=/zerofile 2> /dev/null; sync; rm -f /zerofile; sync
 cat /dev/null > /var/log/lastlog; cat /dev/null > /var/log/wtmp
+
+# ensure address space layout randomization (ASLR) is enabled
+echo '2' > /proc/sys/kernel/randomize_va_space
 
 # some debian-based systems may not regenerate host keys
 # debian9 specifically has issues with this

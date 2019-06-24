@@ -2,9 +2,170 @@
 
 
 
+### Cloud Config Security Updates
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Mon, 24 Jun 2019 12:25:40 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #185
+- fix cloud-init overwriting sshd_config
+- add ASLR check
+- fix grub prompt issue in snapshot configs for ubuntu
+- switch cloud build script to v0.522
+
+
+---
+
+
+### Rewrote the reload API
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Fri, 31 May 2019 05:30:36 +0000  
+> Author: root (root@ip-172-31-13-3.us-east-2.compute.internal)  
+> Committer: root (root@ip-172-31-13-3.us-east-2.compute.internal)  
+
+
+
+---
+
+
+### Set it back so that it binds to all interfaces. This will cause the dashboard not to work on some OS builds
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Tue, 28 May 2019 08:50:12 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### -Fixed the provisioning server template to default to 443 -Fixed the fusionpbx sync script to handle 443 properly
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Tue, 28 May 2019 08:36:16 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Use python docker module versus docker_py
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Tue, 28 May 2019 07:07:40 +0000  
+> Author: root (root@p0.detroitpbx.com)  
+> Committer: root (root@p0.detroitpbx.com)  
+
+
+
+---
+
+
+### Fixed a typo
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Sat, 25 May 2019 10:01:48 +0000  
+> Author: root (root@demo-dsiprouter-0.localdomain)  
+> Committer: root (root@demo-dsiprouter-0.localdomain)  
+
+
+
+---
+
+
+### Fixed an issue with listening on udp and tcp ports
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Sat, 25 May 2019 09:29:37 +0000  
+> Author: root (root@demo-dsiprouter-0.localdomain)  
+> Committer: root (root@demo-dsiprouter-0.localdomain)  
+
+
+
+---
+
+
+### Explicitly added a listen attribute for tcp. Fixed issue #170
+
+> Branches Affected: v0.522  
+> Tags Affected: v0.522-rel  
+> Date: Wed, 22 May 2019 15:54:05 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Fixed a regression from Primary/Secondary Failover Enhancement
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Fri, 17 May 2019 17:59:45 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update README.md
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Thu, 16 May 2019 13:39:24 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### - The admin password is now being set properly on Debian - non AWS - Fixed the spacing when displaying the password info
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Wed, 15 May 2019 07:57:23 +0000  
+> Author: root (root@dSIPRouterJenkins-0.localdomain)  
+> Committer: root (root@dSIPRouterJenkins-0.localdomain)  
+
+
+
+---
+
+
+### Added the ability to clean up expired leases to our system wide cron script
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Tue, 14 May 2019 11:23:07 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
 ### Startup and General Fixes
 
-> Branches Affected: feature-ami  
+> Branches Affected: feature-ami,v0.522  
 > Tags Affected:   
 > Date: Tue, 14 May 2019 07:16:21 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -134,6 +295,19 @@
 > Date: Tue, 7 May 2019 02:17:34 +0000  
 > Author: root (root@dSIPRouterMack0522-0.localdomain)  
 > Committer: root (root@dSIPRouterMack0522-0.localdomain)  
+
+
+
+---
+
+
+### Update domains.rst
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Mon, 6 May 2019 13:30:04 -0400  
+> Author: ncannon01 (44709249+ncannon01@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
 
 
 

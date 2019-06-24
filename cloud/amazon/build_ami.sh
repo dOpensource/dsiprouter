@@ -3,7 +3,7 @@
 # Summary: build dsiprouter for an AWS Deployable Image
 #
 
-BUILD_VERSION="feature-ami"
+BUILD_VERSION="v0.522"
 BUILD_DIR="/opt/dsiprouter"
 REPO_URL="https://github.com/dOpensource/dsiprouter.git"
 CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
