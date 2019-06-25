@@ -2,6 +2,23 @@
 
 
 
+### Security Bug Modification
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Tue, 25 Jun 2019 18:00:12 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- ammending commit c8756c929ccce9793a1e1717439a257c97f22203
+- Resolves #185
+- add host check
+- allow cloud-init to re-add keys
+
+
+---
+
+
 ### Update kamailio51_dsiprouter.cfg
 
 > Branches Affected: v0.522  
@@ -18,7 +35,7 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 
 ### Update kamailio51_dsiprouter.cfg
 
-> Branches Affected: master  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Mon, 24 Jun 2019 13:02:29 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
@@ -102,7 +119,7 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 
 ### Fixed an error that occurs when there are no FusionPBX sources to sync domain info
 
-> Branches Affected: master  
+> Branches Affected: master,v0.522  
 > Tags Affected:   
 > Date: Sun, 26 May 2019 17:14:31 +0000  
 > Author: root (root@demo-dsiprouter-0.localdomain)  

@@ -22,13 +22,11 @@ if cmdExists 'apt'; then
     export UCF_FORCE_CONFFNEW=YES
     ucf --purge /boot/grub/menu.lst
 
-    apt-get -y install perl
     apt-get -y update
     apt-get -y upgrade
     apt-get -y autoremove
     apt-get -y autoclean
 elif cmdExists 'yum'; then
-    yum -y install perl
     yum -y update
     yum -y upgrade
     yum -y autoremove
@@ -97,13 +95,10 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 EOF
 ) > /etc/ssh/sshd_config
 
-# don't aalow cloud-init's initial ssh module to overwrite our settings
-perl -0777 -i -pe 's|(cloud_init_modules:.*?)\s-\sssh\s*\n(\n)|\1\2|gs' /etc/cloud/cloud.cfg
-
 # remove logs and any information from build process
 rm -rf /tmp/* /var/tmp/*
 history -c
-cat /dev/null > /root/.*history
+cat /dev/null | tee /root/.*history
 unset HISTFILE
 find /var/log -mtime -1 -type f -exec truncate -s 0 {} \;
 rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
@@ -115,8 +110,10 @@ cat /dev/null > /var/log/lastlog; cat /dev/null > /var/log/wtmp
 # ensure address space layout randomization (ASLR) is enabled
 echo '2' > /proc/sys/kernel/randomize_va_space
 
-# some debian-based systems may not regenerate host keys
-# debian9 specifically has issues with this
-dpkg-reconfigure -f noninteractive openssh-server
+# regenerate host server host keys
+if cmdExists 'apt'; then
+    dpkg-reconfigure -f noninteractive openssh-server
+fi
+systemctl restart sshd
 
 exit 0
