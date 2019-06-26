@@ -165,6 +165,8 @@ def update_nginx(sources):
     
     #Connect to docker
     client = docker.from_env()
+    if client is not None:
+        print("Got handle to docker")
 
     try:
         
@@ -186,11 +188,11 @@ def update_nginx(sources):
 
     serverList = ""
     for source in sources:
-        serverList += "server " + str(source) + ";\n"
+        serverList += "server " + str(source) + ":443;\n"
 
     #print(serverList)
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    print(script_dir)
+    #print(script_dir)
 
     input = open(script_dir + "/dsiprouter.nginx.tpl")
     output = open(script_dir + "/dsiprouter.nginx","w")
@@ -202,6 +204,7 @@ def update_nginx(sources):
     #Check if dsiprouter-nginx is running. If so, reload nginx
 
     containers = client.containers.list()
+    print("past container list")
     for container in containers:
         if container.name == "dsiprouter-nginx":
             #Execute a command to reload nginx
@@ -228,7 +231,7 @@ def update_nginx(sources):
            container.remove()
        client.containers.run(image='nginx:latest',
             name="dsiprouter-nginx",
-            ports={'80/tcp':'80/tcp'},
+            ports={'80/tcp':'80/tcp','443/tcp':'443/tcp'},
             volumes={
                 host_volume_path: {'bind':'/etc/nginx/conf.d/default.conf','mode':'rw'},
                 html_volume_path: {'bind':'/etc/nginx/html','mode':'rw'}
