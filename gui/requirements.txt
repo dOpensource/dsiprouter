@@ -1,7 +1,8 @@
+docker
 docker_py
 Flask
 Flask_Script
-MySQLdb
+mysqlclient
 psycopg2
 psycopg2_binary
 PyMySQL

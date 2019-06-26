@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
-set -x 
+# import library functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
+(( $DEBUG == 1 )) && set -x
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get -y install build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+    apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
+    apt-get install -y --allow-unauthenticated libmysqlclient-dev libmariadb-client-lgpl-dev python-mysqldb
     apt-get install -y logrotate rsyslog perl sngrep
 
     # Reset python cmd in case it was just installed
@@ -57,7 +61,7 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+    apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent

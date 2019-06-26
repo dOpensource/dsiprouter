@@ -19,6 +19,19 @@ getDisto() {
     cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2
 }
 
+# wait for cloud vps boot processes to finish before starting
+if cmdExists "yum"; then
+    while fuser /var/lib/apt/lists/lock >/dev/null 2>&1 ||
+    [ ! -f /var/lib/cloud/instance/boot-finished ]; do
+        sleep 1
+    done
+elif cmdExists "apt"; then
+    while [ ! -f /var/lib/cloud/instance/boot-finished ] ||
+    [ -f /var/run/yum.pid ]; do
+        sleep 1
+    done
+fi
+
 # update caches and install dependencies for repo
 if cmdExists "yum"; then
     yum update -y
@@ -60,5 +73,6 @@ ${BUILD_DIR}/dsiprouter.sh install -debug -all -servernat | tee -i ${CLOUD_INSTA
 res=$?
 
 ${BUILD_DIR}/cloud/pre-snapshot.sh
+((res+=$?))
 
 exit $res

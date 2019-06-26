@@ -14,12 +14,15 @@ PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 INCLUDE_DIRS=("${PROJECT_ROOT}/gui")
 # destination file
 REQUIREMENTS_FILE="requirements.txt"
+# pipreqs only catches stdlib libraries
+INCLUDE_LIBS=('mysqlclient' 'docker')
 
 create_requirements() {
     for PYTHON_PROJECT in ${INCLUDE_DIRS[@]}; do
         OUT_FILE="${PYTHON_PROJECT}/${REQUIREMENTS_FILE}"
 
-        pipreqs --print ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | sort -u | cut -d '=' -f 1 > ${OUT_FILE}
+        INCLUDE_LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --print ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | sort -u | cut -d '=' -f 1) )
+        printf '%s\n' "${INCLUDE_LIBS[@]}" | sort -u > ${OUT_FILE}
 
         git add ${OUT_FILE}
     done

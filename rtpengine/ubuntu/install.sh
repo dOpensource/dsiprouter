@@ -3,6 +3,8 @@
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
+(( $DEBUG == 1 )) && set -x
+
 function install {
     # Install required libraries
     apt-get install -y logrotate rsyslog
