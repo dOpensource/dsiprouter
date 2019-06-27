@@ -1,9 +1,10 @@
-docker_py
+docker
 Flask
 Flask_Script
 psycopg2
 psycopg2_binary
 PyMySQL
+mysqlclient
 pyspark
 requests
 SQLAlchemy
