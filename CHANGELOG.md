@@ -2,6 +2,21 @@
 
 
 
+### Allow Excluding Libraries in Requirements git Hook
+
+> Branches Affected: v0.522  
+> Tags Affected:   
+> Date: Thu, 27 Jun 2019 11:42:59 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update pre-commit hook to allow exluding libraries
+- add docker_py to excluded libraries
+
+
+---
+
+
 ### Fix Cloud Stability Issues
 
 > Branches Affected: v0.522  
