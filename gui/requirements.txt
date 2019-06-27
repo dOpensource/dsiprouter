@@ -1,4 +1,4 @@
-docker_py
+docker
 Flask
 Flask_Script
 mysqlclient
