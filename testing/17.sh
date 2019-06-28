@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+set -x
 . include/common
 
 unitname="Domain Pass-Thru using FreePBX"
@@ -11,7 +11,7 @@ domain="smoketest.com"
 host="localhost"
 port="5060"
 externalip=$(getExternalIP)
-
+internalip=$INTERNAL_IP
 
 $(addPBX)
 $(addDomain)
@@ -21,8 +21,14 @@ kamcmd domain.reload
 kamcmd drouting.reload
 
 # Register User
+# Try external ip
 sipsak -U -C sip:$username@home.com --from sip:$username@$domain -u $username -a $password -p $externalip:$port -s sip:$username@$domain -i -vvv >/dev/null
 ret=$?
+# Try internal ip if it fails
+if [ "$ret" != "0" ]; then
+	sipsak -U -C sip:$username@home.com --from sip:$username@$domain -u $username -a $password -p $internalip:$port -s sip:$username@$domain -i -vvv >/dev/null
+	ret=$?
+fi
 
 #Clean Up
 deletePBX
