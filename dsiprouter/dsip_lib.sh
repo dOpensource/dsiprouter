@@ -283,20 +283,52 @@ ipv6Test() {
 }
 
 # notes: prints external ip, or empty string if not available
+# notes: below we have measurements for average time of each service
+#        over 10 non-cached requests, in seconds, round trip
+#
+# |          External Service         | Mean RTT | IP Protocol |
+# |:---------------------------------:|:--------:|:-----------:|
+# | https://icanhazip.com             | 0.38080  | IPV4        |
+# | https://ipecho.net/plain          | 0.39810  | IPV4        |
+# | https://myexternalip.com/raw      | 0.51850  | IPV4        |
+# | https://api.ipify.org             | 0.64860  | IPV4        |
+# | https://bot.whatismyipaddress.com | 0.69640  | IPV4        |
+# | https://icanhazip.com             | 0.40190  | IPV6        |
+# | https://bot.whatismyipaddress.com | 0.72490  | IPV6        |
+# | https://ifconfig.co               | 0.80290  | IPV6        |
+# | https://ident.me                  | 0.97620  | IPV6        |
+# | https://api6.ipify.org            | 1.08510  | IPV6        |
+#
 getExternalIP() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
     local EXTERNAL_IP=""
-    local URLS=(
-        "https://icanhazip.com"
-        "https://api.ipify.org"
-        "https://myexternalip.com/raw"
-        "https://ipecho.net/plain"
-        "https://bot.whatismyipaddress.com"
-    )
+    local URLS=() CURL_CMD="curl"
+
+    if (( ${IPV6_ENABLED} == 1 )); then
+        URLS=(
+            "https://icanhazip.com"
+            "https://bot.whatismyipaddress.com"
+            "https://ifconfig.co"
+            "https://ident.me"
+            "https://api6.ipify.org"
+        )
+        CURL_CMD="curl -6"
+        IP_TEST="ipv6Test"
+    else
+        URLS=(
+            "https://icanhazip.com"
+            "https://ipecho.net/plain"
+            "https://myexternalip.com/raw"
+            "https://api.ipify.org"
+            "https://bot.whatismyipaddress.com"
+        )
+        CURL_CMD="curl -4"
+        IP_TEST="ipv4Test"
+    fi
 
     for URL in ${URLS[@]}; do
-        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
-        ipv4Test "$EXTERNAL_IP" && break
-        ipv6Test "$EXTERNAL_IP" && break
+        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout 2 $URL 2>/dev/null)
+        ${IP_TEST} "$EXTERNAL_IP" && break
     done
 
     printf '%s' "$EXTERNAL_IP"
