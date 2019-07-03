@@ -20,42 +20,33 @@ resetpassword                         Resets dSIPRouter admin account and displa
 help|-h|--help                        List all of the options
 ===================================   ======================================================================
 
-Refer to :ref:`installing_dsiprouter` to get the complete one line version of the command.
+Refer to `debian install <debian_install.rst>`_ or `centos install <debian_install.rst>`_ to get the complete one line version of the command.
 
 
 To start dSIPRouter:
 
-::
+.. code-block:: bash
 
-./dsiprouter.sh start
+  ./dsiprouter.sh start
 
-|
 
 To stop dSIPRouter:
 
-::
+.. code-block:: bash
 
-./dsiprouter.sh stop
+  ./dsiprouter.sh stop
 
-|
 
 To restart dSIPRouter:
 
-::
+.. code-block:: bash
 
-./dsiprouter.sh restart
+  ./dsiprouter.sh restart
 
-|
 
 To uninstall dSIPRouter:
 
-::
+.. code-block:: bash
 
-./dsiprouter.sh unistall
-
-|
-
-
-
-
+  ./dsiprouter.sh unistall
 

@@ -2,6 +2,19 @@
 
 
 
+### Fix inconsistencies in documentation
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 14:54:12 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### Merge Documentation Changes
 
 > Branches Affected: dev  
