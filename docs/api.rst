@@ -25,10 +25,13 @@ Executing Lease Point API
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Getting the endlease
 ::
+
  curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
- |
+|
  
- Revoking and replacing with your own lease ID
- ::
-   curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/<leaseid>/revoke"
+Revoking and replacing with your own lease ID
+
+::
+
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/<leaseid>/revoke"
 |
