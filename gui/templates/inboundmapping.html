@@ -167,7 +167,7 @@
       </div>
 
       <div class="form-group">
-        <select class="gwid form-control" name="gwid" title="gwid">
+        <select class="gwid form-control" name="gwid" title="gwid" required="required">
           <option class="hidden" value="" selected disabled>Primary PBX</option>
           {% for gw in gwlist %}
             <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
