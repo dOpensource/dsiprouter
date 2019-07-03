@@ -2,6 +2,32 @@
 
 
 
+### Merge Documentation Fixes
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 15:30:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
+### Update api.rst
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 15:08:56 -0400  
+> Author: Omari S. King (46901954+OmariKing@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
 ### Fix inconsistencies in documentation
 
 > Branches Affected: dev  

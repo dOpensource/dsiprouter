@@ -20,7 +20,7 @@ resetpassword                         Resets dSIPRouter admin account and displa
 help|-h|--help                        List all of the options
 ===================================   ======================================================================
 
-Refer to `debian install <debian_install.rst>`_ or `centos install <debian_install.rst>`_ to get the complete one line version of the command.
+Refer to :ref:`debian_install` to get the complete one line version of the command.
 
 
 To start dSIPRouter:

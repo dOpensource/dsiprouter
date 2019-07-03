@@ -91,7 +91,7 @@ Click `CSV Example <https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.
 Click here to see an example of a csv file.
 
 To Manually import a DID:
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1) Go to the Dashboard screen.
 
