@@ -41,7 +41,7 @@ Paid support is available `here <https://dOpensource.com/shop/>`_
 Installing dSIPRouter
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. toctree::
+  .. toctree::
    :maxdepth: 2
    
    installing.rst
@@ -103,15 +103,9 @@ Upgrade
   
 API
 ^^^
-   .. toctree::
-    :maxdepth: 2
+
+  .. toctree::
+   :maxdepth: 2
+
+   api.rst
    
-    api.rst
-   
-
-
-
-
-
-
-
