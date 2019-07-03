@@ -10,12 +10,19 @@ Getting Your Token
 
 ::
 
-
   cat /opt/dsiprouter/gui/settings.py | grep API_TOKEN
 |
 
 Executing Kamailio stats API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+  
+  curl -H "Authorization: Bearer $DSIP_TOKEN" 
+  -X GET http://<addressOfYourInstance>:5000/api/v1/kamailio/stats
+|
+
+One Line Version:
 ::
   
   curl -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://<addressOfYourInstance>:5000/api/v1/kamailio/stats
