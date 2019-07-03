@@ -2,6 +2,32 @@
 
 
 
+### Update API Docs
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 16:36:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
+### Update api.rst
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 16:10:17 -0400  
+> Author: Omari S. King (46901954+OmariKing@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
 ### Merge Documentation Fixes
 
 > Branches Affected: dev  

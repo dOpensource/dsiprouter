@@ -47,8 +47,8 @@ Must be installed on a fresh install of Debian Stretch or CentOS 7.
 You will not be prompted for any information.  It will take anywhere from 4-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 Links to the installation documentation are below:
 
-- `debian <debian_install.rst>`_
-- `centos <centos_install.rst>`_
+- :ref:`debian9-install`
+- :ref:`centos7-install`
 
 Amazon AMI's
 ^^^^^^^^^^^^
