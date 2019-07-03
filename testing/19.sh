@@ -63,75 +63,75 @@ validate() {
     ruleid0=$(mysql kamailio -sA -e "select ruleid from dr_rules where groupid='9000' limit 1;")
 
 
-    # ===================
-    # GET /api/v1/mapping
-    # ===================
+    # ==========================
+    # GET /api/v1/inboundmapping
+    # ==========================
     # valid requests
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?ruleid=1000000" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?did=1000000" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?ruleid=abcdef" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?did=abcdef" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=1000000" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did=1000000" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=abcdef" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did=abcdef" -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
 
-    # ====================
-    # POST /api/v1/mapping
-    # ====================
+    # ===========================
+    # POST /api/v1/inboundmapping
+    # ===========================
     # valid requests
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "'"${prefix2}"'", "servers": ["66","67"], "notes": "'"${prefix2}"' DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "'"${prefix3}"'","servers": ["66","67"]}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "", "servers": ["66"], "notes": "Default DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"servers": ["66","67"], "notes": "'"${prefix2}"' DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "0", "servers": ["66","67","68","69","70","71","71"], "notes": "0 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "00", "servers": ["",""], "notes": "00 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "000", "servers": ["abc","efg"], "notes": "000 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "0000", "servers": [], "notes": "0000 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "00000", "notes": "00000 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
 
-    # ===================
-    # PUT /api/v1/mapping
-    # ===================
+    # ==========================
+    # PUT /api/v1/inboundmapping
+    # ==========================
     # valid requests
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?ruleid=${ruleid0}" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" \
         -d '{"did": "01234", "notes": "01234 DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?did='"${prefix1}"'" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" \
         -d '{"servers": ["67"]}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?did=10000000" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=10000000" \
         -d '{"did": "01234", "notes": "01234 DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?doesntexist=123" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?doesntexist=123" \
         -d '{"notes": "New DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"notes": "Newer DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?did='"${prefix1}"'" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" \
         -d '{}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?did=01234" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=01234" \
         -d '{"doesntexist": "2"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/mapping?did=01234" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=01234" \
         -d '{"doesntexist": "2", "notes": "New DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
 
-    # ======================
-    # DELETE /api/v1/mapping
-    # ======================
+    # =============================
+    # DELETE /api/v1/inboundmapping
+    # =============================
     # valid requests
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/mapping" -o /dev/null) -eq 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -eq 200 ] && return 1
 
 
     # if we made it this far all checks passed

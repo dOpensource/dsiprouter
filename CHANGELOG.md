@@ -2,6 +2,59 @@
 
 
 
+### Update Inbound Mapping Endpoint
+
+> Branches Affected: v0.523  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 10:55:01 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- change endpoint path to /api/v1/inboundmapping
+
+
+---
+
+
+### Update index.rst
+
+> Branches Affected: v0.523  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 10:39:17 -0400  
+> Author: Omari S. King (46901954+OmariKing@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Update index.rst
+
+> Branches Affected: v0.523  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 10:38:37 -0400  
+> Author: Omari S. King (46901954+OmariKing@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
+### Create API.rst
+
+> Branches Affected: v0.523  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 10:26:08 -0400  
+> Author: Omari S. King (46901954+OmariKing@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+
+
+
+---
+
+
 ### Make Primary PBX Required in GUI
 
 > Branches Affected: v0.523  

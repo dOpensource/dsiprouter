@@ -325,7 +325,7 @@ def updateEndpoint(id):
         db.close()
 
 # TODO: we should obviously optimize this and cleanup reused code
-@api.route("/api/v1/mapping", methods=['GET', 'POST', 'PUT', 'DELETE'])
+@api.route("/api/v1/inboundmapping", methods=['GET', 'POST', 'PUT', 'DELETE'])
 @api_security
 def handleInboundMapping():
     """
