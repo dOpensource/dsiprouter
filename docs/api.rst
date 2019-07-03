@@ -1,26 +1,26 @@
 API
 ===
 
-+----------+----------------+------------------------------------------------+
-| METHODS  | FUNCTIONS      | ENDPOINTS THEY SUPPORT                         |
-+==========+================+================================================+
-| PUT      | Update existing| /api/v1/endpoint/lease/<int:leaseid>/revoke    |
-|          | information at | /api/v1/inboundmapping                         |
-|          | endpoint       |                                                |
-+----------+----------------+------------------------------------------------+
-| GET      | Get Information| /api/v1/kamailio/stats/                        |
-|          | from Endpoint  | /api/v1/endpoint/lease/                        |
-|          |                | /api/v1/kamailio/reload/                       |
-|          |                | /api/v1/inboundmapping                         |
-+----------+----------------+------------------------------------------------+
-| POST     | Create new     | api/v1/endpoint/<int:id>/api/v1/inboundmapping |
-|          | information at |                                                |
-|          | endpoint       |                                                |
-+----------+----------------+------------------------------------------------+
-| DELETE   | Delete         |  /api/v1/inboundmapping                        |
-|          | information at |                                                |
-|          | endpoint       |                                                |
-+----------+----------------+------------------------------------------------+
++----------+----------------+---------------------------------------------------+
+| METHODS  | FUNCTIONS      | ENDPOINTS THEY SUPPORT                            |
++==========+================+===================================================+
+| PUT      | Update existing| - /api/v1/endpoint/lease/<int:leaseid>/revoke     |
+|          | information at | - /api/v1/inboundmapping                          |
+|          | endpoint       |                                                   |
++----------+----------------+---------------------------------------------------+
+| GET      | Get Information| - /api/v1/kamailio/stats/                         |
+|          | from Endpoint  | - /api/v1/endpoint/lease/                         |
+|          |                | - /api/v1/kamailio/reload/                        |
+|          |                | - /api/v1/inboundmapping                          |
++----------+----------------+---------------------------------------------------+
+| POST     | Create new     | - /api/v1/endpoint/<int:id>/api/v1/inboundmapping |
+|          | information at |                                                   |
+|          | endpoint       |                                                   |
++----------+----------------+---------------------------------------------------+
+| DELETE   | Delete         | - /api/v1/inboundmapping                          |
+|          | information at |                                                   |
+|          | endpoint       |                                                   |
++----------+----------------+---------------------------------------------------+
 
 The steps to obtain the API Token key and using the different curl commands are listen below.
 

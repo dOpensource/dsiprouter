@@ -10,7 +10,7 @@ dSIPRouter enables an organization to start supporting SIP Trunking within minut
 Here are the steps to set it up using IP Authenication:
 
 1. Login to dSIPRouter
-2. Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in `<carrier_groups.rst>`_ and/or `<global_outbound_routes.rst>`_ documentation.
+2. Validate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups`_ and/or :ref:`global_outbound_routes`_ documentation.
 
 3. Click on PBX's and Endpoints
 4. Click "Add" 

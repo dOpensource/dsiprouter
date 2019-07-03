@@ -65,7 +65,7 @@ Edit /etc/kamailio/kamailio.conf and change the variable ‘debug’ to the sysl
 
 **5. For more information see the documentation below:**
 
- https://www.kamailio.org/dokuwiki/doku.php/tutorials:debug-syslog-messages
+https://www.kamailio.org/wiki/tutorials/3.2.x/syslog
 
 
 **rtpengine Logging**

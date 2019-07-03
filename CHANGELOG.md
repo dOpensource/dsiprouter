@@ -2,6 +2,21 @@
 
 
 
+### Update Docs
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 17:21:15 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix couple broken links
+- fix `api.rst`
+
+
+---
+
+
 ### Update API Docs
 
 > Branches Affected: dev  
