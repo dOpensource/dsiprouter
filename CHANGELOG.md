@@ -2,6 +2,20 @@
 
 
 
+### Merge Documentation Changes
+
+> Branches Affected: dev  
+> Tags Affected:   
+> Date: Wed, 3 Jul 2019 13:17:11 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Update api.rst
+
+
+---
+
+
 ### Merge documentation Updates
 
 > Branches Affected: dev  
