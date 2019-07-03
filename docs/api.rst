@@ -37,6 +37,7 @@ Getting Your Token
 Executing Kamailio stats API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
 .. code-block:: bash
   
   curl -H "Authorization: Bearer $DSIP_TOKEN"
@@ -53,6 +54,7 @@ One Line Version:
 Executing Lease Point API
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 Getting the endlease
+
 
 .. code-block:: bash
  
@@ -122,4 +124,5 @@ DELETE /api/v1/inboundmapping
 
     curl -X DELETE -H "Authorization: Bearer ${token}" "http://demo.dsiprouter.org:5000/api/v1/inboundmapping?ruleid=3"
     curl -X DELETE -H "Authorization: Bearer ${token}" "http://demo.dsiprouter.org:5000/api/v1/inboundmapping?did=1313"
+
 

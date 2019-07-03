@@ -103,6 +103,7 @@ Upgrade
   
 API
 ^^^
+
   .. toctree::
    :maxdepth: 2
 
