@@ -38,14 +38,14 @@ One Line Version:
 
 Revoking and replacing with your own lease ID
 
-One Line Version:
-::
-
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/<leaseid>/revoke"
-|
-
 ::
  
  curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" 
  -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/<leaseid>/revoke"
+|
+
+One Line Version:
+::
+
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/<leaseid>/revoke"
 |
