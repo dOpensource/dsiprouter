@@ -243,6 +243,12 @@ systemctl restart fail2ban</code></pre>
       <div class="form-group">
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div>
+      <div>
+      	<input class="max_channels form-control" type="text" name="max_channels" placeholder="Max Concurrent Calls">
+	{% if (enterprise_enabled == False) %}
+        <a href="/upgrade/max_channels" [Enterprise]/>
+	{% endif %}
+      </div>
       <div class="form-group">
         <div class="authoptions radio">
           <label><input class="authtype " type="radio" data-toggle="ip_enabled" name="authtype" value="ip" checked>IP

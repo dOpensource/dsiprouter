@@ -1706,7 +1706,7 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectReloadRequired():
-    return dict(reload_required=globals.reload_required)
+    return dict(reload_required=globals.reload_required,enterprise_enabled=globals.enterprise_enabled)
 
 
 class CustomServer(Server):
