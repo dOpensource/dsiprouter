@@ -83,6 +83,7 @@
         <td class='auth_username hidden'>{{ row.username|noneFilter() }}</td>
         <td class='auth_password hidden'>{{ row.password|noneFilter() }}</td>
         <td class='auth_domain hidden'>{{ row.domain|noneFilter() }}</td>
+        <td class='calllimit hidden'>{{ row.calllimit|noneFilter() }}</td>
 
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
@@ -122,6 +123,12 @@
       </div>
       <div class="form-group">
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
+      </div>
+      <div class="form-group">
+      	<input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls">
+	{% if (enterprise_enabled == False) %}
+        <a href="/upgrade/calllimit" [Enterprise]/>
+	{% endif %}
       </div>
       <div class="form-group">
         <div class="authoptions radio">
@@ -243,10 +250,10 @@ systemctl restart fail2ban</code></pre>
       <div class="form-group">
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div>
-      <div>
-      	<input class="max_channels form-control" type="text" name="max_channels" placeholder="Max Concurrent Calls">
+      <div class="form-group">
+      	<input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls">
 	{% if (enterprise_enabled == False) %}
-        <a href="/upgrade/max_channels" [Enterprise]/>
+        <a href="/upgrade/calllimit" [Enterprise]/>
 	{% endif %}
       </div>
       <div class="form-group">

@@ -236,6 +236,19 @@ class dSIPMaintModes(object):
         self.createdate = datetime.now()
     pass
 
+class dSIPCallLimits(object):
+    """
+    Schema for dsip_maintmode table\n
+    Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
+    """
+
+    def __init__(self, gwid, limit, status=1): 
+        self.gwid = gwid
+        self.limit = limit
+        self.status = status
+        self.createdate = datetime.now()
+    pass
+
 
 class UAC(object):
     """
@@ -419,6 +432,7 @@ def loadSession():
     dispatcher = Table('dispatcher', metadata, autoload=True)
     dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
     dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
+    dsip_calllimit = Table('dsip_calllimit', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -445,6 +459,7 @@ def loadSession():
     mapper(Dispatcher, dispatcher)
     mapper(dSIPLeases, dsip_endpoint_lease)
     mapper(dSIPMaintModes, dsip_maintmode)
+    mapper(dSIPCallLimits, dsip_calllimit)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
