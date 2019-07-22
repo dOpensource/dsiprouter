@@ -881,8 +881,13 @@ def addUpdatePBX():
                 if Subscriber:
                     Subscriber.delete(synchronize_session=False)
 
-                db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
+                exists = db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
                     {'ip_addr': ip_addr}, synchronize_session=False)
+                if not exists:
+                    Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+                    db.add(Addr)
+
+
 
         db.commit()
         globals.reload_required = True
