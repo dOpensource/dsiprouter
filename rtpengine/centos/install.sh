@@ -3,6 +3,8 @@
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
+(( $DEBUG == 1 )) && set -x
+
 # compile and install rtpengine from RPM's
 function install {
     local VERSION_NUM=""
@@ -57,11 +59,14 @@ function install {
     mkdir -p ~/rpmbuild/SOURCES
     git archive --output ~/rpmbuild/SOURCES/ngcp-rtpengine-${VERSION_NUM}.tar.gz --prefix=ngcp-rtpengine-${VERSION_NUM}/ ${RTPENGINE_VER}
     rpmbuild -ba  ./el/rtpengine.spec
-    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-${VERSION_NUM}-*.rpm
-    rpm -i ~/rpmbuild/RPMS/noarch/ngcp-rtpengine-dkms-${VERSION_NUM}-*.rpm
-    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-kernel-${VERSION_NUM}-*.rpm
+    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-${VERSION_NUM}*.rpm
+    rpm -q ngcp-rtpengine >/dev/null 2>&1; ret=$?
+    rpm -i ~/rpmbuild/RPMS/noarch/ngcp-rtpengine-dkms-${VERSION_NUM}*.rpm
+    rpm -q ngcp-rtpengine-dkms >/dev/null 2>&1; ((ret+=$?))
+    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-kernel-${VERSION_NUM}*.rpm
+    rpm -q ngcp-rtpengine-kernel >/dev/null 2>&1; ((ret+=$?))
 
-    if [ $? -ne 0 ]; then
+    if [ $ret -ne 0 ]; then
         echo "Problem installing RTPEngine RPM's"
         exit 1
     fi

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+(( $DEBUG == 1 )) && set -x
 
 function install {
     # Install Dependencies
