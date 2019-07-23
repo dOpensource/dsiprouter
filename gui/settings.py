@@ -5,8 +5,8 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'MWQ4NGNlZDMxYjZl'
-DSIP_API_TOKEN = 'XIDwSSz77ct5FQHiS1HT9seJ1MiG5lb1Ls2p841lxRraAnes0Nr7KLgssgfBx8lk'
+PASSWORD = 'ZmJhM2Y1ODAwNDhl'
+DSIP_API_TOKEN = 'neggz1jEn5ei0ZICsNdWSHv9Obdq7VJJukaLp8smlOaZm49NCrHX72MabKCBixLx'
 DSIP_API_HOST = ''
 
 # dsiprouter logging settings
@@ -24,7 +24,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = 0.522
-DEBUG = False
+DEBUG = True
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
@@ -53,7 +53,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = False
+SQLALCHEMY_SQL_DEBUG = True
 
 FLT_CARRIER = 8
 FLT_PBX = 9
@@ -77,9 +77,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '104.248.60.163'
-INTERNAL_IP_NET = '104.248.60.*'
-EXTERNAL_IP_ADDR = '104.248.60.163'
+INTERNAL_IP_ADDR = '165.227.83.229'
+INTERNAL_IP_NET = '165.227.83.*'
+EXTERNAL_IP_ADDR = '165.227.83.229'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -89,5 +89,5 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install 
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = ''
+CLOUD_PLATFORM = 'DO'
 
