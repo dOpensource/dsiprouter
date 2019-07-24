@@ -54,7 +54,7 @@ export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 #exec 19> >(awk -v time=$(date +"[%Y-%m-%d_%H:%M:%S] ") '{ print time, $0; fflush(); }' > /tmp/debug/trace.log)
 #
 #BASH_XTRACEFD="19"
-set -x
+#set -x
 #
 
 #================== USER_CONFIG_SETTINGS ===================#
@@ -808,9 +808,9 @@ EOF
         fi
 
     # rest of the cloud providers only need password reset to instance id
-    elif (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
-        addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
-        addDependsOnInit "dsiprouter.service"
+    #elif (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
+    #    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
+    #    addDependsOnInit "dsiprouter.service"
     fi
 
     # Generate the API token
