@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+#set -x
 . include/common
 
 unitname="Domain Pass-Thru using FreePBX"
