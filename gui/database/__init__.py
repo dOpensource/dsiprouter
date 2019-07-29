@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String, join, Integer, ForeignKey, select
 from sqlalchemy.orm import mapper, sessionmaker
 from sqlalchemy import exc as sql_exceptions
-import settings
+import settings, os
 from shared import IO, debugException, hostToIP
 if settings.KAM_DB_TYPE == "mysql":
     try:
@@ -347,6 +347,14 @@ def getDBURI():
     :return:    list of DB URI connection strings
     """
     uri_list = []
+
+    settings.KAM_DB_DRIVER = os.getenv('KAM_DB_DRIVER',settings.KAM_DB_DRIVER)
+    settings.KAM_DB_HOST = os.getenv('KAM_DB_HOST',settings.KAM_DB_HOST)
+    settings.KAM_DB_TYPE = os.getenv('KAM_DB_TYPE',settings.KAM_DB_TYPE)
+    settings.KAM_DB_PORT = os.getenv('KAM_DB_PORT',settings.KAM_DB_PORT)
+    settings.KAM_DB_NAME = os.getenv('KAM_DB_NAME',settings.KAM_DB_NAME)
+    settings.KAM_DB_USER = os.getenv('KAM_DB_USER',settings.KAM_DB_USER)
+    settings.KAM_DB_PASS = os.getenv('KAM_DB_PASS',settings.KAM_DB_PASS)
 
     if settings.KAM_DB_TYPE != "":
         sql_uri = settings.KAM_DB_TYPE + "{driver}" + "://" + settings.KAM_DB_USER + ":" + settings.KAM_DB_PASS + "@" + "{host}" + "/" + settings.KAM_DB_NAME
