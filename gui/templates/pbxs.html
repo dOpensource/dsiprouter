@@ -4,7 +4,7 @@
 {% block table_headers %}
  <div class="container">
   <div class="pageTitle row">
-      <h4>List of PBX(s)</h4>
+      <h4>List of Endpoint Groups</h4>
   </div>
   <div class="row">
   	<div class="btn-group mr-2">
@@ -17,7 +17,7 @@
     			<button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 				Batch Actions<span class="caret"></span>
     			</button>
-  	
+
     			<div class="dropdown-menu" style="width:190px;padding:5px" aria-labelledby="dropdownMenuButton">
 				<a class="dropdown-item" href="#" onclick='enableMaintenanceMode()'>Enable Maintenance Mode</a>
 				<a class="dropdown-item" href="#" onclick='disableMaintenanceMode()'>Disable Maintenance Mode</a>
@@ -61,10 +61,10 @@
 	      <td><input type="checkbox" id='checkbox_{{ row.gwid }}' class="checkthis" value="{{ row.gwid }}"/></td>
 	<td class='maintmode' id='maintmode_{{ row.gwid }}'>
         {% if row.maintmode %}
-		<span class='glyphicon glyphicon-wrench'>		
+		<span class='glyphicon glyphicon-wrench'>
 	{% endif %}
 
-	</td> 
+	</td>
 	<td class='gwid'>{{ row.gwid }}</td>
         <td class='name'>{{ row.description|attrFilter('name') }}</td>
         <td class='ip_addr'>{{ row.address }}</td>
@@ -110,7 +110,7 @@
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-    <h4 class="modal-title custom_align" id="Heading">Edit Your PBX Detail</h4>
+    <h4 class="modal-title custom_align" id="Heading">Edit Your Endpoint Group Details</h4>
   </div>
 
   <div class="modal-body">
@@ -237,7 +237,7 @@ systemctl restart fail2ban</code></pre>
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-    <h4 class="modal-title custom_align" id="Heading">Add New PBX Detail</h4>
+    <h4 class="modal-title custom_align" id="Heading">Add New Endpoint Detail</h4>
   </div>
 
   <div class="modal-body">
@@ -260,22 +260,25 @@ systemctl restart fail2ban</code></pre>
           <div id="endpoint-nav" class="navbar">
             <ul class="nav nav-tabs">
               <li role="presentation" class="active">
-                <a href="#auth" name="auth-toggle" data-toogle="tab">Auth</a>
+                <a href="#auth" name="auth-toggle" data-toggle="tab">Auth</a>
               </li>
               <li role="presentation">
-                <a href="#" name="endpoints-toggle" data-toogle="tab">Endpoints</a>
+                <a href="#endpoints" name="endpoints-toggle" data-toggle="tab">Endpoints</a>
               </li>
               <li role="presentation">
-                <a href="#" name="notifications-toggle" data-toggle="tab">Notifications</a>
+                <a href="#config" name="config-toggle" data-toggle="tab">Config</a>
               </li>
               <li role="presentation">
-                <a href="#" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
+                <a href="#notifications" name="notifications-toggle" data-toggle="tab">Notifications</a>
+              </li>
+              <li role="presentation">
+                <a href="#fusionpbx" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
               </li>
             </ul>
           </div>
 	  <div class="tab-content"> <!-- begin tab content -->
 
-      <div id="auth" class="tab-pane fade in active" name="auth-toggle" style="padding-top: 15px;">
+      <div id="auth" class="tab-pane fade in active" name="auth-toggle">
       	<div class="form-group">
         	<div class="authoptions radio">
           	<label><input class="authtype " type="radio" data-toggle="ip_enabled" name="authtype" value="ip" checked>IP
@@ -283,7 +286,7 @@ systemctl restart fail2ban</code></pre>
           	<label><input class="authtype " type="radio" data-toggle="userpwd_enabled" name="authtype" value="userpwd">Username/Password
             Auth</label>
         	</div>
-      	</div>	
+      	</div>
 
       <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
         <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
@@ -300,10 +303,29 @@ systemctl restart fail2ban</code></pre>
           <input class="auth_domain form-control" type="text" name="auth_domain"
                  placeholder="Auth Domain (optional)">
         </div>
-      </div> 
-     </div>
-     
-      <div class="hidden" name="config-toggle" style="padding-top: 15px;">
+      </div>
+     </div> <!-- end of auth tab -->
+
+     <div id="endpoints" class="tab-pane fade in" name="endpoints-toggle">
+         <table id="endpoint-table" class=table">
+           <thead>
+           <tr>
+             <th>PBX ID</th>
+             <th>IP Address</th>
+             <th>Description</th>
+           </tr>
+         </thead>
+         <tbody>
+           <tr>
+             <td>56</td>
+             <td>141.141.144.14</td>
+             <td>pbx1</td>
+           </tr>
+         </tbody>
+         </table>
+     </div> <!-- enf of endpoints tab -->
+
+      <div id="config" class="tab-pane fade in" name="config-toggle">
       	<div class="form-group">
         	<input class="strip form-control" type="text" name="strip"
                placeholder="# of characters to strip from RURI">
@@ -312,10 +334,20 @@ systemctl restart fail2ban</code></pre>
         	<input class="prefix form-control" type="text" name="prefix"
                placeholder="The characters to prefix to a RURI">
       	</div>
-      </div>
+      </div> <!-- end of config tab -->
 
-      <div class="FusionPBXDomainOptions form-group hidden" name="fusion-toggle" style="padding-top: 15px;">
-      
+      <div id="notifications" class="tab-pane fade in" name="notifications-toggle">
+        <div class="form-group">
+          <input class="strip form-control" type="text" name="email_over_max_calls"
+               placeholder="Email for Over Max Concurrent Calls">
+        </div>
+        <div class="form-group">
+          <input class="prefix form-control" type="text" name="email_endpoint_failure"
+               placeholder="Email for Endpont Failure">
+        </div>
+      </div> <!-- end of notifications tab -->
+      <div id="fusionpbx" class="tab-pane fade in" name="fusion-toggle">
+
         <div class="form-group">
         <div class="checkbox">
           <label class="label-toggle">
@@ -370,8 +402,10 @@ sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
         </div>
       </div>
+      </div> <!-- end of fusionpbx tab -->
 
-</div> <!-- end of tab-contenet -->
+</div> <!-- end of tabcontent tab -->
+
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
@@ -416,6 +450,8 @@ systemctl restart fail2ban</code></pre>
 
 {% block custom_js %}
 
+ {{ script_tag('jquery.tabledit') }}
+
   <script>
     $(document).ready(function() {
       $('#pbxs').DataTable({
@@ -425,7 +461,15 @@ systemctl restart fail2ban</code></pre>
         ],
         "order": [[2, 'asc']]
       });
+
+      $('#endpoint-table').Tabledit({
+      url: 'example.php',
+      columns: {
+        identifier: [0, 'id'],
+        editable: [[1, 'col1'],[2, 'col2']]
+      }
     });
+});
   </script>
 
 {% endblock %}
