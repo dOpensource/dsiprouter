@@ -53,7 +53,7 @@ After the install is completed you can now restore your kamailio database using 
   
   cd /opt/
   mysql  kamailio < kamailio-bk.sql
-  mysql kamailio -e "alter table dsip_multidomain_mapping add column domain_list_hash varchar(100) after domain_list;"
+  mysql kamailio -e "alter table dsip_multidomain_mapping add column domain_list_hash varchar(255) after domain_list;"
 
 
 Now please restart dsiprouter using the following commands:
