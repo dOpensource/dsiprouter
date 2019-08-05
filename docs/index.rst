@@ -65,6 +65,14 @@ Configuring dSIPRouter
    :maxdepth: 2
    
    configuring.rst
+   
+API
+^^^
+
+  .. toctree::
+   :maxdepth: 2
+
+   api.rst
   
    
 Implementing Use Cases
@@ -101,11 +109,5 @@ Upgrade
  
    upgrade.rst
   
-API
-^^^
 
-  .. toctree::
-   :maxdepth: 2
-
-   api.rst
    
