@@ -25,6 +25,8 @@ username: admin
 
 password: ZmIwMTdmY2I5NjE4
 
+API Token: 9lyrny3HOtwgjR6JIMwRaMej9LijIS835zhVbD8ywHDzXT07Xm6vem1sgfvWkFz3
+
 
 Credits
 =======
