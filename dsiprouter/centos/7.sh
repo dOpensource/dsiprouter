@@ -7,6 +7,7 @@
 function install {
     # Install dependencies for dSIPRouter
     yum remove -y rs-epel-release*
+    yum remove -y python36  python36-libs python36-devel python36-pip
 
     yum install -y yum-utils
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"

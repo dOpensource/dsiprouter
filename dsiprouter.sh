@@ -809,9 +809,9 @@ EOF
         fi
 
     # rest of the cloud providers only need password reset to instance id
-    elif (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
-        addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
-        addDependsOnInit "dsiprouter.service"
+    #elif (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
+    #    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
+    #    addDependsOnInit "dsiprouter.service"
     fi
 
     # Generate the API token
