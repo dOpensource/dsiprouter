@@ -23,7 +23,7 @@ DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
-VERSION = 0.522
+VERSION = 0.523
 DEBUG = True
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
