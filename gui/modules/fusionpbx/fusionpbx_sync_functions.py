@@ -1,4 +1,4 @@
-import psycopg2
+import psycopg2,hashlib
 import MySQLdb
 import os
 import subprocess
@@ -20,7 +20,7 @@ def get_sources(db):
     try:
         db=MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
         c=db.cursor()
-        c.execute("""select pbx_id,address as pbx_host,db_host,db_username,db_password,domain_list,attr_list from dsip_multidomain_mapping join dr_gateways on dsip_multidomain_mapping.pbx_id=dr_gateways.gwid where enabled=1""")
+        c.execute("""select pbx_id,address as pbx_host,db_host,db_username,db_password,domain_list,domain_list_hash,attr_list from dsip_multidomain_mapping join dr_gateways on dsip_multidomain_mapping.pbx_id=dr_gateways.gwid where enabled=1""")
         results =c.fetchall()
         db.close()
         for row in results:
@@ -83,7 +83,7 @@ def sync_db(source,dest):
     domain_id_list = []
     attr_id_list = []
 
-#Get a connection to Kamailio Server DB
+    #Get a connection to Kamailio Server DB
     db=MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
     c=db.cursor()
     #Delete existing domain for the pbx
@@ -94,8 +94,6 @@ def sync_db(source,dest):
         c.execute(query)
         pbx_domain_list=''
     
-
-
     #Trying connecting to PostgresSQL database using a Trust releationship first
     try:
         conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
@@ -107,7 +105,8 @@ def sync_db(source,dest):
         if rows is not None:
             c=db.cursor()
             counter = 0
-            
+            domain_name_str = "" 
+
             for row in rows:
                 c.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""", (row[0],row[0]))
                 print("row count {}".format(c.rowcount))
@@ -124,6 +123,7 @@ def sync_db(source,dest):
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_list',2,%s,NOW())""", (row[0],pbx_id))
                 c.execute("""insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'description',2,%s,NOW())""", (row[0],'notes:'))
                 counter = counter+1
+                domain_name_str += row[0]
 
             for i in domain_id_list:
                 print(i)
@@ -137,9 +137,14 @@ def sync_db(source,dest):
                 pbx_domain_list = pbx_domain_list + "," + domain_id_list
 
             
+            print("[sync_db] String of domains: {}".format(domain_name_str))
+
+            #Create Hash of the string
+            domain_name_str_hash = hashlib.md5(domain_name_str.encode('utf-8')).hexdigest()
+            print("[sync_db] Hashed String of domains: {}".format(domain_name_str_hash))
 
 
-            c.execute("""update dsip_multidomain_mapping set domain_list=%s, syncstatus=1, lastsync=NOW(),syncerror='' where pbx_id=%s""",(pbx_domain_list,pbx_id))
+            c.execute("""update dsip_multidomain_mapping set domain_list=%s, domain_list_hash=%s,syncstatus=1, lastsync=NOW(),syncerror='' where pbx_id=%s""",(pbx_domain_list,domain_name_str_hash,pbx_id))
             db.commit()                
     except Exception as e:
         c=db.cursor()
@@ -149,6 +154,8 @@ def sync_db(source,dest):
         os.remove("./.sync-lock") 
 
         print(e)
+
+
 
 def reloadkam(kamcmd_path):
        try:
@@ -217,6 +224,7 @@ def update_nginx(sources):
        print("trying to create a container")
        host_volume_path = script_dir + "/dsiprouter.nginx"
        html_volume_path = script_dir + "/html"
+       cert_volume_path = script_dir + "/certs"
        #host_volume_path = script_dir
        print(host_volume_path)
        #remove the container with a name of dsiprouter-nginx to avoid conflicts if it already exists
@@ -235,6 +243,7 @@ def update_nginx(sources):
             volumes={
                 host_volume_path: {'bind':'/etc/nginx/conf.d/default.conf','mode':'rw'},
                 html_volume_path: {'bind':'/etc/nginx/html','mode':'rw'}
+                cert_volume_path: {'bind':'/etc/nginx/certs','mode':'rw'}
             },
             detach=True)
        print("created a container")
@@ -242,6 +251,78 @@ def update_nginx(sources):
         os.remove("./.sync-lock") 
         print(e)
                 
+def sync_needed(source,dest):
+
+    #FusionPBX Database Parameters 
+    pbx_id =source[0]
+    pbx_host =source[1]
+    fpbx_hostname=source[2]
+    fpbx_username=source[3]
+    fpbx_password=source[4]
+    pbx_domain_list=source[5]
+    pbx_domain_list_hash=source[6]
+    pbx_attr_list=source[7]
+    fpbx_database = 'fusionpbx'
+    
+    #Kamailio Database Parameters
+    kam_hostname=dest['hostname']
+    kam_username=dest['username']
+    kam_password=dest['password']
+    kam_database=dest['database']
+     
+     
+    domain_id_list = []
+    attr_id_list = []
+    
+    need_sync = True
+
+
+    #Trying connecting to the databases 
+    try:
+    
+        #Get a connection to Kamailio Server DB
+        db=MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
+        c=db.cursor()
+        if c is not None:
+            print("[sync_needed] Connection to Kamailio DB:{} database was successful".format(kam_hostname))
+
+        #Get a connection to the FusionPBX Server
+        conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
+        if conn is not None:
+            print("[sync_needed] Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
+        cur = conn.cursor()
+        cur.execute("""select domain_name from v_domains where domain_enabled='true'""")
+        rows = cur.fetchall()
+        if rows is not None:
+            domain_name_str = "" 
+            
+            #Build a string that contains all of the domains
+            for row in rows:
+                domain_name_str += row[0]
+
+            print("[sync_needed] String of domains: {}".format(domain_name_str))
+
+            #Create Hash of the string
+            domain_name_str_hash = hashlib.md5(domain_name_str.encode('utf-8')).hexdigest()
+            print("[sync_needed] Hashed String of domains: {}".format(domain_name_str_hash))
+            if domain_name_str_hash == pbx_domain_list_hash:
+                #Sync not needed.  Will update the syncstatus=2 to denote a domain change was not detected
+                c.execute("""update dsip_multidomain_mapping set syncstatus=2, lastsync=NOW()""")
+                need_sync = False
+                return need_sync
+        else:
+            #No domains yet, so no need to sync
+            c.execute("""update dsip_multidomain_mapping set syncstatus=3, lastsync=NOW()""")
+            need_sync = False
+            return need_sync
+
+        return need_sync
+    
+    except Exception as e:
+        print(e)
+    finally:
+        db.commit()
+        db.close()
 
 
 def run_sync(settings):
@@ -267,14 +348,13 @@ def run_sync(settings):
 
         #Get the list of FusionPBX's that needs to be sync'd
         sources = get_sources(dest)
-        print(sources)
-        #Remove all existing domain and domain_attrs entries
-        #for key in sources:
-        #    drop_fusionpbx_domains(sources[key], dest)
      
         #Loop thru each FusionPBX system and start the sync
         for key in sources:
-            sync_db(sources[key],dest)
+            if sync_needed(sources[key],dest):
+                sync_db(sources[key],dest)
+            else:
+                print("[run_sync] No sync needed for source: {}".format(sources[key][1]))
          
         #Reload Kamailio
         reloadkam(settings.KAM_KAMCMD_PATH)

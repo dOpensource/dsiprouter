@@ -25,6 +25,8 @@ username: admin
 
 password: ZmIwMTdmY2I5NjE4
 
+API Token: 9lyrny3HOtwgjR6JIMwRaMej9LijIS835zhVbD8ywHDzXT07Xm6vem1sgfvWkFz3
+
 
 Credits
 =======
@@ -41,7 +43,7 @@ Paid support is available `here <https://dOpensource.com/shop/>`_
 Installing dSIPRouter
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. toctree::
+  .. toctree::
    :maxdepth: 2
    
    installing.rst
@@ -65,6 +67,14 @@ Configuring dSIPRouter
    :maxdepth: 2
    
    configuring.rst
+   
+API
+^^^
+
+  .. toctree::
+   :maxdepth: 2
+
+   api.rst
   
    
 Implementing Use Cases
@@ -101,12 +111,5 @@ Upgrade
  
    upgrade.rst
   
+
    
-   
-
-
-
-
-
-
-
