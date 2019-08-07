@@ -221,7 +221,7 @@ def addUpdateCarrierGroups():
                 Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
                              settings.EXTERNAL_IP_ADDR, auth_domain)
                 #Add auth_domain(aka registration server) to the gateway list
-                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, str(settings.FLT_CARRIER), gwgroup=str(gwgroup))
                 db.add(Uacreg)
                 db.add(Addr)
 
