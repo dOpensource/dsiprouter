@@ -242,8 +242,8 @@ def update_nginx(sources):
             ports={'80/tcp':'80/tcp','443/tcp':'443/tcp'},
             volumes={
                 host_volume_path: {'bind':'/etc/nginx/conf.d/default.conf','mode':'rw'},
-                html_volume_path: {'bind':'/etc/nginx/html','mode':'rw'}
-                cert_volume_path: {'bind':'/etc/nginx/certs','mode':'rw'}
+                html_volume_path: {'bind':'/etc/nginx/html','mode':'rw'},
+                cert_volume_path: {'bind':'/etc/ssl/certs','mode':'rw'}
             },
             detach=True)
        print("created a container")

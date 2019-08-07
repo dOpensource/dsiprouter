@@ -7,8 +7,8 @@
         listen 80;
         listen 443 ssl;
 
-        ssl_certificate         /etc/nginx/certs/cert_combined.crt;
-        ssl_certificate_key     /etc/nginx/certs/cert.key;
+        ssl_certificate         /etc/ssl/certs/cert_combined.crt;
+        ssl_certificate_key     /etc/ssl/certs/cert.key;
 
         location /provision/ {
             proxy_pass https://fusionpbx;
