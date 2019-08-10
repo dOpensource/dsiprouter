@@ -10,7 +10,8 @@ Note: You can add a "-b <version number>" to the end of the git command to insta
 
 Install (Don't Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-::
+
+.. code-block:: bash
  
   
   yum install -y git curl 
@@ -18,10 +19,12 @@ Install (Don't Proxy audio (RTP) traffic)
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
   ./dsiprouter.sh install -kam -dsip
-|
+
 
 One Line Version: 
-::
+
+.. code-block:: bash
+
    yum install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install -kam -dsip
 
 

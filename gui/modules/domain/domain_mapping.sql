@@ -29,6 +29,7 @@ CREATE TABLE `dsip_multidomain_mapping` (
   `db_username` varchar(40) NOT NULL,
   `db_password` varchar(40) NOT NULL,
   `domain_list` varchar(255) NOT NULL DEFAULT '',
+  `domain_list_hash` varchar(255) NOT NULL DEFAULT '',
   `attr_list` varchar(255) NOT NULL DEFAULT '',
   `type` tinyint(3) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) NOT NULL DEFAULT '0',

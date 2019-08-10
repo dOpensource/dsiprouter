@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-#PYTHON_CMD=python3.5
+# import library functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
-set -x
+(( $DEBUG == 1 )) && set -x
 
 function install {
     # Install dependencies for dSIPRouter
@@ -10,9 +11,8 @@ function install {
 
     yum install -y yum-utils
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    yum install -y https://centos7.iuscommunity.org/ius-release.rpm
     yum install -y firewalld
-    yum install -y python36u python36u-libs python36u-devel python36u-pip
+    yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
     yum install -y logrotate rsyslog perl
 
     # Reset python cmd in case it was just installed
@@ -62,7 +62,7 @@ function uninstall {
     # Uninstall dependencies for dSIPRouter
     PIP_CMD="pip"
 
-    /usr/bin/yes | ${PYTHON_CMD} -m ${PIP_CMD} uninstall -r ./gui/requirements.txt
+    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
     if [ $? -eq 1 ]; then
         echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
         exit 1

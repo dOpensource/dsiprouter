@@ -11,7 +11,7 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, status
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes
 from modules import flowroute
@@ -160,22 +160,25 @@ def displayCarrierGroups(gwgroup=None):
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -218,7 +221,7 @@ def addUpdateCarrierGroups():
                 Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
                              settings.EXTERNAL_IP_ADDR, auth_domain)
                 #Add auth_domain(aka registration server) to the gateway list
-                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, str(settings.FLT_CARRIER), gwgroup=str(gwgroup))
                 db.add(Uacreg)
                 db.add(Addr)
 
@@ -262,22 +265,25 @@ def addUpdateCarrierGroups():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -320,22 +326,25 @@ def deleteCarrierGroups():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -403,22 +412,25 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
 
 
 @app.route('/carriers', methods=['POST'])
@@ -497,22 +509,25 @@ def addUpdateCarriers():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -573,22 +588,25 @@ def deleteCarriers():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -625,24 +643,27 @@ def displayPBX():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
 
-
+#########################################################################
 @app.route('/pbx', methods=['POST'])
 def addUpdatePBX():
     """
@@ -701,8 +722,9 @@ def addUpdatePBX():
                 db.add(Addr)
             else:
                 # verify we won't break (username,domain) unique key constraint
-                if db.query(Subscribers).filter(Subscribers.username == auth_username,
-                                                Subscribers.domain == auth_domain).scalar():
+                if db.query(Gateways).filter(Gateways.gwid == gwid).scalar(): 
+                #if db.query(Subscribers).filter(Subscribers.username == auth_username,
+                #                               Subscribers.domain == auth_domain).scalar():
                     db.rollback()
                     db.flush()
                     return showError(type="db", code=400,
@@ -776,10 +798,11 @@ def addUpdatePBX():
         else:
             # Update the Gateway table
             db.query(Gateways).filter(Gateways.gwid == gwid).update(
-                {'description': "name:" + name, 'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
+                    {'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
                 synchronize_session=False)
-
-            # enable domain routing for all pbx in multi tenant db
+            Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+            db.add(Addr)
+                   # enable domain routing for all pbx in multi tenant db
             if multi_tenant_domain_enabled:
                 pass
                 # put required VALUES for all multi tenant use cases here
@@ -836,7 +859,10 @@ def addUpdatePBX():
             if authtype == "userpwd":
                 # Remove ip address from address table
                 Addr = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
-                Addr.delete(synchronize_session=False)
+                #Addr.delete(synchronize_session=False)
+                #Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+                #db.add(Addr)
+                
 
                 # Add the username and password that will be used for authentication
                 # Check if the entry in the subscriber table already exists
@@ -863,35 +889,39 @@ def addUpdatePBX():
                 if Subscriber:
                     Subscriber.delete(synchronize_session=False)
 
-                db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
-                    {'ip_addr': ip_addr}, synchronize_session=False)
+                    db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
+                        {'ip_addr': ip_addr}, synchronize_session=False)
 
+           
         db.commit()
         globals.reload_required = True
         return displayPBX()
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
-
+###########################################################
 @app.route('/pbxdelete', methods=['POST'])
 def deletePBX():
     """
@@ -943,22 +973,25 @@ def deletePBX():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -996,22 +1029,25 @@ def displayInboundMapping():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
         
@@ -1056,6 +1092,9 @@ def addUpdateInboundMapping():
 
         # Adding
         if not ruleid:
+            # don't allow duplicate entries
+            if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
+                raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
             db.add(IMap)
 
@@ -1070,22 +1109,25 @@ def addUpdateInboundMapping():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -1118,22 +1160,25 @@ def deleteInboundMapping():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -1157,22 +1202,25 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
 
 
 @app.route('/inboundmappingimport',methods=['POST'])
@@ -1210,22 +1258,25 @@ def importInboundMapping():
     
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -1253,22 +1304,25 @@ def displayTeleBlock():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
 
 
 @app.route('/teleblock', methods=['POST'])
@@ -1303,22 +1357,25 @@ def addUpdateTeleBlock():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -1356,22 +1413,25 @@ def displayOutboundRoutes():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
 
 
 @app.route('/outboundroutes', methods=['POST'])
@@ -1461,7 +1521,7 @@ def addUpateOutboundRoutes():
         else:  # Handle the simple case of a To prefix being updated
             if (from_prefix is None) and (prefix is not None):
                 oldgroupid = groupid
-                if (groupid is None) or (groupid == "None"):
+                if (groupid is None) and (groupid == "None"):
                     groupid = settings.FLT_OUTBOUND
 
                 # Convert the dr_rule back to a default carrier rule
@@ -1483,6 +1543,10 @@ def addUpateOutboundRoutes():
                 # Check if pattern already exists
                 exists = db.query(dSIPLCR).filter(dSIPLCR.pattern == pattern).scalar()
                 if exists:
+                    db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+                    'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
+                    'routeid': routeid, 'gwlist': gwlist, 'description': description
+                })
                     return displayOutboundRoutes()
 
                 elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
@@ -1527,22 +1591,25 @@ def addUpateOutboundRoutes():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 
@@ -1582,22 +1649,25 @@ def deleteOutboundRoute():
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "db"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        msg = str(ex) if len(str(ex)) > 0 else None
         error = "server"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type=error, msg=msg)
     finally:
         db.close()
 

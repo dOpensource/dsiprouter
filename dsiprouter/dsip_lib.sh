@@ -203,7 +203,7 @@ isInstanceDO() {
 # returns: 0 == success, 1 == failure
 # notes: try to access the GCE metadata URL to determine if this is an Google instance
 isInstanceGCE() {
-    curl -s -f --connect-timeout 2 http://metadata.google.internal/computeMetadata/v1/; ret=$?
+    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/; ret=$?
     if (( $ret != 22 )) && (( $ret != 28 )); then
         return 0
     fi
@@ -213,35 +213,37 @@ isInstanceGCE() {
 # returns: 0 == success, 1 == failure
 # notes: try to access the MS Azure metadata URL to determine if this is an Azure instance
 isInstanceAZURE() {
-    curl -s -f --connect-timeout 2 -H Metadata:true "http://169.254.169.254/metadata/instance?api-version=2018-10-01"; ret=$?
+    curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01"; ret=$?
     if (( $ret != 22 )) && (( $ret != 28 )); then
         return 0
     fi
     return 1
 }
 
-# TODO: support digital ocean and google cloud and microsoft azure
-# $1 == -aws | -do | -gce | -azure
 # returns: instance ID || blank string
+# notes: we try checking for exported instance variable avoid querying again
 getInstanceID() {
-#    # TODO: find out what we use as id for each provider (will be set to password)
-#    # TODO: find out how to query that information for that provider
-#    case "$1" in
-#        -aws)
-#            ;;
-#        -do)
-#            ;;
-#        -gce)
-#            ;;
-#        -azure)
-#            ;;
-#        *)
-#            printf ''
-#            ;;
-#    esac
-
-    curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
-    ec2-metadata -i 2>/dev/null
+    if (( ${AWS_ENABLED:-0} == 1)); then
+        curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+        ec2-metadata -i 2>/dev/null
+    elif (( ${DO_ENABLED:-0} == 1 )); then
+        curl http://169.254.169.254/metadata/v1/id 2>/dev/null
+    elif (( ${GCE_ENABLED:-0} == 1 )); then
+        curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
+    elif (( ${AZURE_ENABLED:-0} == 1 )); then
+        curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+    else
+        if isInstanceAMI; then
+            curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+            ec2-metadata -i 2>/dev/null
+        elif isInstanceDO; then
+            curl http://169.254.169.254/metadata/v1/id 2>/dev/null
+        elif isInstanceGCE; then
+            curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
+        elif isInstanceAZURE; then
+            curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+        fi
+    fi
 }
 
 # $1 == crontab entry to append
@@ -281,20 +283,52 @@ ipv6Test() {
 }
 
 # notes: prints external ip, or empty string if not available
+# notes: below we have measurements for average time of each service
+#        over 10 non-cached requests, in seconds, round trip
+#
+# |          External Service         | Mean RTT | IP Protocol |
+# |:---------------------------------:|:--------:|:-----------:|
+# | https://icanhazip.com             | 0.38080  | IPV4        |
+# | https://ipecho.net/plain          | 0.39810  | IPV4        |
+# | https://myexternalip.com/raw      | 0.51850  | IPV4        |
+# | https://api.ipify.org             | 0.64860  | IPV4        |
+# | https://bot.whatismyipaddress.com | 0.69640  | IPV4        |
+# | https://icanhazip.com             | 0.40190  | IPV6        |
+# | https://bot.whatismyipaddress.com | 0.72490  | IPV6        |
+# | https://ifconfig.co               | 0.80290  | IPV6        |
+# | https://ident.me                  | 0.97620  | IPV6        |
+# | https://api6.ipify.org            | 1.08510  | IPV6        |
+#
 getExternalIP() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
     local EXTERNAL_IP=""
-    local URLS=(
-        "https://icanhazip.com"
-        "https://api.ipify.org"
-        "https://myexternalip.com/raw"
-        "https://ipecho.net/plain"
-        "https://bot.whatismyipaddress.com"
-    )
+    local URLS=() CURL_CMD="curl"
+
+    if (( ${IPV6_ENABLED} == 1 )); then
+        URLS=(
+            "https://icanhazip.com"
+            "https://bot.whatismyipaddress.com"
+            "https://ifconfig.co"
+            "https://ident.me"
+            "https://api6.ipify.org"
+        )
+        CURL_CMD="curl -6"
+        IP_TEST="ipv6Test"
+    else
+        URLS=(
+            "https://icanhazip.com"
+            "https://ipecho.net/plain"
+            "https://myexternalip.com/raw"
+            "https://api.ipify.org"
+            "https://bot.whatismyipaddress.com"
+        )
+        CURL_CMD="curl -4"
+        IP_TEST="ipv4Test"
+    fi
 
     for URL in ${URLS[@]}; do
-        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
-        ipv4Test "$EXTERNAL_IP" && break
-        ipv6Test "$EXTERNAL_IP" && break
+        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout 2 $URL 2>/dev/null)
+        ${IP_TEST} "$EXTERNAL_IP" && break
     done
 
     printf '%s' "$EXTERNAL_IP"

@@ -37,6 +37,12 @@ validateInstance() {
     curl -s -L -f --connect-timeout 2 "${proto}://${public_ip}:${port}" >/dev/null
     [ $? -ne 0 ] && return 1
 
+    #
+    # TODO: add check for ssh pubkey access using instance key
+    # how to pull key on running instance (install pub key creds section):
+    # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/building-shared-amis.html
+    #
+
     # if we made it this far all checks passed
     return 0
 }

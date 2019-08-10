@@ -65,9 +65,10 @@ FLT_PBX=9
 FLT_OUTBOUND=8000
 FLT_INBOUND=9000
 WITH_SSL=0
-DEBUG=0     # By default debugging is turned off
+export DEBUG=0     # By default debugging is turned off
 export SERVERNAT=0
 export REQ_PYTHON_MAJOR_VER=3
+export IPV6_ENABLED=0
 export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
 export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
 export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
@@ -210,11 +211,12 @@ ZXIKClRoYW5rcyB0byBvdXIgc3BvbnNvcjogU2t5ZXRlbCAoc2t5ZXRlbC5jb20pCg==" \
 function cleanupAndExit {
     unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
     unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD AWS_ENABLED PATH_UPDATE_FILE SYSTEM_RTPENGINE_CONFIG_DIR SYSTEM_RTPENGINE_CONFIG_FILE SERVERNAT
-    unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG
+    unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG DEBUG IPV6_ENABLED
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE MYSQL_KAM_PASSWORD MYSQL_KAM_USERNAME MYSQL_KAM_DATABASE
-    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT
+    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED GCE_ENABLED AZURE_ENABLED
     unset -f setPythonCmd
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
+    set +x
     exit $1
 }
 
@@ -715,7 +717,7 @@ function disableRTP {
     enableKamailioConfigAttrib 'WITH_NAT' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg
 }
 
-# TODO: follow same user / group guidelines we used for other services
+# TODO: allow password changes on cloud instances (remove password reset after image creation)
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions
 # it would be easier to manage if we moved dsiprouter configs to /etc/dsiprouter
@@ -758,12 +760,12 @@ function installDsiprouter {
         configureSSL
     fi
 
-    # for AMI images the instance-id may change (could be a clone)
+    # for cloud images the instance-id may change (could be a clone)
     # add to startup process a password reset to ensure its set correctly
     if (( $AWS_ENABLED == 1 )); then
-        # add password reset to boot process (for AMI depends on network)
         addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
         addDependsOnInit "dsiprouter.service"
+
         # Required changes for Debian-based AMI's
         if [[ $DISTRO == "debian" ]] || [[ $DISTRO == "ubuntu" ]]; then
             # Remove debian-sys-maint password for initial AMI scan
@@ -780,13 +782,20 @@ function installDsiprouter {
 DSIP_INIT_FILE="$DSIP_INIT_FILE"
 
 # declare imported functions from library
+$(declare -f isInstanceAMI)
+$(declare -f isInstanceDO)
+$(declare -f isInstanceGCE)
+$(declare -f isInstanceAZURE)
 $(declare -f getInstanceID)
 $(declare -f removeInitCmd)
 
 # reset debian user password and remove dsip-init startup cmd
 INSTANCE_ID=\$(getInstanceID)
-mysql -e "CREATE USER IF NOT EXISTS 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';"
-mysql -e "GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';"
+mysql -e "DROP USER 'debian-sys-maint'@'localhost';
+    CREATE USER 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
+    GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
+    FLUSH PRIVILEGES;"
+
 sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
 removeInitCmd '.reset_debiansys_user.sh'
 rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
@@ -798,6 +807,11 @@ EOF
             chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
             addInitCmd "$(type -P bash) -c '${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh >> ${CLOUD_INSTALL_LOG} 2>&1'"
         fi
+
+    # rest of the cloud providers only need password reset to instance id
+    #elif (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
+    #    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
+    #    addDependsOnInit "dsiprouter.service"
     fi
 
     # Generate the API token
@@ -840,7 +854,7 @@ function uninstallDsiprouter {
     fi
 
     # for AMI images remove dsip-init service dependency
-    if (( $AWS_ENABLED == 1 )); then
+    if (( $AWS_ENABLED == 1 )) || (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
         removeInitCmd "dsiprouter.sh resetpassword"
         removeDependsOnInit "dsiprouter.service"
     fi
@@ -962,11 +976,12 @@ installSipsak() {
 
     # Install testing requirements (will move this in the future)
     if cmdExists 'apt'; then
-        apt-get install -y perl perl-CPAN
+        apt-get install -y perl
     elif cmdExists 'yum'; then
-        yum install -y perl perl-CPAN
+        yum install -y perl
     fi
-    perl -MCPAN -e 'install URI::Escape'
+    curl -L http://cpanmin.us | perl - --self-upgrade
+    cpanm URI::Escape
 
     # compile and install from src
     rm -rf ${SRC_DIR}/sipsak 2>/dev/null
@@ -1144,7 +1159,7 @@ function resetPassword {
 
 # Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
 function generatePassword {
-    if (( $AWS_ENABLED == 1)); then
+    if (( $AWS_ENABLED == 1)) || (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
         password=$(getInstanceID)
     else
         password=$(date +%s | sha256sum | base64 | head -c 16)
@@ -1209,8 +1224,12 @@ EOF
 
     chmod +x /etc/update-motd.d/00-dsiprouter
 
-    # for centos7 and debian < v9 we have to update it 'manually'
-    if [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
+    # for debian < v9 we have to update it the dynamic motd location
+    if [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
+        sed -i -r 's|^(session.*pam_motd\.so.*motd=/run/motd).*|\1|' /etc/pam.d/sshd
+    # for centos7 and debian we have to update it 'manually'
+    elif [[ "$DISTRO" == "centos" ]]; then
+        /etc/update-motd.d/00-dsiprouter > /etc/motd
         cronAppend "0 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
     fi
 }
@@ -1445,7 +1464,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1513,7 +1532,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1563,7 +1582,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1585,7 +1604,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1607,7 +1626,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1629,7 +1648,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1651,7 +1670,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1673,7 +1692,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1695,7 +1714,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1717,7 +1736,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1739,7 +1758,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1761,7 +1780,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1783,7 +1802,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
@@ -1805,7 +1824,7 @@ function processCMD {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        DEBUG=1
+                        export DEBUG=1
                         set -x
                         shift
                         ;;
