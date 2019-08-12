@@ -5,10 +5,27 @@
 (( $DEBUG == 1 )) && set -x
 
 function install {
-    # Install dependencies for dSIPRouter
-    yum remove -y rs-epel-release*
-    yum remove -y python36  python36-libs python36-devel python36-pip
+    
+    # Get the default version of python enabled
+    VER=`python -V 2>&1`
+    VER=`echo $VER | cut -d " " -f 2`
+    # Uninstall 3.6 and install a specific version of 3.6 if already installed
+    if [[ "$VER" =~ 3.6 ]]; then
+       yum remove -y rs-epel-release
+       yum remove -y python36  python36-libs python36-devel python36-pip
+       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+       yum install -y python36u python36u-libs python36u-devel python36u-pip
+    elif [[ "$VER" =~ 3 ]]; then
+       yum remove -y rs-epel-release
+       yum remove -y python3* python3*-libs python3*-devel python3*-pip
+       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+       yum install -y python36u python36u-libs python36u-devel python36u-pip
+    elif [[ "$VER" =~ 2.7 ]]; then
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
+    fi
 
+   # Install dependencies for dSIPRouter
     yum install -y yum-utils
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     yum install -y firewalld
