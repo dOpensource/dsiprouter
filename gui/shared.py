@@ -166,6 +166,9 @@ def rowToDict(row):
             d[column.name] = str(getattr(row, column.name))
     elif hasattr(row, '_asdict'):
         d = row._asdict()
+    elif hasattr(row, '__dict__'):
+        d = row.__dict__
+        d.pop('_sa_instance_state', None)
     else:
         d = objToDict(row)
 
@@ -434,7 +437,7 @@ def allowed_file(filename,ALLOWED_EXTENSIONS=set(['csv','txt','pdf','png','jpg',
             filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def showError(type="", code=500, msg=None):
-    return render_template('error.html', type=type), code
+    return render_template('error.html', type=type, msg=msg), code
 
 def redirectCustom(location, *render_args, code=302, response_cb=None, force_redirect=False):
     """

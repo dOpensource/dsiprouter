@@ -58,6 +58,10 @@ function install {
     docker create nginx
     #docker run --name docker-nginx -p 80:80  -v ${abspath}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
 
+    # Install a default self signed certificate for spinning up NGINX
+    openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=MI/L=Detroit/O=dopensource.com/CN=dSIPRouter" -keyout $abspath/certs/cert.key -out $abspath/certs/cert_combined.crt
+
+
     printdbg "FusionPBX module installed"
 }
 

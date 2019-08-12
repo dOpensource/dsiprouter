@@ -113,6 +113,7 @@
       <div class="form-group">
         <select class="alt_gwid form-control" name="alt_gwid" title="alt_gwid">
           <option class="hidden" value="" selected disabled>Failover PBX</option>
+	  <option value="{{ none['gwid'] }}">None</option>
           {% for gw in gwlist %}
             <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
           {% endfor %}
@@ -166,7 +167,7 @@
       </div>
 
       <div class="form-group">
-        <select class="gwid form-control" name="gwid" title="gwid">
+        <select class="gwid form-control" name="gwid" title="gwid" required="required">
           <option class="hidden" value="" selected disabled>Primary PBX</option>
           {% for gw in gwlist %}
             <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
@@ -179,7 +180,7 @@
           <option class="hidden" value="" selected disabled>Failover PBX</option>
           {% for gw in gwlist %}
             <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
-          {% endfor %}
+	   {% endfor %}
         </select>
       </div>
       

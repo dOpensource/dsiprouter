@@ -29,13 +29,8 @@ Global Outbound Routes
 
 
 4) 
-        a)Enter in the Outbound Route information.
-        
-        
-        
-        b)Click on the green Add button.
-        
-        
+  a) Enter in the Outbound Route information.
+  b) Click on the green Add button.
 
 .. image:: images//dSIP_Global_Out_Add_Outbound_Route.png
         :align: center
