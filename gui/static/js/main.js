@@ -230,6 +230,7 @@ $('#open-PbxAdd').click(function() {
   modal_body.find(".auth_username").val('');
   modal_body.find(".auth_password").val('');
   modal_body.find(".auth_domain").val('');
+  modal_body.find(".calllimit").val('');
   modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
 
   /* make sure ip_addr not disabled */
@@ -253,6 +254,7 @@ $('#pbxs #open-Update').click(function() {
   var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
   var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
   var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
+  var calllimit  = $(c).find('tr:eq(' + row_index + ') td:eq(16)').text();
 
 
   /** Clear out the modal */
@@ -266,6 +268,7 @@ $('#pbxs #open-Update').click(function() {
   modal_body.find(".auth_username").val('');
   modal_body.find(".auth_password").val('');
   modal_body.find(".auth_domain").val('');
+  modal_body.find(".calllimit").val('');
 
   /* update modal fields */
   modal_body.find(".gwid").val(gwid);
@@ -280,6 +283,7 @@ $('#pbxs #open-Update').click(function() {
   modal_body.find(".auth_username").val(auth_username);
   modal_body.find(".auth_password").val(auth_password);
   modal_body.find(".auth_domain").val(auth_domain);
+  modal_body.find(".calllimit").val(calllimit);
 
   if (fusionpbx_enabled) {
       modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');

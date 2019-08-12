@@ -8,6 +8,10 @@
 #
 
 def initialize():
+    global reload_required
+    global enterprise_enabled
+    enterprise_enabled = True
+
     globals()['reload_required'] = False
 
 # allow references in code before initialize is called

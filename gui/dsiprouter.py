@@ -13,7 +13,7 @@ from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, status
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
-    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes
+    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, dSIPCallLimits
 from modules import flowroute
 from modules.domain.domain_routes import domains
 import globals
@@ -626,7 +626,7 @@ def displayPBX():
         res = db.query(Gateways).outerjoin(
             dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
             dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
-            Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).add_columns(
+            Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).outerjoin(dSIPCallLimits, Gateways.gwid == dSIPCallLimits.gwid).add_columns(
             Gateways.gwid, Gateways.description,
             Gateways.address, Gateways.strip,
             Gateways.pri_prefix,
@@ -637,7 +637,8 @@ def displayPBX():
             Subscribers.rpid, Subscribers.username,
             Subscribers.password, Subscribers.domain,
             dSIPDomainMapping.enabled.label('freepbx_enabled'),
-            dSIPMaintModes.status.label('maintmode')
+            dSIPMaintModes.status.label('maintmode'),
+            dSIPCallLimits.limit.label('calllimit')
         ).filter(Gateways.type == settings.FLT_PBX).all()
         return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
@@ -693,6 +694,7 @@ def addUpdatePBX():
         auth_username = form['auth_username']
         auth_password = form['auth_password']
         auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DOMAIN
+        calllimit = form['calllimit'] if len(form['calllimit']) > 0 else ""
 
         multi_tenant_domain_enabled = False
         multi_tenant_domain_type = dSIPMultiDomainMapping.FLAGS.TYPE_UNKNOWN.value
@@ -716,6 +718,10 @@ def addUpdatePBX():
             Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
             db.add(Gateway)
             db.flush()
+
+            if calllimit is not None and len(calllimit) > 0:
+                CallLimit = dSIPCallLimits(Gateway.gwid,calllimit)
+                db.add(CallLimit)
 
             if authtype == "ip":
                 Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
@@ -800,9 +806,22 @@ def addUpdatePBX():
             db.query(Gateways).filter(Gateways.gwid == gwid).update(
                     {'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
                 synchronize_session=False)
+            
+            if calllimit is not None and len(calllimit) > 0:
+                exists = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid== gwid).scalar()
+                if exists:  #Update
+                    db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid == gwid).update( {'limit': calllimit},synchronize_session=False)
+                else: # Add
+                   CallLimit = dSIPCallLimits(gwid,calllimit)
+                   db.add(CallLimit)
+            else:
+                CallLimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid == gwid)
+                CallLimit.delete(synchronize_session=False)
+
+
             Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
             db.add(Addr)
-                   # enable domain routing for all pbx in multi tenant db
+            # enable domain routing for all pbx in multi tenant db
             if multi_tenant_domain_enabled:
                 pass
                 # put required VALUES for all multi tenant use cases here
@@ -889,8 +908,12 @@ def addUpdatePBX():
                 if Subscriber:
                     Subscriber.delete(synchronize_session=False)
 
-                    db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
-                        {'ip_addr': ip_addr}, synchronize_session=False)
+                exists = db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
+                    {'ip_addr': ip_addr}, synchronize_session=False)
+                if not exists:
+                    Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+                    db.add(Addr)
+
 
            
         db.commit()
@@ -1693,6 +1716,7 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'dispatcher.reload'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
         return_code += subprocess.call(
             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
@@ -1777,7 +1801,7 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectReloadRequired():
-    return dict(reload_required=globals.reload_required)
+    return dict(reload_required=globals.reload_required,enterprise_enabled=globals.enterprise_enabled)
 
 
 class CustomServer(Server):
