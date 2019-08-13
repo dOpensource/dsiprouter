@@ -13,5 +13,6 @@
 - mhendricks
 - ncannon01
 - Nicole
+- Omari S. King
 - root
 - Tyler Moore

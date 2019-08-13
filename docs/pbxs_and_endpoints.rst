@@ -25,22 +25,13 @@ To add a PBX:
 
 3) Click on the green Add button.
 
-
-
 .. image:: images//dSIP_PBX_Add.png
         :align: center
 
-
-
 4) 
-        a)Enter in the PBX info.
-        
-        
-        
-        b)Click the green Add button.
-        
-          
-        
+  a) Enter in the PBX info.
+  b) Click the green Add button.
+
 .. image:: images//dSIP_PBX_ADD_New_PBX.png
         :align: center
 
@@ -56,7 +47,7 @@ Inbound DID Mapping
 
 
 To Import a DID from a CVS file:
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -88,11 +79,8 @@ To Import a DID from a CVS file:
         
        
 4) 
-        a)Click the Browse button and select the file that contains the DID numbers that you wish to use. 
-        
-        
-        
-        b)Click the green Add button. 
+  a) Click the Browse button and select the file that contains the DID numbers that you wish to use.
+  b) Click the green Add button.
 
 Click `CSV Example <https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.51/docs/images/DID_test.csv>`_ to view a sample of the .CSV file
 
@@ -103,7 +91,7 @@ Click `CSV Example <https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.
 Click here to see an example of a csv file.
 
 To Manually import a DID:
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1) Go to the Dashboard screen.
 
@@ -124,28 +112,13 @@ To Manually import a DID:
         
        
 3) 
-        a)Click on the green ADD button underneath List on Inbound Mappings. 
-   
-   
-   
-        b)On the next screen, enter the DID number in the DID field. 
-        
-        
-        
-        c)Select the PBX from the PBX drop-down menu.
-        
-        
-        
-        d)Click the green Add button.
-        
-        
+  a) Click on the green ADD button underneath List on Inbound Mappings.
+  b) On the next screen, enter the DID number in the DID field.
+  c) Select the PBX from the PBX drop-down menu.
+  d) Click the green Add button.
         
 .. image:: images//dSIP_IN_Manual_Add.png
         :align: center
 
 
-
 4) Click on the blue Reload Kamailio button in order for the changes to be updated.
-
-
-

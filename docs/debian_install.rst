@@ -9,7 +9,8 @@ Note: You can add a "-b <version number>" to the end of the git command to insta
 
 Install (Don't Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-::
+
+.. code-block:: bash
  
   apt-get update 
   apt-get install -y git curl
@@ -17,11 +18,13 @@ Install (Don't Proxy audio (RTP) traffic)
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
   ./dsiprouter.sh install -kam -dsip
-|
+
 
 One Line Version: 
-::
-    apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install -kam -dsip
+
+.. code-block:: bash
+
+  apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd    dsiprouter;./dsiprouter.sh install -kam -dsip
 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
@@ -32,22 +35,21 @@ Install (Proxy audio (RTP) traffic)
 If you need to proxy RTP traffic then use -all install option. The command to install dSIPRouter and the RTPEngine would be:
 
 
-::
+.. code-block:: bash
 
- apt-get update
- apt-get install -y git curl
- cd /opt
- git clone https://github.com/dOpensource/dsiprouter.git
- cd dsiprouter
- ./dsiprouter.sh install -all
-
-|
+  apt-get update
+  apt-get install -y git curl
+  cd /opt
+  git clone https://github.com/dOpensource/dsiprouter.git
+  cd dsiprouter
+  ./dsiprouter.sh install -all
 
 
 One Line Version: 
-::
 
- apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -all
+.. code-block:: bash
+
+  apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -all
 
 
 Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
@@ -55,22 +57,18 @@ Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
 
 If you have a requirement where the PBX's and dSIPRouter are behind NAT then use the steps below, which are the same as above, but you will add a -servernat parameter.   
 
-::
+.. code-block:: bash
 
- apt-get update
- apt-get install -y git curl
- cd /opt
- git clone https://github.com/dOpensource/dsiprouter.git
- cd dsiprouter
- ./dsiprouter.sh install -all -servernat
- 
-|
+  apt-get update
+  apt-get install -y git curl
+  cd /opt
+  git clone https://github.com/dOpensource/dsiprouter.git
+  cd dsiprouter
+  ./dsiprouter.sh install -all -servernat
 
 
 One Line Version: 
 
-::
+.. code-block:: bash
 
- apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -all -servernat
-
-
+  apt-get update;apt-get install -y git curl;cd /opt;git clone https://github.com/dOpensource/dsiprouter.git;cd dsiprouter;./dsiprouter.sh install -all -servernat
