@@ -6,7 +6,6 @@ psycopg2
 psycopg2_binary
 PyMySQL
 mysqlclient
-pyspark
 requests
 SQLAlchemy
 Werkzeug

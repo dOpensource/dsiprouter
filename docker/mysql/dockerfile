@@ -1,0 +1,17 @@
+# Dockerfile
+FROM python:3.6-stretch
+
+MAINTAINER Mack Hendricks <mack@dsiprouter.org>
+
+COPY ../../  /opt/dsiprouter/
+WORKDIR /opt/dsiprouter
+RUN pip install -r ./gui/requirements.txt
+ENV DBSERVER ''
+ENV DBPORT '3306'
+ENV DBUSER ''
+ENV DBPASS ''
+ENV DBNAME ''
+
+EXPOSE 5000:5000
+
+CMD ["python", "./gui/dsiprouter.py"]

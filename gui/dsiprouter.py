@@ -89,6 +89,11 @@ def login():
 
         form = stripDictVals(request.form.to_dict())
 
+
+        #Get Environment Variables if set
+        settings.USERNAME = os.getenv('DSIP_USER',settings.USERNAME)
+        settings.PASSWORD = os.getenv('DSIP_PASS',settings.PASSWORD)
+
         if form['password'] == settings.PASSWORD and form['username'] == settings.USERNAME:
             session['logged_in'] = True
             session['username'] = form['username']
@@ -1817,6 +1822,8 @@ class CustomServer(Server):
             self.ssl_crt = settings.DSIP_SSL_CERT
             self.ssl_key = settings.DSIP_SSL_KEY
 
+        #Enable debugging - check the environment variable first
+        settings.DEBUG = os.getenv('DSIP_DEBUG',settings.DEBUG)
         if settings.DEBUG == True:
             self.use_debugger = True
             self.use_reloader = True
@@ -1856,9 +1863,10 @@ def replaceAppLoggers(log_handler):
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 def initApp(flask_app):
-    
+   
+    #Initialize Globals
     globals.initialize()
-    
+
     # Setup the Flask session manager with a random secret key
     flask_app.secret_key = os.urandom(12)
 
@@ -1885,6 +1893,9 @@ def initApp(flask_app):
     updateConfig(settings, fields)
     reload(settings)
 
+    # Enable debugging - check the environment variable first
+    settings.DEBUG = os.getenv('DSIP_DEBUG',settings.DEBUG)
+    
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
