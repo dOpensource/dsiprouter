@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, signal
+import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, signal, hashlib
+import logging.handlers
 from copy import copy
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
@@ -13,7 +14,7 @@ from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, status
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
-    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes
+    UAC, GatewayGroups, AdminUsers, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes
 from modules import flowroute
 from modules.domain.domain_routes import domains
 import globals
@@ -26,7 +27,6 @@ app.register_blueprint(domains)
 app.register_blueprint(api)
 db = loadSession()
 numbers_api = flowroute.Numbers()
-
 
 # TODO: unit testing per component
 
@@ -74,13 +74,11 @@ def index():
         error = "server"
         return showError(type=error)
 
-
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
-
+    
 @app.route('/login', methods=['POST'])
 def login():
     try:
@@ -88,13 +86,26 @@ def login():
             debugEndpoint()
 
         form = stripDictVals(request.form.to_dict())
+        
+        txtUser = form['username']
+        txtPassword = form['password']
+        txtPasswordHash = hashlib.md5(txtPassword.encode('utf-8')).hexdigest()
 
-        if form['password'] == settings.PASSWORD and form['username'] == settings.USERNAME:
+        validAdmin = db.query(AdminUsers).filter(
+                AdminUsers.admin_username == txtUser,
+                AdminUsers.admin_hash == txtPasswordHash
+            ).count()
+
+        logAdmin = initiateLogger()
+        if validAdmin == 1:
             session['logged_in'] = True
-            session['username'] = form['username']
+            session['username'] = txtUser
+            logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Login successful')
         else:
-            flash('wrong username or password!')
+            flash('There seems to be a problem. Contact technical support.')
+            logAdmin.debug(settings.LOG_TAG + txtUser + ' - Login failure')
             return render_template('index.html', version=settings.VERSION), 403
+
         return redirect(url_for('index'))
         
 
@@ -113,6 +124,9 @@ def logout():
     try:
         if (settings.DEBUG):
             debugEndpoint()
+        
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + ' logout ' + session['username'])
 
         session.pop('logged_in', None)
         session.pop('username', None)
@@ -156,6 +170,9 @@ def displayCarrierGroups(gwgroup=None):
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
                 UAC.auth_username, UAC.auth_password, UAC.realm).all()
         db.close()
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Display Carriers')
+
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -221,7 +238,7 @@ def addUpdateCarrierGroups():
                 Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
                              settings.EXTERNAL_IP_ADDR, auth_domain)
                 #Add auth_domain(aka registration server) to the gateway list
-                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, str(settings.FLT_CARRIER), gwgroup=str(gwgroup))
+                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
 
@@ -1025,6 +1042,8 @@ def displayInboundMapping():
                 debugException(ex, log_ex=False, print_ex=True, showstack=False)
                 return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
 
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Display Inbound Mappings')
         return render_template('inboundmapping.html', rows=res, gwlist=gateways, imported_dids=dids)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1089,7 +1108,7 @@ def addUpdateInboundMapping():
                 gateways.append(gw)
         gwlist = ','.join(gateways)
 
-
+        logMsg = ''
         # Adding
         if not ruleid:
             # don't allow duplicate entries
@@ -1097,13 +1116,16 @@ def addUpdateInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
             db.add(IMap)
-
+            logMsg = 'Added inbound rule: ' + str(prefix)
         # Updating
         else:
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': notes}, synchronize_session=False)
-
+            logMsg = 'Updated inbound rule: ' + str(prefix)
         db.commit()
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - ' + logMsg)
+
         globals.reload_required = True
         return displayInboundMapping()
 
@@ -1154,6 +1176,9 @@ def deleteInboundMapping():
         d = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
         d.delete(synchronize_session=False)
         db.commit()
+        
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Deleted rule id: ' + str(ruleid))
 
         globals.reload_required = True
         return displayInboundMapping()
@@ -1197,6 +1222,9 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
             IMap = InboundMapping(groupid, row[0], pbxid, notes)
             db.add(IMap)
         
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Imported DID\'s')
+  
         db.commit()
 
 
@@ -1408,6 +1436,9 @@ def displayOutboundRoutes():
         teleblock["gw_port"] = settings.TELEBLOCK_GW_PORT
         teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
+
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Display global outbound routes')
 
         return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
 
@@ -1709,13 +1740,18 @@ def reloadkam():
                 ['kamcmd', 'cfg.seti', 'teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)])
 
         session['last_page'] = request.headers['Referer']
-
+        
+        status_code = 100
         if return_code == 0:
             status_code = 1
             globals.reload_required = False
         else:
             status_code = 0
             globals.reload_required = prev_reload_val
+
+        logAdmin = initiateLogger()
+        logAdmin.debug(settings.LOG_TAG + session['username'] + ' - Reloaded Kamailio with return status of ' + str(status_code))
+
         return json.dumps({"status": status_code})
 
     except http_exceptions.HTTPException as ex:
@@ -1883,6 +1919,18 @@ def checkDatabase():
     except sql_exceptions.SQLAlchemyError as ex:
     # If not, close DB connection so that the SQL engine can get another one from the pool
         db.close()
+
+def initiateLogger():
+    
+    logger = logging.getLogger('adminLog')
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+            '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    handler.setFormatter(formatter)
+    if not len(logger.handlers):
+        logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    return logger
 
 if __name__ == "__main__":
     initApp(app)

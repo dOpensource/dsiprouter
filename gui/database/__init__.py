@@ -90,6 +90,19 @@ class InboundMapping(object):
     pass
 
 
+class AdminUsers(object):
+    """
+    Schema for admin_users\n
+    """
+
+    def __init__(self, admin_id, admin_username, admin_hash):
+        self.admin_id = admin_id
+        self.admin_username = admin_username
+        self.admin_hash = admin_hash
+
+    pass
+
+
 class OutboundRoutes(object):
     """
     Schema for dr_rules table\n
@@ -404,6 +417,7 @@ def loadSession():
 
     dr_gateways = Table('dr_gateways', metadata, autoload=True)
     address = Table('address', metadata, autoload=True)
+    admin_users = Table('admin_users', metadata, autoload=True)
     outboundroutes = Table('dr_rules', metadata, autoload=True)
     inboundmapping = Table('dr_rules', metadata, autoload=True)
     subscriber = Table('subscriber', metadata, autoload=True)
@@ -431,6 +445,7 @@ def loadSession():
 
     mapper(Gateways, dr_gateways)
     mapper(Address, address)
+    mapper(AdminUsers, admin_users)
     mapper(InboundMapping, inboundmapping)
     mapper(OutboundRoutes, outboundroutes)
     mapper(dSIPDomainMapping, dsip_domain_mapping)

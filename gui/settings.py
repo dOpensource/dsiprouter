@@ -4,8 +4,6 @@
 DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
-USERNAME = 'admin'
-PASSWORD = 'ZmJhM2Y1ODAwNDhl'
 DSIP_API_TOKEN = 'neggz1jEn5ei0ZICsNdWSHv9Obdq7VJJukaLp8smlOaZm49NCrHX72MabKCBixLx'
 DSIP_API_HOST = ''
 
@@ -91,3 +89,6 @@ UPLOAD_FOLDER = '/tmp'
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
 CLOUD_PLATFORM = ''
 
+
+# Log tagging
+LOG_TAG = '[dsip gui]: '
