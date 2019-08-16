@@ -4,9 +4,11 @@ from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from database import loadSession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Subscribers, dSIPLeases, dSIPMaintModes
 from shared import *
+from util.email import *
 import  urllib.parse as parse
 import json
 import settings
+
 import globals
 
 db = loadSession()
@@ -54,7 +56,7 @@ def reloadKamailio():
     try:
         if (settings.DEBUG):
             debugEndpoint()
-        
+
         payloadResponse = {}
         configParameters = {}
         reloadCommands = {}
@@ -90,7 +92,7 @@ def reloadKamailio():
         #   payloadResponse[key]=json.dumps({"status":r.status_code,"message":r.json()})
         #    payloadResponse[key]=r.status_code
 
-        globals.reload_required = False 
+        globals.reload_required = False
         return json.dumps({"results": payloadResponse})
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -121,11 +123,11 @@ def getEndpointLease():
     try:
         if (settings.DEBUG):
             debugEndpoint()
-        
+
         email=request.args.get('email')
         if not email:
             raise Exception("email parameter is missing")
-        
+
         ttl=request.args.get('ttl')
         if not ttl:
             raise Exception("time to live (ttl) parameter is missing")
@@ -134,7 +136,7 @@ def getEndpointLease():
         rand_num= random.randint(1,200)
         name = "lease" + str(rand_num)
         auth_username = name
-        auth_password = generatePassword()  
+        auth_password = generatePassword()
         auth_domain = settings.DOMAIN
         if settings.DSIP_API_HOST:
             api_hostname = settings.DSIP_API_HOST
@@ -145,7 +147,7 @@ def getEndpointLease():
         ip_addr =''
         strip=''
         prefix=''
-        
+
         #Add the Gateways table
 
         Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
@@ -204,27 +206,27 @@ def revokeEndpointLease(leaseid):
     try:
         if (settings.DEBUG):
             debugEndpoint()
-       
+
         # Query the Lease ID
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
 
         # Remove the entry in the Subscribers table
-               
+
         Subscriber = db.query(Subscribers).filter(Subscribers.id == Lease.sid).first()
         db.delete(Subscriber)
         # Remove the entry in the Gateway table
-        
+
         Gateway = db.query(Gateways).filter(Gateways.gwid == Lease.gwid).first()
         db.delete(Gateway)
 
         # Remove the entry in the Lease table
-        
+
         db.delete(Lease)
-        
+
         payload = {}
         payload['leaseid'] = leaseid
         payload['status'] = 'revoked'
-        
+
         db.commit()
         return json.dumps(payload)
 
@@ -261,10 +263,10 @@ def updateEndpoint(id):
     try:
         if (settings.DEBUG):
             debugEndpoint()
-       
-        # Define a dictionary object that represents the payload 
+
+        # Define a dictionary object that represents the payload
         responsePayload = {}
-        
+
         # Set the status to 0, update it to 1 if the update is successful
         responsePayload['status'] = 0
 
@@ -287,11 +289,11 @@ def updateEndpoint(id):
                  db.flush()
                  if Gateway != None:
                      MaintMode = dSIPMaintModes(Gateway.address,id)
-                 db.add(MaintMode)   
+                 db.add(MaintMode)
         except MaintModeAttrMissing as ex:
             responsePayload['error'] = "maintmode attribute is missing"
             return json.dumps(responsePayload)
-        
+
         db.commit()
         responsePayload['status'] = 1
 
@@ -317,5 +319,56 @@ def updateEndpoint(id):
         db.rollback()
         db.flush()
         return json.dumps(responsePayload)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/notification/<int:gwid>/trigger", methods=['GET'])
+@api_security
+def notificationTrigger(gwid):
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        type=request.args.get('type')
+        if not type:
+            raise Exception("type parameter is missing")
+
+        print("***Triggered for GW {} and type is {}".format(gwid,type))
+
+        # Define a dictionary object that represents the payload
+        responsePayload = {}
+
+        # Set the status to 0, update it to 1 if the update is successful
+        responsePayload['status'] = 0
+
+        recipients = []
+        recipients.append('mack.hendricks@gmail.com')
+        text_body = "This email was sent automatically by dSIPRouter"
+
+        try:
+            # DEBUG
+            #for key, value in data.items():
+            #    print(key,value)
+
+            send_email(recipients=recipients, text_body=text_body,data=None)
+
+
+            return jsonify(
+                status=200,
+                message='Email delivery success'
+            )
+
+        except Exception as e:
+            return jsonify(status=0,error=str(e))
+
+
+
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        #db.rollback()
+        #db.flush()
+        return showError(type=error)
     finally:
         db.close()

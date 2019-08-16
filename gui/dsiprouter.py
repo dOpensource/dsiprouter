@@ -101,7 +101,7 @@ def login():
             flash('wrong username or password!')
             return render_template('index.html', version=settings.VERSION), 403
         return redirect(url_for('index'))
-        
+
 
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -150,6 +150,8 @@ def displayCarrierGroups(gwgroup=None):
         if (settings.DEBUG):
             debugEndpoint()
 
+        typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
+
         # res must be a list()
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
@@ -159,7 +161,7 @@ def displayCarrierGroups(gwgroup=None):
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.auth_username, UAC.auth_password, UAC.realm).all()
+                UAC.auth_username, UAC.auth_password, UAC.realm).filter(GatewayGroups.description.like(typeFilter))
         db.close()
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
@@ -214,7 +216,7 @@ def addUpdateCarrierGroups():
         if len(gwgroup) <= 0:
             print(name)
 
-            Gwgroup = GatewayGroups(name)
+            Gwgroup = GatewayGroups(name,type=settings.FLT_CARRIER)
             db.add(Gwgroup)
             db.flush()
             gwgroup = Gwgroup.id
@@ -598,10 +600,10 @@ def deleteCarriers():
         db.close()
 
 
-@app.route('/pbx')
-def displayPBX():
+@app.route('/endpointgroups')
+def displayEndpointGroups():
     """
-    Display PBX / Endpoints in the view
+    Display Endpoint Groups / Endpoints in the view
     """
     try:
         if not session.get('logged_in'):
@@ -610,24 +612,28 @@ def displayPBX():
         if (settings.DEBUG):
             debugEndpoint()
 
-        res = db.query(Gateways).outerjoin(
-            dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
-            dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
-            Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).outerjoin(dSIPCallLimits, Gateways.gwid == dSIPCallLimits.gwid).add_columns(
-            Gateways.gwid, Gateways.description,
-            Gateways.address, Gateways.strip,
-            Gateways.pri_prefix,
-            dSIPMultiDomainMapping.enabled.label('fusionpbx_enabled'),
-            dSIPMultiDomainMapping.db_host,
-            dSIPMultiDomainMapping.db_username,
-            dSIPMultiDomainMapping.db_password,
-            Subscribers.rpid, Subscribers.username,
-            Subscribers.password, Subscribers.domain,
-            dSIPDomainMapping.enabled.label('freepbx_enabled'),
-            dSIPMaintModes.status.label('maintmode'),
-            dSIPCallLimits.limit.label('calllimit')
-        ).filter(Gateways.type == settings.FLT_PBX).all()
-        return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
+        typeFilter = "%type:{}%".format(settings.FLT_PBX)
+
+        res = db.query(GatewayGroups).add_columns(GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description).filter(GatewayGroups.description.like(typeFilter))
+
+        #res = db.query(Gateways).outerjoin(
+        #    dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
+        #    dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
+        #    Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).outerjoin(dSIPCallLimits, Gateways.gwid == dSIPCallLimits.gwid).add_columns(
+        #    Gateways.gwid, Gateways.description,
+        #    Gateways.address, Gateways.strip,
+        #    Gateways.pri_prefix,
+        #    dSIPMultiDomainMapping.enabled.label('fusionpbx_enabled'),
+        #    dSIPMultiDomainMapping.db_host,
+        #    dSIPMultiDomainMapping.db_username,
+        #    dSIPMultiDomainMapping.db_password,
+        #    Subscribers.rpid, Subscribers.username,
+        #    Subscribers.password, Subscribers.domain,
+        #    dSIPDomainMapping.enabled.label('freepbx_enabled'),
+        #    dSIPMaintModes.status.label('maintmode'),
+        #    dSIPCallLimits.limit.label('calllimit')
+        #).filter(Gateways.type == settings.FLT_PBX).all()
+        return render_template('endpointgroups.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -649,8 +655,8 @@ def displayPBX():
         return showError(type=error)
 
 
-@app.route('/pbx', methods=['POST'])
-def addUpdatePBX():
+@app.route('/endpointgroups', methods=['POST'])
+def addUpdateEndpointGroups():
     """
     Add or Update a PBX / Endpoint
     """
@@ -667,8 +673,9 @@ def addUpdatePBX():
 
         # TODO: change ip_addr field to hostname or domainname, we already support this
         gwid = form['gwid']
+        gwgroup = request.form.get("gwgroup",None)
         name = form['name']
-        ip_addr = form["ip_addr"] if len(form['ip_addr']) > 0 else ""
+        ip_addr = request.form.get("ip_addr",None)
         strip = form['strip'] if len(form['strip']) > 0 else "0"
         prefix = form['prefix'] if len(form['prefix']) > 0 else ""
         authtype = form['authtype']
@@ -698,18 +705,25 @@ def addUpdatePBX():
         #    single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_FREEPBX.value
 
         # Adding
-        if len(gwid) <= 0:
-            Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
-            db.add(Gateway)
+        if gwgroup is None:
+            Gwgroup = GatewayGroups(name,type=settings.FLT_PBX)
+            db.add(Gwgroup)
             db.flush()
+            gwgroup = Gwgroup.id
+
+            #if ip_addr is not None:
+            #    Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
+            #    db.add(Gateway)
+            #    db.flush()
 
             if calllimit is not None and len(calllimit) > 0:
                 CallLimit = dSIPCallLimits(Gateway.gwid,calllimit)
                 db.add(CallLimit)
 
-            if authtype == "ip":
-                Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
-                db.add(Addr)
+            if authtype == "ip" and ip_addr is not None:
+                pass
+            #    Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
+            #    db.add(Addr)
             else:
                 # verify we won't break (username,domain) unique key constraint
                 if db.query(Subscribers).filter(Subscribers.username == auth_username,
@@ -789,7 +803,7 @@ def addUpdatePBX():
             db.query(Gateways).filter(Gateways.gwid == gwid).update(
                 {'description': "name:" + name, 'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
                 synchronize_session=False)
-            
+
             if calllimit is not None and len(calllimit) > 0:
                 exists = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid== gwid).scalar()
                 if exists:  #Update
@@ -946,7 +960,7 @@ def deletePBX():
         subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwid)
         subscriber.delete(synchronize_session=False)
         address.delete(synchronize_session=False)
-        
+
         domainmultimapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwid)
         res = domainmultimapping.options(load_only("domain_list", "attr_list")).first()
         if res is not None:
@@ -967,7 +981,7 @@ def deletePBX():
 
         db.commit()
         globals.reload_required = True
-        return displayPBX()
+        return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1042,7 +1056,7 @@ def displayInboundMapping():
         return showError(type=error)
     finally:
         db.close()
-        
+
 
 
 @app.route('/inboundmapping', methods=['POST'])
@@ -1179,7 +1193,7 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
                 notes=row[2]
             IMap = InboundMapping(groupid, row[0], pbxid, notes)
             db.add(IMap)
-        
+
         db.commit()
 
 
@@ -1205,12 +1219,12 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
 
 @app.route('/inboundmappingimport',methods=['POST'])
 def importInboundMapping():
-    
-    
+
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
-        
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1235,7 +1249,7 @@ def importInboundMapping():
             processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,notes,db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
-    
+
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "db"
@@ -1778,7 +1792,7 @@ def replaceAppLoggers(log_handler):
     for handler in copy(logging.getLogger('sqlalchemy').handlers):
         logging.getLogger('sqlalchemy').removeHandler(handler)
         handler.close()
-        
+
     # replace vanilla werkzeug and sqlalchemy log handler
     logging.getLogger('werkzeug').addHandler(log_handler)
     logging.getLogger('werkzeug').setLevel(settings.DSIP_LOG_LEVEL)
@@ -1792,7 +1806,7 @@ def replaceAppLoggers(log_handler):
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 def initApp(flask_app):
-   
+
     #Initialize Globals
     globals.initialize()
 
@@ -1824,7 +1838,7 @@ def initApp(flask_app):
 
     # Enable debugging - check the environment variable first
     settings.DEBUG = os.getenv('DSIP_DEBUG',settings.DEBUG)
-    
+
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
