@@ -2,7 +2,7 @@ from flask import Blueprint, session, render_template,jsonify
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import loadSession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Subscribers, dSIPLeases, dSIPMaintModes
+from database import loadSession, Address, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes
 from shared import *
 from util.email import *
 import  urllib.parse as parse
@@ -323,9 +323,9 @@ def updateEndpoint(id):
         db.close()
 
 
-@api.route("/api/v1/notification/<int:gwid>/trigger", methods=['GET'])
+@api.route("/api/v1/notification/<int:gwgroup>/trigger", methods=['GET'])
 @api_security
-def notificationTrigger(gwid):
+def notificationTrigger(gwgroup):
     try:
         if (settings.DEBUG):
             debugEndpoint()
@@ -334,7 +334,7 @@ def notificationTrigger(gwid):
         if not type:
             raise Exception("type parameter is missing")
 
-        print("***Triggered for GW {} and type is {}".format(gwid,type))
+        print("***Triggered for GW {} and type is {}".format(gwgroup,type))
 
         # Define a dictionary object that represents the payload
         responsePayload = {}
@@ -371,4 +371,134 @@ def notificationTrigger(gwid):
         #db.flush()
         return showError(type=error)
     finally:
+        db.close()
+
+
+@api.route("/api/v1/endpointgroups", methods=['POST'])
+@api_security
+def addEndpointGroups():
+    """
+    Add Endpoint Group
+    {
+        name: <string>
+        calllimit: <int>,
+        auth: { type: "ip"|"userpwd",
+                user: <string>
+                pass: <string>
+                domain: <string>
+        },
+        endpoints [
+                    {ip:<int,description:<string>,maintmode:<bool>},
+                    {ip:<int,description:<string>,maintmode:<bool>}
+                  ],
+        strip: <int>
+        prefix: <string>
+        notifications: {
+            overmaxcalllimit: <string>,
+            endpointfailure" <string>
+        },
+        fusionpbx: {
+            enabled: <bool>,
+            dbhost: <string>,
+            dbuser: <string>,
+            dbpass: <string>
+            }
+    }
+    """
+
+    gwgroupid = None
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        # Define a dictionary object that represents the payload
+        responsePayload = {}
+
+        # Set the status to 0, update it to 1 if the update is successful
+        responsePayload['status'] = 0
+        responsePayload['gwgroupid'] = None
+
+        # Covert JSON message to Dictionary Object
+        requestPayload = request.get_json()
+
+
+
+        # Check parameters and raise exception if missing required parameters
+        requiredParameters = ['name']
+
+        try:
+            for parameter in requiredParameters:
+                if parameter not in requestPayload:
+                    raise RequiredParameterMissing
+        except RequiredParameterMissing as ex:
+                responsePayload['error'] = "{} attribute is missing".format(parameter)
+                return json.dumps(responsePayload)
+
+        # Process Gateway Name
+        name = requestPayload['name']
+        Gwgroup = GatewayGroups(name,type=settings.FLT_PBX)
+        db.add(Gwgroup)
+        db.flush()
+        gwgroupid = Gwgroup.id
+        responsePayload['gwgroupid'] = gwgroupid
+
+        # Call limit
+        calllimit = requestPayload['calllimit']
+        if calllimit is not None and calllimit >=1:
+            CallLimit = dSIPCallLimits(gwgroupid,calllimit)
+            db.add(CallLimit)
+
+        # Number of characters to strip and prefix
+        strip = requestPayload['strip']
+        prefix = requestPayload['prefix']
+
+        # Setup up authentication
+        authtype = requestPayload['auth']['type']
+        if authtype == "ip":
+            #Store Endpoint IP's in address tables
+            for endpoint in requestPayload['endpoints']:
+                Addr = Address(name, endpoint['ip'],32, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                db.add(Addr)
+                Gateway = Gateways(name, endpoint['ip'], strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                db.add(Gateway)
+        elif authtype == "userpwd":
+            authuser = requestPayload['auth']['user']
+            authpass = requestPayload['auth']['pass']
+            authdomain = requestPayload['auth']['domain']
+            if db.query(Subscribers).filter(Subscribers.username == authuser,Subscribers.domain == authdomain).scalar():
+                raise RequiredParameterMissing
+            else:
+                Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
+                db.add(Subscriber)
+
+
+
+        try:
+            # DEBUG
+            #for key, value in data.items():
+            #    print(key,value)
+
+            #send_email(recipients=recipients, text_body=text_body,data=None)
+
+
+            return jsonify(
+                message='EndpointGroup Created',
+                gwgroupid = responsePayload['gwgroupid'],
+                status = "200"
+            )
+
+        except Exception as e:
+            print(requestPayload)
+            return jsonify(status=0,error=str(e))
+
+
+
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        #db.rollback()
+        #db.flush()
+        return jsonify(status=0,error=str(ex))
+    finally:
+        db.commit()
         db.close()
