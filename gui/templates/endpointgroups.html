@@ -281,15 +281,15 @@ systemctl restart fail2ban</code></pre>
            <thead>
            <tr>
              <th>PBX ID</th>
-             <th>IP Address</th>
+             <th>Hostname/IP</th>
              <th>Description</th>
            </tr>
          </thead>
          <tbody>
            <tr>
-             <td>56</td>
-             <td>141.141.144.14</td>
-             <td>pbx1</td>
+             <td name="pbxid"></td>
+             <td name="hostname"></td>
+             <td name="description"></td>
            </tr>
          </tbody>
          </table>
@@ -308,11 +308,11 @@ systemctl restart fail2ban</code></pre>
 
       <div id="notifications" class="tab-pane fade in" name="notifications-toggle">
         <div class="form-group">
-          <input class="strip form-control" type="text" name="email_over_max_calls"
+          <input class="email_over_max_calls form-control" type="text" name="email_over_max_calls"
                placeholder="Email for Over Max Concurrent Calls">
         </div>
         <div class="form-group">
-          <input class="prefix form-control" type="text" name="email_endpoint_failure"
+          <input class="email_endpoint_failure form-control" type="text" name="email_endpoint_failure"
                placeholder="Email for Endpont Failure">
         </div>
       </div> <!-- end of notifications tab -->
@@ -378,7 +378,7 @@ systemctl restart fail2ban</code></pre>
 
 
       <div class="modal-footer ">
-        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
+        <button type="button" class="btn btn-success btn-lg" style="width: 100%;" onclick='addEndpointGroup()'><span
             class="glyphicon glyphicon-ok-sign"></span> Add
         </button>
       </div>
@@ -437,9 +437,13 @@ systemctl restart fail2ban</code></pre>
       url: 'example.php',
       columns: {
         identifier: [0, 'id'],
-        editable: [[1, 'col1'],[2, 'col2']]
+        editable: [[1, 'col1'],[2, 'col2']],
+        saveButton: true,
       }
     });
+
+    
+
 });
   </script>
 

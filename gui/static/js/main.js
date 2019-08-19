@@ -523,6 +523,88 @@ function enableMaintenanceMode() {
 
 }
 
+function addEndpointGroup() {
+
+
+  var requestPayload = new Object();
+
+  /** Get data from the modal */
+  var modal_body = $('#add .modal-body');
+  requestPayload.name = modal_body.find(".name").val();
+  requestPayload.calllimit = modal_body.find(".calllimit").val();
+
+  auth = new Object();
+
+  auth.type = modal_body.find(".authtype").val();
+  auth.user = modal_body.find(".auth_username").val();
+  auth.pass = modal_body.find(".auth_password").val();
+  auth.domain = modal_body.find(".auth_domain").val();
+
+  requestPayload.auth = auth;
+
+  requestPayload.strip= modal_body.find(".strip").val();
+  requestPayload.prefix = modal_body.find(".prefix").val();
+
+  notifications = new Object()
+
+  notifications.overmaxcalllimit = modal_body.find(".email_over_max_calls").val();
+  notifications.endpointfailure = modal_body.find(".email_endpoint_failure").val();
+
+  requestPayload.notifications = notifications
+
+  fusionpbx = new Object()
+
+  fusionpbx.enabled = modal_body.find(".fusionpbx_db_enabled").val();
+  fusionpbx.dbhost = modal_body.find(".fusionpbx_db_server").val();
+  fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
+  fusionpbx.dbpass = modal_body.find(".fusionpbx_db_password").val();
+
+  requestPayload.fusionpbx = fusionpbx;
+
+
+  /* Process endpoints */
+
+  endpoints = new Object();
+  endpointtable = modal_body.find(".endpoint-table tr")
+
+    endpointtable.each(function (i, row) {
+
+    endpoint = new Object();
+    var $row = $(row)
+    endpoint.pbxid = $row.find('input[name*="pbxid"]');
+    endpoint.hostname = $row.find('input[name*="hostname"]');
+    endpoint.description = $row.find('input[name*="description"]');
+    endpoint.maintmode = $row.find('input[name*="maintmode"]');
+
+    endpoints[i]=endpoint;
+  })
+
+   requestPayload.endpoints=endpoints;
+
+
+
+// Put into JSON Message and send over
+
+  $.ajax({
+		type: "POST",
+		url: "/api/v1/endpointgroups",
+		dataType: "json",
+		contentType: "application/json; charset=utf-8",
+		success: function(msg) {
+			if (msg.status == 200) {
+				//Uncheck the Checkbox
+					reloadkamrequired();
+			}
+			else {
+        console.log("error during endpointgroup update");
+
+			}
+
+		},
+		data: JSON.stringify(requestPayload)
+  })
+}
+
 function disableMaintenanceMode() {
 
 	var table=document.getElementById("pbxs");

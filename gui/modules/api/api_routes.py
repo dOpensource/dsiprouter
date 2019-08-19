@@ -2,7 +2,7 @@ from flask import Blueprint, session, render_template,jsonify
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import loadSession, Address, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes
+from database import loadSession, Address, dSIPNotification,Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits
 from shared import *
 from util.email import *
 import  urllib.parse as parse
@@ -444,18 +444,21 @@ def addEndpointGroups():
         responsePayload['gwgroupid'] = gwgroupid
 
         # Call limit
-        calllimit = requestPayload['calllimit']
-        if calllimit is not None and calllimit >=1:
-            CallLimit = dSIPCallLimits(gwgroupid,calllimit)
-            db.add(CallLimit)
+        calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
+        if calllimit is not None and len(calllimit) >0:
+            if int(calllimit) >=1:
+                CallLimit = dSIPCallLimits(gwgroupid,calllimit)
+                db.add(CallLimit)
 
         # Number of characters to strip and prefix
-        strip = requestPayload['strip']
-        prefix = requestPayload['prefix']
+        strip = requestPayload['strip'] if 'strip' in requestPayload else ""
+        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else None
 
         # Setup up authentication
-        authtype = requestPayload['auth']['type']
-        if authtype == "ip":
+        authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
+        'type' in requestPayload['auth'] else ""
+
+        if authtype == "ip" and "endpoints" in requestPayload:
             #Store Endpoint IP's in address tables
             for endpoint in requestPayload['endpoints']:
                 Addr = Address(name, endpoint['ip'],32, settings.FLT_PBX,gwgroup=str(gwgroupid))
@@ -463,16 +466,42 @@ def addEndpointGroups():
                 Gateway = Gateways(name, endpoint['ip'], strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
                 db.add(Gateway)
         elif authtype == "userpwd":
-            authuser = requestPayload['auth']['user']
-            authpass = requestPayload['auth']['pass']
-            authdomain = requestPayload['auth']['domain']
+            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
+            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
+            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] else settings.DOMAIN
+            if authuser == None or authpass == None:
+                raise AuthUsernameOrPasswordEmpty
             if db.query(Subscribers).filter(Subscribers.username == authuser,Subscribers.domain == authdomain).scalar():
-                raise RequiredParameterMissing
+                raise SubscriberUsernameTaken
             else:
                 Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
                 db.add(Subscriber)
 
+        # Setup notifications
+        if 'notifications' in requestPayload:
+            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] if 'overmaxcalllimit' in requestPayload['notifications'] else None
+            endpointfailure = requestPayload['notifications']['endpointfailure'] if 'endpointfailure' in requestPayload['notifications'] else None
 
+            if overmaxcalllimit is not None:
+                #type = dSIPNotification.FLAGS.TYPE_MAXCALLLIMIT.value
+                type = 0
+                notification = dSIPNotification(gwgroupid,type,0,overmaxcalllimit)
+                db.add(notification)
+
+            if endpointfailure is not None:
+                notification = dSIPNotification(gwgroupid,1,0,endpointfailure)
+                db.add(notification)
+
+        # Enable FusionPBX
+        if 'fusionpbx' in requestPayload:
+            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
+            fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
+            fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
+            fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
+
+        if fusionpbxenabled.lower() == "true" or fusionpbxenabled.lower() == "1":
+              domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
+              fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
 
         try:
             # DEBUG
@@ -481,7 +510,7 @@ def addEndpointGroups():
 
             #send_email(recipients=recipients, text_body=text_body,data=None)
 
-
+            db.commit()
             return jsonify(
                 message='EndpointGroup Created',
                 gwgroupid = responsePayload['gwgroupid'],
@@ -498,7 +527,8 @@ def addEndpointGroups():
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         #db.rollback()
         #db.flush()
+        db.rollback()
         return jsonify(status=0,error=str(ex))
+
     finally:
-        db.commit()
         db.close()
