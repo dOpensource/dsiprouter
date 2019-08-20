@@ -277,7 +277,7 @@ systemctl restart fail2ban</code></pre>
      </div> <!-- end of auth tab -->
 
      <div id="endpoints" class="tab-pane fade in" name="endpoints-toggle">
-         <table id="endpoint-table" class=table">
+         <table id="endpoint-table" class="table">
            <thead>
            <tr>
              <th>PBX ID</th>
@@ -286,10 +286,15 @@ systemctl restart fail2ban</code></pre>
            </tr>
          </thead>
          <tbody>
-           <tr>
-             <td name="pbxid"></td>
-             <td name="hostname"></td>
-             <td name="description"></td>
+           <tr class="endpoint">
+             <td name="pbxid">40</td>
+             <td name="hostname">13.13.11.13</td>
+             <td name="description">Macks IP</td>
+           </tr>
+           <tr class="endpoint">
+             <td name="pbxid">40</td>
+             <td name="hostname">13.13.11.13</td>
+             <td name="description">Jack IP</td>
            </tr>
          </tbody>
          </table>
@@ -442,7 +447,7 @@ systemctl restart fail2ban</code></pre>
       }
     });
 
-    
+
 
 });
   </script>

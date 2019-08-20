@@ -565,16 +565,14 @@ function addEndpointGroup() {
   /* Process endpoints */
 
   endpoints = new Object();
-  endpointtable = modal_body.find(".endpoint-table tr")
-
-    endpointtable.each(function (i, row) {
+  
+    $("tr.endpoint").each(function (i, row) {
 
     endpoint = new Object();
-    var $row = $(row)
-    endpoint.pbxid = $row.find('input[name*="pbxid"]');
-    endpoint.hostname = $row.find('input[name*="hostname"]');
-    endpoint.description = $row.find('input[name*="description"]');
-    endpoint.maintmode = $row.find('input[name*="maintmode"]');
+    endpoint.pbxid = $(this).find('td').eq(0).text();
+    endpoint.hostname = $(this).find('td').eq(1).text();
+    endpoint.description = $(this).find('td').eq(2).text();
+    endpoint.maintmode = $(this).find('td').eq(3).text();
 
     endpoints[i]=endpoint;
   })

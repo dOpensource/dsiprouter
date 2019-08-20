@@ -388,8 +388,8 @@ def addEndpointGroups():
                 domain: <string>
         },
         endpoints [
-                    {ip:<int,description:<string>,maintmode:<bool>},
-                    {ip:<int,description:<string>,maintmode:<bool>}
+                    {ip:<string>,description:<string>,maintmode:<bool>},
+                    {ip:<string>,description:<string>,maintmode:<bool>}
                   ],
         strip: <int>
         prefix: <string>
@@ -461,10 +461,15 @@ def addEndpointGroups():
         if authtype == "ip" and "endpoints" in requestPayload:
             #Store Endpoint IP's in address tables
             for endpoint in requestPayload['endpoints']:
-                Addr = Address(name, endpoint['ip'],32, settings.FLT_PBX,gwgroup=str(gwgroupid))
-                db.add(Addr)
-                Gateway = Gateways(name, endpoint['ip'], strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
-                db.add(Gateway)
+                hostname = endpoint['hostname'] if 'hostname' in endpoint else None
+                name = endpoint['description'] if 'description' in endpoint else None
+                print("***{}***{}".format(hostname,name))
+                if hostname is not None and name is not None \
+                and len(hostname) >0:
+                    Addr = Address(name, hostname,32, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    db.add(Addr)
+                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    db.add(Gateway)
         elif authtype == "userpwd":
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
