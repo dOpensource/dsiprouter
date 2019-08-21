@@ -5,8 +5,8 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = 'ZmJhM2Y1ODAwNDhl'
-DSIP_API_TOKEN = 'neggz1jEn5ei0ZICsNdWSHv9Obdq7VJJukaLp8smlOaZm49NCrHX72MabKCBixLx'
+PASSWORD = '155699168'
+DSIP_API_TOKEN = 'IbLtoNmwR2MT9ndQMDB90G5vrOP6RiZgy6KTEL4yv8giWx4fMwmxKQJwwpBQaSd1'
 DSIP_API_HOST = ''
 
 # dsiprouter logging settings
@@ -23,8 +23,8 @@ DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
-VERSION = 0.523
-DEBUG = False
+VERSION = 0.523+ent
+DEBUG = True
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
@@ -77,9 +77,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '165.227.83.229'
-INTERNAL_IP_NET = '165.227.83.*'
-EXTERNAL_IP_ADDR = '165.227.83.229'
+INTERNAL_IP_ADDR = '142.93.156.198'
+INTERNAL_IP_NET = '142.93.156.*'
+EXTERNAL_IP_ADDR = '142.93.156.198'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -89,5 +89,16 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install 
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = ''
+CLOUD_PLATFORM = 'DO'
 
+# Mail Server settings
+MAIL_SERVER='smtp.gmail.com'
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USE_SSL=False
+MAIL_DEBUG = True
+MAIL_USERNAME=''
+MAIL_PASSWORD=''
+MAIL_ASCII_ATTACHMENTS=False
+MAIL_DEFAULT_SENDER=''
+MAIL_DEFAULT_SUBJECT="[dSIPRouter] Notification"
