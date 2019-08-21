@@ -532,6 +532,9 @@ function configureKamailio {
     
     # Install schema for Notifications 
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_notification.sql
+    
+    # Install schema for gwip2gwgroup
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_gwip2gwgroup.sql
 
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
