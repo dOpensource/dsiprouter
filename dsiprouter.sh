@@ -527,12 +527,9 @@ function configureKamailio {
     # Install schema for custom MaintMode logic
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_maintmode.sql
     
-<<<<<<< HEAD
     # Install schema for Call Limit 
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_calllimit.sql
     
-=======
->>>>>>> gui-changes
     # Install schema for Notifications 
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_notification.sql
 
