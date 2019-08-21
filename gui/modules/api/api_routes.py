@@ -506,12 +506,7 @@ def addEndpointGroups():
             fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
             fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
             fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
-<<<<<<< HEAD
-
-        if fusionpbxenabled.lower() == "true" or fusionpbxenabled.lower() == "1":
-              domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
-              fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
-=======
+        
         # Check if a string with a value of true
         if isinstance(fusionpbxenabled,str):
             if fusionpbxenabled.lower() == "true" or  fusionpbxenabled.lower() == "1":
@@ -522,7 +517,6 @@ def addEndpointGroups():
             if fusionpbxenabled == 1:
                 domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
                 fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
->>>>>>> gui-changes
 
         try:
             # DEBUG
