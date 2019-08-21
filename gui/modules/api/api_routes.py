@@ -2,12 +2,13 @@ from flask import Blueprint, session, render_template,jsonify
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import loadSession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
-    Gateways, Subscribers, dSIPLeases, dSIPMaintModes, InboundMapping
+from database import loadSession, Address, dSIPNotification,Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits
 from shared import *
+from util.email import *
 import  urllib.parse as parse
 import json
 import settings
+
 import globals
 
 db = loadSession()
@@ -58,7 +59,7 @@ def reloadKamailio():
     try:
         if (settings.DEBUG):
             debugEndpoint()
-        
+
         payloadResponse = {}
         configParameters = {}
         reloadCommands = {}
@@ -94,7 +95,7 @@ def reloadKamailio():
         #   payloadResponse[key]=json.dumps({"status":r.status_code,"message":r.json()})
         #    payloadResponse[key]=r.status_code
 
-        globals.reload_required = False 
+        globals.reload_required = False
         return json.dumps({"results": payloadResponse})
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -125,11 +126,11 @@ def getEndpointLease():
     try:
         if (settings.DEBUG):
             debugEndpoint()
-        
+
         email=request.args.get('email')
         if not email:
             raise Exception("email parameter is missing")
-        
+
         ttl=request.args.get('ttl')
         if not ttl:
             raise Exception("time to live (ttl) parameter is missing")
@@ -138,7 +139,7 @@ def getEndpointLease():
         rand_num= random.randint(1,200)
         name = "lease" + str(rand_num)
         auth_username = name
-        auth_password = generatePassword()  
+        auth_password = generatePassword()
         auth_domain = settings.DOMAIN
         if settings.DSIP_API_HOST:
             api_hostname = settings.DSIP_API_HOST
@@ -149,7 +150,7 @@ def getEndpointLease():
         ip_addr =''
         strip=''
         prefix=''
-        
+
         #Add the Gateways table
 
         Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
@@ -208,27 +209,27 @@ def revokeEndpointLease(leaseid):
     try:
         if (settings.DEBUG):
             debugEndpoint()
-       
+
         # Query the Lease ID
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
 
         # Remove the entry in the Subscribers table
-               
+
         Subscriber = db.query(Subscribers).filter(Subscribers.id == Lease.sid).first()
         db.delete(Subscriber)
         # Remove the entry in the Gateway table
-        
+
         Gateway = db.query(Gateways).filter(Gateways.gwid == Lease.gwid).first()
         db.delete(Gateway)
 
         # Remove the entry in the Lease table
-        
+
         db.delete(Lease)
-        
+
         payload = {}
         payload['leaseid'] = leaseid
         payload['status'] = 'revoked'
-        
+
         db.commit()
         return json.dumps(payload)
 
@@ -265,10 +266,10 @@ def updateEndpoint(id):
     try:
         if (settings.DEBUG):
             debugEndpoint()
-       
-        # Define a dictionary object that represents the payload 
+
+        # Define a dictionary object that represents the payload
         responsePayload = {}
-        
+
         # Set the status to 0, update it to 1 if the update is successful
         responsePayload['status'] = 0
 
@@ -291,11 +292,11 @@ def updateEndpoint(id):
                  db.flush()
                  if Gateway != None:
                      MaintMode = dSIPMaintModes(Gateway.address,id)
-                 db.add(MaintMode)   
+                 db.add(MaintMode)
         except MaintModeAttrMissing as ex:
             responsePayload['error'] = "maintmode attribute is missing"
             return json.dumps(responsePayload)
-        
+
         db.commit()
         responsePayload['status'] = 1
 
@@ -324,258 +325,218 @@ def updateEndpoint(id):
     finally:
         db.close()
 
-# TODO: we should obviously optimize this and cleanup reused code
-@api.route("/api/v1/inboundmapping", methods=['GET', 'POST', 'PUT', 'DELETE'])
+
+@api.route("/api/v1/notification/<int:gwgroup>/trigger", methods=['GET'])
 @api_security
-def handleInboundMapping():
+def notificationTrigger(gwgroup):
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        type=request.args.get('type')
+        if not type:
+            raise Exception("type parameter is missing")
+
+        print("***Triggered for GW {} and type is {}".format(gwgroup,type))
+
+        # Define a dictionary object that represents the payload
+        responsePayload = {}
+
+        # Set the status to 0, update it to 1 if the update is successful
+        responsePayload['status'] = 0
+
+        recipients = []
+        recipients.append('mack.hendricks@gmail.com')
+        text_body = "This email was sent automatically by dSIPRouter"
+
+        try:
+            # DEBUG
+            #for key, value in data.items():
+            #    print(key,value)
+
+            send_email(recipients=recipients, text_body=text_body,data=None)
+
+
+            return jsonify(
+                status=200,
+                message='Email delivery success'
+            )
+
+        except Exception as e:
+            return jsonify(status=0,error=str(e))
+
+
+
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        #db.rollback()
+        #db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/endpointgroups", methods=['POST'])
+@api_security
+def addEndpointGroups():
     """
-    Endpoint for Inbound DID Rule Mapping
+    Add Endpoint Group
+    {
+        name: <string>
+        calllimit: <int>,
+        auth: { type: "ip"|"userpwd",
+                user: <string>
+                pass: <string>
+                domain: <string>
+        },
+        endpoints [
+                    {ip:<string>,description:<string>,maintmode:<bool>},
+                    {ip:<string>,description:<string>,maintmode:<bool>}
+                  ],
+        strip: <int>
+        prefix: <string>
+        notifications: {
+            overmaxcalllimit: <string>,
+            endpointfailure" <string>
+        },
+        fusionpbx: {
+            enabled: <bool>,
+            dbhost: <string>,
+            dbuser: <string>,
+            dbpass: <string>
+            }
+    }
     """
 
-    # dr_routing prefix matching supported characters
-    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
-    # TODO: we should move this somewhere shared between gui and api
-    PREFIX_ALLOWED_CHARS = {'0','1','2','3','4','5','6','7','8','9','+','#','*'}
-
-    # use a whitelist to avoid possible SQL Injection vulns
-    VALID_REQUEST_ARGS = {'ruleid', 'did'}
-
-    # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'notes'}
-
-    # defaults.. keep data returned seperate from returned metadata
-    payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    gwgroupid = None
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        # =========================================
-        # get rule for DID mapping or list of rules
-        # =========================================
-        if request.method == "GET":
-            # sanity check
-            for arg in request.args:
-                if arg not in VALID_REQUEST_ARGS:
-                    raise http_exceptions.BadRequest("Request argument not recognized")
+        # Define a dictionary object that represents the payload
+        responsePayload = {}
 
-            # get single rule by ruleid
-            rule_id = request.args.get('ruleid')
-            if rule_id is not None:
-                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).first()
-                if res is not None:
-                    data = rowToDict(res)
-                    data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
-                    payload['data'].append(data)
-                    payload['msg'] = 'Rule Found'
-                else:
-                    payload['msg'] = 'No Matching Rule Found'
+        # Set the status to 0, update it to 1 if the update is successful
+        responsePayload['status'] = 0
+        responsePayload['gwgroupid'] = None
 
-            # get single rule by did
-            else:
-                did_pattern = request.args.get('did')
-                if did_pattern is not None:
-                    res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern).first()
-                    if res is not None:
-                        data = rowToDict(res)
-                        data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
-                        payload['data'].append(data)
-                        payload['msg'] = 'DID Found'
-                    else:
-                        payload['msg'] = 'No Matching DID Found'
+        # Covert JSON message to Dictionary Object
+        requestPayload = request.get_json()
 
-                # get list of rules
-                else:
-                    res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).all()
-                    if len(res) > 0:
-                        for row in res:
-                            data = rowToDict(row)
-                            data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
-                            payload['data'].append(data)
-                        payload['msg'] = 'Rules Found'
-                    else:
-                        payload['msg'] = 'No Rules Found'
 
-            return json.dumps(payload), status.HTTP_OK
 
-        # ===========================
-        # create rule for DID mapping
-        # ===========================
-        elif request.method == "POST":
-            # TODO: should we enforce strict mimetype matching?
-            data = request.get_json(force=True)
+        # Check parameters and raise exception if missing required parameters
+        requiredParameters = ['name']
 
-            # sanity checks
-            for arg in data:
-                if arg not in VALID_REQUEST_DATA_ARGS:
-                    raise http_exceptions.BadRequest("Request data argument not recognized")
+        try:
+            for parameter in requiredParameters:
+                if parameter not in requestPayload:
+                    raise RequiredParameterMissing
+        except RequiredParameterMissing as ex:
+                responsePayload['error'] = "{} attribute is missing".format(parameter)
+                return json.dumps(responsePayload)
 
-            if 'servers' not in data:
-                raise http_exceptions.BadRequest('Servers to map DID to are required')
-            elif len(data['servers']) < 1 or len(data['servers']) > 2:
-                raise http_exceptions.BadRequest('Primary Server missing or More than 2 Servers Provided')
-            elif 'did' not in data:
-                raise http_exceptions.BadRequest('DID is required')
-
-            # TODO: we should be checking dr_gateways table to make sure the servers exist
-            for i in range(0, len(data['servers'])):
-                try:
-                    data['servers'][i] = str(data['servers'][i])
-                    _ = int(data['servers'][i])
-                except:
-                    raise http_exceptions.BadRequest('Invalid Server ID')
-            for c in data['did']:
-                if c not in PREFIX_ALLOWED_CHARS:
-                    raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
-
-            gwlist = ','.join(data['servers'])
-            prefix = data['did']
-            notes = data['notes'] if 'notes' in data else ''
-
-            # don't allow duplicate entries
-            if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
-                raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
-            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
-            db.add(IMap)
-
-            db.commit()
-            globals.reload_required = True
-            payload['kamreload'] = globals.reload_required
-            payload['msg'] = 'Rule Created'
-            return json.dumps(payload), status.HTTP_OK
-
-        # ===========================
-        # update rule for DID mapping
-        # ===========================
-        elif request.method == "PUT":
-            # sanity check
-            for arg in request.args:
-                if arg not in VALID_REQUEST_ARGS:
-                    raise http_exceptions.BadRequest("Request argument not recognized")
-
-            # TODO: should we enforce strict mimetype matching?
-            data = request.get_json(force=True)
-            updates = {}
-
-            # sanity checks
-            for arg in data:
-                if arg not in VALID_REQUEST_DATA_ARGS:
-                    raise http_exceptions.BadRequest("Request data argument not recognized")
-
-            if 'did' not in data and 'servers' not in data and 'notes' not in data:
-                raise http_exceptions.BadRequest("No data args supplied, {did, and servers} is required")
-            # TODO: we should be checking dr_gateways table to make sure the servers exist
-            if 'servers' in data:
-                if len(data['servers']) < 1 or len(data['servers']) > 2:
-                    raise http_exceptions.BadRequest('Primary Server missing or More than 2 Servers Provided')
-                else:
-                    for i in range(0, len(data['servers'])):
-                        try:
-                            data['servers'][i] = str(data['servers'][i])
-                            _ = int(data['servers'][i])
-                        except:
-                            raise http_exceptions.BadRequest('Invalid Server ID')
-                updates['gwlist'] = ','.join(data['servers'])
-            if 'did' in data:
-                for c in data['did']:
-                    if c not in PREFIX_ALLOWED_CHARS:
-                        raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
-                updates['prefix'] = data['did']
-            if 'notes' in data:
-                updates['description'] = data['notes']
-
-            # update single rule by ruleid
-            rule_id = request.args.get('ruleid')
-            if rule_id is not None:
-                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).update(
-                    updates, synchronize_session=False)
-                if res > 0:
-                    payload['msg'] = 'Rule Updated'
-                else:
-                    payload['msg'] = 'No Matching Rule Found'
-
-            # update single rule by did
-            else:
-                did_pattern = request.args.get('did')
-                if did_pattern is not None:
-                    res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern).update(
-                        updates, synchronize_session=False)
-                    if res > 0:
-                        payload['msg'] = 'Rule Updated'
-                    else:
-                        payload['msg'] = 'No Matching Rule Found'
-
-                # no other options
-                else:
-                    raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
-
-            db.commit()
-            globals.reload_required = True
-            payload['kamreload'] = globals.reload_required
-            return json.dumps(payload), status.HTTP_OK
-
-        # ===========================
-        # delete rule for DID mapping
-        # ===========================
-        elif request.method == "DELETE":
-            # sanity check
-            for arg in request.args:
-                if arg not in VALID_REQUEST_ARGS:
-                    raise http_exceptions.BadRequest("Request argument not recognized")
-
-            # delete single rule by ruleid
-            rule_id = request.args.get('ruleid')
-            if rule_id is not None:
-                rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id)
-                rule.delete(synchronize_session=False)
-
-            # delete single rule by did
-            else:
-                did_pattern = request.args.get('did')
-                if did_pattern is not None:
-                    rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern)
-                    rule.delete(synchronize_session=False)
-
-                # no other options
-                else:
-                    raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
-
-            db.commit()
-            globals.reload_required = True
-            payload['kamreload'] = globals.reload_required
-            payload['msg'] = 'Rule Deleted'
-            return json.dumps(payload), status.HTTP_OK
-
-        # not possible
-        else:
-            raise Exception('Unknown Error Occurred')
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        payload['error'] = "db"
-        if len(str(ex)) > 0:
-            payload['msg'] = str(ex)
-        status_code = status.HTTP_INTERNAL_SERVER_ERROR
-        db.rollback()
+        # Process Gateway Name
+        name = requestPayload['name']
+        Gwgroup = GatewayGroups(name,type=settings.FLT_PBX)
+        db.add(Gwgroup)
         db.flush()
-        return json.dumps(payload), status_code
-    except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        payload['error'] = "http"
-        if len(str(ex)) > 0:
-            payload['msg'] = str(ex)
-        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
-        db.rollback()
-        db.flush()
-        return json.dumps(payload), status_code
+        gwgroupid = Gwgroup.id
+        responsePayload['gwgroupid'] = gwgroupid
+
+        # Call limit
+        calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
+        if calllimit is not None and len(calllimit) >0:
+            if int(calllimit) >=1:
+                CallLimit = dSIPCallLimits(gwgroupid,calllimit)
+                db.add(CallLimit)
+
+        # Number of characters to strip and prefix
+        strip = requestPayload['strip'] if 'strip' in requestPayload else ""
+        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else None
+
+        # Setup up authentication
+        authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
+        'type' in requestPayload['auth'] else ""
+
+        if authtype == "ip" and "endpoints" in requestPayload:
+            #Store Endpoint IP's in address tables
+            for endpoint in requestPayload['endpoints']:
+                hostname = endpoint['hostname'] if 'hostname' in endpoint else None
+                name = endpoint['description'] if 'description' in endpoint else None
+                print("***{}***{}".format(hostname,name))
+                if hostname is not None and name is not None \
+                and len(hostname) >0:
+                    Addr = Address(name, hostname,32, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    db.add(Addr)
+                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    db.add(Gateway)
+        elif authtype == "userpwd":
+            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
+            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
+            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] else settings.DOMAIN
+            if authuser == None or authpass == None:
+                raise AuthUsernameOrPasswordEmpty
+            if db.query(Subscribers).filter(Subscribers.username == authuser,Subscribers.domain == authdomain).scalar():
+                raise SubscriberUsernameTaken
+            else:
+                Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
+                db.add(Subscriber)
+
+        # Setup notifications
+        if 'notifications' in requestPayload:
+            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] if 'overmaxcalllimit' in requestPayload['notifications'] else None
+            endpointfailure = requestPayload['notifications']['endpointfailure'] if 'endpointfailure' in requestPayload['notifications'] else None
+
+            if overmaxcalllimit is not None:
+                #type = dSIPNotification.FLAGS.TYPE_MAXCALLLIMIT.value
+                type = 0
+                notification = dSIPNotification(gwgroupid,type,0,overmaxcalllimit)
+                db.add(notification)
+
+            if endpointfailure is not None:
+                notification = dSIPNotification(gwgroupid,1,0,endpointfailure)
+                db.add(notification)
+
+        # Enable FusionPBX
+        if 'fusionpbx' in requestPayload:
+            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
+            fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
+            fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
+            fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
+
+        if fusionpbxenabled.lower() == "true" or fusionpbxenabled.lower() == "1":
+              domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
+              fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+
+        try:
+            # DEBUG
+            #for key, value in data.items():
+            #    print(key,value)
+
+            #send_email(recipients=recipients, text_body=text_body,data=None)
+
+            db.commit()
+            return jsonify(
+                message='EndpointGroup Created',
+                gwgroupid = responsePayload['gwgroupid'],
+                status = "200"
+            )
+
+        except Exception as e:
+            print(requestPayload)
+            return jsonify(status=0,error=str(e))
+
+
+
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        payload['error'] = "server"
-        if len(str(ex)) > 0:
-            payload['msg'] = str(ex)
-        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        #db.rollback()
+        #db.flush()
         db.rollback()
-        db.flush()
-        return json.dumps(payload), status_code
+        return jsonify(status=0,error=str(ex))
+
     finally:
         db.close()

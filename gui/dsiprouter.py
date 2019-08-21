@@ -101,7 +101,7 @@ def login():
             flash('wrong username or password!')
             return render_template('index.html', version=settings.VERSION), 403
         return redirect(url_for('index'))
-        
+
 
     except http_exceptions.HTTPException as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -150,6 +150,8 @@ def displayCarrierGroups(gwgroup=None):
         if (settings.DEBUG):
             debugEndpoint()
 
+        typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
+
         # res must be a list()
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
@@ -159,7 +161,7 @@ def displayCarrierGroups(gwgroup=None):
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.auth_username, UAC.auth_password, UAC.realm).all()
+                UAC.auth_username, UAC.auth_password, UAC.realm).filter(GatewayGroups.description.like(typeFilter))
         db.close()
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
@@ -217,7 +219,7 @@ def addUpdateCarrierGroups():
         if len(gwgroup) <= 0:
             print(name)
 
-            Gwgroup = GatewayGroups(name)
+            Gwgroup = GatewayGroups(name,type=settings.FLT_CARRIER)
             db.add(Gwgroup)
             db.flush()
             gwgroup = Gwgroup.id
@@ -616,10 +618,10 @@ def deleteCarriers():
         db.close()
 
 
-@app.route('/pbx')
-def displayPBX():
+@app.route('/endpointgroups')
+def displayEndpointGroups():
     """
-    Display PBX / Endpoints in the view
+    Display Endpoint Groups / Endpoints in the view
     """
     try:
         if not session.get('logged_in'):
@@ -628,24 +630,28 @@ def displayPBX():
         if (settings.DEBUG):
             debugEndpoint()
 
-        res = db.query(Gateways).outerjoin(
-            dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
-            dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
-            Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).outerjoin(dSIPCallLimits, Gateways.gwid == dSIPCallLimits.gwid).add_columns(
-            Gateways.gwid, Gateways.description,
-            Gateways.address, Gateways.strip,
-            Gateways.pri_prefix,
-            dSIPMultiDomainMapping.enabled.label('fusionpbx_enabled'),
-            dSIPMultiDomainMapping.db_host,
-            dSIPMultiDomainMapping.db_username,
-            dSIPMultiDomainMapping.db_password,
-            Subscribers.rpid, Subscribers.username,
-            Subscribers.password, Subscribers.domain,
-            dSIPDomainMapping.enabled.label('freepbx_enabled'),
-            dSIPMaintModes.status.label('maintmode'),
-            dSIPCallLimits.limit.label('calllimit')
-        ).filter(Gateways.type == settings.FLT_PBX).all()
-        return render_template('pbxs.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
+        typeFilter = "%type:{}%".format(settings.FLT_PBX)
+
+        res = db.query(GatewayGroups).add_columns(GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description).filter(GatewayGroups.description.like(typeFilter))
+
+        #res = db.query(Gateways).outerjoin(
+        #    dSIPMultiDomainMapping, Gateways.gwid == dSIPMultiDomainMapping.pbx_id).outerjoin(
+        #    dSIPDomainMapping, Gateways.gwid == dSIPDomainMapping.pbx_id).outerjoin(
+        #    Subscribers, Gateways.gwid == Subscribers.rpid).outerjoin(dSIPMaintModes, Gateways.gwid == dSIPMaintModes.gwid).outerjoin(dSIPCallLimits, Gateways.gwid == dSIPCallLimits.gwid).add_columns(
+        #    Gateways.gwid, Gateways.description,
+        #    Gateways.address, Gateways.strip,
+        #    Gateways.pri_prefix,
+        #    dSIPMultiDomainMapping.enabled.label('fusionpbx_enabled'),
+        #    dSIPMultiDomainMapping.db_host,
+        #    dSIPMultiDomainMapping.db_username,
+        #    dSIPMultiDomainMapping.db_password,
+        #    Subscribers.rpid, Subscribers.username,
+        #    Subscribers.password, Subscribers.domain,
+        #    dSIPDomainMapping.enabled.label('freepbx_enabled'),
+        #    dSIPMaintModes.status.label('maintmode'),
+        #    dSIPCallLimits.limit.label('calllimit')
+        #).filter(Gateways.type == settings.FLT_PBX).all()
+        return render_template('endpointgroups.html', rows=res, DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -669,9 +675,8 @@ def displayPBX():
         db.flush()
         return showError(type=error, msg=msg)
 
-#########################################################################
-@app.route('/pbx', methods=['POST'])
-def addUpdatePBX():
+@app.route('/endpointgroups', methods=['POST'])
+def addUpdateEndpointGroups():
     """
     Add or Update a PBX / Endpoint
     """
@@ -688,8 +693,9 @@ def addUpdatePBX():
 
         # TODO: change ip_addr field to hostname or domainname, we already support this
         gwid = form['gwid']
-        name = form['name']
-        ip_addr = form["ip_addr"] if len(form['ip_addr']) > 0 else ""
+        gwgroup = request.form.get("gwgroup",None)
+        name = request.form.get("name",None)
+        ip_addr = request.form.get("ip_addr",None)
         strip = form['strip'] if len(form['strip']) > 0 else "0"
         prefix = form['prefix'] if len(form['prefix']) > 0 else ""
         authtype = form['authtype']
@@ -706,224 +712,14 @@ def addUpdatePBX():
         single_tenant_domain_enabled = False
         single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_UNKNOWN.value
 
-        # add any other multi tenant pbx to this list as they are supported
-        # ex) add or statements: if ... or .. or ... elif ... or ...
-        if int(form['fusionpbx_db_enabled']):
-            multi_tenant_domain_enabled = True
-            multi_tenant_domain_type = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value
-        # add any other single tenant pbx to this list as they are supported
-        else:
-            single_tenant_domain_enabled = True
-        #elif int(form['freepbx_enabled']):
-        #    single_tenant_domain_enabled = True
-        #    single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_FREEPBX.value
-
-        # Adding
-        if len(gwid) <= 0:
-            Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
-            db.add(Gateway)
+        if name is not None:
+            Gwgroup = GatewayGroups(name,type=settings.FLT_PBX)
+            db.add(Gwgroup)
             db.flush()
+            gwgroup = Gwgroup.id
 
-            if calllimit is not None and len(calllimit) > 0:
-                CallLimit = dSIPCallLimits(Gateway.gwid,calllimit)
-                db.add(CallLimit)
-
-            if authtype == "ip":
-                Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
-                db.add(Addr)
-            else:
-                # verify we won't break (username,domain) unique key constraint
-                if db.query(Gateways).filter(Gateways.gwid == gwid).scalar(): 
-                #if db.query(Subscribers).filter(Subscribers.username == auth_username,
-                #                               Subscribers.domain == auth_domain).scalar():
-                    db.rollback()
-                    db.flush()
-                    return showError(type="db", code=400,
-                                     msg="Entry for {}@{} already exists".format(auth_username, auth_domain))
-                Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid)
-                db.add(Subscriber)
-
-            # enable domain routing for all pbx in multi tenant db
-            if multi_tenant_domain_enabled:
-                pass
-                # put required VALUES for all multi tenant use cases here
-            # disable domain routing for all pbx in multi tenant db
-            else:
-                pass
-                # put required DEFAULTS for all multi tenant use cases here
-
-            # specific use cases go here
-            if multi_tenant_domain_type == dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value:
-                PBXMultiMapping = dSIPMultiDomainMapping(Gateway.gwid, fusionpbx_db_server, fusionpbx_db_username,
-                                                         fusionpbx_db_password, type=multi_tenant_domain_type)
-
-                # Add another Gateway that represents the External interface, which is 5080 by default
-                name = name + " external"
-                # Test ip address to see if it contains a port number
-                index = ip_addr.find(":")
-                if index > 0:
-                    ip_addr = ip_addr[:index - 1]
-                    ip_addr = ip_addr + ":5080"
-                else:
-                    ip_addr = ip_addr + ":5080"
-
-                Gateway2 = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
-                db.add(Gateway2)
-            # create an entry for fusion pbx that is disabled
-            else:
-                PBXMultiMapping = dSIPMultiDomainMapping(Gateway.gwid, fusionpbx_db_server, fusionpbx_db_username,
-                                                         fusionpbx_db_password, type=multi_tenant_domain_type,
-                                                         enabled=dSIPMultiDomainMapping.FLAGS.DOMAIN_DISABLED.value)
-
-            # required entries guranteed to be created
-            db.add(PBXMultiMapping)
-
-            # enable domain routing for this pbx
-            #if single_tenant_domain_enabled:
-            #    # put required VALUES for all single tenant use cases here
-            #    PBXDomain = Domain(ip_addr)
-            #    PBXDomainAttr = DomainAttrs(ip_addr)
-            #    db.add(PBXDomain)
-            #    db.add(PBXDomainAttr)
-            #    db.flush()
-
-            #    PBXMapping = dSIPDomainMapping(Gateway.gwid, '', '',type=single_tenant_domain_type)
-            # create an entry for this pbx that is disabled (must not match any domain)
-            #else:
-            #    # put required DEFAULTS for all single tenant use cases here
-            #    PBXDomain = Domain(domain="", did="")
-            #    PBXDomainAttr = DomainAttrs(did="", value="")
-            #    db.add(PBXDomain)
-            #    db.add(PBXDomainAttr)
-            #    db.flush()
-
-            #   PBXMapping = dSIPDomainMapping(Gateway.gwid, PBXDomain.id, [PBXDomainAttr.id],
-           #                                    enabled=dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value)
-
-                # specific use cases go here
-
-            # required entries guranteed to be created
-            #db.add(PBXMapping)
-
-        # Updating
-        else:
-            # Update the Gateway table
-            db.query(Gateways).filter(Gateways.gwid == gwid).update(
-                    {'address': ip_addr, 'strip': strip, 'pri_prefix': prefix},
-                synchronize_session=False)
-            
-            if calllimit is not None and len(calllimit) > 0:
-                exists = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid== gwid).scalar()
-                if exists:  #Update
-                    db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid == gwid).update( {'limit': calllimit},synchronize_session=False)
-                else: # Add
-                   CallLimit = dSIPCallLimits(gwid,calllimit)
-                   db.add(CallLimit)
-            else:
-                CallLimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid == gwid)
-                CallLimit.delete(synchronize_session=False)
-
-
-            Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
-            db.add(Addr)
-            # enable domain routing for all pbx in multi tenant db
-            if multi_tenant_domain_enabled:
-                pass
-                # put required VALUES for all multi tenant use cases here
-            # disable domain routing for all pbx in multi tenant db
-            else:
-                pass
-                # put required DEFAULTS for multi single tenant use cases here
-
-            # specific use cases go here
-            if multi_tenant_domain_type == dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value:
-                db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwid).update(
-                    {'pbx_id': gwid, 'db_host': fusionpbx_db_server, 'db_username': fusionpbx_db_username,
-                     'db_password': fusionpbx_db_password, 'enabled': dSIPMultiDomainMapping.FLAGS.DOMAIN_ENABLED.value},
-                    synchronize_session=False)
-            # disable fusion pbx db
-            else:
-                db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwid).update(
-                    {'enabled': dSIPMultiDomainMapping.FLAGS.DOMAIN_DISABLED.value}, synchronize_session=False)
-
-            # enable domain routing for this pbx
-            #if single_tenant_domain_enabled:
-            #
-                # put required VALUES for all single tenant use cases here
-            #    PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
-            #    PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_ENABLED.value
-
-            #    # TODO: support adding / editing multiple domain attributes
-            #    db.query(Domain).filter(Domain.id == PBXMapping.domain_id).update(
-            #        {'domain': ip_addr, 'did': ip_addr, 'last_modified': datetime.utcnow()}, synchronize_session=False)
-                # make sure domain has attributes
-            #    if len(PBXMapping.attr_list) > 0:
-            #        attr_list = list(map(int, filter(None, PBXMapping.attr_list.split(","))))
-            #    db.query(DomainAttrs).filter(DomainAttrs.id.in_(attr_list)).update(
-            #        {'did': ip_addr, 'value': '', 'last_modified': datetime.utcnow()},
-            #        synchronize_session=False)
-            # disable domain routing for this pbx
-            #else:
-            #    # put required DEFAULTS for all single tenant use cases here
-            #    PBXMapping = db.query(dSIPDomainMapping).filter(dSIPDomainMapping.pbx_id == gwid).first()
-            #    PBXMapping.enabled = dSIPDomainMapping.FLAGS.DOMAIN_DISABLED.value
-
-            #    db.query(Domain).filter(Domain.id == PBXMapping.domain_id).update(
-            #        {'did': '', 'value': '', 'last_modified': datetime.utcnow()}, synchronize_session=False)
-                # make sure domain has attributes
-            #    if len(PBXMapping.attr_list) > 0:
-            #        attr_list = list(map(int, filter(None, PBXMapping.attr_list.split(","))))
-            #    db.query(DomainAttrs).filter(DomainAttrs.id.in_(attr_list)).update(
-            #        {'did': '', 'value': '', 'last_modified': datetime.utcnow()}, synchronize_session=False)
-
-            # specific use cases go here
-            # if single_tenant_domain_type == dSIPDomainMapping.FLAGS.TYPE_FREEPBX.value:
-
-            # Update Subscribers table if auth credentials are being used
-            if authtype == "userpwd":
-                # Remove ip address from address table
-                Addr = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
-                #Addr.delete(synchronize_session=False)
-                #Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
-                #db.add(Addr)
-                
-
-                # Add the username and password that will be used for authentication
-                # Check if the entry in the subscriber table already exists
-                exists = db.query(Subscribers).filter(Subscribers.rpid == gwid).scalar()
-                if exists:
-                    db.query(Subscribers).filter(Subscribers.rpid == gwid).update(
-                        {'username': auth_username, 'password': auth_password, 'domain': auth_domain, 'rpid': gwid},
-                        synchronize_session=False)
-                else:
-                    # verify we won't break (username,domain) unique key constraint
-                    if db.query(Subscribers).filter(Subscribers.username == auth_username,
-                                                    Subscribers.domain == auth_domain).scalar():
-                        db.rollback()
-                        db.flush()
-                        return showError(type="db", code=400,
-                                         msg="Entry for {}@{} already exists".format(auth_username, auth_domain))
-                    else:
-                        Subscriber = Subscribers(auth_username, auth_password, auth_domain, gwid)
-                        db.add(Subscriber)
-            # Update the Address table with the new ip address
-            else:
-                # remove pbx from subscriber table
-                Subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwid)
-                if Subscriber:
-                    Subscriber.delete(synchronize_session=False)
-
-                exists = db.query(Address).filter(Address.tag.contains("name:{}".format(name))).update(
-                    {'ip_addr': ip_addr}, synchronize_session=False)
-                if not exists:
-                    Addr = Address(name, ip_addr, 32, settings.FLT_PBX)
-                    db.add(Addr)
-
-
-           
-        db.commit()
         globals.reload_required = True
-        return displayPBX()
+        return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -976,7 +772,7 @@ def deletePBX():
         subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwid)
         subscriber.delete(synchronize_session=False)
         address.delete(synchronize_session=False)
-        
+
         domainmultimapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwid)
         res = domainmultimapping.options(load_only("domain_list", "attr_list")).first()
         if res is not None:
@@ -997,7 +793,7 @@ def deletePBX():
 
         db.commit()
         globals.reload_required = True
-        return displayPBX()
+        return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1078,7 +874,7 @@ def displayInboundMapping():
         return showError(type=error, msg=msg)
     finally:
         db.close()
-        
+
 
 
 @app.route('/inboundmapping', methods=['POST'])
@@ -1224,7 +1020,7 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
                 notes=row[2]
             IMap = InboundMapping(groupid, row[0], pbxid, notes)
             db.add(IMap)
-        
+
         db.commit()
 
 
@@ -1253,12 +1049,12 @@ def processInboundMappingImport(filename,groupid,pbxid,notes,db):
 
 @app.route('/inboundmappingimport',methods=['POST'])
 def importInboundMapping():
-    
-    
+
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
-        
+
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1283,7 +1079,7 @@ def importInboundMapping():
             processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,notes,db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
-    
+
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         msg = str(ex) if len(str(ex)) > 0 else None
@@ -1849,7 +1645,7 @@ def replaceAppLoggers(log_handler):
     for handler in copy(logging.getLogger('sqlalchemy').handlers):
         logging.getLogger('sqlalchemy').removeHandler(handler)
         handler.close()
-        
+
     # replace vanilla werkzeug and sqlalchemy log handler
     logging.getLogger('werkzeug').addHandler(log_handler)
     logging.getLogger('werkzeug').setLevel(settings.DSIP_LOG_LEVEL)
@@ -1863,7 +1659,7 @@ def replaceAppLoggers(log_handler):
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 def initApp(flask_app):
-   
+
     #Initialize Globals
     globals.initialize()
 
@@ -1895,7 +1691,7 @@ def initApp(flask_app):
 
     # Enable debugging - check the environment variable first
     settings.DEBUG = os.getenv('DSIP_DEBUG',settings.DEBUG)
-    
+
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG

@@ -238,10 +238,11 @@ $('#open-PbxAdd').click(function() {
 });
 
 
-$('#pbxs #open-Update').click(function() {
+$('#endpointgroups #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('pbxs');
+  var c = document.getElementById('endpointgroups');
   var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+/*
   var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
   var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
   var strip = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
@@ -255,7 +256,7 @@ $('#pbxs #open-Update').click(function() {
   var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
   var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
   var calllimit  = $(c).find('tr:eq(' + row_index + ') td:eq(16)').text();
-
+*/
 
   /** Clear out the modal */
   var modal_body = $('#edit .modal-body');
@@ -273,6 +274,7 @@ $('#pbxs #open-Update').click(function() {
   /* update modal fields */
   modal_body.find(".gwid").val(gwid);
   modal_body.find(".name").val(name);
+/*
   modal_body.find(".ip_addr").val(ip_addr);
   modal_body.find(".strip").val(strip);
   modal_body.find(".prefix").val(prefix);
@@ -296,18 +298,19 @@ $('#pbxs #open-Update').click(function() {
 
 
   if (authtype !== "") {
-    /* userpwd auth enabled, Set the radio button to true */
+    // userpwd auth enabled, Set the radio button to true
     modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
   }
   else {
-    /* ip auth enabled, Set the radio button to true */
+    // ip auth enabled, Set the radio button to true
     modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
   }
+*/
 });
 
 $('#pbxs #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('pbxs');
+  var c = document.getElementById('endpointgroups');
   var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
   var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
 
@@ -469,7 +472,7 @@ $('#outboundmapping #open-Delete').click(function() {
 
 function reloadkamrequired() {
   var reload_button = $('#reloadkam');
-  
+
   reload_button.removeClass('btn-primary');
   reload_button.addClass('btn-warning');
 
@@ -516,8 +519,88 @@ function enableMaintenanceMode() {
 	    if (checkbox[0].checked) {
 		    updateEndpoint(row,'maintmode',1);
 	    }
-	}	
+	}
 
+}
+
+function addEndpointGroup() {
+
+
+  var requestPayload = new Object();
+
+  /** Get data from the modal */
+  var modal_body = $('#add .modal-body');
+  requestPayload.name = modal_body.find(".name").val();
+  requestPayload.calllimit = modal_body.find(".calllimit").val();
+
+  auth = new Object();
+
+  auth.type = modal_body.find(".authtype").val();
+  auth.user = modal_body.find(".auth_username").val();
+  auth.pass = modal_body.find(".auth_password").val();
+  auth.domain = modal_body.find(".auth_domain").val();
+
+  requestPayload.auth = auth;
+
+  requestPayload.strip= modal_body.find(".strip").val();
+  requestPayload.prefix = modal_body.find(".prefix").val();
+
+  notifications = new Object()
+
+  notifications.overmaxcalllimit = modal_body.find(".email_over_max_calls").val();
+  notifications.endpointfailure = modal_body.find(".email_endpoint_failure").val();
+
+  requestPayload.notifications = notifications
+
+  fusionpbx = new Object()
+
+  fusionpbx.enabled = modal_body.find(".fusionpbx_db_enabled").val();
+  fusionpbx.dbhost = modal_body.find(".fusionpbx_db_server").val();
+  fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
+  fusionpbx.dbpass = modal_body.find(".fusionpbx_db_password").val();
+
+  requestPayload.fusionpbx = fusionpbx;
+
+
+  /* Process endpoints */
+
+  endpoints = new Object();
+  
+    $("tr.endpoint").each(function (i, row) {
+
+    endpoint = new Object();
+    endpoint.pbxid = $(this).find('td').eq(0).text();
+    endpoint.hostname = $(this).find('td').eq(1).text();
+    endpoint.description = $(this).find('td').eq(2).text();
+    endpoint.maintmode = $(this).find('td').eq(3).text();
+
+    endpoints[i]=endpoint;
+  })
+
+   requestPayload.endpoints=endpoints;
+
+
+
+// Put into JSON Message and send over
+
+  $.ajax({
+		type: "POST",
+		url: "/api/v1/endpointgroups",
+		dataType: "json",
+		contentType: "application/json; charset=utf-8",
+		success: function(msg) {
+			if (msg.status == 200) {
+				//Uncheck the Checkbox
+					reloadkamrequired();
+			}
+			else {
+        console.log("error during endpointgroup update");
+
+			}
+
+		},
+		data: JSON.stringify(requestPayload)
+  })
 }
 
 function disableMaintenanceMode() {
@@ -529,11 +612,11 @@ function disableMaintenanceMode() {
 	    if (checkbox[0].checked) {
 		    updateEndpoint(row,'maintmode',0);
 	    }
-	}	
+	}
 
 }
 
-/* Update an attribute of an endpoint 
+/* Update an attribute of an endpoint
 /* row - Javascript DOM that contains the row of the PBX
  * attr - is the attribute that we want to update
  */
@@ -542,7 +625,7 @@ function updateEndpoint(row,attr,attrvalue) {
 	checkbox=row.cells[0].getElementsByClassName('checkthis');
         pbxid = checkbox[0].value;
 
-        requestPayload = '{"maintmode":' +  attrvalue + '}';  
+        requestPayload = '{"maintmode":' +  attrvalue + '}';
 
 	$.ajax({
 		type: "POST",
@@ -568,7 +651,7 @@ function updateEndpoint(row,attr,attrvalue) {
 
 		},
 		data: requestPayload
-		
+
 	});
 }
 
@@ -710,4 +793,3 @@ $('form input[type!="hidden"]').on("paste", function() {
 $('.modal').on('shown.bs.modal', function() {
   $(this).find('[autofocus]').focus();
 });
-
