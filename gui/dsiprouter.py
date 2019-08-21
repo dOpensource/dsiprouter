@@ -675,6 +675,7 @@ def displayEndpointGroups():
         db.flush()
         return showError(type=error, msg=msg)
 
+
 @app.route('/endpointgroups', methods=['POST'])
 def addUpdateEndpointGroups():
     """

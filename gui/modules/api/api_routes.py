@@ -448,10 +448,10 @@ def addEndpointGroups():
 
         # Call limit
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
-        if calllimit is not None and len(calllimit) >0:
-            if int(calllimit) >=1:
-                CallLimit = dSIPCallLimits(gwgroupid,calllimit)
-                db.add(CallLimit)
+        calllimit = int(calllimit) #Convert to an integer
+        if calllimit is not None and calllimit >0:
+            CallLimit = dSIPCallLimits(gwgroupid,calllimit)
+            db.add(CallLimit)
 
         # Number of characters to strip and prefix
         strip = requestPayload['strip'] if 'strip' in requestPayload else ""
@@ -506,10 +506,23 @@ def addEndpointGroups():
             fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
             fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
             fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
+<<<<<<< HEAD
 
         if fusionpbxenabled.lower() == "true" or fusionpbxenabled.lower() == "1":
               domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
               fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+=======
+        # Check if a string with a value of true
+        if isinstance(fusionpbxenabled,str):
+            if fusionpbxenabled.lower() == "true" or  fusionpbxenabled.lower() == "1":
+                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
+                fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+        # Check if the boolean value of true was used
+        elif isinstance(fusionpbxenabled,int):
+            if fusionpbxenabled == 1:
+                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
+                fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+>>>>>>> gui-changes
 
         try:
             # DEBUG
