@@ -47,8 +47,8 @@ class GatewayGroups(object):
     Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gw-lists>`_
     """
 
-    def __init__(self, name, gwlist=[]):
-        self.description = "name:" + name
+    def __init__(self, name, gwlist=[],type=settings.FLT_CARRIER):
+        self.description = "name:{},type:{}".format(name,type)
         self.gwlist = ",".join(str(gw) for gw in gwlist)
 
     pass
@@ -216,7 +216,7 @@ class dSIPLeases(object):
     Documentation: `maintains a list of active leases based on seconds`_
     """
 
-    def __init__(self, gwid, sid, ttl): 
+    def __init__(self, gwid, sid, ttl):
         self.gwid = gwid
         self.sid = sid
         t = datetime.now() + timedelta(seconds=ttl)
@@ -229,7 +229,7 @@ class dSIPMaintModes(object):
     Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
     """
 
-    def __init__(self, ipaddr, gwid, status=1): 
+    def __init__(self, ipaddr, gwid, status=1):
         self.ipaddr = ipaddr
         self.gwid = gwid
         self.status = status
@@ -242,13 +242,29 @@ class dSIPCallLimits(object):
     Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
     """
 
-    def __init__(self, gwid, limit, status=1): 
+    def __init__(self, gwid, limit, status=1):
         self.gwid = gwid
         self.limit = limit
         self.status = status
         self.createdate = datetime.now()
     pass
 
+class dSIPNotification(object):
+    """
+    Schema for dsip_notification table\n
+    Documentation: `maintains the list of notifications`_
+    """
+    class FLAGS(Enum):
+        TYPE_EMAIL = 0
+        TYPE_SLACK = 1
+
+    def __init__(self, gwgroupid, type, method,value):
+        self.gwgroupid = gwgroupid
+        self.type = type
+        self.method = method
+        self.value = value
+        self.createdate = datetime.now()
+    pass
 
 class UAC(object):
     """
@@ -416,11 +432,11 @@ session = None
 
 def loadSession():
     global session
-    
+
     # Return a DB session if one already exists
     if session:
         return session
-    
+
     metadata = MetaData(engine)
 
     dr_gateways = Table('dr_gateways', metadata, autoload=True)
@@ -441,6 +457,7 @@ def loadSession():
     dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
     dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
     dsip_calllimit = Table('dsip_calllimit', metadata, autoload=True)
+    dsip_notification = Table('dsip_notification', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -468,6 +485,7 @@ def loadSession():
     mapper(dSIPLeases, dsip_endpoint_lease)
     mapper(dSIPMaintModes, dsip_maintmode)
     mapper(dSIPCallLimits, dsip_calllimit)
+    mapper(dSIPNotification, dsip_notification)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
@@ -478,4 +496,3 @@ def loadSession():
     session = Session()
 
     return session
-

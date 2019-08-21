@@ -1,13 +1,13 @@
--- MySQL dump 10.16  Distrib 10.1.38-MariaDB, for debian-linux-gnu (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.23, for osx10.14 (x86_64)
 --
--- Host: localhost    Database: kamailio
+-- Host: 127.0.0.1    Database: kamailio
 -- ------------------------------------------------------
--- Server version	10.1.38-MariaDB-0+deb9u1
+-- Server version	5.7.27
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!40101 SET NAMES utf8 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -147,7 +147,7 @@ CREATE TABLE `address` (
   `port` smallint(5) unsigned NOT NULL DEFAULT '0',
   `tag` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -667,7 +667,7 @@ CREATE TABLE `dr_gateways` (
   `attrs` varchar(255) DEFAULT NULL,
   `description` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`gwid`)
-) ENGINE=InnoDB AUTO_INCREMENT=75 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -727,7 +727,7 @@ CREATE TABLE `dr_gw_lists` (
 
 LOCK TABLES `dr_gw_lists` WRITE;
 /*!40000 ALTER TABLE `dr_gw_lists` DISABLE KEYS */;
-INSERT INTO `dr_gw_lists` VALUES (1,'1,2,3,4,5,6,7,8,9,10,11','name:Skyetel CarrierGroup'),(2,'12,13,14,15','name:Flowroute CarrierGroup'),(3,'16,17,18,19,20,21','name:Voxbone CarrierGroup'),(4,'22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37','name:VI CarrierGroup'),(5,'38','name:Thinq CarrierGroup'),(6,'39','name:Voxtelesys CarrierGroup'),(7,'40','name:Les.net CarrierGroup');
+INSERT INTO `dr_gw_lists` VALUES (1,'1,2,3,4,5,6,7,8,9,10,11','name:Skyetel CarrierGroup,type:8'),(2,'12,13,14,15','name:Flowroute CarrierGroup,type:8'),(3,'16,17,18,19,20,21','name:Voxbone CarrierGroup,type:8'),(4,'22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37','name:VI CarrierGroup,type:8'),(5,'38','name:Thinq CarrierGroup,type:8'),(6,'39','name:Voxtelesys CarrierGroup,type:8'),(7,'40','name:Les.net CarrierGroup,type:8');
 /*!40000 ALTER TABLE `dr_gw_lists` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -803,7 +803,7 @@ CREATE TABLE `dsip_domain_mapping` (
   `type` tinyint(3) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -915,7 +915,7 @@ CREATE TABLE `dsip_multidomain_mapping` (
   `syncstatus` tinyint(1) NOT NULL DEFAULT '0',
   `syncerror` varchar(200) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -925,6 +925,32 @@ CREATE TABLE `dsip_multidomain_mapping` (
 LOCK TABLES `dsip_multidomain_mapping` WRITE;
 /*!40000 ALTER TABLE `dsip_multidomain_mapping` DISABLE KEYS */;
 /*!40000 ALTER TABLE `dsip_multidomain_mapping` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `dsip_notification`
+--
+
+DROP TABLE IF EXISTS `dsip_notification`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `dsip_notification` (
+  `gwgroupid` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
+  `method` int(11) DEFAULT NULL,
+  `value` varchar(255) DEFAULT NULL,
+  `createdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`gwgroupid`,`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `dsip_notification`
+--
+
+LOCK TABLES `dsip_notification` WRITE;
+/*!40000 ALTER TABLE `dsip_notification` DISABLE KEYS */;
+/*!40000 ALTER TABLE `dsip_notification` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1216,7 +1242,7 @@ CREATE TABLE `location` (
   KEY `account_contact_idx` (`username`,`domain`,`contact`),
   KEY `expires_idx` (`expires`),
   KEY `connection_idx` (`server_id`,`connection_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1878,7 +1904,7 @@ CREATE TABLE `subscriber` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `account_idx` (`username`,`domain`),
   KEY `username_idx` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2441,4 +2467,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-07-28  9:48:25
+-- Dump completed on 2019-08-20 21:30:19
