@@ -24,7 +24,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = "0.523+ent"
-DEBUG = True
+DEBUG = False
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
@@ -53,7 +53,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = True
+SQLALCHEMY_SQL_DEBUG = False
 
 FLT_CARRIER = 8
 FLT_PBX = 9
@@ -96,7 +96,7 @@ MAIL_SERVER='smtp.gmail.com'
 MAIL_PORT=587
 MAIL_USE_TLS=True
 MAIL_USE_SSL=False
-MAIL_DEBUG = True
+MAIL_DEBUG = False
 MAIL_USERNAME=''
 MAIL_PASSWORD=''
 MAIL_ASCII_ATTACHMENTS=False
