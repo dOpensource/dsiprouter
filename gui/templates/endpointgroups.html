@@ -285,19 +285,11 @@ systemctl restart fail2ban</code></pre>
              <th>Description</th>
            </tr>
          </thead>
-         <tbody>
-           <tr class="endpoint">
-             <td name="pbxid">40</td>
-             <td name="hostname">13.13.11.13</td>
-             <td name="description">Macks IP</td>
-           </tr>
-           <tr class="endpoint">
-             <td name="pbxid">40</td>
-             <td name="hostname">13.13.11.13</td>
-             <td name="description">Jack IP</td>
-           </tr>
+         <tbody id="endpoint-tablebody">
+
          </tbody>
          </table>
+         <button type="button" id="addEndpointRow">Add Row</button>
      </div> <!-- enf of endpoints tab -->
 
       <div id="config" class="tab-pane fade in" name="config-toggle">
@@ -383,7 +375,7 @@ systemctl restart fail2ban</code></pre>
 
 
       <div class="modal-footer ">
-        <button type="button" class="btn btn-success btn-lg" style="width: 100%;" onclick='addEndpointGroup()'><span
+        <button type="button" id="addButton" class="btn btn-success btn-lg" style="width: 100%;" onclick='addEndpointGroup()'><span
             class="glyphicon glyphicon-ok-sign"></span> Add
         </button>
       </div>
@@ -429,6 +421,16 @@ systemctl restart fail2ban</code></pre>
  {{ script_tag('jquery.tabledit') }}
 
   <script>
+    $('#addEndpointRow').click(function() {
+       var table = $('#endpoint-table');
+       var body = $('#endpoint-tablebody');
+       //var nextId = body.find('tr').length + 1;
+       table.append($('<tr class="endpoint"><td name="pbxid"></td><td name="hostname"></td><td name="description"></td></tr>'));
+       table.data('Tabledit').reload();
+       $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
+
+     });
+
     $(document).ready(function() {
       $('#pbxs').DataTable({
         "columnDefs": [
@@ -439,17 +441,22 @@ systemctl restart fail2ban</code></pre>
       });
 
       $('#endpoint-table').Tabledit({
-      url: 'example.php',
+      //url: 'example.php',
       columns: {
         identifier: [0, 'id'],
         editable: [[1, 'col1'],[2, 'col2']],
         saveButton: true,
+      },
+      onAlways:function()
+      {
+        console.log("In Always");
+          $('.tabledit-deleted-row').each( function( index, element ){
+                $(this).remove();
+
+          });
       }
     });
-
-
-
-});
+  });
   </script>
 
 {% endblock %}

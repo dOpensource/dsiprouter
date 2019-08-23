@@ -564,17 +564,17 @@ function addEndpointGroup() {
 
   /* Process endpoints */
 
-  endpoints = new Object();
-  
+  endpoints = new Array();
+
     $("tr.endpoint").each(function (i, row) {
 
     endpoint = new Object();
     endpoint.pbxid = $(this).find('td').eq(0).text();
     endpoint.hostname = $(this).find('td').eq(1).text();
     endpoint.description = $(this).find('td').eq(2).text();
-    endpoint.maintmode = $(this).find('td').eq(3).text();
+    //endpoint.maintmode = $(this).find('td').eq(3).text();
 
-    endpoints[i]=endpoint;
+    endpoints.push(endpoint);
   })
 
    requestPayload.endpoints=endpoints;
@@ -590,6 +590,8 @@ function addEndpointGroup() {
 		contentType: "application/json; charset=utf-8",
 		success: function(msg) {
 			if (msg.status == 200) {
+        // Update the Add Button to say saved
+        $('#add .modal-footer').find('.addButton').text("Save");
 				//Uncheck the Checkbox
 					reloadkamrequired();
 			}

@@ -434,8 +434,13 @@ def addEndpointGroups():
             for parameter in requiredParameters:
                 if parameter not in requestPayload:
                     raise RequiredParameterMissing
+                elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
+                    raise RequiredParameterValueMissing
         except RequiredParameterMissing as ex:
                 responsePayload['error'] = "{} attribute is missing".format(parameter)
+                return json.dumps(responsePayload)
+        except RequiredParameterValueMissing as ex:
+                responsePayload['error'] = "The value of the {} attribute is missing".format(parameter)
                 return json.dumps(responsePayload)
 
         # Process Gateway Name
@@ -448,13 +453,16 @@ def addEndpointGroups():
 
         # Call limit
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
-        calllimit = int(calllimit) #Convert to an integer
-        if calllimit is not None and calllimit >0:
-            CallLimit = dSIPCallLimits(gwgroupid,calllimit)
-            db.add(CallLimit)
+        if calllimit is not None and not calllimit and isinstance(calllimit,int):
+            if calllimit >0:
+                CallLimit = dSIPCallLimits(gwgroupid,calllimit)
+                db.add(CallLimit)
 
         # Number of characters to strip and prefix
         strip = requestPayload['strip'] if 'strip' in requestPayload else ""
+        if isinstance(strip,str):
+            if len(strip) == 0:
+                strip = None
         prefix = requestPayload['prefix'] if 'prefix' in requestPayload else None
 
         # Setup up authentication
@@ -506,7 +514,7 @@ def addEndpointGroups():
             fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
             fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
             fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
-        
+
         # Check if a string with a value of true
         if isinstance(fusionpbxenabled,str):
             if fusionpbxenabled.lower() == "true" or  fusionpbxenabled.lower() == "1":
