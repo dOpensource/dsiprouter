@@ -914,6 +914,7 @@ def addUpdateInboundMapping():
                 gateways.append(gw)
         gwlist = ','.join(gateways)
 
+        # TODO: if hard fwd or failover fwd given add to tables: dsip_hardfwd and dsip_failfwd
 
         # Adding
         if not ruleid:
@@ -1322,12 +1323,12 @@ def addUpateOutboundRoutes():
                 print("from_prefix: {}".format(from_prefix))
 
                 # Grab the lastest groupid and increment
-                mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
+                mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN).order_by(dSIPLCR.dr_groupid.desc()).first()
                 db.commit()
 
-                # Start LCR routes with a groupid of 10000
+                # Start LCR routes with a groupid set in settings (default is 10000)
                 if mlcr is None:
-                    groupid = 10000
+                    groupid = settings.FLT_LCR_MIN
                 else:
                     groupid = int(mlcr.dr_groupid) + 1
 
@@ -1519,6 +1520,9 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'gw2gwgroup'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'gwgroup_hardfwd'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'gwgroup_failfwd'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
         return_code += subprocess.call(
             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])

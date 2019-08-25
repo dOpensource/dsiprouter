@@ -5,9 +5,11 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = ''
-DSIP_API_TOKEN = ''
-DSIP_API_HOST = ''
+PASSWORD = 'admin'
+DSIP_API_TOKEN = 'admin'
+DSIP_API_PROTO = 'http'
+DSIP_API_HOST = '127.0.0.1'
+DSIP_API_PORT = 5000
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -55,10 +57,12 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_SQL_DEBUG = False
 
-FLT_CARRIER = 8
-FLT_PBX = 9
-FLT_OUTBOUND = 8000
-FLT_INBOUND = 9000
+FLT_CARRIER = 8     # type of 8 in dr_gateway table
+FLT_PBX = 9         # type of 9 in dr_gateway table
+FLT_OUTBOUND = 8000 # groupid of 8000 in dr_rules table
+FLT_INBOUND = 9000  # groupid of 9000 in dr_rules table
+FLT_LCR_MIN = 10000 # groupid of >= 10000 in dr_rules table
+FLT_FWD_MIN = 20000 # groupid of >= 20000 in dr_rules table
 
 # The domain used to create user accounts for PBX and Endpoint registrations
 

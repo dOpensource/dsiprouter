@@ -4,10 +4,10 @@ DROP TABLE IF EXISTS `dsip_hardfwd`;
 CREATE TABLE `dsip_hardfwd` (
     `gwgroupid` varchar(64) NOT NULL,
     `did` varchar(64) NOT NULL DEFAULT '',
-    `fwd_gwgroup` varchar(255) NOT NULL DEFAULT '',
+    `dr_groupid` varchar(64) NOT NULL,
     `key_type` varchar(64) NOT NULL DEFAULT '0',
     `value_type` varchar(64) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`gwgroupid`,`type`)
+    PRIMARY KEY (`gwgroupid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -17,9 +17,9 @@ DROP TABLE IF EXISTS `dsip_failfwd`;
 CREATE TABLE `dsip_failfwd` (
     `gwgroupid` varchar(64) NOT NULL,
     `did` varchar(64) NOT NULL DEFAULT '',
-    `fwd_gwgroup` varchar(255) NOT NULL DEFAULT '',
+    `dr_groupid` varchar(64) NOT NULL,
     `key_type` varchar(64) NOT NULL DEFAULT '0',
     `value_type` varchar(64) NOT NULL DEFAULT '0',
-    PRIMARY KEY (`gwgroupid`,`type`)
+    PRIMARY KEY (`gwgroupid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;

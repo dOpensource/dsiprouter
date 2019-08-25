@@ -2,6 +2,32 @@
 
 
 
+### Add Enterprise Features Backend Support
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Sun, 25 Aug 2019 18:45:59 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- make notifications a separate callable route
+- add support for endpoint failure notifications
+- update dsip_hardfwd table
+- update dsip_failfwd table
+- improve email notification messages
+- add improvements to flag handling in kamailio routes
+- add support for hard forwarding to DID
+- add support for failover forwarding to DID
+- update inbound mapping lcr flag handling
+- update some defaults for TESTING in settings.py (remove for production)
+- fix missing servernat option for configurekam command in dsiprouter.sh
+- update command options in dsiprouter.sh
+- fix #!ifdef mismatch in kamailio.cfg
+
+
+---
+
+
 ### Notification API Feature Backend Support
 
 > Branches Affected: v0.523+ent  

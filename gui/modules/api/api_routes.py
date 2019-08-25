@@ -633,8 +633,8 @@ def handleNotificationRequest():
     """
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {'gwgroupid': int, 'type': int, 'text_body': str, 'html_body': str,
-                               'subject': str, 'sender': str}
+    VALID_REQUEST_DATA_ARGS = {'gwgroupid': int, 'type': int, 'text_body': str,
+                               'gwid': int, 'subject': str, 'sender': str}
 
     # defaults.. keep data returned seperate from returned metadata
     payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
@@ -657,7 +657,7 @@ def handleNotificationRequest():
 
         # fix data if client is sloppy (http_async_client)
         if request.headers.get('User-Agent') == 'http_async_client':
-            data = json.loads(data[0])
+            data = json.loads(list(data)[0])
 
         # sanity checks
         for k,v in data.items():
@@ -675,9 +675,22 @@ def handleNotificationRequest():
         # lookup recipients
         gwgroupid = data.pop('gwgroupid')
         notif_type = data.pop('type')
-        row = db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(dSIPNotification.type == notif_type).first()
-        if row is None:
+        notification_row = db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(dSIPNotification.type == notif_type).first()
+        if notification_row is None:
             raise sql_exceptions.SQLAlchemyError('DB Entry Missing for {}'.format(str(gwgroupid)))
+
+        # customize message based on type
+        gwid = data.pop('gwid', None)
+        gw_row = db.query(Gateways).filter(Gateways.gwid == gwid).first() if gwid is not None else None
+        gw_name = strFieldsToDict(gw_row.description)['name'] if gw_row is not None else ''
+        gwgroup_row = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
+        gwgroup_name = strFieldsToDict(gwgroup_row.description)['name'] if gwgroup_row is not None else ''
+        if notif_type == dSIPNotification.FLAGS.TYPE_OVERLIMIT.value:
+            data['html_body'] = ('<html><head><style>.error{{border: 1px solid; margin: 10px 0px; padding: 15px 10px 15px 50px; background-color: #FF5555;}}</style></head>'
+                                 '<body><div class="error"><strong>Call Limit Exceeded in Endpoint Group [{}] on Endpoint [{}]</strong></div></body>').format(gwgroup_name, gw_name)
+        elif notif_type == dSIPNotification.FLAGS.TYPE_GWFAILURE.value:
+            data['html_body'] = ('<html><head><style>.error{{border: 1px solid; margin: 10px 0px; padding: 15px 10px 15px 50px; background-color: #FF5555;}}</style></head>'
+                                 '<body><div class="error"><strong>Failure Detected in Endpoint Group [{}] on Endpoint [{}]</strong></div></body>').format(gwgroup_name, gw_name)
 
         # # get attachments if any uploaded
         # data['attachments'] = []
@@ -686,10 +699,12 @@ def handleNotificationRequest():
         #         if upload.filename != '' and isValidFile(upload.filename):
         #             data['attachments'].append(upload)
 
-        # TODO: we only support email at this time
-        if row.method == dSIPNotification.FLAGS.METHOD_EMAIL.value:
-            data['recipients'] = [row.value]
+        # TODO: we only support email at this time, add support for slack
+        if notification_row.method == dSIPNotification.FLAGS.METHOD_EMAIL.value:
+            data['recipients'] = [notification_row.value]
             sendEmail(**data)
+        elif notification_row.method == dSIPNotification.FLAGS.METHOD_SLACK.value:
+            pass
 
         payload['msg'] = 'Email Sent'
         return json.dumps(payload), status.HTTP_OK

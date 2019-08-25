@@ -449,10 +449,14 @@ function configureSSL {
 
 # updates and settings in kam config that may change
 # should be run after reboot or change in network configurations
+# TODO: this function should copy all globals in setting.py that apply in kamailio.cfg
 function updateKamailioConfig {
+    local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
+
     setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
     setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
     setKamailioConfigIP 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
 }
 
 # updates and settings in rtpengine config that may change
@@ -570,10 +574,10 @@ function configureKamailio {
         # use a tmp dir so we don't have to change repo
         mkdir -p /tmp/defaults
 
-	# copy over default gateway lists
-	cp ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv  /tmp/defaults/dr_gw_lists.csv
-        
-	# sub in dynamic values
+        # copy over default gateway lists
+        cp ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv  /tmp/defaults/dr_gw_lists.csv
+
+        # sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
@@ -610,13 +614,13 @@ function configureKamailio {
     if [ "$SERVERNAT" == "1" ]; then
         enableSERVERNAT
     fi
+
+    # Update kam configs dynamic values
+    updateKamailioConfig
 }
 
 function enableSERVERNAT {
 	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
-	sed -i 's/!INTERNAL_IP_ADDR!.*!g/!INTERNAL_IP_ADDR!'$INTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
-	sed -i 's/!INTERNAL_IP_NET!.*!g/!INTERNAL_IP_NET!'$INTERNAL_NET'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
-	sed -i 's/!EXTERNAL_IP_ADDR!.*!g/!EXTERNAL_IP_ADDR!'$EXTERNAL_IP'!g/' ${DSIP_KAMAILIO_CONFIG_FILE}
 
 	printwarn "SERVERNAT is enabled - Restarting Kamailio is required"
 	printwarn "You can restart it by executing: systemctl restart kamailio"
@@ -1404,7 +1408,7 @@ function usageOptions {
     printf "%-30s %s\n" \
         "restart" "-debug"
     printf "%-30s %s\n" \
-        "configurekam" "-debug"
+        "configurekam" "-debug|-servernat"
     printf "%-30s %s\n" \
         "sslenable" "-debug"
     printf "%-30s %s\n" \
@@ -1417,6 +1421,10 @@ function usageOptions {
         "disableservernat" "-debug"
     printf "%-30s %s\n" \
         "resetpassword" "-debug"
+    printf "%-30s %s\n" \
+        "updatekamconfig" "-debug"
+    printf "%-30s %s\n" \
+        "updatertpconfig" "-debug|-servernat"
     printf "%-30s %s\n" \
         "help|-h|--help"
 
@@ -1663,6 +1671,10 @@ function processCMD {
                     -debug)
                         export DEBUG=1
                         set -x
+                        shift
+                        ;;
+                    -servernat)
+                        export SERVERNAT=1
                         shift
                         ;;
                     *)  # fail on unknown option
