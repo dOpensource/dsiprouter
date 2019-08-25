@@ -47,7 +47,7 @@ class GatewayGroups(object):
     Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gw-lists>`_
     """
 
-    def __init__(self, name, gwlist=[],type=settings.FLT_CARRIER):
+    def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER):
         self.description = "name:{},type:{}".format(name,type)
         self.gwlist = ",".join(str(gw) for gw in gwlist)
 
@@ -213,7 +213,7 @@ class Subscribers(object):
 class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
-    Documentation: `maintains a list of active leases based on seconds`_
+    maintains a list of active leases based on seconds
     """
 
     def __init__(self, gwid, sid, ttl):
@@ -226,7 +226,7 @@ class dSIPLeases(object):
 class dSIPMaintModes(object):
     """
     Schema for dsip_maintmode table\n
-    Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
+    maintains a list of endpoints and carriers that are in maintenance mode
     """
 
     def __init__(self, ipaddr, gwid, status=1):
@@ -238,8 +238,7 @@ class dSIPMaintModes(object):
 
 class dSIPCallLimits(object):
     """
-    Schema for dsip_maintmode table\n
-    Documentation: `maintains a list of endpoints and carriers that are in maintenance mode`_
+    Schema for dsip_calllimit table\n
     """
 
     def __init__(self, gwid, limit, status=1):
@@ -252,13 +251,15 @@ class dSIPCallLimits(object):
 class dSIPNotification(object):
     """
     Schema for dsip_notification table\n
-    Documentation: `maintains the list of notifications`_
+    maintains the list of notifications
     """
     class FLAGS(Enum):
-        TYPE_EMAIL = 0
-        TYPE_SLACK = 1
+        METHOD_EMAIL = 0
+        METHOD_SLACK = 1
+        TYPE_OVERLIMIT = 0
+        TYPE_GWFAILURE = 1
 
-    def __init__(self, gwgroupid, type, method,value):
+    def __init__(self, gwgroupid, type, method, value):
         self.gwgroupid = gwgroupid
         self.type = type
         self.method = method

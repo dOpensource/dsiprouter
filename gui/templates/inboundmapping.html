@@ -180,7 +180,7 @@
           <option class="hidden" value="" selected disabled>Failover PBX</option>
           {% for gw in gwlist %}
             <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
-	   {% endfor %}
+	        {% endfor %}
         </select>
       </div>
       

@@ -1,21 +1,65 @@
+import json
+import urllib.parse as parse
+from functools import wraps
+from flask import Blueprint, jsonify
 from flask import Blueprint, session, render_template,jsonify
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import loadSession, Address, dSIPNotification,Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits
+from database import loadSession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
+    dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
+    dSIPCallLimits, InboundMapping
 from shared import *
-from util.email import *
-import  urllib.parse as parse
-import json
-import settings
+from util.notifications import sendEmail
+from file_handling import isValidFile
+import settings, globals
 
-import globals
 
 db = loadSession()
 api = Blueprint('api', __name__)
 
 # TODO: we need to standardize our response payload
 # preferably we can create a custom response class
+
+class APIToken:
+    token = None
+
+    def __init__(self, request):
+        if 'Authorization' in request.headers:
+            auth_header = request.headers.get('Authorization')
+            if auth_header:
+                self.token = auth_header
+
+    def isValid(self):
+        if self.token:
+            return settings.DSIP_API_TOKEN == self.token
+        else:
+            return False
+
+
+def api_security(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # List of User Agents that are text based
+        TextUserAgentList = ['curl', 'http_async_client']
+        consoleUserAgent = False
+        apiToken = APIToken(request)
+
+        if not session.get('logged_in') and not apiToken.isValid():
+            user_agent = request.headers.get('User-Agent')
+            if user_agent is not None:
+                for agent in TextUserAgentList:
+                    if agent in user_agent:
+                        consoleUserAgent = True
+                        pass
+            if consoleUserAgent:
+                msg = '{"error": "Unauthorized", "error_msg": "Invalid Token"}\n'
+                return Response(msg, 401)
+            else:
+                return render_template('index.html', version=settings.VERSION)
+        return func(*args, **kwargs)
+
+    return wrapper
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
 @api_security
@@ -325,57 +369,354 @@ def updateEndpoint(id):
     finally:
         db.close()
 
-
-@api.route("/api/v1/notification/<int:gwgroup>/trigger", methods=['GET'])
+# TODO: we should obviously optimize this and cleanup reused code
+@api.route("/api/v1/inboundmapping", methods=['GET', 'POST', 'PUT', 'DELETE'])
 @api_security
-def notificationTrigger(gwgroup):
+def handleInboundMapping():
+    """
+    Endpoint for Inbound DID Rule Mapping
+    """
+
+    # dr_routing prefix matching supported characters
+    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
+    # TODO: we should move this somewhere shared between gui and api
+    PREFIX_ALLOWED_CHARS = {'0','1','2','3','4','5','6','7','8','9','+','#','*'}
+
+    # use a whitelist to avoid possible SQL Injection vulns
+    VALID_REQUEST_ARGS = {'ruleid', 'did'}
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'notes'}
+
+    # defaults.. keep data returned seperate from returned metadata
+    payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        type=request.args.get('type')
-        if not type:
-            raise Exception("type parameter is missing")
+        # =========================================
+        # get rule for DID mapping or list of rules
+        # =========================================
+        if request.method == "GET":
+            # sanity check
+            for arg in request.args:
+                if arg not in VALID_REQUEST_ARGS:
+                    raise http_exceptions.BadRequest("Request argument not recognized")
 
-        print("***Triggered for GW {} and type is {}".format(gwgroup,type))
+            # get single rule by ruleid
+            rule_id = request.args.get('ruleid')
+            if rule_id is not None:
+                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).first()
+                if res is not None:
+                    data = rowToDict(res)
+                    data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
+                    payload['data'].append(data)
+                    payload['msg'] = 'Rule Found'
+                else:
+                    payload['msg'] = 'No Matching Rule Found'
 
-        # Define a dictionary object that represents the payload
-        responsePayload = {}
+            # get single rule by did
+            else:
+                did_pattern = request.args.get('did')
+                if did_pattern is not None:
+                    res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern).first()
+                    if res is not None:
+                        data = rowToDict(res)
+                        data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
+                        payload['data'].append(data)
+                        payload['msg'] = 'DID Found'
+                    else:
+                        payload['msg'] = 'No Matching DID Found'
 
-        # Set the status to 0, update it to 1 if the update is successful
-        responsePayload['status'] = 0
+                # get list of rules
+                else:
+                    res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).all()
+                    if len(res) > 0:
+                        for row in res:
+                            data = rowToDict(row)
+                            data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
+                            payload['data'].append(data)
+                        payload['msg'] = 'Rules Found'
+                    else:
+                        payload['msg'] = 'No Rules Found'
 
-        recipients = []
-        recipients.append('mack.hendricks@gmail.com')
-        text_body = "This email was sent automatically by dSIPRouter"
+            return json.dumps(payload), status.HTTP_OK
 
-        try:
-            # DEBUG
-            #for key, value in data.items():
-            #    print(key,value)
+        # ===========================
+        # create rule for DID mapping
+        # ===========================
+        elif request.method == "POST":
+            # TODO: should we enforce strict mimetype matching?
+            data = request.get_json(force=True)
 
-            send_email(recipients=recipients, text_body=text_body,data=None)
+            # sanity checks
+            for arg in data:
+                if arg not in VALID_REQUEST_DATA_ARGS:
+                    raise http_exceptions.BadRequest("Request data argument not recognized")
 
+            if 'servers' not in data:
+                raise http_exceptions.BadRequest('Servers to map DID to are required')
+            elif len(data['servers']) < 1 or len(data['servers']) > 2:
+                raise http_exceptions.BadRequest('Primary Server missing or More than 2 Servers Provided')
+            elif 'did' not in data:
+                raise http_exceptions.BadRequest('DID is required')
 
-            return jsonify(
-                status=200,
-                message='Email delivery success'
-            )
+            # TODO: we should be checking dr_gateways table to make sure the servers exist
+            for i in range(0, len(data['servers'])):
+                try:
+                    data['servers'][i] = str(data['servers'][i])
+                    _ = int(data['servers'][i])
+                except:
+                    raise http_exceptions.BadRequest('Invalid Server ID')
+            for c in data['did']:
+                if c not in PREFIX_ALLOWED_CHARS:
+                    raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
 
-        except Exception as e:
-            return jsonify(status=0,error=str(e))
+            gwlist = ','.join(data['servers'])
+            prefix = data['did']
+            notes = data['notes'] if 'notes' in data else ''
 
+            # don't allow duplicate entries
+            if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
+                raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
+            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
+            db.add(IMap)
 
+            db.commit()
+            globals.reload_required = True
+            payload['kamreload'] = globals.reload_required
+            payload['msg'] = 'Rule Created'
+            return json.dumps(payload), status.HTTP_OK
 
+        # ===========================
+        # update rule for DID mapping
+        # ===========================
+        elif request.method == "PUT":
+            # sanity check
+            for arg in request.args:
+                if arg not in VALID_REQUEST_ARGS:
+                    raise http_exceptions.BadRequest("Request argument not recognized")
+
+            # TODO: should we enforce strict mimetype matching?
+            data = request.get_json(force=True)
+            updates = {}
+
+            # sanity checks
+            for arg in data:
+                if arg not in VALID_REQUEST_DATA_ARGS:
+                    raise http_exceptions.BadRequest("Request data argument not recognized")
+
+            if 'did' not in data and 'servers' not in data and 'notes' not in data:
+                raise http_exceptions.BadRequest("No data args supplied, {did, and servers} is required")
+            # TODO: we should be checking dr_gateways table to make sure the servers exist
+            if 'servers' in data:
+                if len(data['servers']) < 1 or len(data['servers']) > 2:
+                    raise http_exceptions.BadRequest('Primary Server missing or More than 2 Servers Provided')
+                else:
+                    for i in range(0, len(data['servers'])):
+                        try:
+                            data['servers'][i] = str(data['servers'][i])
+                            _ = int(data['servers'][i])
+                        except:
+                            raise http_exceptions.BadRequest('Invalid Server ID')
+                updates['gwlist'] = ','.join(data['servers'])
+            if 'did' in data:
+                for c in data['did']:
+                    if c not in PREFIX_ALLOWED_CHARS:
+                        raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
+                updates['prefix'] = data['did']
+            if 'notes' in data:
+                updates['description'] = data['notes']
+
+            # update single rule by ruleid
+            rule_id = request.args.get('ruleid')
+            if rule_id is not None:
+                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).update(
+                    updates, synchronize_session=False)
+                if res > 0:
+                    payload['msg'] = 'Rule Updated'
+                else:
+                    payload['msg'] = 'No Matching Rule Found'
+
+            # update single rule by did
+            else:
+                did_pattern = request.args.get('did')
+                if did_pattern is not None:
+                    res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern).update(
+                        updates, synchronize_session=False)
+                    if res > 0:
+                        payload['msg'] = 'Rule Updated'
+                    else:
+                        payload['msg'] = 'No Matching Rule Found'
+
+                # no other options
+                else:
+                    raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
+
+            db.commit()
+            globals.reload_required = True
+            payload['kamreload'] = globals.reload_required
+            return json.dumps(payload), status.HTTP_OK
+
+        # ===========================
+        # delete rule for DID mapping
+        # ===========================
+        elif request.method == "DELETE":
+            # sanity check
+            for arg in request.args:
+                if arg not in VALID_REQUEST_ARGS:
+                    raise http_exceptions.BadRequest("Request argument not recognized")
+
+            # delete single rule by ruleid
+            rule_id = request.args.get('ruleid')
+            if rule_id is not None:
+                rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id)
+                rule.delete(synchronize_session=False)
+
+            # delete single rule by did
+            else:
+                did_pattern = request.args.get('did')
+                if did_pattern is not None:
+                    rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern)
+                    rule.delete(synchronize_session=False)
+
+                # no other options
+                else:
+                    raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
+
+            db.commit()
+            globals.reload_required = True
+            payload['kamreload'] = globals.reload_required
+            payload['msg'] = 'Rule Deleted'
+            return json.dumps(payload), status.HTTP_OK
+
+        # not possible
+        else:
+            raise Exception('Unknown Error Occurred')
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        payload['error'] = "db"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return json.dumps(payload), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        payload['error'] = "http"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return json.dumps(payload), status_code
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "server"
-        #db.rollback()
-        #db.flush()
-        return showError(type=error)
+        payload['error'] = "server"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return json.dumps(payload), status_code
     finally:
         db.close()
 
+@api.route("/api/v1/notification/gwgroup", methods=['POST'])
+@api_security
+def handleNotificationRequest():
+    """
+    Endpoint for Sending Notifications
+    """
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {'gwgroupid': int, 'type': int, 'text_body': str, 'html_body': str,
+                               'subject': str, 'sender': str}
+
+    # defaults.. keep data returned seperate from returned metadata
+    payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        # ============================
+        # create and send notification
+        # ============================
+
+        content_type = str.lower(request.headers.get('Content-Type'))
+        if 'multipart/form-data' in content_type:
+            data = request.form.to_dict(flat=False)
+        elif 'application/x-www-form-urlencoded' in content_type:
+            data = request.form.to_dict(flat=False)
+        else:
+            data = request.get_json(force=True)
+
+        # fix data if client is sloppy (http_async_client)
+        if request.headers.get('User-Agent') == 'http_async_client':
+            data = json.loads(data[0])
+
+        # sanity checks
+        for k,v in data.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request data argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                raise http_exceptions.BadRequest("Request data argument '{}' not valid".format(k))
+        if 'gwgroupid' not in data:
+            raise http_exceptions.BadRequest('Gateway Group ID is required')
+        elif 'type' not in data:
+            raise http_exceptions.BadRequest('Notification Type is required')
+        elif 'text_body' not in data:
+            raise http_exceptions.BadRequest('Text Body is required')
+
+        # lookup recipients
+        gwgroupid = data.pop('gwgroupid')
+        notif_type = data.pop('type')
+        row = db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(dSIPNotification.type == notif_type).first()
+        if row is None:
+            raise sql_exceptions.SQLAlchemyError('DB Entry Missing for {}'.format(str(gwgroupid)))
+
+        # # get attachments if any uploaded
+        # data['attachments'] = []
+        # if len(request.files) > 0:
+        #     for upload in request.files:
+        #         if upload.filename != '' and isValidFile(upload.filename):
+        #             data['attachments'].append(upload)
+
+        # TODO: we only support email at this time
+        if row.method == dSIPNotification.FLAGS.METHOD_EMAIL.value:
+            data['recipients'] = [row.value]
+            sendEmail(**data)
+
+        payload['msg'] = 'Email Sent'
+        return json.dumps(payload), status.HTTP_OK
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        payload['error'] = "db"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        return json.dumps(payload), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        payload['error'] = "http"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        return json.dumps(payload), status_code
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        payload['error'] = "server"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        return json.dumps(payload), status_code
+    finally:
+        db.close()
 
 @api.route("/api/v1/endpointgroups", methods=['POST'])
 @api_security
@@ -425,8 +766,6 @@ def addEndpointGroups():
         # Covert JSON message to Dictionary Object
         requestPayload = request.get_json()
 
-
-
         # Check parameters and raise exception if missing required parameters
         requiredParameters = ['name']
 
@@ -445,7 +784,7 @@ def addEndpointGroups():
 
         # Process Gateway Name
         name = requestPayload['name']
-        Gwgroup = GatewayGroups(name,type=settings.FLT_PBX)
+        Gwgroup = GatewayGroups(name, type=settings.FLT_PBX)
         db.add(Gwgroup)
         db.flush()
         gwgroupid = Gwgroup.id
@@ -467,19 +806,19 @@ def addEndpointGroups():
 
         # Setup up authentication
         authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
-        'type' in requestPayload['auth'] else ""
+                                                     'type' in requestPayload['auth'] else ""
 
         if authtype == "ip" and "endpoints" in requestPayload:
-            #Store Endpoint IP's in address tables
+            # Store Endpoint IP's in address tables
             for endpoint in requestPayload['endpoints']:
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else None
                 name = endpoint['description'] if 'description' in endpoint else None
-                print("***{}***{}".format(hostname,name))
+                print("***{}***{}".format(hostname, name))
                 if hostname is not None and name is not None \
-                and len(hostname) >0:
-                    Addr = Address(name, hostname,32, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                      and len(hostname) > 0:
+                    Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Addr)
-                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Gateway)
         elif authtype == "userpwd":
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
@@ -499,13 +838,13 @@ def addEndpointGroups():
             endpointfailure = requestPayload['notifications']['endpointfailure'] if 'endpointfailure' in requestPayload['notifications'] else None
 
             if overmaxcalllimit is not None:
-                #type = dSIPNotification.FLAGS.TYPE_MAXCALLLIMIT.value
+                # type = dSIPNotification.FLAGS.TYPE_MAXCALLLIMIT.value
                 type = 0
-                notification = dSIPNotification(gwgroupid,type,0,overmaxcalllimit)
+                notification = dSIPNotification(gwgroupid, type, 0, overmaxcalllimit)
                 db.add(notification)
 
             if endpointfailure is not None:
-                notification = dSIPNotification(gwgroupid,1,0,endpointfailure)
+                notification = dSIPNotification(gwgroupid, 1, 0, endpointfailure)
                 db.add(notification)
 
         # Enable FusionPBX
@@ -516,42 +855,42 @@ def addEndpointGroups():
             fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
 
         # Check if a string with a value of true
-        if isinstance(fusionpbxenabled,str):
-            if fusionpbxenabled.lower() == "true" or  fusionpbxenabled.lower() == "1":
-                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
-                fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+        if isinstance(fusionpbxenabled, str):
+            if fusionpbxenabled.lower() == "true" or fusionpbxenabled.lower() == "1":
+                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
+                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
         # Check if the boolean value of true was used
-        elif isinstance(fusionpbxenabled,int):
+        elif isinstance(fusionpbxenabled, int):
             if fusionpbxenabled == 1:
-                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
-                fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
+                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
 
         try:
             # DEBUG
-            #for key, value in data.items():
+            # for key, value in data.items():
             #    print(key,value)
 
-            #send_email(recipients=recipients, text_body=text_body,data=None)
+            # send_email(recipients=recipients, text_body=text_body,data=None)
 
             db.commit()
             return jsonify(
                 message='EndpointGroup Created',
-                gwgroupid = responsePayload['gwgroupid'],
-                status = "200"
+                gwgroupid=responsePayload['gwgroupid'],
+                status="200"
             )
 
         except Exception as e:
             print(requestPayload)
-            return jsonify(status=0,error=str(e))
+            return jsonify(status=0, error=str(e))
 
 
 
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        #db.rollback()
-        #db.flush()
+        # db.rollback()
+        # db.flush()
         db.rollback()
-        return jsonify(status=0,error=str(ex))
+        return jsonify(status=0, error=str(ex))
 
     finally:
         db.close()

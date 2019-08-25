@@ -533,8 +533,11 @@ function configureKamailio {
     # Install schema for Notifications 
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_notification.sql
     
-    # Install schema for gwip2gwgroup
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_gwip2gwgroup.sql
+    # Install schema for gw2gwgroup
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
+
+    # Install schema for dsip_hardfwd and dsip_failfwd
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql
 
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
@@ -1180,6 +1183,7 @@ function generatePassword {
 function generateAPIToken {
 	dsip_api_token=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 64 | head -n 1)
     setConfigAttrib 'DSIP_API_TOKEN' "$dsip_api_token" ${DSIP_CONFIG_FILE} -q
+    setKamailioConfigGlobal 'server.api_token' "$dsip_api_token" ${DSIP_KAMAILIO_CONFIG_FILE}
 }
 
 # update MOTD banner for ssh login
