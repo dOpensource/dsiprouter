@@ -238,75 +238,85 @@ $('#open-PbxAdd').click(function() {
 });
 
 
-$('#endpointgroups #open-Update').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('endpointgroups');
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-/*
-  var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-  var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-  var strip = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-  var fusionpbx_enabled = parseInt($(c).find('tr:eq(' + row_index + ') td:eq(8)').text(), 10);
-  var fusionpbx_db_server = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-  var fusionpbx_db_username = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var fusionpbx_db_password = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-  var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-  var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
-  var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
-  var calllimit  = $(c).find('tr:eq(' + row_index + ') td:eq(16)').text();
-*/
+$('#edit').on('show.bs.modal', function() {
 
-  /** Clear out the modal */
+  //console.log("The current endpointgroup is " + gwgroupid);
+  // Show the auth tab by default when the modal shows
   var modal_body = $('#edit .modal-body');
-  modal_body.find(".gwid").val('');
-  modal_body.find(".name").val('');
-  modal_body.find(".ip_addr").val('');
-  modal_body.find(".strip").val('');
-  modal_body.find(".prefix").val('');
-  modal_body.find(".authtype").val('');
-  modal_body.find(".auth_username").val('');
-  modal_body.find(".auth_password").val('');
-  modal_body.find(".auth_domain").val('');
-  modal_body.find(".calllimit").val('');
+  modal_body.find("[name='auth-toggle']").trigger('click');
 
-  /* update modal fields */
-  modal_body.find(".gwid").val(gwid);
-  modal_body.find(".name").val(name);
-/*
-  modal_body.find(".ip_addr").val(ip_addr);
-  modal_body.find(".strip").val(strip);
-  modal_body.find(".prefix").val(prefix);
-  modal_body.find(".authtype").val(authtype);
-  modal_body.find(".fusionpbx_db_server").val(fusionpbx_db_server);
-  modal_body.find(".fusionpbx_db_username").val(fusionpbx_db_username);
-  modal_body.find(".fusionpbx_db_password").val(fusionpbx_db_password);
-  modal_body.find(".auth_username").val(auth_username);
-  modal_body.find(".auth_password").val(auth_password);
-  modal_body.find(".auth_domain").val(auth_domain);
-  modal_body.find(".calllimit").val(calllimit);
+  // Put into JSON Message and send over
 
-  if (fusionpbx_enabled) {
+  $.ajax({
+		type: "GET",
+		url: "/api/v1/endpointgroups/" + gwgroupid,
+		dataType: "json",
+		contentType: "application/json; charset=utf-8",
+		success: function(msg) {
+      updateEndpointGroup(msg)
+		}
+  })
+});
+
+// Updates the modal with the values from the endpointgroup API
+
+function updateEndpointGroup(msg)
+{
+  var modal_body = $('#edit .modal-body');
+  modal_body.find(".name").val(msg.name);
+  modal_body.find(".calllimit").val(msg.calllimit);
+
+  modal_body.find(".authtype").val(msg.auth.type);
+  modal_body.find(".auth_username").val(msg.auth.user);
+  modal_body.find(".auth_password").val(msg.auth.pass);
+  modal_body.find(".auth_domain").val(msg.auth.domain);
+
+  modal_body.find(".strip").val(msg.strip);
+  modal_body.find(".prefix").val(msg.prefix);
+
+  modal_body.find(".email_over_max_calls").val(msg.notifications.overmaxcalllimit);
+  modal_body.find(".email_endpoint_failure").val(msg.notifications.endpointfailure);
+
+  modal_body.find(".fusionpbx_db_enabled").val(msg.fusionpbx.enabled);
+  modal_body.find(".fusionpbx_db_server").val(msg.fusionpbx.dbhost);
+  modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
+  modal_body.find(".fusionpbx_db_password").val(msg.fusionpbx.dbpass);
+
+  if (msg.endpoints) {
+
+    var table = $('#endpoint-table');
+    var body = $('#endpoint-tablebody');
+
+    for (endpoint in msg.endpoints) {
+      row = '<tr class="endpoint"><td name="pbxid"></td>'
+      row += '<td name="hostname">' + msg.endpoints[endpoint].hostname +'</td>'
+      row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>'
+      table.append($(row));
+    }
+
+    table.data('Tabledit').reload();
+
+  }
+
+  if (msg.fusionpbx.enabled) {
       modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
-	  //modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
   }
   else {
       modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-	  //modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
   }
 
 
-  if (authtype !== "") {
-    // userpwd auth enabled, Set the radio button to true
+  if (msg.auth.type == "userpwd") {
+    /* userpwd auth enabled, Set the radio button to true */
     modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
   }
   else {
-    // ip auth enabled, Set the radio button to true
+    /* ip auth enabled, Set the radio button to true */
     modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
   }
-*/
-});
+
+
+}
 
 $('#pbxs #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
@@ -591,7 +601,10 @@ function addEndpointGroup() {
 		success: function(msg) {
 			if (msg.status == 200) {
         // Update the Add Button to say saved
-        $('#add .modal-footer').find('.addButton').text("Save");
+        var btn=$('#add .modal-footer').find('#addButton');
+        btn.removeClass("btn-primary");
+        btn.addClass("btn-success");
+        btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
 				//Uncheck the Checkbox
 					reloadkamrequired();
 			}

@@ -558,3 +558,7 @@ a.navlink {
   overflow-y: auto;
   z-index: 9999;
 }
+
+.selected {
+  background-color: #acbad4 !important;
+}

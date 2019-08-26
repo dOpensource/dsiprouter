@@ -1,5 +1,5 @@
 { "name": "Endpoint1",
-  "calllimit": 0,
+  "calllimit": "0",
   "auth": { "type":"ip",
 	    "user":"mack10",
 	    "pass":"1234",
@@ -17,10 +17,10 @@
   },
   
   "fusionpbx": {
-            "enabled": 0,
-            "dbhost": "",
-            "dbuser": "",
-            "dbpass": ""
+            "enabled": 1,
+            "dbhost": "13.13.24.22",
+            "dbuser": "fusiopbx",
+            "dbpass": "1234"
             }
     
 }
