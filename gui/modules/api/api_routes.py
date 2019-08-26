@@ -28,7 +28,7 @@ class APIToken:
         if 'Authorization' in request.headers:
             auth_header = request.headers.get('Authorization')
             if auth_header:
-                self.token = auth_header
+                self.token = auth_header.split(' ')[1]
 
     def isValid(self):
         if self.token:
