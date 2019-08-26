@@ -5,9 +5,11 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
-PASSWORD = '155699168'
-DSIP_API_TOKEN = 'IbLtoNmwR2MT9ndQMDB90G5vrOP6RiZgy6KTEL4yv8giWx4fMwmxKQJwwpBQaSd1'
-DSIP_API_HOST = ''
+PASSWORD = 'admin'
+DSIP_API_TOKEN = 'admin'
+DSIP_API_PROTO = 'http'
+DSIP_API_HOST = '127.0.0.1'
+DSIP_API_PORT = 5000
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -24,7 +26,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = "0.523+ent"
-DEBUG = False
+DEBUG = True
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
 ROLE = ''  
@@ -55,10 +57,12 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_SQL_DEBUG = False
 
-FLT_CARRIER = 8
-FLT_PBX = 9
-FLT_OUTBOUND = 8000
-FLT_INBOUND = 9000
+FLT_CARRIER = 8     # type of 8 in dr_gateway table
+FLT_PBX = 9         # type of 9 in dr_gateway table
+FLT_OUTBOUND = 8000 # groupid of 8000 in dr_rules table
+FLT_INBOUND = 9000  # groupid of 9000 in dr_rules table
+FLT_LCR_MIN = 10000 # groupid of >= 10000 in dr_rules table
+FLT_FWD_MIN = 20000 # groupid of >= 20000 in dr_rules table
 
 # The domain used to create user accounts for PBX and Endpoint registrations
 
@@ -77,9 +81,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '142.93.156.198'
-INTERNAL_IP_NET = '142.93.156.*'
-EXTERNAL_IP_ADDR = '142.93.156.198'
+INTERNAL_IP_ADDR = '165.227.83.229'
+INTERNAL_IP_NET = '165.227.83.*'
+EXTERNAL_IP_ADDR = '165.227.83.229'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -89,16 +93,14 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install 
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = 'DO'
+CLOUD_PLATFORM = ''
 
-# Mail Server settings
-MAIL_SERVER='smtp.gmail.com'
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USE_SSL=False
-MAIL_DEBUG = False
-MAIL_USERNAME=''
-MAIL_PASSWORD=''
-MAIL_ASCII_ATTACHMENTS=False
-MAIL_DEFAULT_SENDER=''
-MAIL_DEFAULT_SUBJECT="[dSIPRouter] Notification"
+# email server config
+MAIL_SERVER = 'smtp.gmail.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USERNAME = 'dev.test.flyball@gmail.com'
+MAIL_PASSWORD = 'flyball2018'
+MAIL_ASCII_ATTACHMENTS = False
+MAIL_DEFAULT_SENDER = 'dSIPRouter {}'.format(MAIL_USERNAME)
+MAIL_DEFAULT_SUBJECT = "dSIPRouter System Notification"

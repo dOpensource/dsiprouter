@@ -141,6 +141,19 @@ setKamailioConfigIP() {
     sed -i -r -e "s|(#!substdef.*!$NAME!).*(!.*)|\1$VALUE\2|g" ${CONFIG_FILE}
 }
 
+# $1 == name of global variable to change
+# $2 == value to change variable to
+# $3 == kamailio config file
+setKamailioConfigGlobal() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+    local REPLACE_TOKEN='__ABCDEFGHIJKLMNOPQRSTUVWXYZ__'
+
+    perl -pi -e "s/^(${NAME}\s=\s)(?:(\"|')(.*?)(\"|')|\d+)(\sdesc\s(?:\"|').*?(?:\"|'))?/\1\2${REPLACE_TOKEN}\4\5/g" ${CONFIG_FILE}
+    sed -i -e "s/${REPLACE_TOKEN}/${VALUE}/g" ${CONFIG_FILE}
+}
+
 # $1 == attribute name
 # $2 == value of attribute
 # $3 == rtpengine config file

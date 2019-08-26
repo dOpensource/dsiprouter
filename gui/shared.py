@@ -2,46 +2,6 @@ import settings, sys, os, re, socket, requests, logging, traceback, inspect, str
 from flask import request, render_template, make_response, session, Response
 from werkzeug.utils import escape
 from werkzeug.urls import iri_to_uri
-from functools import wraps
-
-class APIToken:
-    token = None
-
-
-    def __init__(self, request):
-
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header:
-                self.token = auth_header.split(' ')[1]
-
-    def isValid(self):
-        if self.token:
-            return settings.DSIP_API_TOKEN == self.token
-        else:
-            return False
-
-def api_security(func):
-    @wraps(func)
-    def wrapper(*args,**kwargs):
-        # List of User Agents that are text based
-        TextUserAgentList = ['curl']
-        consoleUserAgent = False
-        apiToken = APIToken(request)
-        
-        if not session.get('logged_in') and not apiToken.isValid():
-            user_agent  = request.headers['User-Agent']
-            for agent in TextUserAgentList:
-                if agent in user_agent:
-                    consoleUserAgent = True
-                    pass
-            if consoleUserAgent:
-                msg = '{"error": "Unauthorized", "error_msg": "Invalid Token"}\n'
-                return Response(msg,401)
-            else:
-                return render_template('index.html', version=settings.VERSION)
-        return func(*args,**kwargs)
-    return wrapper
 
 
 def ipv4Test(address):
@@ -57,7 +17,6 @@ def ipv4Test(address):
         return False
     return True
 
-
 def ipv6Test(address):
     try:
         socket.inet_pton(socket.AF_INET6, address)
@@ -65,16 +24,16 @@ def ipv6Test(address):
         return False
     return True
 
-def isValidIP(address, tcp_proto=''):
+def isValidIP(address, ip_proto=''):
     """
     Determine if ip address is valid
     :address:       str
     :tcp_proto:     str
     :ref:           <https://stackoverflow.com/questions/319279/how-to-validate-ip-address-in-python>
     """
-    if tcp_proto == '4':
+    if ip_proto == '4':
         return ipv4Test(address)
-    elif tcp_proto == '6':
+    elif ip_proto == '6':
         return ipv6Test(address)
     else:
         if not ipv4Test(address) and not ipv6Test(address):
