@@ -770,6 +770,7 @@ def deleteEndpointGroup(gwgroupid):
         if domainmapping is not None:
             db.delete(domainmapping)
 
+        db.flush()
         db.commit()
 
         responsePayload['status'] = 200
@@ -1115,5 +1116,62 @@ def addEndpointGroups():
         db.rollback()
         return jsonify(status=0, error=str(ex))
 
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/cdrs/gateway/<int:gwid>", methods=['GET'])
+@api_security
+def getCDRS(gwid=None):
+    """
+    Purpose
+
+    Getting the cdrs for a gateway thats part of a gateway group
+
+    """
+    if (settings.DEBUG):
+        debugEndpoint()
+
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
+    try:
+        query = "select gwid, created, calltype as direction, dst_username as \
+         number,src_ip, dst_domain, duration,sip_call_id \
+         from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={};".format(gwid)
+
+        cdrs = db.execute(query)
+        rows = []
+        for cdr in cdrs:
+            row = {}
+            row['gwid'] = cdr[0]
+            row['created'] = str(cdr[1])
+            row['calltype'] = cdr[2]
+            row['number'] = cdr[3]
+            row['src_ip'] = cdr[4]
+            row['dst_domain'] = cdr[5]
+            row['duration'] = cdr[6]
+            row['sip_call_id'] = cdr[7]
+
+            rows.append(row)
+
+        if rows is not None:
+            responsePayload['status'] = "200"
+            responsePayload['cdrs'] = rows
+            responsePayload['recordCount'] = len(rows)
+        else:
+            responsePayload['status'] = "0"
+
+        return json.dumps(responsePayload)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return jsonify(status=0,error=str(ex))
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        return jsonify(status=0,error=str(ex))
     finally:
         db.close()

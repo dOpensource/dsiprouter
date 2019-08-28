@@ -318,17 +318,30 @@ function updateEndpointGroup(msg)
 
 }
 
-$('#pbxs #open-Delete').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('endpointgroups');
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+function deleteEndpointGroup() {
 
-  /* update modal fields */
-  var modal_body = $('#delete .modal-body');
-  modal_body.find(".gwid").val(gwid);
-  modal_body.find(".name").val(name);
-});
+  $.ajax({
+		type: "DELETE",
+		url: "/api/v1/endpointgroups/" + gwgroupid,
+		dataType: "json",
+		contentType: "application/json; charset=utf-8",
+		success: function(msg) {
+
+
+        reloadkamrequired();
+		}
+
+  })
+
+
+  $('#delete').modal('hide');
+  $('#edit').modal('hide');
+  $('#endpointgroups').DataTable().ajax.reload();
+}
+
+
+
+
 
 $('#domains #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
@@ -607,6 +620,7 @@ function addEndpointGroup() {
         btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
 				//Uncheck the Checkbox
 					reloadkamrequired();
+          $('#endpointgroups').DataTable().ajax.reload();
 			}
 			else {
         console.log("error during endpointgroup update");
