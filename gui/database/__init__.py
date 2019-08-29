@@ -79,11 +79,11 @@ class InboundMapping(object):
 
     gwname = Column(String)
 
-    def __init__(self, groupid, prefix, gwlist, notes=''):
+    def __init__(self, groupid, prefix, gwlist, description=''):
         self.groupid = groupid
         self.prefix = prefix
         self.gwlist = gwlist
-        self.description = notes
+        self.description = description
         self.timerec = ''
         self.routeid = ''
 
@@ -241,8 +241,8 @@ class dSIPCallLimits(object):
     Schema for dsip_calllimit table\n
     """
 
-    def __init__(self, gwid, limit, status=1):
-        self.gwid = gwid
+    def __init__(self, gwgroupid, limit, status=1):
+        self.gwgroupid = gwgroupid
         self.limit = limit
         self.status = status
         self.createdate = datetime.now()
@@ -265,6 +265,30 @@ class dSIPNotification(object):
         self.method = method
         self.value = value
         self.createdate = datetime.now()
+    pass
+
+class dSIPHardFwd(object):
+    """
+    Schema for dsip_hardfwd table\n
+    """
+
+    def __init__(self, prefix, did, dr_groupid):
+        self.prefix = prefix
+        self.did = did
+        self.dr_groupid = dr_groupid
+
+    pass
+
+class dSIPFailFwd(object):
+    """
+    Schema for dsip_failfwd table\n
+    """
+
+    def __init__(self, prefix, did, dr_groupid):
+        self.prefix = prefix
+        self.did = did
+        self.dr_groupid = dr_groupid
+
     pass
 
 class UAC(object):
@@ -459,6 +483,8 @@ def loadSession():
     dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
     dsip_calllimit = Table('dsip_calllimit', metadata, autoload=True)
     dsip_notification = Table('dsip_notification', metadata, autoload=True)
+    dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
+    dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -487,6 +513,8 @@ def loadSession():
     mapper(dSIPMaintModes, dsip_maintmode)
     mapper(dSIPCallLimits, dsip_calllimit)
     mapper(dSIPNotification, dsip_notification)
+    mapper(dSIPHardFwd, dsip_hardfwd)
+    mapper(dSIPFailFwd, dsip_failfwd)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],

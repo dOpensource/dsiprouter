@@ -106,7 +106,6 @@ def reloadKamailio():
 
         payloadResponse = {}
         configParameters = {}
-        reloadCommands = {}
         #TODO: Get the configuration parameters to be updatable via the API
         #configParameters['cfg.sets:teleblock-gw_up'] = 'teleblock, gw_ip' + str(settings.TELEBLOCK_GW_IP)
         #configParameters['cfg.sets:teleblock-media_ip'] ='"teleblock", "media_ip",' +  str(settings.TELEBLOCK_MEDIA_IP)
@@ -114,19 +113,23 @@ def reloadKamailio():
         #configParameters['cfg.seti:teleblock-gw_port'] ='"teleblock", "gw_port",' +  str(settings.TELEBLOCK_GW_PORT)
         #configParameters['cfg.seti:teleblock-media_port'] ='"teleblock", "gw_media_port,' +  str(settings.TELEBLOCK_MEDIA_PORT)
 
-        reloadCommands[0] = {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1}
-        reloadCommands[1] = {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1}
-        reloadCommands[2] = {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1}
-        reloadCommands[3] = {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]}
-        reloadCommands[4] = {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]}
-        reloadCommands[5] = {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1}
+        reloadCommands = [
+            {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
+            {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
+            {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
+            {'method': 'dispatcher.reload', 'jsonrpc': '2.0', 'id': 1},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["calllimit"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gw2gwgroup"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gwgroup_hardfwd"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gwgroup_failfwd"]},
+            {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1}
+        ]
 
-
-        for element in reloadCommands:
-            payload = reloadCommands[element]
-            r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
-            payloadResponse[payload['method']]=r.status_code
-
+        for cmdset in reloadCommands:
+            r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
+            payloadResponse[cmdset['method']] = r.status_code
 
 
         #for key in configParameters:
@@ -386,7 +389,7 @@ def handleInboundMapping():
     VALID_REQUEST_ARGS = {'ruleid', 'did'}
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'notes'}
+    VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name'}
 
     # defaults.. keep data returned seperate from returned metadata
     payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
@@ -410,7 +413,7 @@ def handleInboundMapping():
                 res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).first()
                 if res is not None:
                     data = rowToDict(res)
-                    data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
+                    data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'name': strFieldsToDict(data['description'])['name'], 'servers': data['gwlist'].split(',')}
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
                 else:
@@ -423,7 +426,7 @@ def handleInboundMapping():
                     res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.prefix == did_pattern).first()
                     if res is not None:
                         data = rowToDict(res)
-                        data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
+                        data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'name': strFieldsToDict(data['description'])['name'], 'servers': data['gwlist'].split(',')}
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
                     else:
@@ -435,7 +438,7 @@ def handleInboundMapping():
                     if len(res) > 0:
                         for row in res:
                             data = rowToDict(row)
-                            data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'notes': data['description'], 'servers': data['gwlist'].split(',')}
+                            data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'name': strFieldsToDict(data['description'])['name'], 'servers': data['gwlist'].split(',')}
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
                     else:
@@ -475,12 +478,12 @@ def handleInboundMapping():
 
             gwlist = ','.join(data['servers'])
             prefix = data['did']
-            notes = data['notes'] if 'notes' in data else ''
+            description = 'name:{}'.format(data['name']) if 'name' in data else ''
 
             # don't allow duplicate entries
             if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
-            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
+            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             db.add(IMap)
 
             db.commit()
@@ -507,7 +510,7 @@ def handleInboundMapping():
                 if arg not in VALID_REQUEST_DATA_ARGS:
                     raise http_exceptions.BadRequest("Request data argument not recognized")
 
-            if 'did' not in data and 'servers' not in data and 'notes' not in data:
+            if 'did' not in data and 'servers' not in data and 'name' not in data:
                 raise http_exceptions.BadRequest("No data args supplied, {did, and servers} is required")
             # TODO: we should be checking dr_gateways table to make sure the servers exist
             if 'servers' in data:
@@ -526,8 +529,8 @@ def handleInboundMapping():
                     if c not in PREFIX_ALLOWED_CHARS:
                         raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
                 updates['prefix'] = data['did']
-            if 'notes' in data:
-                updates['description'] = data['notes']
+            if 'name' in data:
+                updates['description'] = 'name:{}'.format(data['name'])
 
             # update single rule by ruleid
             rule_id = request.args.get('ruleid')
@@ -740,7 +743,7 @@ def deleteEndpointGroup(gwgroupid):
     try:
         responsePayload = {}
 
-        endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id==gwgroupid).first()
+        endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointgroup is not None:
             db.delete(endpointgroup)
         else:
@@ -749,11 +752,11 @@ def deleteEndpointGroup(gwgroupid):
             return json.dumps(responsePayload)
 
 
-        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid==str(gwgroupid)).first()
+        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == str(gwgroupid)).first()
         if calllimit is not None:
             db.delete(calllimit)
 
-        subscriber =  db.query(Subscribers).filter(Subscribers.rpid==gwgroupid).first()
+        subscriber =  db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
         if subscriber is not None:
             db.delete(subscriber)
 
@@ -800,22 +803,22 @@ def getEndpointGroup(gwgroupid):
         strip = 0
         prefix = ""
 
-        endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id==gwgroupid).first()
+        endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointgroup is not None:
             responsePayload['name'] = strFieldsToDict(endpointgroup.description)['name']
         else:
-            raise EndpointGroupDoesntExist
+            raise http_exceptions.NotFound("Endpoint Group Does Not Exist")
 
         # Send back the gateway groupid that was requested
         responsePayload['gwgroupid'] = gwgroupid
 
-        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid==str(gwgroupid)).first()
+        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == str(gwgroupid)).first()
         if calllimit is not None:
             responsePayload['calllimit'] = calllimit.limit
 
-        #Check to see if a subscriber record exists.  If so, auth is userpwd
+        # Check to see if a subscriber record exists.  If so, auth is userpwd
         auth = {}
-        subscriber =  db.query(Subscribers).filter(Subscribers.rpid==gwgroupid).first()
+        subscriber =  db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
         if subscriber is not None:
             auth['type'] = "userpwd"
             auth['user'] = subscriber.username
@@ -958,37 +961,27 @@ def addEndpointGroups():
     }
     """
 
-    gwgroupid = None
+    # Check parameters and raise exception if missing required parameters
+    requiredParameters = ['name']
+
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
+    # Set the status to 0, update it to 1 if the update is successful
+    responsePayload['status'] = 0
+    responsePayload['gwgroupid'] = None
 
     try:
-        if (settings.DEBUG):
+        if settings.DEBUG:
             debugEndpoint()
 
-        # Define a dictionary object that represents the payload
-        responsePayload = {}
-
-        # Set the status to 0, update it to 1 if the update is successful
-        responsePayload['status'] = 0
-        responsePayload['gwgroupid'] = None
-
-        # Covert JSON message to Dictionary Object
+        # Convert JSON message to Dictionary Object
         requestPayload = request.get_json()
 
-        # Check parameters and raise exception if missing required parameters
-        requiredParameters = ['name']
-
-        try:
-            for parameter in requiredParameters:
-                if parameter not in requestPayload:
-                    raise RequiredParameterMissing
-                elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
-                    raise RequiredParameterValueMissing
-        except RequiredParameterMissing as ex:
-                responsePayload['error'] = "{} attribute is missing".format(parameter)
-                return json.dumps(responsePayload)
-        except RequiredParameterValueMissing as ex:
-                responsePayload['error'] = "The value of the {} attribute is missing".format(parameter)
-                return json.dumps(responsePayload)
+        for parameter in requiredParameters:
+            if parameter not in requestPayload:
+                raise http_exceptions.BadRequest("Request Argument '{}' is Required".format(parameter))
+            elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
+                raise http_exceptions.BadRequest("Value for Request Argument '{}' is Not Valid".format(parameter))
 
         # Process Gateway Name
         name = requestPayload['name']
@@ -999,20 +992,22 @@ def addEndpointGroups():
         responsePayload['gwgroupid'] = gwgroupid
 
         # Call limit
+        # if calllimit is not None and isinstance(calllimit, int) and calllimit > 0:
+        #     CallLimit = dSIPCallLimits(gwgroupid, calllimit)
+        #     db.add(CallLimit)
+
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
         if calllimit is not None and len(calllimit) > 0:
-            if isinstance(calllimit,str):
-                calllimit=int(calllimit)
-                if calllimit >0:
-                    CallLimit = dSIPCallLimits(gwgroupid,calllimit)
-                    db.add(CallLimit)
-
+            calllimit = int(calllimit)
+            if calllimit > 0:
+                CallLimit = dSIPCallLimits(gwgroupid, calllimit)
+                db.add(CallLimit)
 
         # Number of characters to strip and prefix
         strip = requestPayload['strip'] if 'strip' in requestPayload else ""
-        if isinstance(strip,str):
-            if len(strip) == 0:
-                strip = None
+        if isinstance(strip,str) and len(strip) == 0:
+            strip = None
+
         prefix = requestPayload['prefix'] if 'prefix' in requestPayload else None
 
         # Setup up authentication
@@ -1025,37 +1020,41 @@ def addEndpointGroups():
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else None
                 name = endpoint['description'] if 'description' in endpoint else None
                 print("***{}***{}".format(hostname, name))
-                if hostname is not None and name is not None \
-                      and len(hostname) > 0:
+
+                if hostname is not None and name is not None and len(hostname) > 0:
                     Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Addr)
                     Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Gateway)
+
         elif authtype == "userpwd":
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
             authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] else settings.DOMAIN
+
             if authuser == None or authpass == None:
-                raise AuthUsernameOrPasswordEmpty
-            if db.query(Subscribers).filter(Subscribers.username == authuser,Subscribers.domain == authdomain).scalar():
-                raise SubscriberUsernameTaken
+                raise http_exceptions.BadRequest("Authentication Username and Password are Required")
+            if db.query(Subscribers).filter(Subscribers.username == authuser, Subscribers.domain == authdomain).scalar():
+                raise sql_exceptions.SQLAlchemyError('DB Entry Taken for Username {} in Domain {}'.format(authuser, authdomain))
             else:
                 Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
                 db.add(Subscriber)
 
-        #Setup Endpoints
+        # Setup Endpoints
         if "endpoints" in requestPayload:
-            #Store Endpoint IP's in address tables
+            # Store Endpoint IP's in address tables
             for endpoint in requestPayload['endpoints']:
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else None
                 name = endpoint['description'] if 'description' in endpoint else None
-                print("***{}***{}".format(hostname,name))
-                if hostname is not None and name is not None \
-                and len(hostname) >0:
-                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
+
+                if settings.DEBUG:
+                    print("***{}***{}".format(hostname,name))
+
+                if hostname is not None and name is not None and len(hostname) > 0:
+                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Gateway)
                 if authtype == "ip":
-                    Addr = Address(name, hostname,32, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Addr)
 
         # Setup notifications
@@ -1064,13 +1063,15 @@ def addEndpointGroups():
             endpointfailure = requestPayload['notifications']['endpointfailure'] if 'endpointfailure' in requestPayload['notifications'] else None
 
             if overmaxcalllimit is not None:
-                # type = dSIPNotification.FLAGS.TYPE_MAXCALLLIMIT.value
-                type = 0
-                notification = dSIPNotification(gwgroupid, type, 0, overmaxcalllimit)
+                type = dSIPNotification.FLAGS.TYPE_OVERLIMIT.value
+                method = dSIPNotification.FLAGS.METHOD_EMAIL.value
+                notification = dSIPNotification(gwgroupid, type, method, overmaxcalllimit)
                 db.add(notification)
 
             if endpointfailure is not None:
-                notification = dSIPNotification(gwgroupid, 1, 0, endpointfailure)
+                type = dSIPNotification.FLAGS.TYPE_GWFAILURE.value
+                method = dSIPNotification.FLAGS.METHOD_EMAIL.value
+                notification = dSIPNotification(gwgroupid, type, method, endpointfailure)
                 db.add(notification)
 
         # Enable FusionPBX
@@ -1080,42 +1081,48 @@ def addEndpointGroups():
             fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
             fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
 
-        # Convert fusionpbxenabled variable to int
-        if isinstance(fusionpbxenabled,str):
-            fusionpbxenabled = int(fusionpbxenabled)
+            # Convert fusionpbxenabled variable to int
+            if isinstance(fusionpbxenabled, str):
+                fusionpbxenabled = int(fusionpbxenabled)
 
-        if fusionpbxenabled == 1:
-                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
-                fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+            if fusionpbxenabled == 1:
+                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
+                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
                 db.add(domainmapping)
 
-        try:
-            # DEBUG
-            # for key, value in data.items():
-            #    print(key,value)
+        # DEBUG
+        # for key, value in data.items():
+        #    print(key,value)
+        #
+        # send_email(recipients=recipients, text_body=text_body,data=None)
 
-            # send_email(recipients=recipients, text_body=text_body,data=None)
-
-            db.commit()
-            return jsonify(
-                message='EndpointGroup Created',
-                gwgroupid=responsePayload['gwgroupid'],
-                status="200"
-            )
-
-        except Exception as e:
-            print(requestPayload)
-            return jsonify(status=0, error=str(e))
+        db.commit()
+        responsePayload['msg'] = 'EndpointGroup Created'
+        responsePayload['status'] = 1
+        return json.dumps(responsePayload), status.HTTP_OK
 
 
-
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        responsePayload['error'] = "db"
+        if len(str(ex)) > 0:
+            responsePayload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        return json.dumps(responsePayload), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        responsePayload['error'] = "http"
+        if len(str(ex)) > 0:
+            responsePayload['msg'] = str(ex)
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        return json.dumps(responsePayload), status_code
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        # db.rollback()
-        # db.flush()
-        db.rollback()
-        return jsonify(status=0, error=str(ex))
-
+        responsePayload['error'] = "server"
+        if len(str(ex)) > 0:
+            responsePayload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        return json.dumps(responsePayload), status_code
     finally:
         db.close()
 
