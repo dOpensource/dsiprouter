@@ -6,7 +6,7 @@ DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 USERNAME = 'admin'
 PASSWORD = 'admin'
-DSIP_API_TOKEN = 'admin'
+DSIP_API_TOKEN = '1jaqjl489045455'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
@@ -81,9 +81,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '165.227.83.229'
-INTERNAL_IP_NET = '165.227.83.*'
-EXTERNAL_IP_ADDR = '165.227.83.229'
+INTERNAL_IP_ADDR = '172.21.0.2'
+INTERNAL_IP_NET = '172.21.0.*'
+EXTERNAL_IP_ADDR = '98.209.240.245'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -99,8 +99,8 @@ CLOUD_PLATFORM = ''
 MAIL_SERVER = 'smtp.gmail.com'
 MAIL_PORT = 587
 MAIL_USE_TLS = True
-MAIL_USERNAME = 'dev.test.flyball@gmail.com'
-MAIL_PASSWORD = 'flyball2018'
+MAIL_USERNAME = ''
+MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
 MAIL_DEFAULT_SENDER = 'dSIPRouter {}'.format(MAIL_USERNAME)
 MAIL_DEFAULT_SUBJECT = "dSIPRouter System Notification"

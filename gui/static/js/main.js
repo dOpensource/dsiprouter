@@ -222,6 +222,7 @@ $('#pbxs #open-Delete').click(function() {
   var c = document.getElementById('endpointgroups');
   var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
   var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+});
 
 $('#edit').on('show.bs.modal', function() {
 
@@ -449,17 +450,17 @@ $('#inboundmapping #open-Update').click(function() {
   }
 
   /* update toggle buttons */
-  if (modal_body.find("input.hardfwd_enabled").val()) {
-    modal_body.find(".toggle-hardfwd").bootstrapToggle('on');
+  if (modal_body.find("#add input.hardfwd_enabled").val()) {
+    modal_body.find(" #add .toggle-hardfwd").bootstrapToggle('on');
   }
   else {
-    modal_body.find(".toggle-hardfwd").bootstrapToggle('off');
+    modal_body.find("#add .toggle-hardfwd").bootstrapToggle('off');
   }
-  if (modal_body.find("input.failfwd_enabled").val()) {
-    modal_body.find(".toggle-failfwd").bootstrapToggle('on');
+  if (modal_body.find("#add input.failfwd_enabled").val()) {
+    modal_body.find("#add .toggle-failfwd").bootstrapToggle('on');
   }
   else {
-    modal_body.find(".toggle-failfwd").bootstrapToggle('off');
+    modal_body.find("#add .toggle-failfwd").bootstrapToggle('off');
   }
 });
 

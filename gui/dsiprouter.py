@@ -967,7 +967,6 @@ def addUpdateInboundMapping():
                 inserts.append(ffwd_htable)
 
             db.add_all(inserts)
->>>>>>> 2ce8f4bea06100605980b80b424e62e988ae1088
 
         # Updating
         else:

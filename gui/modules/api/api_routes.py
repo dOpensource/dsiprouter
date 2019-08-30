@@ -1238,7 +1238,7 @@ def addEndpointGroups():
         authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
                                                      'type' in requestPayload['auth'] else ""
 
-        #if authtype == "ip" and "endpoints" in requestPayload:
+        if authtype == "ip" and "endpoints" in requestPayload:
             # Store Endpoint IP's in address tables
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
