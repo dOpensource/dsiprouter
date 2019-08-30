@@ -12,7 +12,7 @@
             data-target="#add">Add
     </button>
     <button id='open-DIDImport' class='btn btn-success btn-md' data-title="Import DID's" data-toggle="modal"
-	    data-target="#import">Import DID
+            data-target="#import">Import DID
     </button>
   </div>
 
@@ -28,11 +28,20 @@
       <th></th>
       <th data-field="ruleid">Rule ID</th>
       <th data-field="prefix">DID (or DID pattern)</th>
-      <th data-field="gateway">PBX(s)</th>
-      <th data-field="notes">Notes</th>
-      <th data-field="gwlist" class="hidden">PBX ID(s)</th>
+      <th data-field="gwgroupid" class="hidden"></th>
+      <th data-field="gwgroupname">Endpoint Group</th>
+      <th data-field="rulename">Name</th>
+      <th data-field="gwlist" class="hidden">Gateway List</th>
       <th></th>
       <th></th>
+      <th data-field="hf_ruleid" class="hidden"></th>
+      <th data-field="hf_groupid" class="hidden"></th>
+      <th data-field="hf_gwgroupid" class="hidden"></th>
+      <th data-field="hf_fwddid" class="hidden"></th>
+      <th data-field="ff_ruleid" class="hidden"></th>
+      <th data-field="ff_groupid" class="hidden"></th>
+      <th data-field="ff_gwgroupid" class="hidden"></th>
+      <th data-field="ff_fwddid" class="hidden"></th>
     </tr>
     </thead>
     <tbody>
@@ -41,12 +50,13 @@
         <td><input type="checkbox" class="checkthis" value="1"/></td>
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
+        <td class="gwgroupid hidden">{{ row.gwgroupid }}</td>
         {% if row.gwlist.split(',')|length > 1 %}
-        <td class='gwname'>{{ row.description|attrFilter('name') }}<sup> +1</sup></td>
+          <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}<sup> +1</sup></td>
         {% else %}
-          <td class='gwname'>{{ row.description|attrFilter('name') }}</td>
+          <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}</td>
         {% endif %}
-        <td class="notes">{{ row.notes }}</td>
+        <td class="rulename">{{ row.rule_description|attrFilter('name') }}</td>
         <td class="gwlist hidden">{{ row.gwlist }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
@@ -62,6 +72,14 @@
             </button>
           </p>
         </td>
+        <td class="hf_ruleid hidden">{{ row.hf_ruleid|noneFilter() }}</td>
+        <td class="hf_groupid hidden">{{ row.hf_groupid|noneFilter() }}</td>
+        <td class="hf_gwgroupid hidden">{{ row.hf_gwgroupid|noneFilter() }}</td>
+        <td class="hf_fwddid hidden">{{ row.hf_fwddid|noneFilter() }}</td>
+        <td class="ff_ruleid hidden">{{ row.ff_ruleid|noneFilter() }}</td>
+        <td class="ff_groupid hidden">{{ row.ff_groupid|noneFilter() }}</td>
+        <td class="ff_gwgroupid hidden">{{ row.ff_gwgroupid|noneFilter() }}</td>
+        <td class="ff_fwddid hidden">{{ row.ff_fwddid|noneFilter() }}</td>
       </tr>
     {% endfor %}
     </tbody>
@@ -80,7 +98,18 @@
 
   <div class="modal-body">
     <form action="/inboundmapping" method="POST" role="form">
-      <input class="ruleid " type="hidden" name="ruleid">
+      <input class="ruleid" type="hidden" name="ruleid">
+      <input class="hf_ruleid" type="hidden" name="hf_ruleid">
+      <input class="ff_ruleid" type="hidden" name="ff_ruleid">
+      <input class="hf_groupid" type="hidden" name="hf_groupid">
+      <input class="ff_groupid" type="hidden" name="ff_groupid">
+      <input class="hf_fwddid" type="hidden" name="hf_fwddid">
+      <input class="ff_fwddid" type="hidden" name="ff_fwddid">
+
+      <div class="form-group">
+        <input class="form-control rulename" type="text" name="rulename" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
+      </div>
 
       <div class="form-group">
         {% if imported_dids|length > 0 %}
@@ -88,7 +117,7 @@
             <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
                  aria-haspopup="listbox">
               <input class="did-combobox-input prefix form-control" type="text" name="prefix" placeholder="DID"
-                     autofocus="autofocus" aria-autocomplete="both" aria-controls="did-listbox">
+                     aria-autocomplete="both" aria-controls="did-listbox">
               <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
                    aria-label="Toggle DIDs Shown">
                 <span class="did-combobox-span icon-circle-down centered"></span>
@@ -97,32 +126,110 @@
             <ul class="did-listbox listbox hidden" role="listbox"></ul>
           </div>
         {% else %}
-          <input class="prefix form-control" type="text" name="prefix" placeholder="DID" autofocus="autofocus">
+          <input class="prefix form-control" type="text" name="prefix" placeholder="DID">
         {% endif %}
       </div>
 
       <div class="form-group">
-        <select class="gwid form-control" name="gwid" title="gwid">
-          <option class="hidden" value="" selected disabled>Primary PBX</option>
-          {% for gw in gwlist %}
-            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+          <option class="hidden" value="" selected disabled>Endpoint Group</option>
+          {% for epgroup in epgroups %}
+            <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <div class="form-group">
-        <select class="alt_gwid form-control" name="alt_gwid" title="alt_gwid">
-          <option class="hidden" value="" selected disabled>Failover PBX</option>
-	  <option value="{{ none['gwid'] }}">None</option>
-          {% for gw in gwlist %}
-            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
-          {% endfor %}
-        </select>
-      </div>
 
       <div class="form-group">
-	     <input class="form-control notes" type="text" name="notes" placeholder="Notes about DID(s)">
-     </div>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggle-hardfwd" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-call_hardfwd'></span> Enabled"
+                   data-off="<span class='icon-call_hardfwd'></span> Disabled"
+                   data-width="125px">
+            Hard Forwarding
+          </label>
+        </div>
+        <input class="hardfwd_enabled" type="hidden" name="hardfwd_enabled" value="0">
+      </div>
+
+      <div class="hardfwd-options hidden">
+        <div class="form-group">
+          {% if imported_dids|length > 0 %}
+            <div class="combobox-wrapper">
+              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
+                   aria-haspopup="listbox">
+                <input class="did-combobox-input hf_fwddid form-control" type="text" name="hf_fwddid"
+                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
+                       aria-controls="did-listbox">
+                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
+                     aria-label="Toggle DIDs Shown">
+                  <span class="did-combobox-span icon-circle-down centered"></span>
+                </div>
+              </div>
+              <ul class="did-listbox listbox hidden" role="listbox"></ul>
+            </div>
+          {% else %}
+            <input class="hf_fwddid form-control" type="text" name="hf_fwddid"
+                   placeholder="Forwarded DID (default is unchanged)">
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
+            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            {% for gwgroup in gwgroups %}
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+
+      <div class="form-group">
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggle-failfwd" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-call_failfwd'></span> Enabled"
+                   data-off="<span class='icon-call_failfwd'></span> Disabled"
+                   data-width="125px">
+            Failover Forwarding
+          </label>
+        </div>
+        <input class="failfwd_enabled" type="hidden" name="failfwd_enabled" value="0">
+      </div>
+
+      <div class="failfwd-options hidden">
+        <div class="form-group">
+          {% if imported_dids|length > 0 %}
+            <div class="combobox-wrapper">
+              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
+                   aria-haspopup="listbox">
+                <input class="did-combobox-input ff_fwddid form-control" type="text" name="ff_fwddid"
+                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
+                       aria-controls="did-listbox">
+                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
+                     aria-label="Toggle DIDs Shown">
+                  <span class="did-combobox-span icon-circle-down centered"></span>
+                </div>
+              </div>
+              <ul class="did-listbox listbox hidden" role="listbox"></ul>
+            </div>
+          {% else %}
+            <input class="ff_fwddid form-control" type="text" name="ff_fwddid"
+                   placeholder="Forwarded DID (default is unchanged)">
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
+            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            {% for gwgroup in gwgroups %}
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
@@ -145,7 +252,12 @@
 
   <div class="modal-body">
     <form action="/inboundmapping" method="POST" role="form">
-      <input class="ruleid " type="hidden" name="ruleid">
+      <input class="ruleid" type="hidden" name="ruleid">
+
+      <div class="form-group">
+        <input class="form-control rulename" type="text" name="rulename" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
+      </div>
 
       <div class="form-group">
         {% if imported_dids|length > 0 %}
@@ -153,7 +265,7 @@
             <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
                  aria-haspopup="listbox">
               <input class="did-combobox-input prefix form-control" type="text" name="prefix" placeholder="DID"
-                     autofocus="autofocus" aria-autocomplete="both" aria-controls="did-listbox">
+                     aria-autocomplete="both" aria-controls="did-listbox">
               <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
                    aria-label="Toggle DIDs Shown">
                 <span class="did-combobox-span icon-circle-down centered"></span>
@@ -162,31 +274,110 @@
             <ul class="did-listbox listbox hidden" role="listbox"></ul>
           </div>
         {% else %}
-          <input class="prefix form-control" type="text" name="prefix" placeholder="DID" autofocus="autofocus">
+          <input class="prefix form-control" type="text" name="prefix" placeholder="DID">
         {% endif %}
       </div>
 
       <div class="form-group">
-        <select class="gwid form-control" name="gwid" title="gwid" required="required">
-          <option class="hidden" value="" selected disabled>Primary PBX</option>
-          {% for gw in gwlist %}
-            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+          <option class="hidden" value="" selected disabled>Endpoint Group</option>
+          {% for epgroup in epgroups %}
+            <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
 
+
       <div class="form-group">
-        <select class="alt_gwid form-control" name="alt_gwid" title="alt_gwid">
-          <option class="hidden" value="" selected disabled>Failover PBX</option>
-          {% for gw in gwlist %}
-            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
-	        {% endfor %}
-        </select>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggle-hardfwd" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-call_hardfwd'></span> Enabled"
+                   data-off="<span class='icon-call_hardfwd'></span> Disabled"
+                   data-width="125px">
+            Hard Forwarding
+          </label>
+        </div>
+        <input class="hardfwd_enabled" type="hidden" name="hardfwd_enabled" value="0">
       </div>
-      
+
+      <div class="hardfwd-options form-group hidden">
+        <div class="form-group">
+          {% if imported_dids|length > 0 %}
+            <div class="combobox-wrapper">
+              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
+                   aria-haspopup="listbox">
+                <input class="did-combobox-input hf_fwddid form-control" type="text" name="hf_fwddid"
+                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
+                       aria-controls="did-listbox">
+                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
+                     aria-label="Toggle DIDs Shown">
+                  <span class="did-combobox-span icon-circle-down centered"></span>
+                </div>
+              </div>
+              <ul class="did-listbox listbox hidden" role="listbox"></ul>
+            </div>
+          {% else %}
+            <input class="hf_fwddid form-control" type="text" name="hf_fwddid"
+                   placeholder="Forwarded DID (default is unchanged)">
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
+            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            {% for gwgroup in gwgroups %}
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+
       <div class="form-group">
-	     <input class="form-control notes" type="text" name="notes" placeholder="Notes about DID(s)">
-     </div>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggle-failfwd" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-call_failfwd'></span> Enabled"
+                   data-off="<span class='icon-call_failfwd'></span> Disabled"
+                   data-width="125px">
+            Failover Forwarding
+          </label>
+        </div>
+        <input class="failfwd_enabled" type="hidden" name="failfwd_enabled" value="0">
+      </div>
+
+      <div class="failfwd-options form-group hidden">
+        <div class="form-group">
+          {% if imported_dids|length > 0 %}
+            <div class="combobox-wrapper">
+              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
+                   aria-haspopup="listbox">
+                <input class="did-combobox-input ff_fwddid form-control" type="text" name="ff_fwddid"
+                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
+                       aria-controls="did-listbox">
+                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
+                     aria-label="Toggle DIDs Shown">
+                  <span class="did-combobox-span icon-circle-down centered"></span>
+                </div>
+              </div>
+              <ul class="did-listbox listbox hidden" role="listbox"></ul>
+            </div>
+          {% else %}
+            <input class="ff_fwddid form-control" type="text" name="ff_fwddid"
+                   placeholder="Forwarded DID (default is unchanged)">
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
+            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            {% for gwgroup in gwgroups %}
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
@@ -209,9 +400,10 @@
 
   <div class="modal-body">
     <form action="/inboundmappingdelete" method="POST" role="form">
-      <div class="form-group">
-        <input class="ruleid form-control" type="hidden" name="ruleid">
-      </div>
+      <input class="ruleid" type="hidden" name="ruleid">
+      <input class="prefix" type="hidden" name="prefix">
+      <input class="hf_ruleid" type="hidden" name="hf_ruleid">
+      <input class="ff_ruleid" type="hidden" name="ff_ruleid">
 
       <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
         to delete this Record?
@@ -230,7 +422,7 @@
 {% endblock %}
 
 {% block import_modal %}
-  
+
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
@@ -239,34 +431,123 @@
 
   <div class="modal-body">
     <form action="/inboundmappingimport" method="POST" role="form" enctype="multipart/form-data">
-      <input class="ruleid " type="hidden" name="ruleid">
-      
+      <input class="ruleid" type="hidden" name="ruleid">
+      <input class="hf_ruleid" type="hidden" name="hf_ruleid">
+      <input class="ff_ruleid" type="hidden" name="ff_ruleid">
+      <input class="hf_groupid" type="hidden" name="hf_groupid">
+      <input class="ff_groupid" type="hidden" name="ff_groupid">
+      <input class="hf_fwddid" type="hidden" name="hf_fwddid">
+      <input class="ff_fwddid" type="hidden" name="ff_fwddid">
+
+      <div class="form-group">
+        <input class="form-control rulename" type="text" name="rulename" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
+      </div>
+
       <div class="form-group">
         <label for="importFile">CSV File with DID's</label>
         <input type="file" name="file" class="form-control-file" id="importFile">
       </div>
-      
+
       <div class="form-group">
-        <select class="gwid form-control" name="gwid" title="gwid">
-          <option class="hidden" value="" selected disabled>Primary PBX</option>
-          {% for gw in gwlist %}
-            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+          <option class="hidden" value="" selected disabled>Endpoint Group</option>
+          {% for epgroup in epgroups %}
+            <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="form-group">
-        <select class="alt_gwid form-control" name="alt_gwid" title="alt_gwid">
-          <option class="hidden" value="" selected disabled>Failover PBX</option>
-          {% for gw in gwlist %}
-            <option value="{{ gw['gwid'] }}">{{ gw['description']|attrFilter('name') }}</option>
-          {% endfor %}
-        </select>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggle-hardfwd" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-call_hardfwd'></span> Enabled"
+                   data-off="<span class='icon-call_hardfwd'></span> Disabled"
+                   data-width="125px">
+            Hard Forwarding
+          </label>
+        </div>
+        <input class="hardfwd_enabled" type="hidden" name="hardfwd_enabled" value="0">
       </div>
 
+      <div class="hardfwd-options form-group hidden">
+        <div class="form-group">
+          {% if imported_dids|length > 0 %}
+            <div class="combobox-wrapper">
+              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
+                   aria-haspopup="listbox">
+                <input class="did-combobox-input hf_fwddid form-control" type="text" name="hf_fwddid"
+                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
+                       aria-controls="did-listbox">
+                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
+                     aria-label="Toggle DIDs Shown">
+                  <span class="did-combobox-span icon-circle-down centered"></span>
+                </div>
+              </div>
+              <ul class="did-listbox listbox hidden" role="listbox"></ul>
+            </div>
+          {% else %}
+            <input class="hf_fwddid form-control" type="text" name="hf_fwddid"
+                   placeholder="Forwarded DID (default is unchanged)">
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
+            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            {% for gwgroup in gwgroups %}
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+
       <div class="form-group">
-	     <input class="form-control" type="text" name="notes" placeholder="Notes about DID(s)">
-     </div>
+        <div class="checkbox">
+          <label class="label-toggle">
+            <input class="toggle-failfwd" type="checkbox" data-toggle="toggle" value="1"
+                   data-on="<span class='icon-call_failfwd'></span> Enabled"
+                   data-off="<span class='icon-call_failfwd'></span> Disabled"
+                   data-width="125px">
+            Failover Forwarding
+          </label>
+        </div>
+        <input class="failfwd_enabled" type="hidden" name="failfwd_enabled" value="0">
+      </div>
+
+      <div class="failfwd-options form-group hidden">
+        <div class="form-group">
+          {% if imported_dids|length > 0 %}
+            <div class="combobox-wrapper">
+              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
+                   aria-haspopup="listbox">
+                <input class="did-combobox-input ff_fwddid form-control" type="text" name="ff_fwddid"
+                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
+                       aria-controls="did-listbox">
+                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
+                     aria-label="Toggle DIDs Shown">
+                  <span class="did-combobox-span icon-circle-down centered"></span>
+                </div>
+              </div>
+              <ul class="did-listbox listbox hidden" role="listbox"></ul>
+            </div>
+          {% else %}
+            <input class="ff_fwddid form-control" type="text" name="ff_fwddid"
+                   placeholder="Forwarded DID (default is unchanged)">
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
+            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            {% for gwgroup in gwgroups %}
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span

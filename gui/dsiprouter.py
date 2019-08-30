@@ -13,7 +13,8 @@ from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
-    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, dSIPCallLimits
+    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
+    dSIPMaintModes, dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
 from modules.domain.domain_routes import domains
 import globals
@@ -821,11 +822,25 @@ def displayInboundMapping():
         if (settings.DEBUG):
             debugEndpoint()
 
-        res = db.execute(
-            'select r.ruleid,r.groupid,r.prefix,r.gwlist,r.description as notes, g.gwid, g.description from dr_rules r,dr_gateways g where r.gwlist = g.gwid and r.groupid = {}'.format(settings.FLT_INBOUND))
-        gateways = db.query(Gateways).filter(Gateways.type == settings.FLT_PBX).all()
-        # sort gateways by name
-        gateways.sort(key=lambda x: strFieldsToDict(x.description)['name'])
+        endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
+        carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
+
+        res = db.execute("""select * from (
+select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {}
+) as t1 left join (
+select r.ruleid as hf_ruleid, r.groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid, hf.prefix as hf_hardfwd_prefix from dsip_hardfwd as hf left join dr_rules as r on hf.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+) as t2 on t1.prefix = t2.hf_hardfwd_prefix left join (
+select r.ruleid as ff_ruleid, r.groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid, ff.prefix as ff_failfwd_prefix from dsip_failfwd as ff left join dr_rules as r on ff.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+) as t3 on t1.prefix = t3.ff_failfwd_prefix""".format(settings.FLT_INBOUND))
+
+        epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
+        gwgroups = db.query(GatewayGroups).filter(
+            (GatewayGroups.description.like(endpoint_filter)) | (GatewayGroups.description.like(carrier_filter))).all()
+
+        # sort endpoint groups by name
+        epgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())
+        # sort gateway groups by type then by name
+        gwgroups.sort(key=lambda x: (strFieldsToDict(x.description)['type'], strFieldsToDict(x.description)['name'].lower()))
 
         dids = []
         if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
@@ -835,7 +850,7 @@ def displayInboundMapping():
                 debugException(ex, log_ex=False, print_ex=True, showstack=False)
                 return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
 
-        return render_template('inboundmapping.html', rows=res, gwlist=gateways, imported_dids=dids)
+        return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -878,15 +893,11 @@ def addUpdateInboundMapping():
 
         form = stripDictVals(request.form.to_dict())
 
-        # id in dr_rules table
-        ruleid = None
-        if form['ruleid']:
-            ruleid = form['ruleid']
-
         # get form data
-        gwid = form['gwid'] if 'gwid' in form else ''
-        alt_gwid = form['alt_gwid'] if 'alt_gwid' in form else ''
+        ruleid = form['ruleid'] if 'ruleid' in form else None
+        gwgroupid = form['gwgroupid'] if 'gwgroupid' in form else ''
         prefix = form['prefix'] if 'prefix' in form else ''
+<<<<<<< HEAD
         notes = form['notes'] if 'notes' in form else ''
 
         # we only support 2 pbx's so format gwlist accordingly
@@ -901,11 +912,95 @@ def addUpdateInboundMapping():
         if not ruleid:
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
             db.add(IMap)
+=======
+        description = 'name:{}'.format(form['rulename']) if 'rulename' in form else ''
+        hardfwd_enabled = form['hardfwd_enabled']
+        hf_ruleid = form['hf_ruleid'] if 'hf_ruleid' in form else ''
+        hf_gwgroupid = form['hf_gwgroupid'] if 'hf_gwgroupid' in form else ''
+        hf_groupid = form['hf_groupid'] if 'hf_groupid' in form else ''
+        hf_fwddid = form['hf_fwddid'] if 'hf_fwddid' in form else ''
+        failfwd_enabled = form['failfwd_enabled']
+        ff_ruleid = form['ff_ruleid'] if 'ff_ruleid' in form else ''
+        ff_gwgroupid = form['ff_gwgroupid'] if 'ff_gwgroupid' in form else ''
+        ff_groupid = form['ff_groupid'] if 'ff_groupid' in form else ''
+        ff_fwddid = form['ff_fwddid'] if 'ff_fwddid' in form else ''
+
+        # we only support a single gwgroup at this time
+        gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
+        fwdgroupid = None
+
+        # Adding
+        if not ruleid:
+            inserts = []
+
+            # don't allow duplicate entries
+            if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
+                raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
+
+            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
+            inserts.append(IMap)
+
+            if hardfwd_enabled:
+                # find last forwarding rule
+                lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                db.commit()
+
+                # Start forwarding routes with a groupid set in settings (default is 20000)
+                if lastfwd is None:
+                    fwdgroupid = settings.FLT_LCR_MIN
+                else:
+                    fwdgroupid = int(lastfwd.groupid) + 1
+
+                gwlist = '#{}'.format(hf_gwgroupid) if len(hf_gwgroupid) > 0 else ''
+
+                hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward to DID {}'.format(hf_fwddid))
+                inserts.append(hfwd)
+
+                hfwd_htable = dSIPHardFwd(prefix, hf_fwddid, fwdgroupid)
+                inserts.append(hfwd_htable)
+
+            if failfwd_enabled:
+                # skip lookup if we just found the groupid
+                if fwdgroupid is not None:
+                    fwdgroupid += 1
+                else:
+                    # find last forwarding rule
+                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                    db.commit()
+
+                    # Start forwarding routes with a groupid set in settings (default is 20000)
+                    if lastfwd is None:
+                        fwdgroupid = settings.FLT_LCR_MIN
+                    else:
+                        fwdgroupid = int(lastfwd.groupid) + 1
+
+                    gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
+
+                ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward to DID {}'.format(ff_fwddid))
+                inserts.append(ffwd)
+
+                ffwd_htable = dSIPFailFwd(prefix, ff_fwddid, fwdgroupid)
+                inserts.append(ffwd_htable)
+
+            db.add_all(inserts)
+>>>>>>> 2ce8f4bea06100605980b80b424e62e988ae1088
 
         # Updating
         else:
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
-                {'prefix': prefix, 'gwlist': gwlist, 'description': notes}, synchronize_session=False)
+                {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
+
+            if hardfwd_enabled:
+                db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid).update(
+                    {'prefix': '', 'gwlist': '#{}'.format(hf_gwgroupid), 'description': 'name:Hard Forward to DID {}'.format(hf_fwddid)}, synchronize_session=False)
+                db.query(dSIPHardFwd).filter(dSIPHardFwd.prefix == prefix).update(
+                    {'did': hf_fwddid, 'dr_groupid': hf_groupid}, synchronize_session=False)
+
+            if failfwd_enabled:
+                db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid).update(
+                    {'prefix': '', 'gwlist': '#{}'.format(ff_gwgroupid), 'description': 'name:Hard Forward to DID {}'.format(ff_fwddid)}, synchronize_session=False)
+                db.query(dSIPFailFwd).filter(dSIPFailFwd.prefix == prefix).update(
+                    {'did': ff_fwddid, 'dr_groupid': ff_groupid}, synchronize_session=False)
 
         db.commit()
         globals.reload_required = True
@@ -952,8 +1047,25 @@ def deleteInboundMapping():
         form = stripDictVals(request.form.to_dict())
 
         ruleid = form['ruleid']
-        d = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
-        d.delete(synchronize_session=False)
+        prefix = form['prefix']
+        hf_ruleid = form['hf_ruleid']
+        ff_ruleid = form['ff_ruleid']
+
+        im_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
+        im_rule.delete(synchronize_session=False)
+
+        if len(hf_ruleid) > 0:
+            hf_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid)
+            hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.prefix == prefix)
+            hf_rule.delete(synchronize_session=False)
+            hf_htable.delete(synchronize_session=False)
+
+        if len(ff_ruleid) > 0:
+            ff_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid)
+            ff_htable = db.query(dSIPFailFwd).filter(dSIPFailFwd.prefix == prefix)
+            ff_rule.delete(synchronize_session=False)
+            ff_htable.delete(synchronize_session=False)
+
         db.commit()
 
         globals.reload_required = True
@@ -980,23 +1092,24 @@ def deleteInboundMapping():
     finally:
         db.close()
 
-def processInboundMappingImport(filename,groupid,pbxid,notes,db):
+def processInboundMappingImport(filename, groupid, pbxid, name, db):
     try:
-
         # Adding
         f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
         csv_f = csv.reader(f)
 
         for row in csv_f:
+            prefix = row[0]
             if len(row) > 1:
-                pbxid=row[1]
+                pbxid = row[1]
             if len(row) > 2:
-                notes=row[2]
-            IMap = InboundMapping(groupid, row[0], pbxid, notes)
+                description = 'name:{}'.format(row[2])
+            else:
+                description = 'name:{}'.format(name)
+            IMap = InboundMapping(groupid, prefix, pbxid, description)
             db.add(IMap)
 
         db.commit()
-
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
@@ -1033,7 +1146,7 @@ def importInboundMapping():
 
         # get form data
         gwid = form['gwid']
-        notes = form['notes']
+        name = form['name']
 
         if 'file' not in request.files:
             flash('No file part')
@@ -1047,7 +1160,7 @@ def importInboundMapping():
         if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,notes,db)
+            processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,name,db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
 
@@ -1330,13 +1443,13 @@ def addUpateOutboundRoutes():
 
                 elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
                     # Create a new groupid
-                    mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(
+                    mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN).order_by(
                         dSIPLCR.dr_groupid.desc()).first()
                     db.commit()
 
-                    # Start LCR routes with a groupid of 10000
+                    # Start LCR routes with a groupid set in settings (default is 10000)
                     if mlcr is None:
-                        groupid = 10000
+                        groupid = settings.FLT_LCR_MIN
                     else:
                         groupid = int(mlcr.dr_groupid) + 1
 

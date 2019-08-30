@@ -217,6 +217,11 @@ $('#open-CarrierAdd').click(function() {
 
 
 
+$('#pbxs #open-Delete').click(function() {
+  var row_index = $(this).parent().parent().parent().index() + 1;
+  var c = document.getElementById('endpointgroups');
+  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
 
 $('#edit').on('show.bs.modal', function() {
 
@@ -373,48 +378,88 @@ $('#domains #open-Delete').click(function() {
   modal_body.find(".domain_name").val(domain_name);
 });
 
+$('#open-CarrierAdd').click(function() {
+  /** Clear out the modal */
+  var modal_body = $('#add .modal-body');
+  modal_body.find("input").val('');
+  modal_body.find('select').prop('selectedIndex', 0);
+});
+
 $('#inboundmapping #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('inboundmapping');
-  /* we only want the TEXT nodes value w/o other inline tags */
   var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
   var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  // var gwname = $(c).find('tr:eq(' + row_index + ') td:eq(3)').contents().filter(function() {
-  //   return this.nodeType === Node.TEXT_NODE;
-  // }).text();
-  var notes = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-  var gwlist = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-
-  /* we only support 2 pbx's so format accordingly */
-  gwlist_arr = gwlist.replace(/(^\s+|\s+$)/g,'').split(',');
-  gwid = gwlist_arr.length > 0 ? gwlist_arr[0] : '';
-  alt_gwid = gwlist_arr.length > 1 ? gwlist_arr[1] : '';
+  var gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+  var rulename = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+  var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+  var hf_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
+  var hf_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
+  var hf_fwddid = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
+  var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var ff_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
+  var ff_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
+  var ff_fwddid = $(c).find('tr:eq(' + row_index + ') td:eq(16)').text();
 
   /** Clear out the modal */
   var modal_body = $('#edit .modal-body');
-  modal_body.find(".ruleid").val('');
-  modal_body.find(".prefix").val('');
-  modal_body.find(".notes").val('');
-  modal_body.find(".gwid").val('');
-  modal_body.find(".alt_gwid").val('');
+  modal_body.find("input.ruleid").val('');
+  modal_body.find("input.prefix").val('');
+  modal_body.find("input.rulename").val('');
+  modal_body.find("input.hf_ruleid").val('');
+  modal_body.find("input.hf_groupid").val('');
+  modal_body.find("input.hf_fwddid").val('');
+  modal_body.find("input.ff_ruleid").val('');
+  modal_body.find("input.ff_groupid").val('');
+  modal_body.find("input.ff_fwddid").val('');
 
   /* update modal fields */
-  modal_body.find(".ruleid").val(ruleid);
-  modal_body.find(".prefix").val(prefix);
-  modal_body.find(".notes").val(notes);
-  modal_body.find("input.gwid").val(gwid);
-  modal_body.find("input.alt_gwid").val(alt_gwid);
+  modal_body.find("input.ruleid").val(ruleid);
+  modal_body.find("input.prefix").val(prefix);
+  modal_body.find("input.rulename").val(rulename);
+  modal_body.find("input.hf_ruleid").val(hf_ruleid);
+  modal_body.find("input.hf_groupid").val(hf_groupid);
+  modal_body.find("input.hf_fwddid").val(hf_fwddid);
+  modal_body.find("input.ff_ruleid").val(ff_ruleid);
+  modal_body.find("input.ff_groupid").val(ff_groupid);
+  modal_body.find("input.ff_fwddid").val(ff_fwddid);
 
   /* update options selected */
-  var selects = modal_body.find("select").get();
-  for (var i = 0; i < selects.length; i++) {
-    var options = $(selects[i]).find("option").get();
-    for (var j = 0; j < options.length; j++) {
-      if (gwlist_arr[i] === options[j].value) {
-        $(options[j]).attr('selected', true);
-        break;
-      }
+  var i = 0;
+  var gwgroup_options = modal_body.find("select.gwgroupid > option").get();
+  for (i = 0; i < gwgroup_options.length; i++) {
+    if (gwgroupid === gwgroup_options[i].value) {
+      $(gwgroup_options[i]).attr('selected', true);
+      break;
     }
+  }
+  var hf_gwgroup_options = modal_body.find("select.hf_gwgroupid > option").get();
+  for (i = 0; i < hf_gwgroup_options.length; i++) {
+    if (hf_gwgroupid === hf_gwgroup_options[i].value) {
+      $(hf_gwgroup_options[i]).attr('selected', true);
+      break;
+    }
+  }
+  var ff_gwgroup_options = modal_body.find("select.ff_gwgroupid > option").get();
+  for (i = 0; i < ff_gwgroup_options.length; i++) {
+    if (ff_gwgroupid === ff_gwgroup_options[i].value) {
+      $(ff_gwgroup_options[i]).attr('selected', true);
+      break;
+    }
+  }
+
+  /* update toggle buttons */
+  if (modal_body.find("input.hardfwd_enabled").val()) {
+    modal_body.find(".toggle-hardfwd").bootstrapToggle('on');
+  }
+  else {
+    modal_body.find(".toggle-hardfwd").bootstrapToggle('off');
+  }
+  if (modal_body.find("input.failfwd_enabled").val()) {
+    modal_body.find(".toggle-failfwd").bootstrapToggle('on');
+  }
+  else {
+    modal_body.find(".toggle-failfwd").bootstrapToggle('off');
   }
 });
 
@@ -422,10 +467,16 @@ $('#inboundmapping #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('inboundmapping');
   var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
+  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
+  var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+  var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
 
   /* update modal fields */
   var modal_body = $('#delete .modal-body');
-  modal_body.find(".ruleid").val(ruleid);
+  modal_body.find("input.ruleid").val(ruleid);
+  modal_body.find("input.prefix").val(prefix);
+  modal_body.find("input.hf_ruleid").val(hf_ruleid);
+  modal_body.find("input.ff_ruleid").val(ff_ruleid);
 });
 
 $('#outboundmapping #open-Update').click(function() {
@@ -634,7 +685,7 @@ function addEndpointGroup(action) {
 
   endpoints = new Array();
 
-    $("tr.endpoint").each(function (i, row) {
+  $("tr.endpoint").each(function (i, row) {
 
     endpoint = new Object();
     endpoint.pbxid = $(this).find('td').eq(0).text();
@@ -643,7 +694,7 @@ function addEndpointGroup(action) {
     //endpoint.maintmode = $(this).find('td').eq(3).text();
 
     endpoints.push(endpoint);
-  })
+  });
 
    requestPayload.endpoints=endpoints;
 
@@ -708,9 +759,8 @@ function disableMaintenanceMode() {
 function updateEndpoint(row,attr,attrvalue) {
 
 	checkbox=row.cells[0].getElementsByClassName('checkthis');
-        pbxid = checkbox[0].value;
-
-        requestPayload = '{"maintmode":' +  attrvalue + '}';
+  pbxid = checkbox[0].value;
+  requestPayload = '{"maintmode":' +  attrvalue + '}';
 
 	$.ajax({
 		type: "POST",
@@ -752,7 +802,6 @@ $('.modal-body .toggleFusionPBXDomain').change(function() {
     /* uncheck other toggles */
     //modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
   }
-
   else {
     modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
     modal_body.find('.fusionpbx_db_enabled').val(0);
@@ -771,7 +820,6 @@ $('.modal-body .toggleFreePBXDomain').change(function() {
     /* uncheck other toggles */
     modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
   }
-
   else {
     modal_body.find('.FreePBXDomainOptions').addClass("hidden");
     modal_body.find('.freepbx_enabled').val(0);
@@ -789,6 +837,39 @@ $('#toggleTeleblock').change(function() {
     $('#teleblockOptions').addClass("hidden");
     $(this).val("0");
     $(this).bootstrapToggle('off');
+  }
+});
+
+/* listener for hard forward toggle */
+$('.modal-body .toggle-hardfwd').change(function() {
+  var modal = $(this).closest('div.modal');
+  var modal_body = modal.find('.modal-body');
+
+  if ($(this).is(":checked") || $(this).prop("checked")) {
+    modal_body.find('.hardfwd-options').removeClass("hidden");
+    modal_body.find('.hardfwd_enabled').val(1);
+    // modal_body.find('select.gwgroupid').prop('selectedIndex', 0);
+    toggleElemDisabled(modal_body.find('select.gwgroupid'), true);
+  }
+  else {
+    modal_body.find('.hardfwd-options').addClass("hidden");
+    modal_body.find('.hardfwd_enabled').val(0);
+    toggleElemDisabled(modal_body.find('select.gwgroupid'), false);
+  }
+});
+
+/* listener for failover forward toggle */
+$('.modal-body .toggle-failfwd').change(function() {
+  var modal = $(this).closest('div.modal');
+  var modal_body = modal.find('.modal-body');
+
+  if ($(this).is(":checked") || $(this).prop("checked")) {
+    modal_body.find('.failfwd-options').removeClass("hidden");
+    modal_body.find('.failfwd_enabled').val(1);
+  }
+  else {
+    modal_body.find('.failfwd-options').addClass("hidden");
+    modal_body.find('.failfwd_enabled').val(0);
   }
 });
 
