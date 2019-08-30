@@ -897,22 +897,6 @@ def addUpdateInboundMapping():
         ruleid = form['ruleid'] if 'ruleid' in form else None
         gwgroupid = form['gwgroupid'] if 'gwgroupid' in form else ''
         prefix = form['prefix'] if 'prefix' in form else ''
-<<<<<<< HEAD
-        notes = form['notes'] if 'notes' in form else ''
-
-        # we only support 2 pbx's so format gwlist accordingly
-        gateways = []
-        for gw in gwid, alt_gwid:
-            if len(gw) > 0:
-                gateways.append(gw)
-        gwlist = ','.join(gateways)
-
-
-        # Adding
-        if not ruleid:
-            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, notes)
-            db.add(IMap)
-=======
         description = 'name:{}'.format(form['rulename']) if 'rulename' in form else ''
         hardfwd_enabled = form['hardfwd_enabled']
         hf_ruleid = form['hf_ruleid'] if 'hf_ruleid' in form else ''
