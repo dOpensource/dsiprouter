@@ -752,7 +752,7 @@ def deleteEndpointGroup(gwgroupid):
             return json.dumps(responsePayload)
 
 
-        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid==str(gwgroupid))
+        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid==str(gwgroupid))
         if calllimit is not None:
             calllimit.delete(synchronize_session=False)
 
@@ -774,7 +774,8 @@ def deleteEndpointGroup(gwgroupid):
             domainmapping.delete(synchronize_session=False)
 
         db.commit()
-        db.close()
+        db.flush()
+        #db.close()
 
         responsePayload['status'] = 200
 
@@ -789,8 +790,8 @@ def deleteEndpointGroup(gwgroupid):
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
         return jsonify(status=0,error=str(ex))
-    finally:
-        db.close()
+    #finally:
+        #db.close()
 
 
 
@@ -927,8 +928,10 @@ def listEndpointGroups():
         error = "server"
         return jsonify(status=0,error=str(ex))
 #TODO: Figure out why doing a db.close causes the previous DeleteEndpointGroup call to fail
-    #finally:
-        #db.close()
+    finally:
+        db.commit()
+        db.flush()
+        db.close()
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['PUT'])
 @api_security
@@ -974,7 +977,7 @@ def updateEndpointGroups(gwgroupid):
         # Update Concurrent connections
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
         if calllimit is not None:
-            if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwid == gwgroupid).update({'limit': calllimit},synchronize_session=False):
+            if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update({'limit': calllimit},synchronize_session=False):
                 pass
             else:
                 if isinstance(calllimit,str):
@@ -1238,7 +1241,7 @@ def addEndpointGroups():
         authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
                                                      'type' in requestPayload['auth'] else ""
 
-        if authtype == "ip" and "endpoints" in requestPayload:
+        if authtype == "userpwd":
             # Store Endpoint IP's in address tables
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
@@ -1322,7 +1325,7 @@ def addEndpointGroups():
 
         db.commit()
         responsePayload['msg'] = 'EndpointGroup Created'
-        responsePayload['status'] = 1
+        responsePayload['status'] = 200
         return json.dumps(responsePayload), status.HTTP_OK
 
 

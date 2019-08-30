@@ -224,26 +224,6 @@ $('#pbxs #open-Delete').click(function() {
   var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
 });
 
-$('#edit').on('show.bs.modal', function() {
-
-  //console.log("The current endpointgroup is " + gwgroupid);
-  // Show the auth tab by default when the modal shows
-  var modal_body = $('#edit .modal-body');
-  modal_body.find("[name='auth-toggle']").trigger('click');
-
-  // Put into JSON Message and send over
-
-  $.ajax({
-		type: "GET",
-		url: "/api/v1/endpointgroups/" + gwgroupid,
-		dataType: "json",
-		contentType: "application/json; charset=utf-8",
-		success: function(msg) {
-      displayEndpointGroup(msg)
-		}
-  })
-});
-
 // Updates the modal with the values from the endpointgroup API
 
 function displayEndpointGroup(msg)
@@ -581,163 +561,12 @@ function enableMaintenanceMode() {
 
 }
 
-$('#open-EndpointGroupsAdd').click(function() {
-
-  clearEndpointGroupModal();
-
-})
 
 
 
-function clearEndpointGroupModal() {
-
-    /** Clear out the modal */
-
-  var modal_body = $('#add .modal-body');
-  modal_body.find(".gwgroupid").val('');
-  modal_body.find(".name").val('');
-  modal_body.find(".ip_addr").val('');
-  modal_body.find(".strip").val('');
-  modal_body.find(".prefix").val('');
-  modal_body.find(".fusionpbx_db_server").val('');
-  modal_body.find(".fusionpbx_db_username").val('fusionpbx');
-  modal_body.find(".fusionpbx_db_password").val('');
-  modal_body.find(".authtype").val('ip');
-  modal_body.find(".auth_username").val('');
-  modal_body.find(".auth_password").val('');
-  modal_body.find(".auth_domain").val('');
-  modal_body.find(".calllimit").val('');
-  modal_body.find(".email_over_max_calls").val('');
-  modal_body.find(".email_endpoint_failure").val('');
-  modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
-
-  // Remove Endpont Rows
-  $("tr.endpoint").each(function (i, row) {
-      $(this).remove();
-  })
-
-  // Make the Auth tab the default
-  modal_body.find(".auth-tab").addClass("active");
-
-
-  /* make sure ip_addr not disabled */
-  toggleElemDisabled(modal_body.find('.ip_addr'), false);
-
-}
-
-
-function addEndpointGroup(action) {
-
-  /** Get data from the modal */
-
-
-  // The default action is a POST (creating a new EndpointGroup)
-  if (action == undefined) {
-    action = "POST"
-    selector = "#add"
-    var modal_body = $(selector + ' .modal-body');
-    url = "/api/v1/endpointgroups"
-  }
-
-  if (action == "PUT") {
-      selector = "#edit"
-      // Grab the Gateway Group ID if updating usinga PUT
-      var modal_body = $(selector + ' .modal-body');
-      gwgroupid = modal_body.find(".gwgroupid").val();
-      url = "/api/v1/endpointgroups/" + gwgroupid
-  }
-
-
-  var requestPayload = new Object();
-
-  requestPayload.name = modal_body.find(".name").val();
-  requestPayload.calllimit = modal_body.find(".calllimit").val();
-
-  auth = new Object();
-
-  auth.type = modal_body.find(".authtype").val();
-  auth.user = modal_body.find(".auth_username").val();
-  auth.pass = modal_body.find(".auth_password").val();
-  auth.domain = modal_body.find(".auth_domain").val();
-
-  requestPayload.auth = auth;
-
-  requestPayload.strip= modal_body.find(".strip").val();
-  requestPayload.prefix = modal_body.find(".prefix").val();
-
-  notifications = new Object()
-
-  notifications.overmaxcalllimit = modal_body.find(".email_over_max_calls").val();
-  notifications.endpointfailure = modal_body.find(".email_endpoint_failure").val();
-
-  requestPayload.notifications = notifications
-
-  fusionpbx = new Object()
-
-  fusionpbx.enabled = modal_body.find(".fusionpbx_db_enabled").val();
-  fusionpbx.dbhost = modal_body.find(".fusionpbx_db_server").val();
-  fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
-  fusionpbx.dbpass = modal_body.find(".fusionpbx_db_password").val();
-
-  requestPayload.fusionpbx = fusionpbx;
-
-
-  /* Process endpoints */
-
-  endpoints = new Array();
-
-  $("tr.endpoint").each(function (i, row) {
-
-    endpoint = new Object();
-    endpoint.pbxid = $(this).find('td').eq(0).text();
-    endpoint.hostname = $(this).find('td').eq(1).text();
-    endpoint.description = $(this).find('td').eq(2).text();
-    //endpoint.maintmode = $(this).find('td').eq(3).text();
-
-    endpoints.push(endpoint);
-  });
-
-   requestPayload.endpoints=endpoints;
 
 
 
-// Put into JSON Message and send over
-
-  $.ajax({
-		type: action,
-		url: url,
-		dataType: "json",
-		contentType: "application/json; charset=utf-8",
-		success: function(msg) {
-			if (msg.status == 200) {
-        // Update the Add Button to say saved
-        var btn=$('#add .modal-footer').find('#addButton');
-        btn.removeClass("btn-primary");
-        btn.addClass("btn-success");
-        btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
-				//Uncheck the Checkbox
-					reloadkamrequired();
-          $('#endpointgroups').DataTable().ajax.reload();
-			}
-			else {
-        console.log("error during endpointgroup update");
-
-			}
-
-		},
-		data: JSON.stringify(requestPayload)
-  })
-}
-
-
-function updateEndpointGroup () {
-
-
-
-  addEndpointGroup("PUT");
-
-
-}
 
 
 function disableMaintenanceMode() {
