@@ -215,27 +215,7 @@ $('#open-CarrierAdd').click(function() {
   modal.css('z-index','1070');
 });
 
-$('#open-PbxAdd').click(function() {
-  /** Clear out the modal */
-  var modal_body = $('#add .modal-body');
-  modal_body.find(".gwid").val('');
-  modal_body.find(".name").val('');
-  modal_body.find(".ip_addr").val('');
-  modal_body.find(".strip").val('');
-  modal_body.find(".prefix").val('');
-  modal_body.find(".fusionpbx_db_server").val('');
-  modal_body.find(".fusionpbx_db_username").val('fusionpbx');
-  modal_body.find(".fusionpbx_db_password").val('');
-  modal_body.find(".authtype").val('ip');
-  modal_body.find(".auth_username").val('');
-  modal_body.find(".auth_password").val('');
-  modal_body.find(".auth_domain").val('');
-  modal_body.find(".calllimit").val('');
-  modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
 
-  /* make sure ip_addr not disabled */
-  toggleElemDisabled(modal_body.find('.ip_addr'), false);
-});
 
 
 $('#edit').on('show.bs.modal', function() {
@@ -253,17 +233,20 @@ $('#edit').on('show.bs.modal', function() {
 		dataType: "json",
 		contentType: "application/json; charset=utf-8",
 		success: function(msg) {
-      updateEndpointGroup(msg)
+      displayEndpointGroup(msg)
 		}
   })
 });
 
 // Updates the modal with the values from the endpointgroup API
 
-function updateEndpointGroup(msg)
+function displayEndpointGroup(msg)
 {
+  clearEndpointGroupModal();
+
   var modal_body = $('#edit .modal-body');
   modal_body.find(".name").val(msg.name);
+  modal_body.find(".gwgroupid").val(msg.gwgroupid);
   modal_body.find(".calllimit").val(msg.calllimit);
 
   modal_body.find(".authtype").val(msg.auth.type);
@@ -288,7 +271,7 @@ function updateEndpointGroup(msg)
     var body = $('#endpoint-tablebody');
 
     for (endpoint in msg.endpoints) {
-      row = '<tr class="endpoint"><td name="pbxid"></td>'
+      row = '<tr class="endpoint"><td name="pbxid">' + msg.endpoints[endpoint].pbxid + '</td>'
       row += '<td name="hostname">' + msg.endpoints[endpoint].hostname +'</td>'
       row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>'
       table.append($(row));
@@ -546,13 +529,75 @@ function enableMaintenanceMode() {
 
 }
 
-function addEndpointGroup() {
+$('#open-EndpointGroupsAdd').click(function() {
+
+  clearEndpointGroupModal();
+
+})
+
+
+
+function clearEndpointGroupModal() {
+
+    /** Clear out the modal */
+
+  var modal_body = $('#add .modal-body');
+  modal_body.find(".gwgroupid").val('');
+  modal_body.find(".name").val('');
+  modal_body.find(".ip_addr").val('');
+  modal_body.find(".strip").val('');
+  modal_body.find(".prefix").val('');
+  modal_body.find(".fusionpbx_db_server").val('');
+  modal_body.find(".fusionpbx_db_username").val('fusionpbx');
+  modal_body.find(".fusionpbx_db_password").val('');
+  modal_body.find(".authtype").val('ip');
+  modal_body.find(".auth_username").val('');
+  modal_body.find(".auth_password").val('');
+  modal_body.find(".auth_domain").val('');
+  modal_body.find(".calllimit").val('');
+  modal_body.find(".email_over_max_calls").val('');
+  modal_body.find(".email_endpoint_failure").val('');
+  modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+
+  // Remove Endpont Rows
+  $("tr.endpoint").each(function (i, row) {
+      $(this).remove();
+  })
+
+  // Make the Auth tab the default
+  modal_body.find(".auth-tab").addClass("active");
+
+
+  /* make sure ip_addr not disabled */
+  toggleElemDisabled(modal_body.find('.ip_addr'), false);
+
+}
+
+
+function addEndpointGroup(action) {
+
+  /** Get data from the modal */
+
+
+  // The default action is a POST (creating a new EndpointGroup)
+  if (action == undefined) {
+    action = "POST"
+    selector = "#add"
+    var modal_body = $(selector + ' .modal-body');
+    url = "/api/v1/endpointgroups"
+  }
+
+  if (action == "PUT") {
+      selector = "#edit"
+      // Grab the Gateway Group ID if updating usinga PUT
+      var modal_body = $(selector + ' .modal-body');
+      gwgroupid = modal_body.find(".gwgroupid").val();
+      url = "/api/v1/endpointgroups/" + gwgroupid
+  }
 
 
   var requestPayload = new Object();
 
-  /** Get data from the modal */
-  var modal_body = $('#add .modal-body');
   requestPayload.name = modal_body.find(".name").val();
   requestPayload.calllimit = modal_body.find(".calllimit").val();
 
@@ -607,8 +652,8 @@ function addEndpointGroup() {
 // Put into JSON Message and send over
 
   $.ajax({
-		type: "POST",
-		url: "/api/v1/endpointgroups",
+		type: action,
+		url: url,
 		dataType: "json",
 		contentType: "application/json; charset=utf-8",
 		success: function(msg) {
@@ -631,6 +676,17 @@ function addEndpointGroup() {
 		data: JSON.stringify(requestPayload)
   })
 }
+
+
+function updateEndpointGroup () {
+
+
+
+  addEndpointGroup("PUT");
+
+
+}
+
 
 function disableMaintenanceMode() {
 

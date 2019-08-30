@@ -8,7 +8,7 @@
   </div>
   <div class="row">
   	<div class="btn-group mr-2">
-    		<button id='open-PbxAdd' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal" data-target="#add">
+    		<button id='open-EndpointGroupsAdd' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal" data-target="#add">
       		Add
     		</button>
   	</div>
@@ -58,7 +58,7 @@
 <div class="modal-body">
   <form action="/endpointgroups" method="POST" role="form">
     <input class="gwid" type="hidden" name="gwid">
-    <input class="gwgroup" type="hidden" name="gwgroup">
+    <input class="gwgroupid" type="hidden" name="gwgroupid">
     <div class="form-group">
       <input class="name form-control" type="text" name="name" placeholder="Friendly Name(Optional)"
              autofocus="autofocus">
@@ -75,7 +75,7 @@
     <!-- nav tabs -->
         <div id="endpoint-nav" class="navbar">
           <ul class="nav nav-tabs">
-            <li role="presentation" class="active">
+            <li role="presentation" class="auth-tab active">
               <a href="#auth" name="auth-toggle" data-toggle="tab">Auth</a>
             </li>
             <li role="presentation">
@@ -221,7 +221,7 @@ systemctl restart fail2ban</code></pre>
 
 
     <div class="modal-footer ">
-      <button type="button" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;" onclick='addEndpointGroup()'><span
+      <button type="button" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;" onclick='updateEndpointGroup()'><span
           class="glyphicon glyphicon-ok-sign"></span> Update
       </button>
     </div>
