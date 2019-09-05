@@ -226,87 +226,8 @@ $('#pbxs #open-Delete').click(function() {
 
 // Updates the modal with the values from the endpointgroup API
 
-function displayEndpointGroup(msg)
-{
-  clearEndpointGroupModal();
-
-  var modal_body = $('#edit .modal-body');
-  modal_body.find(".name").val(msg.name);
-  modal_body.find(".gwgroupid").val(msg.gwgroupid);
-  modal_body.find(".calllimit").val(msg.calllimit);
-
-  modal_body.find(".authtype").val(msg.auth.type);
-  modal_body.find(".auth_username").val(msg.auth.user);
-  modal_body.find(".auth_password").val(msg.auth.pass);
-  modal_body.find(".auth_domain").val(msg.auth.domain);
-
-  modal_body.find(".strip").val(msg.strip);
-  modal_body.find(".prefix").val(msg.prefix);
-
-  modal_body.find(".email_over_max_calls").val(msg.notifications.overmaxcalllimit);
-  modal_body.find(".email_endpoint_failure").val(msg.notifications.endpointfailure);
-
-  modal_body.find(".fusionpbx_db_enabled").val(msg.fusionpbx.enabled);
-  modal_body.find(".fusionpbx_db_server").val(msg.fusionpbx.dbhost);
-  modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
-  modal_body.find(".fusionpbx_db_password").val(msg.fusionpbx.dbpass);
-
-  if (msg.endpoints) {
-
-    var table = $('#endpoint-table');
-    var body = $('#endpoint-tablebody');
-
-    for (endpoint in msg.endpoints) {
-      row = '<tr class="endpoint"><td name="pbxid">' + msg.endpoints[endpoint].pbxid + '</td>'
-      row += '<td name="hostname">' + msg.endpoints[endpoint].hostname +'</td>'
-      row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>'
-      table.append($(row));
-    }
-
-    table.data('Tabledit').reload();
-
-  }
-
-  if (msg.fusionpbx.enabled) {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
-  }
-  else {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-  }
 
 
-  if (msg.auth.type == "userpwd") {
-    /* userpwd auth enabled, Set the radio button to true */
-    modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
-  }
-  else {
-    /* ip auth enabled, Set the radio button to true */
-    modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
-  }
-
-
-}
-
-function deleteEndpointGroup() {
-
-  $.ajax({
-		type: "DELETE",
-		url: "/api/v1/endpointgroups/" + gwgroupid,
-		dataType: "json",
-		contentType: "application/json; charset=utf-8",
-		success: function(msg) {
-
-
-        reloadkamrequired();
-		}
-
-  })
-
-
-  $('#delete').modal('hide');
-  $('#edit').modal('hide');
-  $('#endpointgroups').DataTable().ajax.reload();
-}
 
 
 
@@ -359,12 +280,6 @@ $('#domains #open-Delete').click(function() {
   modal_body.find(".domain_name").val(domain_name);
 });
 
-$('#open-CarrierAdd').click(function() {
-  /** Clear out the modal */
-  var modal_body = $('#add .modal-body');
-  modal_body.find("input").val('');
-  modal_body.find('select').prop('selectedIndex', 0);
-});
 
 $('#inboundmapping #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
