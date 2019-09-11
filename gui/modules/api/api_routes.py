@@ -4,7 +4,7 @@ from functools import wraps
 from flask import Blueprint, jsonify
 from flask import Blueprint, session, render_template,jsonify
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
-from sqlalchemy import case, func, exc as sql_exceptions, and_
+from sqlalchemy import case, func, exc as sql_exceptions, and_, not_
 from werkzeug import exceptions as http_exceptions
 from database import loadSession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
@@ -978,6 +978,7 @@ def updateEndpointGroups(gwgroupid):
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
         if calllimit is not None:
             if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update({'limit': calllimit},synchronize_session=False):
+                db.flush()
                 pass
             else:
                 if isinstance(calllimit,str):
@@ -1030,11 +1031,12 @@ def updateEndpointGroups(gwgroupid):
         typeFilter = "%gwgroup:{}%".format(gwgroupid)
         currentEndpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
 
+        IO.loginfo("****Before Endpoints****")
         if "endpoints" in requestPayload:
             gwlist=[]
             for endpoint in requestPayload['endpoints']:
-                # If gwid is empty then this is a new endpoint
-                if endpoint['pbxid'] is None:
+                # pbxid is really the gwid. If gwid is empty then this is a new endpoint
+                if len(endpoint['pbxid']) == 0:
                     hostname = endpoint['hostname'] if 'hostname' in endpoint else None
                     name = endpoint['description'] if 'description' in endpoint else None
                     if hostname is not None and name is not None \
@@ -1050,26 +1052,34 @@ def updateEndpointGroups(gwgroupid):
                 #Check if it exists in the currentEndpoints and update
                 else:
                     for currentEndpoint in currentEndpoints:
-                        if endpoint['pbxid'] == currentEndpoint.gwid:
+                        IO.loginfo("endpoint pbx: {},currentEndpont: {},".format(endpoint['pbxid'],currentEndpoint.gwid))
+                        if int(endpoint['pbxid']) == currentEndpoint.gwid:
+                            IO.loginfo("Match:endpoint pbx: {},currentEndpont: {}".format(endpoint['pbxid'],currentEndpoint.gwid))
                             fields['name'] = endpoint['description']
                             fields['gwgroup'] = gwgroupid
                             description = dictToStrFields(fields)
-                            if currentEndpoints.update({"address": endpoint['hostname'],"description:":description }):
+                            if currentEndpoints.update({"address": endpoint['hostname'],"description":description },synchronize_session=False):
+                                IO.loginfo("adding gateway: {}".format(str(endpoint['pbxid'])))
                                 gwlist.append(str(endpoint['pbxid']))
                                 if authtype == "ip":
-                                    db.query(Address).filter(and_(ip_addr == currentEndpoint.hostname,description.like(typeFilter))).update( \
-                                    {"ip_addr":endpoint['hostname']})
+                                    db.query(Address).filter(and_(ip_addr == currentEndpoint.hostname,Address.description.like(typeFilter))).update( \
+                                            {"ip_addr":endpoint['hostname']},synchronize_session=False)
+
 
             if len(gwlist) > 0:
                 seperator = ","
                 gwlistString = seperator.join(gwlist)
+                IO.loginfo("gwlist: {}".format(gwlistString))
+                #Commit all of the changes that happened
+                db.commit()
                 #Remove any gateways that aren't on the list
-                db.query(Gateways).filter(and_(Gateways.gwid.notin_(gwlistString),Gateways.description.like(typeFilter))).delete()
-                #Update the GatewayGroup with the lists of gateways
+                db.query(Gateways).filter(and_(Gateways.gwid.notin_([gwlistString]),Gateways.description.like(typeFilter))).delete(synchronize_session=False)
 
             if len(gwlist) == 0:
                 db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update( \
                     {"gwlist": ""}, synchronize_session=False)
+                #Remove all gateways for that Endpoint group because the endpoint group is empty
+                db.query(Gateways).filter(Gateways.description.like(typeFilter)).delete(synchronize_session=False)
             else:
                 db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update( \
                     {"gwlist": gwlistString}, synchronize_session=False)
@@ -1385,7 +1395,7 @@ def getGatewayGroupCDRS(gwgroupid=None):
 
         query = "select gwid, created, calltype as direction, dst_username as \
          number,src_ip, dst_domain, duration,sip_call_id \
-         from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid in ({});".format(gwlist)
+         from dr_gateways,cdrs where (cdrs.src_ip = substring_index(dr_gateways.address,':',1) or cdrs.dst_domain = substring_index(dr_gateways.address,':',1)) and gwid in ({});".format(gwlist)
 
         cdrs = db.execute(query)
         rows = []
