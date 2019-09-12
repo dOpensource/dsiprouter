@@ -217,7 +217,7 @@ isInstanceDO() {
 # notes: try to access the GCE metadata URL to determine if this is an Google instance
 isInstanceGCE() {
     curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/; ret=$?
-    if (( $ret != 22 )) && (( $ret != 28 )); then
+    if (( $ret != 6 )) && (( $ret != 22 )) && (( $ret != 28 )); then
         return 0
     fi
     return 1

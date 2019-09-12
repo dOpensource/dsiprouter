@@ -1,11 +1,12 @@
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
 
+DSIP_ID = 1
 DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
-USERNAME = 'admin'
-PASSWORD = 'admin'
+DSIP_USERNAME = 'admin'
+DSIP_PASSWORD = 'admin'
 DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'

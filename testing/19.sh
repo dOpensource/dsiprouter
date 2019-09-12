@@ -12,8 +12,8 @@ cookie_file=/tmp/cookie
 proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
 host=$(getConfigAttrib 'DSIP_HOST' $project_dir/gui/settings.py)
 port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
-username=$(getConfigAttrib 'USERNAME' $project_dir/gui/settings.py)
-password=$(getConfigAttrib 'PASSWORD' $project_dir/gui/settings.py)
+username=$(getConfigAttrib 'DSIP_USERNAME' $project_dir/gui/settings.py)
+password=$(getConfigAttrib 'DSIP_PASSWORD' $project_dir/gui/settings.py)
 inbound_flag=$(getConfigAttrib 'FLT_INBOUND' $project_dir/gui/settings.py)
 # if dsip is bound to all available addresses use localhost
 [ "$host" = "0.0.0.0" ] && host="localhost"
