@@ -11,7 +11,7 @@ cookie_file=/tmp/cookie
 # dynamic settings
 proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
 port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
-password=$(getConfigAttrib 'PASSWORD' $project_dir/gui/settings.py)
+password=$(getConfigAttrib 'DSIP_PASSWORD' $project_dir/gui/settings.py)
 
 # In Accordance With AWS Marketplace Policy:
 # https://docs.aws.amazon.com/marketplace/latest/userguide/product-and-ami-policies.html

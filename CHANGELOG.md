@@ -2,6 +2,121 @@
 
 
 
+### v0523 Fixes
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Wed, 11 Sep 2019 20:03:40 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fixed invalid GCE instance detection
+- fix hardfwd and failfwd always insert issue
+- fix typo in inbound mapping route
+- fix inbound mapping modal update for fwd's
+- fix hardfwd and failfwd matching logic
+- fix inbound mapping edit modal fwd buttons toggle update
+- added prefix mapping htable and db view
+- added dsip_settings db table with a subset of the settings
+- refactor username/password to follow naming convention
+- added new features to install process
+- added sql dump of v0.523+ent to testing sql files
+
+
+---
+
+
+### Added support for dynamically setting up DR gateways and gateway list when an endpont registers
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Wed, 11 Sep 2019 13:31:06 +0000  
+> Author: root (root@dev-siprouter01.ynyybpir3miebggok1eqcyxpaf.gx.internal.cloudapp.net)  
+> Committer: root (root@dev-siprouter01.ynyybpir3miebggok1eqcyxpaf.gx.internal.cloudapp.net)  
+
+
+
+---
+
+
+### Fixed a regression in the Carrier Groups Add Carrier Modal.
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Thu, 5 Sep 2019 07:23:48 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Refactored the Endpoint Groups
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 30 Aug 2019 11:49:12 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### The DSIP_API_TOKEN value will be admin before install
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 30 Aug 2019 07:46:37 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Fixed issues that resulted from the merge
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 30 Aug 2019 07:42:15 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Fixed merge issue
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 30 Aug 2019 03:30:54 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Enhancements - Added CDR's to the GUI and via a RESTFul endpoint - Added the ability to update an endpont group record
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 30 Aug 2019 03:15:15 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
 ###   - update call limit to use gwgroup   - fix hardfwd and failfwd routing logic   - update notification feature to use bearer token   - fix looping bug with failover fwd   - move enpoint groups js to fix conflict   - add insert,update,delete triggers for gw2gwroup table   - update dsip fwding to match on prefix instead of gwgroup   - make gui templates more standardized (description field)   - update inbound mapping to use gwgroups   - add hardfwd and failfwd to inbound mapping   - change templates to show hostname support in drouting   - NOTE: inbound mapping updated but still needs work   - update kam reload in api to match gui   - fix misc issues in api_routes   - add new icons for forwarding   - clear add modals when opening again
 
 > Branches Affected: v0.523+ent  

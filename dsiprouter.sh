@@ -60,10 +60,13 @@ export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 #================== USER_CONFIG_SETTINGS ===================#
 
 # Define some global variables
+DSIP_ID=1
 FLT_CARRIER=8
 FLT_PBX=9
 FLT_OUTBOUND=8000
 FLT_INBOUND=9000
+FLT_LCR_MIN=10000
+FLT_FWD_MIN=20000
 WITH_SSL=0
 export DEBUG=0     # By default debugging is turned off
 export SERVERNAT=0
@@ -540,8 +543,15 @@ function configureKamailio {
     # Install schema for gw2gwgroup
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
 
-    # Install schema for dsip_hardfwd and dsip_failfwd
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql
+    # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
+    sed -e "s|FLT_INBOUND|${FLT_INBOUND}|g" ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
+        mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
+
+    # Install schema for dsip_settings
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE \
+        -e "insert into dsip_settings values(${DSIP_ID},${FLT_CARRIER},${FLT_PBX},${FLT_OUTBOUND},${FLT_INBOUND},${FLT_LCR_MIN},${FLT_FWD_MIN})"
+
 
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
@@ -1148,8 +1158,8 @@ function displayLoginInfo {
     printf '\n'
     printdbg "The username and dynamically generated password are below:"
 
-    pprint "Username: $(getConfigAttrib 'USERNAME' ${DSIP_CONFIG_FILE})"
-    pprint "Password: $(getConfigAttrib 'PASSWORD' ${DSIP_CONFIG_FILE})"
+    pprint "Username: $(getConfigAttrib 'DSIP_USERNAME' ${DSIP_CONFIG_FILE})"
+    pprint "Password: $(getConfigAttrib 'DSIP_PASSWORD' ${DSIP_CONFIG_FILE})"
     pprint "API Token: $(getConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})"
 
     # Tell them how to access the URL
@@ -1173,7 +1183,7 @@ function resetPassword {
     printwarn "Restart dSIPRouter to make the password active!"
 }
 
-# Generate password and set it in the ${DSIP_CONFIG_FILE} PASSWORD field
+# Generate password and set it in the ${DSIP_CONFIG_FILE} DSIP_PASSWORD field
 function generatePassword {
     if (( $AWS_ENABLED == 1)) || (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
         password=$(getInstanceID)
@@ -1181,7 +1191,7 @@ function generatePassword {
         password=$(date +%s | sha256sum | base64 | head -c 16)
     fi
 
-    setConfigAttrib 'PASSWORD' "$password" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PASSWORD' "$password" ${DSIP_CONFIG_FILE} -q
 }
 
 function generateAPIToken {

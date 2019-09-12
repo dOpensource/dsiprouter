@@ -92,10 +92,10 @@ def login():
 
 
         #Get Environment Variables if set
-        settings.USERNAME = os.getenv('DSIP_USER',settings.USERNAME)
-        settings.PASSWORD = os.getenv('DSIP_PASS',settings.PASSWORD)
+        settings.DSIP_USERNAME = os.getenv('DSIP_USER', settings.DSIP_USERNAME)
+        settings.DSIP_PASSWORD = os.getenv('DSIP_PASS', settings.DSIP_PASSWORD)
 
-        if form['password'] == settings.PASSWORD and form['username'] == settings.USERNAME:
+        if form['password'] == settings.DSIP_PASSWORD and form['username'] == settings.DSIP_USERNAME:
             session['logged_in'] = True
             session['username'] = form['username']
         else:
@@ -898,12 +898,12 @@ def addUpdateInboundMapping():
         gwgroupid = form['gwgroupid'] if 'gwgroupid' in form else ''
         prefix = form['prefix'] if 'prefix' in form else ''
         description = 'name:{}'.format(form['rulename']) if 'rulename' in form else ''
-        hardfwd_enabled = form['hardfwd_enabled']
+        hardfwd_enabled = int(form['hardfwd_enabled'])
         hf_ruleid = form['hf_ruleid'] if 'hf_ruleid' in form else ''
         hf_gwgroupid = form['hf_gwgroupid'] if 'hf_gwgroupid' in form else ''
         hf_groupid = form['hf_groupid'] if 'hf_groupid' in form else ''
         hf_fwddid = form['hf_fwddid'] if 'hf_fwddid' in form else ''
-        failfwd_enabled = form['failfwd_enabled']
+        failfwd_enabled = int(form['failfwd_enabled'])
         ff_ruleid = form['ff_ruleid'] if 'ff_ruleid' in form else ''
         ff_gwgroupid = form['ff_gwgroupid'] if 'ff_gwgroupid' in form else ''
         ff_groupid = form['ff_groupid'] if 'ff_groupid' in form else ''
@@ -931,13 +931,13 @@ def addUpdateInboundMapping():
 
                 # Start forwarding routes with a groupid set in settings (default is 20000)
                 if lastfwd is None:
-                    fwdgroupid = settings.FLT_LCR_MIN
+                    fwdgroupid = settings.FLT_FWD_MIN
                 else:
                     fwdgroupid = int(lastfwd.groupid) + 1
 
                 gwlist = '#{}'.format(hf_gwgroupid) if len(hf_gwgroupid) > 0 else ''
 
-                hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward to DID {}'.format(hf_fwddid))
+                hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
                 inserts.append(hfwd)
 
                 hfwd_htable = dSIPHardFwd(prefix, hf_fwddid, fwdgroupid)
@@ -954,13 +954,13 @@ def addUpdateInboundMapping():
 
                     # Start forwarding routes with a groupid set in settings (default is 20000)
                     if lastfwd is None:
-                        fwdgroupid = settings.FLT_LCR_MIN
+                        fwdgroupid = settings.FLT_FWD_MIN
                     else:
                         fwdgroupid = int(lastfwd.groupid) + 1
 
                     gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
 
-                ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward to DID {}'.format(ff_fwddid))
+                ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
                 inserts.append(ffwd)
 
                 ffwd_htable = dSIPFailFwd(prefix, ff_fwddid, fwdgroupid)
@@ -975,13 +975,13 @@ def addUpdateInboundMapping():
 
             if hardfwd_enabled:
                 db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid).update(
-                    {'prefix': '', 'gwlist': '#{}'.format(hf_gwgroupid), 'description': 'name:Hard Forward to DID {}'.format(hf_fwddid)}, synchronize_session=False)
+                    {'prefix': '', 'gwlist': '#{}'.format(hf_gwgroupid), 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}, synchronize_session=False)
                 db.query(dSIPHardFwd).filter(dSIPHardFwd.prefix == prefix).update(
                     {'did': hf_fwddid, 'dr_groupid': hf_groupid}, synchronize_session=False)
 
             if failfwd_enabled:
                 db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid).update(
-                    {'prefix': '', 'gwlist': '#{}'.format(ff_gwgroupid), 'description': 'name:Hard Forward to DID {}'.format(ff_fwddid)}, synchronize_session=False)
+                    {'prefix': '', 'gwlist': '#{}'.format(ff_gwgroupid), 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
                 db.query(dSIPFailFwd).filter(dSIPFailFwd.prefix == prefix).update(
                     {'did': ff_fwddid, 'dr_groupid': ff_groupid}, synchronize_session=False)
 
