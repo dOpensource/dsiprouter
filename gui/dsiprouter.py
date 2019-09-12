@@ -828,10 +828,10 @@ def displayInboundMapping():
         res = db.execute("""select * from (
 select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {}
 ) as t1 left join (
-select r.ruleid as hf_ruleid, r.groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid, hf.prefix as hf_hardfwd_prefix from dsip_hardfwd as hf left join dr_rules as r on hf.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
-) as t2 on t1.prefix = t2.hf_hardfwd_prefix left join (
-select r.ruleid as ff_ruleid, r.groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid, ff.prefix as ff_failfwd_prefix from dsip_failfwd as ff left join dr_rules as r on ff.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
-) as t3 on t1.prefix = t3.ff_failfwd_prefix""".format(settings.FLT_INBOUND))
+select hf.dr_ruleid as hf_ruleid, r.groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid from dsip_hardfwd as hf left join dr_rules as r on hf.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+) as t2 on t1.ruleid = t2.hf_ruleid left join (
+select ff.dr_ruleid as ff_ruleid, r.groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on ff.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+) as t3 on t1.ruleid = t3.ff_ruleid""".format(settings.FLT_INBOUND))
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
         gwgroups = db.query(GatewayGroups).filter(
