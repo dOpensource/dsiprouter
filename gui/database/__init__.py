@@ -272,8 +272,8 @@ class dSIPHardFwd(object):
     Schema for dsip_hardfwd table\n
     """
 
-    def __init__(self, prefix, did, dr_groupid):
-        self.prefix = prefix
+    def __init__(self, dr_ruleid, did, dr_groupid):
+        self.dr_ruleid = dr_ruleid
         self.did = did
         self.dr_groupid = dr_groupid
 
@@ -284,8 +284,8 @@ class dSIPFailFwd(object):
     Schema for dsip_failfwd table\n
     """
 
-    def __init__(self, prefix, did, dr_groupid):
-        self.prefix = prefix
+    def __init__(self, dr_ruleid, did, dr_groupid):
+        self.dr_ruleid = dr_ruleid
         self.did = did
         self.dr_groupid = dr_groupid
 

@@ -174,6 +174,7 @@ function clearEndpointGroupModal() {
   /* make sure ip_addr not disabled */
   toggleElemDisabled(modal_body.find('.ip_addr'), false);
 
+
 }
 
 function displayEndpointGroup(msg)
@@ -200,6 +201,15 @@ function displayEndpointGroup(msg)
   modal_body.find(".fusionpbx_db_server").val(msg.fusionpbx.dbhost);
   modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
   modal_body.find(".fusionpbx_db_password").val(msg.fusionpbx.dbpass);
+
+	
+  /* reset the save button*/
+  updatebtn = $('#edit .modal-footer').find("#updateButton")
+  updatebtn.removeClass("btn-success");
+  updatebtn.addClass("btn-warning");
+  updatebtn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
+ 
+
 
   if (msg.endpoints) {
 

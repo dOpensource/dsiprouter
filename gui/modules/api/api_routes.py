@@ -1014,7 +1014,9 @@ def updateEndpointGroups(gwgroupid):
                     if db.query(Subscribers).filter(Subscribers.username == authuser,Subscribers.domain == authdomain).scalar():
                         raise SubscriberUsernameTaken
                     else: # Update the Subscriber Info
-                        currentSubscriberInfo.update({"username":authuser,"password":authpass,"domain":authdomain})
+                        currentSubscriberInfo.username=authuser
+                        currentSubscriberInfo.password=authpass
+                        currentSubscriberInfo.domain=authdomain
             else: #Create a new Suscriber entry
                    Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
                    db.add(Subscriber)

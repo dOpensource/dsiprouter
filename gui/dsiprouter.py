@@ -924,10 +924,13 @@ def addUpdateInboundMapping():
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             inserts.append(IMap)
 
+            # find last rule in dr_rules
+            lastrule = db.query(InboundMapping).order_by(InboundMapping.ruleid.desc()).first()
+            ruleid = int(lastrule.ruleid) + 1 if lastrule is not None else 1
+
             if hardfwd_enabled:
                 # find last forwarding rule
                 lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
-                db.commit()
 
                 # Start forwarding routes with a groupid set in settings (default is 20000)
                 if lastfwd is None:
@@ -940,7 +943,7 @@ def addUpdateInboundMapping():
                 hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
                 inserts.append(hfwd)
 
-                hfwd_htable = dSIPHardFwd(prefix, hf_fwddid, fwdgroupid)
+                hfwd_htable = dSIPHardFwd(ruleid, hf_fwddid, fwdgroupid)
                 inserts.append(hfwd_htable)
 
             if failfwd_enabled:
@@ -950,7 +953,6 @@ def addUpdateInboundMapping():
                 else:
                     # find last forwarding rule
                     lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
-                    db.commit()
 
                     # Start forwarding routes with a groupid set in settings (default is 20000)
                     if lastfwd is None:
@@ -958,32 +960,99 @@ def addUpdateInboundMapping():
                     else:
                         fwdgroupid = int(lastfwd.groupid) + 1
 
-                    gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
+                gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
 
                 ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
                 inserts.append(ffwd)
 
-                ffwd_htable = dSIPFailFwd(prefix, ff_fwddid, fwdgroupid)
+                ffwd_htable = dSIPFailFwd(ruleid, ff_fwddid, fwdgroupid)
                 inserts.append(ffwd_htable)
 
             db.add_all(inserts)
 
         # Updating
         else:
+            inserts = []
+
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
 
+            hardfwd_exists = db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid).scalar()
+
             if hardfwd_enabled:
-                db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid).update(
-                    {'prefix': '', 'gwlist': '#{}'.format(hf_gwgroupid), 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}, synchronize_session=False)
-                db.query(dSIPHardFwd).filter(dSIPHardFwd.prefix == prefix).update(
-                    {'did': hf_fwddid, 'dr_groupid': hf_groupid}, synchronize_session=False)
+                gwlist = '#{}'.format(hf_gwgroupid) if len(hf_gwgroupid) > 0 else ''
+
+                # create fwd rule if it does not exist
+                if not hardfwd_exists:
+                    # find last forwarding rule
+                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+
+                    # Start forwarding routes with a groupid set in settings (default is 20000)
+                    if lastfwd is None:
+                        fwdgroupid = settings.FLT_FWD_MIN
+                    else:
+                        fwdgroupid = int(lastfwd.groupid) + 1
+
+                    hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
+                    inserts.append(hfwd)
+
+                    hfwd_htable = dSIPHardFwd(ruleid, hf_fwddid, fwdgroupid)
+                    inserts.append(hfwd_htable)
+                # update existing fwd rule
+                else:
+                    db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid).update(
+                        {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}, synchronize_session=False)
+                    db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).update(
+                        {'did': hf_fwddid, 'dr_groupid': hf_groupid}, synchronize_session=False)
+            else:
+                # delete existing fwd rule
+                if hardfwd_exists:
+                    hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
+                    hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid)
+                    hf_rule.delete(synchronize_session=False)
+                    hf_htable.delete(synchronize_session=False)
+
+            failfwd_exists = db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid).scalar()
 
             if failfwd_enabled:
-                db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid).update(
-                    {'prefix': '', 'gwlist': '#{}'.format(ff_gwgroupid), 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
-                db.query(dSIPFailFwd).filter(dSIPFailFwd.prefix == prefix).update(
-                    {'did': ff_fwddid, 'dr_groupid': ff_groupid}, synchronize_session=False)
+                gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
+
+                # create fwd rule if it does not exist
+                if not failfwd_exists:
+                    # skip lookup if we just found the groupid
+                    if fwdgroupid is not None:
+                        fwdgroupid += 1
+                    else:
+                        # find last forwarding rule
+                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+
+                        # Start forwarding routes with a groupid set in settings (default is 20000)
+                        if lastfwd is None:
+                            fwdgroupid = settings.FLT_FWD_MIN
+                        else:
+                            fwdgroupid = int(lastfwd.groupid) + 1
+
+                    ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
+                    inserts.append(ffwd)
+
+                    ffwd_htable = dSIPFailFwd(ruleid, ff_fwddid, fwdgroupid)
+                    inserts.append(ffwd_htable)
+                # update existing fwd rule
+                else:
+                    db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid).update(
+                        {'prefix': '', 'gwlist': gwlist, 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
+                    db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid).update(
+                        {'did': ff_fwddid, 'dr_groupid': ff_groupid}, synchronize_session=False)
+            else:
+                # delete existing fwd rule
+                if failfwd_exists:
+                    ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+                    ff_htable = db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid)
+                    ff_rule.delete(synchronize_session=False)
+                    ff_htable.delete(synchronize_session=False)
+
+            if len(inserts) > 0:
+                db.add_all(inserts)
 
         db.commit()
         globals.reload_required = True
@@ -1030,22 +1099,23 @@ def deleteInboundMapping():
         form = stripDictVals(request.form.to_dict())
 
         ruleid = form['ruleid']
-        prefix = form['prefix']
         hf_ruleid = form['hf_ruleid']
+        hf_groupid = form['hf_groupid']
         ff_ruleid = form['ff_ruleid']
+        ff_groupid = form['ff_groupid']
 
         im_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
         im_rule.delete(synchronize_session=False)
 
         if len(hf_ruleid) > 0:
-            hf_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid)
-            hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.prefix == prefix)
+            hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
+            hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid)
             hf_rule.delete(synchronize_session=False)
             hf_htable.delete(synchronize_session=False)
 
         if len(ff_ruleid) > 0:
-            ff_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid)
-            ff_htable = db.query(dSIPFailFwd).filter(dSIPFailFwd.prefix == prefix)
+            ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+            ff_htable = db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid)
             ff_rule.delete(synchronize_session=False)
             ff_htable.delete(synchronize_session=False)
 
@@ -1562,6 +1632,10 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'gw2gwgroup'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_hardfwd'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_failfwd'])
+        return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_prefixmap'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
         return_code += subprocess.call(
             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])

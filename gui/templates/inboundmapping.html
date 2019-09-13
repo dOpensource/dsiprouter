@@ -103,8 +103,6 @@
       <input class="ff_ruleid" type="hidden" name="ff_ruleid">
       <input class="hf_groupid" type="hidden" name="hf_groupid">
       <input class="ff_groupid" type="hidden" name="ff_groupid">
-      <input class="hf_fwddid" type="hidden" name="hf_fwddid">
-      <input class="ff_fwddid" type="hidden" name="ff_fwddid">
 
       <div class="form-group">
         <input class="form-control rulename" type="text" name="rulename" placeholder="Friendly Name (Optional)"
@@ -401,9 +399,10 @@
   <div class="modal-body">
     <form action="/inboundmappingdelete" method="POST" role="form">
       <input class="ruleid" type="hidden" name="ruleid">
-      <input class="prefix" type="hidden" name="prefix">
       <input class="hf_ruleid" type="hidden" name="hf_ruleid">
       <input class="ff_ruleid" type="hidden" name="ff_ruleid">
+      <input class="hf_groupid" type="hidden" name="hf_groupid">
+      <input class="ff_groupid" type="hidden" name="ff_groupid">
 
       <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
         to delete this Record?
@@ -436,8 +435,6 @@
       <input class="ff_ruleid" type="hidden" name="ff_ruleid">
       <input class="hf_groupid" type="hidden" name="hf_groupid">
       <input class="ff_groupid" type="hidden" name="ff_groupid">
-      <input class="hf_fwddid" type="hidden" name="hf_fwddid">
-      <input class="ff_fwddid" type="hidden" name="ff_fwddid">
 
       <div class="form-group">
         <input class="form-control rulename" type="text" name="rulename" placeholder="Friendly Name (Optional)"

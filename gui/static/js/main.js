@@ -364,16 +364,18 @@ $('#inboundmapping #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('inboundmapping');
   var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
   var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+  var hf_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
   var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
+  var ff_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
 
   /* update modal fields */
   var modal_body = $('#delete .modal-body');
   modal_body.find("input.ruleid").val(ruleid);
-  modal_body.find("input.prefix").val(prefix);
   modal_body.find("input.hf_ruleid").val(hf_ruleid);
+  modal_body.find("input.hf_groupid").val(hf_groupid);
   modal_body.find("input.ff_ruleid").val(ff_ruleid);
+  modal_body.find("input.ff_groupid").val(ff_groupid);
 });
 
 $('#outboundmapping #open-Update').click(function() {
