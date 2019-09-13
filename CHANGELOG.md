@@ -2,6 +2,63 @@
 
 
 
+### Forwarding fixes and Misc Updates
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 13 Sep 2019 11:35:41 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix forwarding dr_groupid update
+- allow fwding rule create/delete on update
+- fix outbound route dr_groupid filtering
+- update kamreload cmd with reload for new htables
+- update harfwd and failfwd dr_rule matching on dr_groupid
+- clean up kam config
+- reset defaults to prod values
+
+
+---
+
+
+### Fixes - Fixed the Endpoint Group Modal - Fixed issues with the Call Limit not working with User/Pass Registration - Fixed issues with the API
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Fri, 13 Sep 2019 02:17:08 +0000  
+> Author: root (root@dev-siprouter01.ynyybpir3miebggok1eqcyxpaf.gx.internal.cloudapp.net)  
+> Committer: root (root@dev-siprouter01.ynyybpir3miebggok1eqcyxpaf.gx.internal.cloudapp.net)  
+
+
+
+---
+
+
+### v0523 Fixes
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Wed, 11 Sep 2019 20:03:40 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fixed invalid GCE instance detection
+- fix hardfwd and failfwd always insert issue
+- fix typo in inbound mapping route
+- fix inbound mapping modal update for fwd's
+- fix hardfwd and failfwd matching logic
+- fix inbound mapping edit modal fwd buttons toggle update
+- added prefix mapping htable and db view
+- added dsip_settings db table with a subset of the settings
+- refactor username/password to follow naming convention
+- added new features to install process
+- added sql dump of v0.523+ent to testing sql files
+
+
+---
+
+
 ### v0523 Fixes
 
 > Branches Affected: v0.523+ent  

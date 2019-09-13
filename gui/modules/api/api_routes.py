@@ -122,8 +122,9 @@ def reloadKamailio():
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["calllimit"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gw2gwgroup"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gwgroup_hardfwd"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gwgroup_failfwd"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_hardfwd"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
             {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1}
         ]
 

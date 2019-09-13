@@ -913,6 +913,8 @@ def addUpdateInboundMapping():
         gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
         fwdgroupid = None
 
+        # TODO: seperate redundant code into functions
+
         # Adding
         if not ruleid:
             inserts = []
@@ -1348,11 +1350,13 @@ def displayOutboundRoutes():
             debugEndpoint()
 
         rows = db.query(OutboundRoutes).filter(
-            (OutboundRoutes.groupid == settings.FLT_OUTBOUND) | (OutboundRoutes.groupid >= 10000)).outerjoin(
+            (OutboundRoutes.groupid == settings.FLT_OUTBOUND) |
+            ((OutboundRoutes.groupid >= settings.FLT_LCR_MIN) &
+            (OutboundRoutes.groupid < settings.FLT_FWD_MIN))).outerjoin(
             dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
-            dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid, OutboundRoutes.prefix,
-            OutboundRoutes.routeid, OutboundRoutes.gwlist, OutboundRoutes.timerec, OutboundRoutes.priority,
-            OutboundRoutes.description)
+            dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid,
+            OutboundRoutes.prefix, OutboundRoutes.routeid, OutboundRoutes.gwlist,
+            OutboundRoutes.timerec, OutboundRoutes.priority, OutboundRoutes.description)
 
         teleblock = {}
         teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -1446,12 +1450,13 @@ def addUpateOutboundRoutes():
                 print("from_prefix: {}".format(from_prefix))
 
                 # Grab the lastest groupid and increment
-                mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= 10000).order_by(dSIPLCR.dr_groupid.desc()).first()
+                mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
+                    (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
                 db.commit()
 
-                # Start LCR routes with a groupid of 10000
+                # Start LCR routes with a groupid in settings (default is 10000)
                 if mlcr is None:
-                    groupid = 10000
+                    groupid = settings.FLT_LCR_MIN
                 else:
                     groupid = int(mlcr.dr_groupid) + 1
 
@@ -1496,8 +1501,8 @@ def addUpateOutboundRoutes():
 
                 elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
                     # Create a new groupid
-                    mlcr = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN).order_by(
-                        dSIPLCR.dr_groupid.desc()).first()
+                    mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
+                        (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
                     db.commit()
 
                     # Start LCR routes with a groupid set in settings (default is 10000)
@@ -1519,7 +1524,8 @@ def addUpateOutboundRoutes():
                         'routeid': routeid, 'gwlist': gwlist, 'description': description
                     })
 
-                elif (int(groupid) >= 10000):  # Update existing pattern
+                # Update existing pattern
+                elif (int(groupid) >= settings.FLT_LCR_MIN) and (int(groupid) < settings.FLT_FWD_MIN):
                     db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == groupid).update({
                         'pattern': pattern, 'from_prefix': from_prefix})
 
