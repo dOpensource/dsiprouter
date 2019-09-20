@@ -11,6 +11,7 @@ from database import loadSession, Address, dSIPNotification, Domain, DomainAttrs
     dSIPCallLimits, InboundMapping
 from shared import *
 from util.notifications import sendEmail
+from util.security import AES_CBC
 from file_handling import isValidFile
 import settings, globals
 
@@ -32,7 +33,17 @@ class APIToken:
 
     def isValid(self):
         if self.token:
-            return settings.DSIP_API_TOKEN == self.token
+            # Get Environment Variables if in debug mode
+            if settings.DEBUG:
+                settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
+
+            # need to decrypt token
+            if isinstance(settings.DSIP_API_TOKEN, bytes):
+                tokencheck = AES_CBC().decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+            else:
+                tokencheck = settings.DSIP_API_TOKEN
+
+            return tokencheck == self.token
         else:
             return False
 

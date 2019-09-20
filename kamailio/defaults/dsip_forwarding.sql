@@ -35,5 +35,5 @@ DROP VIEW IF EXISTS dsip_prefix_mapping;
 CREATE VIEW dsip_prefix_mapping AS
   SELECT prefix, CAST(ruleid AS char(64)) AS ruleid, '0' AS key_type, '0' AS value_type
   FROM dr_rules
-  WHERE groupid = (SELECT FLT_INBOUND FROM dsip_settings LIMIT 1);
+  WHERE groupid = (SELECT FLT_INBOUND FROM dsip_settings WHERE DSIP_ID = DSIP_ID_REPLACE LIMIT 1);
 /*!40101 SET character_set_client = @saved_cs_client */;

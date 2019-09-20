@@ -14,11 +14,12 @@ from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, 
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
-    dSIPMaintModes, dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
+    dSIPMaintModes, dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
 from modules import flowroute
 from modules.domain.domain_routes import domains
-import globals
 from modules.api.api_routes import api
+from util.security import hashCreds
+import globals
 import settings
 
 # global variables
@@ -90,14 +91,21 @@ def login():
 
         form = stripDictVals(request.form.to_dict())
 
+        # Get Environment Variables if in debug mode
+        if settings.DEBUG:
+            settings.DSIP_USERNAME = os.getenv('DSIP_USERNAME', settings.DSIP_USERNAME)
+            settings.DSIP_PASSWORD = os.getenv('DSIP_PASSWORD', settings.DSIP_PASSWORD)
 
-        #Get Environment Variables if set
-        settings.DSIP_USERNAME = os.getenv('DSIP_USER', settings.DSIP_USERNAME)
-        settings.DSIP_PASSWORD = os.getenv('DSIP_PASS', settings.DSIP_PASSWORD)
+        if form['username'] == settings.DSIP_USERNAME:
+            if isinstance(settings.DSIP_PASSWORD, bytes):
+                # hash password and compare with stored password
+                pwcheck = hashCreds(form['password'], settings.DSIP_SALT)[0]
+            else:
+                pwcheck = form['password']
 
-        if form['password'] == settings.DSIP_PASSWORD and form['username'] == settings.DSIP_USERNAME:
-            session['logged_in'] = True
-            session['username'] = form['username']
+            if pwcheck == settings.DSIP_PASSWORD:
+                session['logged_in'] = True
+                session['username'] = form['username']
         else:
             flash('wrong username or password!')
             return render_template('index.html', version=settings.VERSION), 403
@@ -1742,8 +1750,6 @@ class CustomServer(Server):
             self.ssl_crt = settings.DSIP_SSL_CERT
             self.ssl_key = settings.DSIP_SSL_KEY
 
-        #Enable debugging - check the environment variable first
-        settings.DEBUG = os.getenv('DSIP_DEBUG',settings.DEBUG)
         if settings.DEBUG == True:
             self.use_debugger = True
             self.use_reloader = True
@@ -1805,16 +1811,29 @@ def initApp(flask_app):
 
     # Dynamically update settings
     fields = {}
-    fields['TELEBLOCK_GW_ENABLED'] = 0
-    fields['TELEBLOCK_GW_IP'] = '62.34.24.22'
+
+    # sync settings from settings.py
+    if settings.LOAD_SETTINGS_FROM == 'file':
+        try:
+            updateDsipSettingsTable(db)
+        except sql_exceptions.SQLAlchemyError as ex:
+            debugException(ex)
+            IO.printerr('Could Not Update dsip_settings Database Table')
+    # sync settings from dsip_settings table
+    elif settings.LOAD_SETTINGS_FROM == 'db':
+        try:
+            fields = dict(db.execute('select * from dsip_settings').first().items())
+
+        except sql_exceptions.SQLAlchemyError as ex:
+            debugException(ex)
+            IO.printerr('Could Not Access dsip_settings Database Table')
+
+    # always update ip's
     fields['INTERNAL_IP_ADDR'] = getInternalIP()
     fields['INTERNAL_IP_NET'] = "{}.*".format(getInternalIP().rsplit(".", 1)[0])
     fields['EXTERNAL_IP_ADDR'] = getExternalIP()
     updateConfig(settings, fields)
     reload(settings)
-
-    # Enable debugging - check the environment variable first
-    settings.DEBUG = os.getenv('DSIP_DEBUG',settings.DEBUG)
 
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"

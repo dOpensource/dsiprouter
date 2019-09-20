@@ -4,6 +4,7 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from util.decorator import async
+from util.security import AES_CBC
 from shared import debugException
 
 @async
@@ -52,6 +53,17 @@ def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAU
                 msg_attachments.add_header('Content-Disposition', 'attachment', filename=os.path.basename(file))
                 msg_root.attach(msg_attachments)
 
+        # check environ vars if in debug mode
+        if settings.DEBUG:
+            settings.MAIL_USERNAME = os.getenv('DSIP_USER', settings.MAIL_USERNAME)
+            settings.MAIL_PASSWORD = os.getenv('DSIP_PASS', settings.MAIL_PASSWORD)
+
+        # need to decrypt password
+        if isinstance(settings.MAIL_PASSWORD, bytes):
+            mailpass = AES_CBC().decrypt(settings.MAIL_PASSWORD).decode('utf-8')
+        else:
+            mailpass = settings.MAIL_PASSWORD
+
         # print("sending email")
         with smtplib.SMTP(settings.MAIL_SERVER, settings.MAIL_PORT) as server:
             server.connect(settings.MAIL_SERVER, settings.MAIL_PORT)
@@ -59,7 +71,7 @@ def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAU
             if settings.MAIL_USE_TLS:
                 server.starttls()
                 server.ehlo()
-            server.login(settings.MAIL_USERNAME, settings.MAIL_PASSWORD)
+            server.login(settings.MAIL_USERNAME, mailpass)
             msg_root_str = msg_root.as_string()
             server.sendmail(sender, recipients, msg_root_str)
             server.quit()

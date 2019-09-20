@@ -13,14 +13,16 @@ proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
 host=$(getConfigAttrib 'DSIP_HOST' $project_dir/gui/settings.py)
 port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
 username=$(getConfigAttrib 'DSIP_USERNAME' $project_dir/gui/settings.py)
-password=$(getConfigAttrib 'DSIP_PASSWORD' $project_dir/gui/settings.py)
+export DSIP_PASSWORD="temp"
+export DSIP_API_TOKEN="temp"
+OLD_API_TOKEN=$(kamcmd cfg.get server api_token)
 inbound_flag=$(getConfigAttrib 'FLT_INBOUND' $project_dir/gui/settings.py)
 # if dsip is bound to all available addresses use localhost
 [ "$host" = "0.0.0.0" ] && host="localhost"
 
 # attempt to login to dsiprouter
 base_url="${proto}://${host}:${port}"
-payload="username=$(uriEncode ${username})&password=$(uriEncode ${password})&nextpage="
+payload="username=$(uriEncode ${username})&DSIP_PASSWORD=$(uriEncode ${DSIP_PASSWORD})&nextpage="
 
 declare -a flat_headers=()
 declare -A headers=(
@@ -40,6 +42,9 @@ declare -A headers=(
 for key in ${!headers[@]}; do flat_headers+=( "$key: ${headers[$key]}" ); done
 
 validate() {
+    # update kams api token for testing
+    kamcmd cfg.sets server api_token $DSIP_API_TOKEN
+
     # attempt to auth and store cookie, we will get a 200 OK on good auth
     status=$(curl -s -L --connect-timeout 3 -c "$cookie_file" -w "%{http_code}" -d "$payload" "${flat_headers[@]/#/-H}" "$base_url/login" -o /dev/null)
     [ ${status:-400} -ne 200 ] && return 1
@@ -48,9 +53,8 @@ validate() {
     status=$(curl -X GET -s --connect-timeout 3 -b "$cookie_file" -w "%{http_code}" "${flat_headers[@]/#/-H}" "$base_url/api/v1/kamailio/stats" -o /dev/null)
     [ ${status:-400} -ne 200 ] && return 1
 
-    # get API Token/Key and try again
-    token=$(getConfigAttrib 'DSIP_API_TOKEN' $project_dir/gui/settings.py) 
-    status=$(curl -X GET -s --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/kamailio/stats" -o /dev/null)
+    # try again with API token
+    status=$(curl -X GET -s --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/kamailio/stats" -o /dev/null)
     [ ${status:-400} -ne 200 ] && return 1
 
     # create entries for testing /api/v1/mapping endpoint
@@ -67,71 +71,71 @@ validate() {
     # GET /api/v1/inboundmapping
     # ==========================
     # valid requests
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=1000000" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did=1000000" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=abcdef" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did=abcdef" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=1000000" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did=1000000" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=abcdef" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did=abcdef" -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
+    [ $(curl -s -X GET --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
 
     # ===========================
     # POST /api/v1/inboundmapping
     # ===========================
     # valid requests
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "'"${prefix2}"'", "servers": ["66","67"], "notes": "'"${prefix2}"' DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "'"${prefix3}"'","servers": ["66","67"]}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "", "servers": ["66"], "notes": "Default DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"servers": ["66","67"], "notes": "'"${prefix2}"' DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "0", "servers": ["66","67","68","69","70","71","71"], "notes": "0 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "00", "servers": ["",""], "notes": "00 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "000", "servers": ["abc","efg"], "notes": "000 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "0000", "servers": [], "notes": "0000 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X POST --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"did": "00000", "notes": "00000 DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
 
     # ==========================
     # PUT /api/v1/inboundmapping
     # ==========================
     # valid requests
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" \
         -d '{"did": "01234", "notes": "01234 DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" \
         -d '{"servers": ["67"]}' -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=10000000" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=10000000" \
         -d '{"did": "01234", "notes": "01234 DID Mapping"}' -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?doesntexist=123" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?doesntexist=123" \
         -d '{"notes": "New DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping" \
         -d '{"notes": "Newer DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" \
         -d '{}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=01234" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=01234" \
         -d '{"doesntexist": "2"}' -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=01234" \
+    [ $(curl -s -X PUT --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" --connect-timeout 3 -H "Content-Type: application/json" "$base_url/api/v1/inboundmapping?did=01234" \
         -d '{"doesntexist": "2", "notes": "New DID Mapping"}' -o /dev/null) -eq 200 ] && return 1
 
     # =============================
     # DELETE /api/v1/inboundmapping
     # =============================
     # valid requests
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?ruleid=${ruleid0}" -o /dev/null) -ne 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?did='"${prefix1}"'" -o /dev/null) -ne 200 ] && return 1
     # invalid requests
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
-    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${token}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -eq 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping?doesntexist=123" -o /dev/null) -eq 200 ] && return 1
+    [ $(curl -s -X DELETE --connect-timeout 3 -H "Authorization: Bearer ${DSIP_API_TOKEN}" -w "%{http_code}" "$base_url/api/v1/inboundmapping" -o /dev/null) -eq 200 ] && return 1
 
 
     # if we made it this far all checks passed
@@ -142,6 +146,8 @@ validate() {
 cleanupHandler() {
     rm -f $cookie_file
     mysql kamailio -e "delete from dr_rules where groupid='$inbound_flag';"
+    kamcmd cfg.sets server api_token $OLD_API_TOKEN
+    unset DSIP_PASSWORD DSIP_API_TOKEN
 }
 
 trap cleanupHandler EXIT

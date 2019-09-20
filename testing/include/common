@@ -90,21 +90,25 @@ getConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    local VALUE=$(grep -oP '^(?!#)'${NAME}'[ \t]*=[ \t]*\K(\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
-    printf "$VALUE" | sed -r -e "s/^'+(.+?)'+$/\1/g" -e 's/^"+(.+?)"+$/\1/g'
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    printf '%s' "${VALUE}" | perl -0777 -pe 's|^b?["'"'"']+(.+?)["'"'"']+$|\1|g'
 }
 
 # $1 == attribute name
 # $2 == attribute value
 # $3 == python config file
-# $4 == whether to 'quote' value (use for strings)
+# $4 == -q (quote string) | -qb (quote byte string)
 setConfigAttrib() {
     local NAME="$1"
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
     if (( $# >= 4 )); then
-        VALUE="'${VALUE}'"
+        if [[ "$4" == "-q" ]]; then
+            VALUE="'${VALUE}'"
+        elif [[ "$4" == "-qb" ]]; then
+            VALUE="b'${VALUE}'"
+        fi
     fi
     sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
 }

@@ -4,8 +4,10 @@ Flask_Script
 mysqlclient
 psycopg2
 psycopg2_binary
+pycrypto
 PyMySQL
-mysqlclient
+pyspark
+pytz
 requests
 SQLAlchemy
 Werkzeug

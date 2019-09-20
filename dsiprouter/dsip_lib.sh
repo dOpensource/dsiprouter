@@ -19,6 +19,7 @@ ANSI_CYAN="${ESC_SEQ}1;36m"
 
 # Constants for imported functions
 DSIP_INIT_FILE="/etc/systemd/system/dsip-init.service"
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 
 ##############################################
 # Printing functions and String Manipulation #
@@ -89,14 +90,18 @@ setErrorTracing() {
 # $1 == attribute name
 # $2 == attribute value
 # $3 == python config file
-# $4 == whether to 'quote' value (use for strings)
+# $4 == -q (quote string) | -qb (quote byte string)
 setConfigAttrib() {
     local NAME="$1"
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
     if (( $# >= 4 )); then
-        VALUE="'${VALUE}'"
+        if [[ "$4" == "-q" ]]; then
+            VALUE="'${VALUE}'"
+        elif [[ "$4" == "-qb" ]]; then
+            VALUE="b'${VALUE}'"
+        fi
     fi
     sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
@@ -108,8 +113,26 @@ getConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|""".*"""[ \t]*$|'"'''.*'''"'[ \v]*$|".*"[ \t]*$|'"'.*'"')' ${CONFIG_FILE})
-    printf "$VALUE" | sed -r 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    printf '%s' "${VALUE}" | perl -0777 -pe 's|^b?["'"'"']+(.+?)["'"'"']+$|\1|g'
+}
+
+# $1 == attribute name
+# returns: attribute value decrypted
+# notes: if value is not encrypted the value will be returned
+decryptConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
+    local PYTHON=${PYTHON_CMD:-python3}
+    local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "${CONFIG_FILE}")}
+
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    # if value is not a byte literal it isn't encrypted
+    if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
+        printf '%s' "${VALUE}" | perl -0777 -pe 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
+    else
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CBC; print(AES_CBC().decrypt(settings.${NAME}).decode('utf-8'), end='')"
+    fi
 }
 
 # $1 == attribute name
@@ -118,7 +141,7 @@ enableKamailioConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    sed -i -r -e "s/#+(!(define|trydef|redefine)[[:space:]]? $NAME)/#\1/g" ${CONFIG_FILE}
+    sed -i -r -e "s~#+(!(define|trydef|redefine)[[:space:]]? $NAME)~#\1~g" ${CONFIG_FILE}
 }
 
 # $1 == attribute name
@@ -127,7 +150,7 @@ disableKamailioConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    sed -i -r -e "s/#+(!(define|trydef|redefine)[[:space:]]? $NAME)/##\1/g" ${CONFIG_FILE}
+    sed -i -r -e "s~#+(!(define|trydef|redefine)[[:space:]]? $NAME)~##\1~g" ${CONFIG_FILE}
 }
 
 # $1 == name of ip to change
@@ -138,7 +161,7 @@ setKamailioConfigIP() {
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
-    sed -i -r -e "s|(#!substdef.*!$NAME!).*(!.*)|\1$VALUE\2|g" ${CONFIG_FILE}
+    sed -i -r -e "s~(#!substdef.*!$NAME!).*(!.*)~\1$VALUE\2~g" ${CONFIG_FILE}
 }
 
 # $1 == name of global variable to change
@@ -151,7 +174,7 @@ setKamailioConfigGlobal() {
     local REPLACE_TOKEN='__ABCDEFGHIJKLMNOPQRSTUVWXYZ__'
 
     perl -pi -e "s/^(${NAME}\s=\s)(?:(\"|')(.*?)(\"|')|\d+)(\sdesc\s(?:\"|').*?(?:\"|'))?/\1\2${REPLACE_TOKEN}\4\5/g" ${CONFIG_FILE}
-    sed -i -e "s/${REPLACE_TOKEN}/${VALUE}/g" ${CONFIG_FILE}
+    sed -i -e "s~${REPLACE_TOKEN}~${VALUE}~g" ${CONFIG_FILE}
 }
 
 # $1 == attribute name

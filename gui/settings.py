@@ -7,10 +7,12 @@ DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
 DSIP_PASSWORD = 'admin'
+DSIP_SALT = b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
 DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
+DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -26,7 +28,7 @@ DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
-VERSION = "0.523+ent"
+VERSION = "0.60+ent"
 DEBUG = False
 # '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # outbound = act as an outbound proxy only 
@@ -103,5 +105,10 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter {}'.format(MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'DoNotReply@{}'.format(MAIL_SERVER)
 MAIL_DEFAULT_SUBJECT = "dSIPRouter System Notification"
+
+# Where to sync settings from
+# file  - load from setting.py file
+# db    - load from dsip_settings table
+LOAD_SETTINGS_FROM = 'file'

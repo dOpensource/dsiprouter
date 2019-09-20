@@ -14,20 +14,21 @@ ENABLED=0 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstal
 function installSQL {
     # Check to see if the acc table or cdr tables are in use
     MERGE_DATA=0
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE -e "select count(*) from dsip_lcr limit 10" > /dev/null 2>&1
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME -e "select count(*) from dsip_lcr limit 10" > /dev/null 2>&1
     if [ "$?" -eq 0 ]; then
         MERGE_DATA=1
     fi
 
-    # Replace the dSIPRouter LCR tables and add some optional Kamailio stored procedures
-    printwarn "Adding/Replacing the tables needed for LCR  within dSIPRouter..."
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ./gui/modules/lcr/lcr.sql
-
-    if [ ${MERGE_DATA} -eq 0 ]; then
+    if [ ${MERGE_DATA} -eq 1 ]; then
         printwarn "The dSIPRouter LCR Support (dsip_lcr) table already exists. Dumping table data"
-        mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-            --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${MYSQL_KAM_DATABASE} dsip_lcr \
-            | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
+        (cat ${DSIP_PROJECT_DIR}/gui/modules/lcr/lcr.sql;
+            mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
+                --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${KAM_DB_NAME} dsip_lcr
+        ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME
+    else
+        # Replace the dSIPRouter LCR tables and add some optional Kamailio stored procedures
+        printwarn "Adding/Replacing the tables needed for LCR  within dSIPRouter..."
+        mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_PROJECT_DIR}/gui/modules/lcr/lcr.sql
     fi
 }
 

@@ -13,13 +13,13 @@ proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
 host=$(getConfigAttrib 'DSIP_HOST' $project_dir/gui/settings.py)
 port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
 username=$(getConfigAttrib 'DSIP_USERNAME' $project_dir/gui/settings.py)
-password=$(getConfigAttrib 'DSIP_PASSWORD' $project_dir/gui/settings.py)
+export DSIP_PASSWORD="temp"
 # if dsip is bound to all available addresses use localhost
 [ "$host" = "0.0.0.0" ] && host="localhost"
 
 # attempt to login to dsiprouter
 base_url="${proto}://${host}:${port}"
-payload="username=$(uriEncode ${username})&password=$(uriEncode ${password})&nextpage="
+payload="username=$(uriEncode ${username})&DSIP_PASSWORD=$(uriEncode ${DSIP_PASSWORD})&nextpage="
 
 declare -a flat_headers=()
 declare -A headers=(
@@ -59,5 +59,7 @@ validateDsipAuth() {
 }
 
 validateDsipAuth; ret=$?
+
+unset DSIP_PASSWORD
 
 process_result "$test" $ret

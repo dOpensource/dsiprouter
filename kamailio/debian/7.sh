@@ -73,9 +73,8 @@ EOF
         echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
     fi
 
-    # Will hardcode lation1 as the database character set used to create the Kamailio schema due to
-    # a potential bug in how Kamailio additional tables are created
-    echo "CHARSET=latin1" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    # Use utf8 as it is the worldwide defacto standard for charsets
+    echo "CHARSET=utf8" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create

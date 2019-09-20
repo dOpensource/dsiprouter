@@ -1,20 +1,65 @@
---
--- TODO: add support for the rest of the settings
--- TODO: create functions for synchronizing with settings.py, such as:
--- FILE MODE -> settings.py saved to db settings or
--- DB MODE -> db settings saved to settings.py
---
 DROP TABLE IF EXISTS dsip_settings;
 /*!40101 SET @saved_cs_client = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE dsip_settings (
-  DSIP_ID int unsigned NOT NULL DEFAULT 1,
+  DSIP_ID int UNSIGNED NOT NULL DEFAULT 1,
+  DSIP_PROTO varchar(255) NOT NULL DEFAULT 'http',
+  DSIP_HOST varchar(255) NOT NULL DEFAULT '0.0.0.0',
+  DSIP_PORT int NOT NULL DEFAULT 5000,
+  DSIP_USERNAME varchar(255) NOT NULL DEFAULT 'admin',
+  DSIP_PASSWORD binary(128) COLLATE 'binary' NOT NULL,
+  DSIP_SALT binary(128) COLLATE 'binary' NOT NULL,
+  DSIP_API_PROTO varchar(255) NOT NULL DEFAULT 'http',
+  DSIP_API_HOST varchar(255) NOT NULL DEFAULT '127.0.0.1',
+  DSIP_API_PORT int NOT NULL DEFAULT 5000,
+  DSIP_API_TOKEN binary(64) COLLATE 'binary' NOT NULL,
+  DSIP_LOG_LEVEL int NOT NULL DEFAULT 3,
+  DSIP_LOG_FACILITY int NOT NULL DEFAULT 18,
+  DSIP_SSL_KEY varchar(255) NOT NULL DEFAULT '',
+  DSIP_SSL_CERT varchar(255) NOT NULL DEFAULT '',
+  DSIP_SSL_EMAIL varchar(255) NOT NULL DEFAULT '',
+  VERSION varchar(255) NOT NULL DEFAULT '0.523+ent',
+  DEBUG tinyint(1) NOT NULL DEFAULT 0,
+  ROLE varchar(255) NOT NULL DEFAULT '',
+  KAM_DB_HOST varchar(255) NOT NULL DEFAULT 'localhost',
+  KAM_DB_DRIVER varchar(255) NOT NULL DEFAULT '',
+  KAM_DB_TYPE varchar(255) NOT NULL DEFAULT 'mysql',
+  KAM_DB_PORT varchar(255) NOT NULL DEFAULT '3306',
+  KAM_DB_NAME varchar(255) NOT NULL DEFAULT 'kamailio',
+  KAM_DB_USER varchar(255) NOT NULL DEFAULT 'kamailio',
+  KAM_DB_PASS varbinary(128) COLLATE 'binary' NOT NULL,
+  KAM_KAMCMD_PATH varchar(255) NOT NULL DEFAULT '/usr/sbin/kamcmd',
+  KAM_CFG_PATH varchar(255) NOT NULL DEFAULT '/etc/kamailio/kamailio.cfg',
+  RTP_CFG_PATH varchar(255) NOT NULL DEFAULT '/etc/kamailio/kamailio.cfg',
+  SQLALCHEMY_TRACK_MODIFICATIONS tinyint(1) NOT NULL DEFAULT 0,
+  SQLALCHEMY_SQL_DEBUG tinyint(1) NOT NULL DEFAULT 0,
   FLT_CARRIER int NOT NULL DEFAULT 8,
   FLT_PBX int NOT NULL DEFAULT 9,
   FLT_OUTBOUND int NOT NULL DEFAULT 8000,
   FLT_INBOUND int NOT NULL DEFAULT 9000,
   FLT_LCR_MIN int NOT NULL DEFAULT 10000,
   FLT_FWD_MIN int NOT NULL DEFAULT 20000,
+  DOMAIN varchar(255) NOT NULL DEFAULT 'sip.dsiprouter.org',
+  TELEBLOCK_GW_ENABLED int NOT NULL DEFAULT 0,
+  TELEBLOCK_GW_IP varchar(255) NOT NULL DEFAULT '62.34.24.22',
+  TELEBLOCK_GW_PORT varchar(255) NOT NULL DEFAULT '5066',
+  TELEBLOCK_MEDIA_IP varchar(255) NOT NULL DEFAULT '',
+  TELEBLOCK_MEDIA_PORT varchar(255) NOT NULL DEFAULT '',
+  FLOWROUTE_ACCESS_KEY varchar(255) NOT NULL DEFAULT '',
+  FLOWROUTE_SECRET_KEY varchar(255) NOT NULL DEFAULT '',
+  FLOWROUTE_API_ROOT_URL varchar(255) NOT NULL DEFAULT 'https://api.flowroute.com/v2',
+  UPLOAD_FOLDER varchar(255) NOT NULL DEFAULT '/tmp',
+  CLOUD_PLATFORM varchar(255) NOT NULL DEFAULT '',
+  MAIL_SERVER varchar(255) NOT NULL DEFAULT 'smtp.gmail.com',
+  MAIL_PORT int NOT NULL DEFAULT 587,
+  MAIL_USE_TLS tinyint(1) NOT NULL DEFAULT 1,
+  MAIL_USERNAME varchar(255) NOT NULL DEFAULT '',
+  MAIL_PASSWORD varbinary(128) COLLATE 'binary' NOT NULL,
+  MAIL_ASCII_ATTACHMENTS tinyint(1) NOT NULL DEFAULT 0,
+  MAIL_DEFAULT_SENDER varchar(255) NOT NULL DEFAULT 'DoNotReply@smtp.gmail.com',
+  MAIL_DEFAULT_SUBJECT varchar(255) NOT NULL DEFAULT 'dSIPRouter System Notification',
+  CHECK (ROLE IN ('', 'outbound', 'inout')),
+  CHECK (CLOUD_PLATFORM IN ('', 'AWS', 'GCP', 'AZURE', 'DO')),
   PRIMARY KEY (DSIP_ID)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = latin1

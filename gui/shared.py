@@ -151,7 +151,7 @@ def updateConfig(config_obj, field_dict):
             config_str = config.read()
             for key, val in field_dict.items():
                 regex = r"^(?!#)(?:" + re.escape(key) + \
-                        r")[ \t]*=[ \t]*(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|\"\"\".*\"\"\"[ \t]*$|'''.*'''[ \v]*$|\".*\"[ \t]*$|'.*')"
+                        r")[ \t]*=[ \t]*(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?\"\"\".*\"\"\"[ \t]*$|b?'''.*'''[ \v]*$|b?\".*\"[ \t]*$|b?'.*')"
                 replace_str = "{} = {}".format(key, repr(val))
                 config_str = re.sub(regex, replace_str, config_str, flags=re.MULTILINE)
             config.seek(0)

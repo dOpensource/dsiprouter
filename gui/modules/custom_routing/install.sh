@@ -11,17 +11,17 @@ function installSQL {
     printwarn "Adding/Replacing the tables needed for Custom Routing  within dSIPRouter..."
 
     # Check to see if table exists
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE -e "select count(*) from ${TABLES[0]} limit 1" > /dev/null 2>&1
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME -e "select count(*) from ${TABLES[0]} limit 1" > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
         printwarn "The dSIPRouter tables ${TABLES[@]} already exists. Merging table data"
         (cat ${DSIP_PROJECT_DIR}/gui/modules/custom_routing/custom_routing.sql;
             mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-                --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${MYSQL_KAM_DATABASE} ${TABLES[@]};
-        ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE
+                --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${KAM_DB_NAME} ${TABLES[@]};
+        ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME
     else
         echo -e "Installing schema for custom routing"
-        mysql -sN --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE \
+        mysql -sN --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME \
             < ${DSIP_PROJECT_DIR}/gui/modules/custom_routing/custom_routing.sql
     fi
 }

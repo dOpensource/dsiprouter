@@ -11,7 +11,7 @@ cookie_file=/tmp/cookie
 # dynamic settings
 proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
 port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
-password=$(getConfigAttrib 'DSIP_PASSWORD' $project_dir/gui/settings.py)
+export DSIP_PASSWORD="temp"
 
 # In Accordance With AWS Marketplace Policy:
 # https://docs.aws.amazon.com/marketplace/latest/userguide/product-and-ami-policies.html
@@ -21,14 +21,14 @@ validateInstance() {
         return 0
     fi
 
-    # check dsiprouter password is set to instance id
-    [ "$(getInstanceID)" = "$password" ] || return 1
+    # check dsiprouter DSIP_PASSWORD is set to instance id
+    [ "$(getInstanceID)" = "$DSIP_PASSWORD" ] || return 1
 
-    # check debian-sys-maint user's password is set to instance-id (file & runtime)
+    # check debian-sys-maint user's DSIP_PASSWORD is set to instance-id (file & runtime)
     if [ -f /etc/debian_version ]; then
-        maintpass=$(grep -oP '^(?!#)password[ \t]*=[ \t]*\K([\w\d\.\-]+)' /etc/mysql/debian.cnf | head -1)
-        [ "$maintpass" = "$password" ] || return 1
-        mysql --user="debian-sys-maint" --password="$maintpass" -e 'SELECT VERSION();' >/dev/null
+        maintpass=$(grep -oP '^(?!#)DSIP_PASSWORD[ \t]*=[ \t]*\K([\w\d\.\-]+)' /etc/mysql/debian.cnf | head -1)
+        [ "$maintpass" = "$DSIP_PASSWORD" ] || return 1
+        mysql --user="debian-sys-maint" --DSIP_PASSWORD="$maintpass" -e 'SELECT VERSION();' >/dev/null
         [ $? -ne 0 ] && return 1
     fi
 
@@ -48,5 +48,7 @@ validateInstance() {
 }
 
 validateInstance; ret=$?
+
+unset DSIP_PASSWORD
 
 process_result "$test" $ret
