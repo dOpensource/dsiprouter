@@ -159,12 +159,14 @@ function toggleElemDisabled(selector, disable) {
     });
     select_elem.prop('readonly', true);
     select_elem.prop('tabindex', -1);
+    select_elem.prop('disabled', true);
   }
   else {
     select_elem.parent().removeAttr('style');
     select_elem.removeAttr('style');
     select_elem.prop('readonly', false);
     select_elem.prop('tabindex', 0);
+    select_elem.prop('disabled', false);
   }
 }
 
@@ -210,11 +212,6 @@ function descendingSearch(selector, test) {
   descendingSearch(node_list, test)
 }
 
-$('#open-CarrierAdd').click(function() {
-  var modal = $('#add');
-  modal.css('z-index','1070');
-});
-
 
 
 $('#pbxs #open-Delete').click(function() {
@@ -225,14 +222,6 @@ $('#pbxs #open-Delete').click(function() {
 });
 
 // Updates the modal with the values from the endpointgroup API
-
-
-
-
-
-
-
-
 $('#domains #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
   var c = document.getElementById('domains');
@@ -278,104 +267,6 @@ $('#domains #open-Delete').click(function() {
   var modal_body = $('#delete .modal-body');
   modal_body.find(".domain_id").val(domain_id);
   modal_body.find(".domain_name").val(domain_name);
-});
-
-
-$('#inboundmapping #open-Update').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('inboundmapping');
-  var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-  var rulename = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-  var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-  var hf_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var hf_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-  var hf_fwddid = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-  var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-  var ff_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
-  var ff_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
-  var ff_fwddid = $(c).find('tr:eq(' + row_index + ') td:eq(16)').text();
-
-  /** Clear out the modal */
-  var modal_body = $('#edit .modal-body');
-  modal_body.find("input.ruleid").val('');
-  modal_body.find("input.prefix").val('');
-  modal_body.find("input.rulename").val('');
-  modal_body.find("input.hf_ruleid").val('');
-  modal_body.find("input.hf_groupid").val('');
-  modal_body.find("input.hf_fwddid").val('');
-  modal_body.find("input.ff_ruleid").val('');
-  modal_body.find("input.ff_groupid").val('');
-  modal_body.find("input.ff_fwddid").val('');
-
-  /* update modal fields */
-  modal_body.find("input.ruleid").val(ruleid);
-  modal_body.find("input.prefix").val(prefix);
-  modal_body.find("input.rulename").val(rulename);
-  modal_body.find("input.hf_ruleid").val(hf_ruleid);
-  modal_body.find("input.hf_groupid").val(hf_groupid);
-  modal_body.find("input.hf_fwddid").val(hf_fwddid);
-  modal_body.find("input.ff_ruleid").val(ff_ruleid);
-  modal_body.find("input.ff_groupid").val(ff_groupid);
-  modal_body.find("input.ff_fwddid").val(ff_fwddid);
-
-  /* update options selected */
-  var i = 0;
-  var gwgroup_options = modal_body.find("select.gwgroupid > option").get();
-  for (i = 0; i < gwgroup_options.length; i++) {
-    if (gwgroupid === gwgroup_options[i].value) {
-      $(gwgroup_options[i]).attr('selected', true);
-      break;
-    }
-  }
-  var hf_gwgroup_options = modal_body.find("select.hf_gwgroupid > option").get();
-  for (i = 0; i < hf_gwgroup_options.length; i++) {
-    if (hf_gwgroupid === hf_gwgroup_options[i].value) {
-      $(hf_gwgroup_options[i]).attr('selected', true);
-      break;
-    }
-  }
-  var ff_gwgroup_options = modal_body.find("select.ff_gwgroupid > option").get();
-  for (i = 0; i < ff_gwgroup_options.length; i++) {
-    if (ff_gwgroupid === ff_gwgroup_options[i].value) {
-      $(ff_gwgroup_options[i]).attr('selected', true);
-      break;
-    }
-  }
-
-  /* update toggle buttons */
-  if (hf_ruleid.length > 0) {
-    modal_body.find("input.toggle-hardfwd").bootstrapToggle('on');
-  }
-  else {
-    modal_body.find("input.toggle-hardfwd").bootstrapToggle('off');
-  }
-
-  if (ff_ruleid.length > 0) {
-    modal_body.find("input.toggle-failfwd").bootstrapToggle('on');
-  }
-  else {
-    modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
-  }
-});
-
-$('#inboundmapping #open-Delete').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('inboundmapping');
-  var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-  var hf_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-  var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-  var ff_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
-
-  /* update modal fields */
-  var modal_body = $('#delete .modal-body');
-  modal_body.find("input.ruleid").val(ruleid);
-  modal_body.find("input.hf_ruleid").val(hf_ruleid);
-  modal_body.find("input.hf_groupid").val(hf_groupid);
-  modal_body.find("input.ff_ruleid").val(ff_ruleid);
-  modal_body.find("input.ff_groupid").val(ff_groupid);
 });
 
 $('#outboundmapping #open-Update').click(function() {
@@ -577,39 +468,6 @@ $('#toggleTeleblock').change(function() {
     $('#teleblockOptions').addClass("hidden");
     $(this).val("0");
     $(this).bootstrapToggle('off');
-  }
-});
-
-/* listener for hard forward toggle */
-$('.modal-body .toggle-hardfwd').change(function() {
-  var modal = $(this).closest('div.modal');
-  var modal_body = modal.find('.modal-body');
-
-  if ($(this).is(":checked") || $(this).prop("checked")) {
-    modal_body.find('.hardfwd-options').removeClass("hidden");
-    modal_body.find('.hardfwd_enabled').val(1);
-    // modal_body.find('select.gwgroupid').prop('selectedIndex', 0);
-    toggleElemDisabled(modal_body.find('select.gwgroupid'), true);
-  }
-  else {
-    modal_body.find('.hardfwd-options').addClass("hidden");
-    modal_body.find('.hardfwd_enabled').val(0);
-    toggleElemDisabled(modal_body.find('select.gwgroupid'), false);
-  }
-});
-
-/* listener for failover forward toggle */
-$('.modal-body .toggle-failfwd').change(function() {
-  var modal = $(this).closest('div.modal');
-  var modal_body = modal.find('.modal-body');
-
-  if ($(this).is(":checked") || $(this).prop("checked")) {
-    modal_body.find('.failfwd-options').removeClass("hidden");
-    modal_body.find('.failfwd_enabled').val(1);
-  }
-  else {
-    modal_body.find('.failfwd-options').addClass("hidden");
-    modal_body.find('.failfwd_enabled').val(0);
   }
 });
 

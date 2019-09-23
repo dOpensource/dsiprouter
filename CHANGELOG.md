@@ -2,6 +2,26 @@
 
 
 
+### Update to DID Forwarding
+
+> Branches Affected: v0.523+ent,v0.60+ent  
+> Tags Affected:   
+> Date: Mon, 23 Sep 2019 19:25:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- add feature to allow DID routing without specifying gwgroup
+- update inbound mapping route to accomodate new feature
+- update gwgroup selection to allow default option
+- update toggleElemDisabled() to be more robust
+- change hardfwd toggle button to set gwgroup selection to default option
+- move inbound mapping js logic from main to its own file
+- fix bug where failover forwarding would overwrite fwd info
+
+
+---
+
+
 ### Add Security Features and Database Settings Update
 
 > Branches Affected: v0.60+ent  

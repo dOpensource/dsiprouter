@@ -8,7 +8,7 @@
 
   <div class="tableAddButton">
     <h4>List of Inbound Mappings</h4>
-    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
+    <button id='open-Add' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
             data-target="#add">Add
     </button>
     <button id='open-DIDImport' class='btn btn-success btn-md' data-title="Import DID's" data-toggle="modal"
@@ -175,7 +175,7 @@
 
         <div class="form-group">
           <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
-            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
               <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
             {% endfor %}
@@ -221,7 +221,7 @@
 
         <div class="form-group">
           <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
-            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
               <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
             {% endfor %}
@@ -323,7 +323,7 @@
 
         <div class="form-group">
           <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
-            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
               <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
             {% endfor %}
@@ -369,7 +369,7 @@
 
         <div class="form-group">
           <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
-            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
               <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
             {% endfor %}
@@ -492,7 +492,7 @@
 
         <div class="form-group">
           <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
-            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
               <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
             {% endfor %}
@@ -538,7 +538,7 @@
 
         <div class="form-group">
           <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
-            <option class="hidden" value="" selected disabled>Carrier/Endpoint Group</option>
+            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
               <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
             {% endfor %}

@@ -834,12 +834,12 @@ def displayInboundMapping():
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
         res = db.execute("""select * from (
-select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {}
+select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {flt_inbound}
 ) as t1 left join (
-select hf.dr_ruleid as hf_ruleid, r.groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid from dsip_hardfwd as hf left join dr_rules as r on hf.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+select hf.dr_ruleid as hf_ruleid, r.groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid from dsip_hardfwd as hf left join dr_rules as r on (hf.dr_groupid = r.groupid and hf.dr_groupid <> {flt_inbound}) or (hf.dr_ruleid = r.ruleid and hf.dr_groupid = {flt_inbound}) left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
 ) as t2 on t1.ruleid = t2.hf_ruleid left join (
-select ff.dr_ruleid as ff_ruleid, r.groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on ff.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
-) as t3 on t1.ruleid = t3.ff_ruleid""".format(settings.FLT_INBOUND))
+select ff.dr_ruleid as ff_ruleid, r.groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on (ff.dr_groupid = r.groupid and ff.dr_groupid <> {flt_inbound}) or (ff.dr_ruleid = r.ruleid and ff.dr_groupid = {flt_inbound}) left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+) as t3 on t1.ruleid = t3.ff_ruleid;""".format(flt_inbound=settings.FLT_INBOUND))
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
         gwgroups = db.query(GatewayGroups).filter(
@@ -939,61 +939,10 @@ def addUpdateInboundMapping():
             ruleid = int(lastrule.ruleid) + 1 if lastrule is not None else 1
 
             if hardfwd_enabled:
-                # find last forwarding rule
-                lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                # when gwgroup is set we need to create a dr_rule that maps to the gwlist of that gwgroup
+                if len(hf_gwgroupid) > 0:
+                    gwlist = '#{}'.format(hf_gwgroupid)
 
-                # Start forwarding routes with a groupid set in settings (default is 20000)
-                if lastfwd is None:
-                    fwdgroupid = settings.FLT_FWD_MIN
-                else:
-                    fwdgroupid = int(lastfwd.groupid) + 1
-
-                gwlist = '#{}'.format(hf_gwgroupid) if len(hf_gwgroupid) > 0 else ''
-
-                hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
-                inserts.append(hfwd)
-
-                hfwd_htable = dSIPHardFwd(ruleid, hf_fwddid, fwdgroupid)
-                inserts.append(hfwd_htable)
-
-            if failfwd_enabled:
-                # skip lookup if we just found the groupid
-                if fwdgroupid is not None:
-                    fwdgroupid += 1
-                else:
-                    # find last forwarding rule
-                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
-
-                    # Start forwarding routes with a groupid set in settings (default is 20000)
-                    if lastfwd is None:
-                        fwdgroupid = settings.FLT_FWD_MIN
-                    else:
-                        fwdgroupid = int(lastfwd.groupid) + 1
-
-                gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
-
-                ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
-                inserts.append(ffwd)
-
-                ffwd_htable = dSIPFailFwd(ruleid, ff_fwddid, fwdgroupid)
-                inserts.append(ffwd_htable)
-
-            db.add_all(inserts)
-
-        # Updating
-        else:
-            inserts = []
-
-            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
-                {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
-
-            hardfwd_exists = db.query(InboundMapping).filter(InboundMapping.ruleid == hf_ruleid).scalar()
-
-            if hardfwd_enabled:
-                gwlist = '#{}'.format(hf_gwgroupid) if len(hf_gwgroupid) > 0 else ''
-
-                # create fwd rule if it does not exist
-                if not hardfwd_exists:
                     # find last forwarding rule
                     lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
 
@@ -1005,30 +954,18 @@ def addUpdateInboundMapping():
 
                     hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
                     inserts.append(hfwd)
-
-                    hfwd_htable = dSIPHardFwd(ruleid, hf_fwddid, fwdgroupid)
-                    inserts.append(hfwd_htable)
-                # update existing fwd rule
+                # if no gwgroup selected we dont need dr_rules we set dr_groupid to FLT_INBOUND and we create hardfwd/failfwd rules
                 else:
-                    db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid).update(
-                        {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}, synchronize_session=False)
-                    db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).update(
-                        {'did': hf_fwddid, 'dr_groupid': hf_groupid}, synchronize_session=False)
-            else:
-                # delete existing fwd rule
-                if hardfwd_exists:
-                    hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
-                    hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid)
-                    hf_rule.delete(synchronize_session=False)
-                    hf_htable.delete(synchronize_session=False)
+                    fwdgroupid = settings.FLT_INBOUND
 
-            failfwd_exists = db.query(InboundMapping).filter(InboundMapping.ruleid == ff_ruleid).scalar()
+                hfwd_htable = dSIPHardFwd(ruleid, hf_fwddid, fwdgroupid)
+                inserts.append(hfwd_htable)
 
             if failfwd_enabled:
-                gwlist = '#{}'.format(ff_gwgroupid) if len(ff_gwgroupid) > 0 else ''
+                # when gwgroup is set we need to create a dr_rule that maps to the gwlist of that gwgroup
+                if len(ff_gwgroupid) > 0:
+                    gwlist = '#{}'.format(ff_gwgroupid)
 
-                # create fwd rule if it does not exist
-                if not failfwd_exists:
                     # skip lookup if we just found the groupid
                     if fwdgroupid is not None:
                         fwdgroupid += 1
@@ -1044,21 +981,167 @@ def addUpdateInboundMapping():
 
                     ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
                     inserts.append(ffwd)
-
-                    ffwd_htable = dSIPFailFwd(ruleid, ff_fwddid, fwdgroupid)
-                    inserts.append(ffwd_htable)
-                # update existing fwd rule
+                # if no gwgroup selected we dont need dr_rules we set dr_groupid to FLT_INBOUND and we create hardfwd/failfwd rules
                 else:
-                    db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid).update(
-                        {'prefix': '', 'gwlist': gwlist, 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
-                    db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid).update(
-                        {'did': ff_fwddid, 'dr_groupid': ff_groupid}, synchronize_session=False)
+                    fwdgroupid = settings.FLT_INBOUND
+
+                ffwd_htable = dSIPFailFwd(ruleid, ff_fwddid, fwdgroupid)
+                inserts.append(ffwd_htable)
+
+            db.add_all(inserts)
+
+        # Updating
+        else:
+            inserts = []
+
+            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
+                {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
+
+            hardfwd_exists = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).scalar()
+
+            if hardfwd_enabled:
+                
+                # create fwd htable if it does not exist
+                if not hardfwd_exists:
+                    # only create rule if gwgroup has been selected
+                    if len(hf_gwgroupid) > 0:
+                        gwlist = '#{}'.format(hf_gwgroupid)
+
+                        # find last forwarding rule
+                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+
+                        # Start forwarding routes with a groupid set in settings (default is 20000)
+                        if lastfwd is None:
+                            fwdgroupid = settings.FLT_FWD_MIN
+                        else:
+                            fwdgroupid = int(lastfwd.groupid) + 1
+
+                        hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
+                        inserts.append(hfwd)
+                    # if no gwgroup selected we dont need dr_rules we set dr_groupid to FLT_INBOUND and we create htable
+                    else:
+                        fwdgroupid = settings.FLT_INBOUND
+
+                    hfwd_htable = dSIPHardFwd(ruleid, hf_fwddid, fwdgroupid)
+                    inserts.append(hfwd_htable)
+
+                # update existing fwd htable
+                else:
+                    # intially set fwdgroupid to update (if we create new rule it will change)
+                    fwdgroupid = int(hf_groupid) if len(hf_gwgroupid) > 0 else settings.FLT_INBOUND
+
+                    # only update rule if one exists, which we know only happens if groupid != FLT_INBOUND
+                    if hf_groupid != str(settings.FLT_INBOUND):
+                        # if gwgroup is selected we update the rule, if not selected we delete the rule
+                        if len(hf_gwgroupid) > 0:
+                            gwlist = '#{}'.format(hf_gwgroupid)
+                            db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid).update(
+                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}, synchronize_session=False)
+                        else:
+                            hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
+                            hf_rule.delete(synchronize_session=False)
+                    else:
+                        # if gwgroup is selected we create the rule
+                        if len(hf_gwgroupid) > 0:
+                            gwlist = '#{}'.format(hf_gwgroupid)
+
+                            # find last forwarding rule
+                            lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                                InboundMapping.groupid.desc()).first()
+
+                            # Start forwarding routes with a groupid set in settings (default is 20000)
+                            if lastfwd is None:
+                                fwdgroupid = settings.FLT_FWD_MIN
+                            else:
+                                fwdgroupid = int(lastfwd.groupid) + 1
+
+                            hfwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid))
+                            inserts.append(hfwd)
+
+                    db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).update(
+                        {'did': hf_fwddid, 'dr_groupid': fwdgroupid}, synchronize_session=False)
+
             else:
-                # delete existing fwd rule
+                # delete existing fwd htable and possibly fwd rule
+                if hardfwd_exists:
+                    if hf_groupid != str(settings.FLT_INBOUND):
+                        hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
+                        hf_rule.delete(synchronize_session=False)
+                    hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid)
+                    hf_htable.delete(synchronize_session=False)
+
+
+            failfwd_exists = db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid).scalar()
+
+            if failfwd_enabled:
+                
+                # create fwd htable if it does not exist
+                if not failfwd_exists:
+                    # only create rule if gwgroup has been selected
+                    if len(ff_gwgroupid) > 0:
+                        gwlist = '#{}'.format(ff_gwgroupid)
+
+                        # find last forwarding rule
+                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+
+                        # Start forwarding routes with a groupid set in settings (default is 20000)
+                        if lastfwd is None:
+                            fwdgroupid = settings.FLT_FWD_MIN
+                        else:
+                            fwdgroupid = int(lastfwd.groupid) + 1
+
+                        ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, ff_fwddid))
+                        inserts.append(ffwd)
+                    # if no gwgroup selected we dont need dr_rules we set dr_groupid to FLT_INBOUND and we create htable
+                    else:
+                        fwdgroupid = settings.FLT_INBOUND
+
+                    ffwd_htable = dSIPHardFwd(ruleid, ff_fwddid, fwdgroupid)
+                    inserts.append(ffwd_htable)
+
+                # update existing fwd htable
+                else:
+                    # intially set fwdgroupid to update (if we create new rule it will change)
+                    fwdgroupid = int(ff_groupid) if len(ff_gwgroupid) > 0 else settings.FLT_INBOUND
+
+                    # only update rule if one exists, which we know only happens if groupid != FLT_INBOUND
+                    if ff_groupid != str(settings.FLT_INBOUND):
+                        # if gwgroup is selected we update the rule, if not selected we delete the rule
+                        if len(ff_gwgroupid) > 0:
+                            gwlist = '#{}'.format(ff_gwgroupid)
+                            db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid).update(
+                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
+                        else:
+                            ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+                            ff_rule.delete(synchronize_session=False)
+                    else:
+                        # if gwgroup is selected we create the rule
+                        if len(ff_gwgroupid) > 0:
+                            gwlist = '#{}'.format(ff_gwgroupid)
+
+                            # find last forwarding rule
+                            lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                                InboundMapping.groupid.desc()).first()
+
+                            # Start forwarding routes with a groupid set in settings (default is 20000)
+                            if lastfwd is None:
+                                fwdgroupid = settings.FLT_FWD_MIN
+                            else:
+                                fwdgroupid = int(lastfwd.groupid) + 1
+
+                            ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, ff_fwddid))
+                            inserts.append(ffwd)
+
+                    db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).update(
+                        {'did': ff_fwddid, 'dr_groupid': fwdgroupid}, synchronize_session=False)
+                    
+            else:
+                # delete existing fwd htable and possibly fwd rule
                 if failfwd_exists:
-                    ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+                    if ff_groupid != str(settings.FLT_INBOUND):
+                        ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+                        ff_rule.delete(synchronize_session=False)
                     ff_htable = db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid)
-                    ff_rule.delete(synchronize_session=False)
                     ff_htable.delete(synchronize_session=False)
 
             if len(inserts) > 0:
@@ -1118,15 +1201,20 @@ def deleteInboundMapping():
         im_rule.delete(synchronize_session=False)
 
         if len(hf_ruleid) > 0:
-            hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
+            # no dr_rules created for fwding without a gwgroup selected
+            if hf_groupid != str(settings.FLT_INBOUND):
+                hf_rule = db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid)
+                hf_rule.delete(synchronize_session=False)
             hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid)
-            hf_rule.delete(synchronize_session=False)
             hf_htable.delete(synchronize_session=False)
 
         if len(ff_ruleid) > 0:
-            ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+            ff_ruleid = int(ff_ruleid)
+            # no dr_rules created for fwding without a gwgroup selected
+            if ff_groupid != str(settings.FLT_INBOUND):
+                ff_rule = db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid)
+                ff_rule.delete(synchronize_session=False)
             ff_htable = db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid)
-            ff_rule.delete(synchronize_session=False)
             ff_htable.delete(synchronize_session=False)
 
         db.commit()
