@@ -1474,7 +1474,7 @@ Moved the API section from the bottom.
 
 ### Kam Cluster Stability Improvements
 
-> Branches Affected: HA  
+> Branches Affected: HA,v0.60+ent  
 > Tags Affected:   
 > Date: Thu, 14 Mar 2019 10:48:56 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -3121,7 +3121,7 @@ Removed generatePassword from the displayLoginInfo function
 
 ### Tighten Install for Release
 
-> Branches Affected: HA  
+> Branches Affected: HA,v0.60+ent  
 > Tags Affected:   
 > Date: Wed, 13 Mar 2019 10:24:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -3172,7 +3172,7 @@ Removed generatePassword from the displayLoginInfo function
 
 ### Add 2 new HA Features
 
-> Branches Affected: HA  
+> Branches Affected: HA,v0.60+ent  
 > Tags Affected:   
 > Date: Fri, 8 Mar 2019 10:14:31 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -3250,7 +3250,7 @@ Removed generatePassword from the displayLoginInfo function
 
 ### Add Mysql Replication Scripts
 
-> Branches Affected: HA  
+> Branches Affected: HA,v0.60+ent  
 > Tags Affected:   
 > Date: Tue, 26 Feb 2019 11:58:06 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
@@ -3313,7 +3313,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Initial commit
 
-> Branches Affected: HA,master  
+> Branches Affected: HA,master,v0.60+ent  
 > Tags Affected:   
 > Date: Fri, 15 Feb 2019 16:31:20 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
