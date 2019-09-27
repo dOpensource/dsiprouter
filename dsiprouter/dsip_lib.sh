@@ -173,8 +173,8 @@ setKamailioConfigGlobal() {
     local CONFIG_FILE="$3"
     local REPLACE_TOKEN='__ABCDEFGHIJKLMNOPQRSTUVWXYZ__'
 
-    perl -pi -e "s/^(${NAME}\s=\s)(?:(\"|')(.*?)(\"|')|\d+)(\sdesc\s(?:\"|').*?(?:\"|'))?/\1\2${REPLACE_TOKEN}\4\5/g" ${CONFIG_FILE}
-    sed -i -e "s~${REPLACE_TOKEN}~${VALUE}~g" ${CONFIG_FILE}
+    perl -pi -e "s~^(${NAME}\s?=\s?)(?:(\"|')(.*?)(\"|')|\d+)(\sdesc\s(?:\"|').*?(?:\"|'))?~\1\2${REPLACE_TOKEN}\4\5~g" ${CONFIG_FILE}
+    sed -i -e "s%${REPLACE_TOKEN}%${VALUE}%g" ${CONFIG_FILE}
 }
 
 # $1 == attribute name
@@ -185,7 +185,7 @@ setRtpengineConfigAttrib() {
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
-    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+    sed -i -r -e "s|(${NAME}\s?=\s?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # notes: prints out Linux Distro name

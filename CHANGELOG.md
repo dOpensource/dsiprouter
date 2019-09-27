@@ -2,6 +2,50 @@
 
 
 
+### Bug Fixes and Forwarding Feature Update
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 26 Sep 2019 23:37:28 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update dsip_lib.sh kam config funcs to use a better separator
+- update dr_gateways db mapping class to fit new updates
+- update sql files to match utf-8 encoding from previous commit
+- update dsip_forwarding.sql to use DSIP_ID set at install
+- update kam to track src and dest gwgroup for call limiting
+- update kam SEND_NOTIFICATION route to support dynamic gwid and gwgroupid
+- create trigger for dr_gateways to support feature updates
+- fix rtpengine install detection (typo)
+- fix and improve various sql queries in resistrar
+
+
+---
+
+
+### Bug Fixes and Forwarding Feature Update
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Thu, 26 Sep 2019 13:13:25 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update dsip_lib.sh kam config funcs to use a better separator
+- update dr_gateways db mapping class to fit new updates
+- update sql files to match utf-8 encoding from previous commit
+- update dsip_forwarding.sql to use DSIP_ID set at install
+- update kam to track src and dest gwgroup for call limiting
+- update kam SEND_NOTIFICATION route to support dynamic gwid and gwgroupid
+- create trigger for dr_gateways to support feature updates
+- fix rtpengine install detection (typo)
+- fix and improve various sql queries in resistrar
+
+
+---
+
+
 ### Update to DID Forwarding
 
 > Branches Affected: v0.523+ent,v0.60+ent  

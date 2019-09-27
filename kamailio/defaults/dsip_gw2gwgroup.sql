@@ -8,7 +8,7 @@ CREATE TABLE dsip_gw2gwgroup (
   value_type varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (gwid, gwgroupid)
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = latin1;
+  DEFAULT CHARSET = utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 
@@ -28,12 +28,13 @@ BEGIN
     SET num_gws := (CHAR_LENGTH(NEW.gwlist) - CHAR_LENGTH(REPLACE(NEW.gwlist, ',', '')) + 1);
 
     -- loop through gwlist (1-based index)
-    WHILE gw_index <= num_gws DO
-    INSERT IGNORE INTO dsip_gw2gwgroup
-    VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(new.gwlist, ',', gw_index), ',', -1), cast(new.id AS char(64)), DEFAULT,
-            DEFAULT);
-    SET gw_index := gw_index + 1;
-    END WHILE;
+    WHILE gw_index <= num_gws
+      DO
+        INSERT IGNORE INTO dsip_gw2gwgroup
+        VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(NEW.gwlist, ',', gw_index), ',', -1), cast(NEW.id AS char(64)), DEFAULT,
+                DEFAULT);
+        SET gw_index := gw_index + 1;
+      END WHILE;
   END IF;
 
 END;//
@@ -51,25 +52,27 @@ BEGIN
   DECLARE num_gws int DEFAULT 0;
   DECLARE gw_index int DEFAULT 1;
 
-  -- best approach is to delete old rows and create new ones
+  -- best approach is to delete OLD rows and create NEW ones
   IF NOT (NEW.gwlist <=> OLD.gwlist) THEN
-    DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(old.id AS char(64));
+    DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(OLD.id AS char(64));
 
     IF CHAR_LENGTH(NEW.gwlist) > 0 THEN
       SET num_gws := (CHAR_LENGTH(NEW.gwlist) - CHAR_LENGTH(REPLACE(NEW.gwlist, ',', '')) + 1);
 
       -- loop through gwlist (1-based index)
-      WHILE gw_index <= num_gws DO
-      INSERT IGNORE INTO dsip_gw2gwgroup
-      VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(new.gwlist, ',', gw_index), ',', -1), cast(new.id AS char(64)), DEFAULT,
-              DEFAULT);
-      SET gw_index := gw_index + 1;
-      END WHILE;
+      WHILE gw_index <= num_gws
+        DO
+          INSERT IGNORE INTO dsip_gw2gwgroup
+          VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(NEW.gwlist, ',', gw_index), ',', -1), cast(NEW.id AS char(64)),
+                  DEFAULT,
+                  DEFAULT);
+          SET gw_index := gw_index + 1;
+        END WHILE;
     END IF;
 
     -- only need to update gwid here
   ELSEIF NOT (NEW.id <=> OLD.id) THEN
-    UPDATE dsip_gw2gwgroup SET gwgroupid = cast(new.id AS char(64)) WHERE gwgroupid = cast(old.id AS char(64));
+    UPDATE dsip_gw2gwgroup SET gwgroupid = cast(NEW.id AS char(64)) WHERE gwgroupid = cast(OLD.id AS char(64));
   END IF;
 
 END;//
@@ -84,7 +87,7 @@ CREATE TRIGGER delete_gw2gwgroup
   FOR EACH ROW
 BEGIN
 
-  DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(old.id AS char(64));
+  DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(OLD.id AS char(64));
 
 END;//
 DELIMITER ;

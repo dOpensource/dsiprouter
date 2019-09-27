@@ -62,7 +62,7 @@ CREATE TABLE dsip_settings (
   CHECK (CLOUD_PLATFORM IN ('', 'AWS', 'GCP', 'AZURE', 'DO')),
   PRIMARY KEY (DSIP_ID)
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = latin1
+  DEFAULT CHARSET = utf8
   MAX_ROWS = 1
   MIN_ROWS = 1;
 /*!40101 SET character_set_client = @saved_cs_client */;

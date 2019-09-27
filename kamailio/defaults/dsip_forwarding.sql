@@ -10,7 +10,7 @@ CREATE TABLE dsip_hardfwd (
   value_type varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (dr_ruleid)
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = latin1;
+  DEFAULT CHARSET = utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 -- dr_ruleid refers to owning inbound rule
@@ -25,7 +25,7 @@ CREATE TABLE dsip_failfwd (
   value_type varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (dr_ruleid)
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = latin1;
+  DEFAULT CHARSET = utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 DROP TABLE IF EXISTS dsip_prefix_mapping;

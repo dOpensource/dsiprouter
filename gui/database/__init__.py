@@ -40,7 +40,6 @@ class Gateways(object):
         self.strip = strip
         self.pri_prefix = prefix
         self.type = type
-        self.attrs = ""
 
     pass
 
@@ -474,7 +473,7 @@ def createValidEngine(uri_list):
 
 
 # TODO: we should be creating a queue of the valid db_engines
-# from there we can perform round connections and more advanced clustering
+# from there we can perform round robin connections and more advanced clustering
 # this does have the requirement of new session instancing per request
 
 # Make the engine global
