@@ -7,13 +7,13 @@ CREATE TRIGGER insert_dr_gateways
   FOR EACH ROW
 BEGIN
 
-  DECLARE new_gwid int;
-  SET new_gwid := (
+  SET @new_gwid := COALESCE(@new_gwid, (
     SELECT auto_increment
     FROM information_schema.tables
-    WHERE table_name = 'dr_gateways' AND table_schema = DATABASE());
+    WHERE table_name = 'dr_gateways' AND table_schema = DATABASE()));
 
-  SET NEW.attrs = CONCAT(CAST(new_gwid AS char), ',', CAST(NEW.type AS char));
+  SET NEW.attrs = CONCAT(CAST(@new_gwid AS char), ',', CAST(NEW.type AS char));
+  SET @new_gwid = @new_gwid + 1;
 
 END;//
 DELIMITER ;
@@ -27,7 +27,7 @@ CREATE TRIGGER update_dr_gateways
   FOR EACH ROW
 BEGIN
 
-  IF NOT (NEW.gwid <=> OLD.gwid) THEN
+  IF NOT (NEW.gwid <=> OLD.gwid AND OLD.type <=> NEW.type) THEN
     SET NEW.attrs = CONCAT(CAST(NEW.gwid AS char), ',', CAST(NEW.type AS char));
   END IF;
 
