@@ -993,9 +993,9 @@ def updateEndpointGroups(gwgroupid):
                 db.flush()
                 pass
             else:
-                if isinstance(calllimit,str):
-                    calllimit=int(calllimit)
-                    if calllimit >0:
+                if isinstance(calllimit, str):
+                    calllimit = int(calllimit)
+                    if calllimit > -1:
                         CallLimit = dSIPCallLimits(gwgroupid,calllimit)
                         db.add(CallLimit)
 
@@ -1072,22 +1072,25 @@ def updateEndpointGroups(gwgroupid):
                             fields['name'] = endpoint['description']
                             fields['gwgroup'] = gwgroupid
                             description = dictToStrFields(fields)
-                            if currentEndpoints.update({"address": endpoint['hostname'],"description":description },synchronize_session=False):
+                            if db.query(Gateways).filter(Gateways.gwid == currentEndpoint.gwid).update({"address": endpoint['hostname'],"description":description }, synchronize_session=False):
                                 IO.loginfo("adding gateway: {}".format(str(endpoint['pbxid'])))
                                 gwlist.append(str(endpoint['pbxid']))
                                 if authtype == "ip":
-                                    db.query(Address).filter(and_(ip_addr == currentEndpoint.hostname,Address.description.like(typeFilter))).update( \
+                                    db.query(Address).filter(and_(Address.ip_addr == currentEndpoint.address,Address.tag.like(typeFilter))).update(
                                             {"ip_addr":endpoint['hostname']},synchronize_session=False)
 
+            db.commit()
 
             if len(gwlist) > 0:
                 seperator = ","
                 gwlistString = seperator.join(gwlist)
                 IO.loginfo("gwlist: {}".format(gwlistString))
-                #Commit all of the changes that happened
+                # Remove any gateways that aren't on the list
+                #db.query(Gateways).filter(and_(Gateways.gwid.notin_([gwlistString]),Gateways.description.like(typeFilter))).delete(synchronize_session=False)
+                query = "DELETE FROM dr_gateways WHERE dr_gateways.gwid NOT IN ({}) AND dr_gateways.description LIKE '%gwgroup:{}%'".format(gwlistString,gwgroupid)
+                db.execute(query)
                 db.commit()
-                #Remove any gateways that aren't on the list
-                db.query(Gateways).filter(and_(Gateways.gwid.notin_([gwlistString]),Gateways.description.like(typeFilter))).delete(synchronize_session=False)
+
 
             if len(gwlist) == 0:
                 db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update( \
@@ -1250,7 +1253,7 @@ def addEndpointGroups():
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
         if calllimit is not None and len(calllimit) > 0:
             calllimit = int(calllimit)
-            if calllimit > 0:
+            if calllimit > -1:
                 CallLimit = dSIPCallLimits(gwgroupid, calllimit)
                 db.add(CallLimit)
 

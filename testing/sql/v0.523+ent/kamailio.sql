@@ -147,7 +147,7 @@ CREATE TABLE `address` (
   `port` smallint(5) unsigned NOT NULL DEFAULT '0',
   `tag` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=72 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -156,7 +156,7 @@ CREATE TABLE `address` (
 
 LOCK TABLES `address` WRITE;
 /*!40000 ALTER TABLE `address` DISABLE KEYS */;
-INSERT INTO `address` VALUES (1,8,'52.41.52.34',32,0,'name:Skyetel North West Inbound,gwgroup:1'),(2,8,'52.8.201.128',32,0,'name:Skyetel South West Inbound,gwgroup:1'),(3,8,'52.60.138.31',32,0,'name:Skyetel North East Inbound,gwgroup:1'),(4,8,'50.17.48.216',32,0,'name:Skyetel South East Inbound,gwgroup:1'),(5,8,'35.156.192.164',32,0,'name:Skyetel Europe Inbound,gwgroup:1'),(6,8,'term.skyetel.com',32,0,'name:Skyetel 1st Priority Outbound Call,gwgroup:1'),(7,8,'52.41.52.34',32,0,'name:Skyetel 2nd Priority Outbound Call,gwgroup:1'),(8,8,'52.8.201.128',32,0,'name:Skyetel 3rd Priority Outbound Call,gwgroup:1'),(9,8,'50.17.48.216',32,0,'name:Skyetel 4rd Priority Outbound Call,gwgroup:1'),(10,8,'52.32.223.28',32,0,'name:Skyetel North West High Cost Outbound Traffic,gwgroup:1'),(11,8,'52.4.178.107',32,0,'name:Skyetel South East High Cost Outbound Traffic,gwgroup:1'),(12,8,'147.75.60.160',32,0,'name:Flowroute US-West-WA,gwgroup:2'),(13,8,'34.210.91.112',32,0,'name:Flowroute US-West-OR,gwgroup:2'),(14,8,'147.75.65.192',32,0,'name:Flowroute US-East-NJ,gwgroup:2'),(15,8,'34.226.36.32',32,0,'name:Flowroute US-East-VA,gwgroup:2'),(16,8,'81.201.82.45',32,0,'name:Voxbone Belgium,gwgroup:3'),(17,8,'81.201.84.195',32,0,'name:Voxbone LA,gwgroup:3'),(18,8,'81.201.85.45',32,0,'name:Voxbone NYC,gwgroup:3'),(19,8,'81.201.83.45',32,0,'name:Voxbone Germany,gwgroup:3'),(20,8,'81.201.86.45',32,0,'name:Voxbone Hong Kong,gwgroup:3'),(21,8,'81.201.84.195',32,0,'name:Voxbone Australia,gwgroup:3'),(22,8,'64.136.174.30',32,0,'name:VI Carrier,gwgroup:4'),(23,8,'64.136.173.22',32,0,'name:VI Carrier,gwgroup:4'),(24,8,'209.166.128.200',32,0,'name:VI Carrier,gwgroup:4'),(25,8,'192.240.151.100',32,0,'name:VI Carrier,gwgroup:4'),(26,8,'64.136.173.31',32,0,'name:VI Carrier,gwgroup:4'),(27,8,'64.136.174.30',32,0,'name:VI Carrier,gwgroup:4'),(28,8,'64.136.174.20',32,0,'name:VI Carrier,gwgroup:4'),(29,8,'209.166.154.70',32,0,'name:VI Carrier,gwgroup:4'),(30,8,'64.136.174.65',32,0,'name:VI Carrier,gwgroup:4'),(31,8,'64.136.173.23',32,0,'name:VI Carrier,gwgroup:4'),(32,8,'209.166.128.201',32,0,'name:VI Carrier,gwgroup:4'),(33,8,'192.240.151.101',32,0,'name:VI Carrier,gwgroup:4'),(34,8,'64.136.173.65',32,0,'name:VI Carrier,gwgroup:4'),(35,8,'64.136.174.65',32,0,'name:VI Carrier,gwgroup:4'),(36,8,'64.136.174.21',32,0,'name:VI Carrier,gwgroup:4'),(37,8,'209.166.154.71',32,0,'name:VI Carrier,gwgroup:4'),(38,8,'72.15.219.140',32,0,'name:Thinq Carrier,gwgroup:5'),(39,8,'216.147.191.157',32,0,'name:Voxtelesys Carrier,gwgroup:6'),(40,8,'64.34.181.47',32,0,'name:Les.net Carrier,gwgroup:7'),(64,8,'10.10.10.89',32,0,'name:tunnel vpn ip,gwgroup:8'),(65,9,'127.0.0.100',32,0,'name:fake pbx,gwgroup:9'),(66,9,'127.0.0.100',32,0,'name:fake endpoint,gwgroup:11'),(67,9,'127.0.0.101',32,0,'name:fake pbx,gwgroup:12'),(68,9,'127.0.0.102',32,0,'name:fake endpoint,gwgroup:13');
+INSERT INTO `address` VALUES (1,8,'52.41.52.34',32,0,'name:Skyetel North West Inbound,gwgroup:1'),(2,8,'52.8.201.128',32,0,'name:Skyetel South West Inbound,gwgroup:1'),(3,8,'52.60.138.31',32,0,'name:Skyetel North East Inbound,gwgroup:1'),(4,8,'50.17.48.216',32,0,'name:Skyetel South East Inbound,gwgroup:1'),(5,8,'35.156.192.164',32,0,'name:Skyetel Europe Inbound,gwgroup:1'),(6,8,'term.skyetel.com',32,0,'name:Skyetel 1st Priority Outbound Call,gwgroup:1'),(7,8,'52.41.52.34',32,0,'name:Skyetel 2nd Priority Outbound Call,gwgroup:1'),(8,8,'52.8.201.128',32,0,'name:Skyetel 3rd Priority Outbound Call,gwgroup:1'),(9,8,'50.17.48.216',32,0,'name:Skyetel 4rd Priority Outbound Call,gwgroup:1'),(10,8,'52.32.223.28',32,0,'name:Skyetel North West High Cost Outbound Traffic,gwgroup:1'),(11,8,'52.4.178.107',32,0,'name:Skyetel South East High Cost Outbound Traffic,gwgroup:1'),(12,8,'147.75.60.160',32,0,'name:Flowroute US-West-WA,gwgroup:2'),(13,8,'34.210.91.112',32,0,'name:Flowroute US-West-OR,gwgroup:2'),(14,8,'147.75.65.192',32,0,'name:Flowroute US-East-NJ,gwgroup:2'),(15,8,'34.226.36.32',32,0,'name:Flowroute US-East-VA,gwgroup:2'),(16,8,'81.201.82.45',32,0,'name:Voxbone Belgium,gwgroup:3'),(17,8,'81.201.84.195',32,0,'name:Voxbone LA,gwgroup:3'),(18,8,'81.201.85.45',32,0,'name:Voxbone NYC,gwgroup:3'),(19,8,'81.201.83.45',32,0,'name:Voxbone Germany,gwgroup:3'),(20,8,'81.201.86.45',32,0,'name:Voxbone Hong Kong,gwgroup:3'),(21,8,'81.201.84.195',32,0,'name:Voxbone Australia,gwgroup:3'),(22,8,'64.136.174.30',32,0,'name:VI Carrier,gwgroup:4'),(23,8,'64.136.173.22',32,0,'name:VI Carrier,gwgroup:4'),(24,8,'209.166.128.200',32,0,'name:VI Carrier,gwgroup:4'),(25,8,'192.240.151.100',32,0,'name:VI Carrier,gwgroup:4'),(26,8,'64.136.173.31',32,0,'name:VI Carrier,gwgroup:4'),(27,8,'64.136.174.30',32,0,'name:VI Carrier,gwgroup:4'),(28,8,'64.136.174.20',32,0,'name:VI Carrier,gwgroup:4'),(29,8,'209.166.154.70',32,0,'name:VI Carrier,gwgroup:4'),(30,8,'64.136.174.65',32,0,'name:VI Carrier,gwgroup:4'),(31,8,'64.136.173.23',32,0,'name:VI Carrier,gwgroup:4'),(32,8,'209.166.128.201',32,0,'name:VI Carrier,gwgroup:4'),(33,8,'192.240.151.101',32,0,'name:VI Carrier,gwgroup:4'),(34,8,'64.136.173.65',32,0,'name:VI Carrier,gwgroup:4'),(35,8,'64.136.174.65',32,0,'name:VI Carrier,gwgroup:4'),(36,8,'64.136.174.21',32,0,'name:VI Carrier,gwgroup:4'),(37,8,'209.166.154.71',32,0,'name:VI Carrier,gwgroup:4'),(38,8,'72.15.219.140',32,0,'name:Thinq Carrier,gwgroup:5'),(39,8,'216.147.191.157',32,0,'name:Voxtelesys Carrier,gwgroup:6'),(40,8,'64.34.181.47',32,0,'name:Les.net Carrier,gwgroup:7'),(64,8,'10.10.10.89',32,0,'name:vpn conn,gwgroup:8'),(65,9,'127.0.0.2',32,0,'name:,gwgroup:9'),(66,9,'127.0.0.3',32,0,'name:,gwgroup:10'),(67,9,'127.0.0.4',32,0,'name:,gwgroup:11'),(68,9,'127.0.0.4',32,0,'name:,gwgroup:12'),(69,8,'50.253.243.17',32,0,'name:vpn ext,gwgroup:8'),(70,9,'127.0.0.6',32,0,'name:,gwgroup:13'),(71,9,'127.0.0.6',32,0,'name:,gwgroup:14');
 /*!40000 ALTER TABLE `address` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -492,22 +492,6 @@ LOCK TABLES `dialplan` WRITE;
 UNLOCK TABLES;
 
 --
--- Temporary table structure for view `did_mapping`
---
-
-DROP TABLE IF EXISTS `did_mapping`;
-/*!50001 DROP VIEW IF EXISTS `did_mapping`*/;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8;
-/*!50001 CREATE TABLE `did_mapping` (
-  `prefix` tinyint NOT NULL,
-  `ruleid` tinyint NOT NULL,
-  `key_type` tinyint NOT NULL,
-  `value_type` tinyint NOT NULL
-) ENGINE=MyISAM */;
-SET character_set_client = @saved_cs_client;
-
---
 -- Table structure for table `dispatcher`
 --
 
@@ -655,7 +639,7 @@ CREATE TABLE `dr_custom_rules` (
   `description` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`dr_ruleid`),
   CONSTRAINT `dr_custom_rules_ibfk_1` FOREIGN KEY (`dr_ruleid`) REFERENCES `dr_rules` (`ruleid`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -683,7 +667,7 @@ CREATE TABLE `dr_gateways` (
   `attrs` varchar(255) DEFAULT NULL,
   `description` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`gwid`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -692,9 +676,63 @@ CREATE TABLE `dr_gateways` (
 
 LOCK TABLES `dr_gateways` WRITE;
 /*!40000 ALTER TABLE `dr_gateways` DISABLE KEYS */;
-INSERT INTO `dr_gateways` VALUES (1,8,'52.41.52.34',0,'','','name:Skyetel North West Inbound,gwgroup:1'),(2,8,'52.8.201.128',0,'','','name:Skyetel South West Inbound,gwgroup:1'),(3,8,'52.60.138.31',0,'','','name:Skyetel North East Inbound,gwgroup:1'),(4,8,'50.17.48.216',0,'','','name:Skyetel South East Inbound,gwgroup:1'),(5,8,'35.156.192.164',0,'','','name:Skyetel Europe Inbound,gwgroup:1'),(6,8,'term.skyetel.com',0,'','','name:Skyetel 1st Priority Outbound Call,gwgroup:1'),(7,8,'52.41.52.34',0,'','','name:Skyetel 2nd Priority Outbound Call,gwgroup:1'),(8,8,'52.8.201.128',0,'','','name:Skyetel 3rd Priority Outbound Call,gwgroup:1'),(9,8,'50.17.48.216',0,'','','name:Skyetel 4rd Priority Outbound Call,gwgroup:1'),(10,8,'52.32.223.28',0,'','','name:Skyetel North West High Cost Outbound Traffic,gwgroup:1'),(11,8,'52.4.178.107',0,'','','name:Skyetel South East High Cost Outbound Traffic,gwgroup:1'),(12,8,'147.75.60.160',0,'','','name:Flowroute US-West-WA,gwgroup:2'),(13,8,'34.210.91.112',0,'','','name:Flowroute US-West-OR,gwgroup:2'),(14,8,'147.75.65.192',0,'','','name:Flowroute US-East-NJ,gwgroup:2'),(15,8,'34.226.36.32',0,'','','name:Flowroute US-East-VA,gwgroup:2'),(16,8,'81.201.82.45',0,'','','name:Voxbone Belgium,gwgroup:3'),(17,8,'81.201.84.195',0,'','','name:Voxbone LA,gwgroup:3'),(18,8,'81.201.85.45',0,'','','name:Voxbone NYC,gwgroup:3'),(19,8,'81.201.83.45',0,'','','name:Voxbone Germany,gwgroup:3'),(20,8,'81.201.86.45',0,'','','name:Voxbone Hong Kong,gwgroup:3'),(21,8,'81.201.84.195',0,'','','name:Voxbone Australia,gwgroup:3'),(22,8,'64.136.174.30',0,'','','name:VI Carrier,gwgroup:4'),(23,8,'64.136.173.22',0,'','','name:VI Carrier,gwgroup:4'),(24,8,'209.166.128.200',0,'','','name:VI Carrier,gwgroup:4'),(25,8,'192.240.151.100',0,'','','name:VI Carrier,gwgroup:4'),(26,8,'64.136.173.31',0,'','','name:VI Carrier,gwgroup:4'),(27,8,'64.136.174.30',0,'','','name:VI Carrier,gwgroup:4'),(28,8,'64.136.174.20',0,'','','name:VI Carrier,gwgroup:4'),(29,8,'209.166.154.70',0,'','','name:VI Carrier,gwgroup:4'),(30,8,'64.136.174.65',0,'','','name:VI Carrier,gwgroup:4'),(31,8,'64.136.173.23',0,'','','name:VI Carrier,gwgroup:4'),(32,8,'209.166.128.201',0,'','','name:VI Carrier,gwgroup:4'),(33,8,'192.240.151.101',0,'','','name:VI Carrier,gwgroup:4'),(34,8,'64.136.173.65',0,'','','name:VI Carrier,gwgroup:4'),(35,8,'64.136.174.65',0,'','','name:VI Carrier,gwgroup:4'),(36,8,'64.136.174.21',0,'','','name:VI Carrier,gwgroup:4'),(37,8,'209.166.154.71',0,'','','name:VI Carrier,gwgroup:4'),(38,8,'72.15.219.140',0,'','','name:Thinq Carrier,gwgroup:5'),(39,8,'216.147.191.157',0,'','','name:Voxtelesys Carrier,gwgroup:6'),(40,8,'64.34.181.47',0,'','','name:Les.net Carrier,gwgroup:7'),(64,8,'10.10.10.89',0,'','','name:tunnel vpn ip,gwgroup:8'),(66,9,'127.0.0.100',0,'','','name:fake endpoint,gwgroup:11'),(67,9,'127.0.0.101',0,'','','name:fake pbx,gwgroup:12'),(68,9,'127.0.0.102',0,'','','name:fake endpoint,gwgroup:13');
+INSERT INTO `dr_gateways` VALUES (1,8,'52.41.52.34',0,'','1,8','name:Skyetel North West Inbound,gwgroup:1'),(2,8,'52.8.201.128',0,'','2,8','name:Skyetel South West Inbound,gwgroup:1'),(3,8,'52.60.138.31',0,'','3,8','name:Skyetel North East Inbound,gwgroup:1'),(4,8,'50.17.48.216',0,'','4,8','name:Skyetel South East Inbound,gwgroup:1'),(5,8,'35.156.192.164',0,'','5,8','name:Skyetel Europe Inbound,gwgroup:1'),(6,8,'term.skyetel.com',0,'','6,8','name:Skyetel 1st Priority Outbound Call,gwgroup:1'),(7,8,'52.41.52.34',0,'','7,8','name:Skyetel 2nd Priority Outbound Call,gwgroup:1'),(8,8,'52.8.201.128',0,'','8,8','name:Skyetel 3rd Priority Outbound Call,gwgroup:1'),(9,8,'50.17.48.216',0,'','9,8','name:Skyetel 4rd Priority Outbound Call,gwgroup:1'),(10,8,'52.32.223.28',0,'','10,8','name:Skyetel North West High Cost Outbound Traffic,gwgroup:1'),(11,8,'52.4.178.107',0,'','11,8','name:Skyetel South East High Cost Outbound Traffic,gwgroup:1'),(12,8,'147.75.60.160',0,'','12,8','name:Flowroute US-West-WA,gwgroup:2'),(13,8,'34.210.91.112',0,'','13,8','name:Flowroute US-West-OR,gwgroup:2'),(14,8,'147.75.65.192',0,'','14,8','name:Flowroute US-East-NJ,gwgroup:2'),(15,8,'34.226.36.32',0,'','15,8','name:Flowroute US-East-VA,gwgroup:2'),(16,8,'81.201.82.45',0,'','16,8','name:Voxbone Belgium,gwgroup:3'),(17,8,'81.201.84.195',0,'','17,8','name:Voxbone LA,gwgroup:3'),(18,8,'81.201.85.45',0,'','18,8','name:Voxbone NYC,gwgroup:3'),(19,8,'81.201.83.45',0,'','19,8','name:Voxbone Germany,gwgroup:3'),(20,8,'81.201.86.45',0,'','20,8','name:Voxbone Hong Kong,gwgroup:3'),(21,8,'81.201.84.195',0,'','21,8','name:Voxbone Australia,gwgroup:3'),(22,8,'64.136.174.30',0,'','22,8','name:VI Carrier,gwgroup:4'),(23,8,'64.136.173.22',0,'','23,8','name:VI Carrier,gwgroup:4'),(24,8,'209.166.128.200',0,'','24,8','name:VI Carrier,gwgroup:4'),(25,8,'192.240.151.100',0,'','25,8','name:VI Carrier,gwgroup:4'),(26,8,'64.136.173.31',0,'','26,8','name:VI Carrier,gwgroup:4'),(27,8,'64.136.174.30',0,'','27,8','name:VI Carrier,gwgroup:4'),(28,8,'64.136.174.20',0,'','28,8','name:VI Carrier,gwgroup:4'),(29,8,'209.166.154.70',0,'','29,8','name:VI Carrier,gwgroup:4'),(30,8,'64.136.174.65',0,'','30,8','name:VI Carrier,gwgroup:4'),(31,8,'64.136.173.23',0,'','31,8','name:VI Carrier,gwgroup:4'),(32,8,'209.166.128.201',0,'','32,8','name:VI Carrier,gwgroup:4'),(33,8,'192.240.151.101',0,'','33,8','name:VI Carrier,gwgroup:4'),(34,8,'64.136.173.65',0,'','34,8','name:VI Carrier,gwgroup:4'),(35,8,'64.136.174.65',0,'','35,8','name:VI Carrier,gwgroup:4'),(36,8,'64.136.174.21',0,'','36,8','name:VI Carrier,gwgroup:4'),(37,8,'209.166.154.71',0,'','37,8','name:VI Carrier,gwgroup:4'),(38,8,'72.15.219.140',0,'','38,8','name:Thinq Carrier,gwgroup:5'),(39,8,'216.147.191.157',0,'','39,8','name:Voxtelesys Carrier,gwgroup:6'),(40,8,'64.34.181.47',0,'','40,8','name:Les.net Carrier,gwgroup:7'),(64,8,'10.10.10.89',0,'','64,8','name:vpn conn,gwgroup:8'),(65,9,'127.0.0.2',0,'','65,9','name:,gwgroup:9'),(66,9,'127.0.0.3',0,'','66,9','name:,gwgroup:10'),(67,9,'127.0.0.4',0,'','67,9','name:,gwgroup:11'),(68,9,'127.0.0.5',0,'','68,9','gwgroup:12,name:,type:9'),(69,8,'50.253.243.17',0,'','69,8','name:vpn ext,gwgroup:8');
 /*!40000 ALTER TABLE `dr_gateways` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER insert_dr_gateways
+  BEFORE INSERT
+  ON dr_gateways
+  FOR EACH ROW
+BEGIN
+
+  DECLARE new_gwid int;
+  SET new_gwid := (
+    SELECT auto_increment
+    FROM information_schema.tables
+    WHERE table_name = 'dr_gateways' AND table_schema = DATABASE());
+
+  SET NEW.attrs = CONCAT(CAST(new_gwid AS char), ',', CAST(NEW.type AS char));
+
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER update_dr_gateways
+  BEFORE UPDATE
+  ON dr_gateways
+  FOR EACH ROW
+BEGIN
+
+  IF NOT (NEW.gwid <=> OLD.gwid) THEN
+    SET NEW.attrs = CONCAT(CAST(NEW.gwid AS char), ',', CAST(NEW.type AS char));
+  END IF;
+
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Table structure for table `dr_groups`
@@ -734,7 +772,7 @@ CREATE TABLE `dr_gw_lists` (
   `gwlist` varchar(255) NOT NULL,
   `description` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -743,7 +781,7 @@ CREATE TABLE `dr_gw_lists` (
 
 LOCK TABLES `dr_gw_lists` WRITE;
 /*!40000 ALTER TABLE `dr_gw_lists` DISABLE KEYS */;
-INSERT INTO `dr_gw_lists` VALUES (1,'1,2,3,4,5,6,7,8,9,10,11','name:Skyetel CarrierGroup,type:8'),(2,'12,13,14,15','name:Flowroute CarrierGroup,type:8'),(3,'16,17,18,19,20,21','name:Voxbone CarrierGroup,type:8'),(4,'22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37','name:VI CarrierGroup,type:8'),(5,'38','name:Thinq CarrierGroup,type:8'),(6,'39','name:Voxtelesys CarrierGroup,type:8'),(7,'40','name:Les.net CarrierGroup,type:8'),(8,'64','type:8,name:testing carriergroup'),(11,'66','name:test endpointgroup 1,type:9'),(12,'67','name:test endpointgroup 2,type:9'),(13,'68','name:test endpointgroup 3,type:9');
+INSERT INTO `dr_gw_lists` VALUES (1,'1,2,3,4,5,6,7,8,9,10,11','name:Skyetel CarrierGroup,type:8'),(2,'12,13,14,15','name:Flowroute CarrierGroup,type:8'),(3,'16,17,18,19,20,21','name:Voxbone CarrierGroup,type:8'),(4,'22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37','name:VI CarrierGroup,type:8'),(5,'38','name:Thinq CarrierGroup,type:8'),(6,'39','name:Voxtelesys CarrierGroup,type:8'),(7,'40','name:Les.net CarrierGroup,type:8'),(8,'64,69','name:tyler testing,type:8'),(9,'65','name:test no fwd,type:9'),(10,'66','name:test hard fwd,type:9'),(11,'67','name:test fail fwd,type:9'),(12,'68','name:test call limit,type:9');
 /*!40000 ALTER TABLE `dr_gw_lists` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -768,12 +806,13 @@ BEGIN
     SET num_gws := (CHAR_LENGTH(NEW.gwlist) - CHAR_LENGTH(REPLACE(NEW.gwlist, ',', '')) + 1);
 
     
-    WHILE gw_index <= num_gws DO
-    INSERT IGNORE INTO dsip_gw2gwgroup
-    VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(new.gwlist, ',', gw_index), ',', -1), cast(new.id AS char(64)), DEFAULT,
-            DEFAULT);
-    SET gw_index := gw_index + 1;
-    END WHILE;
+    WHILE gw_index <= num_gws
+      DO
+        INSERT IGNORE INTO dsip_gw2gwgroup
+        VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(NEW.gwlist, ',', gw_index), ',', -1), cast(NEW.id AS char(64)), DEFAULT,
+                DEFAULT);
+        SET gw_index := gw_index + 1;
+      END WHILE;
   END IF;
 
 END */;;
@@ -802,23 +841,25 @@ BEGIN
 
   
   IF NOT (NEW.gwlist <=> OLD.gwlist) THEN
-    DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(old.id AS char(64));
+    DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(OLD.id AS char(64));
 
     IF CHAR_LENGTH(NEW.gwlist) > 0 THEN
       SET num_gws := (CHAR_LENGTH(NEW.gwlist) - CHAR_LENGTH(REPLACE(NEW.gwlist, ',', '')) + 1);
 
       
-      WHILE gw_index <= num_gws DO
-      INSERT IGNORE INTO dsip_gw2gwgroup
-      VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(new.gwlist, ',', gw_index), ',', -1), cast(new.id AS char(64)), DEFAULT,
-              DEFAULT);
-      SET gw_index := gw_index + 1;
-      END WHILE;
+      WHILE gw_index <= num_gws
+        DO
+          INSERT IGNORE INTO dsip_gw2gwgroup
+          VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(NEW.gwlist, ',', gw_index), ',', -1), cast(NEW.id AS char(64)),
+                  DEFAULT,
+                  DEFAULT);
+          SET gw_index := gw_index + 1;
+        END WHILE;
     END IF;
 
     
   ELSEIF NOT (NEW.id <=> OLD.id) THEN
-    UPDATE dsip_gw2gwgroup SET gwgroupid = cast(new.id AS char(64)) WHERE gwgroupid = cast(old.id AS char(64));
+    UPDATE dsip_gw2gwgroup SET gwgroupid = cast(NEW.id AS char(64)) WHERE gwgroupid = cast(OLD.id AS char(64));
   END IF;
 
 END */;;
@@ -842,7 +883,7 @@ DELIMITER ;;
   FOR EACH ROW
 BEGIN
 
-  DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(old.id AS char(64));
+  DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(OLD.id AS char(64));
 
 END */;;
 DELIMITER ;
@@ -868,7 +909,7 @@ CREATE TABLE `dr_rules` (
   `gwlist` varchar(255) NOT NULL,
   `description` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`ruleid`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -877,7 +918,7 @@ CREATE TABLE `dr_rules` (
 
 LOCK TABLES `dr_rules` WRITE;
 /*!40000 ALTER TABLE `dr_rules` DISABLE KEYS */;
-INSERT INTO `dr_rules` VALUES (1,'8000','','',0,'','1,2','name:Default Outbound Route'),(11,'9000','1234','',0,'','#11','name:1234 did route'),(16,'9000','12345','',0,'','#11','name:12345 did route'),(17,'20000','','',0,'','#12','name:Hard Forward to DID 5555'),(18,'9000','123456','',0,'','#11','name:123456 did route'),(19,'20001','','',0,'','#13','name:Failover Forward to DID 5555'),(20,'9000','1234567','',0,'','#11','name:1234567 did route'),(21,'20002','','',0,'','#12','name:Hard Forward to DID 6666'),(22,'20003','','',0,'','#13','name:Failover Forward to DID 7777');
+INSERT INTO `dr_rules` VALUES (1,'8000','','',0,'','1,2','name:Default Outbound Route'),(2,'9000','123456','',0,'','#9','name:test no fwd'),(3,'9000','1234567','',0,'','','name:test hard fwd'),(4,'9000','12345678','',0,'','#9','name:test fail fwd'),(5,'9000','123456789','',0,'','','name:test fail fwd + hard fwd'),(6,'9000','012345','',0,'','','name:test hard fwd + gwgroup'),(7,'20000','','',0,'','#10','name:Hard Forward from 012345 to DID 5555'),(8,'9000','0123456','',0,'','#9','name:test fail fwd + gwgroup'),(9,'20001','','',0,'','#11','name:Failover Forward from 0123456 to DID 6666'),(10,'9000','01234567','',0,'','','name:test hard fwd + fail fwd + gwgroups'),(11,'20002','','',0,'','#10','name:Hard Forward from 01234567 to DID 5555'),(12,'20003','','',0,'','#11','name:Failover Forward from 01234567 to DID 6666'),(17,'9000','012345678','',0,'','#12','name:test call limit');
 /*!40000 ALTER TABLE `dr_rules` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -895,7 +936,7 @@ CREATE TABLE `dsip_calllimit` (
   `key_type` varchar(64) NOT NULL DEFAULT '0',
   `value_type` varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (`gwgroupid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -904,6 +945,7 @@ CREATE TABLE `dsip_calllimit` (
 
 LOCK TABLES `dsip_calllimit` WRITE;
 /*!40000 ALTER TABLE `dsip_calllimit` DISABLE KEYS */;
+INSERT INTO `dsip_calllimit` VALUES ('12','0',1,'0','0');
 /*!40000 ALTER TABLE `dsip_calllimit` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -922,7 +964,7 @@ CREATE TABLE `dsip_domain_mapping` (
   `type` tinyint(3) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -973,7 +1015,7 @@ CREATE TABLE `dsip_failfwd` (
   `key_type` varchar(64) NOT NULL DEFAULT '0',
   `value_type` varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (`dr_ruleid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -982,7 +1024,7 @@ CREATE TABLE `dsip_failfwd` (
 
 LOCK TABLES `dsip_failfwd` WRITE;
 /*!40000 ALTER TABLE `dsip_failfwd` DISABLE KEYS */;
-INSERT INTO `dsip_failfwd` VALUES ('18','5555','20001','0','0'),('20','7777','20003','0','0');
+INSERT INTO `dsip_failfwd` VALUES ('10','6666','20003','0','0'),('4','6666','8000','0','0'),('5','6666','8000','0','0'),('8','6666','20001','0','0');
 /*!40000 ALTER TABLE `dsip_failfwd` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -999,7 +1041,7 @@ CREATE TABLE `dsip_gw2gwgroup` (
   `key_type` varchar(64) NOT NULL DEFAULT '0',
   `value_type` varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (`gwid`,`gwgroupid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1008,7 +1050,7 @@ CREATE TABLE `dsip_gw2gwgroup` (
 
 LOCK TABLES `dsip_gw2gwgroup` WRITE;
 /*!40000 ALTER TABLE `dsip_gw2gwgroup` DISABLE KEYS */;
-INSERT INTO `dsip_gw2gwgroup` VALUES ('1','1','0','0'),('10','1','0','0'),('11','1','0','0'),('12','2','0','0'),('13','2','0','0'),('14','2','0','0'),('15','2','0','0'),('16','3','0','0'),('17','3','0','0'),('18','3','0','0'),('19','3','0','0'),('2','1','0','0'),('20','3','0','0'),('21','3','0','0'),('22','4','0','0'),('23','4','0','0'),('24','4','0','0'),('25','4','0','0'),('26','4','0','0'),('27','4','0','0'),('28','4','0','0'),('29','4','0','0'),('3','1','0','0'),('30','4','0','0'),('31','4','0','0'),('32','4','0','0'),('33','4','0','0'),('34','4','0','0'),('35','4','0','0'),('36','4','0','0'),('37','4','0','0'),('38','5','0','0'),('39','6','0','0'),('4','1','0','0'),('40','7','0','0'),('5','1','0','0'),('6','1','0','0'),('64','8','0','0'),('66','11','0','0'),('67','12','0','0'),('68','13','0','0'),('7','1','0','0'),('8','1','0','0'),('9','1','0','0');
+INSERT INTO `dsip_gw2gwgroup` VALUES ('1','1','0','0'),('10','1','0','0'),('11','1','0','0'),('12','2','0','0'),('13','2','0','0'),('14','2','0','0'),('15','2','0','0'),('16','3','0','0'),('17','3','0','0'),('18','3','0','0'),('19','3','0','0'),('2','1','0','0'),('20','3','0','0'),('21','3','0','0'),('22','4','0','0'),('23','4','0','0'),('24','4','0','0'),('25','4','0','0'),('26','4','0','0'),('27','4','0','0'),('28','4','0','0'),('29','4','0','0'),('3','1','0','0'),('30','4','0','0'),('31','4','0','0'),('32','4','0','0'),('33','4','0','0'),('34','4','0','0'),('35','4','0','0'),('36','4','0','0'),('37','4','0','0'),('38','5','0','0'),('39','6','0','0'),('4','1','0','0'),('40','7','0','0'),('5','1','0','0'),('6','1','0','0'),('64','8','0','0'),('65','9','0','0'),('66','10','0','0'),('67','11','0','0'),('68','12','0','0'),('69','8','0','0'),('7','1','0','0'),('8','1','0','0'),('9','1','0','0');
 /*!40000 ALTER TABLE `dsip_gw2gwgroup` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1026,7 +1068,7 @@ CREATE TABLE `dsip_hardfwd` (
   `key_type` varchar(64) NOT NULL DEFAULT '0',
   `value_type` varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (`dr_ruleid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1035,7 +1077,7 @@ CREATE TABLE `dsip_hardfwd` (
 
 LOCK TABLES `dsip_hardfwd` WRITE;
 /*!40000 ALTER TABLE `dsip_hardfwd` DISABLE KEYS */;
-INSERT INTO `dsip_hardfwd` VALUES ('16','5555','20000','0','0'),('20','6666','20002','0','0');
+INSERT INTO `dsip_hardfwd` VALUES ('10','5555','20002','0','0'),('3','5555','8000','0','0'),('5','5555','8000','0','0'),('6','5555','20000','0','0');
 /*!40000 ALTER TABLE `dsip_hardfwd` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1115,7 +1157,7 @@ CREATE TABLE `dsip_multidomain_mapping` (
   `syncstatus` tinyint(1) NOT NULL DEFAULT '0',
   `syncerror` varchar(200) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1141,7 +1183,7 @@ CREATE TABLE `dsip_notification` (
   `value` varchar(255) DEFAULT NULL,
   `createdate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`gwgroupid`,`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1150,7 +1192,7 @@ CREATE TABLE `dsip_notification` (
 
 LOCK TABLES `dsip_notification` WRITE;
 /*!40000 ALTER TABLE `dsip_notification` DISABLE KEYS */;
-INSERT INTO `dsip_notification` VALUES (11,0,0,'','2019-09-10 15:20:46'),(11,1,0,'','2019-09-10 15:20:46'),(12,0,0,'','2019-09-10 15:21:09'),(12,1,0,'','2019-09-10 15:21:09'),(13,0,0,'','2019-09-10 15:21:38'),(13,1,0,'','2019-09-10 15:21:38');
+INSERT INTO `dsip_notification` VALUES (9,0,0,'','2019-09-30 19:07:46'),(9,1,0,'','2019-09-30 19:07:46'),(10,0,0,'','2019-09-30 19:08:23'),(10,1,0,'','2019-09-30 19:08:23'),(11,0,0,'','2019-09-30 19:08:33'),(11,1,0,'','2019-09-30 19:08:33'),(12,0,0,'tmoore@goflyball.com','2019-09-30 23:20:24'),(12,1,0,'tmoore@goflyball.com','2019-09-30 23:20:24');
 /*!40000 ALTER TABLE `dsip_notification` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1186,7 +1228,7 @@ CREATE TABLE `dsip_settings` (
   `FLT_LCR_MIN` int(11) NOT NULL DEFAULT '10000',
   `FLT_FWD_MIN` int(11) NOT NULL DEFAULT '20000',
   PRIMARY KEY (`DSIP_ID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 MIN_ROWS=1 MAX_ROWS=1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 MIN_ROWS=1 MAX_ROWS=1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1440,7 +1482,7 @@ CREATE TABLE `locale_lookup` (
   `fprefix` varchar(64) NOT NULL DEFAULT '0',
   `tprefix` varchar(64) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2766,9 +2808,9 @@ DELIMITER ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
-/*!50003 SET character_set_client  = latin1 */ ;
-/*!50003 SET character_set_results = latin1 */ ;
-/*!50003 SET collation_connection  = latin1_swedish_ci */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = '' */ ;
 DELIMITER ;;
@@ -2805,25 +2847,6 @@ DELIMITER ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
--- Final view structure for view `did_mapping`
---
-
-/*!50001 DROP TABLE IF EXISTS `did_mapping`*/;
-/*!50001 DROP VIEW IF EXISTS `did_mapping`*/;
-/*!50001 SET @saved_cs_client          = @@character_set_client */;
-/*!50001 SET @saved_cs_results         = @@character_set_results */;
-/*!50001 SET @saved_col_connection     = @@collation_connection */;
-/*!50001 SET character_set_client      = utf8mb4 */;
-/*!50001 SET character_set_results     = utf8mb4 */;
-/*!50001 SET collation_connection      = utf8mb4_general_ci */;
-/*!50001 CREATE ALGORITHM=UNDEFINED */
-/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `did_mapping` AS select `dr_rules`.`prefix` AS `prefix`,cast(`dr_rules`.`ruleid` as char(64) charset utf8mb4) AS `ruleid`,'0' AS `key_type`,'0' AS `value_type` from `dr_rules` where (`dr_rules`.`groupid` = 9000) */;
-/*!50001 SET character_set_client      = @saved_cs_client */;
-/*!50001 SET character_set_results     = @saved_cs_results */;
-/*!50001 SET collation_connection      = @saved_col_connection */;
-
---
 -- Final view structure for view `dsip_prefix_mapping`
 --
 
@@ -2837,7 +2860,7 @@ DELIMITER ;
 /*!50001 SET collation_connection      = utf8mb4_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `dsip_prefix_mapping` AS select `dr_rules`.`prefix` AS `prefix`,cast(`dr_rules`.`ruleid` as char(64) charset utf8mb4) AS `ruleid`,'0' AS `key_type`,'0' AS `value_type` from `dr_rules` where (`dr_rules`.`groupid` = (select `dsip_settings`.`FLT_INBOUND` from `dsip_settings` limit 1)) */;
+/*!50001 VIEW `dsip_prefix_mapping` AS select `dr_rules`.`prefix` AS `prefix`,cast(`dr_rules`.`ruleid` as char(64) charset utf8mb4) AS `ruleid`,'0' AS `key_type`,'0' AS `value_type` from `dr_rules` where (`dr_rules`.`groupid` = (select `dsip_settings`.`FLT_INBOUND` from `dsip_settings` where (`dsip_settings`.`DSIP_ID` = 1) limit 1)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -2851,4 +2874,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2019-09-11 19:53:35
+-- Dump completed on 2019-09-30 19:43:05

@@ -16,8 +16,7 @@ var DID_LIST = DID_LIST || [];
  */
 var toggleElemDisabled = toggleElemDisabled || function(a,b) {
   console.err("toggleElemDisabled() not defined, main.js must be loaded first");
-  return;
-}
+};
 
 /**
  * Search DID_LIST for search_string
@@ -207,17 +206,17 @@ $(document).ready(function() {
     if (this.selectedIndex !== 0) {
       var options = add_modal.find("select").not(this).find("option").get();
       for (var i = 0; i < options.length; i++) {
-        options[i].value === $(this).val() ? toggleElemDisabled($(options[i]), true) : toggleElemDisabled($(options[i]), false)
+        options[i].value === $(this).val() ? toggleElemDisabled($(options[i]), true, true) : toggleElemDisabled($(options[i]), false, true)
       }
     }
   });
-  var edit_modal = $('#edit .modal-body')
+  var edit_modal = $('#edit .modal-body');
   edit_modal.find("select").change(function() {
     /* we don't care if there are duplicate selects of the default value */
     if (this.selectedIndex !== 0) {
       var options = edit_modal.find("select").not(this).find("option").get();
       for (var i = 0; i < options.length; i++) {
-        options[i].value === $(this).val() ? toggleElemDisabled($(options[i]), true) : toggleElemDisabled($(options[i]), false)
+        options[i].value === $(this).val() ? toggleElemDisabled($(options[i]), true, true) : toggleElemDisabled($(options[i]), false, true)
       }
     }
   });

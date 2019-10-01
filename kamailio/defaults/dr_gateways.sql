@@ -8,13 +8,28 @@ CREATE TRIGGER insert_dr_gateways
 BEGIN
 
   DECLARE new_gwid int;
-  SET new_gwid := IF(ISNULL(NEW.gwid),
-    (SELECT auto_increment
+  SET new_gwid := (
+    SELECT auto_increment
     FROM information_schema.tables
-    WHERE table_name = 'dr_gateways' AND table_schema = DATABASE()),
-    NEW.gwid);
+    WHERE table_name = 'dr_gateways' AND table_schema = DATABASE());
 
   SET NEW.attrs = CONCAT(CAST(new_gwid AS char), ',', CAST(NEW.type AS char));
+
+END;//
+DELIMITER ;
+
+-- update dr_gateways attrs column when gwid updated
+DROP TRIGGER IF EXISTS update_dr_gateways;
+DELIMITER //
+CREATE TRIGGER update_dr_gateways
+  BEFORE UPDATE
+  ON dr_gateways
+  FOR EACH ROW
+BEGIN
+
+  IF NOT (NEW.gwid <=> OLD.gwid) THEN
+    SET NEW.attrs = CONCAT(CAST(NEW.gwid AS char), ',', CAST(NEW.type AS char));
+  END IF;
 
 END;//
 DELIMITER ;

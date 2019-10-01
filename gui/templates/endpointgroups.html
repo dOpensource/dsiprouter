@@ -67,10 +67,10 @@
       <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
     </div> -->
     <div class="form-group">
-      <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls">
-{% if (enterprise_enabled == False) %}
-      <a href="/upgrade/calllimit" [Enterprise]/>
-{% endif %}
+      <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls" autocomplete="off">
+      {% if (enterprise_enabled == False) %}
+        <a href="/upgrade/calllimit" [Enterprise]/>
+      {% endif %}
     </div>
     <!-- nav tabs -->
         <div id="endpoint-nav" class="navbar">
@@ -251,7 +251,7 @@ systemctl restart fail2ban</code></pre>
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div> -->
       <div class="form-group">
-      	<input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls">
+      	<input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls" autocomplete="off">
 	{% if (enterprise_enabled == False) %}
         <a href="/upgrade/calllimit" [Enterprise]/>
 	{% endif %}

@@ -2,6 +2,77 @@
 
 
 
+### Merge branch v0.523+ent into v0.60+ent
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Mon, 30 Sep 2019 20:51:38 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
+### Additional bug fixes
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Mon, 30 Sep 2019 19:29:27 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update call limit to allow 0 (user can block an endpoint group this way)
+- fix bug with dr_gateways trigger not firing
+- fix bug where non servernat instances won't bind to any address
+- fix bug with call limits htable being initialized to zero
+- move event routes to more suitable location in config
+- add dr_gateways update trigger
+- update kamailio.sql testing dump
+- cleanup kam config a bit
+
+
+---
+
+
+### Update toggleElemDisabled
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Mon, 30 Sep 2019 15:39:28 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- allow toggleElemDisabled to specify which element to disable cursor
+- update inboundmapping.js to choose child elem for disabled elems
+
+
+---
+
+
+### Fix Regressions and Merge Recent Commits
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Mon, 30 Sep 2019 13:42:37 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix commit fc5f80d583c5f2513546798d511ca9fc6c57d4dc
+- fix commit 9c92a5cbdabfd56add520408b82b0a324a78571b
+- resolve regressions and merge commit 3c75d41c1296d99e63117d6d15ae625a69f08935
+- rollback commit 50698c1c2a15952390b77ff594a716fa88228231
+- fix up ALL kamailio logging funcs
+- update dsip_token in updateKamConfig func
+- resolves issue #4
+- resolves issue #5
+- resolves issue #6
+
+
+---
+
+
 ### Bug Fixes and Forwarding Feature Update
 
 > Branches Affected: v0.60+ent  

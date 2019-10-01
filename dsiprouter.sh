@@ -534,6 +534,9 @@ function configureKamailio {
     sed -e "s|DSIP_ID_REPLACE|${DSIP_ID}|g" ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
         mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME
 
+    # Install schema for custom dr_gateways logic
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_DEFAULTS_DIR}/dr_gateways.sql
+
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
 #    function resetIncrementers {

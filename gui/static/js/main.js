@@ -135,9 +135,11 @@ var getQueryString = function(field, url) {
  * Use this instead of the HTML5 disabled prop
  * @param selector  String|jQuery Object    The selector for elem
  * @param disable   Boolean   Whether to disable or re-enable
+ * @param child     Boolean   Whether to change cursor on child instead
  */
-function toggleElemDisabled(selector, disable) {
+function toggleElemDisabled(selector, disable, child) {
   var select_elem = null;
+
   if (typeof selector === 'string' || selector instanceof String) {
     select_elem = $(selector);
   }
@@ -148,10 +150,17 @@ function toggleElemDisabled(selector, disable) {
     console.err("toggleElemDisabled(): invalid selector argument");
     return;
   }
+
+  /* by default change cursor on parent not child */
+  child = child || false;
+
   if (disable) {
-    select_elem.parent().css({
-      'cursor': 'not-allowed'
-    });
+    if (!child) {
+      select_elem.parent().css({'cursor': 'not-allowed'});
+    }
+    else {
+      select_elem.css({'cursor': 'not-allowed'});
+    }
     select_elem.css({
       'background-color': '#EEEEEE',
       'opacity': '0.7',
@@ -162,7 +171,9 @@ function toggleElemDisabled(selector, disable) {
     select_elem.prop('disabled', true);
   }
   else {
-    select_elem.parent().removeAttr('style');
+    if (!child) {
+      select_elem.parent().removeAttr('style');
+    }
     select_elem.removeAttr('style');
     select_elem.prop('readonly', false);
     select_elem.prop('tabindex', 0);
