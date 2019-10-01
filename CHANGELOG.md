@@ -2,6 +2,71 @@
 
 
 
+### Update Enterprise and OSS Features
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 1 Oct 2019 16:40:26 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- merge HA branch into v0.60+ent
+- improve portability and reliability of HA install scripts
+- fix iptables save bug in HA install
+- fix merging functions in HA install
+- add new standardized git workflow for contributors and option to install in repo
+- add / update git hooks: pre-commit, post-commit, prepare-commit-msg, commit-msg
+- add / upfate git configs: .gitignore, .gitattributes, .gitconfig
+- add merge conflict drivers for git hook generated files, such as CHANGELOG
+- add full support for storing settings in DB with security
+- add asymmetric, symmetric, and hashing functions
+- add setcredentials command for convenience
+- add support for settings updates through domain sockets
+- add support for settings updates through prcoess signaling (reload)
+- add functions to support ipc with dsiprouter process
+- add support for hot reload of updated settings
+- add option to enable lcr on install
+- update in progress work on AA Group Replication install
+- update asterisk prefix conversions to be reusable and moved to conversions.py
+- update all credentials and settings to be stored securely
+- update support for settings updates through env variables to only debug mode
+- update READEME to reflect enterprise version and display enterprise features
+- update a couple shared.py functions to be more robust
+- update kam config update functions to support all the dynamic settings
+- remove deprecated lcr module (it is already part of core dsiprouter)
+
+
+---
+
+
+### Slight Tweak to dr_gateways trigger
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 1 Oct 2019 14:06:23 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update trigger to support multi-row inserts
+
+
+---
+
+
+### Slight Tweak to dr_gateways trigger
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Tue, 1 Oct 2019 14:06:23 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update trigger to support multi-row inserts
+
+
+---
+
+
 ### Merge branch v0.523+ent into v0.60+ent
 
 > Branches Affected: v0.60+ent  
@@ -3428,7 +3493,7 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 
 ### Initial commit
 
-> Branches Affected: HA,master,v0.60+ent  
+> Branches Affected: HA,master,v0.523+ent,v0.60+ent  
 > Tags Affected:   
 > Date: Fri, 15 Feb 2019 16:31:20 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  

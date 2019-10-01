@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Summary:  Allow / Disallow commit hooks dependent on situation
+# Author:   DevOpSec <https://github.com/devopsec>
+# Usage:    Copy to your repo in <repo>/.git/hooks/prepare-commit-msg
+# Notes:    Adding this hook to your workflow can alleviate some merging issues
+#           caused by the automated file creation in the commit hooks
+#           This hook runs after pre-commit and before post-commit
+#
+
+# project root
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+# passed in when hook is called
+COMMIT_SOURCE="$2"
+# indicator that post commit hooks have been disabled
+DISABLED_INDICATOR_FILE="${PROJECT_ROOT}/.postcommit_disabled"
+
+# fast-forward pulls/commits/merges
+if git reflog -1 | grep -q 'Fast-forward' 2>/dev/null; then
+    RUN_COMMIT_HOOKS=0
+# git revert
+elif [[ -e "${PROJECT_ROOT}/.git/REVERT_HEAD" ]]; then
+    RUN_COMMIT_HOOKS=0
+# git cherry-pick
+elif [[ -e "${PROJECT_ROOT}/.git/CHERRY_PICK_HEAD" ]]; then
+    RUN_COMMIT_HOOKS=0
+# squashed commits/merges/rebases
+elif [[ "$COMMIT_SOURCE" == "squash" || -e "${PROJECT_ROOT}/.git/SQUASH_MSG" ]]; then
+    RUN_COMMIT_HOOKS=1
+# git merge (will only run if not an automatic merge)
+elif [[ "$COMMIT_SOURCE" == "merge" || -e "${PROJECT_ROOT}/.git/MERGE_MSG" ]]; then
+    RUN_COMMIT_HOOKS=1
+# git commit
+elif [[ "$COMMIT_SOURCE" == "commit" ]]; then
+    RUN_COMMIT_HOOKS=1
+# default is allow hooks if executed by git
+else
+    RUN_COMMIT_HOOKS=1
+fi
+
+if (( $RUN_COMMIT_HOOKS == 0 )); then
+    touch ${DISABLED_INDICATOR_FILE}
+else
+    rm -f ${DISABLED_INDICATOR_FILE} 2>/dev/null
+fi
+
+exit 0

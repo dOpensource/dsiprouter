@@ -4,17 +4,22 @@
 # Author:   DevOpSec <https://github.com/devopsec>
 # Notes:    Original idea from Martin Seeler <https://github.com/MartinSeeler>
 # Usage:    Copy to your repo in <repo>/.git/hooks/post-commit
-#           Alternatively the create_changelog function can be used independently (-c option)
+#           Alternatively the functions can be run outside of git (using -exec option)
 #
 
 # project root
 PROJECT_ROOT="$(git rev-parse --show-toplevel)"
 # destination changelog file
 CHANGELOG_FILE="CHANGELOG.md"
-# indicator that we commit the changelog
-INDICATOR_FILE="${PROJECT_ROOT}/.changelog_commited"
+# indicator that we commited the changelog
+CHANGELOG_INDICATOR_FILE="${PROJECT_ROOT}/.changelog_commited"
+# indicator that post commit hooks have been disabled
+DISABLED_INDICATOR_FILE="${PROJECT_ROOT}/.postcommit_disabled"
 
 create_changelog() {
+    # start at project root
+    cd ${PROJECT_ROOT}
+
     # give it a header
     printf '%s\n\n\n\n' "## $(echo -n ${CHANGELOG_FILE} | rev | cut -d '.' -f 2- | rev)" > ${CHANGELOG_FILE}
 
@@ -56,26 +61,31 @@ create_changelog() {
     done
 }
 
-# start at project root
-cd ${PROJECT_ROOT}
+main() {
+    touch ${CHANGELOG_INDICATOR_FILE}
+    create_changelog
+    git add ${CHANGELOG_FILE}
+    git commit --amend -C HEAD --no-verify
+    exit 0
+}
 
 # allow execution outside of git hook
-if (( $# > 0 )) && [[ "$1" == "-c" ]]; then
-    create_changelog
-    exit 0
+if (( $# > 0 )) && [[ "$1" == "-exec" ]]; then
+    main
 fi
 
+# don't run if hook is disabled
+# this is primarily for conflict resolution
+if [[ -e ${DISABLED_INDICATOR_FILE} ]]; then
+    rm -f ${DISABLED_INDICATOR_FILE}
+    exit 0
 # prevent recursion
 # since a 'commit --amend' will trigger the post-commit script again
 # we have to check if the changelog file has been commited yet
 # if changelog commited this is recursive call, do nothing
-if [[ -e ${INDICATOR_FILE} ]]; then
-    rm -f ${INDICATOR_FILE}
+elif [[ -e ${CHANGELOG_INDICATOR_FILE} ]]; then
+    rm -f ${CHANGELOG_INDICATOR_FILE}
+    exit 0
 else
-    touch ${INDICATOR_FILE}
-    create_changelog
-    git add ${CHANGELOG_FILE}
-    git commit --amend -C HEAD --no-verify
+    main
 fi
-
-exit 0

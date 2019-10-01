@@ -1,0 +1,9 @@
+[merge "merge-changelog"]
+    name = A custom merge driver used to resolve CHANGELOG.md conflicts
+    driver = _merge-changelog %O %A %B %L %P
+[merge "merge-contributors"]
+    name = A custom merge driver used to resolve CONTRIBUTORS.md conflicts
+    driver = true
+[merge "merge-requirements"]
+    name = A custom merge driver used to resolve requirements.txt conflicts
+    driver = true

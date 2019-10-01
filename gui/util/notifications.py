@@ -1,4 +1,4 @@
-import os, settings, smtplib
+import os, smtplib
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -6,6 +6,7 @@ from email.mime.multipart import MIMEMultipart
 from util.decorator import async
 from util.security import AES_CBC
 from shared import debugException
+import settings
 
 @async
 def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAULT_SUBJECT,

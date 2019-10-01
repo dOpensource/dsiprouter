@@ -1,8 +1,9 @@
-import settings, sys, os, re, socket, requests, logging, traceback, inspect, string, random
+import sys, os, re, socket, requests, logging, traceback, inspect, string, random
+from importlib import reload
 from flask import request, render_template, make_response, session, Response
 from werkzeug.utils import escape
 from werkzeug.urls import iri_to_uri
-
+import settings
 
 def ipv4Test(address):
     try:
@@ -69,24 +70,33 @@ def getExternalIP():
 
 
 def getDNSNames():
-    """ Returns ( hostname, domain ) of system """
-    host, domain = None, None
+    """ Returns ( hostname, domain, fqdn ) of system """
+
+    host, domain, fqdn = '', '', ''
 
     try:
-        host, domain = socket.getfqdn().split('.', 1)
+        fqdn = socket.getfqdn()
+        host = fqdn.split('.', 1)[0]
+        domain = fqdn.split('.', 1)[1]
     except:
         pass
-    if host == None or host == "":
+    if host == '':
         try:
-            host, domain = socket.gethostbyaddr(socket.gethostname())[0].split('.', 1)
+            fqdn = socket.gethostbyaddr(socket.gethostname())[0]
+            host = fqdn.split('.', 1)[0]
+            domain = fqdn.split('.', 1)[1]
         except:
             pass
-    if host == None or host == "":
+    if host == '':
         try:
-            host, domain = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3].split('.', 1)
+            fqdn = socket.getaddrinfo(socket.gethostname(), 0, flags=socket.AI_CANONNAME)[0][3]
+            host = fqdn.split('.', 1)[0]
+            domain = fqdn.split('.', 1)[1]
         except:
             pass
-    return host, domain
+
+    return host, domain, fqdn
+
 
 def hostToIP(host):
     """ Returns ip of host, or None on failure"""
@@ -142,7 +152,13 @@ def dictToStrFields(fields_dict):
     return ','.join("{}:{}".format(k, v) for k, v in fields_dict.items())
 
 
-def updateConfig(config_obj, field_dict):
+def updateConfig(config_obj, field_dict, hot_reload=False):
+    """
+    Update a python config module
+    :param config_obj:
+    :param field_dict:
+    :return:
+    """
     config_file = "<no filepath available>"
     try:
         config_file = config_obj.__file__
@@ -157,6 +173,9 @@ def updateConfig(config_obj, field_dict):
             config.seek(0)
             config.write(config_str)
             config.truncate()
+
+        if hot_reload:
+            reload(config_obj)
     except:
         print('Problem updating the {0} configuration file').format(config_file)
 

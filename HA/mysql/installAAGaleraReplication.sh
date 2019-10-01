@@ -11,11 +11,12 @@
 # Usage:        ./installAAGaleraReplication.sh [-remotedb|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
 #
 
-# set project root, if not a git repo must be run from top level
-PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(readlink -f "$0"))}
+# set project root, if in a git repo resolve top level dir
+PROJECT_ROOT=${PROJECT_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}
+PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(dirname $(dirname $(readlink -f "$0"))))}
 # import shared library functions
-. ${PROJECT_ROOT}/shared_lib.sh
+. ${PROJECT_ROOT}/HA/shared_lib.sh
+
 
 # node configuration settings
 CLUSTER_NAME="mysqlcluster"
@@ -49,13 +50,18 @@ fi
 
 setOSInfo
 # install local requirements for script
-if [[ "$DISTRO" == "debian" ]]; then
-    apt-get install -y sshpass
-elif [[ "$DISTRO" == "centos" ]]; then
-    yum install -y sshpass
-else
-    printerr "Your OS Distro is currently not supported" && exit 1
-fi
+case "$DISTRO" in
+    debian|ubuntu|linuxmint)
+        apt-get install -y sshpass gawk
+        ;;
+    centos|redhat|amazon)
+        yum install -y sshpass gawk
+        ;;
+    *)
+        printerr "Your OS Distro is currently not supported"
+        exit 1
+        ;;
+esac
 
 # prints number of nodes in cluster
 getClusterSize() {
@@ -255,7 +261,7 @@ for NODE in ${ARGS[@]}; do
         IP6RESTORE_FILE="/etc/iptables/rules.v6"
         export DEBIAN_FRONTEND=noninteractive
 
-        apt-get install -y curl perl sed gawk rsync dirmngr bc
+        apt-get install -y curl perl sed gawk rsync dirmngr bc iptables-persistent netfilter-persistent
 
         # install or upgrade mysql if needed
         # debian has multiple packages for mariadb-server, easier to find version with dpkg

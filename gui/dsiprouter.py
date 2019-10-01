@@ -4,31 +4,32 @@ import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, sign
 from copy import copy
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
-from importlib import reload
 from sqlalchemy import case, func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
 from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
     UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
     dSIPMaintModes, dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
-from util.security import hashCreds
+from util.security import hashCreds, AES_CBC
+from util.ipc import createSettingsManager
 import globals
 import settings
 
-# global variables
+# module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
 db = loadSession()
 numbers_api = flowroute.Numbers()
-
+shared_settings = objToDict(settings)
+settings_manager = createSettingsManager(shared_settings)
 
 # TODO: unit testing per component
 
@@ -1417,8 +1418,7 @@ def addUpdateTeleBlock():
         teleblock['TELEBLOCK_MEDIA_IP'] = form['media_ip']
         teleblock['TELEBLOCK_MEDIA_PORT'] = form['media_port']
 
-        updateConfig(settings, teleblock)
-        reload(settings)
+        updateConfig(settings, teleblock, hot_reload=True)
 
         globals.reload_required = True
         return displayTeleBlock()
@@ -1731,7 +1731,7 @@ def deleteOutboundRoute():
 @app.route('/reloadkam')
 def reloadkam():
     """
-    Reload kamailio modules
+    Soft Reload of kamailio modules and settings
     """
 
     prev_reload_val = globals.reload_required
@@ -1743,6 +1743,14 @@ def reloadkam():
         if (settings.DEBUG):
             debugEndpoint()
 
+        # format some settings for kam config
+        dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
+        if isinstance(settings.DSIP_API_TOKEN, bytes):
+            dsip_api_token = AES_CBC().decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+        else:
+            dsip_api_token = settings.DSIP_API_TOKEN
+
+        # -- Reloading modules --
         return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
         return_code += subprocess.call(['kamcmd', 'drouting.reload'])
         return_code += subprocess.call(['kamcmd', 'domain.reload'])
@@ -1754,10 +1762,11 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_failfwd'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_prefixmap'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
+
+        # -- Updating settings --
         return_code += subprocess.call(
             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
 
-        # Enable/Disable Teleblock
         if settings.TELEBLOCK_GW_ENABLED:
             return_code += subprocess.call(
                 ['kamcmd', 'cfg.sets', 'teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)])
@@ -1767,6 +1776,11 @@ def reloadkam():
                 ['kamcmd', 'cfg.sets', 'teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)])
             return_code += subprocess.call(
                 ['kamcmd', 'cfg.seti', 'teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)])
+
+        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'role', settings.ROLE])
+        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_server', dsip_api_url])
+        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_token', dsip_api_token])
+
 
         session['last_page'] = request.headers['Referer']
 
@@ -1862,11 +1876,44 @@ class CustomServer(Server):
             self.threaded = True
             self.processes = 1
 
+def syncSettings(fields={}, update_net=False):
+    # sync settings from settings.py
+    if settings.LOAD_SETTINGS_FROM == 'file':
+        try:
+            updateDsipSettingsTable(db)
+        except sql_exceptions.SQLAlchemyError as ex:
+            debugException(ex)
+            IO.printerr('Could Not Update dsip_settings Database Table')
+    # sync settings from dsip_settings table
+    elif settings.LOAD_SETTINGS_FROM == 'db':
+        try:
+            fields = dict(db.execute('select * from dsip_settings').first().items())
+
+        except sql_exceptions.SQLAlchemyError as ex:
+            debugException(ex)
+            IO.printerr('Could Not Access dsip_settings Database Table')
+
+    # update ip's dynamically
+    if update_net:
+        fields['INTERNAL_IP_ADDR'] = getInternalIP()
+        fields['INTERNAL_IP_NET'] = "{}.*".format(getInternalIP().rsplit(".", 1)[0])
+        fields['EXTERNAL_IP_ADDR'] = getExternalIP()
+
+    if len(fields) > 0:
+        updateConfig(settings, fields, hot_reload=True)
+
 def sigHandler(signum=None, frame=None):
     """ Logic for trapped signals """
     # ignore SIGHUP
-    if signum == 1:
+    if signum == signal.SIGHUP.value:
         IO.logwarn("Received SIGHUP.. ignoring signal")
+    # sync settings from db or file
+    elif signum == signal.SIGUSR1.value:
+        syncSettings()
+    # sync settings from shared memory
+    elif signum == signal.SIGUSR2.value:
+        shared_settings = dict(settings_manager.getSettings().items())
+        syncSettings(shared_settings)
 
 def replaceAppLoggers(log_handler):
     """ Handle configuration of web server loggers """
@@ -1913,44 +1960,40 @@ def initApp(flask_app):
     # db.app = app
 
     # Dynamically update settings
-    fields = {}
-
-    # sync settings from settings.py
-    if settings.LOAD_SETTINGS_FROM == 'file':
-        try:
-            updateDsipSettingsTable(db)
-        except sql_exceptions.SQLAlchemyError as ex:
-            debugException(ex)
-            IO.printerr('Could Not Update dsip_settings Database Table')
-    # sync settings from dsip_settings table
-    elif settings.LOAD_SETTINGS_FROM == 'db':
-        try:
-            fields = dict(db.execute('select * from dsip_settings').first().items())
-
-        except sql_exceptions.SQLAlchemyError as ex:
-            debugException(ex)
-            IO.printerr('Could Not Access dsip_settings Database Table')
-
-    # always update ip's
-    fields['INTERNAL_IP_ADDR'] = getInternalIP()
-    fields['INTERNAL_IP_NET'] = "{}.*".format(getInternalIP().rsplit(".", 1)[0])
-    fields['EXTERNAL_IP_ADDR'] = getExternalIP()
-    updateConfig(settings, fields)
-    reload(settings)
+    syncSettings(update_net=True)
 
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
 
     # Flask App Manager configs
-    manager = Manager(app)
-    manager.add_command('runserver', CustomServer())
+    app_manager = Manager(flask_app, with_default_commands=False)
+    app_manager.add_command('runserver', CustomServer())
 
     # trap SIGHUP signals
     signal.signal(signal.SIGHUP, sigHandler)
+    signal.signal(signal.SIGUSR1, sigHandler)
+    signal.signal(signal.SIGUSR2, sigHandler)
 
-    # start the server
-    manager.run()
+    # start the Shared Memory Management server
+    if os.path.exists(settings.DSIP_IPC_SOCK):
+        os.remove(settings.DSIP_IPC_SOCK)
+    settings_manager.start()
+
+    # start the Flask App server
+    with open(settings.DSIP_PID_FILE, 'w') as pidfd:
+        pidfd.write(str(os.getpid()))
+    app_manager.run()
+
+def teardown():
+    try:
+        settings_manager.shutdown()
+    except:
+        pass
+    try:
+        os.remove(settings.DSIP_PID_FILE)
+    except:
+        pass
 
 def checkDatabase():
    # Check database connection is still good
@@ -1961,5 +2004,9 @@ def checkDatabase():
     # If not, close DB connection so that the SQL engine can get another one from the pool
         db.close()
 
+
 if __name__ == "__main__":
-    initApp(app)
+    try:
+        initApp(app)
+    finally:
+        teardown()

@@ -4,6 +4,9 @@
 # contains utility functions and shared variables
 # should be sourced by an external script
 #
+# TODO: section library scripts into more manageable files (grouping related funcs)
+# we should also put them in a central location such as: <project dir>/bashlibs
+#
 
 ###################
 # Color constants #
@@ -112,18 +115,29 @@ isRoot() {
 
 # sets DISTRO and DISTRO_VER variables in current shell
 setOSInfo() {
-    if [ -f /etc/redhat-release ]; then
-        DISTRO="centos"
-        DISTRO_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
-    elif [ -f /etc/debian_version ]; then
-        DISTRO="debian"
-        DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
-    elif [[ "$(cat /etc/os-release | grep '^ID=' 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2)" == "amzn" ]]; then
-        DISTRO="amazon"
-        DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    DISTRO=$(cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2)
+
+    if [[ "$DISTRO" == "linuxmint" ]]; then
+        export DISTRO="linuxmint"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    elif [[ "$DISTRO" == "ubuntu" ]]; then
+        export DISTRO="ubuntu"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    elif [[ "$DISTRO" == "debian" ]]; then
+        export DISTRO="debian"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    elif [[ "$DISTRO" == "amzn" ]]; then
+        export DISTRO="amazon"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    elif [[ "$DISTRO" == "centos" ]]; then
+        export DISTRO="centos"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    elif [[ -f /etc/redhat-release ]] && [[ "$(cat /etc/redhat-release | awk '{ print tolower($1) }')" == "red" ]]; then
+        export DISTRO="redhat"
+        export DISTRO_VER=$(cat /etc/redhat-release | sed 's/.* \(7\).[0-9] .*/\1/')
     else
-        DISTRO=""
-        DISTRO_VER=""
+        export DISTRO=""
+        export DISTRO_VER=""
     fi
 }
 
@@ -148,7 +162,7 @@ checkSSH() {
 
 # Notes: prints generated password
 createPass() {
-    date +%s | sha256sum | base64 | head -c 16
+    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1
 }
 
 # usage: getPkgVer [--opt] <arg>
@@ -239,7 +253,7 @@ getPkgVer() {
 #           --pass=<mysql password>
 #           --host=<mysql host>
 #           --port=<mysql port>
-# notes: redirect output sql as needed
+# notes: redirect output sql as needed (in shell)
 dumpMysqlDatabases() {
     local OPT=""
     local KEY=""
@@ -289,31 +303,25 @@ dumpMysqlDatabases() {
         esac
     done
 
-    # let calling shell redirect output
-    case $KEY in
-        all|full)
-            # for all databases
-            mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
-                --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}"
-                ####> ${MYSQL_BACKUP_DIR}/dumps/full.sql
-            ;;
-        all|merge)
-            # for merging non system databases
-            local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-                -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')")
-            mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
-                --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} \
-                | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs'
-                ####> ${MYSQL_BACKUP_DIR}/dumps/merge.sql
-            ;;
-        all|grants)
-            # for copying privileges
-            mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-                -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" \
-                | mysql -sN -A \
-                | sed 's/$/;/g' \
-                | awk '!x[$0]++'
-                ####> ${MYSQL_BACKUP_DIR}/dumps/grants.sql
-            ;;
-    esac
+    # for all databases
+    if [[ "$KEY" == "all" ]] || [[ "$KEY" == "full" ]]; then
+        mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
+            --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}"
+    fi
+    # for merging non system databases
+    if [[ "$KEY" == "all" ]] || [[ "$KEY" == "merge" ]]; then
+        local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+            -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')")
+        mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
+            --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} \
+            | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs'
+    fi
+    # for copying privileges
+    if [[ "$KEY" == "all" ]] || [[ "$KEY" == "grants" ]]; then
+        mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+            -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" \
+            | mysql -sN -A \
+            | sed 's/$/;/g' \
+            | awk '!x[$0]++'
+    fi
 }

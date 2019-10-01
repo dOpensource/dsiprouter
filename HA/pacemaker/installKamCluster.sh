@@ -12,11 +12,12 @@
 # /var/log/pcsd/pacemaker.log
 # /var/log/nodeutil.log
 
-# set project root, if not a git repo must be run from top level
-PROJECT_ROOT=$(git rev-parse --show-toplevel)
-PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(readlink -f "$0"))}
+# set project root, if in a git repo resolve top level dir
+PROJECT_ROOT=${PROJECT_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}
+PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(dirname $(dirname $(readlink -f "$0"))))}
 # import shared library functions
-. ${PROJECT_ROOT}/shared_lib.sh
+. ${PROJECT_ROOT}/HA/shared_lib.sh
+
 
 # node configuration settings
 PACEMAKER_TCP_PORTS=(2224 3121 5403 21064)
@@ -30,6 +31,7 @@ DSIP_PROJECT_DIR="/opt/dsiprouter"
 DSIP_SCRIPT="${DSIP_PROJECT_DIR}/dsiprouter.sh"
 SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
 
+
 printUsage() {
     pprint "Usage: $0 [-vip <virtual ip>|-net <subnet cidr>|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
 }
@@ -41,6 +43,21 @@ fi
 if (( $# < 2 )) || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
     printerr "At least 2 nodes are required to setup kam cluster" && printUsage && exit 1
 fi
+
+setOSInfo
+# install local requirements for script
+case "$DISTRO" in
+    debian|ubuntu|linuxmint)
+        apt-get install -y sshpass nmap sed gawk
+        ;;
+    centos|redhat|amazon)
+        yum install -y sshpass nmap sed gawk
+        ;;
+    *)
+        printerr "Your OS Distro is currently not supported"
+        exit 1
+        ;;
+esac
 
 # $1 == cidr subnet
 # returns: 0 == success, 1 == failure
@@ -87,24 +104,6 @@ showClusterStatus() {
     corosync-cfgtool -s
     pcs status --full
 }
-
-if ! isRoot; then
-    printerr "Must be run with root privileges" && exit 1
-fi
-
-if (( $# < 2 )); then
-    printerr "At least 2 nodes are required to setup replication" && printUsage && exit 1
-fi
-
-setOSInfo
-# install local requirements for script
-if [[ "$DISTRO" == "debian" ]]; then
-    apt-get install -y sshpass nmap sed gawk
-elif [[ "$DISTRO" == "centos" ]]; then
-    yum install -y sshpass nmap sed gawk
-else
-    printerr "Your OS Distro is currently not supported" && exit 1
-fi
 
 
 # loop through args and evaluate any options
@@ -213,24 +212,27 @@ for NODE in ${ARGS[@]}; do
 
     setOSInfo
     printdbg 'installing requirements'
-    if [[ "\$DISTRO" == "debian" ]]; then
-        # debian specific configs
-        IP4RESTORE_FILE="/etc/iptables/rules.v4"
-        IP6RESTORE_FILE="/etc/iptables/rules.v6"
-        export DEBIAN_FRONTEND=noninteractive
+    case "\$DISTRO" in
+        debian|ubuntu|linuxmint)
+            # debian-based configs
+            IP4RESTORE_FILE="/etc/iptables/rules.v4"
+            IP6RESTORE_FILE="/etc/iptables/rules.v6"
+            export DEBIAN_FRONTEND=noninteractive
 
-        apt-get install -y corosync pacemaker pcs gawk
+            apt-get install -y corosync pacemaker pcs gawk iptables-persistent netfilter-persistent
+            ;;
+        centos|redhat|amazon)
+            # redhat-based specific configs
+            IP4RESTORE_FILE="/etc/sysconfig/iptables"
+            IP6RESTORE_FILE="/etc/sysconfig/ip6tables"
 
-    elif [[ "\$DISTRO" == "centos" ]]; then
-        # centos specific configs
-        IP4RESTORE_FILE="/etc/sysconfig/iptables"
-        IP6RESTORE_FILE="/etc/sysconfig/ip6tables"
-
-        yum install -y corosync pacemaker pcs gawk
-
-    else
-        printerr "Your OS Distro is currently not supported" && exit 1
-    fi
+            yum install -y corosync pacemaker pcs gawk
+            ;;
+        *)
+            printerr "Your OS Distro is currently not supported"
+            exit 1
+            ;;
+    esac
 
     if ! cmdExists 'pcs'; then
         printerr 'Failed to install requirements' && exit 1

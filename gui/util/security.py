@@ -1,7 +1,6 @@
 import hashlib, binascii
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from importlib import reload
 from sqlalchemy import exc as sql_exceptions
 from shared import updateConfig
 import settings
@@ -37,14 +36,15 @@ def hashCreds(creds, salt=None):
     return (binascii.hexlify(hash), binascii.hexlify(salt))
 
 
-def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b''):
+def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b''):
     """
     Set secure credentials, either by hashing or encrypting
-    :param dsip_creds:  dsiprouter admin password as byte string
-    :param api_creds:   dsiprouter api token as byte string
-    :param kam_creds:   kamailio db password as byte string
-    :param mail_creds:  dsiprouter mail password as byte string
-    :return:            None
+    :param dsip_creds:      dsiprouter admin password as byte string
+    :param api_creds:       dsiprouter api token as byte string
+    :param kam_creds:       kamailio db password as byte string
+    :param mail_creds:      dsiprouter mail password as byte string
+    :param ipc_creds:       dsiprouter ipc connection password as byte string
+    :return:                None
     """
     fields = {}
     aes = AES_CBC()
@@ -71,19 +71,26 @@ def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b''):
             raise ValueError('mail credentials must be 64 bytes or less')
         fields['MAIL_PASSWORD'] = aes.encrypt(mail_creds)
 
+    if len(ipc_creds) > 0:
+        if len(ipc_creds) > 64:
+            raise ValueError('mail credentials must be 64 bytes or less')
+        fields['DSIP_IPC_PASS'] = aes.encrypt(ipc_creds)
+
     if settings.LOAD_SETTINGS_FROM == 'file':
         updateConfig(settings, fields)
-        reload(settings)
     elif settings.LOAD_SETTINGS_FROM == 'db':
         from database import loadSession
+        db = loadSession()
         try:
-            db = loadSession()
             db.execute(
                 'update dsip_settings set {} where DSIP_ID={}'.format(', '.join(['{}=:{}'.format(x, x) for x in fields.keys()]), settings.DSIP_ID),
                 fields)
             db.commit()
         except sql_exceptions.SQLAlchemyError:
+            db.rollback()
             raise
+        finally:
+            db.close()
 
 class AES_CBC(object):
     """

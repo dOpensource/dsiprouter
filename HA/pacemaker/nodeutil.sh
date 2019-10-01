@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
 # Summary: Utility functions for managing cluster nodes
 # Summary: Program should be run locally on desired node
 # Note:    Must be run as root user or with sudo priveledges
@@ -99,11 +100,11 @@ show_status() {
 cmd=""  # Default none
 
 HELP() {
-	echo "Usage: "
-	echo "nodeutil -h                    Display this help message."
-	echo "nodeutil -t|--target <target>  Specify a specific node as target."
+    echo "Usage: "
+    echo "nodeutil -h                    Display this help message."
+    echo "nodeutil -t|--target <target>  Specify a specific node as target."
     echo "nodeutil -c|--cmd <cmd>        Specify <cmd> from list of cmds to run."
-	echo "Available <cmd> options:"
+    echo "Available <cmd> options:"
     echo "standby, unstandby, stop, start, panic, start_cluster, restart_cluster, stop_cluster"
 }
 
@@ -119,35 +120,35 @@ eval set -- "$options"
 while true; do
     OPT="$1"
     case "$OPT" in
-		-h)                 # Show help option menu
-		    shift
-			HELP
+        -h)                 # Show help option menu
+            shift
+            HELP
             exit 1
-			;;
-		-t|--target)        # Grab the target node name
-			shift
-			NODE_NAME="$1"
-			shift
-			;;
-		-c|--cmd)           # Grab the cmd to execute
-		    shift
-			cmd="$1"
-			shift
+            ;;
+        -t|--target)        # Grab the target node name
+            shift
+            NODE_NAME="$1"
+            shift
+            ;;
+        -c|--cmd)           # Grab the cmd to execute
+            shift
+            cmd="$1"
+            shift
 
-			case $cmd in
-			    standby|unstandby|stop|start|restart|startup|panic|start_cluster|restart_cluster|stop_cluster|find_resource|show_status)
-				    $cmd "$@"
-				    ;;
-				*)
+            case $cmd in
+                standby|unstandby|stop|start|restart|startup|panic|start_cluster|restart_cluster|stop_cluster|find_resource|show_status)
+                    $cmd "$@"
+                    ;;
+                *)
                     HELP && exit 1
                     ;;
             esac
             ;;
-		--)
-			shift
-			break
-			;;
-	esac
+        --)
+            shift
+            break
+            ;;
+	  esac
 done
 
 exit 0

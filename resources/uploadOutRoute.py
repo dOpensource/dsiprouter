@@ -1,6 +1,6 @@
 import requests
 
-# set per your own configs (get prefixs from expandPrefix.py)
+# set per your own configs (get prefixs from gui/util/conversions.py)
 processed_prefixs = [
 '011',
 ]

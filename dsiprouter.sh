@@ -59,7 +59,10 @@ export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 
 #================== USER_CONFIG_SETTINGS ===================#
 
-# Define some global variables
+# TODO: naming convention for system vs dsip config files is very confusing
+# we should update this to be much more explicit
+
+# Define some defaults and environment variables
 FLT_CARRIER=8
 FLT_PBX=9
 FLT_OUTBOUND=8000
@@ -67,7 +70,8 @@ FLT_INBOUND=9000
 FLT_LCR_MIN=10000
 FLT_FWD_MIN=20000
 WITH_SSL=0
-export DEBUG=0     # By default debugging is turned off
+WITH_LCR=1
+export DEBUG=0
 export SERVERNAT=0
 export REQ_PYTHON_MAJOR_VER=3
 export IPV6_ENABLED=0
@@ -440,15 +444,34 @@ function configureSSL {
 
 # updates and settings in kam config that may change
 # should be run after changing settings.py or change in network configurations
+# TODO: add support for hot reloading of kam settings. i.e. using kamcmd cfg.sets <key> <val> / kamcmd cfg.seti <key> <val>
 function updateKamailioConfig {
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN')}
+    local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
+    local ROLE=${ROLE:-$(getConfigAttrib 'ROLE' ${DSIP_CONFIG_FILE})}
+    local TELEBLOCK_GW_ENABLED=${TELEBLOCK_GW_ENABLED:-$(getConfigAttrib 'TELEBLOCK_GW_ENABLED' ${DSIP_CONFIG_FILE})}
+    local TELEBLOCK_GW_IP=${TELEBLOCK_GW_IP:-$(getConfigAttrib 'TELEBLOCK_GW_IP' ${DSIP_CONFIG_FILE})}
+    local TELEBLOCK_GW_PORT=${TELEBLOCK_GW_PORT:-$(getConfigAttrib 'TELEBLOCK_GW_PORT' ${DSIP_CONFIG_FILE})}
+    local TELEBLOCK_MEDIA_IP=${TELEBLOCK_MEDIA_IP:-$(getConfigAttrib 'TELEBLOCK_MEDIA_IP' ${DSIP_CONFIG_FILE})}
+    local TELEBLOCK_MEDIA_PORT=${TELEBLOCK_MEDIA_PORT:-$(getConfigAttrib 'TELEBLOCK_MEDIA_PORT' ${DSIP_CONFIG_FILE})}
 
     setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigIP 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'teleblock.gw_enabled' "${TELEBLOCK_GW_ENABLED}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'teleblock.gw_ip' "${TELEBLOCK_GW_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'teleblock.gw_port' "${TELEBLOCK_GW_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'teleblock.media_ip' "${TELEBLOCK_MEDIA_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigGlobal 'teleblock.media_port' "${TELEBLOCK_MEDIA_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    if [[ "$DEBUG" == "True" ]]; then
+        enableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
 
     # check for cluster db connection and set kam db config settings appropriately
     # note: the '@' symbol must be escaped in perl regex
@@ -494,7 +517,7 @@ function configureKamailio {
     # copy of template kamailio configuration to dsiprouter system config dir
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     # set kamailio version in kam config
-    sed -i -e "s/KAMAILIO_VERSION/${KAM_VERSION}/" ${DSIP_KAMAILIO_CONFIG_FILE}
+    sed -i -e "s~KAMAILIO_VERSION~${KAM_VERSION}~" ${DSIP_KAMAILIO_CONFIG_FILE}
 
     # make sure kamailio user exists
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_ROOT_DATABASE \
@@ -596,11 +619,6 @@ function configureKamailio {
         rm -rf /tmp/defaults
     fi
 
-    # Backup kamcfg and link the dsiprouter kamcfg
-    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
-    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
-    ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
-
     # Fix the mpath
     fixMPATH
 
@@ -609,6 +627,17 @@ function configureKamailio {
         enableSERVERNAT
     fi
 
+    if (( ${WITH_LCR} == 1 )); then
+        enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+
+    # Backup kamcfg and link the dsiprouter kamcfg
+    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
+    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
+
     # kamcfg will contain plaintext passwords / tokens
     # make sure we give it reasonable permissions
     chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -616,10 +645,10 @@ function configureKamailio {
 }
 
 function enableSERVERNAT {
-	sed -i 's/##!define WITH_SERVERNAT/#!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
+    enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
-	printwarn "SERVERNAT is enabled - Restarting Kamailio is required"
-	printwarn "You can restart it by executing: systemctl restart kamailio"
+    printwarn "SERVERNAT is enabled - Restarting Kamailio is required"
+    printwarn "You can restart it by executing: systemctl restart kamailio"
 }
 
 function disableSERVERNAT {
@@ -828,8 +857,9 @@ EOF
 
     # Generate dsip private key (used for encryption across services)
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import AES_CBC; AES_CBC().genKey()"
-    chown root:root ${DSIP_PRIV_KEY}
-    chmod 0400 ${DSIP_PRIV_KEY}
+
+    # Generate ipc access password
+    ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds, get_random_bytes; setCreds(ipc_creds=get_random_bytes(64))"
 
     # TODO: merge these functions into setCredentials
     # it may be easier to move option checking in setCredentials to
@@ -844,6 +874,12 @@ EOF
 
     # Update db settings table
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from database import updateDsipSettingsTable; updateDsipSettingsTable()"
+
+    # Restrict access to settings and private key
+    chown root:root ${DSIP_PRIV_KEY}
+    chmod 0400 ${DSIP_PRIV_KEY}
+    chown root:root ${DSIP_CONFIG_FILE}
+    chmod 0600 ${DSIP_CONFIG_FILE}
 
     # custom dsiprouter MOTD banner for ssh logins
     updateBanner
@@ -1224,6 +1260,8 @@ function setCredentials {
     local SET_DSIP_USER="${SET_DSIP_USER}"
     local SET_KAM_USER="${SET_KAM_USER}"
     local SET_MAIL_USER="${SET_MAIL_USER}"
+    local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
+    local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
 
     if [[ -n "${SET_DSIP_CREDS}" ]]; then
         DSIP_PASSWORD="$SET_DSIP_CREDS"
@@ -1238,26 +1276,41 @@ function setCredentials {
         KAM_DB_PASS="$SET_KAM_CREDS"
     fi
     if [[ -n "${SET_DSIP_USER}" ]]; then
-        setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_USER" ${DSIP_CONFIG_FILE} -q
+        if [[ "${LOAD_SETTINGS_FROM}" == "db" ]]; then
+            mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME \
+                -e "update dsip_settings set DSIP_USERNAME='${SET_DSIP_USER}' where DSIP_ID=${DSIP_ID}"
+        else
+            setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_USER" ${DSIP_CONFIG_FILE} -q
+        fi
         DSIP_USERNAME="$SET_DSIP_USER"
     fi
     if [[ -n "${SET_KAM_USER}" ]]; then
-        setConfigAttrib 'KAM_DB_USER' "$SET_KAM_USER" ${DSIP_CONFIG_FILE} -q
+        if [[ "${LOAD_SETTINGS_FROM}" == "db" ]]; then
+            mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME \
+                -e "update dsip_settings set KAM_DB_USER='${SET_KAM_USER}' where DSIP_ID=${DSIP_ID}"
+        else
+            setConfigAttrib 'KAM_DB_USER' "$SET_KAM_USER" ${DSIP_CONFIG_FILE} -q
+        fi
         KAM_DB_USER="$SET_KAM_USER"
     fi
     if [[ -n "${SET_MAIL_USER}" ]]; then
-        setConfigAttrib 'MAIL_USERNAME' "$SET_MAIL_USER" ${DSIP_CONFIG_FILE} -q
+        if [[ "${LOAD_SETTINGS_FROM}" == "db" ]]; then
+            mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME \
+                -e "update dsip_settings set MAIL_USERNAME='${SET_MAIL_USER}' where DSIP_ID=${DSIP_ID}"
+        else
+            setConfigAttrib 'MAIL_USERNAME' "$SET_MAIL_USER" ${DSIP_CONFIG_FILE} -q
+        fi
         MAIL_USERNAME="$SET_MAIL_USER"
     fi
 
-    ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds; \
-        setCreds(dsip_creds='${SET_DSIP_CREDS}', api_creds='${SET_API_CREDS}', kam_creds='${SET_KAM_CREDS}', mail_creds='${SET_MAIL_CREDS}')"
+    ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds; from util.shmem import sendSyncSettingsSignal; \
+        setCreds(dsip_creds='${SET_DSIP_CREDS}', api_creds='${SET_API_CREDS}', kam_creds='${SET_KAM_CREDS}', mail_creds='${SET_MAIL_CREDS}'); sendSyncSettingsSignal()"
 
     if [[ -n "${SET_API_CREDS}" || -n "${SET_KAM_CREDS}" || -n "${SET_KAM_USER}" ]]; then
         updateKamailioConfig
-        printwarn "Restart Kamailio and dSIPRouter to make credentials active"
+        printwarn "Restart Kamailio to make credentials active"
     else
-        printwarn "Restart dSIPRouter to make credentials active"
+        printdbg "dSIPRouter credentials have been updated"
     fi
 }
 
@@ -1455,6 +1508,48 @@ function upgrade {
     # TODO: restart services, check for good startup
 }
 
+function configGitDevEnv {
+    mkdir -p ${DSIP_PROJECT_DIR}/.git/info
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/info/attributes ${DSIP_PROJECT_DIR}/.git/info/attributes.old 2>/dev/null
+    cat ${DSIP_PROJECT_DIR}/resources/git/gitattributes >> ${DSIP_PROJECT_DIR}/.git/info/attributes
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/config ${DSIP_PROJECT_DIR}/.git/config.old 2>/dev/null
+    cat ${DSIP_PROJECT_DIR}/resources/git/gitconfig >> ${DSIP_PROJECT_DIR}/.git/config
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/info/exclude ${DSIP_PROJECT_DIR}/.git/info/exclude.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/gitignore ${DSIP_PROJECT_DIR}/.git/info/exclude
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/commit-msg ${DSIP_PROJECT_DIR}/.git/commit-msg.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/commit-msg ${DSIP_PROJECT_DIR}/.git/commit-msg
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/pre-commit.sh ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit
+    chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/prepare-commit-msg.sh ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg
+    chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/post-commit ${DSIP_PROJECT_DIR}/.git/hooks/post-commit.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/post-commit.sh ${DSIP_PROJECT_DIR}/.git/hooks/post-commit
+    chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/post-commit
+
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/merge-changelog.sh /usr/local/bin/_merge-changelog
+    chmod +x /usr/local/bin/_merge-changelog
+}
+
+function cleanGitDevEnv {
+    mv -f ${DSIP_PROJECT_DIR}/.gitattributes.old ${DSIP_PROJECT_DIR}/.gitattributes 2>/dev/null
+    mv -f ${DSIP_PROJECT_DIR}/.git/config.old ${DSIP_PROJECT_DIR}/.git/config 2>/dev/null
+    mv -f ${DSIP_PROJECT_DIR}/.gitignore.old ${DSIP_PROJECT_DIR}/.gitignore 2>/dev/null
+    mv -f ${DSIP_PROJECT_DIR}/.git/commit-msg.old ${DSIP_PROJECT_DIR}/.git/commit-msg 2>/dev/null
+    mv -f ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit.old ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit 2>/dev/null
+    mv -f ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg.old ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg 2>/dev/null
+    mv -f ${DSIP_PROJECT_DIR}/.git/hooks/post-commit.old ${DSIP_PROJECT_DIR}/.git/hooks/post-commit 2>/dev/null
+    rm -f /usr/local/bin/_merge-changelog
+}
+
 function usageOptions {
     linebreak() {
         printf '_%.0s' $(seq 1 ${COLUMNS:-100}) && echo ''
@@ -1468,9 +1563,10 @@ function usageOptions {
     linebreak
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
-    printf "%-30s %s\n%-30s %s\n" \
+    printf "%-30s %s\n%-30s %s\n%-30s %s\n" \
         "install" "-debug|-servernat|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|" \
-        " " "-exip <ip>|--external-ip=<ip>|-db <db host(s)>|--database=<db host(s)>|-id <num>|--dsip-id=<num>"
+        " " "-exip <ip>|--external-ip=<ip>|-db <db host(s)>|--database=<db host(s)>|-id <num>|--dsip-id=<num>|" \
+        " " "-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>"
     printf "%-30s %s\n" \
         "uninstall" "-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine"
     printf "%-30s %s\n" \
@@ -1537,8 +1633,8 @@ function processCMD {
 
     # Display usage options if no options are specified
     if (( $# == 0 )); then
-   	    usageOptions
-    	cleanupAndExit 1
+        usageOptions
+        cleanupAndExit 1
     fi
 
     # use options to add commands in any order needed
@@ -1623,6 +1719,30 @@ function processCMD {
                             shift
                         fi
                         ;;
+                    -with_lcr|--with_lcr=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
+                                WITH_LCR=1
+                            else
+                                WITH_LCR=0
+                            fi
+                            shift
+                        else
+                            WITH_LCR=1
+                            shift
+                        fi
+                        ;;
+                    -with_dev|--with_dev=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
+                                RUN_COMMANDS+=(configGitDevEnv)
+                            fi
+                            shift
+                        else
+                            RUN_COMMANDS+=(configGitDevEnv)
+                            shift
+                        fi
+                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -1688,6 +1808,11 @@ function processCMD {
                         ;;
                 esac
             done
+
+            # clean dev environment if configured
+            if [[ -e /usr/local/bin/_merge-changelog ]]; then
+                RUN_COMMANDS+=(cleanGitDevEnv)
+            fi
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then

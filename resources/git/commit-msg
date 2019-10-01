@@ -1,0 +1,12 @@
+%s
+
+Commit:         %h
+Tree:           %t
+Author:         %an
+Email:          %ae
+Date:           %aD
+  
+%b
+
+%N
+

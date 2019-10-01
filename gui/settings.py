@@ -13,6 +13,9 @@ DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
+DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
+DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
+DSIP_IPC_PASS = b''
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -30,8 +33,9 @@ DSIP_SSL_EMAIL = ''
 
 VERSION = "0.60+ent"
 DEBUG = False
-# '' = default behavior - handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
-# outbound = act as an outbound proxy only 
+# '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
+# 'outbound'    = act as an outbound proxy only (no domain routing)
+# 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
 ROLE = ''  
 
 # MySQL settings for kamailio

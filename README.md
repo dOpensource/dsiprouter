@@ -1,5 +1,19 @@
-What is dSIPRouter?
-===================
+# dSIPRouter Enterprise
+
+Provides enterprise features for the dSIPRouter platform.  
+
+The following features are currently supported:
+
+- Mysql Active-Active replication
+- Pacemaker / Corosync Active-Passive floating IP
+- Call Limits
+- Over Call Limit Notifications
+- Endpoint Failure Notifications
+- Failover to a DID
+- HardForward Inbound DID to an external number
+- Call Detail Records per Endpoint
+
+## What is dSIPRouter?
 
 dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:
 
@@ -24,6 +38,18 @@ username: admin
 password: ZmIwMTdmY2I5NjE4
 
 API Token: 9lyrny3HOtwgjR6JIMwRaMej9LijIS835zhVbD8ywHDzXT07Xm6vem1sgfvWkFz3
+
+### HA Installation Notes
+
+The highly available mysql and pacemaker modules are installed seperately at this time:
+
+- Both modules are deployed from an edge server that must connect through ssh to all nodes
+- Currently 2 node clusters have been thoroughly tested but there is no limit to cluster size.
+
+Supported SSH authentication methods for cluster configuration:
+
+1. public key
+2. password
 
 ### Documentation
 
