@@ -2,6 +2,20 @@
 
 
 
+### Update RTPEngine Default Config
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 1 Oct 2019 17:58:13 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- change default config to use explicit ip definition to avoid confusion
+
+
+---
+
+
 ### Update Enterprise and OSS Features
 
 > Branches Affected: v0.60+ent  

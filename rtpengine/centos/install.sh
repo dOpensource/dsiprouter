@@ -106,7 +106,7 @@ function install {
 [rtpengine]
 table = -1
 interface = ${INTERFACE}
-listen-ng = 7722
+listen-ng = 127.0.0.1:7722
 port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
 log-level = 7
