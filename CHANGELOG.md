@@ -2,6 +2,19 @@
 
 
 
+### Merge Commit c88b214251333b7350b10b27fa2dae683ef3b602 From OSS Repo
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 2 Oct 2019 16:59:11 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### Update RTPEngine Default Config
 
 > Branches Affected: v0.60+ent  
@@ -758,7 +771,7 @@
 ### FusionPBX Provisioning Services: - The docker container now starts up with a self signed cert
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.523-rel  
 > Date: Wed, 7 Aug 2019 12:00:45 +0000  
 > Author: root (root@dsip0523-qa-0.localdomain)  
 > Committer: root (root@dsip0523-qa-0.localdomain)  
@@ -797,7 +810,7 @@
 ### Domains - Local Subscriber: - Fixed authentication logic.  It will now properly authenticate against the subscriber table
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.523-beta1  
 > Date: Mon, 5 Aug 2019 22:09:48 +0000  
 > Author: root (root@dsip0523qa-0.localdomain)  
 > Committer: root (root@dsip0523qa-0.localdomain)  
@@ -1175,7 +1188,7 @@ Moved the API section from the bottom.
 ### Disabled verbose output for a test
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.5221-rel  
 > Date: Wed, 24 Jul 2019 13:30:30 +0000  
 > Author: Mack Hendricks (mack@goflyball.com)  
 > Committer: Mack Hendricks (mack@goflyball.com)  
@@ -1809,7 +1822,7 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 ### Set it back so that it binds to all interfaces. This will cause the dashboard not to work on some OS builds
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.522-rel  
 > Date: Tue, 28 May 2019 08:50:12 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Mack Hendricks (mack@dopensource.com)  
@@ -5170,7 +5183,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Add files via upload
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.511-rel  
 > Date: Wed, 19 Dec 2018 15:03:28 -0600  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -11242,7 +11255,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Turned off the debug statement
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.51-rc1  
 > Date: Thu, 15 Nov 2018 11:57:05 +0000  
 > Author: root (root@dSIPRouter-v051-build.localdomain)  
 > Committer: root (root@dSIPRouter-v051-build.localdomain)  
@@ -15776,7 +15789,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Updated the logo's
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.50  
 > Date: Tue, 28 Aug 2018 14:00:15 +0000  
 > Author: root (root@dsiprouter-v50-final.localdomain)  
 > Committer: root (root@dsiprouter-v50-final.localdomain)  
@@ -16558,7 +16571,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Update README.md
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.40  
 > Date: Thu, 17 May 2018 10:36:24 +0200  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -16818,7 +16831,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Update settings.py
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.35  
 > Date: Tue, 24 Apr 2018 16:38:47 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -16948,7 +16961,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Fixed issue with rtpengine not starting after installation
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.34  
 > Date: Sat, 24 Mar 2018 22:43:13 -0400  
 > Author: root (root@dsiprouter.dopensource.com)  
 > Committer: root (root@dsiprouter.dopensource.com)  
@@ -17208,7 +17221,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Update settings.py
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.34-beta  
 > Date: Mon, 19 Mar 2018 06:01:04 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -17364,7 +17377,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Update kamailio51_dsiprouter.cfg
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.33  
 > Date: Mon, 12 Mar 2018 21:04:00 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -17403,7 +17416,7 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 ### Update README.md
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.32  
 > Date: Sun, 11 Mar 2018 21:43:45 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
@@ -17782,7 +17795,7 @@ Was missing "$" and being displayed as text. Now resolves to variable
 ### update the version from 0.30 to 0.31
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.31  
 > Date: Mon, 4 Dec 2017 12:12:24 +0000  
 > Author: root (root@packer-debian-8-amd64.droplet.local)  
 > Committer: root (root@packer-debian-8-amd64.droplet.local)  
@@ -18068,7 +18081,7 @@ Was missing "$" and being displayed as text. Now resolves to variable
 ### Updated the release version
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.3  
 > Date: Mon, 13 Nov 2017 17:50:18 +0000  
 > Author: root (root@packer-debian-8-amd64.droplet.local)  
 > Committer: root (root@packer-debian-8-amd64.droplet.local)  
@@ -18575,7 +18588,7 @@ Was missing "$" and being displayed as text. Now resolves to variable
 ### Fixed it for Debian
 
 > Branches Affected: v0.523+ent,v0.60+ent  
-> Tags Affected:   
+> Tags Affected: v0.2  
 > Date: Mon, 11 Sep 2017 18:47:29 -0700  
 > Author: dopensource (dopensource@noc-lcb-spxy1.garlic.com)  
 > Committer: dopensource (dopensource@noc-lcb-spxy1.garlic.com)  
