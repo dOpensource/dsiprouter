@@ -23,7 +23,7 @@ DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
 PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh"
 CONSUL_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/consulkey"
 export KEY_CIPHER_TEXT_B64=$(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64)
-SERVICES_TO_TRACK=("kamailio" "haproxy" "asterisk" "freeswitch" "rtpengine" "rtpproxy" "mysql" "mariadb" "postgresql" "redis")
+SERVICES_TO_TRACK=("dsiprouter" "kamailio" "haproxy" "asterisk" "freeswitch" "rtpengine" "rtpproxy" "mysql" "mariadb" "postgresql" "redis")
 SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
 CONSUL_TCP_PORTS=(8300 8301 8302 8500 8501 8600)
 CONSUL_UDP_PORTS=(8301 8302 8600)

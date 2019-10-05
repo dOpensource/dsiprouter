@@ -2,6 +2,19 @@
 
 
 
+### Add dsiprouter to list of tracked services for consul
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Sat, 5 Oct 2019 19:07:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### DB Session Management Updates and Feature Additions
 
 > Branches Affected: v0.60+ent  
