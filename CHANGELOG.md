@@ -2,6 +2,47 @@
 
 
 
+### DB Session Management Updates and Feature Additions
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Fri, 4 Oct 2019 20:37:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- overhaul DB session management architecture to support multithreading
+- update app to close all db sessions and connections when stopping
+- update galera, group replication, and kamcluster scripts to fix some small install bugs
+- update cluster install scripts to support firewalld
+- add support for consul cluster installation and configuration
+- update exception and endpoint debug functions to have more sane defaults
+- move filehandling.py to util module
+- fix syslogging bugs in dsiprouter
+- update dsiprouter syslog format to be more useful
+- fix various bugs in api_routes code
+- fix various bugs related to incorrect session handling
+- add utility functions ti shared_lib for HA scripts
+- fix regression with kamailio config updates on install
+- add DummySession class to fix exception handling logic flow
+- fix enterprise_enabled global to really be global
+
+
+---
+
+
+### Merge Commit c88b214251333b7350b10b27fa2dae683ef3b602 From OSS Repo
+
+> Branches Affected: v0.523+ent  
+> Tags Affected: showv0.523+ent-rel  
+> Date: Wed, 2 Oct 2019 16:59:11 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### Merge Commit c88b214251333b7350b10b27fa2dae683ef3b602 From OSS Repo
 
 > Branches Affected: v0.60+ent  
@@ -61,6 +102,19 @@
 - update a couple shared.py functions to be more robust
 - update kam config update functions to support all the dynamic settings
 - remove deprecated lcr module (it is already part of core dsiprouter)
+
+
+---
+
+
+### Call Detail Records: - Records are not sorted by call start time
+
+> Branches Affected: v0.523+ent  
+> Tags Affected:   
+> Date: Tue, 1 Oct 2019 18:49:52 +0000  
+> Author: root (root@dSIP0523entNightly-0.localdomain)  
+> Committer: root (root@dSIP0523entNightly-0.localdomain)  
+
 
 
 ---

@@ -11,9 +11,9 @@ from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
-from database import loadSession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, \
-    UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
-    dSIPMaintModes, dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
+from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
+    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
+    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -26,7 +26,6 @@ import settings
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
-db = loadSession()
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
@@ -49,12 +48,16 @@ def before_request():
 
 @app.route('/')
 def index():
+    db = DummySession()
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
+        db = SessionLoader()
+
         if not session.get('logged_in'):
-            checkDatabase()
+            checkDatabase(db)
             return render_template('index.html', version=settings.VERSION)
         else:
             action = request.args.get('action')
@@ -62,20 +65,21 @@ def index():
 
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
-        db.close()
         return render_template('index.html', version=settings.VERSION)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         return showError(type=error)
+    finally:
+        SessionLoader.remove()
 
 
 @app.route('/favicon.ico')
@@ -114,11 +118,11 @@ def login():
 
 
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         return showError(type=error)
 
@@ -134,11 +138,11 @@ def logout():
         return redirect(url_for('index'))
 
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         return showError(type=error)
 
@@ -153,12 +157,16 @@ def displayCarrierGroups(gwgroup=None):
 
     # TODO: track related dr_rules and update lists on delete
 
+    db = DummySession()
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
 
@@ -172,29 +180,29 @@ def displayCarrierGroups(gwgroup=None):
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
                 UAC.auth_username, UAC.auth_password, UAC.realm).filter(GatewayGroups.description.like(typeFilter))
-        db.close()
+
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/carriergroups', methods=['POST'])
@@ -203,6 +211,7 @@ def addUpdateCarrierGroups():
     Add or Update a group of carriers
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -210,6 +219,8 @@ def addUpdateCarrierGroups():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -278,25 +289,25 @@ def addUpdateCarrierGroups():
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/carriergroupdelete', methods=['POST'])
@@ -305,6 +316,7 @@ def deleteCarrierGroups():
     Delete a group of carriers
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -312,6 +324,8 @@ def deleteCarrierGroups():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -336,25 +350,25 @@ def deleteCarrierGroups():
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/carriers')
@@ -368,12 +382,16 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     :param newgwid:
     """
 
+    db = DummySession()
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         # carriers is a list of carriers matching query
         # carrier_routes is a list of associated rules for each carrier
@@ -419,23 +437,25 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
+    finally:
+        SessionLoader.remove()
 
 
 @app.route('/carriers', methods=['POST'])
@@ -444,7 +464,7 @@ def addUpdateCarriers():
     Add or Update a carrier
     """
 
-
+    db = DummySession()
     newgwid = None
 
     try:
@@ -453,6 +473,8 @@ def addUpdateCarriers():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -513,25 +535,25 @@ def addUpdateCarriers():
         return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/carrierdelete', methods=['POST'])
@@ -540,6 +562,7 @@ def deleteCarriers():
     Delete a carrier
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -547,6 +570,8 @@ def deleteCarriers():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -589,25 +614,25 @@ def deleteCarriers():
         return displayCarriers(gwgroup=gwgroup)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/endpointgroups')
@@ -615,6 +640,7 @@ def displayEndpointGroups():
     """
     Display Endpoint Groups / Endpoints in the view
     """
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
@@ -624,23 +650,13 @@ def displayEndpointGroups():
 
         return render_template('endpointgroups.html', DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        db.rollback()
-        db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        db.rollback()
-        db.flush()
         return showError(type=error)
 
 @app.route('/cdrs')
@@ -657,23 +673,13 @@ def displayCDRS():
 
         return render_template('cdrs.html', DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        db.rollback()
-        db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        db.rollback()
-        db.flush()
         return showError(type=error)
 
 
@@ -683,6 +689,7 @@ def addUpdateEndpointGroups():
     Add or Update a PBX / Endpoint
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -690,6 +697,8 @@ def addUpdateEndpointGroups():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db =SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -724,25 +733,25 @@ def addUpdateEndpointGroups():
         return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/pbxdelete', methods=['POST'])
@@ -751,6 +760,7 @@ def deletePBX():
     Delete a PBX / Endpoint
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -758,6 +768,8 @@ def deletePBX():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -795,25 +807,25 @@ def deletePBX():
         return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/inboundmapping')
@@ -824,12 +836,16 @@ def displayInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
+    db = DummySession()
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
@@ -856,31 +872,31 @@ select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwdd
             try:
                 dids = numbers_api.getNumbers()
             except http_exceptions.HTTPException as ex:
-                debugException(ex, log_ex=False, print_ex=True, showstack=False)
+                debugException(ex)
                 return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
 
         return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 
@@ -892,6 +908,7 @@ def addUpdateInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -899,6 +916,8 @@ def addUpdateInboundMapping():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1165,25 +1184,25 @@ def addUpdateInboundMapping():
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/inboundmappingdelete', methods=['POST'])
@@ -1194,6 +1213,7 @@ def deleteInboundMapping():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -1201,6 +1221,8 @@ def deleteInboundMapping():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1239,25 +1261,26 @@ def deleteInboundMapping():
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
+
 
 def processInboundMappingImport(filename, groupid, pbxid, name, db):
     try:
@@ -1279,19 +1302,19 @@ def processInboundMappingImport(filename, groupid, pbxid, name, db):
         db.commit()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
@@ -1301,6 +1324,7 @@ def processInboundMappingImport(filename, groupid, pbxid, name, db):
 @app.route('/inboundmappingimport',methods=['POST'])
 def importInboundMapping():
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -1308,6 +1332,8 @@ def importInboundMapping():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1327,30 +1353,19 @@ def importInboundMapping():
         if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename,settings.FLT_INBOUND,gwid,name,db)
+            processInboundMappingImport(filename, settings.FLT_INBOUND, gwid, name, db)
             flash('X number of file were imported')
             return redirect(url_for('displayInboundMapping',filename=filename))
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        db.rollback()
-        db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        db.rollback()
-        db.flush()
         return showError(type=error)
-    finally:
-        db.close()
+
 
 @app.route('/teleblock')
 def displayTeleBlock():
@@ -1374,23 +1389,13 @@ def displayTeleBlock():
 
         return render_template('teleblock.html', teleblock=teleblock)
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        db.rollback()
-        db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        db.rollback()
-        db.flush()
         return showError(type=error)
 
 
@@ -1423,26 +1428,14 @@ def addUpdateTeleBlock():
         globals.reload_required = True
         return displayTeleBlock()
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        db.rollback()
-        db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        db.rollback()
-        db.flush()
         return showError(type=error)
-    finally:
-        db.close()
 
 
 @app.route('/outboundroutes')
@@ -1453,12 +1446,16 @@ def displayOutboundRoutes():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
+    db = DummySession()
+
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         rows = db.query(OutboundRoutes).filter(
             (OutboundRoutes.groupid == settings.FLT_OUTBOUND) |
@@ -1479,23 +1476,25 @@ def displayOutboundRoutes():
         return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
+    finally:
+        SessionLoader.remove()
 
 
 @app.route('/outboundroutes', methods=['POST'])
@@ -1505,6 +1504,8 @@ def addUpateOutboundRoutes():
     Supports rule definitions for Kamailio Drouting module\n
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
+
+    db = DummySession()
 
     # set default values
     # from_prefix = ""
@@ -1527,6 +1528,8 @@ def addUpateOutboundRoutes():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1652,25 +1655,25 @@ def addUpateOutboundRoutes():
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/outboundroutesdelete', methods=['POST'])
@@ -1681,6 +1684,7 @@ def deleteOutboundRoute():
     Documentation: `Drouting module <https://kamailio.org/docs/modules/4.4.x/modules/drouting.html>`_
     """
 
+    db = DummySession()
 
     try:
         if not session.get('logged_in'):
@@ -1688,6 +1692,8 @@ def deleteOutboundRoute():
 
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1707,25 +1713,25 @@ def deleteOutboundRoute():
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @app.route('/reloadkam')
@@ -1793,11 +1799,11 @@ def reloadkam():
         return json.dumps({"status": status_code})
 
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         return showError(type=error)
 
@@ -1877,21 +1883,25 @@ class CustomServer(Server):
             self.processes = 1
 
 def syncSettings(fields={}, update_net=False):
-    # sync settings from settings.py
-    if settings.LOAD_SETTINGS_FROM == 'file':
-        try:
+    db = DummySession()
+
+    try:
+        db = SessionLoader()
+
+        # sync settings from settings.py
+        if settings.LOAD_SETTINGS_FROM == 'file':
             updateDsipSettingsTable(db)
-        except sql_exceptions.SQLAlchemyError as ex:
-            debugException(ex)
-            IO.printerr('Could Not Update dsip_settings Database Table')
-    # sync settings from dsip_settings table
-    elif settings.LOAD_SETTINGS_FROM == 'db':
-        try:
+        # sync settings from dsip_settings table
+        elif settings.LOAD_SETTINGS_FROM == 'db':
             fields = dict(db.execute('select * from dsip_settings').first().items())
 
-        except sql_exceptions.SQLAlchemyError as ex:
-            debugException(ex)
-            IO.printerr('Could Not Access dsip_settings Database Table')
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        IO.printerr('Could Not Update dsip_settings Database Table')
+        db.rollback()
+        db.flush()
+    finally:
+        SessionLoader.remove()
 
     # update ip's dynamically
     if update_net:
@@ -1940,7 +1950,7 @@ def replaceAppLoggers(log_handler):
 
 def initApp(flask_app):
 
-    #Initialize Globals
+    # Initialize Globals
     globals.initialize()
 
     # Setup the Flask session manager with a random secret key
@@ -1955,9 +1965,6 @@ def initApp(flask_app):
 
     # Add jinja2 functions
     flask_app.jinja_env.globals.update(zip=zip)
-
-    # db.init_app(flask_app)
-    # db.app = app
 
     # Dynamically update settings
     syncSettings(update_net=True)
@@ -1991,18 +1998,28 @@ def teardown():
     except:
         pass
     try:
+        SessionLoader.session_factory.close_all()
+    except:
+        pass
+    try:
+        db_engine.dispose()
+    except:
+        pass
+    try:
         os.remove(settings.DSIP_PID_FILE)
     except:
         pass
 
-def checkDatabase():
+# TODO: probably not needed anymore
+def checkDatabase(session=None):
+    db = session if session is not None else SessionLoader()
    # Check database connection is still good
     try:
         db.execute('select 1')
         db.flush()
     except sql_exceptions.SQLAlchemyError as ex:
-    # If not, close DB connection so that the SQL engine can get another one from the pool
-        db.close()
+        # If not, close DB connection so that the SQL engine can get another one from the pool
+        SessionLoader.remove()
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ def initSyslogLogger():
         handler.close()
 
     # create our own custom formatter and handler for syslog
-    log_formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(pathname)s->%(lineno)d]: %(message)s',
+    log_formatter = logging.Formatter('[%(asctime)s] [%(process)d->(thread)d] [%(levelname)s]: %(message)s',
                                       datefmt='%Y-%m-%d %H:%M:%S')
     log_handler = logging.handlers.SysLogHandler(address="/dev/log", facility=settings.DSIP_LOG_FACILITY)
     log_handler.setLevel(settings.DSIP_LOG_LEVEL)

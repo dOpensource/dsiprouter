@@ -1,22 +1,16 @@
 import json
-import urllib.parse as parse
 from functools import wraps
 from flask import Blueprint, jsonify
-from flask import Blueprint, session, render_template,jsonify
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
-from sqlalchemy import case, func, exc as sql_exceptions, and_, not_
+from sqlalchemy import exc as sql_exceptions, and_
 from werkzeug import exceptions as http_exceptions
-from database import loadSession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
-    dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
+from database import SessionLoader, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
     dSIPCallLimits, InboundMapping
 from shared import *
 from util.notifications import sendEmail
 from util.security import AES_CBC
-from file_handling import isValidFile
 import settings, globals
 
 
-db = loadSession()
 api = Blueprint('api', __name__)
 
 # TODO: we need to standardize our response payload
@@ -72,12 +66,18 @@ def api_security(func):
 
     return wrapper
 
+
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
 @api_security
 def getKamailioStats():
+    
+    db = DummySession()
+    
     try:
         if (settings.DEBUG):
             debugEndpoint()
+            
+        db = SessionLoader()
 
         payload = {"jsonrpc": "2.0", "method": "tm.stats","id": 1}
         #r = requests.get('https://www.google.com',data=payload)
@@ -87,33 +87,38 @@ def getKamailioStats():
         return r.text
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
 @api_security
 def reloadKamailio():
+    
+    db = DummySession()
+    
     try:
         if (settings.DEBUG):
             debugEndpoint()
+            
+        db = SessionLoader()
 
         payloadResponse = {}
         configParameters = {}
@@ -158,33 +163,38 @@ def reloadKamailio():
         return json.dumps({"results": payloadResponse})
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/endpoint/lease", methods=['GET'])
 @api_security
 def getEndpointLease():
+    
+    db = DummySession()
+    
     try:
         if (settings.DEBUG):
             debugEndpoint()
+            
+        db = SessionLoader()
 
         email=request.args.get('email')
         if not email:
@@ -242,32 +252,38 @@ def getEndpointLease():
         return json.dumps(payload)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
-        #db.rollback()
-        #db.flush()
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        #db.rollback()
-        #db.flush()
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        #db.rollback()
-        #db.flush()
+        db.rollback()
+        db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
+
 
 @api.route("/api/v1/endpoint/lease/<int:leaseid>/revoke", methods=['PUT'])
 @api_security
 def revokeEndpointLease(leaseid):
+    
+    db = DummySession()
+    
     try:
         if (settings.DEBUG):
             debugEndpoint()
+        
+        db = SessionLoader()
 
         # Query the Lease ID
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
@@ -293,25 +309,25 @@ def revokeEndpointLease(leaseid):
         return json.dumps(payload)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 class APIException(Exception):
     pass
@@ -319,15 +335,21 @@ class APIException(Exception):
 class MaintModeAttrMissing(APIException):
     pass
 
+
 @api.route("/api/v1/endpoint/<int:id>", methods=['POST'])
 @api_security
 def updateEndpoint(id):
+    
+    db = DummySession()
+
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
-
-        # Define a dictionary object that represents the payload
-        responsePayload = {}
+        
+        db = SessionLoader()
 
         # Set the status to 0, update it to 1 if the update is successful
         responsePayload['status'] = 0
@@ -362,7 +384,7 @@ def updateEndpoint(id):
         return json.dumps(responsePayload)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
@@ -370,19 +392,20 @@ def updateEndpoint(id):
             responsePayload['error'] = "endpoint {} is already in maintmode".format(id)
         return json.dumps(responsePayload)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return json.dumps(responsePayload)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return json.dumps(responsePayload)
     finally:
-        db.close()
+        SessionLoader.remove()
+
 
 # TODO: we should obviously optimize this and cleanup reused code
 @api.route("/api/v1/inboundmapping", methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -391,6 +414,8 @@ def handleInboundMapping():
     """
     Endpoint for Inbound DID Rule Mapping
     """
+
+    db = DummySession()
 
     # dr_routing prefix matching supported characters
     # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
@@ -409,6 +434,8 @@ def handleInboundMapping():
     try:
         if (settings.DEBUG):
             debugEndpoint()
+            
+        db = SessionLoader()
 
         # =========================================
         # get rule for DID mapping or list of rules
@@ -611,7 +638,7 @@ def handleInboundMapping():
             raise Exception('Unknown Error Occurred')
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         payload['error'] = "db"
         if len(str(ex)) > 0:
             payload['msg'] = str(ex)
@@ -620,7 +647,7 @@ def handleInboundMapping():
         db.flush()
         return json.dumps(payload), status_code
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         payload['error'] = "http"
         if len(str(ex)) > 0:
             payload['msg'] = str(ex)
@@ -629,7 +656,7 @@ def handleInboundMapping():
         db.flush()
         return json.dumps(payload), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         payload['error'] = "server"
         if len(str(ex)) > 0:
             payload['msg'] = str(ex)
@@ -638,7 +665,8 @@ def handleInboundMapping():
         db.flush()
         return json.dumps(payload), status_code
     finally:
-        db.close()
+        SessionLoader.remove()
+
 
 @api.route("/api/v1/notification/gwgroup", methods=['POST'])
 @api_security
@@ -646,6 +674,8 @@ def handleNotificationRequest():
     """
     Endpoint for Sending Notifications
     """
+
+    db = DummySession()
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {'gwgroupid': int, 'type': int, 'text_body': str,
@@ -657,6 +687,8 @@ def handleNotificationRequest():
     try:
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         # ============================
         # create and send notification
@@ -725,34 +757,48 @@ def handleNotificationRequest():
         return json.dumps(payload), status.HTTP_OK
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         payload['error'] = "db"
         if len(str(ex)) > 0:
             payload['msg'] = str(ex)
         status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
         return json.dumps(payload), status_code
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         payload['error'] = "http"
         if len(str(ex)) > 0:
             payload['msg'] = str(ex)
         status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
         return json.dumps(payload), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         payload['error'] = "server"
         if len(str(ex)) > 0:
             payload['msg'] = str(ex)
         status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
         return json.dumps(payload), status_code
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['DELETE'])
 @api_security
 def deleteEndpointGroup(gwgroupid):
+    
+    db = DummySession()
+    
     try:
+        if settings.DEBUG:
+            debugEndpoint()
+            
+        db = SessionLoader()
+        
         responsePayload = {}
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id==gwgroupid)
@@ -786,32 +832,48 @@ def deleteEndpointGroup(gwgroupid):
             domainmapping.delete(synchronize_session=False)
 
         db.commit()
-        db.flush()
-        #db.close()
 
         responsePayload['status'] = 200
 
         return json.dumps(responsePayload)
 
-
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        return jsonify(status=0,error=str(ex))
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        return jsonify(status=0,error=str(ex))
-    #finally:
-        #db.close()
-
-
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
+    finally:
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
 def getEndpointGroup(gwgroupid):
+    
+    db = DummySession()
+    
     try:
+        if settings.DEBUG:
+            debugEndpoint()
+        
+        db = SessionLoader()
+        
         responsePayload = {}
         strip = 0
         prefix = ""
@@ -885,29 +947,49 @@ def getEndpointGroup(gwgroupid):
 
         return json.dumps(responsePayload)
 
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
-        return jsonify(status=0,error=str(ex))
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        return jsonify(status=0,error=str(ex))
-    #finally:
-    #    db.close()
-
-
-
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
+    finally:
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/endpointgroups", methods=['GET'])
 @api_security
 def listEndpointGroups():
+    
+    db = DummySession()
+    
     responsePayload = {}
     responsePayload['endpointgroups'] = []
     typeFilter = "%type:{}%".format(settings.FLT_PBX)
+    
     try:
+        if settings.DEBUG:
+            debugEndpoint()
+        
+        db = SessionLoader()
+        
         endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter))
+        
         for endpointgroup in endpointgroups:
             # Create a dictionary object
             eg = {}
@@ -929,32 +1011,45 @@ def listEndpointGroups():
 
         return json.dumps(responsePayload)
 
-    except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
         db.rollback()
         db.flush()
-        return jsonify(status=0,error=str(ex))
-    except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "server"
-        return jsonify(status=0,error=str(ex))
-#TODO: Figure out why doing a db.close causes the previous DeleteEndpointGroup call to fail
-    finally:
-        db.commit()
+        return jsonify(status=0, error=error), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
         db.flush()
-        db.close()
+        return jsonify(status=0, error=error), status_code
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
+    finally:
+        SessionLoader.remove()
+
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['PUT'])
 @api_security
 def updateEndpointGroups(gwgroupid):
+    
+    db = DummySession()
+
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
-
-        # Define a dictionary object that represents the payload
-        responsePayload = {}
+            
+        db = SessionLoader()
 
         # Set the status to 0, update it to 1 if the update is successful
         responsePayload['status'] = 0
@@ -966,18 +1061,11 @@ def updateEndpointGroups(gwgroupid):
         # Check parameters and raise exception if missing required parameters
         requiredParameters = ['name']
 
-        try:
-            for parameter in requiredParameters:
-                if parameter not in requestPayload:
-                    raise RequiredParameterMissing
-                elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
-                    raise RequiredParameterValueMissing
-        except RequiredParameterMissing as ex:
-                responsePayload['error'] = "{} attribute is missing".format(parameter)
-                return json.dumps(responsePayload)
-        except RequiredParameterValueMissing as ex:
-                responsePayload['error'] = "The value of the {} attribute is missing".format(parameter)
-                return json.dumps(responsePayload)
+        for parameter in requiredParameters:
+            if parameter not in requestPayload:
+                raise http_exceptions.BadRequest("Required parameter '{}' missing".format(parameter))
+            elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
+                raise http_exceptions.BadRequest("Required parameter '{}' invalid".format(parameter))
 
         # Update Gateway Name
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
@@ -1015,7 +1103,8 @@ def updateEndpointGroups(gwgroupid):
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
             authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] else settings.DOMAIN
             if authuser == None or authpass == None:
-                raise AuthUsernameOrPasswordEmpty
+                raise http_exceptions.BadRequest("Auth username or password invalid")
+
             #Get the existing username and domain_name if it exists
             currentSubscriberInfo = db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
             if currentSubscriberInfo is not None:
@@ -1024,14 +1113,15 @@ def updateEndpointGroups(gwgroupid):
                     pass # The subscriber info is the same - no need to update
                 else: #Check if the new username and domain is unique
                     if db.query(Subscribers).filter(Subscribers.username == authuser,Subscribers.domain == authdomain).scalar():
-                        raise SubscriberUsernameTaken
+                        raise http_exceptions.BadRequest("Subscriber username already taken")
                     else: # Update the Subscriber Info
                         currentSubscriberInfo.username=authuser
                         currentSubscriberInfo.password=authpass
                         currentSubscriberInfo.domain=authdomain
             else: #Create a new Suscriber entry
-                   Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
-                   db.add(Subscriber)
+               Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
+               db.add(Subscriber)
+
         #Delete the Subscriber info if IP is selected
         if authtype == "ip":
             subscriber =  db.query(Subscribers).filter(Subscribers.rpid==gwgroupid)
@@ -1101,9 +1191,6 @@ def updateEndpointGroups(gwgroupid):
                 db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update( \
                     {"gwlist": gwlistString}, synchronize_session=False)
 
-
-
-
         #Update notifications
         if 'notifications' in requestPayload:
             overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] if 'overmaxcalllimit' in requestPayload['notifications'] else None
@@ -1150,7 +1237,7 @@ def updateEndpointGroups(gwgroupid):
             if fusionpbxenabled == 1:
                 #Update
                 if db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id==gwgroupid).update( \
-                {"pbx_id":gwgroup_id,"db_host":fusionpbxdbhost,"db_username":fusionpbxdbuser,"db_password":fusionpbxdbpass}):
+                {"pbx_id":gwgroupid,"db_host":fusionpbxdbhost,"db_username":fusionpbxdbuser,"db_password":fusionpbxdbpass}):
                     pass
                 else:
                     #Create new record
@@ -1161,8 +1248,6 @@ def updateEndpointGroups(gwgroupid):
             elif fusionpbxenabled == 0:
                 db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id==gwgroupid).delete()
 
-
-
         db.commit()
 
         return jsonify(
@@ -1171,16 +1256,35 @@ def updateEndpointGroups(gwgroupid):
             status="200"
         )
 
-    except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        # db.rollback()
-        # db.flush()
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        responsePayload['error'] = "db"
+        if len(str(ex)) > 0:
+            responsePayload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
         db.rollback()
-        return jsonify(status=0, error=str(ex))
-
+        db.flush()
+        return json.dumps(responsePayload), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        responsePayload['error'] = "http"
+        if len(str(ex)) > 0:
+            responsePayload['msg'] = str(ex)
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return json.dumps(responsePayload), status_code
+    except Exception as ex:
+        debugException(ex)
+        responsePayload['error'] = "server"
+        if len(str(ex)) > 0:
+            responsePayload['msg'] = str(ex)
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return json.dumps(responsePayload), status_code
     finally:
-        db.close()
-
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/endpointgroups", methods=['POST'])
@@ -1215,6 +1319,8 @@ def addEndpointGroups():
     }
     """
 
+    db = DummySession()
+
     # Check parameters and raise exception if missing required parameters
     requiredParameters = ['name']
 
@@ -1227,6 +1333,8 @@ def addEndpointGroups():
     try:
         if settings.DEBUG:
             debugEndpoint()
+            
+        db = SessionLoader()
 
         # Convert JSON message to Dictionary Object
         requestPayload = request.get_json()
@@ -1308,9 +1416,6 @@ def addEndpointGroups():
             db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
                 {'gwlist': gwlistString}, synchronize_session=False)
 
-
-
-
         # Setup notifications
         if 'notifications' in requestPayload:
             overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] if 'overmaxcalllimit' in requestPayload['notifications'] else None
@@ -1357,28 +1462,34 @@ def addEndpointGroups():
 
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         responsePayload['error'] = "db"
         if len(str(ex)) > 0:
             responsePayload['msg'] = str(ex)
         status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
         return json.dumps(responsePayload), status_code
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         responsePayload['error'] = "http"
         if len(str(ex)) > 0:
             responsePayload['msg'] = str(ex)
         status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
         return json.dumps(responsePayload), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         responsePayload['error'] = "server"
         if len(str(ex)) > 0:
             responsePayload['msg'] = str(ex)
         status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
         return json.dumps(responsePayload), status_code
     finally:
-        db.close()
+        SessionLoader.remove()
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
@@ -1389,12 +1500,17 @@ def getGatewayGroupCDRS(gwgroupid=None):
     Getting the cdrs for a gatewaygroup
 
     """
-    if (settings.DEBUG):
-        debugEndpoint()
+
+    db = DummySession()
 
     # Define a dictionary object that represents the payload
     responsePayload = {}
+    
     try:
+        if settings.DEBUG:
+            debugEndpoint()
+        
+        db = SessionLoader()
 
         query = "select gwlist from dr_gw_lists where id = {}".format(gwgroupid)
         gwgroup = db.execute(query).first()
@@ -1438,18 +1554,29 @@ def getGatewayGroupCDRS(gwgroupid=None):
 
         return json.dumps(responsePayload)
 
-    except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
         db.rollback()
         db.flush()
-        return jsonify(status=0,error=str(ex))
+        return jsonify(status=0, error=error), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        return jsonify(status=0,error=str(ex))
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     finally:
-        db.close()
+        SessionLoader.remove()
 
 
 @api.route("/api/v1/cdrs/endpoint/<int:gwid>", methods=['GET'])
@@ -1461,12 +1588,18 @@ def getGatewayCDRS(gwid=None):
     Getting the cdrs for a gateway thats part of a gateway group
 
     """
-    if (settings.DEBUG):
-        debugEndpoint()
+
+    db = DummySession()
 
     # Define a dictionary object that represents the payload
     responsePayload = {}
+    
     try:
+        if settings.DEBUG:
+            debugEndpoint()
+        
+        db = SessionLoader()
+        
         query = "select gwid, created, calltype as direction, dst_username as \
          number,src_ip, dst_domain, duration,sip_call_id \
          from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={};".format(gwid)
@@ -1495,15 +1628,26 @@ def getGatewayCDRS(gwid=None):
 
         return json.dumps(responsePayload)
 
-    except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
         db.rollback()
         db.flush()
-        return jsonify(status=0,error=str(ex))
+        return jsonify(status=0, error=error), status_code
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
-        return jsonify(status=0,error=str(ex))
+        status_code = status.HTTP_INTERNAL_SERVER_ERROR
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error), status_code
     finally:
-        db.close()
+        SessionLoader.remove()

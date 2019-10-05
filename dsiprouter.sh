@@ -862,7 +862,6 @@ EOF
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds, get_random_bytes; setCreds(ipc_creds=get_random_bytes(64))"
 
     # TODO: merge these functions into setCredentials
-    # it may be easier to move option checking in setCredentials to
     # Set kam db pass
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds; setCreds(kam_creds='${KAM_DB_PASS}')"
 
@@ -874,6 +873,10 @@ EOF
 
     # Update db settings table
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from database import updateDsipSettingsTable; updateDsipSettingsTable()"
+
+    # update kamailio config with new settings
+    updateKamailioConfig
+    systemctl restart kamailio
 
     # Restrict access to settings and private key
     chown root:root ${DSIP_PRIV_KEY}
@@ -950,9 +953,8 @@ function installKamailio {
     printdbg "Attempting to install Kamailio..."
     ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
-        # configure kamailio settings
         configureKamailio
-        echo "Configuring Kamailio service"
+        updateKamailioConfig
     else
         printerr "kamailio install failed"
         cleanupAndExit 1
@@ -998,7 +1000,7 @@ function uninstallKamailio {
     removeDependsOnInit "kamailio.service"
 
     # Remove the hidden installed file, which denotes if it's installed or not
-	rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
+	  rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
 
     printdbg "kamailio was uninstalled"
 }
@@ -1049,21 +1051,21 @@ installSipsak() {
 
     # compile and install from src
     rm -rf ${SRC_DIR}/sipsak 2>/dev/null
-	git clone https://github.com/nils-ohlmeier/sipsak.git ${SRC_DIR}/sipsak
+    git clone https://github.com/nils-ohlmeier/sipsak.git ${SRC_DIR}/sipsak
 
-	cd ${SRC_DIR}/sipsak
-	autoreconf --install
-	./configure
-	make
-	make install
-	ret=$?
+    cd ${SRC_DIR}/sipsak
+    autoreconf --install
+    ./configure
+    make
+    make install
+    ret=$?
 
-	if [ $ret -eq 0 ]; then
-		pprint "SipSak was installed"
-		touch ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
-	else
-		printerr "SipSak install failed.. continuing without it"
-	fi
+    if [ $ret -eq 0 ]; then
+        pprint "SipSak was installed"
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
+    else
+        printerr "SipSak install failed.. continuing without it"
+    fi
 
 	cd ${START_DIR}
 }
@@ -1073,19 +1075,19 @@ uninstallSipsak() {
     local START_DIR="$(pwd)"
 
     if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled" ]; then
-	    printwarn "sipsak is not installed or failed during install - uninstalling anyway to be safe"
-	fi
+        printwarn "sipsak is not installed or failed during install - uninstalling anyway to be safe"
+    fi
 
-	if [ -d ${SRC_DIR}/sipsak ]; then
-		cd ${SRC_DIR}/sipsak
-		make uninstall
-		rm -rf ${SRC_DIR}/sipsak
-	fi
+    if [ -d ${SRC_DIR}/sipsak ]; then
+        cd ${SRC_DIR}/sipsak
+        make uninstall
+        rm -rf ${SRC_DIR}/sipsak
+    fi
 
-	# Remove the hidden installed file, which denotes if it's installed or not
-	rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
+    # Remove the hidden installed file, which denotes if it's installed or not
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
 
-	cd ${START_DIR}
+    cd ${START_DIR}
 }
 
 function start {
@@ -1650,7 +1652,7 @@ function processCMD {
     case $ARG in
         install)
             # always create the init service and always install sipsak
-            RUN_COMMANDS+=(setCloudPlatform createInitService installSipsak)
+            RUN_COMMANDS+=(setCloudPlatform createInitService)
             shift
 
             while (( $# > 0 )); do
@@ -1668,7 +1670,6 @@ function processCMD {
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
                         RUN_COMMANDS+=(installKamailio)
-                        DEFERRED_COMMANDS+=(updateKamailioConfig)
                         shift
                         ;;
                     -dsip|--dsiprouter)
@@ -1685,8 +1686,7 @@ function processCMD {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installKamailio installDsiprouter installRTPEngine)
-                        DEFERRED_COMMANDS+=(updateKamailioConfig)
+                        RUN_COMMANDS+=(installSipsak installKamailio installDsiprouter installRTPEngine)
                         shift
                         ;;
                     -exip|--external-ip=*)
@@ -1797,7 +1797,7 @@ function processCMD {
                         ;;
                     -all|--all)    # only remove init if all services will be removed (dependency for others)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio removeInitService uninstallSipsak)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallSipsak removeInitService)
                         shift
                         ;;
                     *)  # fail on unknown option

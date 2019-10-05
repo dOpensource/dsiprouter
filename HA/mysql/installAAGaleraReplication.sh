@@ -8,7 +8,7 @@
 #               if quorum is lost between 2-node cluster you must reset the quorum, bootstrap the non-primary:
 #               mysql -e "SET GLOBAL wsrep_provider_options='pc.bootstrap=YES';"
 #               ref: <http://galeracluster.com/documentation-webpages/quorumreset.html>
-# Usage:        ./installAAGaleraReplication.sh [-remotedb|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
+# Usage:        ./installAAGaleraReplication.sh [-h|--help|-remotedb] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
 #
 
 # set project root, if in a git repo resolve top level dir
@@ -37,14 +37,34 @@ MYSQL_REQ_VER="10.1"
 
 
 printUsage() {
-    pprint "Usage: $0 [-remotedb|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
+    pprint "Usage: $0 [-h|--help|-remotedb] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
 }
 
 if ! isRoot; then
     printerr "Must be run with root privileges" && exit 1
 fi
 
-if (( $# < 2 )) || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    printUsage && exit 1
+fi
+
+# loop through args and evaluate any options
+ARGS=()
+while (( $# > 0 )); do
+    ARG="$1"
+    case $ARG in
+        -remotedb)
+            WITH_REMOTE_DB=1
+            shift
+            ;;
+        *)  # add to list of args
+            ARGS+=( "$ARG" )
+            shift
+            ;;
+    esac
+done
+
+if (( ${#ARGS[@]} < 2 )); then
     printerr "At least 2 nodes are required to setup replication" && printUsage && exit 1
 fi
 
@@ -55,6 +75,7 @@ case "$DISTRO" in
         apt-get install -y sshpass gawk
         ;;
     centos|redhat|amazon)
+        yum install -y epel-release
         yum install -y sshpass gawk
         ;;
     *)
@@ -106,42 +127,37 @@ setFirewallRules() {
     local IP4RESTORE_FILE="$1"
     local IP6RESTORE_FILE="$2"
 
-    # set ipv4 firewall rules for each node
-    iptables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
-    iptables -I INPUT 1 -p tcp --dport ${GALERA_REPL_PORT} -j ACCEPT
-    iptables -I INPUT 1 -p udp --dport ${GALERA_REPL_PORT} -j ACCEPT
-    iptables -I INPUT 1 -p tcp --dport ${GALERA_INCR_PORT} -j ACCEPT
-    iptables -I INPUT 1 -p tcp --dport ${GALERA_SNAP_PORT} -j ACCEPT
+    # use firewalld if installed
+    if cmdExists "firewall-cmd"; then
+        firewall-cmd --zone=public --add-port=${MYSQL_PORT}/tcp --permanent
+        firewall-cmd --zone=public --add-port=${GALERA_REPL_PORT}/tcp --permanent
+        firewall-cmd --zone=public --add-port=${GALERA_REPL_PORT}/udp --permanent
+        firewall-cmd --zone=public --add-port=${GALERA_INCR_PORT}/tcp --permanent
+        firewall-cmd --zone=public --add-port=${GALERA_SNAP_PORT}/tcp --permanent
+
+        firewall-cmd --reload
+    else
+        # set ipv4 firewall rules for each node
+        iptables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
+        iptables -I INPUT 1 -p tcp --dport ${GALERA_REPL_PORT} -j ACCEPT
+        iptables -I INPUT 1 -p udp --dport ${GALERA_REPL_PORT} -j ACCEPT
+        iptables -I INPUT 1 -p tcp --dport ${GALERA_INCR_PORT} -j ACCEPT
+        iptables -I INPUT 1 -p tcp --dport ${GALERA_SNAP_PORT} -j ACCEPT
+
+        # set ipv6 firewall rules for each node
+        ip6tables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
+        ip6tables -I INPUT 1 -p tcp --dport ${GALERA_REPL_PORT} -j ACCEPT
+        ip6tables -I INPUT 1 -p udp --dport ${GALERA_REPL_PORT} -j ACCEPT
+        ip6tables -I INPUT 1 -p tcp --dport ${GALERA_INCR_PORT} -j ACCEPT
+        ip6tables -I INPUT 1 -p tcp --dport ${GALERA_SNAP_PORT} -j ACCEPT
+    fi
+
     # Remove duplicates and save
     mkdir -p $(dirname ${IP4RESTORE_FILE})
     iptables-save | awk '!x[$0]++' > ${IP4RESTORE_FILE}
-
-    # set ipv6 firewall rules for each node
-    ip6tables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
-    ip6tables -I INPUT 1 -p tcp --dport ${GALERA_REPL_PORT} -j ACCEPT
-    ip6tables -I INPUT 1 -p udp --dport ${GALERA_REPL_PORT} -j ACCEPT
-    ip6tables -I INPUT 1 -p tcp --dport ${GALERA_INCR_PORT} -j ACCEPT
-    ip6tables -I INPUT 1 -p tcp --dport ${GALERA_SNAP_PORT} -j ACCEPT
-    # Remove duplicates and save
     mkdir -p $(dirname ${IP6RESTORE_FILE})
     ip6tables-save | awk '!x[$0]++' > ${IP6RESTORE_FILE}
 }
-
-# loop through args and evaluate any options
-ARGS=()
-while (( $# > 0 )); do
-    ARG="$1"
-    case $ARG in
-        -remotedb)
-            WITH_REMOTE_DB=1
-            shift
-            ;;
-        *)  # add to list of args
-            ARGS+=( "$ARG" )
-            shift
-            ;;
-    esac
-done
 
 # loop through args and grab hosts
 HOST_LIST=()
@@ -362,7 +378,10 @@ for NODE in ${ARGS[@]}; do
 
         # centos SELINUX
         if sestatus | head -1 | grep -qi 'enabled'; then
+            yum install -y policycoreutils-python setools-console selinux-policy-devel
+
             semanage permissive -a mysqld_t
+
             semanage port -a -t mysqld_port_t -p tcp 3306
             semanage port -a -t mysqld_port_t -p tcp 4567
             semanage port -a -t mysqld_port_t -p tcp 4568

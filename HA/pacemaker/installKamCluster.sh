@@ -4,7 +4,7 @@
 # Notes:    more than 2 nodes may require fencing settings
 #           you must be able to ssh to every node in the cluster from where script is run
 #           supported ssh authentication methods: password, pubkey
-# Usage:    ./installKamCluster.sh [-vip <virtual ip>|-net <subnet cidr>|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
+# Usage:    ./installKamCluster.sh [-h|--help] -vip <virtual ip>|-net <subnet cidr> <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
 #
 ### log file locations:
 # /var/log/pcsd/pcsd.log
@@ -33,24 +33,57 @@ SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveIn
 
 
 printUsage() {
-    pprint "Usage: $0 [-vip <virtual ip>|-net <subnet cidr>|-h|--help] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
+    pprint "Usage: $0 [-h|--help] -vip <virtual ip>|-net <subnet cidr> <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
 }
 
 if ! isRoot; then
     printerr "Must be run with root privileges" && exit 1
 fi
 
-if (( $# < 2 )) || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    printUsage && exit 1
+fi
+
+# loop through args and evaluate any options
+ARGS=()
+while (( $# > 0 )); do
+    ARG="$1"
+    case $ARG in
+        -vip)
+            shift
+            KAM_VIP="$1"
+            shift
+            ;;
+        -net)
+            shift
+            KAM_VIP=$(findAvailableIP "$1")
+            CIDR_NETMASK=$(echo "$1" | cut -d '/' -f 2)
+            shift
+            ;;
+        *)  # add to list of args
+            ARGS+=( "$ARG" )
+            shift
+            ;;
+    esac
+done
+
+if [[ -z "${KAM_VIP}" ]] || [[ -z "${CIDR_NETMASK}" ]]; then
+    printerr 'Kamailio virtual IP or CIDR netmask is required' && printUsage && exit 1
+fi
+
+# make sure required args are fulfilled
+if (( ${#ARGS[@]} < 2 )); then
     printerr "At least 2 nodes are required to setup kam cluster" && printUsage && exit 1
 fi
 
-setOSInfo
 # install local requirements for script
+setOSInfo
 case "$DISTRO" in
     debian|ubuntu|linuxmint)
         apt-get install -y sshpass nmap sed gawk
         ;;
     centos|redhat|amazon)
+        yum install -y epel-release
         yum install -y sshpass nmap sed gawk
         ;;
     *)
@@ -105,33 +138,43 @@ showClusterStatus() {
     pcs status --full
 }
 
+setFirewallRules() {
+    local IP4RESTORE_FILE="$1"
+    local IP6RESTORE_FILE="$2"
 
-# loop through args and evaluate any options
-ARGS=()
-while (( $# > 0 )); do
-    ARG="$1"
-    case $ARG in
-        -vip)
-            shift
-            KAM_VIP="$1"
-            shift
-            ;;
-        -net)
-            shift
-            KAM_VIP=$(findAvailableIP "$1")
-            CIDR_NETMASK=$(echo "$1" | cut -d '/' -f 2)
-            shift
-            ;;
-        *)  # add to list of args
-            ARGS+=( "$ARG" )
-            shift
-            ;;
-    esac
-done
+    # use firewalld if installed
+    if cmdExists "firewall-cmd"; then
+        for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
+            firewall-cmd --zone=public --add-port=${PORT}/tcp --permanent
+        done
+        for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
+            firewall-cmd --zone=public --add-port=${PORT}/udp --permanent
+        done
+        firewall-cmd --reload
+    else
+        # set ipv4 firewall rules (on each node)
+        for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
+            iptables -I INPUT 1 -p tcp --dport ${PORT} -j ACCEPT
+        done
+        for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
+            iptables -I INPUT 1 -p udp --dport ${PORT} -j ACCEPT
+        done
 
-if [ -z "${KAM_VIP}" ] || [ -z "${CIDR_NETMASK}" ]; then
-    printerr 'Kamailio virtual IP and CIDR netmask are required' && printUsage && exit 1
-fi
+        # set ipv6 firewall rules (on each node)
+        for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
+            ip6tables -I INPUT 1 -p tcp --dport ${PORT} -j ACCEPT
+        done
+        for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
+            ip6tables -I INPUT 1 -p udp --dport ${PORT} -j ACCEPT
+        done
+    fi
+
+    # Remove duplicates and save
+    mkdir -p $(dirname ${IP4RESTORE_FILE})
+    iptables-save | awk '!x[$0]++' > ${IP4RESTORE_FILE}
+    mkdir -p $(dirname ${IP6RESTORE_FILE})
+    ip6tables-save | awk '!x[$0]++' > ${IP6RESTORE_FILE}
+}
 
 # loop through args and grab hosts
 HOST_LIST=()
@@ -202,6 +245,7 @@ for NODE in ${ARGS[@]}; do
     $(typeset -f cmdExists)
     $(typeset -f join)
     $(typeset -f setOSInfo)
+    $(typeset -f setFirewallRules)
     HOST_LIST=( ${HOST_LIST[@]} )
     NODE_NAMES=( ${NODE_NAMES[@]} )
     ESC_SEQ="\033["
@@ -241,27 +285,8 @@ for NODE in ${ARGS[@]}; do
 
     printdbg 'configuring server for cluster deployment'
 
-    # set ipv4 firewall rules (on each node)
-    for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
-        iptables -I INPUT 1 -p tcp --dport \${PORT} -j ACCEPT
-    done
-    for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
-        iptables -I INPUT 1 -p udp --dport \${PORT} -j ACCEPT
-    done
-    # Remove duplicates and save
-    mkdir -p \$(dirname \${IP4RESTORE_FILE})
-    iptables-save | awk '!x[\$0]++' > \${IP4RESTORE_FILE}
-
-    # set ipv6 firewall rules (on each node)
-    for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
-        ip6tables -I INPUT 1 -p tcp --dport \${PORT} -j ACCEPT
-    done
-    for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
-        ip6tables -I INPUT 1 -p udp --dport \${PORT} -j ACCEPT
-    done
-    # Remove duplicates and save
-    mkdir -p \$(dirname \${IP6RESTORE_FILE})
-    ip6tables-save | awk '!x[\$0]++' > \${IP6RESTORE_FILE}
+    # set firewall rules
+    setFirewallRules "\$IP4RESTORE_FILE" "\$IP6RESTORE_FILE"
 
     # start the services (on each node)
     systemctl enable pcsd

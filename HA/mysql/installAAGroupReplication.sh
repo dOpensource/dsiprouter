@@ -55,6 +55,7 @@ case "$DISTRO" in
         apt-get install -y sshpass gawk
         ;;
     centos|redhat|amazon)
+        yum install -y epel-release
         yum install -y sshpass gawk
         ;;
     *)
@@ -89,17 +90,23 @@ apt-get -f install -y
 ########################################
 
 ##### set firewall rules FOR EACH NODE
-# set ipv4 firewall rules for each node
-iptables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
-iptables -I INPUT 1 -p tcp --dport ${REPL_PORT} -j ACCEPT
+# use firewalld if installed
+if cmdExists "firewall-cmd"; then
+    firewall-cmd --zone=public --add-port=${MYSQL_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${REPL_PORT}/tcp --permanent
+    firewall-cmd --reload
+else
+    # set ipv4 firewall rules for each node
+    iptables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
+    iptables -I INPUT 1 -p tcp --dport ${REPL_PORT} -j ACCEPT
+    # set ipv6 firewall rules for each node
+    ip6tables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
+    ip6tables -I INPUT 1 -p tcp --dport ${REPL_PORT} -j ACCEPT
+fi
+
 # Remove duplicates and save
 mkdir -p $(dirname ${IP4RESTORE_FILE})
 iptables-save | awk '!x[$0]++' > ${IP4RESTORE_FILE}
-
-# set ipv6 firewall rules for each node
-ip6tables -I INPUT 1 -p tcp --dport ${MYSQL_PORT} -j ACCEPT
-ip6tables -I INPUT 1 -p tcp --dport ${REPL_PORT} -j ACCEPT
-# Remove duplicates and save
 mkdir -p $(dirname ${IP6RESTORE_FILE})
 ip6tables-save | awk '!x[$0]++' > ${IP6RESTORE_FILE}
 ########################################

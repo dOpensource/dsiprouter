@@ -78,4 +78,4 @@ def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAU
             server.quit()
 
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)

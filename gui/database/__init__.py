@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String
-from sqlalchemy.orm import mapper, sessionmaker
+from sqlalchemy.orm import mapper, sessionmaker, scoped_session
 from sqlalchemy import exc as sql_exceptions
 from collections import OrderedDict
 import settings
@@ -23,7 +23,7 @@ if settings.KAM_DB_TYPE == "mysql":
                 raise
             except Exception as ex:
                 if settings.DEBUG:
-                    debugException(ex, log_ex=False, print_ex=True, showstack=False)
+                    debugException(ex)
                 raise
 
 
@@ -445,15 +445,21 @@ def createValidEngine(uri_list):
     """
     Create DB engine if connection is valid
     Attempts each uri in the list until a valid connection is made
+    This method uses a singleton pattern and returns db_engine if created
     :param uri_list:    list of connection uri's
     :return:            DB engine object
     :raise:             SQLAlchemyError if all connections fail
     """
+
+    if 'db_engine' in globals():
+        return globals()['db_engine']
+
     errors = []
 
     for conn_uri in uri_list:
         try:
-            db_engine = create_engine(conn_uri, echo=True, pool_recycle=10, isolation_level="READ UNCOMMITTED",
+            db_engine = create_engine(conn_uri, echo=True, pool_recycle=300, pool_size=10,
+                                      isolation_level="READ UNCOMMITTED",
                                       connect_args={"connect_timeout": 5})
             # test connection
             _ = db_engine.connect()
@@ -465,31 +471,27 @@ def createValidEngine(uri_list):
     # we failed to return good connection raise exceptions
     if settings.DEBUG:
         for ex in errors:
-            debugException(ex, log_ex=False, print_ex=True, showstack=False)
+            debugException(ex)
 
     try:
         raise sql_exceptions.SQLAlchemyError(errors)
     except:
         raise Exception(errors)
 
+def createSessionMaker():
+    """
+    This method uses a singleton pattern and returns SessionLoader if created
+    :return:    SessionMaker() object
+    """
 
-# TODO: we should be creating a queue of the valid db_engines
-# from there we can perform round robin connections and more advanced clustering
-# this does have the requirement of new session instancing per request
+    if 'SessionLoader' in globals():
+        return globals()['SessionLoader']
+    if not 'db_engine' in globals():
+        db_engine = createValidEngine(getDBURI())
+    else:
+        db_engine = globals()['db_engine']
 
-# Make the engine global
-engine = createValidEngine(getDBURI())
-session = None
-
-
-def loadSession():
-    global session
-
-    # Return a DB session if one already exists
-    if session:
-        return session
-
-    metadata = MetaData(engine)
+    metadata = MetaData(db_engine)
 
     dr_gateways = Table('dr_gateways', metadata, autoload=True)
     address = Table('address', metadata, autoload=True)
@@ -548,14 +550,73 @@ def loadSession():
     #     'description': [dr_groups.c.description, dr_gw_lists_alias.c.drlist_description],
     # })
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    loadSession = scoped_session(sessionmaker(bind=db_engine))
+    return loadSession
 
-    return session
-
+class DummySession():
+    """
+    Sole purpose is to avoid exceptions when SessionLoader fails
+    This allows us to handle exceptions later in the try blocks
+    We also avoid exceptions in the except blocks by using dummy sesh
+    """
+    @staticmethod
+    def noop(*args, **kwargs):
+        return None
+    def __contains__(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def __iter__(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def add(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def add_all(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def begin(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def begin_nested(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def close(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def commit(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def connection(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def execute(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def expire(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def expire_all(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def expunge(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def expunge_all(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def flush(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def get_bind(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def is_modified(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def bulk_save_objects(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def bulk_insert_mappings(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def bulk_update_mappings(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def merge(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def query(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def refresh(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def rollback(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def scalar(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
 
 def updateDsipSettingsTable(session=None):
-    db = session if session is not None else loadSession()
+    db = session if session is not None else SessionLoader()
 
     if isinstance(settings.KAM_DB_HOST, list):
         KAM_DB_HOST = ','.join(settings.KAM_DB_HOST)
@@ -589,3 +650,12 @@ def updateDsipSettingsTable(session=None):
     db.execute(
         'REPLACE INTO dsip_settings VALUES ({})'.format(','.join([':{}'.format(x) for x in values.keys()])), values)
     db.commit()
+
+
+# TODO: we should be creating a queue of the valid db_engines
+# from there we can perform round robin connections and more advanced clustering
+# this does have the requirement of new session instancing per request
+
+# Make the engine and session maker global
+db_engine = createValidEngine(getDBURI())
+SessionLoader = createSessionMaker()

@@ -325,3 +325,125 @@ dumpMysqlDatabases() {
             | awk '!x[$0]++'
     fi
 }
+
+detectServiceMan() {
+    INIT_PROC=$(readlink -f $(readlink -f /proc/1/exe))
+
+    case "$INIT_PROC" in
+        *systemd)
+            SERVICE_MANAGER="systemd"
+            ;;
+        *upstart)
+            SERVICE_MANAGER="upstart"
+            ;;
+        *runit-init)
+            SERVICE_MANAGER="runit"
+            ;;
+        *openrc-init)
+            SERVICE_MANAGER="openrc"
+            ;;
+        /sbin/init)
+            INIT_PROC_INFO=$(/sbin/init --version 2>/dev/null | head -1)
+            case "$INIT_PROC_INFO" in
+                *systemd*)
+                    SERVICE_MANAGER="systemd"
+                    ;;
+                *upstart*)
+                    SERVICE_MANAGER="upstart"
+                    ;;
+                *runit-init*)
+                    SERVICE_MANAGER="runit"
+                    ;;
+                *openrc-init*)
+                    SERVICE_MANAGER="openrc"
+                    ;;
+            esac
+            ;;
+        *)
+            SERVICE_MANAGER="sysv"
+            ;;
+    esac
+
+    export SERVICE_MANAGER
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+# notes: regex credit to <https://helloacm.com>
+ipv4Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+# notes: regex credit to <https://helloacm.com>
+ipv6Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# notes: prints external ip, or empty string if not available
+# notes: below we have measurements for average time of each service
+#        over 10 non-cached requests, in seconds, round trip
+#
+# |          External Service         | Mean RTT | IP Protocol |
+# |:---------------------------------:|:--------:|:-----------:|
+# | https://icanhazip.com             | 0.38080  | IPV4        |
+# | https://ipecho.net/plain          | 0.39810  | IPV4        |
+# | https://myexternalip.com/raw      | 0.51850  | IPV4        |
+# | https://api.ipify.org             | 0.64860  | IPV4        |
+# | https://bot.whatismyipaddress.com | 0.69640  | IPV4        |
+# | https://icanhazip.com             | 0.40190  | IPV6        |
+# | https://bot.whatismyipaddress.com | 0.72490  | IPV6        |
+# | https://ifconfig.co               | 0.80290  | IPV6        |
+# | https://ident.me                  | 0.97620  | IPV6        |
+# | https://api6.ipify.org            | 1.08510  | IPV6        |
+#
+getExternalIP() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
+    local EXTERNAL_IP=""
+    local URLS=() CURL_CMD="curl"
+
+    if (( ${IPV6_ENABLED} == 1 )); then
+        URLS=(
+            "https://icanhazip.com"
+            "https://bot.whatismyipaddress.com"
+            "https://ifconfig.co"
+            "https://ident.me"
+            "https://api6.ipify.org"
+        )
+        CURL_CMD="curl -6"
+        IP_TEST="ipv6Test"
+    else
+        URLS=(
+            "https://icanhazip.com"
+            "https://ipecho.net/plain"
+            "https://myexternalip.com/raw"
+            "https://api.ipify.org"
+            "https://bot.whatismyipaddress.com"
+        )
+        CURL_CMD="curl -4"
+        IP_TEST="ipv4Test"
+    fi
+
+    for URL in ${URLS[@]}; do
+        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout 2 $URL 2>/dev/null)
+        ${IP_TEST} "$EXTERNAL_IP" && break
+    done
+
+    printf '%s' "$EXTERNAL_IP"
+}
+
+# notes:    prints internal ip addr
+getInternalIP() {
+    ip route get 8.8.8.8 | awk 'NR == 1 {print $7}'
+}

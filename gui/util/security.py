@@ -79,9 +79,10 @@ def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_c
     if settings.LOAD_SETTINGS_FROM == 'file':
         updateConfig(settings, fields)
     elif settings.LOAD_SETTINGS_FROM == 'db':
-        from database import loadSession
-        db = loadSession()
+        from database import SessionLoader, DummySession
+        db = DummySession()
         try:
+            db = SessionLoader()
             db.execute(
                 'update dsip_settings set {} where DSIP_ID={}'.format(', '.join(['{}=:{}'.format(x, x) for x in fields.keys()]), settings.DSIP_ID),
                 fields)
@@ -90,7 +91,7 @@ def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_c
             db.rollback()
             raise
         finally:
-            db.close()
+            SessionLoader.remove()
 
 class AES_CBC(object):
     """

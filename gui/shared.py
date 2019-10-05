@@ -327,7 +327,7 @@ class IO():
             logging.getLogger().log(logging.NOTSET, str(message).strip())
 
 
-def debugException(ex=None, log_ex=True, print_ex=False, showstack=True):
+def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
     """
     Debugging of an exception: print and/or log frame and/or stacktrace
     :param ex:          The exception object
@@ -370,7 +370,7 @@ def debugException(ex=None, log_ex=True, print_ex=False, showstack=True):
         IO.printerr(text)
 
 
-def debugEndpoint(log_out=False, print_out=True, **kwargs):
+def debugEndpoint(log_out=True, print_out=True, **kwargs):
     """
     Debug an endpoint, must be run within request context
     :param log_out:       True | False

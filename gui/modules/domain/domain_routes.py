@@ -2,22 +2,23 @@ from flask import Blueprint, session, render_template
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import loadSession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways
+from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways
 from shared import *
 import settings
 import globals
 import re
 
-db = loadSession()
+
 domains = Blueprint('domains', __name__)
 
+
 # Gateway to IP - A gateway can be a carrier or PBX
-def gatewayIdToIP(pbx_id):
+def gatewayIdToIP(pbx_id, db):
     gw = db.query(Gateways).filter(Gateways.gwid == pbx_id).first()
     if gw is not None:
         return gw.address
 
-def addDomain(domain, authtype, pbxs, notes):
+def addDomain(domain, authtype, pbxs, notes, db):
     # Create the domain because we need the domain id
     PBXDomain = Domain(domain=domain, did=domain)
     db.add(PBXDomain)
@@ -40,7 +41,7 @@ def addDomain(domain, authtype, pbxs, notes):
         PBXDomainAttr3 = DomainAttrs(did=domain, name='created_by', value="0")
         PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
         PBXDomainAttr5 = DomainAttrs(did=domain, name='description', value="notes:{}".format(notes))
-        PBXDomainAttr6 = DomainAttrs(did=domain, name='pbx_ip', value=gatewayIdToIP(pbx_id))
+        PBXDomainAttr6 = DomainAttrs(did=domain, name='pbx_ip', value=gatewayIdToIP(pbx_id, db))
         
         db.add(PBXDomainAttr1)
         db.add(PBXDomainAttr2)
@@ -78,9 +79,14 @@ def addDomain(domain, authtype, pbxs, notes):
 
 @domains.route("/domains", methods=['GET'])
 def displayDomains():
+    
+    db = DummySession()
+    
     try:
         if (settings.DEBUG):
             debugEndpoint()
+            
+        db = SessionLoader()
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
@@ -118,13 +124,13 @@ def displayDomains():
         return render_template('domains.html', rows=res, pbxlookup=pbx_lookup)
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
@@ -136,14 +142,18 @@ def displayDomains():
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 @domains.route("/domains", methods=['POST'])
 def addUpdateDomain():
 
+    db = DummySession()
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         if not session.get('logged_in'):
             return render_template('index.html')
@@ -161,7 +171,7 @@ def addUpdateDomain():
             domainlist = domainlist.split(",")
 
             for domain in domainlist:
-                addDomain(domain.strip(), authtype, pbxs, notes)
+                addDomain(domain.strip(), authtype, pbxs, notes, db)
         # Updating
         else:
             # remove old entries and add new ones
@@ -190,7 +200,7 @@ def addUpdateDomain():
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
@@ -202,15 +212,18 @@ def addUpdateDomain():
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()
 
 @domains.route("/domainsdelete", methods=['POST'])
 def deleteDomain():
 
+    db = DummySession()
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
+
+        db = SessionLoader()
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
@@ -233,22 +246,22 @@ def deleteDomain():
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "db"
         db.rollback()
         db.flush()
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "http"
         db.rollback()
         db.flush()
         return showError(type=error)
     except Exception as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        debugException(ex)
         error = "server"
         db.rollback()
         db.flush()
         return showError(type=error)
     finally:
-        db.close()
+        SessionLoader.remove()

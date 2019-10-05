@@ -1,0 +1,8 @@
+/usr/local/bin/consul -- gen_context(system_u:object_r:consul_exec_t,s0)
+/usr/lib/systemd/system/consul.service -- gen_context(system_u:object_r:consul_unit_file_t,s0)
+/etc/systemd/system/consul.service -- gen_context(system_u:object_r:consul_unit_file_t,s0)
+/var/lib/consul(/.*)? -- gen_context(system_u:object_r:consul_var_lib_t,s0)
+/var/run/consul.pid -- gen_context(system_u:object_r:consul_var_run_t,s0)
+/var/run/user/consul(/.*)? -- gen_context(system_u:object_r:consul_tmp_t,s0)
+/var/cache/consul(/.*)? -- gen_context(system_u:object_r:consul_cache_t,s0)
+/etc/consul.d(/.*)? -- gen_context(system_u:object_r:consul_etc_t,s0)

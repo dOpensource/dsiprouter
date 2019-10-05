@@ -1,0 +1,21 @@
+[Unit]
+Description="HashiCorp Consul Service Mesh"
+Documentation=https://www.consul.io/
+Requires=network-online.target
+After=network-online.target
+ConditionFileNotEmpty=/etc/consul.d/consul.hcl
+
+[Service]
+User=consul
+Group=consul
+PIDFile=/var/run/consul/consul.pid
+ExecStartPre=[ -f "/var/run/consul/consul.pid" ] && /bin/rm -f /var/run/consul/consul.pid
+ExecStartPre=/usr/local/bin/consul validate /etc/consul.d
+ExecStart=/usr/local/bin/consul agent -pid-file /var/run/consul/consul.pid -enable-local-script-checks -config-dir=/etc/consul.d
+ExecReload=/usr/local/bin/consul reload
+KillMode=process
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
