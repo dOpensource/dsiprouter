@@ -31,19 +31,16 @@ create_changelog() {
     # --not --remotes
     COMMIT_HASHES=$(git --no-pager log --branches --no-merges --format='%H')
 
-    # add the branch and tag info changelog
+    # add the branch and tag info to changelog
     for HASH in $COMMIT_HASHES; do
         # safe formatting needed for sed / bash expansion throughout
         BRANCHES=$(git branch --contains "${HASH}" | perl -pe 's/.+?(?=[\w\d])(.*)/\1/gm' | tr '\n' ',' | rev | cut -d ',' -f 2- | rev)
         TAGS=$(git show-ref --tags -d | grep "^${HASH}" | sed -e 's,.* refs/tags/,,' -e 's/\^{}//' | tr -d '\n')
-        # label the pertinent data
-        REFERENCE_INFO="> Branches Affected: ${BRANCHES}  \n> Tags Affected: ${TAGS}  "
-        BODY_INFO=$(git log --format=%b -n 1 ${HASH})
+        # label the pertinent data then
         # replace any delims (/) with placeholder (~~)
-        REFERENCE_INFO=$(sed 's|/|~~|g' <<<"$REFERENCE_INFO")
-        BODY_INFO=$(sed 's|/|~~|g' <<<"$BODY_INFO")
-        # start formatting as markdown
-        BODY_INFO=$(
+        REFERENCE_INFO=$(printf '%s' "> Branches Affected: ${BRANCHES}  \n> Tags Affected: ${TAGS}  " | sed 's|/|~~|g')
+        BODY_INFO=$(git log --format=%b -n 1 ${HASH} | sed 's|/|~~|g' |
+            # start formatting as markdown
             # delete empty lines
             sed '/^$/d' <<<"$BODY_INFO" |
             # indented lines -> bullets
@@ -56,9 +53,10 @@ create_changelog() {
         # add to the changelog
         sed -i "0,/BRANCH_TAG_INFO/{s/BRANCH_TAG_INFO/$REFERENCE_INFO/}" ${CHANGELOG_FILE}
         sed -i "0,/BODY_INFO/{s/BODY_INFO/$BODY_INFO/}" ${CHANGELOG_FILE}
-        # replace placeholders (~~) with original chars (/)
-        sed -i 's|~~|/|g' ${CHANGELOG_FILE}
     done
+
+    # replace placeholders (~~) with original chars (/)
+    sed -i 's|~~|/|g' ${CHANGELOG_FILE}
 }
 
 main() {
