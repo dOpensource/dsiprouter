@@ -66,9 +66,11 @@ main() {
     create_contributors
     create_requirements
 
-    git stash apply -q "$STASH_ID"
-    git stash drop -q "$STASH_ID"
-    exit 0
+    git reset --hard -q &&
+    git stash apply -q --index "$STASH_ID" &&
+    git stash drop -q "$STASH_ID" &&
+    exit 0 ||
+    exit 1
 }
 
 # allow execution outside of git hook

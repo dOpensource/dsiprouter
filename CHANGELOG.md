@@ -2,6 +2,32 @@
 
 
 
+### Fix pre-commit hook
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 8 Oct 2019 06:20:48 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
+### Increase Efficiency of CHANGELOG creation
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 8 Oct 2019 03:26:36 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### Add dsiprouter to list of tracked services for consul
 
 > Branches Affected: v0.60+ent  
@@ -23,21 +49,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- overhaul DB session management architecture to support multithreading
-- update app to close all db sessions and connections when stopping
-- update galera, group replication, and kamcluster scripts to fix some small install bugs
-- update cluster install scripts to support firewalld
-- add support for consul cluster installation and configuration
-- update exception and endpoint debug functions to have more sane defaults
-- move filehandling.py to util module
-- fix syslogging bugs in dsiprouter
-- update dsiprouter syslog format to be more useful
-- fix various bugs in api_routes code
-- fix various bugs related to incorrect session handling
-- add utility functions ti shared_lib for HA scripts
-- fix regression with kamailio config updates on install
-- add DummySession class to fix exception handling logic flow
-- fix enterprise_enabled global to really be global
 
 
 ---
@@ -77,7 +88,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- change default config to use explicit ip definition to avoid confusion
 
 
 ---
@@ -91,30 +101,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- merge HA branch into v0.60+ent
-- improve portability and reliability of HA install scripts
-- fix iptables save bug in HA install
-- fix merging functions in HA install
-- add new standardized git workflow for contributors and option to install in repo
-- add / update git hooks: pre-commit, post-commit, prepare-commit-msg, commit-msg
-- add / upfate git configs: .gitignore, .gitattributes, .gitconfig
-- add merge conflict drivers for git hook generated files, such as CHANGELOG
-- add full support for storing settings in DB with security
-- add asymmetric, symmetric, and hashing functions
-- add setcredentials command for convenience
-- add support for settings updates through domain sockets
-- add support for settings updates through prcoess signaling (reload)
-- add functions to support ipc with dsiprouter process
-- add support for hot reload of updated settings
-- add option to enable lcr on install
-- update in progress work on AA Group Replication install
-- update asterisk prefix conversions to be reusable and moved to conversions.py
-- update all credentials and settings to be stored securely
-- update support for settings updates through env variables to only debug mode
-- update READEME to reflect enterprise version and display enterprise features
-- update a couple shared.py functions to be more robust
-- update kam config update functions to support all the dynamic settings
-- remove deprecated lcr module (it is already part of core dsiprouter)
 
 
 ---
@@ -141,7 +127,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update trigger to support multi-row inserts
 
 
 ---
@@ -155,7 +140,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update trigger to support multi-row inserts
 
 
 ---
@@ -182,14 +166,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update call limit to allow 0 (user can block an endpoint group this way)
-- fix bug with dr_gateways trigger not firing
-- fix bug where non servernat instances won't bind to any address
-- fix bug with call limits htable being initialized to zero
-- move event routes to more suitable location in config
-- add dr_gateways update trigger
-- update kamailio.sql testing dump
-- cleanup kam config a bit
 
 
 ---
@@ -203,8 +179,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- allow toggleElemDisabled to specify which element to disable cursor
-- update inboundmapping.js to choose child elem for disabled elems
 
 
 ---
@@ -218,15 +192,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix commit fc5f80d583c5f2513546798d511ca9fc6c57d4dc
-- fix commit 9c92a5cbdabfd56add520408b82b0a324a78571b
-- resolve regressions and merge commit 3c75d41c1296d99e63117d6d15ae625a69f08935
-- rollback commit 50698c1c2a15952390b77ff594a716fa88228231
-- fix up ALL kamailio logging funcs
-- update dsip_token in updateKamConfig func
-- resolves issue #4
-- resolves issue #5
-- resolves issue #6
 
 
 ---
@@ -240,15 +205,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update dsip_lib.sh kam config funcs to use a better separator
-- update dr_gateways db mapping class to fit new updates
-- update sql files to match utf-8 encoding from previous commit
-- update dsip_forwarding.sql to use DSIP_ID set at install
-- update kam to track src and dest gwgroup for call limiting
-- update kam SEND_NOTIFICATION route to support dynamic gwid and gwgroupid
-- create trigger for dr_gateways to support feature updates
-- fix rtpengine install detection (typo)
-- fix and improve various sql queries in resistrar
 
 
 ---
@@ -262,15 +218,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update dsip_lib.sh kam config funcs to use a better separator
-- update dr_gateways db mapping class to fit new updates
-- update sql files to match utf-8 encoding from previous commit
-- update dsip_forwarding.sql to use DSIP_ID set at install
-- update kam to track src and dest gwgroup for call limiting
-- update kam SEND_NOTIFICATION route to support dynamic gwid and gwgroupid
-- create trigger for dr_gateways to support feature updates
-- fix rtpengine install detection (typo)
-- fix and improve various sql queries in resistrar
 
 
 ---
@@ -284,13 +231,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add feature to allow DID routing without specifying gwgroup
-- update inbound mapping route to accomodate new feature
-- update gwgroup selection to allow default option
-- update toggleElemDisabled() to be more robust
-- change hardfwd toggle button to set gwgroup selection to default option
-- move inbound mapping js logic from main to its own file
-- fix bug where failover forwarding would overwrite fwd info
 
 
 ---
@@ -304,38 +244,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add automatic db/file settings update (on startup) based on mode
-- add database dump for v0.60+ent
-- add security functions for hashing (pbkdf2_hmac) and encrpyting (AES256) credentials
-- add secure credential usage to db connection functions
-- add setcredentials command to allow user to set credentials securely using script
-- add root priviledge check to dsiprouter script
-- add securing permissions on kam cfg to dsiprouter script
-- add private AES key generation to dsiprouter script
-- add option to configure kam db hosts from install command
-- add option to configure dsip id from install command
-- update getConfigAttrib() and setConfigAttrib() to support byte string literals
-- update kam cfg update functions to use a better delimiter when parsing
-- update install script to secure credentials by default
-- update updateConfig() function to support byte string literals
-- update MakeFile to run dsiprouter in debug mode and allow credential hot swapping
-- update testing scripts to use credential hot swapping
-- update install script to be more efficient by isolating a few functions
-- update displayLoginIfno() to be more reliable and show kam credentials
-- update dsip_forwarding.sql to support multiple dsiprouter instances
-- change secure credential env loading only to debug mode
-- change dsip/api/mail credentials auth to use encrypted credentials
-- change dsip credentials auth to compare hashes
-- change default db characterset to utf-8 (should always be used moving forward)
-- change default admin password generation to use /dev/urandom
-- fix kam cfg DBLUSTER settings update logic
-- fix kam cfg DBURL settings update logic
-- fix mail default sender bug
-- fix byte string storage bug by adding encoding/decoding to security functions
-- fix table detection bug when running installSQL() in a few modules
-- fix schema load order for dsip_forwarding.sql
-- fix kam cfg symlink not created issue
-- fix is rtpengine installed check
 
 
 ---
@@ -349,13 +257,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix forwarding dr_groupid update
-- allow fwding rule create/delete on update
-- fix outbound route dr_groupid filtering
-- update kamreload cmd with reload for new htables
-- update harfwd and failfwd dr_rule matching on dr_groupid
-- clean up kam config
-- reset defaults to prod values
 
 
 ---
@@ -382,17 +283,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fixed invalid GCE instance detection
-- fix hardfwd and failfwd always insert issue
-- fix typo in inbound mapping route
-- fix inbound mapping modal update for fwd's
-- fix hardfwd and failfwd matching logic
-- fix inbound mapping edit modal fwd buttons toggle update
-- added prefix mapping htable and db view
-- added dsip_settings db table with a subset of the settings
-- refactor username/password to follow naming convention
-- added new features to install process
-- added sql dump of v0.523+ent to testing sql files
 
 
 ---
@@ -406,17 +296,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fixed invalid GCE instance detection
-- fix hardfwd and failfwd always insert issue
-- fix typo in inbound mapping route
-- fix inbound mapping modal update for fwd's
-- fix hardfwd and failfwd matching logic
-- fix inbound mapping edit modal fwd buttons toggle update
-- added prefix mapping htable and db view
-- added dsip_settings db table with a subset of the settings
-- refactor username/password to follow naming convention
-- added new features to install process
-- added sql dump of v0.523+ent to testing sql files
 
 
 ---
@@ -586,19 +465,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- make notifications a separate callable route
-- add support for endpoint failure notifications
-- update dsip_hardfwd table
-- update dsip_failfwd table
-- improve email notification messages
-- add improvements to flag handling in kamailio routes
-- add support for hard forwarding to DID
-- add support for failover forwarding to DID
-- update inbound mapping lcr flag handling
-- update some defaults for TESTING in settings.py (remove for production)
-- fix missing servernat option for configurekam command in dsiprouter.sh
-- update command options in dsiprouter.sh
-- fix #!ifdef mismatch in kamailio.cfg
 
 
 ---
@@ -612,16 +478,6 @@
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add kamailio route for notifications / http requests
-- add gw2gwroup table
-- add tables for hard forwarding and failover forwarding
-- add email notification support
-- add file upload support
-- add async func wrapper
-- add endpoint for notifications to API
-- add email settings in settings.py
-- move API security functions to API routes
-- add http_async_client module to install scripts
 
 
 ---
@@ -1142,7 +998,6 @@
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Moved the API section from the bottom.
 
 
 ---
@@ -1351,8 +1206,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix couple broken links
-- fix `api.rst`
 
 
 ---
@@ -1431,7 +1284,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Update api.rst
 
 
 ---
@@ -1445,7 +1297,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Update domains.rst
 
 
 ---
@@ -1550,7 +1401,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- change endpoint path to /api/v1/inboundmapping
 
 
 ---
@@ -1603,8 +1453,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #181
-- make select field for primary pbx required in front end
 
 
 ---
@@ -1618,15 +1466,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #77
-- create new API DID Mapping endpoint for GET,POST,PUT,DELETE
-- add tests to API test `19.sh`
-- fix creation of duplicate inbound DID's
-- update exception handling to be more useful
-- update globals
-- add TODO comments
-- update rowToDict function
-- make `error.html` prettier / more palatable
 
 
 ---
@@ -1640,9 +1479,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #183
-- set ip resolution to ipv4 by default
-- note: ipv6 support is not fully supported yet
 
 
 ---
@@ -1656,7 +1492,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add case for new package name default-libmysqlclient-dev
 
 
 ---
@@ -1670,7 +1505,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add case for new package name default-libmysqlclient-dev
 
 
 ---
@@ -1723,9 +1557,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #182
-- Resolves #88
-- commented out call to kamailio_rating in kam cfg
 
 
 ---
@@ -1739,8 +1570,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update pre-commit hook to allow exluding libraries
-- add docker_py to excluded libraries
 
 
 ---
@@ -1754,7 +1583,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update resource wait times for pcs
 
 
 ---
@@ -1768,16 +1596,6 @@ Moved the API section from the bottom.
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix sipsak install fail due to memory allocation errors
-- fix apt and yum locking errors on install
-- fix dependency mismatching for mysldb
-- upadate requirements hook to allow non stdlib deps
-- add initial support getting GCE, AZURE, and DO images
-- fix centos false positive build errors
-- cleanup dsiprouter install debug statements
-- fix motd banner for centos and debian < v9
-- fix debian user password reset on cloud images
-- added a couple TODO's for install scripts
 
 
 ---
@@ -1791,7 +1609,6 @@ Moved the API section from the bottom.
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Putting back the required libraries
 
 
 ---
@@ -1805,10 +1622,6 @@ Putting back the required libraries
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- ammending commit c8756c929ccce9793a1e1717439a257c97f22203
-- Resolves #185
-- add host check
-- allow cloud-init to re-add keys
 
 
 ---
@@ -1835,7 +1648,6 @@ Putting back the required libraries
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-Changing the INVITE timer to a more standard timeout of 32 secs
 
 
 ---
@@ -1849,7 +1661,6 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Changing the INVITE timer to a more standard timeout of 32 secs
 
 
 ---
@@ -1863,11 +1674,6 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #185
-- fix cloud-init overwriting sshd_config
-- add ASLR check
-- fix grub prompt issue in snapshot configs for ubuntu
-- switch cloud build script to v0.522
 
 
 ---
@@ -2076,14 +1882,6 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix dsiprouter startup issue on centos and amazon linux
-- fix ssh server security holes
-- add git contributing pre-commit hook
-- update cloud instance checks
-- fix ubuntu unattended upgrade dialog issue
-- add custom MOTD banner
-- revert debug settings to production as default
-- improve ipv4 and ipv6 checks
 
 
 ---
@@ -2851,7 +2649,6 @@ Changing the INVITE timer to a more standard timeout of 32 secs
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: root (root@dSIPRouterMackMaster-0.localdomain)  
 
-Modified the docs to reflect the new install options
 
 
 ---
@@ -3034,7 +2831,6 @@ Modified the docs to reflect the new install options
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Modified the docs to reflect the new install options
 
 
 ---
@@ -3061,19 +2857,6 @@ Modified the docs to reflect the new install options
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix double password reset issue
-- cleanup unneeded extra files
-- update dsiprouter service
-- allow color printing function use inline
-- added and updated comments / TODO's
-- allow DB driver selection
-- fix uninstall dsiprouter to not fail on pip cmd
-- fix configurePythonSettings issue
-- add support for debian8 (jessie)
-- add support for ubuntu 16.04 (xenial)
-- add support for amazon linux 2
-- fix false negatives on install starting services
-- add color to usage cmd output
 
 
 ---
@@ -3087,7 +2870,6 @@ Modified the docs to reflect the new install options
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Removed generatePassword from the displayLoginInfo function
 
 
 ---
@@ -3127,8 +2909,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- rename JSONRPC test to `16.sh`
-- merge feature-ami commits onto dev branch
 
 
 ---
@@ -3142,8 +2922,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add tcp port for jsonrpc access
-- cleanup centos commands
 
 
 ---
@@ -3170,17 +2948,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update AMI funtions to run with systemd
-- add seperate log file for dsip cloud installs
-- fix broken paths
-- make kam cfg actual readable (spaces not tabs)
-- add test for syslog service
-- add test for AMI requirements
-- add test for dsip GUI login
-- add dev files for next tests to make
-- fix test sorting to work past 10
-- add work on custom redirection function
-- fix login logic in routes and HTTP return codes
 
 
 ---
@@ -3259,37 +3026,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #42
-- Resolves #103
-- add localhost to bind addresses for testing
-- wrap LCR routing in #!ifdef WITH_LCR
-- fix RTPEngine service startup issue
-- update rtpengine service file
-- update dsiprouter service file
-- add debian support for rtpengine systemd service
-- add debian support for kernel packet forwarding
-- fix non-root user kernel packet forwarding support
-- make rtpengine service namespace cross platform compat
-- make centos mariadb service namespace alias to mysql.service
-- fix tests for reg, auth, and DOS
-- create service check tests
-- update test formatting to be cleaner
-- update tests documentation
-- update test Makefile to sort test execution
-- fix debian AMI instable repo lists
-- make getExternalIP function match logic from shared.py
-- create structure for systemd startup dependencies
-- add dsip-init systemd resource
-- fix AMI image creation service startup issues
-- add detailed debugging options in dsiprouter.sh
-- add colored output and cleanup script output
-- fix python dependency removal order in uninstall funcs
-- add dependency installation for sipsak
-- finish separating service install logic to independent functions
-- update install/uninstall options to allow for independent installs
-- improve path check logic to avoid duplicates
-- fix dr_gw_lists import regression (path issue)
-- change logo color (no orange in 8-bit so we use cyan now)
 
 
 ---
@@ -3303,10 +3039,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #87
-- simplify domain routing
-- allow editing in domain route
-- update pre commit script
 
 
 ---
@@ -3333,9 +3065,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #47
-- add defaults for carrier form
-- remove uneeded DB drivers
 
 
 ---
@@ -3349,9 +3078,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- re-add configureKamailio command to install
-- fix DSIP_KAMAILIO_CONFIG_FILE path
-- remove uneeded kam code from hotfix
 
 
 ---
@@ -3365,8 +3091,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #123
-- set form defaults on db update for inbound did route
 
 
 ---
@@ -3380,14 +3104,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- move rtpengine install to seperate dir
-- update git resources
-- fix merging issues with modules
-- seperate kamailio install function and logic
-- add printing functions / colors to install
-- update requirements.txt install for stability
-- add mysql imports for pipreqs pre-commit updates
-- update module sql merging
 
 
 ---
@@ -3401,10 +3117,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix cluster resource waiting stability
-- fix intermittent route editing issue
-- add centos support for galera replication
-- fix centos plugin auth issues
 
 
 ---
@@ -3431,14 +3143,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #122
-- add dynamic routing for LCR module (similar to dRouting matches)
-- make LCR prefix length configurable in kam config
-- update both kamailio template and config files
-- general cleanup on kam configs
-- update internal IP resolution
-- update PATH resolution (fix logic bug)
-- fix dsiprouter logrotate path
 
 
 ---
@@ -3452,8 +3156,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- mysql galera replication
-- pacemaker / corosync cluster with floating ip
 
 
 ---
@@ -3467,7 +3169,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add redundancy checking for project root dir
 
 
 ---
@@ -3481,9 +3182,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- changed internal ip resolution based on default route
-- fix rtpengine config update function
-- add rtpcfg variable for later use
 
 
 ---
@@ -3497,8 +3195,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- drop dr_custom_rules on fresh kam configure
-- remove hung locks when adding user
 
 
 ---
@@ -3512,11 +3208,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add curl timeout on AWS check
-- make PBX local digit length check globalls configurable
-- fix typos
-- fix line breaks
-- automate merging table data during install
 
 
 ---
@@ -3530,9 +3221,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- support for group replication
-- support for galera replication
-- mysql size check script added
 
 
 ---
@@ -3546,7 +3234,6 @@ Removed generatePassword from the displayLoginInfo function
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Set the domain flag: register_myself to 0.  This flag was causing Kamailio to get stuck in a continuous loop  when receiving an ACK from an endpoint.  This is due to the fact that Kamailio sees the domains in the domains table reside on the Kamailio server with the register_myself flag being set to 1
 
 
 ---
@@ -3560,8 +3247,6 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add changelog merging script
-- add some python testing scripts
 
 
 ---
@@ -3575,11 +3260,6 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #115
-- update rtpengine config on reboot
-- fix misc issues with install script
-- fix adding user issue
-- update exception function
 
 
 ---
@@ -3684,7 +3364,6 @@ Set the domain flag: register_myself to 0.  This flag was causing Kamailio to ge
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-Fixed an issue with a redirect
 
 
 ---
@@ -3698,9 +3377,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix datatable auto width resolution issue
-- fix db connection issue
-- add dsiprouter flag definitions
 
 
 ---
@@ -3831,14 +3507,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #100
-- Resolves #54
-- add support for secondary pbx inbound route
-- DID failover is supported by adding another rule
-- add fail2ban instructions to domain and pbx pages
-- small syntax fixes
-- update combobox and fix issues
-- update inboundroutes routing and DB model
 
 
 ---
@@ -3878,15 +3546,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix PATH on install
-- dynamic kam config update
-- add updatekamconfig cli option
-- fix for debian 8 debhelper issue
-- fix kamailio and rtpengine user creation
-- fix rtpengine default conf file location
-- fix firewalld centos ami issue
-- fix merge issues (install,installSipsak)
-- minor improvements to syslog handler
 
 
 ---
@@ -3965,10 +3624,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #76
-- sort pbx select list on pbx name
-- enable combobox for imported did's
-- fix autoselect on add / import did modal
 
 
 ---
@@ -3982,9 +3637,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #7
-- carriers removed from all related dr_rules gwlists on delete
-- create alert and warn user that related rules will be updated
 
 
 ---
@@ -3998,9 +3650,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #96
-- replace data-tables ver w/ standalone library
-- rename imports
 
 
 ---
@@ -4456,23 +4105,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #103
-- change rtpengine install to be last
-- update usage options
-- update command line options
-- misc formatting improvements
-- fix centos ami kam repo issue
-- fix centos kamilio startup issue
-- fix rtpengine startup issue
-- fix debian ami sources issue
-- separate rtpengine source repo from project dir
-- fix rtpengine kernel packet forwarding issue
-- add location dependent redundancy checks in dsiprouter.sh
-- improve reliability of dynamic ip resolution
-- general cleanup in dsiprouter.sh
-- overhaul of arg / option parsing
-- improve usage readability
-- update usage options
 
 
 ---
@@ -4512,14 +4144,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fixed syslog config files
-- seperate syslog configs in install process
-- redirect rtpengine daemon output to syslog
-- move syslog log handler to top of imports
-- support redirecting stdout / sterr to syslog
-- fix function naming to match
-- add signal handler func
-- add nohup signal handling to python app
 
 
 ---
@@ -4533,14 +4157,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- move all logging to syslog
-- move all log rotation to logrotate
-- add syslog and logrotate as dependencies
-- update and create syslog configs for each service
-- add werkzurg and sqlalchemy log handlers from pull #36
-- add syslog support for dsiprouter app
-- add script header in comments
-- update app DEBUG variable dynamically
 
 
 ---
@@ -4567,13 +4183,6 @@ Fixed an issue with a redirect
 > Author: Nicole (ncannon@goflyball.com)  
 > Committer: Nicole (ncannon@goflyball.com)  
 
-- Created documentation for troubeshooting  dSIPRouter, Kamailio and rtpengine when turning logging on and off.
-- Includes information:
-1 how to turn it on
-2. how do to turn it off
-3. location of the log files
-4. how do i configure it
-5. References
 
 
 ---
@@ -4639,8 +4248,6 @@ Fixed an issue with a redirect
 > Author: Nicole (ncannon@goflyball.com)  
 > Committer: Nicole (ncannon@goflyball.com)  
 
-- added images for chan sip
-- added work flow for chan sip
 
 
 ---
@@ -4654,8 +4261,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Fix project path for absolute path resolution
-- Fix cron jobs for empty crontab use case
 
 
 ---
@@ -4669,9 +4274,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- create cronAppend and cronRemove library functions
-- replace overwriting cron commands
-- change permissions on git hook
 
 
 ---
@@ -4685,8 +4287,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Merge with Master branch
-- update ami build to clone from feature branch
 
 
 ---
@@ -4700,13 +4300,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add getInstanceID to library script
-- allow independent execution of changelog hook
-- update ami bootstrap commands to be more robust
-- fix debian ami sys-maint user bug
-- fix PID check for startup process
-- fix python version check bug
-- added comments
 
 
 ---
@@ -4733,9 +4326,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #81
-- Add changelog markdown file
-- Add git hook for generating changelog
 
 
 ---
@@ -4749,8 +4339,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- move AMI checks for debian before end of function
-- to ensure we do not return false positive to calling script
 
 
 ---
@@ -4764,8 +4352,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add support for debian AMI build
-- apply AWS AMI policies for debian build
 
 
 ---
@@ -4779,9 +4365,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- catch errors on external IP resolution failure
-- add commandline option for setting external ip
-- change permisions on ami build script
 
 
 ---
@@ -4808,7 +4391,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- update debian-based install for unattended install
 
 
 ---
@@ -5147,12 +4729,6 @@ Fixed an issue with a redirect
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add ami build script for v0.52
-- fix firewalld not started bug
-- change rtpengine install to bootstrap on restart of AMI image
-- fix rc.local format bug from last commit
-- add descriptive comments
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -5166,7 +4742,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix AMI pw reset bug
 
 
 ---
@@ -5180,7 +4755,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fixed bootstrap file test
 
 
 ---
@@ -5194,9 +4768,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix bootstrap file not to interfere with other cmds
-- fix centos rtpengine install
-- make centos rtpengine failure stop install
 
 
 ---
@@ -5210,8 +4781,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fix logical check for bootstrap file
-- add cmdExists function to dsip_lib
 
 
 ---
@@ -5238,10 +4807,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- add support for installing on AMI images
-- fixed small typos in install script
-- fixed error message when restarting process
-- fixed centos kernel headers install issue
 
 
 ---
@@ -11235,7 +10800,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- added ssl default configuration to install process
 
 
 ---
@@ -15422,8 +14986,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: root (mack@dopensource.com)  
 > Committer: root (mack@dopensource.com)  
 
-- Static and Dynamic domains can be displayed in the GUI.
-- Added a UnitTest to validate the Domain Management Services
 
 
 ---
@@ -15437,26 +14999,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- allow cluster db installation config
-- auto update cluster params in kamconfig
-- condense kamconfig files (using ifdefs)
-- merge current SIPWISE kamconfig
-- merge asterisk-realtime branch
-- fix NAT issues
-- auto update kamversion in kamconfig
-- upgrade version / release functions
-- improve install script util functions
-- add import library to install script
-- section out user configurable settings
-- make install script vars easier to use
-- remove placeholder in docs
-- add TODO statements
-- add current asterisk-realtime resources
-- add possible rtpengine fix in resources
-- add module install echo statements
-- allow SSL keys on debug
-- update OS dependencies
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -15470,7 +15012,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: GitHub (noreply@github.com)  
 
-initial guide
 
 
 ---
@@ -15549,28 +15090,6 @@ initial guide
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #30
-- Resolves #69
-- merge changes with v5.1
-- remove python prompt
-- change validate to allow centos v7
-- add centos checks in install functions
-- fix distro / OS version checks
-- fix centos uninstall funcs
-- automate kamdbctl password prompt (edit config)
-- add module install support for centos
-- unset exported vars/funcs on exit (cleanup)
-- get rid of kamailio db prompt
-- allow debug in all commands (1st param only)
-- various fixes for install scripts
-- add util / library script
-- improve distro version checks
-- fixes for db error handling in dsiprouter.py
-- re-add serving https through ssl certs (settings.py)
-- improve file parsing in updateConfig()
-- fix default mysql csv's (broken from last commit)
-- enable cdrs by default
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -15727,23 +15246,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- Resolves #1
-- Resolves #65
-- add pbx registration forwarding
-- add single tenant pbx domain routing
-- add flowroute did importing
-- fix fusionpbx conflicts with domain table
-- add generic multidomain pbx support
-- add syntax highliting in <code> blocks
-- add / optimize css vendor prefixes (autoprefix)
-- add combobox widget to inboundmapping view
-- add new icons for combobox widget
-- improved element disable functions
-- improved error view allowing debug messages
-- add custom domain tables to install script
-- fix nat reply bug in kamailio configs
-- merge new updates into kam44 config file
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -15965,13 +15467,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fixed login page styles
-- fixed table styles
-- fixed update on pbx endpoint
-- fixed auth radio toggle
-- fixed uacreg import csv values
-- fixed update on uac table to enable flag
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -15985,10 +15480,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- fixed toggle button listeners
-- fixed pbx modal listener (not populating)
-- fixed reload button refreshing on ajax call
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -16002,9 +15493,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-- change default server to use multi-threading
-- fix hanging comma in dsiprouter.py
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -16018,137 +15506,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 
-commit 3eb7182214594dfbbe3701487bb959f0aec4b08d
-Merge: 8582913 6bbc7de
-Author: Tyler Moore <tmoore@goflyball.com>
-Date:   Thu Aug 9 11:12:24 2018 -0400
-- Merge remote-tracking branch 'origin/carrier-modal' into carrier-modal
-- Conflicts:
-- gui/settings.py
-
-commit 85829134650ee4598f3c42db063b00f2ef16b4e8
-Author: Tyler Moore <tmoore@goflyball.com>
-Date:   Wed Aug 8 22:33:01 2018 -0400
-
-- v.50 Final Commit
-- Resolves #1
-- Resolves #4
-- Resolves #6
-- Resolves #55
-- Resolves #58
-- Resolves #62
-- Resolves #63
-- various DB query fixes
-- carrier delete fix
-- debug defaults set for production
-- custom icons added
-- Jquery queries optimized
-- JS library source map files fixed
-- HTTP errors fixed
-- resolving IP dynamically
-- HTML errors fixed
-- toggle buttons fixed
-- query selector shadowing id's fixed
-- radio button listeners fixed
-- modal nesting fixed
-- modal scrolling fixed
-- modal styles fixed
-- add exception handling throughout API
-- add endpoint debugging when debug enabled
-- finish carrier group modal features
-- jinja macro additions
-- add gateway group configuration defaults
-- dr_gw_lists table
-- uacreg table
-- dr_gateways table (update)
-- address table (update)
-- install script fixes for kamailio config added
-- added group name editing feature
-- add conversion functions
-- change version number
-- many more small bug fixes / tweaks.. see diff
-- Signed-off-by: Tyler Moore <tmoore@goflyball.com>
-
-commit 6bbc7defae59a6da1b8c146370621bb845fb9091
-Author: Tyler Moore <tmoore@goflyball.com>
-Date:   Wed Aug 8 22:33:01 2018 -0400
-
-- v.50 Final Merge
-- Resolves #1
-- Resolves #4
-- Resolves #6
-- Resolves #55
-- Resolves #58
-- Resolves #62
-- Resolves #63
-- various DB query fixes
-- carrier delete fix
-- debug defaults set for production
-- custom icons added
-- Jquery queries optimized
-- JS library source map files fixed
-- HTTP errors fixed
-- resolving IP dynamically
-- HTML errors fixed
-- toggle buttons fixed
-- query selector shadowing id's fixed
-- radio button listeners fixed
-- modal nesting fixed
-- modal scrolling fixed
-- modal styles fixed
-- add exception handling throughout API
-- add endpoint debugging when debug enabled
-- finish carrier group modal features
-- jinja macro additions
-- add gateway group configuration defaults
-- dr_gw_lists table
-- uacreg table
-- dr_gateways table (update)
-- address table (update)
-- install script fixes for kamailio config added
-- added group name editing feature
-- add conversion functions
-- many more small bug fixes / tweaks.. see diff
-- Signed-off-by: Tyler Moore <tmoore@goflyball.com>
-
-commit e14c688bd7b11145061d913a80236da0ad509eb6
-Author: Tyler Moore <tmoore@goflyball.com>
-Date:   Sun Jul 29 16:31:29 2018 -0400
-
-- Feature Addition: Carrier Groups
-- modifiy / resolves #57
-- resolves #60
-- resolves #9
-- This commit is for v0.50
-- https://github.com/dOpensource/dsiprouter/tree/v0.50
-- Add new carrier gruop route
-- Add UAC carrier registration
-- Add Voxbone carrier to default
-- Various backend additions
-- Add support for gw_lists table in DB
-- Fix table border in GUI
-- Fix GUI hideen modal / input selection bugs
-- Fix GUI modal input field data populating
-- Add notes for frontend improvements
-- Fix update config file
-- Add dynamic ip / domain methods
-- Various other fixes in commit changes
-
-commit 9e0e97755ad3f87b366b162c13761ab5fec21d38
-Author: Tyler Moore <tmoore@goflyball.com>
-Date:   Tue Jul 10 20:05:33 2018 -0400
-
-- 57] Feature Addition: Unique Domain Name Per PBX
-- resolves #57
-- This commit is for v0.50 https://github.com/dOpensource/dsiprouter/tree/v0.50
-- See screenshots in: dsiprouter/docs/images/features/pbx_domain
-
-commit b67161169bbba39abb6327c9cefb1ee28961e743
-Author: root <root@dsiprouter-dev.localdomain>
-Date:   Mon Jul 2 21:21:48 2018 +0000
-
-- Removed the uk_cfk index
-Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 
 
 ---
@@ -17839,7 +17196,6 @@ Signed-off-by: Tyler Moore <tmoore@goflyball.com>
 > Author: hailthemelody (rainman@hailthemelody.com)  
 > Committer: hailthemelody (rainman@hailthemelody.com)  
 
-Was pointing to REQ_PYTHON_VER, which presumable was the previous name of the variable
 
 
 ---
@@ -17853,7 +17209,6 @@ Was pointing to REQ_PYTHON_VER, which presumable was the previous name of the va
 > Author: hailthemelody (rainman@hailthemelody.com)  
 > Committer: hailthemelody (rainman@hailthemelody.com)  
 
-Was missing "$" and being displayed as text. Now resolves to variable
 
 
 ---
