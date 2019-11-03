@@ -11,7 +11,7 @@ Fill in the domain name. (Note: You can create 1 or more domains by separating t
 - Select Realtime DB or Local Subscriber table (for multiple domains)
 - Select Pass Thru to PBX (single domain). 
 
-Note: Details can be found in Realtime DB if you want to ensure that the Kamailio configuration file is setup to point to the Asterisk Realtime database configuration. Details on how to populate the table can be found in the Local Suscriber table if you want to use the built in subscriber table that's part of Kamailio. Use the pass thru to register info to the FreePBX server so that you don’t have to change how authentication is done.
+Note: Details can be found in Realtime DB if you want to ensure that the Kamailio configuration file is setup to point to the Asterisk Realtime database configuration. Details on how to populate the table can be found in the Local Suscriber table if you want to use the built in subscriber table that's part of Kamailio. Use the pass thru to register info to the FreePBX server so that you don’t have to change how authentication is done. The support matrix that shows what's supported for Pass Thru authentication for a single domain can be found here:
 
 
 .. image:: images/add_new_domain522.png
@@ -37,3 +37,5 @@ Be sure to click the Reload Kamailio button to apply changes.
 .. image:: images/reload_button.png
  :align: center
  
+
+
