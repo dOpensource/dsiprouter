@@ -5,7 +5,7 @@ Supported Configurations
 Pass Thru to PBX Authentication Supported Configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-| PBX Distribution | PBX Version | Driver Type | Registration Test | Extention to Extension Test | Notes
+| PBX Distribution | PBX Version | Driver Type | Registration Test | Extention to Extension Test | Notes |
 | FreePBX | Asterisk 13.22.0 | chan_sip | Yes | Yes | Support for the Path header has to be enable.  Instructions can be found here |
 | FreePBX | Asterisk 13.22.0 | chan_pjsip |  |  | |
 | FusionPBX 4.4.0 | FreeSWITCH 1.6.2 | Sofia | Yes | Yes | 
