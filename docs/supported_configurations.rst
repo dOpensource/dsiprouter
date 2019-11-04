@@ -1,3 +1,5 @@
+.. _supported_configurations
+
 Supported Configurations
 ========================
 
