@@ -11,7 +11,7 @@ Pass Thru to PBX Authentication Supported Configurations
 PBX Distribution    PBX Version        Driver Type   Registration Test   Ext to Ext Test    Notes 
 ================   =================   ===========   =================   ================   ==========
 FreePBX            Asterisk 13.22.0    chan_sip       Pass                  Pass             see :ref:`enabling-the-path-header-for-asterisk-chan_sip`
-FreePBX            Asterisk 13.22.0    chan_pjsip     Not Tested            Not Tested      
+FreePBX            Asterisk 13.22.0    chan_pjsip     Pass .                Not Tested       suppport_path needs to be enabled
 FusionPBX          FreeSWITCH 1.6      Sofia          Pass                  Pass  
 ================   =================   ===========   =================   ================   ==========
 
