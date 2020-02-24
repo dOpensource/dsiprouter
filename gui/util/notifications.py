@@ -4,7 +4,7 @@ from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from util.decorator import async
-from util.security import AES_CBC
+from util.security import AES_CTR
 from shared import debugException
 import settings
 
@@ -56,12 +56,12 @@ def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAU
 
         # check environ vars if in debug mode
         if settings.DEBUG:
-            settings.MAIL_USERNAME = os.getenv('DSIP_USER', settings.MAIL_USERNAME)
-            settings.MAIL_PASSWORD = os.getenv('DSIP_PASS', settings.MAIL_PASSWORD)
+            settings.MAIL_USERNAME = os.getenv('MAIL_USERNAME', settings.MAIL_USERNAME)
+            settings.MAIL_PASSWORD = os.getenv('MAIL_PASSWORD', settings.MAIL_PASSWORD)
 
         # need to decrypt password
         if isinstance(settings.MAIL_PASSWORD, bytes):
-            mailpass = AES_CBC().decrypt(settings.MAIL_PASSWORD).decode('utf-8')
+            mailpass = AES_CTR.decrypt(settings.MAIL_PASSWORD).decode('utf-8')
         else:
             mailpass = settings.MAIL_PASSWORD
 

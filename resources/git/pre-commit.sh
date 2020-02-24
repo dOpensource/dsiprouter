@@ -3,13 +3,13 @@
 # Summary:  Create CONTRIBUTORS.md and requirements.txt on commit
 # Author:   DevOpSec <https://github.com/devopsec>
 # Usage:    Copy to your repo in <repo>/.git/hooks/pre-commit
-#           Alternatively the create_contributors function can be used independently by running script
+#           Alternatively the functions can be run outside of git (using -exec option)
 # Notes:    Requires pipreqs -> pip install pipreqs
 #           To add directories to recursive search, change INCLUDE_DIRS (its an array)
 #
 
 # project root
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 # destination file
 CONTRIBUTING_FILE="CONTRIBUTORS.md"
 # indicator that we commited the changelog

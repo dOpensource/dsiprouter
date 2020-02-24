@@ -17,7 +17,7 @@ from database import db_engine, SessionLoader, DummySession, Gateways, Address, 
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
-from util.security import hashCreds, AES_CBC
+from util.security import hashCreds, AES_CTR
 from util.ipc import createSettingsManager
 import globals
 import settings
@@ -79,7 +79,7 @@ def index():
         error = "server"
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/favicon.ico')
@@ -202,7 +202,7 @@ def displayCarrierGroups(gwgroup=None):
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/carriergroups', methods=['POST'])
@@ -307,7 +307,7 @@ def addUpdateCarrierGroups():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/carriergroupdelete', methods=['POST'])
@@ -368,7 +368,7 @@ def deleteCarrierGroups():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/carriers')
@@ -455,7 +455,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/carriers', methods=['POST'])
@@ -553,7 +553,7 @@ def addUpdateCarriers():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/carrierdelete', methods=['POST'])
@@ -632,7 +632,7 @@ def deleteCarriers():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/endpointgroups')
@@ -751,7 +751,7 @@ def addUpdateEndpointGroups():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/pbxdelete', methods=['POST'])
@@ -825,7 +825,7 @@ def deletePBX():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/inboundmapping')
@@ -896,7 +896,7 @@ select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwdd
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 
@@ -1117,7 +1117,7 @@ def addUpdateInboundMapping():
                         else:
                             fwdgroupid = int(lastfwd.groupid) + 1
 
-                        ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, ff_fwddid))
+                        ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
                         inserts.append(ffwd)
                     # if no gwgroup selected we dont need dr_rules we set dr_groupid to FLT_OUTBOUND and we create htable
                     else:
@@ -1137,7 +1137,7 @@ def addUpdateInboundMapping():
                         if len(ff_gwgroupid) > 0:
                             gwlist = '#{}'.format(ff_gwgroupid)
                             db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid).update(
-                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
+                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
                         else:
                             ff_rule = db.query(InboundMapping).filter(
                                 ((InboundMapping.groupid == ff_groupid) & (InboundMapping.groupid != settings.FLT_OUTBOUND)) |
@@ -1159,7 +1159,7 @@ def addUpdateInboundMapping():
                             else:
                                 fwdgroupid = int(lastfwd.groupid) + 1
 
-                            ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Hard Forward from {} to DID {}'.format(prefix, ff_fwddid))
+                            ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
                             inserts.append(ffwd)
 
                     db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid).update(
@@ -1202,7 +1202,7 @@ def addUpdateInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/inboundmappingdelete', methods=['POST'])
@@ -1279,7 +1279,7 @@ def deleteInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 def processInboundMappingImport(filename, groupid, pbxid, name, db):
@@ -1494,7 +1494,7 @@ def displayOutboundRoutes():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/outboundroutes', methods=['POST'])
@@ -1673,7 +1673,7 @@ def addUpateOutboundRoutes():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/outboundroutesdelete', methods=['POST'])
@@ -1731,7 +1731,7 @@ def deleteOutboundRoute():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.remove()
 
 
 @app.route('/reloadkam')
@@ -1752,7 +1752,7 @@ def reloadkam():
         # format some settings for kam config
         dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
         if isinstance(settings.DSIP_API_TOKEN, bytes):
-            dsip_api_token = AES_CBC().decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+            dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 
@@ -1901,7 +1901,7 @@ def syncSettings(fields={}, update_net=False):
         db.rollback()
         db.flush()
     finally:
-        SessionLoader.remove()
+        db.remove()
 
     # update ip's dynamically
     if update_net:
@@ -2019,7 +2019,7 @@ def checkDatabase(session=None):
         db.flush()
     except sql_exceptions.SQLAlchemyError as ex:
         # If not, close DB connection so that the SQL engine can get another one from the pool
-        SessionLoader.remove()
+        db.remove()
 
 
 if __name__ == "__main__":

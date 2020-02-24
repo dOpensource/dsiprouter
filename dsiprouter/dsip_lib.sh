@@ -131,7 +131,7 @@ decryptConfigAttrib() {
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
         printf '%s' "${VALUE}" | perl -0777 -pe 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
     else
-        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CBC; print(AES_CBC().decrypt(settings.${NAME}).decode('utf-8'), end='')"
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
     fi
 }
 
@@ -151,6 +151,19 @@ disableKamailioConfigAttrib() {
     local CONFIG_FILE="$2"
 
     sed -i -r -e "s~#+(!(define|trydef|redefine)[[:space:]]? $NAME)~##\1~g" ${CONFIG_FILE}
+}
+
+# $1 == name of defined url to change
+# $2 == value to change url to
+# $3 == kamailio config file
+# notes: will skip any cluster url attributes
+setKamailioConfigDburl() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    perl -e "\$dburl='${VALUE}';" \
+        -0777 -i -pe 's~(#!(define|trydef|redefine)\s+?'"${NAME}"'\s+)['"'"'"](?!cluster\:).*['"'"'"]~\1"${dburl}"~g' ${CONFIG_FILE}
 }
 
 # $1 == name of ip to change

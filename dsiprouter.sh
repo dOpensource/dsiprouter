@@ -445,6 +445,7 @@ function configureSSL {
 # updates and settings in kam config that may change
 # should be run after changing settings.py or change in network configurations
 # TODO: add support for hot reloading of kam settings. i.e. using kamcmd cfg.sets <key> <val> / kamcmd cfg.seti <key> <val>
+# TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN')}
@@ -493,10 +494,13 @@ function updateKamailioConfig {
         done
         KAM_DB_CLUSTER_MODES="modparam('db_cluster', 'cluster', 'dbcluster=>${KAM_DB_CLUSTER_MODES}')"
 
-        perl -0777 -i -pe 's~(modparam\("db_cluster", "connection".*\s)+(modparam\("db_cluster", "cluster".*)~'"${KAM_DB_CLUSTER_CONNS}${KAM_DB_CLUSTER_MODES}"'~gm' ${DSIP_KAMAILIO_CONFIG_FILE}
+        perl -e "\$dbcluster='${KAM_DB_CLUSTER_CONNS}${KAM_DB_CLUSTER_MODES}';" \
+            -0777 -i -pe 's~(modparam\("db_cluster", "connection".*\s)+(modparam\("db_cluster", "cluster".*)~${dbcluster}~gm' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        local DBURL="\"${KAM_DB_TYPE}://${KAM_DB_USER}:${KAM_DB_PASS}\\@${KAM_DB_HOST}:${KAM_DB_PORT}/${KAM_DB_NAME}\""
-        perl -0777 -i -pe 's~(#!(define|trydef|redefine)\s+?DBURL\s+)['"'"'"](?!cluster\:).*['"'"'"]~\1'"${DBURL}"'~g' ${DSIP_KAMAILIO_CONFIG_FILE}
+        local DBURL="${KAM_DB_TYPE}://${KAM_DB_USER}:${KAM_DB_PASS}@${KAM_DB_HOST}:${KAM_DB_PORT}/${KAM_DB_NAME}"
+        setKamailioConfigDburl "DBURL" "${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
+        setKamailioConfigDburl "SQLCONN_KAM" "kam=>${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
+        setKamailioConfigDburl "SQLCONN_AST" "asterisk=>${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 }
 
@@ -856,7 +860,7 @@ EOF
     fi
 
     # Generate dsip private key (used for encryption across services)
-    ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import AES_CBC; AES_CBC().genKey()"
+    ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
 
     # Generate ipc access password
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds, get_random_bytes; setCreds(ipc_creds=get_random_bytes(64))"
@@ -1461,6 +1465,10 @@ function upgrade {
     CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
     mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
     mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
+
+    # TODO: more cross platform / cloud RDBMS friendly dump, such as the following:
+#    VIEWS=$(mysql --skip-column-names --batch -D information_schema -e 'select table_name from tables where table_schema="kamailio" and table_type="VIEW"' | perl -0777 -pe 's/\n(?!\Z)/|/g')
+#    mysqldump -B kamailio --routines --triggers --hex-blob | sed -e 's|DEFINER=`[a-z0-9A-Z]*`@`[a-z0-9A-Z]*`||g' | perl -0777 -pe 's|(CREATE TABLE `?(?:'"${VIEWS}"')`?.*?)ENGINE=\w+|\1|sgm' > kamdump.sql
 
     mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
         --user="$KAM_DB_USER" --password="$KAM_DB_PASS" > ${CURR_BACKUP_DIR}/mysql_full.sql

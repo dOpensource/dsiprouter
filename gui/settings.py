@@ -20,11 +20,13 @@ DSIP_IPC_PASS = b''
 # dsiprouter logging settings
 # syslog level and facility values based on:
 # <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>
+
 DSIP_LOG_LEVEL = 3
 DSIP_LOG_FACILITY = 18
 
-# ssl key / cert paths
-# email for re-certification (must match certs)
+# dSIPRouter SSL settings
+# ssl key / cert are absolute paths
+# email for re-certification must match certs
 DSIP_SSL_KEY = ''
 DSIP_SSL_CERT = ''
 DSIP_SSL_EMAIL = ''
@@ -88,9 +90,9 @@ FLOWROUTE_SECRET_KEY=''
 FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '172.21.0.2'
-INTERNAL_IP_NET = '172.21.0.*'
-EXTERNAL_IP_ADDR = '98.209.240.245'
+INTERNAL_IP_ADDR = '192.168.0.1'
+INTERNAL_IP_NET = '192.168.0.*'
+EXTERNAL_IP_ADDR = '1.1.1.1'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'

@@ -7,7 +7,7 @@ from sqlalchemy import exc as sql_exceptions
 from collections import OrderedDict
 import settings
 from shared import IO, debugException, hostToIP
-from util.security import AES_CBC
+from util.security import AES_CTR
 
 
 if settings.KAM_DB_TYPE == "mysql":
@@ -26,7 +26,6 @@ if settings.KAM_DB_TYPE == "mysql":
                     debugException(ex)
                 raise
 
-
 class Gateways(object):
     """
     Schema for dr_gateways table\n
@@ -44,7 +43,6 @@ class Gateways(object):
 
     pass
 
-
 class GatewayGroups(object):
     """
     Schema for dr_gw_lists table\n
@@ -56,7 +54,6 @@ class GatewayGroups(object):
         self.gwlist = ",".join(str(gw) for gw in gwlist)
 
     pass
-
 
 class Address(object):
     """
@@ -73,7 +70,6 @@ class Address(object):
         self.grp = type
 
     pass
-
 
 class InboundMapping(object):
     """
@@ -93,7 +89,6 @@ class InboundMapping(object):
 
     pass
 
-
 class OutboundRoutes(object):
     """
     Schema for dr_rules table\n
@@ -111,7 +106,6 @@ class OutboundRoutes(object):
 
     pass
 
-
 class CustomRouting(object):
     """
     Schema for dr_custom_rules table\n
@@ -123,7 +117,6 @@ class CustomRouting(object):
         self.description = description
 
     pass
-
 
 class dSIPLCR(object):
     """
@@ -141,7 +134,6 @@ class dSIPLCR(object):
         self.cost = cost
 
     pass
-
 
 class dSIPMultiDomainMapping(object):
     """
@@ -166,7 +158,6 @@ class dSIPMultiDomainMapping(object):
         self.enabled = enabled
 
     pass
-
 
 class dSIPDomainMapping(object):
     """
@@ -196,7 +187,6 @@ class dSIPDomainMapping(object):
 
     pass
 
-
 class Subscribers(object):
     """
     Schema for subscriber table\n
@@ -214,7 +204,6 @@ class Subscribers(object):
 
     pass
 
-
 class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
@@ -228,7 +217,6 @@ class dSIPLeases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
-
 
 class dSIPMaintModes(object):
     """
@@ -244,7 +232,6 @@ class dSIPMaintModes(object):
 
     pass
 
-
 class dSIPCallLimits(object):
     """
     Schema for dsip_calllimit table\n
@@ -257,7 +244,6 @@ class dSIPCallLimits(object):
         self.createdate = datetime.now()
 
     pass
-
 
 class dSIPNotification(object):
     """
@@ -280,7 +266,6 @@ class dSIPNotification(object):
 
     pass
 
-
 class dSIPHardFwd(object):
     """
     Schema for dsip_hardfwd table\n
@@ -293,7 +278,6 @@ class dSIPHardFwd(object):
 
     pass
 
-
 class dSIPFailFwd(object):
     """
     Schema for dsip_failfwd table\n
@@ -305,7 +289,6 @@ class dSIPFailFwd(object):
         self.dr_groupid = dr_groupid
 
     pass
-
 
 class UAC(object):
     """
@@ -343,7 +326,6 @@ class UAC(object):
 
     pass
 
-
 class Domain(object):
     """
     Schema for domain table\n
@@ -358,7 +340,6 @@ class Domain(object):
         self.last_modified = last_modified
 
     pass
-
 
 class DomainAttrs(object):
     """
@@ -380,7 +361,6 @@ class DomainAttrs(object):
 
     pass
 
-
 class Dispatcher(object):
     """
     Schema for dispatcher table\n
@@ -396,6 +376,8 @@ class Dispatcher(object):
         self.description = description
 
     pass
+
+# TODO: create class for dsip_settings table
 
 
 def getDBURI():
@@ -418,7 +400,7 @@ def getDBURI():
 
     # need to decrypt password
     if isinstance(settings.KAM_DB_PASS, bytes):
-        kampass = AES_CBC().decrypt(settings.KAM_DB_PASS).decode('utf-8')
+        kampass = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
     else:
         kampass = settings.KAM_DB_PASS
 
@@ -440,7 +422,6 @@ def getDBURI():
 
     return uri_list
 
-
 def createValidEngine(uri_list):
     """
     Create DB engine if connection is valid
@@ -459,8 +440,8 @@ def createValidEngine(uri_list):
     for conn_uri in uri_list:
         try:
             db_engine = create_engine(conn_uri, echo=True, pool_recycle=300, pool_size=10,
-                                      isolation_level="READ UNCOMMITTED",
-                                      connect_args={"connect_timeout": 5})
+                isolation_level="READ UNCOMMITTED",
+                connect_args={"connect_timeout": 5})
             # test connection
             _ = db_engine.connect()
             # conn good return it
@@ -559,6 +540,7 @@ class DummySession():
     This allows us to handle exceptions later in the try blocks
     We also avoid exceptions in the except blocks by using dummy sesh
     """
+
     @staticmethod
     def noop(*args, **kwargs):
         return None
@@ -613,6 +595,12 @@ class DummySession():
     def rollback(self, *args, **kwargs):
         DummySession.noop(*args, **kwargs)
     def scalar(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def remove(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def configure(self, *args, **kwargs):
+        DummySession.noop(*args, **kwargs)
+    def query_property(self, *args, **kwargs):
         DummySession.noop(*args, **kwargs)
 
 def updateDsipSettingsTable(session=None):

@@ -7,7 +7,7 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, dSI
     dSIPCallLimits, InboundMapping
 from shared import *
 from util.notifications import sendEmail
-from util.security import AES_CBC
+from util.security import AES_CTR
 import settings, globals
 
 
@@ -20,10 +20,9 @@ class APIToken:
     token = None
 
     def __init__(self, request):
-        if 'Authorization' in request.headers:
-            auth_header = request.headers.get('Authorization')
-            if auth_header:
-                self.token = auth_header.split(' ')[1]
+        auth_header = request.headers.get('Authorization')
+        if auth_header is not None:
+            self.token = auth_header.split(' ')[1]
 
     def isValid(self):
         if self.token:
@@ -33,7 +32,7 @@ class APIToken:
 
             # need to decrypt token
             if isinstance(settings.DSIP_API_TOKEN, bytes):
-                tokencheck = AES_CBC().decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+                tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
             else:
                 tokencheck = settings.DSIP_API_TOKEN
 
@@ -45,23 +44,15 @@ class APIToken:
 def api_security(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # List of User Agents that are text based
-        TextUserAgentList = ['curl', 'http_async_client']
-        consoleUserAgent = False
         apiToken = APIToken(request)
 
         if not session.get('logged_in') and not apiToken.isValid():
-            user_agent = request.headers.get('User-Agent')
-            if user_agent is not None:
-                for agent in TextUserAgentList:
-                    if agent in user_agent:
-                        consoleUserAgent = True
-                        pass
-            if consoleUserAgent:
-                msg = '{"error": "Unauthorized", "error_msg": "Invalid Token"}\n'
-                return Response(msg, 401)
-            else:
+            accept_header = request.headers.get('Accept', '')
+            if 'text/html' in accept_header.split(';')[0]:
                 return render_template('index.html', version=settings.VERSION)
+            else:
+                payload = {'error': 'Unauthorized', 'msg': 'Invalid Token', 'data': []}
+                return jsonify(payload), 401
         return func(*args, **kwargs)
 
     return wrapper
@@ -1526,7 +1517,7 @@ def getGatewayGroupCDRS(gwgroupid=None):
             responsePayload['message'] = "Endpont group doesn't exist"
             return json.dumps(responsePayload)
 
-        query = "select gwid, created, calltype as direction, dst_username as \
+        query = "select gwid, call_start_time, calltype as direction, dst_username as \
          number,src_ip, dst_domain, duration,sip_call_id \
          from dr_gateways,cdrs where (cdrs.src_ip = substring_index(dr_gateways.address,':',1) or cdrs.dst_domain = substring_index(dr_gateways.address,':',1)) and gwid in ({});".format(gwlist)
 
@@ -1535,7 +1526,7 @@ def getGatewayGroupCDRS(gwgroupid=None):
         for cdr in cdrs:
             row = {}
             row['gwid'] = cdr[0]
-            row['created'] = str(cdr[1])
+            row['call_start_time'] = str(cdr[1])
             row['calltype'] = cdr[2]
             row['number'] = cdr[3]
             row['src_ip'] = cdr[4]
@@ -1600,7 +1591,7 @@ def getGatewayCDRS(gwid=None):
         
         db = SessionLoader()
         
-        query = "select gwid, created, calltype as direction, dst_username as \
+        query = "select gwid, call_start_time, calltype as direction, dst_username as \
          number,src_ip, dst_domain, duration,sip_call_id \
          from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={};".format(gwid)
 
@@ -1609,7 +1600,7 @@ def getGatewayCDRS(gwid=None):
         for cdr in cdrs:
             row = {}
             row['gwid'] = cdr[0]
-            row['created'] = str(cdr[1])
+            row['call_start_time'] = str(cdr[1])
             row['calltype'] = cdr[2]
             row['number'] = cdr[3]
             row['src_ip'] = cdr[4]

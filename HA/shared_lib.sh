@@ -312,7 +312,7 @@ dumpMysqlDatabases() {
     if [[ "$KEY" == "all" ]] || [[ "$KEY" == "merge" ]]; then
         local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
             -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')")
-        mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
+        mysqldump --single-transaction --skip-add-drop-table --insert-ignore \
             --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} \
             | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs'
     fi

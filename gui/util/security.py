@@ -1,5 +1,6 @@
 import hashlib, binascii
 from Crypto.Cipher import AES
+from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
 from sqlalchemy import exc as sql_exceptions
 from shared import updateConfig
@@ -47,7 +48,6 @@ def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_c
     :return:                None
     """
     fields = {}
-    aes = AES_CBC()
 
     if len(dsip_creds) > 0:
         if len(dsip_creds) > 64:
@@ -58,23 +58,23 @@ def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_c
 
     if len(api_creds) > 0:
         if len(api_creds) > 64:
-            raise ValueError('kamailio credentials must be 64 bytes')
-        fields['DSIP_API_TOKEN'] = aes.encrypt(api_creds)
+            raise ValueError('kamailio credentials must be 64 bytes or less')
+        fields['DSIP_API_TOKEN'] = AES_CTR.encrypt(api_creds)
 
     if len(kam_creds) > 0:
         if len(kam_creds) > 64:
             raise ValueError('kamailio credentials must be 64 bytes or less')
-        fields['KAM_DB_PASS'] = aes.encrypt(kam_creds)
+        fields['KAM_DB_PASS'] = AES_CTR.encrypt(kam_creds)
 
     if len(mail_creds) > 0:
         if len(mail_creds) > 64:
             raise ValueError('mail credentials must be 64 bytes or less')
-        fields['MAIL_PASSWORD'] = aes.encrypt(mail_creds)
+        fields['MAIL_PASSWORD'] = AES_CTR.encrypt(mail_creds)
 
     if len(ipc_creds) > 0:
         if len(ipc_creds) > 64:
             raise ValueError('mail credentials must be 64 bytes or less')
-        fields['DSIP_IPC_PASS'] = aes.encrypt(ipc_creds)
+        fields['DSIP_IPC_PASS'] = AES_CTR.encrypt(ipc_creds)
 
     if settings.LOAD_SETTINGS_FROM == 'file':
         updateConfig(settings, fields)
@@ -91,55 +91,48 @@ def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_c
             db.rollback()
             raise
         finally:
-            SessionLoader.remove()
+            db.remove()
 
-class AES_CBC(object):
+class AES_CTR():
     """
-    Wrapper class for pycrypto's AES256 functions in CBC mode
+    Wrapper class for pycrypto's AES256 functions in AES_CTR mode
     """
 
-    def __init__(self, keyfile=settings.DSIP_PRIV_KEY):
-        self.keyfile = keyfile
+    BLOCK_SIZE = 16
+    KEY_SIZE = 32
 
-    def genKey(self):
-        with open(self.keyfile, 'wb') as f:
-            key = get_random_bytes(AES.block_size)
-            iv = get_random_bytes(AES.block_size)
+    @staticmethod
+    def genKey(keyfile=settings.DSIP_PRIV_KEY):
+        with open(keyfile, 'wb') as f:
+            key = get_random_bytes(AES_CTR.KEY_SIZE)
             f.write(key)
-            f.write(iv)
 
-    def pad(self, byte_string, block_size=16):
-        # we don't need to pad if multiple of block size
-        remainder = len(byte_string) % block_size
-        if remainder > 0:
-            padding_len = block_size - remainder
-            byte_string = byte_string + padding_len * chr(block_size).encode('utf-8')
-        return byte_string
-
-    def unpad(self, byte_string, block_size=16):
-        return byte_string.rstrip(chr(block_size).encode('utf-8'))
-
-    def encrypt(self, byte_string):
+    @staticmethod
+    def encrypt(byte_string, key_file=settings.DSIP_PRIV_KEY):
         if isinstance(byte_string, str):
             byte_string = byte_string.encode('utf-8')
 
-        with open(self.keyfile, 'rb') as f:
-            key = f.read(AES.block_size)
-            iv = f.read(AES.block_size)
+        with open(key_file, 'rb') as f:
+            key = f.read(AES_CTR.KEY_SIZE)
 
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        cipher_bytes = cipher.encrypt(self.pad(byte_string, AES.block_size))
+        iv = get_random_bytes(AES_CTR.BLOCK_SIZE)
+        ctr = Counter.new(AES_CTR.BLOCK_SIZE * 8, initial_value=int(binascii.hexlify(iv), 16))
+        aes = AES.new(key, AES.MODE_CTR, counter=ctr)
+        cipher_bytes = iv + aes.encrypt(byte_string)
+
         return binascii.hexlify(cipher_bytes)
 
-    def decrypt(self, byte_string):
+    @staticmethod
+    def decrypt(byte_string, key_file=settings.DSIP_PRIV_KEY):
         if isinstance(byte_string, str):
             byte_string = byte_string.encode('utf-8')
         byte_string = binascii.unhexlify(byte_string)
 
-        with open(self.keyfile, 'rb') as f:
-            key = f.read(AES.block_size)
-            iv = f.read(AES.block_size)
+        with open(key_file, 'rb') as f:
+            key = f.read(AES_CTR.KEY_SIZE)
 
-        cipher = AES.new(key, AES.MODE_CBC, iv)
-        plain_bytes = self.unpad(cipher.decrypt(byte_string))
-        return plain_bytes
+        iv = byte_string[:AES_CTR.BLOCK_SIZE]
+        ctr = Counter.new(AES_CTR.BLOCK_SIZE * 8, initial_value=int(binascii.hexlify(iv), 16))
+        aes = AES.new(key, AES.MODE_CTR, counter=ctr)
+
+        return aes.decrypt(byte_string[AES_CTR.BLOCK_SIZE:])

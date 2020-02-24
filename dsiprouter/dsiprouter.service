@@ -1,6 +1,6 @@
 [Unit]
 Description=dSIPRouter Service
-After=network.target mysql.service
+After=network.target mysql.service syslog.service
 
 [Service]
 Type=simple
@@ -11,7 +11,7 @@ EnvironmentFile=-/etc/defaults/dsiprouter.conf
 EnvironmentFile=-/etc/defaults/dsiprouter.d/*.conf
 PIDFile=${DSIP_RUN_DIR}/dsiprouter.pid
 ExecStartPre=-/bin/mkdir -p ${DSIP_RUN_DIR}
-#ExecStartPre=-/bin/chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+ExecStartPre=-/bin/chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 ExecStart=/usr/bin/python3 ${DSIP_PROJECT_DIR}/gui/dsiprouter.py runserver
 Restart=on-failure
 

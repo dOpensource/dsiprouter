@@ -42,7 +42,7 @@ create_changelog() {
         BODY_INFO=$(git log --format=%b -n 1 ${HASH} | sed 's|/|~~|g' |
             # start formatting as markdown
             # delete empty lines
-            sed '/^$/d' <<<"$BODY_INFO" |
+            sed '/^$/d' |
             # indented lines -> bullets
             sed -r 's/^[^0-9a-zA-Z]+/- /' |
             # non indented lines -> paragraph

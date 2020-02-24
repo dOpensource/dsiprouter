@@ -199,28 +199,6 @@ $(document).ready(function() {
     modal_body.find("input.ff_groupid").val(ff_groupid);
   });
 
-  /* make sure we don't have duplicate selects */
-  var add_modal = $('#add .modal-body');
-   add_modal.find("select").change(function() {
-    /* we don't care if there are duplicate selects of the default value */
-    if (this.selectedIndex !== 0) {
-      var options = add_modal.find("select").not(this).find("option").get();
-      for (var i = 0; i < options.length; i++) {
-        options[i].value === $(this).val() ? toggleElemDisabled($(options[i]), true, true) : toggleElemDisabled($(options[i]), false, true)
-      }
-    }
-  });
-  var edit_modal = $('#edit .modal-body');
-  edit_modal.find("select").change(function() {
-    /* we don't care if there are duplicate selects of the default value */
-    if (this.selectedIndex !== 0) {
-      var options = edit_modal.find("select").not(this).find("option").get();
-      for (var i = 0; i < options.length; i++) {
-        options[i].value === $(this).val() ? toggleElemDisabled($(options[i]), true, true) : toggleElemDisabled($(options[i]), false, true)
-      }
-    }
-  });
-
   /* listener for hard forward toggle */
   $('.modal-body .toggle-hardfwd').change(function() {
     var modal = $(this).closest('div.modal');

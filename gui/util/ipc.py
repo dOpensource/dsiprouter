@@ -1,12 +1,12 @@
 import os, signal
 from multiprocessing.managers import SyncManager
-from util.security import AES_CBC
+from util.security import AES_CTR
 import settings
 
 # create server to share data over sockets
 def createSettingsManager(shared_settings, address=settings.DSIP_IPC_SOCK, authkey=None):
     if authkey is None:
-        authkey = AES_CBC().decrypt(settings.DSIP_IPC_PASS)
+        authkey = AES_CTR.decrypt(settings.DSIP_IPC_PASS)
 
     class SettingsManager(SyncManager):
         def __init__(self, *args, **kwargs):
@@ -22,7 +22,7 @@ def createSettingsManager(shared_settings, address=settings.DSIP_IPC_SOCK, authk
 # TODO: add error handling / good return codes for the following funcs
 def setSharedSettings(fields_dict={}, address=settings.DSIP_IPC_SOCK, authkey=None):
     if authkey is None:
-        authkey = AES_CBC().decrypt(settings.DSIP_IPC_PASS)
+        authkey = AES_CTR.decrypt(settings.DSIP_IPC_PASS)
 
     class SettingsManager(SyncManager):
         def __init__(self, *args, **kwargs):
