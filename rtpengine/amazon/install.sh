@@ -9,14 +9,26 @@
 function install {
     local VERSION_NUM=""
 
-
+    # try installing in the following order:
+    # 1: headers from repos
+    # 2: headers from rpmfind.net (updates branch)
+    # 3: headers from rpmfind.net (os branch)
+    # 4: headers from linuxsoft.cern.ch (updates branch)
+    # 5: headers from linuxsoft.cern.ch (os branch)
     function installKernelDevHeaders {
-        yum install -y "kernel-devel-uname-r == $(uname -r)"
-        # if the headers for this kernel are not found try archives
-        if [ $? -ne 0 ]; then
-            yum install -y https://rpmfind.net/linux/centos/$(cat /etc/redhat-release | cut -d ' ' -f 4)/updates/$(uname -m)/Packages/kernel-devel-$(uname -r).rpm ||
-            yum install -y https://rpmfind.net/linux/centos/$(cat /etc/redhat-release | cut -d ' ' -f 4)/os/$(uname -m)/Packages/kernel-devel-$(uname -r).rpm
-        fi
+        local OS_VER="$(cat /etc/redhat-release | cut -d ' ' -f 4)"
+        local OS_ARCH="$(uname -m)"
+        local OS_KERNEL="$(uname -r)"
+
+        yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
+        yum install -y https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm
     }
 
     # Install required libraries
@@ -28,7 +40,7 @@ function install {
 
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables-devel kernel-devel kernel-headers xmlrpc-c-devel gperf redhat-lsb iptables-ipv6 redhat-rpm-config rpm-build pkgconfig \
+        iptables-devel xmlrpc-c-devel gperf redhat-lsb iptables-ipv6 redhat-rpm-config rpm-build pkgconfig \
         freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog
 
     yum --disablerepo='*' --enablerepo='epel-multimedia' install -y libbluray libbluray-devel
