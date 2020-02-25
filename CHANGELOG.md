@@ -2,6 +2,34 @@
 
 
 
+### Fix Testing Makefile
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 25 Feb 2020 15:33:22 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Makefile requires tabs, re-tabbed spaces
+
+
+---
+
+
+### Fix RTPEngine Kernel Header Install Issue
+
+> Branches Affected: dmq-feature  
+> Tags Affected:   
+> Date: Tue, 25 Feb 2020 14:54:46 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- find current kernels headers instead of installing new kernel
+
+
+---
+
+
 ### Fix RTPEngine Kernel Header Install Issue
 
 > Branches Affected: v0.60+ent  
