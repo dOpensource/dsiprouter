@@ -142,7 +142,7 @@ def displayDomains():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 @domains.route("/domains", methods=['POST'])
 def addUpdateDomain():
@@ -212,7 +212,7 @@ def addUpdateDomain():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 @domains.route("/domainsdelete", methods=['POST'])
 def deleteDomain():
@@ -264,4 +264,4 @@ def deleteDomain():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()

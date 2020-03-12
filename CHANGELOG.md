@@ -2,6 +2,25 @@
 
 
 
+### Merge v0.55+ent changes into v0.60+ent
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 12 Mar 2020 16:24:26 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- merge in cdr and backup/restore changes
+- various styling / syntax fixes
+- make bootstrap-datepicker.css local
+- update docker compose file for v0.60
+- fix some remaining db session bugs missed b4
+- fix dsiprouter syslog not logging pid issue
+
+
+---
+
+
 ### Merge dmq-feature branch into v0.60+ent
 
 > Branches Affected: v0.60+ent  

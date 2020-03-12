@@ -277,6 +277,18 @@ class dSIPHardFwd(object):
 
     pass
 
+class dSIPCDRInfo(object):
+    """
+    Schema for dsip_cdrinfo table\n
+    """
+
+    def __init__(self, gwgroupid, email, send_date):
+        self.gwgroupid = gwgroupid
+        self.email = email
+        self.send_date = send_date
+
+    pass
+
 class dSIPFailFwd(object):
     """
     Schema for dsip_failfwd table\n

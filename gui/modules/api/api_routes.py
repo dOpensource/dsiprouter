@@ -1,13 +1,17 @@
-import json
+import os, time, json, random, pipes
+import urllib.parse as parse
 from functools import wraps
-from flask import Blueprint, jsonify
+from datetime import datetime
+from flask import Blueprint, jsonify, session, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, send_file
 from sqlalchemy import exc as sql_exceptions, and_
 from werkzeug import exceptions as http_exceptions
+from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
-    dSIPCallLimits, InboundMapping
+    dSIPCallLimits, InboundMapping, dSIPCDRInfo
 from shared import *
 from util.notifications import sendEmail
 from util.security import AES_CTR
+from util.file_handling import isValidFile
 import settings, globals
 
 
@@ -283,16 +287,14 @@ def revokeEndpointLease(leaseid):
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
 
         # Remove the entry in the Subscribers table
-
         Subscriber = db.query(Subscribers).filter(Subscribers.id == Lease.sid).first()
         db.delete(Subscriber)
-        # Remove the entry in the Gateway table
 
+        # Remove the entry in the Gateway table
         Gateway = db.query(Gateways).filter(Gateways.gwid == Lease.gwid).first()
         db.delete(Gateway)
 
         # Remove the entry in the Lease table
-
         db.delete(Lease)
 
         payload = {}
@@ -363,11 +365,10 @@ def updateEndpoint(id):
              elif requestPayload['maintmode'] == 1:
                 #Lookup Gateway ip adddess
                  Gateway = db.query(Gateways).filter(Gateways.gwid == id).first()
-                 db.commit()
                  db.flush()
                  if Gateway != None:
-                     MaintMode = dSIPMaintModes(Gateway.address,id)
-                 db.add(MaintMode)
+                    MaintMode = dSIPMaintModes(Gateway.address, id)
+                    db.add(MaintMode)
         except MaintModeAttrMissing as ex:
             responsePayload['error'] = "maintmode attribute is missing"
             return json.dumps(responsePayload)
@@ -821,6 +822,10 @@ def deleteEndpointGroup(gwgroupid):
         for notification in n:
             n.delete(synchronize_session=False)
 
+        cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid)
+        if cdrinfo is not None:
+            cdrinfo.delete(synchronize_session=False)
+
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
             domainmapping.delete(synchronize_session=False)
@@ -937,6 +942,14 @@ def getEndpointGroup(gwgroupid):
             responsePayload['fusionpbx']['dbhost'] = domainmapping.db_host
             responsePayload['fusionpbx']['dbuser'] = domainmapping.db_username
             responsePayload['fusionpbx']['dbpass'] = domainmapping.db_password
+
+
+        #CDR info
+        responsePayload['cdr'] = {}
+        cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
+        if cdrinfo is not None:
+            responsePayload['cdr']['cdr_email'] = cdrinfo.email
+            responsePayload['cdr']['cdr_send_date'] = cdrinfo.send_date
 
 
         return json.dumps(responsePayload)
@@ -1216,6 +1229,26 @@ def updateEndpointGroups(gwgroupid):
                 db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid==gwgroupid,dSIPNotification.type==1)).delete()
 
 
+        #Update CDR
+        if 'cdr' in requestPayload:
+            cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else None
+            cdr_send_date = requestPayload['cdr']['cdr_send_date'] if 'cdr_send_date' in requestPayload['cdr'] else None
+
+            if len(cdr_email) > 0 and len(cdr_send_date) > 0:
+                # Try to update
+
+                if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid==gwgroupid).update({"email":cdr_email,"send_date":cdr_send_date}):
+                    pass
+                else:
+                    cdrinfo = dSIPCDRInfo(gwgroupid,cdr_email,cdr_send_date)
+                    db.add(cdrinfo)
+            else:
+                # Removte CDR Info
+                cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid==gwgroupid).first()
+                if cdrinfo is not None:
+                    db.delete(cdrinfo)
+
+
         #Update FusionPBX
         if 'fusionpbx' in requestPayload:
             fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
@@ -1303,6 +1336,10 @@ def addEndpointGroups():
             overmaxcalllimit: <string>,
             endpointfailure" <string>
         },
+        cdr: {
+            cdr_email: <string>,
+            cdr_send_date: <string>
+        }
         fusionpbx: {
             enabled: <bool>,
             dbhost: <string>,
@@ -1426,6 +1463,15 @@ def addEndpointGroups():
                 notification = dSIPNotification(gwgroupid, type, method, endpointfailure)
                 db.add(notification)
 
+        #Enable CDR
+        if 'cdr' in requestPayload:
+            cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else None
+            cdr_send_date = requestPayload['cdr']['cdr_send_date'] if 'cdr_send_date' in requestPayload['cdr'] else None
+
+            if len(cdr_email) > 0 and len(cdr_send_date) > 0:
+                cdrinfo = dSIPCDRInfo(gwgroupid,cdr_email,cdr_send_date)
+                db.add(cdrinfo)
+
         # Enable FusionPBX
         if 'fusionpbx' in requestPayload:
             fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
@@ -1484,33 +1530,25 @@ def addEndpointGroups():
     finally:
         db.close()
 
-@api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
-@api_security
-def getGatewayGroupCDRS(gwgroupid=None):
-    """
-    Purpose
 
-    Getting the cdrs for a gatewaygroup
-
-    """
-
+def generateCDRS(gwgroupid,type=None,email="False"):
     db = DummySession()
 
     # Define a dictionary object that represents the payload
     responsePayload = {}
-    
+
     try:
-        if settings.DEBUG:
-            debugEndpoint()
-        
         db = SessionLoader()
 
-        query = "select gwlist from dr_gw_lists where id = {}".format(gwgroupid)
+        query = "select * from dr_gw_lists where id = {}".format(gwgroupid)
         gwgroup = db.execute(query).first()
         if gwgroup is not None:
             gwlist = gwgroup.gwlist
+            gwgroupName = strFieldsToDict(gwgroup.description)['name']
             if len(gwlist) == 0:
                 responsePayload['status'] = "0"
+                responsePayload['cdr'] = []
+                responsePayload['recordCount'] = "0"
                 responsePayload['message'] = "No endpoints are defined"
                 return json.dumps(responsePayload)
 
@@ -1519,33 +1557,81 @@ def getGatewayGroupCDRS(gwgroupid=None):
             responsePayload['message'] = "Endpont group doesn't exist"
             return json.dumps(responsePayload)
 
-        query = "select gwid, call_start_time, calltype as direction, dst_username as \
-         number,src_ip, dst_domain, duration,sip_call_id \
-         from dr_gateways,cdrs where (cdrs.src_ip = substring_index(dr_gateways.address,':',1) or cdrs.dst_domain = substring_index(dr_gateways.address,':',1)) and gwid in ({});".format(gwlist)
+        query = "select gwid, created, calltype as direction, dst_username as \
+         to_num, src_username as from_num, src_ip, dst_domain, duration,sip_call_id \
+         from dr_gateways,cdrs where (cdrs.src_ip = substring_index(dr_gateways.address,':',1) or cdrs.dst_domain = substring_index(dr_gateways.address,':',1)) and gwid in ({}) order by call_start_time;".format(gwlist)
 
         cdrs = db.execute(query)
         rows = []
         for cdr in cdrs:
             row = {}
             row['gwid'] = cdr[0]
-            row['call_start_time'] = str(cdr[1])
+            row['created'] = str(cdr[1])
             row['calltype'] = cdr[2]
-            row['number'] = cdr[3]
-            row['src_ip'] = cdr[4]
-            row['dst_domain'] = cdr[5]
-            row['duration'] = cdr[6]
-            row['sip_call_id'] = cdr[7]
+
+            if cdr[2] == "inbound":
+                row['subscriber'] = cdr[3]
+            else:
+                row['subscriber'] = cdr[4]
+            row['to_num'] = cdr[3]
+            row['from_num'] = cdr[4]
+            row['src_ip'] = cdr[5]
+            row['dst_domain'] = cdr[6]
+            row['duration'] = cdr[7]
+            row['sip_call_id'] = cdr[8]
+            row['gwgroupName'] = gwgroupName
 
             rows.append(row)
 
-        if rows is not None:
-            responsePayload['status'] = "200"
-            responsePayload['cdrs'] = rows
-            responsePayload['recordCount'] = len(rows)
-        else:
-            responsePayload['status'] = "0"
 
-        return json.dumps(responsePayload)
+        responsePayload['status'] = "200"
+        responsePayload['cdrs'] = rows
+        responsePayload['recordCount'] = len(rows)
+
+
+        if type == "csv":
+            # Convert array to csv format
+            lines = "ID,Call Start,Call Direction,Subscriber,To,From,Source,Destination Domain,Call Duration,Call ID,Endpoint Group\r"
+            columns = ['gwid','created','calltype','subscriber','to_num','from_num','src_ip','dst_domain','duration','sip_call_id','gwgroupName']
+            for row in rows:
+                line = ""
+                for column in columns:
+                    line += str(row[column]) + ","
+                # Remove the last comma and add end of line return
+                line = line[:-1] + "\r"
+                lines += line
+
+
+            dateTime = time.strftime('%Y%m%d-%H%M%S')
+            attachment = "attachment; filename={}_{}.csv".format(gwgroupName,dateTime)
+            headers={"Content-disposition":attachment}
+
+            if email == 'True' or email == 'true':
+                # Write out csv to a file
+                filename = '/tmp/{}_{}.csv'.format(gwgroupName,dateTime)
+                f = open(filename,'wb')
+                for line in lines:
+                    f.write(line.encode())
+                f.close()
+
+                # Setup the parameters to send the email
+                data = {}
+                data['html_body'] = "<html>CDR Report for {}</html>".format(gwgroupName)
+                data['text_body'] = "CDR Report for {}".format(gwgroupName)
+                data['subject'] = "CDR Report for {}".format(gwgroupName)
+                data['attachments'] = []
+                data['attachments'].append(filename)
+                data['recipients'] = ["mack.hendricks@gmail.com"]
+                sendEmail(**data)
+                # Remove CDR's from the payload thats being returned
+                responsePayload.pop('cdrs')
+                responsePayload['format'] = 'csv'
+                responsePayload['type'] = 'email'
+                return json.dumps(responsePayload)
+
+            return Response(lines, mimetype="text/csv",headers=headers)
+        else:
+            return json.dumps(responsePayload)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1555,21 +1641,39 @@ def getGatewayGroupCDRS(gwgroupid=None):
         db.flush()
         return jsonify(status=0, error=error), status_code
     except http_exceptions.HTTPException as ex:
-        debugException(ex)
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "http"
-        status_code = ex.code or status.HTTP_INTERNAL_SERVER_ERROR
         db.rollback()
         db.flush()
-        return jsonify(status=0, error=error), status_code
+        return jsonify(status=0,error=error)
     except Exception as ex:
-        debugException(ex)
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
-        status_code = status.HTTP_INTERNAL_SERVER_ERROR
-        db.rollback()
-        db.flush()
-        return jsonify(status=0, error=error), status_code
+        return jsonify(status=0,error=error)
     finally:
         db.close()
+
+
+@api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
+@api_security
+def getGatewayGroupCDRS(gwgroupid=None,type=None,email="False"):
+    """
+    Purpose
+
+    Getting the cdrs for a gatewaygroup
+
+    """
+    if (settings.DEBUG):
+        debugEndpoint()
+
+    if type is None:
+        type=request.args.get('type')
+    else:
+        type="JSON" # Set the value to JSON if the type attribute is not specified
+
+    email = request.args.get('email')
+
+    return generateCDRS(gwgroupid,type,email)
 
 
 @api.route("/api/v1/cdrs/endpoint/<int:gwid>", methods=['GET'])
@@ -1581,19 +1685,18 @@ def getGatewayCDRS(gwid=None):
     Getting the cdrs for a gateway thats part of a gateway group
 
     """
-
     db = DummySession()
 
     # Define a dictionary object that represents the payload
     responsePayload = {}
-    
+
     try:
-        if settings.DEBUG:
-            debugEndpoint()
-        
         db = SessionLoader()
-        
-        query = "select gwid, call_start_time, calltype as direction, dst_username as \
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        query = "select gwid, created, calltype as direction, dst_username as \
          number,src_ip, dst_domain, duration,sip_call_id \
          from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={};".format(gwid)
 
@@ -1617,7 +1720,9 @@ def getGatewayCDRS(gwid=None):
             responsePayload['cdrs'] = rows
             responsePayload['recordCount'] = len(rows)
         else:
-            responsePayload['status'] = "0"
+            responsePayload['status'] = "200"
+            responsePayload['cdrs'] = rows
+            responsePayload['recordCount'] = len(rows)
 
         return json.dumps(responsePayload)
 
@@ -1644,3 +1749,134 @@ def getGatewayCDRS(gwid=None):
         return jsonify(status=0, error=error), status_code
     finally:
         db.close()
+
+@api.route("/api/v1/backupandrestore/backup", methods=['GET'])
+@api_security
+def createBackup(gwid=None):
+    """
+    Purpose
+
+    Generate a backup of the database
+
+    """
+    db = DummySession()
+
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
+
+    try:
+        db = SessionLoader()
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        backupDateTime = time.strftime('%Y%m%d-%H%M%S')
+        backupFilename = backupDateTime + ".sql"
+        dumpcmd = "mysqldump -h " + settings.KAM_DB_HOST + " -u " + settings.KAM_DB_USER + " -p" + settings.KAM_DB_PASS + " " + settings.KAM_DB_NAME + " > " + pipes.quote(settings.BACKUP_FOLDER) + "/" + pipes.quote(backupFilename)
+        os.system(dumpcmd)
+
+        #lines = "It wrote the backup"
+        #attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
+        #headers={"Content-disposition":attachment}
+        #return Response(lines, mimetype="text/plain",headers=headers)
+        filename = "dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
+        return send_file(pipes.quote(settings.BACKUP_FOLDER) + "/" + pipes.quote(backupFilename),attachment_filename=filename,as_attachment=True)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return jsonify(status=0, error=error)
+    finally:
+        db.close()
+
+@api.route("/api/v1/backupandrestore/restore", methods=['POST'])
+@api_security
+def restoreBackup():
+    """
+    Purpose
+
+    Restore backup of the database
+
+    """
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        content_type = str.lower(request.headers.get('Content-Type'))
+        if 'multipart/form-data' in content_type:
+             data = request.form.to_dict(flat=True)
+        elif 'application/x-www-form-urlencoded' in content_type:
+            data = request.form.to_dict(flat=True)
+        else:
+            data = request.get_json(force=True)
+
+        # fix data if client is sloppy (http_async_client)
+        if request.headers.get('User-Agent') == 'http_async_client':
+            data = json.loads(list(data)[0])
+
+        KAM_DB_USER = settings.KAM_DB_USER
+        KAM_DB_PASS = settings.KAM_DB_PASS
+
+        if 'db_username' in data.keys():
+            KAM_DB_USER = data.get('db_username')
+            if KAM_DB_USER !='':
+                KAM_DB_PASS = data.get('db_password')
+
+        if 'file' not in request.files:
+            responsePayload['status'] = "401"
+            responsePayload['error'] = "No file was sent"
+            return responsePayload
+
+        file = request.files['file']
+
+        if file.filename == '':
+            responsePayload['status'] = "401"
+            responsePayload['error'] = "No file name was sent"
+            return responsePayload
+
+        if file and allowed_file(file.filename,ALLOWED_EXTENSIONS={'sql'}):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(settings.BACKUP_FOLDER, filename))
+            responsePayload['status'] = "200"
+            responsePayload['error'] = "The backup file was uploaded"
+
+        if len(KAM_DB_PASS) == 0:
+            restorecmd = "mysql -h" + settings.KAM_DB_HOST + " -u " + str(KAM_DB_USER) + " " + settings.KAM_DB_NAME + " < " + pipes.quote(settings.BACKUP_FOLDER) + "/" + pipes.quote(filename)
+        else:
+            restorecmd = "mysql -h" + settings.KAM_DB_HOST + " -u " + str(KAM_DB_USER) + " -p" + str(KAM_DB_PASS) + " " + settings.KAM_DB_NAME + " < " + pipes.quote(settings.BACKUP_FOLDER) + "/" + pipes.quote(filename)
+        os.system(restorecmd)
+
+        responsePayload['status'] = "200"
+        responsePayload['error'] = "The restore was successful"
+
+        return responsePayload
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return jsonify(status=0, error=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return jsonify(status=0, error=error)
+
+# Generates a password with a length of 32 charactors
+@api.route("/api/v1/sys/generatepassword", methods=['GET'])
+@api_security
+def generatePassword():
+    chars = "abcdefghijklmnopqrstvwxyz0123456789"
+    password = ''
+    for c in range(32):
+        password += random.choice(chars)
+    return jsonify(password=password)

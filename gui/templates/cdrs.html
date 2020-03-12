@@ -7,8 +7,9 @@
       <h4>Call Detail Records</h4>
   </div>
   <div class="row">
-  	<div class="btn-group">
+  	<div class="btn-group col-xs-3" id="menu">
 		 <select class="btn-primary btn-md" id="endpointgroups"></select>
+		<i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>
   	</div>
   </div>
 </div>
@@ -24,7 +25,9 @@
         <th data-field="gwid">ID</th>
         <th data-field="call_start_time">Call Start</th>
         <th data-field="calltype">Call Direction</th>
-        <th data-field="number">Number</th>
+        <th data-field="subscriber">Subscriber</th>
+        <th data-field="to_num">To</th>
+        <th data-field="from_num">From</th>
         <th data-field="src_ip">Source IP</th>
         <th data-field="dst_domain">Destination Domain</th>
         <th data-field="duration">Call Duration</th>
@@ -62,13 +65,27 @@
        $("#endpointgroups option:selected").each(function() {
         
           loadCDRDataTable($(this).val());
+
+	  // Add the ability to download it
+	  //$("#menu").append('<i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>');
+
        });
       })
+
+     $('#downloadCDR').click(function(){
+	    gwgroupid = $("#endpointgroups").val();
+	    $('#wait-animation').show();
+	    document.location.href = '/api/v1/cdrs/endpointgroups/' + gwgroupid + '?type=csv';
+	    $('#wait-animation').hide();
+     });
 
       function loadCDRDataTable(gwgroupid) {
 
         if ( $.fn.dataTable.isDataTable( '#cdrs' ) ) {
           table = $('#cdrs').DataTable();
+          // Clear the contents of the table
+          table.clear();
+          table.draw();
           table.ajax.url("/api/v1/cdrs/endpointgroups/" + gwgroupid);
           table.ajax.reload();
         }
@@ -82,7 +99,9 @@
               { "data": "gwid" },
               { "data": "call_start_time" },
               { "data": "calltype" },
-              { "data": "number" },
+              { "data": "subscriber" },
+              { "data": "to_num" },
+              { "data": "from_num" },
               { "data": "src_ip" },
               { "data": "dst_domain" },
               { "data": "duration" },
@@ -90,6 +109,7 @@
               //{ "data": "gwlist", visible: false },
 
               ],
+	            "pageLength": 100,
 
               "order": [[2, 'asc']]
           });

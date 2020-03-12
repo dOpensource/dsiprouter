@@ -120,6 +120,9 @@ MAIL_ASCII_ATTACHMENTS = False
 MAIL_DEFAULT_SENDER = '{}@{}'.format(MAIL_USERNAME, MAIL_SERVER)
 MAIL_DEFAULT_SUBJECT = "dSIPRouter System Notification"
 
+# backup settings
+BACKUP_FOLDER= '/tmp'
+
 # Where to sync settings from
 # file  - load from setting.py file
 # db    - load from dsip_settings table

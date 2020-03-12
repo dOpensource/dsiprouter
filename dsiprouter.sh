@@ -599,7 +599,7 @@ function configureKamailio {
     fi
 
     # Install schema for custom LCR logic
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_DEFAULTS_DIR}/lcr.sql
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_DEFAULTS_DIR}/dsip_lcr.sql
     
     # Install schema for custom MaintMode logic
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_DEFAULTS_DIR}/dsip_maintmode.sql
@@ -612,6 +612,9 @@ function configureKamailio {
     
     # Install schema for gw2gwgroup
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
+
+    # Install schema for dsip_cdrinfo
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $MYSQL_KAM_DATABASE < ${DSIP_DEFAULTS_DIR}/dsip_cdrinfo.sql
 
     # Install schema for dsip_settings
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql
@@ -1095,7 +1098,7 @@ function uninstallKamailio {
     removeDependsOnInit "kamailio.service"
 
     # Remove the hidden installed file, which denotes if it's installed or not
-	  rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
 
     printdbg "kamailio was uninstalled"
 }

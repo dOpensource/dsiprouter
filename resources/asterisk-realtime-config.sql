@@ -10,16 +10,16 @@
 
 CREATE TABLE `bit_ast_config` (
 `id` int(11) NOT NULL auto_increment,
-`cat_metric` int(11) NOT NULL default ‘0’,
-`var_metric` int(11) NOT NULL default ‘0’,
-`commented` int(11) NOT NULL default ‘0’,
-`filename` varchar(128) NOT NULL default ”,
-`category` varchar(128) NOT NULL default ‘default’,
-`var_name` varchar(128) NOT NULL default ”,
-`var_val` varchar(128) NOT NULL default ”,
+`cat_metric` int(11) NOT NULL default '0',
+`var_metric` int(11) NOT NULL default '0',
+`commented` int(11) NOT NULL default '0',
+`filename` varchar(128) NOT NULL default '',
+`category` varchar(128) NOT NULL default 'default',
+`var_name` varchar(128) NOT NULL default '',
+`var_val` varchar(128) NOT NULL default '',
 PRIMARY KEY (`id`),
 KEY `filename_comment` (`filename`,`commented`)
-) TYPE=MyISAM;
+);
 
 
 
@@ -27,17 +27,17 @@ KEY `filename_comment` (`filename`,`commented`)
 
 CREATE TABLE `bit_sip_buddies` (
 `id` int(11) NOT NULL auto_increment,
-`name` varchar(80) NOT NULL default ”,
-`host` varchar(31) NOT NULL default ”,
-`nat` varchar(5) NOT NULL default ‘no’,
-`type` enum(‘user’,’peer’,’friend’) NOT NULL default ‘friend’,
+`name` varchar(80) NOT NULL default '',
+`host` varchar(31) NOT NULL default '',
+`nat` varchar(5) NOT NULL default 'no',
+`type` enum('user','peer','friend') NOT NULL default 'friend',
 `accountcode` varchar(20) default NULL,
 `amaflags` varchar(13) default NULL,
 `call-limit` smallint(5) unsigned default NULL,
 `callgroup` varchar(10) default NULL,
 `callerid` varchar(80) default NULL,
-`cancallforward` char(3) default ‘yes’,
-`canreinvite` char(3) default ‘yes’,
+`cancallforward` char(3) default 'yes',
+`canreinvite` char(3) default 'yes',
 `context` varchar(80) default NULL,
 `defaultip` varchar(15) default NULL,
 `dtmfmode` varchar(7) default NULL,
@@ -59,16 +59,16 @@ CREATE TABLE `bit_sip_buddies` (
 `rtpholdtimeout` char(3) default NULL,
 `secret` varchar(80) default NULL,
 `setvar` varchar(100) default NULL,
-`disallow` varchar(100) default ‘all’,
-`allow` varchar(100) default ‘g729;ilbc;gsm;ulaw;alaw’,
-`fullcontact` varchar(80) NOT NULL default ”,
-`ipaddr` varchar(15) NOT NULL default ”,
-`port` smallint(5) unsigned NOT NULL default ‘0’,
+`disallow` varchar(100) default 'all',
+`allow` varchar(100) default 'g729;ilbc;gsm;ulaw;alaw',
+`fullcontact` varchar(80) NOT NULL default '',
+`ipaddr` varchar(15) NOT NULL default '',
+`port` smallint(5) unsigned NOT NULL default '0',
 `regserver` varchar(100) default NULL,
-`regseconds` int(11) NOT NULL default ‘0’,
-`lastms` int(11) NOT NULL default ‘0’,
-`username` varchar(80) NOT NULL default ”,
-`defaultuser` varchar(80) NOT NULL default ”,
+`regseconds` int(11) NOT NULL default '0',
+`lastms` int(11) NOT NULL default '0',
+`username` varchar(80) NOT NULL default '',
+`defaultuser` varchar(80) NOT NULL default '',
 `subscribecontext` varchar(80) default NULL,
 `useragent` varchar(20) default NULL,
 PRIMARY KEY (`id`),
@@ -194,7 +194,7 @@ amaflags varchar(100),
 callerid varchar(100),
 context varchar(100),
 defaultip varchar(15),
-host varchar(31) NOT NULL default ‘dynamic’,
+host varchar(31) NOT NULL default 'dynamic',
 language char(5),
 mailbox varchar(50),
 deny varchar(95),
@@ -340,14 +340,14 @@ setinterfacevar BOOL
 
 CREATE TABLE `bit_extensions_table` (
 `id` int(11) NOT NULL auto_increment,
-`context` varchar(20) NOT NULL default ”,
-`exten` varchar(20) NOT NULL default ”,
-`priority` tinyint(4) NOT NULL default ‘0’,
-`app` varchar(20) NOT NULL default ”,
-`appdata` varchar(128) NOT NULL default ”,
+`context` varchar(20) NOT NULL default '',
+`exten` varchar(20) NOT NULL default '',
+`priority` tinyint(4) NOT NULL default '0',
+`app` varchar(20) NOT NULL default '',
+`appdata` varchar(128) NOT NULL default '',
 PRIMARY KEY (`context`,`exten`,`priority`),
 KEY `id` (`id`)
-) TYPE=MyISAM;
+);
 
 
 
@@ -358,7 +358,7 @@ KEY `id` (`id`)
 #https://www.voip-info.org/asterisk-realtime-meetme
 
 CREATE TABLE `bit_meetme` (
-`confno` varchar(80) DEFAULT ‘0’ NOT NULL,
+`confno` varchar(80) DEFAULT '0' NOT NULL,
 `pin` varchar(20) NULL,
 `adminpin` varchar(20) NULL,
 `members` integer DEFAULT 0 NOT NULL,
@@ -370,7 +370,7 @@ PRIMARY KEY (confno)
 #https://www.voip-info.org/asterisk-realtime-chansccp2
 
 CREATE TABLE `sccpdevices` (
-`name` varchar(15) NOT NULL default ”,
+`name` varchar(15) NOT NULL default '',
 `type` varchar(45) default NULL,
 `autologin` varchar(45) default NULL,
 `description` varchar(45) default NULL,
@@ -388,7 +388,7 @@ PRIMARY KEY (`name`)
 );
 
 CREATE TABLE `sccplines` (
-`name` varchar(45) NOT NULL default ”,
+`name` varchar(45) NOT NULL default '',
 `id` varchar(45) default NULL,
 `pin` varchar(45) default NULL,
 `label` varchar(45) default NULL,
@@ -433,7 +433,7 @@ CREATE TABLE `extensions` (
 `notes` varchar(255) default NULL,
 PRIMARY KEY (`context`,`exten`,`priority`),
 KEY `id` (`id`)
-) TYPE=MyISAM;
+);
 CREATE TABLE `voicemail` (
 `uniqueid` int(11) NOT NULL auto_increment,
 `customer_id` varchar(11) NOT NULL default '0',
@@ -461,7 +461,7 @@ CREATE TABLE `voicemail` (
 `hidefromdir` varchar(4) NOT NULL default 'yes',
 PRIMARY KEY (`uniqueid`),
 KEY `mailbox_context` (`mailbox`,`context`)
-) TYPE=MyISAM;
+);
 CREATE TABLE `sip` (
 `id` int(11) NOT NULL auto_increment,
 `name` varchar(80) NOT NULL default '',
@@ -505,7 +505,7 @@ CREATE TABLE `sip` (
 PRIMARY KEY (`id`),
 UNIQUE KEY `name` (`name`),
 KEY `name_2` (`name`)
-) TYPE=MyISAM;
+);
 CREATE TABLE `pins` (
 `id` int(11) NOT NULL auto_increment,
 `company` varchar(20) NOT NULL default '',
@@ -515,5 +515,5 @@ CREATE TABLE `pins` (
 `notes` varchar(255) default NULL,
 PRIMARY KEY (`company`,`pin`),
 KEY `id` (`id`)
-) TYPE=MyISAM;
+);
 

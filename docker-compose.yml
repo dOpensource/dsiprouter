@@ -28,7 +28,7 @@ services:
     image: mysql:5.7
     volumes:
       - /tmp/dbdata:/var/lib/mysql
-      - ./dsiprouter/sql/v0.522:/docker-entrypoint-initdb.d/
+      - ./testing/sql/v0.60+ent:/docker-entrypoint-initdb.d/
     ports:
       - "3306:3306"
     environment:

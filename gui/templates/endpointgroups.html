@@ -1,5 +1,8 @@
 {% extends 'table_layout.html' %}
 
+{% block custom_css %}
+  {{ link_tag('bootstrap-datepicker.min') }}
+{% endblock %}
 
 {% block table_headers %}
   <div class="container">
@@ -68,8 +71,7 @@
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div> -->
       <div class="form-group">
-        <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls"
-               autocomplete="off">
+        <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls" autocomplete="off">
         {% if (enterprise_enabled == False) %}
           <a href="/upgrade/calllimit" [Enterprise]/>
         {% endif %}
@@ -90,6 +92,9 @@
             <a href="#notifications" name="notifications-toggle" data-toggle="tab">Notifications</a>
           </li>
           <li role="presentation">
+            <a href="#cdr" name="cdr-toggle" data-toggle="tab">CDR</a>
+          </li>
+          <li role="presentation">
             <a href="#fusionpbx" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
           </li>
         </ul>
@@ -98,16 +103,15 @@
 
         <div id="auth" class="tab-pane fade in active" name="auth-toggle">
           <div class="form-group">
-            <div class="authoptions radio">
-              <label><input class="authtype " type="radio" data-toggle="ip_enabled" name="authtype" value="ip" checked>IP
+            <div id="authoptions2" class="btn-group" data-toggle="buttons">
+              <label><input class="authtype" type="radio" name="authtype" id="ip2" value="ip" checked> IP
                 Auth</label>
-              <label><input class="authtype " type="radio" data-toggle="userpwd_enabled" name="authtype"
-                            value="userpwd">Username/Password
+              <label><input class="authtype" type="radio" name="authtype" id="userpwd2" value="userpwd"> Username/Password
                 Auth</label>
             </div>
           </div>
 
-          <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
+          <div id="userpwd_enabled2">
             <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
               different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
             <div class="form-group">
@@ -115,8 +119,9 @@
                      placeholder="Auth Username">
             </div>
             <div class="form-group">
-              <input class="auth_password form-control" type="password" name="auth_password"
+              <input id="auth_password2" class="form-control" type="password" name="auth_password"
                      placeholder="Auth Password">
+              <span toggle="#auth_password2" class="field-icon toggle-password glyphicon glyphicon-eye-close"></span>
             </div>
             <div class="form-group">
               <input class="auth_domain form-control" type="text" name="auth_domain"
@@ -162,6 +167,16 @@
                    placeholder="Email for Endpont Failure">
           </div>
         </div> <!-- end of notifications tab -->
+        <div id="cdr" class="tab-pane fade in" name="cdr-toggle">
+          <div class="form-group">
+            <input class="cdr_email form-control" type="text" name="cdr_email"
+                   placeholder="Email to send CDR's">
+          </div>
+          <div class="form-group">
+            <input class="cdr_send_date form-control" type="text" name="cdr_send_date"
+                   placeholder="Date of month to send CDR's (eg 5)">
+          </div>
+        </div> <!-- end of cdr  tab -->
         <div id="fusionpbx" class="tab-pane fade in" name="fusion-toggle">
 
           <div class="form-group">
@@ -220,16 +235,14 @@ systemctl restart fail2ban</code></pre>
         </div>
       </div> <!-- end of fusionpbx tab -->
 
-  </div> <!-- end of tabcontent tab -->
 
-
-  <div class="modal-footer ">
-    <button type="button" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"
-            onclick='updateEndpointGroup()'><span
-        class="glyphicon glyphicon-ok-sign"></span> Update
-    </button>
-  </div>
-  </form>
+      <div class="modal-footer ">
+        <button type="button" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"
+                onclick='updateEndpointGroup()'><span
+            class="glyphicon glyphicon-ok-sign"></span> Update
+        </button>
+      </div>
+    </form>
   </div>
 
 {% endblock %}
@@ -277,6 +290,9 @@ systemctl restart fail2ban</code></pre>
             <a href="#notifications2" name="notifications-toggle" data-toggle="tab">Notifications</a>
           </li>
           <li role="presentation">
+            <a href="#cdr2" name="cdr-toggle" data-toggle="tab">CDR</a>
+          </li>
+          <li role="presentation">
             <a href="#fusionpbx2" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
           </li>
         </ul>
@@ -285,16 +301,15 @@ systemctl restart fail2ban</code></pre>
 
         <div id="auth2" class="tab-pane fade in active" name="auth-toggle">
           <div class="form-group">
-            <div class="authoptions radio">
-              <label><input class="authtype " type="radio" data-toggle="ip_enabled" name="authtype" value="ip" checked>IP
+            <div id="authoptions" class="btn-group" data-toggle="buttons">
+              <label><input class="authtype" type="radio" name="authtype" id="ip" value="ip" checked> IP
                 Auth</label>
-              <label><input class="authtype " type="radio" data-toggle="userpwd_enabled" name="authtype"
-                            value="userpwd">Username/Password
+              <label><input class="authtype" type="radio" name="authtype" id="userpwd" value="userpwd"> Username/Password
                 Auth</label>
             </div>
           </div>
 
-          <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
+          <div id="userpwd_enabled">
             <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
               different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
             <div class="form-group">
@@ -302,8 +317,9 @@ systemctl restart fail2ban</code></pre>
                      placeholder="Auth Username">
             </div>
             <div class="form-group">
-              <input class="auth_password form-control" type="password" name="auth_password"
+              <input id="auth_password" class="form-control" type="password" name="auth_password"
                      placeholder="Auth Password">
+              <span toggle="#auth_password" class="field-icon toggle-password glyphicon glyphicon-eye-close"></span>
             </div>
             <div class="form-group">
               <input class="auth_domain form-control" type="text" name="auth_domain"
@@ -349,6 +365,16 @@ systemctl restart fail2ban</code></pre>
                    placeholder="Email for Endpont Failure">
           </div>
         </div> <!-- end of notifications tab -->
+        <div id="cdr2" class="tab-pane fade in" name="cdr-toggle">
+          <div class="form-group">
+            <input class="cdr_email form-control" type="text" name="cdr_email"
+                   placeholder="Email to send CDR's">
+          </div>
+          <div class="form-group">
+            <input class="cdr_send_date form-control" type="text" name="cdr_send_date"
+                   placeholder="Date of month to send CDR's (eg 5)">
+          </div>
+        </div> <!-- end of cdr  tab -->
         <div id="fusionpbx2" class="tab-pane fade in" name="fusion-toggle">
 
           <div class="form-group">
@@ -407,16 +433,13 @@ systemctl restart fail2ban</code></pre>
         </div>
       </div> <!-- end of fusionpbx tab -->
 
-  </div> <!-- end of tabcontent tab -->
-
-
-  <div class="modal-footer ">
-    <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"
-            onclick='addEndpointGroup()'><span
-        class="glyphicon glyphicon-ok-sign"></span> Add
-    </button>
-  </div>
-  </form>
+      <div class="modal-footer ">
+        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"
+                onclick='addEndpointGroup()'><span
+            class="glyphicon glyphicon-ok-sign"></span> Add
+        </button>
+      </div>
+    </form>
   </div>
 
 {% endblock %}
@@ -456,8 +479,7 @@ systemctl restart fail2ban</code></pre>
 {% endblock %}
 
 {% block custom_js %}
-
   {{ script_tag('jquery.tabledit') }}
+  {{ script_tag('bootstrap-datepicker.min') }}
   {{ script_tag('endpointgroups') }}
-
 {% endblock %}
