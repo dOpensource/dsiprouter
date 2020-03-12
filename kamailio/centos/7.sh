@@ -72,7 +72,8 @@ EOF
 
     yum update -y
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
-        kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress kamailio-http_async_client
+        kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
+        kamailio-http_async_client kamailio-dmq_userloc
 
     # workaround for kamailio rpm transaction failures
     if (( $? != 0 )); then
@@ -132,11 +133,17 @@ EOF
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
-    # Make sure MariaDB starts before Kamailio
-    sed -i -E "s/(After=.*)/\1 mysql.service/g" /lib/systemd/system/kamailio.service
+    # Make sure MariaDB and Local DNS start before Kamailio
+    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
+    fi
+    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
+    fi
     systemctl daemon-reload
 
     # Setup kamailio Logging

@@ -6,7 +6,7 @@ ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstal
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
 function install {
-    if cmdExists 'apt'; then
+    if cmdExists 'apt-get'; then
         apt-get install -y \
             apt-transport-https \
             ca-certificates \
@@ -76,7 +76,7 @@ function uninstall {
 		printwarn "No docker containers to remove"
 	fi
 
-    if cmdExists 'apt'; then
+    if cmdExists 'apt-get'; then
         # Can't remove packages because it removes python3-pip package
         #apt-get remove -y \
         #apt-transport-https \

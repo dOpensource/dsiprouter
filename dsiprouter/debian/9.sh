@@ -9,7 +9,12 @@ function install {
     # Install dependencies for dSIPRouter
     apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
     apt-get install -y --allow-unauthenticated '(default-)?libmysqlclient-dev|libmariadbclient-dev'
-    apt-get install -y logrotate rsyslog perl sngrep
+    apt-get install -y logrotate rsyslog perl sngrep libev-dev
+
+    # create dsiprouter user and group
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Reset python cmd in case it was just installed
     setPythonCmd

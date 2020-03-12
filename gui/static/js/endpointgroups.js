@@ -62,7 +62,7 @@ function addEndpointGroup(action) {
   $("tr.endpoint").each(function (i, row) {
 
     endpoint = new Object();
-    endpoint.pbxid = $(this).find('td').eq(0).text();
+    endpoint.gwid = $(this).find('td').eq(0).text();
     endpoint.hostname = $(this).find('td').eq(1).text();
     endpoint.description = $(this).find('td').eq(2).text();
     //endpoint.maintmode = $(this).find('td').eq(3).text();
@@ -213,7 +213,7 @@ function displayEndpointGroup(msg)
     var body = $('#endpoint-tablebody');
 
     for (endpoint in msg.endpoints) {
-      row = '<tr class="endpoint"><td name="pbxid">' + msg.endpoints[endpoint].pbxid + '</td>'
+      row = '<tr class="endpoint"><td name="gwid">' + msg.endpoints[endpoint].gwid + '</td>'
       row += '<td name="hostname">' + msg.endpoints[endpoint].hostname +'</td>'
       row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>'
       table.append($(row));
@@ -300,8 +300,8 @@ $(document).ready(function() {
   $('#endpoint-table').Tabledit({
     //url: 'example.php',
     columns: {
-      identifier: [0, 'id'],
-      editable: [[1, 'col1'], [2, 'col2']],
+      identifier: [0, 'gwid'],
+      editable: [[1, 'hostname'], [2, 'description']],
       saveButton: true,
     },
     onAlways: function() {
@@ -316,8 +316,8 @@ $(document).ready(function() {
   $('#endpoint-table2').Tabledit({
     //url: 'example.php',
     columns: {
-      identifier: [0, 'id'],
-      editable: [[1, 'col1'], [2, 'col2']],
+      identifier: [0, 'gwid'],
+      editable: [[1, 'hostname'], [2, 'description']],
       saveButton: true,
     },
     onAlways: function() {
@@ -355,7 +355,7 @@ $(document).ready(function() {
     var table = $('#endpoint-table2');
     var body = $('#endpoint-tablebody2');
     //var nextId = body.find('tr').length + 1;
-    table.append($('<tr class="endpoint"><td name="pbxid"></td><td name="hostname"></td><td name="description"></td></tr>'));
+    table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
     table.data('Tabledit').reload();
     $("#endpoint-table2" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
   });
@@ -364,7 +364,7 @@ $(document).ready(function() {
     var table = $('#endpoint-table');
     var body = $('#endpoint-tablebody');
     //var nextId = body.find('tr').length + 1;
-    table.append($('<tr class="endpoint"><td name="pbxid"></td><td name="hostname"></td><td name="description"></td></tr>'));
+    table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
     table.data('Tabledit').reload();
     $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
   });

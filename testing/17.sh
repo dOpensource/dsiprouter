@@ -11,7 +11,7 @@ domain="smoketest.com"
 host="localhost"
 port="5060"
 externalip=$(getExternalIP)
-internalip=$INTERNAL_IP
+internalip=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
 
 $(addPBX)
 $(addDomain)

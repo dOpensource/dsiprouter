@@ -1,7 +1,9 @@
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
 
-DSIP_ID = 1
+DSIP_ID = None
+DSIP_CLUSTER_ID = 1
+DSIP_CLUSTER_SYNC = True
 DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
@@ -38,7 +40,8 @@ DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
-ROLE = ''  
+ROLE = ''
+GUI_INACTIVE_TIMEOUT = 20
 
 # MySQL settings for kamailio
 
@@ -66,15 +69,18 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_SQL_DEBUG = False
 
-FLT_CARRIER = 8     # type of 8 in dr_gateway table
-FLT_PBX = 9         # type of 9 in dr_gateway table
-FLT_OUTBOUND = 8000 # groupid of 8000 in dr_rules table
-FLT_INBOUND = 9000  # groupid of 9000 in dr_rules table
-FLT_LCR_MIN = 10000 # groupid of >= 10000 in dr_rules table
-FLT_FWD_MIN = 20000 # groupid of >= 20000 in dr_rules table
+# These constants shouldn't be modified
+# FLT_CARRIER/FLT_PBX:          type in dr_gateway table
+# FLT_OUTBOUND/FLT_INBOUND:     groupid in dr_rules table
+# FLT_LCR_MIN/FLT_FWD_MIN:      range of groupid in dr_rules table
+FLT_CARRIER = 8
+FLT_PBX = 9
+FLT_OUTBOUND = 8000
+FLT_INBOUND = 9000
+FLT_LCR_MIN = 10000
+FLT_FWD_MIN = 20000
 
 # The domain used to create user accounts for PBX and Endpoint registrations
-
 DOMAIN = 'sip.dsiprouter.org'
 
 # Teleblock Settings

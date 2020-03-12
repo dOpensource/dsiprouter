@@ -103,7 +103,7 @@ setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
-    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+    sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # $1 == attribute name
@@ -118,13 +118,13 @@ getConfigAttrib() {
 }
 
 # $1 == attribute name
+# $2 == python config file
 # returns: attribute value decrypted
 # notes: if value is not encrypted the value will be returned
 decryptConfigAttrib() {
     local NAME="$1"
-    local CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
+    local CONFIG_FILE="$2"
     local PYTHON=${PYTHON_CMD:-python3}
-    local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "${CONFIG_FILE}")}
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
     # if value is not a byte literal it isn't encrypted
@@ -422,4 +422,16 @@ removeDependsOnInit() {
 
     sed -i "\|^Before=${SERVICE}|d" ${DSIP_INIT_FILE}
     systemctl daemon-reload
+}
+
+# $1 == ip or hostname
+# $2 == port
+# returns: 0 == connection good, 1 == connection bad
+# note: timeout is set to 3 sec
+checkConn() {
+    if cmdExists 'nc'; then
+        nc -w 3 "$1" "$2" < /dev/null 2>&1 > /dev/null; return $?
+    else
+        timeout 3 bash -c "< /dev/tcp/$1/$2" 2> /dev/null; return $?
+    fi
 }

@@ -41,4 +41,6 @@ Contains the Unittest number and a description of what the tests validates
 |17|Domain Pass-Thru using FreePBX|
 |18|DoS and SIP Security - Doesn't Block Known Carrier IP(s)|
 |19|dSIPRouter API|
+|20|DNSmasq is started|
+|21|DNS Resolver Test|
 **More to come

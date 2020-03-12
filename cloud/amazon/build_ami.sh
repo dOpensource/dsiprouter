@@ -25,7 +25,7 @@ if cmdExists "yum"; then
     [ ! -f /var/lib/cloud/instance/boot-finished ]; do
         sleep 1
     done
-elif cmdExists "apt"; then
+elif cmdExists "apt-get"; then
     while [ ! -f /var/lib/cloud/instance/boot-finished ] ||
     [ -f /var/run/yum.pid ]; do
         sleep 1
@@ -36,7 +36,7 @@ fi
 if cmdExists "yum"; then
     yum update -y
     yum install -y git curl wget
-elif cmdExists "apt"; then
+elif cmdExists "apt-get"; then
     apt-get update -y
     apt-get install -y --fix-missing git curl wget
 

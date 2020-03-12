@@ -12,7 +12,7 @@ rpc_proto="http"
 host="localhost"
 
 # Send a bunch of of requests to the server
-curl -s -X GET --connect-timeout 3 --data-raw '{"jsonrpc": "2.0", "method": "core.psx", "id": 1}' "${rpc_proto}://${host}:${sip_port}/api/kamailio" > /dev/null
+curl -s -X GET --connect-timeout 3 -d '{"jsonrpc": "2.0", "method": "core.psx", "id": 1}' "${rpc_proto}://${host}:${sip_port}/api/kamailio" > /dev/null
 ret=$?
 
 process_result "$unitname" $ret

@@ -2,6 +2,81 @@
 
 
 
+### Merge dmq-feature branch into v0.60+ent
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 12 Mar 2020 10:37:41 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
+### DMQ Replication Support and Stability Fixes
+
+> Branches Affected: dmq-feature  
+> Tags Affected:   
+> Date: Wed, 11 Mar 2020 15:24:25 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- dynamic kam db url updating
+- AES implementation update / fix
+- allow dsip dummy session to handle scoped session calls
+- update api auth to use Accept header instead of User-Agent
+- fix cdr start time field
+- fix inbound mapping failover fwd description
+- allow same endpoint on failover for inbound mappings
+- fix mail user / pass ENV variables
+- fix git pre/post commit hook
+- fix parsing of special chars in kam config db url update
+- added dmq replication support for htables and dialogs
+- add support for dsip cluster settings synchronization
+- add option to install for setting private key
+- improved dsiprouter.sh script dependency handling
+- allow changing all db options on install via db option
+- update comments / TODO's in scripts
+- change pkgmgr cmd check to apt-get to be more portable
+- changed pbx_invite_timeout to a more reasonable 16sec
+- changed kamailio.cfg to tabs, this seemed to be the standard
+- fixed discrepancy between kam notification route and api_route
+- made primary gwgroup required on inbound mappings
+- fixed bug w/ endpoint group not populating in modal
+- updated dsip_settings table to support more settings and sync
+- added update_dsip_settings procedure w/ auto cluster sync
+- fix improper gwid in special cases when insert_dr_gateways triggered
+- add resolution of dsip_id in cluster sync mode
+- revert change from db.close -> db.remove in dsiprouter.py
+- fix naming of failfwd htable entry descriptions
+- update inbound mapping query to support primary endpoint group
+- add param check to gui login
+- update shared_lib.sh to include triggers in merge sql dump
+- update shared_lib.sh to remove definer in all sql dumps
+- update usage options
+- add support for remote cluster installation w/ synced private keys
+- add support for setting private key on install
+- add support for updating mysql user creds in dsiprouter.sh script
+- add header check to api auth
+- fixed bad FLT flags in script by moving inline comments in settings.py
+- fix improper special character handling in setConfigAttrib func
+- revert updateDsipSettingsTable back into dsiprouter.py for new logic
+- fixed rtpengine rpm build errors
+- add support for building rtpengine ngcp-rtpengine-recording module
+- fix bug where strFieldsToDict would throw on bad field
+- add chcek for function in objToDict
+- add test 20,21 for DNSmasq and DNS resolver functionality
+- fix broken Makefile by switching to tabs
+- fix broken tests 11,19 by handling encrypted/hashed credentials
+- fix bad flag on test 16 causing failure on centos
+- add dsiprouter user/group creation during install
+
+
+---
+
+
 ### Fix Testing Makefile
 
 > Branches Affected: v0.60+ent  

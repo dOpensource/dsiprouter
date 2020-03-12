@@ -95,7 +95,7 @@ $(document).ready(function() {
     modal_body.find("input.ff_fwddid").val('');
 
     /* reset options selected */
-    modal_body.find("select").prop('selectedIndex', 0);
+    modal_body.find("select").val('');
 
     /* reset toggle buttons */
     modal_body.find("input.toggle-hardfwd").bootstrapToggle('off');
@@ -142,28 +142,10 @@ $(document).ready(function() {
     modal_body.find("input.ff_fwddid").val(ff_fwddid);
 
     /* update options selected */
-    var i = 0;
-    var gwgroup_options = modal_body.find("select.gwgroupid > option").get();
-    for (i = 0; i < gwgroup_options.length; i++) {
-      if (gwgroupid === gwgroup_options[i].value) {
-        $(gwgroup_options[i]).attr('selected', true);
-        break;
-      }
-    }
-    var hf_gwgroup_options = modal_body.find("select.hf_gwgroupid > option").get();
-    for (i = 0; i < hf_gwgroup_options.length; i++) {
-      if (hf_gwgroupid === hf_gwgroup_options[i].value) {
-        $(hf_gwgroup_options[i]).attr('selected', true);
-        break;
-      }
-    }
-    var ff_gwgroup_options = modal_body.find("select.ff_gwgroupid > option").get();
-    for (i = 0; i < ff_gwgroup_options.length; i++) {
-      if (ff_gwgroupid === ff_gwgroup_options[i].value) {
-        $(ff_gwgroup_options[i]).attr('selected', true);
-        break;
-      }
-    }
+    modal_body.find("select").val('');
+    modal_body.find("select.gwgroupid").val(gwgroupid);
+    modal_body.find("select.hf_gwgroupid").val(hf_gwgroupid);
+    modal_body.find("select.ff_gwgroupid").val(ff_gwgroupid);
 
     /* update toggle buttons */
     if (hf_ruleid.length > 0) {
@@ -207,13 +189,10 @@ $(document).ready(function() {
     if ($(this).is(":checked") || $(this).prop("checked")) {
       modal_body.find('.hardfwd-options').removeClass("hidden");
       modal_body.find('.hardfwd_enabled').val(1);
-      modal_body.find('select.gwgroupid').prop('selectedIndex', 0);
-      toggleElemDisabled(modal_body.find('select.gwgroupid'), true);
     }
     else {
       modal_body.find('.hardfwd-options').addClass("hidden");
       modal_body.find('.hardfwd_enabled').val(0);
-      toggleElemDisabled(modal_body.find('select.gwgroupid'), false);
     }
   });
 

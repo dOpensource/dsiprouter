@@ -14,15 +14,18 @@ import settings, globals
 api = Blueprint('api', __name__)
 
 # TODO: we need to standardize our response payload
-# preferably we can create a custom response class
+#       preferably we can create a custom response class
+# TODO: trash all this and restart? this is almost impossible to work on...
+#       we need to abstract out common code between gui and api and standardize routes!
 
 class APIToken:
     token = None
 
     def __init__(self, request):
-        auth_header = request.headers.get('Authorization')
-        if auth_header is not None:
-            self.token = auth_header.split(' ')[1]
+        if 'Authorization' in request.headers:
+            auth_header = request.headers.get('Authorization', None)
+            if auth_header is not None:
+                self.token = auth_header.split(' ')[1]
 
     def isValid(self):
         if self.token:
@@ -96,7 +99,7 @@ def getKamailioStats():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
@@ -172,7 +175,7 @@ def reloadKamailio():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpoint/lease", methods=['GET'])
@@ -261,7 +264,7 @@ def getEndpointLease():
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpoint/lease/<int:leaseid>/revoke", methods=['PUT'])
@@ -318,7 +321,7 @@ def revokeEndpointLease(leaseid):
         db.flush()
         return showError(type=error)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 class APIException(Exception):
     pass
@@ -395,7 +398,7 @@ def updateEndpoint(id):
         db.flush()
         return json.dumps(responsePayload)
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 # TODO: we should obviously optimize this and cleanup reused code
@@ -656,7 +659,7 @@ def handleInboundMapping():
         db.flush()
         return json.dumps(payload), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/notification/gwgroup", methods=['POST'])
@@ -775,7 +778,7 @@ def handleNotificationRequest():
         db.flush()
         return json.dumps(payload), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['DELETE'])
@@ -850,7 +853,7 @@ def deleteEndpointGroup(gwgroupid):
         db.flush()
         return jsonify(status=0, error=error), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['GET'])
@@ -902,7 +905,7 @@ def getEndpointGroup(gwgroupid):
         endpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
         for endpoint in endpoints:
             e ={}
-            e['pbxid'] = endpoint.gwid
+            e['gwid'] = endpoint.gwid
             e['hostname'] = endpoint.address
             e['description'] = strFieldsToDict(endpoint.description)['name']
             e['maintmode'] = ""
@@ -960,13 +963,13 @@ def getEndpointGroup(gwgroupid):
         db.flush()
         return jsonify(status=0, error=error), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpointgroups", methods=['GET'])
 @api_security
 def listEndpointGroups():
-    
+
     db = DummySession()
     
     responsePayload = {}
@@ -976,10 +979,10 @@ def listEndpointGroups():
     try:
         if settings.DEBUG:
             debugEndpoint()
-        
+
         db = SessionLoader()
         
-        endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter))
+        endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
         
         for endpointgroup in endpointgroups:
             # Create a dictionary object
@@ -1024,7 +1027,7 @@ def listEndpointGroups():
         db.flush()
         return jsonify(status=0, error=error), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['PUT'])
@@ -1067,7 +1070,7 @@ def updateEndpointGroups(gwgroupid):
 
         # Update Concurrent connections
         calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
-        if calllimit is not None:
+        if calllimit is not None and len(calllimit) > 0:
             if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update({'limit': calllimit},synchronize_session=False):
                 db.flush()
                 pass
@@ -1114,7 +1117,7 @@ def updateEndpointGroups(gwgroupid):
                db.add(Subscriber)
 
         #Delete the Subscriber info if IP is selected
-        if authtype == "ip":
+        elif authtype == "ip":
             subscriber =  db.query(Subscribers).filter(Subscribers.rpid==gwgroupid)
             if subscriber is not None:
                 subscriber.delete(synchronize_session=False)
@@ -1130,13 +1133,12 @@ def updateEndpointGroups(gwgroupid):
         if "endpoints" in requestPayload:
             gwlist=[]
             for endpoint in requestPayload['endpoints']:
-                # pbxid is really the gwid. If gwid is empty then this is a new endpoint
-                if len(endpoint['pbxid']) == 0:
+                # gwid is really the gwid. If gwid is empty then this is a new endpoint
+                if len(endpoint['gwid']) == 0:
                     hostname = endpoint['hostname'] if 'hostname' in endpoint else None
                     name = endpoint['description'] if 'description' in endpoint else None
-                    if hostname is not None and name is not None \
-                    and len(hostname) >0:
-                        Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX,gwgroup=str(gwgroupid))
+                    if hostname is not None and name is not None and len(hostname) > 0:
+                        Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
                         db.add(Gateway)
                         db.flush()
                         gwlist.append(str(Gateway.gwid))
@@ -1147,15 +1149,15 @@ def updateEndpointGroups(gwgroupid):
                 #Check if it exists in the currentEndpoints and update
                 else:
                     for currentEndpoint in currentEndpoints:
-                        IO.loginfo("endpoint pbx: {},currentEndpont: {},".format(endpoint['pbxid'],currentEndpoint.gwid))
-                        if int(endpoint['pbxid']) == currentEndpoint.gwid:
-                            IO.loginfo("Match:endpoint pbx: {},currentEndpont: {}".format(endpoint['pbxid'],currentEndpoint.gwid))
+                        IO.loginfo("endpoint pbx: {},currentEndpont: {},".format(endpoint['gwid'],currentEndpoint.gwid))
+                        if int(endpoint['gwid']) == currentEndpoint.gwid:
+                            IO.loginfo("Match:endpoint pbx: {},currentEndpont: {}".format(endpoint['gwid'],currentEndpoint.gwid))
                             fields['name'] = endpoint['description']
                             fields['gwgroup'] = gwgroupid
                             description = dictToStrFields(fields)
                             if db.query(Gateways).filter(Gateways.gwid == currentEndpoint.gwid).update({"address": endpoint['hostname'],"description":description }, synchronize_session=False):
-                                IO.loginfo("adding gateway: {}".format(str(endpoint['pbxid'])))
-                                gwlist.append(str(endpoint['pbxid']))
+                                IO.loginfo("adding gateway: {}".format(str(endpoint['gwid'])))
+                                gwlist.append(str(endpoint['gwid']))
                                 if authtype == "ip":
                                     db.query(Address).filter(and_(Address.ip_addr == currentEndpoint.address,Address.tag.like(typeFilter))).update(
                                             {"ip_addr":endpoint['hostname']},synchronize_session=False)
@@ -1275,7 +1277,7 @@ def updateEndpointGroups(gwgroupid):
         db.flush()
         return json.dumps(responsePayload), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/endpointgroups", methods=['POST'])
@@ -1480,7 +1482,7 @@ def addEndpointGroups():
         db.flush()
         return json.dumps(responsePayload), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
@@ -1567,7 +1569,7 @@ def getGatewayGroupCDRS(gwgroupid=None):
         db.flush()
         return jsonify(status=0, error=error), status_code
     finally:
-        SessionLoader.remove()
+        db.close()
 
 
 @api.route("/api/v1/cdrs/endpoint/<int:gwid>", methods=['GET'])
@@ -1641,4 +1643,4 @@ def getGatewayCDRS(gwid=None):
         db.flush()
         return jsonify(status=0, error=error), status_code
     finally:
-        SessionLoader.remove()
+        db.close()

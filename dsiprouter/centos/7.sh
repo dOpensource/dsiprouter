@@ -30,11 +30,15 @@ function install {
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     yum install -y firewalld
     yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
-    yum install -y logrotate rsyslog perl
+    yum install -y logrotate rsyslog perl libev-devel
+
+    # create dsiprouter user and group
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Reset python cmd in case it was just installed
     setPythonCmd
-
 
     # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
     if (( $? != 0 )); then

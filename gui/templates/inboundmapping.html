@@ -129,7 +129,7 @@
       </div>
 
       <div class="form-group">
-        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
@@ -277,7 +277,7 @@
       </div>
 
       <div class="form-group">
-        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
@@ -408,7 +408,6 @@
         to delete this Record?
       </div>
 
-
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok-sign"></span> Yes</button>
         <button type="button" class="btn btn-default" data-dismiss="modal"><span
@@ -447,7 +446,7 @@
       </div>
 
       <div class="form-group">
-        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>

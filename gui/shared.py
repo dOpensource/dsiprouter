@@ -119,8 +119,7 @@ def objToDict(obj):
     converts an arbitrary object to dict
     """
     return dict((attr, getattr(obj, attr)) for attr in dir(obj) if
-                not attr.startswith('__') and not inspect.ismethod(getattr(obj, attr)))
-
+                not attr.startswith('__') and not inspect.ismethod(getattr(obj, attr)) and not inspect.isfunction(getattr(obj, attr)))
 
 def rowToDict(row):
     """
@@ -145,7 +144,12 @@ def rowToDict(row):
 
 
 def strFieldsToDict(fields_str):
-    return dict(field.split(':') for field in fields_str.split(','))
+    fields = {}
+    for field in fields_str.split(','):
+        if ':' in field:
+            tmp = field.split(':', 1)
+            fields[tmp[0]] = tmp[1]
+    return fields
 
 
 def dictToStrFields(fields_dict):
@@ -177,7 +181,7 @@ def updateConfig(config_obj, field_dict, hot_reload=False):
         if hot_reload:
             reload(config_obj)
     except:
-        print('Problem updating the {0} configuration file').format(config_file)
+        IO.logerr('Problem updating the {0} configuration file').format(config_file)
 
 
 def stripDictVals(d):

@@ -306,20 +306,22 @@ dumpMysqlDatabases() {
     # for all databases
     if [[ "$KEY" == "all" ]] || [[ "$KEY" == "full" ]]; then
         mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
-            --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}"
+            --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+            | sed -r -e 's|DEFINER=[`"'"'"']\w*[`"'"'"']@[`"'"'"']\w*[`"'"'"']||g'
     fi
     # for merging non system databases
     if [[ "$KEY" == "all" ]] || [[ "$KEY" == "merge" ]]; then
         local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
             -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')")
-        mysqldump --single-transaction --skip-add-drop-table --insert-ignore \
+        mysqldump --single-transaction --opt --routines --triggers --skip-add-drop-table --insert-ignore \
             --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} \
-            | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs'
+            | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs' \
+            | sed -r -e 's|DEFINER=[`"'"'"']\w*[`"'"'"']@[`"'"'"']\w*[`"'"'"']||g'
     fi
     # for copying privileges
     if [[ "$KEY" == "all" ]] || [[ "$KEY" == "grants" ]]; then
         mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-            -e "SELECT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" \
+            -e "SELECT DISTINCT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" \
             | mysql -sN -A \
             | sed 's/$/;/g' \
             | awk '!x[$0]++'

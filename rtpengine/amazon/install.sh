@@ -41,7 +41,7 @@ function install {
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
         iptables-devel xmlrpc-c-devel gperf redhat-lsb iptables-ipv6 redhat-rpm-config rpm-build pkgconfig \
-        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog
+        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd spandsp-devel bc
 
     yum --disablerepo='*' --enablerepo='epel-multimedia' install -y libbluray libbluray-devel
     yum install -y ffmpeg ffmpeg-devel
@@ -72,9 +72,16 @@ function install {
     git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
     cd ./rtpengine
 
-    VERSION_NUM=$(grep -oP 'Version:.+?\K[0-9\.]+' ./el/rtpengine.spec)
+    VERSION_NUM=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
+    if (( $(echo "$RTPENGINE_VER" | perl -0777 -pe 's|mr(\d+\.\d+)\.(\d+)\.(\d+)|\1\2\3 >= 6.511|gm' | bc -l) )); then
+        PREFIX="rtpengine-${VERSION_NUM}/"
+    else
+        PREFIX="ngcp-rtpengine-${VERSION_NUM}/"
+    fi
+
     mkdir -p ~/rpmbuild/SOURCES
-    git archive --output ~/rpmbuild/SOURCES/ngcp-rtpengine-${VERSION_NUM}.tar.gz --prefix=ngcp-rtpengine-${VERSION_NUM}/ ${RTPENGINE_VER}
+
+    git archive --output ~/rpmbuild/SOURCES/ngcp-rtpengine-${VERSION_NUM}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
     rpmbuild -ba  ./el/rtpengine.spec
     rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-${VERSION_NUM}*.rpm
     rpm -q ngcp-rtpengine >/dev/null 2>&1; ret=$?
@@ -82,6 +89,10 @@ function install {
     rpm -q ngcp-rtpengine-dkms >/dev/null 2>&1; ((ret+=$?))
     rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-kernel-${VERSION_NUM}*.rpm
     rpm -q ngcp-rtpengine-kernel >/dev/null 2>&1; ((ret+=$?))
+    if [ -f ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-recording-${VERSION_NUM}*.rpm ]; then
+        rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-recording-${VERSION_NUM}*.rpm
+        rpm -q ngcp-rtpengine-recording >/dev/null 2>&1; ((ret+=$?))
+    fi
 
     if [ $ret -ne 0 ]; then
         echo "Problem installing RTPEngine RPM's"
@@ -93,22 +104,22 @@ function install {
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
 
-#    # Configure RTPEngine to support kernel packet forwarding
-#    cd ${SRC_DIR}/rtpengine/kernel-module &&
-#    make &&
-#    cp -f xt_RTPENGINE.ko /lib/modules/$(uname -r)/updates/ &&
-#    if [ $? -ne 0 ]; then
-#        echo "Problem installing RTPEngine kernel-module"
-#        exit 1
-#    fi
-#
-#    # Remove RTPEngine kernel module if previously inserted
-#    if lsmod | grep 'xt_RTPENGINE'; then
-#        rmmod xt_RTPENGINE
-#    fi
-#    # Load new RTPEngine kernel module
-#    depmod -a &&
-#    modprobe xt_RTPENGINE
+    # Configure RTPEngine to support kernel packet forwarding
+    cd ${SRC_DIR}/rtpengine/kernel-module &&
+    make &&
+    cp -f xt_RTPENGINE.ko /lib/modules/$(uname -r)/updates/ &&
+    if [ $? -ne 0 ]; then
+        echo "Problem installing RTPEngine kernel-module"
+        exit 1
+    fi
+
+    # Remove RTPEngine kernel module if previously inserted
+    if lsmod | grep 'xt_RTPENGINE'; then
+        rmmod xt_RTPENGINE
+    fi
+    # Load new RTPEngine kernel module
+    depmod -a &&
+    modprobe xt_RTPENGINE
 
 
     if [ "$SERVERNAT" == "0" ]; then

@@ -15,7 +15,7 @@ getDisto() {
 }
 
 # make sure all security updates are installed
-if cmdExists 'apt'; then
+if cmdExists 'apt-get'; then
     # grub updates adhere to ucf not debconf
     # make sure ucf defaults to unattended upgrade
     unset UCF_FORCE_CONFFOLD
@@ -111,7 +111,7 @@ cat /dev/null > /var/log/lastlog; cat /dev/null > /var/log/wtmp
 echo '2' > /proc/sys/kernel/randomize_va_space
 
 # regenerate host server host keys
-if cmdExists 'apt'; then
+if cmdExists 'apt-get'; then
     dpkg-reconfigure -f noninteractive openssh-server
 fi
 systemctl restart sshd

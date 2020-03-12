@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-import os, re, json, subprocess, urllib.parse, glob,datetime, csv, logging, signal
+import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal
 from copy import copy
+from collections import OrderedDict
+from importlib import reload
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
 from sqlalchemy import case, func, exc as sql_exceptions
@@ -13,7 +15,7 @@ from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, 
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
-    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
+    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -21,6 +23,7 @@ from util.security import hashCreds, AES_CTR
 from util.ipc import createSettingsManager
 import globals
 import settings
+
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -41,35 +44,21 @@ def before_first_request():
 @app.before_request
 def before_request():
     session.permanent = True
-    if not hasattr(settings,'GUI_INACTIVE_TIMEOUT'):
-        settings.GUI_INACTIVE_TIMEOUT = 20 #20 minutes
     app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
 @app.route('/')
 def index():
-    db = DummySession()
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
-
         if not session.get('logged_in'):
-            checkDatabase(db)
             return render_template('index.html', version=settings.VERSION)
         else:
             action = request.args.get('action')
             return render_template('dashboard.html', show_add_onload=action, version=settings.VERSION)
 
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return render_template('index.html', version=settings.VERSION)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
         error = "http"
@@ -78,15 +67,11 @@ def index():
         debugException(ex)
         error = "server"
         return showError(type=error)
-    finally:
-        db.remove()
-
 
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
+        'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -95,6 +80,8 @@ def login():
             debugEndpoint()
 
         form = stripDictVals(request.form.to_dict())
+        if 'username' not in form or 'password' not in form:
+            raise http_exceptions.BadRequest('Username and Password are required')
 
         # Get Environment Variables if in debug mode
         if settings.DEBUG:
@@ -126,7 +113,6 @@ def login():
         error = "server"
         return showError(type=error)
 
-
 @app.route('/logout')
 def logout():
     try:
@@ -145,7 +131,6 @@ def logout():
         debugException(ex)
         error = "server"
         return showError(type=error)
-
 
 @app.route('/carriergroups')
 @app.route('/carriergroups/<int:gwgroup>')
@@ -202,8 +187,7 @@ def displayCarrierGroups(gwgroup=None):
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/carriergroups', methods=['POST'])
 def addUpdateCarrierGroups():
@@ -237,21 +221,21 @@ def addUpdateCarrierGroups():
         if len(gwgroup) <= 0:
             print(name)
 
-            Gwgroup = GatewayGroups(name,type=settings.FLT_CARRIER)
+            Gwgroup = GatewayGroups(name, type=settings.FLT_CARRIER)
             db.add(Gwgroup)
             db.flush()
             gwgroup = Gwgroup.id
 
             if authtype == "userpwd":
                 Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
-                             settings.EXTERNAL_IP_ADDR, auth_domain)
-                #Add auth_domain(aka registration server) to the gateway list
+                    settings.EXTERNAL_IP_ADDR, auth_domain)
+                # Add auth_domain(aka registration server) to the gateway list
                 Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
 
             else:
-                Uacreg = UAC(gwgroup, username=gwgroup,local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
+                Uacreg = UAC(gwgroup, username=gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
                 db.add(Uacreg)
 
         # Updating
@@ -262,7 +246,7 @@ def addUpdateCarrierGroups():
                 fields = strFieldsToDict(Gwgroup.description)
                 fields['name'] = new_name
                 Gwgroup.description = dictToStrFields(fields)
-                db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).update({'description': Gwgroup.description},synchronize_session=False)
+                db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).update({'description': Gwgroup.description}, synchronize_session=False)
 
             # auth form
             else:
@@ -307,8 +291,7 @@ def addUpdateCarrierGroups():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/carriergroupdelete', methods=['POST'])
 def deleteCarrierGroups():
@@ -368,8 +351,7 @@ def deleteCarrierGroups():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/carriers')
 @app.route('/carriers/<int:gwid>')
@@ -432,7 +414,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 for rule in rules:
                     if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
                         gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-                carrier_rules.append(json.dumps(gateway_rules, separators=(',',':')))
+                carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
 
@@ -455,8 +437,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/carriers', methods=['POST'])
 def addUpdateCarriers():
@@ -553,8 +534,7 @@ def addUpdateCarriers():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/carrierdelete', methods=['POST'])
 def deleteCarriers():
@@ -632,8 +612,7 @@ def deleteCarriers():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/endpointgroups')
 def displayEndpointGroups():
@@ -682,7 +661,7 @@ def displayCDRS():
         error = "server"
         return showError(type=error)
 
-
+# TODO: why are we doing this weird api workaround, instead of making the gui and pai separate??
 @app.route('/endpointgroups', methods=['POST'])
 def addUpdateEndpointGroups():
     """
@@ -698,36 +677,35 @@ def addUpdateEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db =SessionLoader()
+        db = SessionLoader()
 
-        form = stripDictVals(request.form.to_dict())
-
+        # form = stripDictVals(request.form.to_dict())
+        #
         # TODO: change ip_addr field to hostname or domainname, we already support this
-        gwid = form['gwid']
-        gwgroupid = request.form.get("gwgroup",None)
-        name = request.form.get("name",None)
-        ip_addr = request.form.get("ip_addr",None)
-        strip = form['strip'] if len(form['strip']) > 0 else "0"
-        prefix = form['prefix'] if len(form['prefix']) > 0 else ""
-        authtype = form['authtype']
-        fusionpbx_db_server = form['fusionpbx_db_server']
-        fusionpbx_db_username = form['fusionpbx_db_username']
-        fusionpbx_db_password = form['fusionpbx_db_password']
-        auth_username = form['auth_username']
-        auth_password = form['auth_password']
-        auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DOMAIN
-        calllimit = form['calllimit'] if len(form['calllimit']) > 0 else ""
-
-        multi_tenant_domain_enabled = False
-        multi_tenant_domain_type = dSIPMultiDomainMapping.FLAGS.TYPE_UNKNOWN.value
-        single_tenant_domain_enabled = False
-        single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_UNKNOWN.value
+        # gwid = form['gwid']
+        # gwgroupid = request.form.get("gwgroup", None)
+        name = request.form.get("name", None)
+        # ip_addr = request.form.get("ip_addr", None)
+        # strip = form['strip'] if len(form['strip']) > 0 else "0"
+        # prefix = form['prefix'] if len(form['prefix']) > 0 else ""
+        # authtype = form['authtype']
+        # fusionpbx_db_server = form['fusionpbx_db_server']
+        # fusionpbx_db_username = form['fusionpbx_db_username']
+        # fusionpbx_db_password = form['fusionpbx_db_password']
+        # auth_username = form['auth_username']
+        # auth_password = form['auth_password']
+        # auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DOMAIN
+        # calllimit = form['calllimit'] if len(form['calllimit']) > 0 else ""
+        #
+        # multi_tenant_domain_enabled = False
+        # multi_tenant_domain_type = dSIPMultiDomainMapping.FLAGS.TYPE_UNKNOWN.value
+        # single_tenant_domain_enabled = False
+        # single_tenant_domain_type = dSIPDomainMapping.FLAGS.TYPE_UNKNOWN.value
 
         if name is not None:
-            Gwgroup = GatewayGroups(name,type=settings.FLT_PBX)
+            Gwgroup = GatewayGroups(name, type=settings.FLT_PBX)
             db.add(Gwgroup)
-            db.flush()
-            gwgroup = Gwgroup.id
+            db.commit()
 
         globals.reload_required = True
         return displayEndpointGroups()
@@ -751,8 +729,7 @@ def addUpdateEndpointGroups():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/pbxdelete', methods=['POST'])
 def deletePBX():
@@ -801,7 +778,6 @@ def deletePBX():
             # delete the entry in the multi domain mapping table
             domainmultimapping.delete(synchronize_session=False)
 
-
         db.commit()
         globals.reload_required = True
         return displayEndpointGroups()
@@ -825,8 +801,7 @@ def deletePBX():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/inboundmapping')
 def displayInboundMapping():
@@ -851,11 +826,15 @@ def displayInboundMapping():
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
         res = db.execute("""select * from (
-select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {flt_inbound}
+    select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {flt_inbound}
 ) as t1 left join (
-select hf.dr_ruleid as hf_ruleid, hf.dr_groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid from dsip_hardfwd as hf left join dr_rules as r on (hf.dr_groupid = r.groupid and hf.dr_groupid <> {flt_outbound}) or (hf.dr_ruleid = r.ruleid and hf.dr_groupid = {flt_outbound}) left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+    select hf.dr_ruleid as hf_ruleid, hf.dr_groupid as hf_groupid, hf.did as hf_fwddid, g.id as hf_gwgroupid from dsip_hardfwd as hf left join dr_rules as r on hf.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where hf.dr_groupid <> {flt_outbound}
+    union all
+    select hf.dr_ruleid as hf_ruleid, hf.dr_groupid as hf_groupid, hf.did as hf_fwddid, NULL as hf_gwgroupid from dsip_hardfwd as hf left join dr_rules as r on hf.dr_ruleid = r.ruleid where hf.dr_groupid = {flt_outbound}
 ) as t2 on t1.ruleid = t2.hf_ruleid left join (
-select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on (ff.dr_groupid = r.groupid and ff.dr_groupid <> {flt_outbound}) or (ff.dr_ruleid = r.ruleid and ff.dr_groupid = {flt_outbound}) left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '')
+    select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwddid, g.id as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on ff.dr_groupid = r.groupid left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where ff.dr_groupid <> {flt_outbound}
+    union all
+    select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwddid, NULL as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on ff.dr_ruleid = r.ruleid where ff.dr_groupid = {flt_outbound}
 ) as t3 on t1.ruleid = t3.ff_ruleid""".format(flt_inbound=settings.FLT_INBOUND, flt_outbound=settings.FLT_OUTBOUND))
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
@@ -896,9 +875,7 @@ select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwdd
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
-
+        db.close()
 
 @app.route('/inboundmapping', methods=['POST'])
 def addUpdateInboundMapping():
@@ -923,17 +900,15 @@ def addUpdateInboundMapping():
 
         # get form data
         ruleid = form['ruleid'] if 'ruleid' in form else None
-        gwgroupid = form['gwgroupid'] if 'gwgroupid' in form else ''
+        gwgroupid = form['gwgroupid'] if 'gwgroupid' in form and form['gwgroupid'] != "0" else ''
         prefix = form['prefix'] if 'prefix' in form else ''
         description = 'name:{}'.format(form['rulename']) if 'rulename' in form else ''
         hardfwd_enabled = int(form['hardfwd_enabled'])
-        hf_ruleid = form['hf_ruleid'] if 'hf_ruleid' in form else ''
-        hf_gwgroupid = form['hf_gwgroupid'] if 'hf_gwgroupid' in form else ''
+        hf_gwgroupid = form['hf_gwgroupid'] if 'hf_gwgroupid' in form and form['hf_gwgroupid'] != "0" else ''
         hf_groupid = form['hf_groupid'] if 'hf_groupid' in form else ''
         hf_fwddid = form['hf_fwddid'] if 'hf_fwddid' in form else ''
         failfwd_enabled = int(form['failfwd_enabled'])
-        ff_ruleid = form['ff_ruleid'] if 'ff_ruleid' in form else ''
-        ff_gwgroupid = form['ff_gwgroupid'] if 'ff_gwgroupid' in form else ''
+        ff_gwgroupid = form['ff_gwgroupid'] if 'ff_gwgroupid' in form and form['ff_gwgroupid'] != "0" else ''
         ff_groupid = form['ff_groupid'] if 'ff_groupid' in form else ''
         ff_fwddid = form['ff_fwddid'] if 'ff_fwddid' in form else ''
 
@@ -955,8 +930,9 @@ def addUpdateInboundMapping():
             inserts.append(IMap)
 
             # find last rule in dr_rules
-            lastrule = db.query(InboundMapping).order_by(InboundMapping.ruleid.desc()).first()
-            ruleid = int(lastrule.ruleid) + 1 if lastrule is not None else 1
+            ruleid = int(db.execute(
+                """SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='dr_rules'""".format(
+                    settings.KAM_DB_NAME)).first()[0])
 
             if hardfwd_enabled:
                 # when gwgroup is set we need to create a dr_rule that maps to the gwlist of that gwgroup
@@ -964,7 +940,8 @@ def addUpdateInboundMapping():
                     gwlist = '#{}'.format(hf_gwgroupid)
 
                     # find last forwarding rule
-                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                    lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                        InboundMapping.groupid.desc()).first()
 
                     # Start forwarding routes with a groupid set in settings (default is 20000)
                     if lastfwd is None:
@@ -991,7 +968,8 @@ def addUpdateInboundMapping():
                         fwdgroupid += 1
                     else:
                         # find last forwarding rule
-                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                            InboundMapping.groupid.desc()).first()
 
                         # Start forwarding routes with a groupid set in settings (default is 20000)
                         if lastfwd is None:
@@ -1021,7 +999,7 @@ def addUpdateInboundMapping():
             db.flush()
 
             if hardfwd_enabled:
-                
+
                 # create fwd htable if it does not exist
                 if not hardfwd_exists:
                     # only create rule if gwgroup has been selected
@@ -1029,7 +1007,8 @@ def addUpdateInboundMapping():
                         gwlist = '#{}'.format(hf_gwgroupid)
 
                         # find last forwarding rule
-                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                            InboundMapping.groupid.desc()).first()
 
                         # Start forwarding routes with a groupid set in settings (default is 20000)
                         if lastfwd is None:
@@ -1057,7 +1036,8 @@ def addUpdateInboundMapping():
                         if len(hf_gwgroupid) > 0:
                             gwlist = '#{}'.format(hf_gwgroupid)
                             db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid).update(
-                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}, synchronize_session=False)
+                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)},
+                                synchronize_session=False)
                         else:
                             hf_rule = db.query(InboundMapping).filter(
                                 ((InboundMapping.groupid == hf_groupid) & (InboundMapping.groupid != settings.FLT_OUTBOUND)) |
@@ -1096,12 +1076,11 @@ def addUpdateInboundMapping():
                     hf_htable = db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid)
                     hf_htable.delete(synchronize_session=False)
 
-
             failfwd_exists = True if db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid).scalar() else False
             db.flush()
 
             if failfwd_enabled:
-                
+
                 # create fwd htable if it does not exist
                 if not failfwd_exists:
                     # only create rule if gwgroup has been selected
@@ -1109,7 +1088,8 @@ def addUpdateInboundMapping():
                         gwlist = '#{}'.format(ff_gwgroupid)
 
                         # find last forwarding rule
-                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(InboundMapping.groupid.desc()).first()
+                        lastfwd = db.query(InboundMapping).filter(InboundMapping.groupid >= settings.FLT_FWD_MIN).order_by(
+                            InboundMapping.groupid.desc()).first()
 
                         # Start forwarding routes with a groupid set in settings (default is 20000)
                         if lastfwd is None:
@@ -1137,7 +1117,8 @@ def addUpdateInboundMapping():
                         if len(ff_gwgroupid) > 0:
                             gwlist = '#{}'.format(ff_gwgroupid)
                             db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid).update(
-                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}, synchronize_session=False)
+                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)},
+                                synchronize_session=False)
                         else:
                             ff_rule = db.query(InboundMapping).filter(
                                 ((InboundMapping.groupid == ff_groupid) & (InboundMapping.groupid != settings.FLT_OUTBOUND)) |
@@ -1164,7 +1145,7 @@ def addUpdateInboundMapping():
 
                     db.query(dSIPFailFwd).filter(dSIPFailFwd.dr_ruleid == ruleid).update(
                         {'did': ff_fwddid, 'dr_groupid': fwdgroupid}, synchronize_session=False)
-                    
+
             else:
                 # delete existing fwd htable and possibly fwd rule
                 if failfwd_exists:
@@ -1202,8 +1183,7 @@ def addUpdateInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/inboundmappingdelete', methods=['POST'])
 def deleteInboundMapping():
@@ -1279,24 +1259,25 @@ def deleteInboundMapping():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
+        db.close()
 
-
-def processInboundMappingImport(filename, groupid, pbxid, name, db):
+def processInboundMappingImport(filename, gwgroupid, name, db):
     try:
         # Adding
         f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
         csv_f = csv.reader(f)
 
         for row in csv_f:
+            if row[0].startswith("#"):
+                continue
             prefix = row[0]
             if len(row) > 1:
-                pbxid = row[1]
+                gwgroupid = row[1]
             if len(row) > 2:
                 description = 'name:{}'.format(row[2])
             else:
                 description = 'name:{}'.format(name)
-            IMap = InboundMapping(groupid, prefix, pbxid, description)
+            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwgroupid, description)
             db.add(IMap)
 
         db.commit()
@@ -1320,10 +1301,8 @@ def processInboundMappingImport(filename, groupid, pbxid, name, db):
         db.flush()
         return showError(type=error)
 
-
-@app.route('/inboundmappingimport',methods=['POST'])
+@app.route('/inboundmappingimport', methods=['POST'])
 def importInboundMapping():
-
     db = DummySession()
 
     try:
@@ -1338,8 +1317,7 @@ def importInboundMapping():
         form = stripDictVals(request.form.to_dict())
 
         # get form data
-        gwid = form['gwid']
-        name = form['name']
+        gwgroupid = form['gwgroupid'] if 'gwgroupid' in form else None
 
         if 'file' not in request.files:
             flash('No file part')
@@ -1350,22 +1328,34 @@ def importInboundMapping():
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename,ALLOWED_EXTENSIONS=set(['csv'])):
+        if file and allowed_file(file.filename, ALLOWED_EXTENSIONS=set(['csv'])):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename, settings.FLT_INBOUND, gwid, name, db)
+            processInboundMappingImport(filename, gwgroupid, None, db)
             flash('X number of file were imported')
-            return redirect(url_for('displayInboundMapping',filename=filename))
+            globals.reload_required = True
+            return redirect(url_for('displayInboundMapping', filename=filename))
 
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
         error = "http"
+        db.rollback()
+        db.flush()
         return showError(type=error)
     except Exception as ex:
         debugException(ex)
         error = "server"
+        db.rollback()
+        db.flush()
         return showError(type=error)
-
+    finally:
+        db.close()
 
 @app.route('/teleblock')
 def displayTeleBlock():
@@ -1398,13 +1388,11 @@ def displayTeleBlock():
         error = "server"
         return showError(type=error)
 
-
 @app.route('/teleblock', methods=['POST'])
 def addUpdateTeleBlock():
     """
     Update teleblock config file settings
     """
-
 
     try:
         if not session.get('logged_in'):
@@ -1437,7 +1425,6 @@ def addUpdateTeleBlock():
         error = "server"
         return showError(type=error)
 
-
 @app.route('/outboundroutes')
 def displayOutboundRoutes():
     """
@@ -1460,7 +1447,7 @@ def displayOutboundRoutes():
         rows = db.query(OutboundRoutes).filter(
             (OutboundRoutes.groupid == settings.FLT_OUTBOUND) |
             ((OutboundRoutes.groupid >= settings.FLT_LCR_MIN) &
-            (OutboundRoutes.groupid < settings.FLT_FWD_MIN))).outerjoin(
+             (OutboundRoutes.groupid < settings.FLT_FWD_MIN))).outerjoin(
             dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
             dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid,
             OutboundRoutes.prefix, OutboundRoutes.routeid, OutboundRoutes.gwlist,
@@ -1494,8 +1481,7 @@ def displayOutboundRoutes():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/outboundroutes', methods=['POST'])
 def addUpateOutboundRoutes():
@@ -1565,7 +1551,7 @@ def addUpateOutboundRoutes():
 
                 # Grab the lastest groupid and increment
                 mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
-                    (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
+                                                (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
                 db.commit()
 
                 # Start LCR routes with a groupid in settings (default is 10000)
@@ -1577,7 +1563,7 @@ def addUpateOutboundRoutes():
                 pattern = from_prefix + "-" + prefix
 
             OMap = OutboundRoutes(groupid=groupid, prefix=prefix, timerec=timerec, priority=priority,
-                                  routeid=routeid, gwlist=gwlist, description=description)
+                routeid=routeid, gwlist=gwlist, description=description)
             db.add(OMap)
 
             # Add the lcr map
@@ -1616,7 +1602,7 @@ def addUpateOutboundRoutes():
                 elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
                     # Create a new groupid
                     mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
-                        (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
+                                                    (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
                     db.commit()
 
                     # Start LCR routes with a groupid set in settings (default is 10000)
@@ -1673,8 +1659,7 @@ def addUpateOutboundRoutes():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/outboundroutesdelete', methods=['POST'])
 def deleteOutboundRoute():
@@ -1731,8 +1716,7 @@ def deleteOutboundRoute():
         db.flush()
         return showError(type=error)
     finally:
-        db.remove()
-
+        db.close()
 
 @app.route('/reloadkam')
 def reloadkam():
@@ -1787,7 +1771,6 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_server', dsip_api_url])
         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_token', dsip_api_token])
 
-
         session['last_page'] = request.headers['Referer']
 
         if return_code == 0:
@@ -1807,7 +1790,6 @@ def reloadkam():
         error = "server"
         return showError(type=error)
 
-
 # custom jinja filters
 def yesOrNoFilter(list, field):
     if list == 1:
@@ -1815,13 +1797,11 @@ def yesOrNoFilter(list, field):
     else:
         return "No"
 
-
 def noneFilter(list):
     if list is None:
         return ""
     else:
         return list
-
 
 def attrFilter(list, field):
     if list is None:
@@ -1843,7 +1823,6 @@ def domainTypeFilter(list):
     else:
         return "Dynamic"
 
-
 def imgFilter(name):
     images_url = urllib.parse.urljoin(app.static_url_path, 'images')
     search_path = os.path.join(app.static_folder, 'images', name)
@@ -1853,12 +1832,10 @@ def imgFilter(name):
     else:
         return ""
 
-
 # custom jinja context processors
 @app.context_processor
 def injectReloadRequired():
-    return dict(reload_required=globals.reload_required,enterprise_enabled=globals.enterprise_enabled)
-
+    return dict(reload_required=globals.reload_required, enterprise_enabled=globals.enterprise_enabled)
 
 class CustomServer(Server):
     """ Customize the Flask server with our settings """
@@ -1882,18 +1859,99 @@ class CustomServer(Server):
             self.threaded = True
             self.processes = 1
 
-def syncSettings(fields={}, update_net=False):
+def syncSettings(new_fields={}, update_net=False):
+    """
+    Synchronize settings.py with shared mem / db
+
+    :param new_fields:
+    :type new_fields:
+    :param update_net:
+    :type update_net:
+    :return:
+    :rtype:
+    """
+
     db = DummySession()
 
     try:
         db = SessionLoader()
 
+        # update ip's dynamically
+        if update_net:
+            net_dict = {
+                'INTERNAL_IP_ADDR': getInternalIP(),
+                'INTERNAL_IP_NET': "{}.*".format(getInternalIP().rsplit(".", 1)[0]),
+                'EXTERNAL_IP_ADDR': getExternalIP()
+            }
+        else:
+            net_dict = {}
+
         # sync settings from settings.py
-        if settings.LOAD_SETTINGS_FROM == 'file':
-            updateDsipSettingsTable(db)
+        if settings.LOAD_SETTINGS_FROM == 'file' or settings.DSIP_ID is None:
+            # need to grab any changes on disk b4 merging
+            reload(settings)
+
+            # format fields for DB
+            fields = OrderedDict(
+                [('DSIP_ID', settings.DSIP_ID), ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID), ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
+                 ('DSIP_PROTO', settings.DSIP_PROTO), ('DSIP_HOST', settings.DSIP_HOST), ('DSIP_PORT', settings.DSIP_PORT),
+                 ('DSIP_USERNAME', settings.DSIP_USERNAME), ('DSIP_PASSWORD', settings.DSIP_PASSWORD), ('DSIP_SALT', settings.DSIP_SALT),
+                 ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO), ('DSIP_API_HOST', settings.DSIP_API_HOST),
+                 ('DSIP_API_PORT', settings.DSIP_API_PORT), ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY), ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
+                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
+                 ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY), ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
+                 ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL), ('VERSION', settings.VERSION),
+                 ('DEBUG', settings.DEBUG), ('ROLE', settings.ROLE), ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
+                 ('KAM_DB_HOST', settings.KAM_DB_HOST), ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER), ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
+                 ('KAM_DB_PORT', settings.KAM_DB_PORT), ('KAM_DB_NAME', settings.KAM_DB_NAME), ('KAM_DB_USER', settings.KAM_DB_USER),
+                 ('KAM_DB_PASS', settings.KAM_DB_PASS), ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH), ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
+                 ('RTP_CFG_PATH', settings.RTP_CFG_PATH), ('SQLALCHEMY_TRACK_MODIFICATIONS', settings.SQLALCHEMY_TRACK_MODIFICATIONS),
+                 ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG), ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX),
+                 ('FLT_OUTBOUND', settings.FLT_OUTBOUND), ('FLT_INBOUND', settings.FLT_INBOUND), ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
+                 ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DOMAIN', settings.DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
+                 ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
+                 ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP), ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
+                 ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
+                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
+                 ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET), ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
+                 ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER), ('CLOUD_PLATFORM', settings.CLOUD_PLATFORM), ('MAIL_SERVER', settings.MAIL_SERVER),
+                 ('MAIL_PORT', settings.MAIL_PORT), ('MAIL_USE_TLS', settings.MAIL_USE_TLS), ('MAIL_USERNAME', settings.MAIL_USERNAME),
+                 ('MAIL_PASSWORD', settings.MAIL_PASSWORD), ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
+                 ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER), ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT)])
+
+            fields.update(new_fields)
+            fields.update(net_dict)
+
+            # convert db specific fields
+            orig_kam_db_host = fields['KAM_DB_HOST']
+            if isinstance(settings.KAM_DB_HOST, list):
+                fields['KAM_DB_HOST'] = ','.join(settings.KAM_DB_HOST)
+
+            db.execute('CALL update_dsip_settings({})'.format(','.join([':{}'.format(x) for x in fields.keys()])), fields)
+
+            # revert db specific fields
+            fields['KAM_DB_HOST'] = orig_kam_db_host
+
+            if settings.DSIP_ID is None:
+                lastrowid = db.execute('SELECT LAST_INSERT_ID()').first()[0]
+                fields['DSIP_ID'] = lastrowid
+
         # sync settings from dsip_settings table
         elif settings.LOAD_SETTINGS_FROM == 'db':
-            fields = dict(db.execute('select * from dsip_settings').first().items())
+            fields = dict(db.execute('SELECT * FROM dsip_settings WHERE DSIP_ID={}'.format(settings.DSIP_ID)).first().items())
+            fields.update(new_fields)
+            fields.update(net_dict)
+
+            if ',' in fields['KAM_DB_HOST']:
+                fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
+
+        # no other sync scenarios
+        else:
+            fields = {}
+
+        # update and reload settings file
+        if len(fields) > 0:
+            updateConfig(settings, fields, hot_reload=True)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1901,16 +1959,7 @@ def syncSettings(fields={}, update_net=False):
         db.rollback()
         db.flush()
     finally:
-        db.remove()
-
-    # update ip's dynamically
-    if update_net:
-        fields['INTERNAL_IP_ADDR'] = getInternalIP()
-        fields['INTERNAL_IP_NET'] = "{}.*".format(getInternalIP().rsplit(".", 1)[0])
-        fields['EXTERNAL_IP_ADDR'] = getExternalIP()
-
-    if len(fields) > 0:
-        updateConfig(settings, fields, hot_reload=True)
+        db.close()
 
 def sigHandler(signum=None, frame=None):
     """ Logic for trapped signals """
@@ -1949,7 +1998,6 @@ def replaceAppLoggers(log_handler):
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 def initApp(flask_app):
-
     # Initialize Globals
     globals.initialize()
 
@@ -2010,17 +2058,16 @@ def teardown():
     except:
         pass
 
-# TODO: probably not needed anymore
-def checkDatabase(session=None):
-    db = session if session is not None else SessionLoader()
-   # Check database connection is still good
-    try:
-        db.execute('select 1')
-        db.flush()
-    except sql_exceptions.SQLAlchemyError as ex:
-        # If not, close DB connection so that the SQL engine can get another one from the pool
-        db.remove()
-
+# # TODO: probably not needed anymore
+# def checkDatabase(session=None):
+#     db = session if session is not None else SessionLoader()
+#     # Check database connection is still good
+#     try:
+#         db.execute('select 1')
+#         db.flush()
+#     except sql_exceptions.SQLAlchemyError as ex:
+#         # If not, close DB connection so that the SQL engine can get another one from the pool
+#         db.close()
 
 if __name__ == "__main__":
     try:

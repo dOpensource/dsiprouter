@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 
 # Ansi Colors
 ESC_SEQ="\033["
@@ -95,6 +95,24 @@ getConfigAttrib() {
 }
 
 # $1 == attribute name
+# $2 == python config file
+# returns: attribute value decrypted
+# notes: if value is not encrypted the value will be returned
+decryptConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+    local PYTHON=${PYTHON_CMD:-python3}
+
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    # if value is not a byte literal it isn't encrypted
+    if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
+        printf '%s' "${VALUE}" | perl -0777 -pe 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
+    else
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+    fi
+}
+
+# $1 == attribute name
 # $2 == attribute value
 # $3 == python config file
 # $4 == -q (quote string) | -qb (quote byte string)
@@ -110,7 +128,7 @@ setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
-    sed -i -r -e "s|($NAME[[:space:]]?=[[:space:]]?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+    sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # returns: 0 == success, 1 == failure

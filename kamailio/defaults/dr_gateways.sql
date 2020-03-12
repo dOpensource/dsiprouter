@@ -7,7 +7,7 @@ CREATE TRIGGER insert_dr_gateways
   FOR EACH ROW
 BEGIN
 
-  SET @new_gwid := COALESCE(@new_gwid, (
+  SET @new_gwid := COALESCE(NEW.gwid, @new_gwid, (
     SELECT auto_increment
     FROM information_schema.tables
     WHERE table_name = 'dr_gateways' AND table_schema = DATABASE()));

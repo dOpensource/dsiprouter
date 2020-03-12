@@ -34,8 +34,14 @@ function install {
     # Enable MySQL and Kamailio for system startup
     systemctl enable mysql
 
-    # Make sure mysql starts before Kamailio
-    sed -i s/After=.*/After=mysqld.service/g /lib/systemd/system/kamailio.service
+    # Make sure MariaDB and Local DNS start before Kamailio
+    # Make sure MariaDB and Local DNS start before Kamailio
+    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
+    fi
+    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
+    fi
     systemctl daemon-reload
     systemctl enable kamailio
 
@@ -86,6 +92,7 @@ EOF
     # Firewall settings
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
