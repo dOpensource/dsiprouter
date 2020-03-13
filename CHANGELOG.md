@@ -2,6 +2,23 @@
 
 
 
+### CDR / Backup Feature Fixes
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Fri, 13 Mar 2020 11:51:22 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- change sorting to be done on backend for CDR's
+- fix shell quoting issue w/ backup/restore cmds
+- handle bad file upload on restore cmd
+- auto format api_routes code
+
+
+---
+
+
 ### Merge v0.55+ent changes into v0.60+ent
 
 > Branches Affected: v0.60+ent  
