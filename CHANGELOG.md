@@ -2,6 +2,21 @@
 
 
 
+### Fix errors in dsiprouter script
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Fri, 13 Mar 2020 13:19:55 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix missing semi-colon
+- re-order OS info function
+
+
+---
+
+
 ### CDR / Backup Feature Fixes
 
 > Branches Affected: v0.60+ent  

@@ -140,25 +140,6 @@ setScriptSettings() {
 
     DSIP_SERVER_DOMAIN="$(hostname -f)"
 
-    # Get Linux Distro and Version, and normalize values for later use
-    DISTRO=$(getDisto)
-    # check downstream Distro's first, then check upstream Distro's if no match
-    if [[ "$DISTRO" == "amzn" ]]; then
-        export DISTRO="amazon"
-        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
-    elif [[ "$DISTRO" == "ubuntu" ]]; then
-        export DISTRO="ubuntu"
-        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
-    else
-        if [ -f /etc/redhat-release ]; then
-            export DISTRO="centos"
-            export DISTRO_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
-        elif [ -f /etc/debian_version ]; then
-            export DISTRO="debian"
-            export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
-        fi
-    fi
-
     # grab root db settings from env or set to defaults
     export MYSQL_ROOT_USERNAME=${MYSQL_ROOT_USERNAME:-$MYSQL_ROOT_DEF_USERNAME}
     export MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-$MYSQL_ROOT_DEF_PASSWORD}
@@ -246,6 +227,27 @@ function validateRootPriv {
     fi
 }
 
+function setOSInfo {
+    # Get Linux Distro and Version, and normalize values for later use
+    DISTRO=$(getDisto)
+    # check downstream Distro's first, then check upstream Distro's if no match
+    if [[ "$DISTRO" == "amzn" ]]; then
+        export DISTRO="amazon"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    elif [[ "$DISTRO" == "ubuntu" ]]; then
+        export DISTRO="ubuntu"
+        export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+    else
+        if [ -f /etc/redhat-release ]; then
+            export DISTRO="centos"
+            export DISTRO_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
+        elif [ -f /etc/debian_version ]; then
+            export DISTRO="debian"
+            export DISTRO_VER=$(grep -w "VERSION_ID" /etc/os-release | cut -d '"' -f 2)
+        fi
+    fi
+}
+
 # Validate OS and get supported Kamailio versions
 function validateOSInfo {
     if [[ "$DISTRO" == "debian" ]]; then
@@ -312,6 +314,8 @@ function validateOSInfo {
 # run prior to any cmd being processed
 function initialChecks {
     validateRootPriv
+
+    setOSInfo
 
     validateOSInfo
 
@@ -1817,7 +1821,7 @@ clusterInstall() { (
     chmod 0400 ${TMP_PRIV_KEY}
 
     # guarantee key will be destroyed when subshell exits
-    cleanupHandler() { rm -f ${TMP_PRIV_KEY} }
+    cleanupHandler() { rm -f ${TMP_PRIV_KEY}; }
     trap cleanupHandler EXIT
 
     # loop through nodes to:
@@ -1904,7 +1908,7 @@ EOSSH
 
         i=$((i+1))
     done
-) || cleanupAndExit $? }
+) || cleanupAndExit $?; }
 
 function usageOptions {
     linebreak() {
