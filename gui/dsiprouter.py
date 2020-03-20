@@ -1289,15 +1289,18 @@ def processInboundMappingImport(filename, gwgroupid, name, db):
         csv_f = csv.reader(f)
 
         for row in csv_f:
+            # skip header if present
             if row[0].startswith("#"):
                 continue
+
             prefix = row[0]
-            if len(row) > 1:
-                gwgroupid = row[1]
+            if len(row) > 1 and gwgroupid is None:
+                gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
             if len(row) > 2:
                 description = 'name:{}'.format(row[2])
             else:
                 description = 'name:{}'.format(name)
+
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwgroupid, description)
             db.add(IMap)
 

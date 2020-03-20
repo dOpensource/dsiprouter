@@ -2,6 +2,19 @@
 
 
 
+### Fix inbound mapping import issues
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Fri, 20 Mar 2020 14:10:00 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
 ### Stability Fixes and Cluster Sync/Install Updates
 
 > Branches Affected: v0.60+ent  

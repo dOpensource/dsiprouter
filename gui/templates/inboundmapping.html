@@ -441,13 +441,13 @@
       </div>
 
       <div class="form-group">
-        <label for="importFile">CSV File with DID's</label>
+        <label for="importFile">CSV File with DID's (<a href="/static/template/DID_example.csv" target="_blank">Download Example CSV</a>)</label>
         <input type="file" name="file" class="form-control-file" id="importFile">
       </div>
 
       <div class="form-group">
-        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
-          <option class="hidden" value="" selected disabled>Endpoint Group</option>
+        <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
+          <option class="hidden" value="" selected disabled>Override Endpoint Group (Optional)</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
           {% endfor %}
