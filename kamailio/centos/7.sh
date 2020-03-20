@@ -18,24 +18,37 @@ function install() {
     # allow symlinks in mariadb service
     sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
 
+    # add in the original aliases (from debian repo) to mariadb.service
+    perl -0777 -i -pe 's|(\[Install\]\s+WantedBy.*?\n+)|\1Alias=mysql.service\nAlias=mysqld.service\n\n|gms' /lib/systemd/system/mariadb.service
+
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
-    # allowing us to use same service name across platforms
+    # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
     (cat << 'EOF'
-# Add mysql Aliases by including distro script
-# as recommended in /lib/systemd/system/mariadb.service
+# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
 .include /lib/systemd/system/mariadb.service
 
 [Install]
-Alias=mysql.service
+Alias=
 Alias=mysqld.service
+Alias=mariadb.service
 EOF
-    ) > /etc/systemd/system/mariadb.service
-    chmod 0644 /etc/systemd/system/mariadb.service
+    ) > /lib/systemd/system/mysql.service
+    chmod 0644 /lib/systemd/system/mysql.service
+    (cat << 'EOF'
+# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
+.include /lib/systemd/system/mariadb.service
 
-    # link the services so we can use the mysql namespace from systemctl
-    ln -s /etc/systemd/system/mariadb.service /etc/systemd/system/mysql.service
-    ln -s /etc/systemd/system/mariadb.service /etc/systemd/system/mysqld.service
+[Install]
+Alias=
+Alias=mysql.service
+Alias=mariadb.service
+EOF
+    ) > /lib/systemd/system/mysqld.service
+    chmod 0644 /lib/systemd/system/mysqld.service
     systemctl daemon-reload
+
+    # if db is remote don't run local service
+    reconfigureMysqlSystemdService
 
     # create mysql user and group
     mkdir -p /var/run/mariadb
@@ -86,7 +99,7 @@ EOF
 
     touch /etc/tmpfiles.d/kamailio.conf
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
- 
+
     # create kamailio defaults config
     (cat << 'EOF'
  RUN_KAMAILIO=yes
@@ -102,20 +115,30 @@ EOF
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
-    echo "" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "DBENGINE=MYSQL" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "INSTALL_EXTRA_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "INSTALL_PRESENCE_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "INSTALL_DBUID_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc.$(date +%Y%m%d_%H%M%S)
     if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
-        echo "DBROOTPWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+        local ROOTPW_SETTING="DBROOTPWSKIP=yes"
     else
-        echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+        local ROOTPW_SETTING="DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\""
     fi
 
-    # Use utf8 as it is the worldwide defacto standard for charsets
-    echo "CHARSET=utf8" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    # TODO: we should set STORE_PLAINTEXT_PW to 0, this is not default but would need tested
+    (cat << EOF
+DBENGINE=MYSQL
+DBHOST=${KAM_DB_HOST}
+DBPORT=${KAM_DB_PORT}
+DBNAME=${KAM_DB_NAME}
+DBRWUSER="${KAM_DB_USER}"
+DBRWPW="${KAM_DB_PASS}"
+DBROOTUSER="${MYSQL_ROOT_USERNAME}"
+${ROOTPW_SETTING}
+CHARSET=utf8
+INSTALL_EXTRA_TABLES=yes
+INSTALL_PRESENCE_TABLES=yes
+INSTALL_DBUID_TABLES=yes
+# STORE_PLAINTEXT_PW=0
+EOF
+    ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
@@ -146,6 +169,9 @@ EOF
     fi
     systemctl daemon-reload
 
+    # Enable Kamailio for system startup
+    systemctl enable kamailio
+
     # Setup kamailio Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
     touch /var/log/kamailio.log
@@ -159,12 +185,17 @@ function uninstall {
     # Stop servers
     systemctl stop kamailio
     systemctl stop mysql
+    systemctl disable kamailio
+    systemctl disable mysql
 
     # Backup kamailio configuration directory
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
+
+    # remove mysql unit files we created
+    rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
 
     # Uninstall Kamailio modules and mysql / Mariadb
     yum remove -y mysql\*

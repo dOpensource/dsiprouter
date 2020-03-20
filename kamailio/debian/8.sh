@@ -31,6 +31,44 @@ function install {
     # Install Kamailio packages
     apt-get install -y --allow-unauthenticated --force-yes firewalld kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules
 
+    # alias mariadb.service to mysql.service and mysqld.service as in debian repo
+    # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
+    (cat << 'EOF'
+# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
+.include /lib/systemd/system/mariadb.service
+
+[Install]
+Alias=
+Alias=mysqld.service
+Alias=mariadb.service
+EOF
+    ) > /lib/systemd/system/mysql.service
+    chmod 0644 /lib/systemd/system/mysql.service
+    (cat << 'EOF'
+# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
+.include /lib/systemd/system/mariadb.service
+
+[Install]
+Alias=
+Alias=mysql.service
+Alias=mariadb.service
+EOF
+    ) > /lib/systemd/system/mysqld.service
+    chmod 0644 /lib/systemd/system/mysqld.service
+    systemctl daemon-reload
+
+    # if db is remote don't run local service
+    reconfigureMysqlSystemdService
+
+    # Make sure MariaDB and Local DNS start before Kamailio
+    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
+    fi
+    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
+    fi
+    systemctl daemon-reload
+
     # Enable MySQL and Kamailio for system startup
     systemctl enable mysql
     systemctl enable kamailio
@@ -58,20 +96,30 @@ EOF
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
-    echo "DBENGINE=MYSQL" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "INSTALL_EXTRA_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "INSTALL_PRESENCE_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-    echo "INSTALL_DBUID_TABLES=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-        echo "DBROOTUSER=\"${MYSQL_ROOT_USERNAME}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc.$(date +%Y%m%d_%H%M%S)
     if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
-        echo "PWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-        echo "DBROOTPWSKIP=yes" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+        local ROOTPW_SETTING="DBROOTPWSKIP=yes"
     else
-        echo "DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\"" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+        local ROOTPW_SETTING="DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\""
     fi
 
-    # Use utf8 as it is the worldwide defacto standard for charsets
-    echo "CHARSET=utf8" >> ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
+    # TODO: we should set STORE_PLAINTEXT_PW to 0, this is not default but would need tested
+    (cat << EOF
+DBENGINE=MYSQL
+DBHOST=${KAM_DB_HOST}
+DBPORT=${KAM_DB_PORT}
+DBNAME=${KAM_DB_NAME}
+DBRWUSER="${KAM_DB_USER}"
+DBRWPW="${KAM_DB_PASS}"
+DBROOTUSER="${MYSQL_ROOT_USERNAME}"
+${ROOTPW_SETTING}
+CHARSET=utf8
+INSTALL_EXTRA_TABLES=yes
+INSTALL_PRESENCE_TABLES=yes
+INSTALL_DBUID_TABLES=yes
+# STORE_PLAINTEXT_PW=0
+EOF
+    ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
@@ -86,15 +134,6 @@ EOF
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
-
-    # Make sure MariaDB and Local DNS start before Kamailio
-    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
-        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
-    systemctl daemon-reload
 
     # Setup kamailio Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
@@ -114,12 +153,17 @@ function uninstall {
     # Stop servers
     systemctl stop kamailio
     systemctl stop mysql
+    systemctl disable kamailio
+    systemctl disable mysql
 
     # Backup kamailio configuration directory
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
+
+    # remove mysql unit files we created
+    rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
 
     # Uninstall Kamailio modules and Mariadb
     apt-get -y remove --purge mysql\*

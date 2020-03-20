@@ -252,7 +252,7 @@ isInstanceDO() {
 # returns: 0 == success, 1 == failure
 # notes: try to access the GCE metadata URL to determine if this is an Google instance
 isInstanceGCE() {
-    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/; ret=$?
+    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/ &>/dev/null; ret=$?
     if (( $ret != 6 )) && (( $ret != 22 )) && (( $ret != 28 )); then
         return 0
     fi
@@ -262,7 +262,7 @@ isInstanceGCE() {
 # returns: 0 == success, 1 == failure
 # notes: try to access the MS Azure metadata URL to determine if this is an Azure instance
 isInstanceAZURE() {
-    curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01"; ret=$?
+    curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01" &>/dev/null; ret=$?
     if (( $ret != 22 )) && (( $ret != 28 )); then
         return 0
     fi
@@ -434,4 +434,115 @@ checkConn() {
     else
         timeout 3 bash -c "< /dev/tcp/$1/$2" 2> /dev/null; return $?
     fi
+}
+
+# $@ == ssh command to test
+# returns: 0 == ssh connected, 1 == ssh could not connect
+checkSSH() {
+    local SSH_CMD="$@ -o ConnectTimeout=5 -q 'exit 0'"
+    bash -c "${SSH_CMD}" 2>&1 > /dev/null; return $?
+}
+
+# usage: checkDB [options] <database>
+# options:  --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+# returns:  0 if DB exists, 1 otherwise
+checkDB() {
+    local MYSQL_DBNAME=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+
+    while (( $# > 0 )); do
+        # last arg is database
+        if (( $# == 1 )); then
+            MYSQL_DBNAME="$1"
+            shift
+            break
+        fi
+
+        case "$1" in
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # not valid option skip
+                shift
+                ;;
+        esac
+    done
+
+    local CHECK=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+        -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$MYSQL_DBNAME';")
+    if [[ -n "$CHECK" ]] && [[ "$CHECK" == "$MYSQL_DB" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# usage: dumpkDB [options] <database>
+# options:  --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+# notes: redirect output sql as needed (in shell)
+# returns: 0 on success, non zero otherwise
+dumpDB() {
+    local MYSQL_DBNAME=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+
+    while (( $# > 0 )); do
+        # last arg is database
+        if (( $# == 1 )); then
+            MYSQL_DBNAME="$1"
+            shift
+            break
+        fi
+
+        case "$1" in
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # not valid option skip
+                shift
+                ;;
+        esac
+    done
+
+    (mysqldump --single-transaction --opt --routines --triggers \
+        --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${MYSQL_DBNAME} \
+        | sed -r -e 's|DEFINER=[`"'"'"']\w*[`"'"'"']@[`"'"'"']\w*[`"'"'"']||g';
+        exit ${PIPESTATUS[0]}; ) 2>/dev/null
+    return $?
 }

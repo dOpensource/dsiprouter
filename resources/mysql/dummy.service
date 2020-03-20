@@ -1,0 +1,11 @@
+[Unit]
+Description=MySQL Dummy Service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+RemainAfterExit=true
+TimeoutSec=0
+
+[Install]
+WantedBy=multi-user.target

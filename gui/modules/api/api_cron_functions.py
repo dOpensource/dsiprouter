@@ -1,9 +1,7 @@
-from shared import debugException, IO
-from database import SessionLoader, DummySession, Subscribers, dSIPLeases, Gateways, dSIPCDRInfo
 from datetime import datetime
-from sqlalchemy import case, func, exc as sql_exceptions,or_
+from shared import debugException, monthdelta
+from database import SessionLoader, DummySession, Subscribers, dSIPLeases, Gateways, dSIPCDRInfo
 from modules.api.api_routes import revokeEndpointLease, generateCDRS
-import settings
 
 def cleanup_leases():
 
@@ -12,26 +10,19 @@ def cleanup_leases():
     try:
         db = SessionLoader()
 
-        Leases = db.query(dSIPLeases).filter(datetime.now() >= dSIPLeases.expiration)
+        Leases = db.query(dSIPLeases).filter(datetime.now() >= dSIPLeases.expiration).all()
         for Lease in Leases:
-
             # Remove the entry in the Subscribers table
-            Subscriber = db.query(Subscribers).filter(Subscribers.id == Lease.sid).first()
-            db.delete(Subscriber)
+            db.query(Subscribers).filter(Subscribers.id == Lease.sid).delete(synchronize_session=False)
 
             # Remove the entry in the Gateway table
-            Gateway = db.query(Gateways).filter(Gateways.gwid == Lease.gwid).first()
-            db.delete(Gateway)
+            db.query(Gateways).filter(Gateways.gwid == Lease.gwid).delete(synchronize_session=False)
 
             # Remove the entry in the Lease table
             db.delete(Lease)
 
         db.commit()
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        db.rollback()
-        db.flush()
     except Exception as ex:
         debugException(ex)
         db.rollback()
@@ -46,19 +37,15 @@ def send_monthly_cdrs():
         db = SessionLoader()
 
         now = datetime.now()
-        day = now.strftime("%d")
-        date = now.strftime('%Y-%m-%d')
+        today = datetime(now.year, now.month, now.day)
+        prev_month = monthdelta(today, -1)
 
-        CDRReports = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.send_date == day).filter(or_(dSIPCDRInfo.last_sent < date, dSIPCDRInfo.last_sent == None))
+        CDRReports = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.send_date == now.day).filter((dSIPCDRInfo.last_sent < today) | (dSIPCDRInfo.last_sent == None)).all()
         for CDRReport in CDRReports:
-            generateCDRS(gwgroupid=CDRReport.gwgroupid,type='csv',email="True")
-            db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == CDRReport.gwgroupid).update({"last_sent":date})
-            db.commit()
+            generateCDRS(gwgroupid=CDRReport.gwgroupid, type='csv', email=True, dtfilter=prev_month)
+            db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == CDRReport.gwgroupid).update({"last_sent":now}, synchronize_session=False)
+        db.commit()
 
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        db.rollback()
-        db.flush()
     except Exception as ex:
         debugException(ex)
         db.rollback()
@@ -67,11 +54,8 @@ def send_monthly_cdrs():
         db.close()
 
 def api_cron():
-    try:
-        cleanup_leases()
-        send_monthly_cdrs()
-    except Exception as ex:
-        debugException(ex)
+    cleanup_leases()
+    send_monthly_cdrs()
 
 if __name__ == "__main__":
     api_cron()

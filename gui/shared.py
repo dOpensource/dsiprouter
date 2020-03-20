@@ -1,4 +1,5 @@
 import sys, os, re, socket, requests, logging, traceback, inspect, string, random
+from calendar import monthrange
 from importlib import reload
 from flask import request, render_template, make_response, session, Response
 from werkzeug.utils import escape
@@ -220,7 +221,13 @@ def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + 
 def generatePassword(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
-
+def monthdelta(dt, delta):
+    """ Return dt with a delta month change (neg or pos) """
+    m, y = (dt.month + delta) % 12, dt.year + (dt.month + delta - 1) // 12
+    if m == 0:
+        m = 12
+    d = min(dt.day, monthrange(y, m)[1])
+    return dt.replace(day=d, month=m, year=y)
 
 # modified method from Python cookbook, #475186
 def supportsColor(stream):

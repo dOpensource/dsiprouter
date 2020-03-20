@@ -2,6 +2,28 @@
 
 
 
+### Stability Fixes and Cluster Sync/Install Updates
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Fri, 20 Mar 2020 11:53:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update pbx invite timeout on 180,181,183 response
+- update cdr email to send only last month of cdr's
+- disable mysql service on remote db configuration
+- fix redirection for isinstance checks
+- fix mysql service linking
+- update kamctlrc to include DB settings
+- fix issues installing with remote db
+- add setkamdbconfig command to allow changing db configs
+- add current work on clusterinstall command
+
+
+---
+
+
 ### Fix errors in dsiprouter script
 
 > Branches Affected: v0.60+ent  

@@ -1512,7 +1512,7 @@ def addEndpointGroups():
     finally:
         db.close()
 
-def generateCDRS(gwgroupid, type=None, email="False"):
+def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
     db = DummySession()
 
     # Define a dictionary object that represents the payload
@@ -1538,10 +1538,9 @@ def generateCDRS(gwgroupid, type=None, email="False"):
             responsePayload['message'] = "Endpont group doesn't exist"
             return json.dumps(responsePayload)
 
-        query = "select gwid, call_start_time, calltype as direction, dst_username as \
-         to_num, src_username as from_num, src_ip, dst_domain, duration,sip_call_id \
-         from dr_gateways,cdrs where (cdrs.src_ip = substring_index(dr_gateways.address,':',1) or cdrs.dst_domain = substring_index(dr_gateways.address,':',1)) and gwid in ({}) order by call_start_time DESC;".format(
-            gwlist)
+        query = """SELECT gwid, call_start_time, calltype AS direction, dst_username AS to_num, src_username AS from_num, src_ip, dst_domain, duration, sip_call_id
+            FROM dr_gateways, cdrs WHERE (cdrs.src_ip = substring_index(dr_gateways.address,':',1) OR cdrs.dst_domain = substring_index(dr_gateways.address,':',1))
+            AND gwid IN ({}) AND call_start_time >= '{}' ORDER BY call_start_time DESC;""".format(gwlist, dtfilter)
 
         cdrs = db.execute(query)
         rows = []
@@ -1586,28 +1585,31 @@ def generateCDRS(gwgroupid, type=None, email="False"):
             attachment = "attachment; filename={}_{}.csv".format(gwgroupName, dateTime)
             headers = {"Content-disposition": attachment}
 
-            if email == 'True' or email == 'true':
-                # Write out csv to a file
-                filename = '/tmp/{}_{}.csv'.format(gwgroupName, dateTime)
-                f = open(filename, 'wb')
-                for line in lines:
-                    f.write(line.encode())
-                f.close()
+            if email:
+                # recipients required
+                cdr_info = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
+                if cdr_info is not None:
+                    # Write out csv to a file
+                    filename = '/tmp/{}_{}.csv'.format(gwgroupName, dateTime)
+                    f = open(filename, 'wb')
+                    for line in lines:
+                        f.write(line.encode())
+                    f.close()
 
-                # Setup the parameters to send the email
-                data = {}
-                data['html_body'] = "<html>CDR Report for {}</html>".format(gwgroupName)
-                data['text_body'] = "CDR Report for {}".format(gwgroupName)
-                data['subject'] = "CDR Report for {}".format(gwgroupName)
-                data['attachments'] = []
-                data['attachments'].append(filename)
-                data['recipients'] = ["mack.hendricks@gmail.com"]
-                sendEmail(**data)
-                # Remove CDR's from the payload thats being returned
-                responsePayload.pop('cdrs')
-                responsePayload['format'] = 'csv'
-                responsePayload['type'] = 'email'
-                return json.dumps(responsePayload)
+                    # Setup the parameters to send the email
+                    data = {}
+                    data['html_body'] = "<html>CDR Report for {}</html>".format(gwgroupName)
+                    data['text_body'] = "CDR Report for {}".format(gwgroupName)
+                    data['subject'] = "CDR Report for {}".format(gwgroupName)
+                    data['attachments'] = []
+                    data['attachments'].append(filename)
+                    data['recipients'] = cdr_info.email.split(',')
+                    sendEmail(**data)
+                    # Remove CDR's from the payload thats being returned
+                    responsePayload.pop('cdrs')
+                    responsePayload['format'] = 'csv'
+                    responsePayload['type'] = 'email'
+                    return json.dumps(responsePayload)
 
             return Response(lines, mimetype="text/csv", headers=headers)
         else:
@@ -1635,7 +1637,7 @@ def generateCDRS(gwgroupid, type=None, email="False"):
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
-def getGatewayGroupCDRS(gwgroupid=None, type=None, email="False"):
+def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None):
     """
     Purpose
 
@@ -1646,11 +1648,14 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email="False"):
         debugEndpoint()
 
     if type is None:
-        type = request.args.get('type')
+        type = "JSON"
     else:
-        type = "JSON"  # Set the value to JSON if the type attribute is not specified
+        type = request.args.get('type')
 
-    email = request.args.get('email')
+    if email is None:
+        email = False
+    else:
+        email = bool(request.args.get('email', 0))
 
     return generateCDRS(gwgroupid, type, email)
 
