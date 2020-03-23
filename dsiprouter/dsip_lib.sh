@@ -540,9 +540,9 @@ dumpDB() {
         esac
     done
 
-    (mysqldump --single-transaction --opt --routines --triggers \
-        --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${MYSQL_DBNAME} \
-        | sed -r -e 's|DEFINER=[`"'"'"']\w*[`"'"'"']@[`"'"'"']\w*[`"'"'"']||g';
+    (mysqldump --single-transaction --opt --routines --triggers --hex-blob \
+        --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${MYSQL_DBNAME} 2>/dev/null \
+        | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g';
         exit ${PIPESTATUS[0]}; ) 2>/dev/null
     return $?
 }

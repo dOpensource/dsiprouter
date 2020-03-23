@@ -1,4 +1,4 @@
-import os, time, json, random
+import os, time, json, random, subprocess
 import urllib.parse as parse
 from functools import wraps
 from datetime import datetime
@@ -1760,10 +1760,14 @@ def createBackup(gwid=None):
             kampass = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
         else:
             kampass = settings.KAM_DB_PASS
-        dumpcmd = "mysqldump --single-transaction --opt --events --routines --triggers --host='" + settings.KAM_DB_HOST + \
-                  "' --user='" + settings.KAM_DB_USER + "' --password='" + kampass + "' " + settings.KAM_DB_NAME + \
-                  """ | sed -r -e 's|DEFINER=[`"'"'"']\w*[`"'"'"']@[`"'"'"']\w*[`"'"'"']||g'""" + " > " + backup_path
-        os.system(dumpcmd)
+
+        dumpcmd = ['/usr/bin/mysqldump', '--single-transaction', '--opt', '--routines', '--triggers', '--hex-blob', '-h', settings.KAM_DB_HOST, '-u',
+                   settings.KAM_DB_USER, '-p{}'.format(kampass), '-B', settings.KAM_DB_NAME]
+        with open(backup_path, 'wb') as fp:
+            dump = subprocess.Popen(dumpcmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]
+            dump = re.sub(rb'''DEFINER=[`"\'][a-zA-Z0-9_%]*[`"\']@[`"\'][a-zA-Z0-9_%]*[`"\']''', b'', dump, flags=re.MULTILINE)
+            dump = re.sub(rb'ENGINE=MyISAM', b'ENGINE=InnoDB', dump, flags=re.MULTILINE)
+            fp.write(dump)
 
         # lines = "It wrote the backup"
         # attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
@@ -1818,9 +1822,9 @@ def restoreBackup():
         KAM_DB_PASS = settings.KAM_DB_PASS
 
         if 'db_username' in data.keys():
-            KAM_DB_USER = data.get('db_username')
+            KAM_DB_USER = str(data.get('db_username'))
             if KAM_DB_USER != '':
-                KAM_DB_PASS = data.get('db_password')
+                KAM_DB_PASS = str(data.get('db_password'))
 
         if 'file' not in request.files:
             responsePayload['status'] = "401"
@@ -1846,12 +1850,12 @@ def restoreBackup():
             return responsePayload
 
         if len(KAM_DB_PASS) == 0:
-            restorecmd = "mysql --host='" + settings.KAM_DB_HOST + "' --user='" + str(
-                KAM_DB_USER) + "' " + settings.KAM_DB_NAME + " < " + restore_path
+            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-D', settings.KAM_DB_NAME]
         else:
-            restorecmd = "mysql --host='" + settings.KAM_DB_HOST + "' --user='" + str(KAM_DB_USER) + "' --password='" + str(
-                KAM_DB_PASS) + "' " + settings.KAM_DB_NAME + " < " + restore_path
-        os.system(restorecmd)
+            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-p{}'.format(KAM_DB_PASS), '-D', settings.KAM_DB_NAME]
+
+        with open(restore_path, 'rb') as fp:
+            subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
 
         responsePayload['status'] = "200"
         responsePayload['error'] = "The restore was successful"

@@ -2,6 +2,22 @@
 
 
 
+### Update mysqldump Commands to Handle More Use Cases
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Mon, 23 Mar 2020 14:04:50 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update mysql dump and commands to remove definer and MyISAM
+- update mysql dump and restore commands in api to be more secure
+- resolves #11
+
+
+---
+
+
 ### Increase Kamailio Max Loop Count
 
 > Branches Affected: v0.60+ent  
