@@ -2,6 +2,20 @@
 
 
 
+### Increase Kamailio Max Loop Count
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Mon, 23 Mar 2020 10:25:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- Resolves #8
+
+
+---
+
+
 ### Fix inbound mapping import issues
 
 > Branches Affected: v0.60+ent  
