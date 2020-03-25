@@ -78,11 +78,13 @@ setScriptSettings() {
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
+    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/tls_dsiprouter.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
     export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
     export SYSTEM_KAMAILIO_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg" # will be symlinked
+    export SYSTEM_KAMAILIO_TLS_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/tls.cfg" # will be symlinked
     export SYSTEM_RTPENGINE_CONFIG_DIR="/etc/rtpengine"
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
@@ -129,6 +131,8 @@ setScriptSettings() {
     export RTP_PORT_MAX=20000
     export KAM_SIP_PORT=5060
     export KAM_DMQ_PORT=5090
+    export KAM_TLS_PORT=5061
+    export KAM_WSS_PORT=4443
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
@@ -472,6 +476,7 @@ function configurePythonSettings {
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_PRIV_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_SSL_CERT_DIR' "$DSIP_SSL_CERT_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROTO' "$DSIP_GUI_PROTOCOL" ${DSIP_CONFIG_FILE} -q
@@ -490,9 +495,22 @@ function updatePythonRuntimeSettings {
 
 function configureSSL {
     ## Configure self signed certificate
-  
-    mkdir -p ${DSIP_SSL_CERT_DIR}
-    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
+
+    CERT_DIR=${DSIP_SYSTEM_CONFIG_DIR}/certs
+
+    # Configure Self-Signed Certs if no certs exist already
+    if [ -f "${CERT_DIR}/dsiprouter.crt"  -a  -f "${CERT_DIR}/dsiprouter.key" ]; then
+            printwarn "Certificate found in ${CERT_DIR} - using it"
+            chown root:kamailio ${CERT_DIR}/dsiprouter*
+            chmod g=+r ${CERT_DIR}/dsiprouter*
+    else
+            printdbg "Generating dSIPRouter Self-Signed Certificates"
+            mkdir -p ${CERT_DIR}
+            openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
+            chown root:kamailio ${CERT_DIR}/dsiprouter*
+            chmod g=+r ${CERT_DIR}/dsiprouter*
+    fi
+
 }
 
 # updates and settings in kam config that may change
@@ -621,6 +639,7 @@ function updateDnsConfig {
 function configureKamailio {
     # copy of template kamailio configuration to dsiprouter system config dir
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
+    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -760,9 +779,12 @@ function configureKamailio {
 
     # Backup kamcfg and link the dsiprouter kamcfg
     cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
+    cp -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
     rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    rm -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
     ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
-
+    ln -s ${DSIP_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
+    
     # kamcfg will contain plaintext passwords / tokens
     # make sure we give it reasonable permissions
     chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1121,6 +1143,8 @@ function installKamailio {
 
     ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
+	#Configure Certs
+	configureSSL
         configureKamailio
         updateKamailioConfig
     else
