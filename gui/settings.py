@@ -1,23 +1,23 @@
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
 
-DSIP_ID = None
+DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
 DSIP_CLUSTER_SYNC = True
 DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = 'admin'
-DSIP_SALT = b'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-DSIP_API_TOKEN = 'admin'
+DSIP_PASSWORD = b'c460aa699c815fe9c82642ed62b521c9b5f538014466906d1d9f556e23398b609d000198896b6163ef3f334528c201c7d08ca4bfa51f26ff968f1310b3040e39'
+DSIP_SALT = b'f7963b3106cce6bebe74fc94a23481442d7fcc1179f75385ec81236207fe8045943c0d4c116adb4f9b5fe9c02e790467f4b7aff5df88d5c9b9948adcc834b262'
+DSIP_API_TOKEN = b'8d1dbcdcfce936c5019ef0728f0a776da755ba2088c3059ebd833462b34c0882f323973b92c44347b4bcaab358bac91ec472c254f2aa11a38df25fa4d8333c1c912afe5e5bf209f412cfc65352300b34'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b''
+DSIP_IPC_PASS = b'28ca51991f409c3bea0dc110dca2d1548c2f45a8bf1393617d392588d18c33ecb84bb676353f58bed4265e96dd7fd012ad57f118fbd7f2285a8b4ac36840e72a2e96383b0946bb6875211aa8677b4c6d'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -35,7 +35,7 @@ DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
-VERSION = "0.60+ent"
+VERSION = '0.60+ent'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -91,14 +91,14 @@ TELEBLOCK_MEDIA_IP = ''
 TELEBLOCK_MEDIA_PORT = ''
 
 # Flowroute API Settings
-FLOWROUTE_ACCESS_KEY=''
-FLOWROUTE_SECRET_KEY=''
-FLOWROUTE_API_ROOT_URL = "https://api.flowroute.com/v2"
+FLOWROUTE_ACCESS_KEY = ''
+FLOWROUTE_SECRET_KEY = ''
+FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '192.168.0.1'
-INTERNAL_IP_NET = '192.168.0.*'
-EXTERNAL_IP_ADDR = '1.1.1.1'
+INTERNAL_IP_ADDR = '167.172.141.19'
+INTERNAL_IP_NET = '167.172.141.*'
+EXTERNAL_IP_ADDR = '167.172.141.19'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -108,7 +108,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install 
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = ''
+CLOUD_PLATFORM = 'DO'
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
@@ -117,8 +117,8 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = '{}@{}'.format(MAIL_USERNAME, MAIL_SERVER)
-MAIL_DEFAULT_SUBJECT = "dSIPRouter System Notification"
+MAIL_DEFAULT_SENDER = '@smtp.gmail.com'.format(MAIL_USERNAME, MAIL_SERVER)
+MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
 BACKUP_FOLDER= '/tmp'

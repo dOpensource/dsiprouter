@@ -29,7 +29,7 @@ function install {
     apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated --force-yes firewalld kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules
+    apt-get install -y --allow-unauthenticated --force-yes firewalld kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules
 
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
@@ -131,6 +131,7 @@ EOF
     # Firewall settings
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_TLS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
@@ -172,8 +173,11 @@ function uninstall {
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:
-    firewall-cmd --zone=public --remove-port=5060/udp --permanent
-
+    firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_TLS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
+    
     if [ -n "$DSIP_PORT" ]; then
         firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
     fi
