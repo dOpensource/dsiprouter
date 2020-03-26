@@ -2,6 +2,21 @@
 
 
 
+### Fix Carrier Update Changing Reload Button
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 26 Mar 2020 16:25:53 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update carriers.html to propagate reload state
+- Resolves #15
+
+
+---
+
+
 ### Fix Carrier Address Mismatch Issue
 
 > Branches Affected: v0.60+ent  

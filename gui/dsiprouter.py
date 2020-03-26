@@ -437,7 +437,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                         gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
-        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid)
+        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid, reload_required=globals.reload_required)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)

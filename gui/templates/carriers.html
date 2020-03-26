@@ -1,3 +1,11 @@
+{% if reload_required == True %}
+  <script type="application/javascript">
+    var reload_btn = $('#reloadkam');
+    reload_btn.removeClass('btn-primary');
+    reload_btn.addClass('btn-warning');
+  </script>
+{% endif %}
+
 <table id="carriers" class="table table-striped table-centered">
   <thead>
   <tr class='element-row'>
