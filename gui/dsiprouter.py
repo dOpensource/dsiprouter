@@ -491,8 +491,10 @@ def addUpdateCarriers():
         if len(gwid) <= 0:
             if len(gwgroup) > 0:
                 Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup)
+                db.add(Addr)
+                db.flush()
 
+                Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
                 db.add(Gateway)
                 db.flush()
 
@@ -505,10 +507,11 @@ def addUpdateCarriers():
 
             else:
                 Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER)
-                Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER)
-                db.add(Gateway)
+                db.add(Addr)
+                db.flush()
 
-            db.add(Addr)
+                Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
+                db.add(Gateway)
 
         # Updating
         else:
@@ -516,21 +519,43 @@ def addUpdateCarriers():
             Gateway.address = ip_addr
             Gateway.strip = strip
             Gateway.pri_prefix = prefix
-            fields = strFieldsToDict(Gateway.description)
-            fields['name'] = name
-            Gateway.description = dictToStrFields(fields)
 
-            # make the extra query to find associated gwgroup if needed
+            gw_fields = strFieldsToDict(Gateway.description)
+            gw_fields['name'] = name
             if len(gwgroup) <= 0:
-                Gateway = db.query(Gateways).filter(Gateways.gwid == gwid).first()
-                fields = strFieldsToDict(Gateway.description)
-                gwgroup = fields['gwgroup']
+                gw_fields['gwgroup'] = gwgroup
 
-            Addr = db.query(Address).filter(Address.tag.contains('gwgroup:{}'.format(gwgroup))).first()
-            Addr.ip_addr = ip_addr
-            fields = strFieldsToDict(Addr.tag)
-            fields['name'] = name
-            Addr.tag = dictToStrFields(fields)
+            # if address exists update
+            address_exists = False
+            if 'addr_id' in gw_fields:
+                Addr = db.query(Address).filter(Address.id == gw_fields['addr_id']).first()
+
+                # if entry is non existent handle in next block
+                if Addr is not None:
+                    address_exists = True
+
+                    Addr.ip_addr = ip_addr
+                    addr_fields = strFieldsToDict(Addr.tag)
+                    addr_fields['name'] = name
+
+                    if len(gwgroup) > 0:
+                        addr_fields['gwgroup'] = gwgroup
+                    Addr.tag = dictToStrFields(addr_fields)
+
+            # otherwise create the address
+            if 'addr_id' not in gw_fields or address_exists == False:
+                if len(gwgroup) > 0:
+                    Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                else:
+                    Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER)
+
+                db.add(Addr)
+                db.flush()
+                gw_fields['addr_id'] = str(Addr.id)
+
+            # gw_fields may be updated above so set after
+            Gateway.description = dictToStrFields(gw_fields)
+
 
         db.commit()
         globals.reload_required = True
@@ -578,29 +603,34 @@ def deleteCarriers():
 
         gwid = form['gwid']
         gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
-        name = form['name']
         related_rules = json.loads(form['related_rules']) if 'related_rules' in form else ''
 
         Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
-        # make the extra query to find associated gwgroup if needed
+        Gateway_Row = Gateway.first()
+        gw_fields = strFieldsToDict(Gateway_Row.description)
+
+        # find associated gwgroup if not provided
         if len(gwgroup) <= 0:
-            Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
-            fields = strFieldsToDict(Gateway.first().description)
-            gwgroup = fields['gwgroup']
-        # grab associated address entry as well
-        Addr = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(name)))
+            gwgroup = gw_fields['gwgroup'] if 'gwgroup' in gw_fields else ''
+
+        # remove associated address if exists
+        if 'addr_id' in gw_fields:
+            Addr = db.query(Address).filter(Address.id == gw_fields['addr_id'])
+            Addr.delete(synchronize_session=False)
+
         # grab any related carrier groups
         Gatewaygroups = db.execute('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET({}, dr_gw_lists.gwlist)'.format(gwid))
 
-        # remove gateway and address
+        # remove gateway
         Gateway.delete(synchronize_session=False)
-        Addr.delete(synchronize_session=False)
+
         # remove carrier from gwlist in carrier group
         for Gatewaygroup in Gatewaygroups:
             gwlist = list(filter(None, Gatewaygroup[1].split(",")))
             gwlist.remove(gwid)
             db.query(GatewayGroups).filter(GatewayGroups.id == str(Gatewaygroup[0])).update(
                 {'gwlist': ','.join(gwlist)}, synchronize_session=False)
+
         # remove carrier from gwlist in carrier rules
         if len(related_rules) > 0:
             rule_ids = related_rules.keys()

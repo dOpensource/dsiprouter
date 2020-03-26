@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
 from sqlalchemy import exc as sql_exceptions
 import settings
-from shared import IO, debugException, hostToIP
+from shared import IO, debugException, hostToIP, dictToStrFields
 from util.security import AES_CTR
 
 
@@ -31,10 +31,14 @@ class Gateways(object):
     Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gateways>`_
     """
 
-    def __init__(self, name, ip_addr, strip, prefix, type, gwgroup=None):
-        self.description = "name:" + name
+    def __init__(self, name, ip_addr, strip, prefix, type, gwgroup=None, addr_id=None):
+        description = {"name": name}
         if gwgroup is not None:
-            self.description += ",gwgroup:" + gwgroup
+            description["gwgroup"] = str(gwgroup)
+        if addr_id is not None:
+            description['addr_id'] = str(addr_id)
+
+        self.description = dictToStrFields(description)
         self.address = ip_addr
         self.strip = strip
         self.pri_prefix = prefix
@@ -61,9 +65,11 @@ class Address(object):
     """
 
     def __init__(self, name, ip_addr, mask, type, gwgroup=None):
-        self.tag = "name:" + name
+        tag = {"name": name}
         if gwgroup is not None:
-            self.tag += ",gwgroup:" + gwgroup
+            tag["gwgroup"] = str(gwgroup)
+
+        self.tag = dictToStrFields(tag)
         self.ip_addr = ip_addr
         self.mask = mask
         self.grp = type

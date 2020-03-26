@@ -2,10 +2,64 @@
 
 
 
-### Update mysqldump Commands to Handle More Use Cases
+### Fix Carrier Address Mismatch Issue
 
 > Branches Affected: v0.60+ent  
 > Tags Affected:   
+> Date: Thu, 26 Mar 2020 15:31:27 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update dr_gateways to track address entry id
+- Resolves #18
+
+
+---
+
+
+### Set KAM_DB_PASS to the default value of kamailiorw
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 25 Mar 2020 11:11:14 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Fixed a regression
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 25 Mar 2020 10:25:07 +0000  
+> Author: root (root@dSIP060entNightly-0.localdomain)  
+> Committer: root (root@dSIP060entNightly-0.localdomain)  
+
+
+
+---
+
+
+### TLS Support - Added support that will enable TLS on initial install - Added support to install the proper Kamailio modules for Debian - Added logic to generate a self-signed certitifcate during install
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 25 Mar 2020 00:18:39 +0000  
+> Author: root (root@dSIP060entNightly-0.localdomain)  
+> Committer: root (root@dSIP060entNightly-0.localdomain)  
+
+
+
+---
+
+
+### Update mysqldump Commands to Handle More Use Cases
+
+> Branches Affected: v0.60+ent  
+> Tags Affected: v0.60+ent-beta  
 > Date: Mon, 23 Mar 2020 14:04:50 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -378,7 +432,7 @@
 ### Fix pre-commit hook
 
 > Branches Affected: dmq-feature,v0.60+ent  
-> Tags Affected: v0.60+ent  
+> Tags Affected:   
 > Date: Tue, 8 Oct 2019 06:20:48 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
