@@ -72,6 +72,7 @@ setScriptSettings() {
     WITH_LCR=1
     export DEBUG=0
     export SERVERNAT=0
+    export TEAMS_ENABLED=1
     export REQ_PYTHON_MAJOR_VER=3
     export IPV6_ENABLED=0
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
@@ -92,6 +93,7 @@ setScriptSettings() {
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups"
     export CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
+  
 
     # Default MYSQL db root user values
     MYSQL_ROOT_DEF_USERNAME="root"
@@ -494,22 +496,40 @@ function updatePythonRuntimeSettings {
 }
 
 function configureSSL {
-    ## Configure self signed certificate
-
+    # Define the directory that will be used for storing Certificates and create that directory 
     CERT_DIR=${DSIP_SYSTEM_CONFIG_DIR}/certs
-
-    # Configure Self-Signed Certs if no certs exist already
+    mkdir -p ${CERT_DIR}
+    
+    # Check if certificates already exists.  If so, use them and exit
     if [ -f "${CERT_DIR}/dsiprouter.crt"  -a  -f "${CERT_DIR}/dsiprouter.key" ]; then
             printwarn "Certificate found in ${CERT_DIR} - using it"
             chown root:kamailio ${CERT_DIR}/dsiprouter*
             chmod g=+r ${CERT_DIR}/dsiprouter*
-    else
-            printdbg "Generating dSIPRouter Self-Signed Certificates"
-            mkdir -p ${CERT_DIR}
-            openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
-            chown root:kamailio ${CERT_DIR}/dsiprouter*
-            chmod g=+r ${CERT_DIR}/dsiprouter*
+	    return
     fi
+
+    # Use LetsEncrypt if Teams is Enabled
+    if (( ${TEAMS_ENABLED} == 1 )); then 
+            printdbg "Generating Cert for `hostname` using LetsEncrypt"
+    	    certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
+	    if (( ${?} == 0 )); then
+		rm -rf ${CERT_DIR}/dsiprouter*
+	    	ln -s  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
+	    	ln -s  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
+    		chown root:kamailio ${CERT_DIR}/dsiprouter*
+    		chmod g=+r ${CERT_DIR}/dsiprouter*
+	  	return 
+            else
+            	printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
+	    fi
+    fi	    
+    
+    # Worst case, genrate a Self-Signed Certificate
+    printdbg "Generating dSIPRouter Self-Signed Certificates"
+    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
+    chown root:kamailio ${CERT_DIR}/dsiprouter*
+    chmod g=+r ${CERT_DIR}/dsiprouter*
+    	  
 
 }
 
