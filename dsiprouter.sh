@@ -514,8 +514,8 @@ function configureSSL {
     	    certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
 	    if (( ${?} == 0 )); then
 		rm -rf ${CERT_DIR}/dsiprouter*
-	    	ln -s  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
-	    	ln -s  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
+	    	cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
+	    	cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
     		chown root:kamailio ${CERT_DIR}/dsiprouter*
     		chmod g=+r ${CERT_DIR}/dsiprouter*
 	  	return 
