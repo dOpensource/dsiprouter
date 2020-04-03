@@ -1798,6 +1798,7 @@ def reloadkam():
         return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
         return_code += subprocess.call(['kamcmd', 'drouting.reload'])
         return_code += subprocess.call(['kamcmd', 'domain.reload'])
+        return_code += subprocess.call(['kamcmd', 'dispatcher.reload'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])

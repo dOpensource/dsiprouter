@@ -26,7 +26,7 @@
     <th data-field="domain_type">Domain Type</th>
     <th data-field="pbx_name">Domain Created By</th>
     <th data-field="authtype">Domain Auth</th>
-    <th data-field="pbx_list">Mapped PBX(s)</th>
+    <th data-field="pbx_list">Mapped Endpoints</th>
     <th data-field="notes">Notes</th>
     <th></th>
     <th></th>
@@ -90,20 +90,29 @@
              placeholder="domainA.com,domainB.com">
     </div>
 
-    <div class="form-group">
-      <input class="pbx_list form-control" type="text" name="pbx_list"
-             placeholder="List of backend PBX ID's ">
-    </div>
 
     <div class="form-group">
       <div class="domainauthoptions radio">
-        <label><input class="authtype " type="radio" data-toggle="realtime" name="authtype" value="realtime" checked>
+         <select class="authtype form-control" name="authtype">
+		 <option value="">Select Domain Type</option>
+		 <option value="passthru">Pass Thru to PBX</option>
+		 <option value="msteams">Microsoft Teams Direct Routing</option>
+		 <option value="local">Local Subscriber Table</option>
+		 <option value=realtime">Real Time DB</option>
+	</select>
+	<!--
+	 <label><input class="authtype " type="radio" data-toggle="realtime" name="authtype" value="realtime" checked>
           Realtime DB (aka Asterisk Realtime)</label>
         <label><input class="authtype " type="radio" data-toggle="local" name="authtype" value="local">
           Local Subscriber Table</label>
         <label><input class="authtype " type="radio" data-toggle="passthru" name="authtype" value="passthru">
-          Pass Thru to PBX</label>
+	Pass Thru to PBX</label>-->
       </div>
+    </div>
+
+    <div class="form-group">
+      <input class="pbx_list form-control" type="text" name="pbx_list"
+             placeholder="List of backend PBX ID's ">
     </div>
 
     <div class="form-group">
@@ -138,21 +147,30 @@
              placeholder="domainA.com,domainB.com">
     </div>
 
-    <div class="form-group">
-      <input class="pbx_list form-control" type="text" name="pbx_list"
-             placeholder="List of backend PBX ID's ">
-    </div>
 
     <div class="form-group">
       <div class="domainauthoptions radio">
-        <label><input class="authtype " type="radio" data-toggle="realtime" name="authtype" value="realtime" checked>Realtime
+
+         <select class="authtype form-control" name="authtype">
+		 <option value="">Select Domain Type</option>
+		 <option value="passthru">Pass Thru to PBX</option>
+		 <option value="msteams">Microsoft Teams Direct Routing</option>
+		 <option value="local">Local Subscriber Table</option>
+		 <option value=realtime">Real Time DB</option>
+	</select>
+        <!--<label><input class="authtype " type="radio" data-toggle="realtime" name="authtype" value="realtime" checked>Realtime
           DB (aka Asterisk Realtime)</label>
         <label><input class="authtype " type="radio" data-toggle="local" name="authtype" value="local">Local Subscriber
           Table</label>
         <label><input class="authtype " type="radio" data-toggle="passthru" name="authtype" value="passthru">Pass Thru
           to
-          PBX</label>
+	  PBX</label>-->
       </div>
+    </div>
+    
+    <div class="form-group">
+      <input class="pbx_list form-control" type="text" name="pbx_list"
+             placeholder="List of backend PBX ID's ">
     </div>
 
     <div class="form-group">

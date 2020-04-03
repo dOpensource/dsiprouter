@@ -2,7 +2,7 @@ from flask import Blueprint, session, render_template
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways
+from database import Address,SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways
 from shared import *
 import settings
 import globals
@@ -50,6 +50,46 @@ def addDomain(domain, authtype, pbxs, notes, db):
         db.add(PBXDomainAttr5)
         db.add(PBXDomainAttr6)
 
+    # MSTeams Support
+    elif authtype == "msteams":
+        # Set of MS Teams Proxies
+        msteams_dns_endpoints=settings.MSTEAMS_DNS_ENDPOINTS
+        msteams_ip_endpointss=settings.MSTEAMS_IP_ENDPOINTS
+
+        # Attributes to specify that the domain was created manually
+        PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value="{}".format(",".join(msteams_dns_endpoints)))
+        PBXDomainAttr2 = DomainAttrs(did=domain, name='pbx_type', value="0")
+        PBXDomainAttr3 = DomainAttrs(did=domain, name='created_by', value="0")
+        PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
+        PBXDomainAttr5 = DomainAttrs(did=domain, name='description', value="notes:{}".format(notes))
+        # Serial folking will be used to forward registration info to multiple PBX's
+        PBXDomainAttr6 = DomainAttrs(did=domain, name='dispatcher_alg_reg', value="4")
+        PBXDomainAttr7 = DomainAttrs(did=domain, name='dispatcher_alg_in', value="4")
+        # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
+        PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
+
+        
+        for endpoint in msteams_dns_endpoints:
+            dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(settings.EXTERNAL_IP_ADDR,domain),description='msteam_endpoint:{}'.format(endpoint))
+            db.add(dispatcher)
+
+        db.add(PBXDomainAttr1)
+        db.add(PBXDomainAttr2)
+        db.add(PBXDomainAttr3)
+        db.add(PBXDomainAttr4)
+        db.add(PBXDomainAttr5)
+        db.add(PBXDomainAttr6)
+        db.add(PBXDomainAttr7)
+        db.add(PBXDomainAttr8)
+
+
+        # Check if the MSTeams IP(s) that send us OPTION messages is in the the address table
+        for endpoint_ip in msteams_ip_endpointss:
+            address_query = db.query(Address).filter(Address.ip_addr == endpoint_ip).first()
+            if address_query is None:
+                Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS, gwgroup=0)
+                db.add(Addr)
+
     # Implement external authentiction to either Realtime DB or Local Subscriber table
     else:
         # Attributes to specify that the domain was created manually
@@ -76,6 +116,39 @@ def addDomain(domain, authtype, pbxs, notes, db):
         db.add(PBXDomainAttr7)
         db.add(PBXDomainAttr8)
 
+@domains.route("/domains/msteams/<int:id>", methods=['GET'])
+def configureMSTeams(id):
+    
+    db = DummySession()
+    
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+            
+        db = SessionLoader()
+
+        return render_template('msteams.html', domainid=id, domain="sbc3.dsiprouter.net")
+    
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex, log_ex=True, print_ex=True, showstack=True)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
 
 @domains.route("/domains", methods=['GET'])
 def displayDomains():

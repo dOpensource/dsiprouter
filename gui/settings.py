@@ -36,7 +36,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = '0.60+ent'
-DEBUG = False
+DEBUG = True
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
@@ -67,7 +67,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = False
+SQLALCHEMY_SQL_DEBUG = True
 
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table
@@ -75,6 +75,7 @@ SQLALCHEMY_SQL_DEBUG = False
 # FLT_LCR_MIN/FLT_FWD_MIN:      range of groupid in dr_rules table
 FLT_CARRIER = 8
 FLT_PBX = 9
+FLT_MSTEAMS = 17
 FLT_OUTBOUND = 8000
 FLT_INBOUND = 9000
 FLT_LCR_MIN = 10000
@@ -122,9 +123,13 @@ MAIL_DEFAULT_SENDER = '@smtp.gmail.com'.format(MAIL_USERNAME, MAIL_SERVER)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
-BACKUP_FOLDER= '/tmp'
+BACKUP_FOLDER= '/tmp's
 
 # Where to sync settings from
 # file  - load from setting.py file
 # db    - load from dsip_settings table
 LOAD_SETTINGS_FROM = 'file'
+
+# micosoft teams settings
+MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
+MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
