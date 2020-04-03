@@ -36,7 +36,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = '0.60+ent'
-DEBUG = True
+DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
@@ -67,7 +67,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = True
+SQLALCHEMY_SQL_DEBUG = False
 
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table
@@ -123,7 +123,7 @@ MAIL_DEFAULT_SENDER = '@smtp.gmail.com'.format(MAIL_USERNAME, MAIL_SERVER)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
-BACKUP_FOLDER= '/tmp's
+BACKUP_FOLDER= '/tmp'
 
 # Where to sync settings from
 # file  - load from setting.py file
