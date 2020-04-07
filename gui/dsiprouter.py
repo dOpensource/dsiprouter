@@ -1312,7 +1312,7 @@ def deleteInboundMapping():
     finally:
         db.close()
 
-def processInboundMappingImport(filename, gwgroupid, name, db):
+def processInboundMappingImport(filename, override_gwgroupid, name, db):
     try:
         # Adding
         f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
@@ -1324,9 +1324,12 @@ def processInboundMappingImport(filename, gwgroupid, name, db):
                 continue
 
             prefix = row[0]
-            if len(row) > 1 and gwgroupid is None:
-                gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
-            if len(row) > 2:
+            if len(row) > 0:
+                if override_gwgroupid is not None:
+                    gwgroupid = override_gwgroupid
+                else:
+                    gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
+            if len(row) > 1:
                 description = 'name:{}'.format(row[2])
             else:
                 description = 'name:{}'.format(name)
