@@ -292,6 +292,7 @@ class dSIPCDRInfo(object):
         self.gwgroupid = gwgroupid
         self.email = email
         self.send_date = send_date
+        self.last_sent = None
 
     pass
 
@@ -512,6 +513,7 @@ def createSessionMaker():
     dsip_notification = Table('dsip_notification', metadata, autoload=True)
     dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
     dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
+    dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -542,6 +544,7 @@ def createSessionMaker():
     mapper(dSIPNotification, dsip_notification)
     mapper(dSIPHardFwd, dsip_hardfwd)
     mapper(dSIPFailFwd, dsip_failfwd)
+    mapper(dSIPCDRInfo, dsip_cdrinfo)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
