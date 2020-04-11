@@ -4,6 +4,7 @@ import os
 import subprocess
 import docker
 from database import Domain, DomainAttrs, dSIPMultiDomainMapping
+from util.security import AES_CTR
 
 #Obtain a set of FusionPBX systems that contains domains that Kamailio will route traffic to.
 def get_sources(db):
@@ -44,6 +45,7 @@ def drop_fusionpbx_domains(source, db):
     kam_password=db['password']
     kam_database=db['database']
 
+    
     pbx_domain_list = list(map(int, filter(None, pbx_domain_list.split(","))))
     pbx_attr_list = list(map(int, filter(None, pbx_attr_list.split(","))))
 
@@ -78,7 +80,7 @@ def sync_db(source,dest):
     kam_username=dest['username']
     kam_password=dest['password']
     kam_database=dest['database']
-     
+    
      
     domain_id_list = []
     attr_id_list = []
@@ -269,7 +271,7 @@ def sync_needed(source,dest):
     kam_username=dest['username']
     kam_password=dest['password']
     kam_database=dest['database']
-     
+    
      
     domain_id_list = []
     attr_id_list = []
@@ -340,10 +342,14 @@ def run_sync(settings):
             f.close()
 
         
+        # need to decrypt password if encrypted
+        if isinstance(settings.KAM_DB_PASS, bytes):
+            kam_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
+        
         dest={}
         dest['hostname']=settings.KAM_DB_HOST
         dest['username']=settings.KAM_DB_USER
-        dest['password']=settings.KAM_DB_PASS
+        dest['password']=kam_password
         dest['database']=settings.KAM_DB_NAME
 
         #Get the list of FusionPBX's that needs to be sync'd
