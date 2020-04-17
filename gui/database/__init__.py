@@ -209,6 +209,7 @@ class Subscribers(object):
 
     pass
 
+
 class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
@@ -222,6 +223,7 @@ class dSIPLeases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
+
 
 class dSIPMaintModes(object):
     """
@@ -237,6 +239,7 @@ class dSIPMaintModes(object):
 
     pass
 
+
 class dSIPCallLimits(object):
     """
     Schema for dsip_calllimit table\n
@@ -249,6 +252,7 @@ class dSIPCallLimits(object):
         self.createdate = datetime.now()
 
     pass
+
 
 class dSIPNotification(object):
     """
@@ -270,6 +274,7 @@ class dSIPNotification(object):
         self.createdate = datetime.now()
 
     pass
+
 
 class dSIPHardFwd(object):
     """
@@ -307,6 +312,7 @@ class dSIPFailFwd(object):
         self.dr_groupid = dr_groupid
 
     pass
+
 
 class UAC(object):
     """
@@ -378,6 +384,7 @@ class DomainAttrs(object):
         self.value = temp_value if temp_value is not None else did
 
     pass
+
 
 class Dispatcher(object):
     """
@@ -477,11 +484,10 @@ def createValidEngine(uri_list):
     except:
         raise Exception(errors)
 
-def createSessionMaker():
-    """
-    This method uses a singleton pattern and returns SessionLoader if created
-    :return:    SessionMaker() object
-    """
+
+
+def loadSession():
+    global session
 
     if 'SessionLoader' in globals():
         return globals()['SessionLoader']
@@ -623,11 +629,11 @@ class DummySession():
     def query_property(self, *args, **kwargs):
         DummySession.noop(*args, **kwargs)
 
-
 # TODO: we should be creating a queue of the valid db_engines
 # from there we can perform round robin connections and more advanced clustering
 # this does have the requirement of new session instancing per request
 
 # Make the engine and session maker global
 db_engine = createValidEngine(getDBURI())
-SessionLoader = createSessionMaker()
+SessionLoader = loadSession()
+

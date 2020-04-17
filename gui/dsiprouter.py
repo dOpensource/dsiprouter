@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
-from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
+from database import SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
@@ -1931,7 +1931,7 @@ def syncSettings(new_fields={}, update_net=False):
     db = DummySession()
 
     try:
-        db = SessionLoader()
+        db = SessionLoader
 
         # update ip's dynamically
         if update_net:
