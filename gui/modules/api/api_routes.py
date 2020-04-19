@@ -1247,6 +1247,7 @@ def addEndpointGroups():
         # Convert JSON message to Dictionary Object
         requestPayload = request.get_json()
 
+
         for parameter in requiredParameters:
             if parameter not in requestPayload:
                 raise http_exceptions.BadRequest("Request Argument '{}' is Required".format(parameter))
@@ -1298,6 +1299,34 @@ def addEndpointGroups():
                 Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
                 db.add(Subscriber)
 
+        # Enable FusionPBX Support for the Endpoint Group
+        if 'fusionpbx' in requestPayload:
+            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
+            fusionpbxdbonly = requestPayload['fusionpbx']['dbonly'] if 'dbonly' in requestPayload['fusionpbx'] else None
+            fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
+            fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
+            fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
+
+            # Convert fusionpbxenabled variable to int
+            if isinstance(fusionpbxenabled, str):
+                fusionpbxenabled = int(fusionpbxenabled)
+
+            if fusionpbxenabled == 1:
+                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
+                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+                db.add(domainmapping)
+
+                # Add the FusionPBX server as an Endpoint if it's not just the DB server
+
+                if fusionpbxdbonly is None or fusionpbxdbonly == False:
+                    endpoint={}
+                    endpoint['hostname'] = fusionpbxdbhost
+                    endpoint['description'] = "FusionPBX Server"
+                    if "endpoints" not in requestPayload:
+                        requestPayload['endpoints']=[]
+                    
+                    requestPayload['endpoints'].append(endpoint) 
+        
         # Setup Endpoints
         if "endpoints" in requestPayload:
             #Store the gateway lists
@@ -1353,21 +1382,6 @@ def addEndpointGroups():
                 cdrinfo = dSIPCDRInfo(gwgroupid,cdr_email,cdr_send_date)
                 db.add(cdrinfo)
 
-        # Enable FusionPBX
-        if 'fusionpbx' in requestPayload:
-            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
-            fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
-            fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
-            fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
-
-            # Convert fusionpbxenabled variable to int
-            if isinstance(fusionpbxenabled, str):
-                fusionpbxenabled = int(fusionpbxenabled)
-
-            if fusionpbxenabled == 1:
-                domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
-                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
-                db.add(domainmapping)
 
         # DEBUG
         # for key, value in data.items():

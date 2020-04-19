@@ -102,7 +102,7 @@ def displayDomains():
             on t2.did=domain_attrs.did join
             ( select did,value as domain_auth from domain_attrs where name='domain_auth' ) t3
             on t3.did=domain_attrs.did join
-            ( select did,description as creator from domain_attrs left join dr_gateways on domain_attrs.value = dr_gateways.gwid where name='created_by') t4
+            ( select did,description as creator from domain_attrs left join dr_gw_lists on domain_attrs.value = dr_gw_lists.id where name='created_by') t4
             on t4.did=domain_attrs.did;"""
 
         res2 = db.execute(sql2)
