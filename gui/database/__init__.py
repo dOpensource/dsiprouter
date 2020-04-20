@@ -328,7 +328,7 @@ class UAC(object):
         REG_IN_PROGRESS_AUTH = 8
         REG_INITIALIZED = 16
 
-    def __init__(self, uuid, username="", password="", realm="", proxy="", local_domain="", remote_domain="", flags=0):
+    def __init__(self, uuid, username="", password="", realm="", auth_username="",auth_proxy="", local_domain="", remote_domain="", flags=0):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
@@ -337,13 +337,13 @@ class UAC(object):
             self.auth_username = ""
         else:
             self.r_username = username
-            self.auth_username = username
+            self.auth_username = auth_username
 
         self.r_domain = remote_domain
         self.realm = realm
         self.auth_password = password
         self.auth_ha1 = ""
-        self.auth_proxy = proxy
+        self.auth_proxy = auth_proxy
         self.expires = 60
         self.flags = flags
         self.reg_delay = 0

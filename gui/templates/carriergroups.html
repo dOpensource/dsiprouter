@@ -246,8 +246,8 @@
               <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
                 <p>Please enter the registration username and password provided by the carrier.</p>
                 <div class="form-group">
-                  <input class="form-control auth_username" type="text" name="auth_username"
-                         placeholder="Auth Username" autofocus="autofocus">
+                  <input class="form-control auth_username" type="text" name="r_username"
+                         placeholder="Username" autofocus="autofocus">
                 </div>
                 <div class="form-group">
                   <input class="form-control auth_password" type="password" name="auth_password"
@@ -255,7 +255,18 @@
                 </div>
                 <div class="form-group">
                   <input class="form-control auth_domain" type="text" name="auth_domain"
-                         placeholder="Registration Server (IP or Hostname)">
+                         placeholder="Registration Server or Domain">
+                </div>
+                <div class="form-group">
+          	<h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
+                </div>
+                <div class="form-group">
+                  <input class="form-control auth_domain" type="text" name="auth_username"
+                         placeholder="Auth Username">
+                </div>
+                <div class="form-group">
+                  <input class="form-control auth_domain" type="text" name="auth_proxy"
+                         placeholder="Outbound Proxy">
                 </div>
               </div>
               <div class="modal-footer ">
@@ -327,20 +338,31 @@
 
             <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
               <p>Please enter the registration username and password provided by the carrier.</p>
-              <div class="form-group">
-                <input class="form-control auth_username" type="text" name="auth_username"
-                       placeholder="Auth Username">
-              </div>
-              <div class="form-group">
-                <input class="form-control auth_password" type="password" name="auth_password"
-                       placeholder="Auth Password">
-              </div>
-              <div class="form-group">
-                <input class="form-control auth_domain" type="text" name="auth_domain"
-                       placeholder="Registration Server (IP or Hostname)">
+                <div class="form-group">
+                  <input class="form-control auth_username" type="text" name="r_username"
+                         placeholder="Username" autofocus="autofocus">
+                </div>
+                <div class="form-group">
+                  <input class="form-control auth_password" type="password" name="auth_password"
+                         placeholder="Auth Password">
+                </div>
+                <div class="form-group">
+                  <input class="form-control auth_domain" type="text" name="auth_domain"
+                         placeholder="Registration Server or Domain">
+                </div>
+                <div class="form-group">
+          	<h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
+                </div>
+                <div class="form-group">
+                  <input class="form-control auth_domain" type="text" name="auth_username"
+                         placeholder="Auth Username">
+                </div>
+                <div class="form-group">
+                  <input class="form-control auth_domain" type="text" name="auth_proxy"
+                         placeholder="Outbound Proxy">
+                </div>
               </div>
             </div>
-
             <div class="modal-footer ">
               <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
                   class="glyphicon glyphicon-ok-sign"></span> Add

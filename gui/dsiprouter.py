@@ -233,10 +233,17 @@ def addUpdateCarrierGroups():
         name = form['name']
         new_name = form['new_name'] if 'new_name' in form else ''
         authtype = form['authtype'] if 'authtype' in form else ''
+        r_username = form['r_username'] if 'r_username' in form else ''
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
-        auth_proxy = "sip:{}@{}:5060".format(auth_username, auth_domain)
+        auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else None
+        if auth_proxy is None:
+            #Use the r_username to auth against the proxy
+            auth_proxy = "sip:{}@{}".format(r_username, auth_domain)
+        else:
+            #Use the auth_username against the auth proxy
+            auth_proxy = "sip:{}@{}".format(auth_username,auth_proxy)
 
         # Adding
         if len(gwgroup) <= 0:
@@ -248,13 +255,12 @@ def addUpdateCarrierGroups():
             gwgroup = Gwgroup.id
 
             if authtype == "userpwd":
-                Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
-                    settings.EXTERNAL_IP_ADDR, auth_domain)
+                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,auth_proxy=auth_proxy,
+                    local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 # Add auth_domain(aka registration server) to the gateway list
-                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                #Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
-                db.add(Addr)
-
+                #db.add(Addr)
             else:
                 Uacreg = UAC(gwgroup, username=gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
                 db.add(Uacreg)
