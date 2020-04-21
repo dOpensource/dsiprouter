@@ -41,10 +41,13 @@
         <td class='gwgroup'>{{ row.id|noneFilter() }}</td>
         <td class='name'>{{ row.description|attrFilter('name')|noneFilter() }}</td>
         <td class='gwlist'>{{ row.gwlist|noneFilter() }}</td>
-        <td class='authtype hide'>{{ row.auth_username|noneFilter() }}</td>
-        <td class='auth_username hide'>{{ row.auth_username|noneFilter() }}</td>
+        <td class='authtype hide'>{{ row.r_username|noneFilter() }}</td>
+        <td class='r_username hide'>{{ row.r_username|noneFilter() }}</td>
         <td class='auth_password hide'>{{ row.auth_password|noneFilter() }}</td>
-        <td class='auth_domain hide'>{{ row.realm|noneFilter() }}</td>
+        <td class='auth_domain hide'>{{ row.r_domain|noneFilter() }}</td>
+        <td class='auth_username hide'>{{ row.auth_username|noneFilter() }}</td>
+        <td class='auth_proxy hide'>{{ row.auth_proxy|noneFilter() }}</td>
+        <td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
@@ -246,7 +249,7 @@
               <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
                 <p>Please enter the registration username and password provided by the carrier.</p>
                 <div class="form-group">
-                  <input class="form-control auth_username" type="text" name="r_username"
+                  <input class="form-control r_username" type="text" name="r_username"
                          placeholder="Username" autofocus="autofocus">
                 </div>
                 <div class="form-group">
@@ -261,11 +264,11 @@
           	<h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
                 </div>
                 <div class="form-group">
-                  <input class="form-control auth_domain" type="text" name="auth_username"
+                  <input class="form-control auth_username" type="text" name="auth_username"
                          placeholder="Auth Username">
                 </div>
                 <div class="form-group">
-                  <input class="form-control auth_domain" type="text" name="auth_proxy"
+                  <input class="form-control auth_proxy" type="text" name="auth_proxy"
                          placeholder="Outbound Proxy">
                 </div>
               </div>
@@ -339,7 +342,7 @@
             <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
               <p>Please enter the registration username and password provided by the carrier.</p>
                 <div class="form-group">
-                  <input class="form-control auth_username" type="text" name="r_username"
+                  <input class="form-control r_username" type="text" name="r_username"
                          placeholder="Username" autofocus="autofocus">
                 </div>
                 <div class="form-group">
@@ -354,11 +357,11 @@
           	<h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
                 </div>
                 <div class="form-group">
-                  <input class="form-control auth_domain" type="text" name="auth_username"
+                  <input class="form-control auth_username" type="text" name="auth_username"
                          placeholder="Auth Username">
                 </div>
                 <div class="form-group">
-                  <input class="form-control auth_domain" type="text" name="auth_proxy"
+                  <input class="form-control auth_proxy" type="text" name="auth_proxy"
                          placeholder="Outbound Proxy">
                 </div>
               </div>

@@ -180,12 +180,12 @@ def displayCarrierGroups(gwgroup=None):
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.auth_username, UAC.auth_password, UAC.realm).filter(
+                UAC.r_username, UAC.auth_password, UAC.r_domain,UAC.auth_username,UAC.auth_proxy).filter(
                 GatewayGroups.id == gwgroup).first()]
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.auth_username, UAC.auth_password, UAC.realm).filter(GatewayGroups.description.like(typeFilter))
+                UAC.r_username, UAC.auth_password, UAC.r_domain,UAC.auth_username,UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
 
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
@@ -238,13 +238,28 @@ def addUpdateCarrierGroups():
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else None
-        if auth_proxy is None:
-            #Use the r_username to auth against the proxy
+        if "sip:" in auth_proxy or "sips:" in auth_proxy:
+            #Search and grab the hostname or ip address
+            #m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
+            m = re.search(':(.*@)?(.*)(:.*)?',auth_proxy)
+            if m:
+                ip_addr = hostToIP(m.group(2));
+            #Let the user set the authproxy field manually
+            pass
+        elif auth_proxy is '' or auth_proxy is None:
+            #IP Address to store in the address table
+            ip_addr = hostToIP(auth_domain)
+            #Use the r_username to auth against the auth domain
             auth_proxy = "sip:{}@{}".format(r_username, auth_domain)
         else:
-            #Use the auth_username against the auth proxy
-            auth_proxy = "sip:{}@{}".format(auth_username,auth_proxy)
-
+            ip_addr = hostToIP(auth_proxy)
+            if auth_username is '' or auth_username is None:
+                #User r_username is auth_username is empty
+                auth_proxy = "sip:{}@{}".format(r_username, auth_proxy)
+            else:
+                #Use the auth_username against the auth proxy
+                auth_proxy = "sip:{}@{}".format(auth_username,auth_proxy)
+            
         # Adding
         if len(gwgroup) <= 0:
             print(name)
@@ -258,9 +273,9 @@ def addUpdateCarrierGroups():
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 # Add auth_domain(aka registration server) to the gateway list
-                #Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
-                #db.add(Addr)
+                db.add(Addr)
             else:
                 Uacreg = UAC(gwgroup, username=gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
                 db.add(Uacreg)
@@ -279,12 +294,12 @@ def addUpdateCarrierGroups():
             else:
                 if authtype == "userpwd":
                     db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': auth_username, 'r_username': auth_username, 'auth_username': auth_username,
+                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
                          'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False)
                     Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name)))
                     Addr.delete(synchronize_session=False)
-                    Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                     db.add(Addr)
 
                 else:
