@@ -259,7 +259,7 @@ function validateOSInfo {
         case "$DISTRO_VER" in
             9|8)
                 if [[ -z "$KAM_VERSION" ]]; then
-                   KAM_VERSION=51
+                   KAM_VERSION=53
                 fi
                 ;;
             7)
