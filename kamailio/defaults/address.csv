@@ -38,9 +38,9 @@ null;FLT_CARRIER;209.166.154.71;32;0;name:VI Carrier,gwgroup:4
 null;FLT_CARRIER;72.15.219.140;32;0;name:Thinq Carrier,gwgroup:5
 null;FLT_CARRIER;216.147.191.157;32;0;name:Voxtelesys Carrier,gwgroup:6
 null;FLT_CARRIER;64.34.181.47;32;0;name:Les.net Carrier,gwgroup:7
-null;FLT_MSTEAMS;"52.114.148.0";"32";"0";"name:msteams-sbc,gwgroup:0"
-null;FLT_MSTEAMS;"52.114.132.46";"32";"0";"name:msteams-sbc,gwgroup:0"
-null;FLT_MSTEAMS;"52.114.75.24";"32";"0";"name:msteams-sbc,gwgroup:0"
-null;FLT_MSTEAMS;"52.114.76.76";"32";"0";"name:msteams-sbc,gwgroup:0"
-null;FLT_MSTEAMS;"52.114.7.24";"32";"0";"name:msteams-sbc,gwgroup:0"
-null;FLT_MSTEAMS;"52.114.14.70";"32";"0";"name:msteams-sbc,gwgroup:0"
+null;FLT_MSTEAMS;52.114.148.0;32;0;name:msteams-sbc,gwgroup:0
+null;FLT_MSTEAMS;52.114.132.46;32;0;name:msteams-sbc,gwgroup:0
+null;FLT_MSTEAMS;52.114.75.24;32;0;name:msteams-sbc,gwgroup:0
+null;FLT_MSTEAMS;52.114.76.76;32;0;name:msteams-sbc,gwgroup:0
+null;FLT_MSTEAMS;52.114.7.24;32;0;name:msteams-sbc,gwgroup:0
+null;FLT_MSTEAMS;52.114.14.70;32;0;name:msteams-sbc,gwgroup:0

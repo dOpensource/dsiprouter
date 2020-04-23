@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+#set -x
 #=============== dSIPRouter Management Script ==============#
 #
 # install, configure, and manage dsiprouter
@@ -495,25 +495,42 @@ function updatePythonRuntimeSettings {
 }
 
 function configureSSL {
-    ## Configure self signed certificate
-
+    # Define the directory that will be used for storing Certificates and create that directory
     CERT_DIR=${DSIP_SYSTEM_CONFIG_DIR}/certs
+    mkdir -p ${CERT_DIR}
 
-    # Configure Self-Signed Certs if no certs exist already
+    # Check if certificates already exists.  If so, use them and exit
     if [ -f "${CERT_DIR}/dsiprouter.crt"  -a  -f "${CERT_DIR}/dsiprouter.key" ]; then
             printwarn "Certificate found in ${CERT_DIR} - using it"
             chown root:kamailio ${CERT_DIR}/dsiprouter*
             chmod g=+r ${CERT_DIR}/dsiprouter*
-    else
-            printdbg "Generating dSIPRouter Self-Signed Certificates"
-            mkdir -p ${CERT_DIR}
-            openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
-            chown root:kamailio ${CERT_DIR}/dsiprouter*
-            chmod g=+r ${CERT_DIR}/dsiprouter*
+            return
     fi
 
-}
+    # Use LetsEncrypt if Teams is Enabled
+    if (( ${TEAMS_ENABLED} == 1 )); then
+            printdbg "Generating Cert for `hostname` using LetsEncrypt"
+            certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
+            if (( ${?} == 0 )); then
+                rm -rf ${CERT_DIR}/dsiprouter*
+                cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
+                cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
+                chown root:kamailio ${CERT_DIR}/dsiprouter*
+                chmod g=+r ${CERT_DIR}/dsiprouter*
+                return
+            else
+                printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
+            fi
+    fi
 
+    # Worst case, genrate a Self-Signed Certificate
+    printdbg "Generating dSIPRouter Self-Signed Certificates"
+    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
+    chown root:kamailio ${CERT_DIR}/dsiprouter*
+    chmod g=+r ${CERT_DIR}/dsiprouter*
+
+
+}
 # updates and settings in kam config that may change
 # should be run after changing settings.py or change in network configurations
 # TODO: add support for hot reloading of kam settings. i.e. using kamcmd cfg.sets <key> <val> / kamcmd cfg.seti <key> <val>
@@ -742,6 +759,8 @@ function configureKamailio {
         # sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+        sed "s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+            /tmp/defaults/address.csv  > /tmp/defaults/address.csv
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
         sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
