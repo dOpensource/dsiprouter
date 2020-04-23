@@ -64,6 +64,7 @@ setScriptSettings() {
     # Define some defaults and environment variables
     FLT_CARRIER=8
     FLT_PBX=9
+    FLT_MSTEAMS=22
     FLT_OUTBOUND=8000
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
