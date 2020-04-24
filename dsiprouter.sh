@@ -509,6 +509,9 @@ function configureSSL {
 
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
+    	    #Open port 80 for hostname validation
+    	    firewall-cmd --zone=public --add-port=80/tcp --permanent
+	    firewall-cmd --reload
             printdbg "Generating Cert for `hostname` using LetsEncrypt"
             certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
             if (( ${?} == 0 )); then
@@ -521,6 +524,8 @@ function configureSSL {
             else
                 printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
             fi
+	    firewall-cmd --zone=public --remove-port=80/tcp --permanent
+	    firewall-cmd --reload
     #fi
 
     # Worst case, genrate a Self-Signed Certificate
