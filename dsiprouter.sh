@@ -507,8 +507,8 @@ function configureSSL {
             return
     fi
 
-    # Use LetsEncrypt if Teams is Enabled
-    if (( ${TEAMS_ENABLED} == 1 )); then
+    # Try to create cert using LetsEncrypt's first
+    #if (( ${TEAMS_ENABLED} == 1 )); then
             printdbg "Generating Cert for `hostname` using LetsEncrypt"
             certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
             if (( ${?} == 0 )); then
@@ -521,7 +521,7 @@ function configureSSL {
             else
                 printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
             fi
-    fi
+    #fi
 
     # Worst case, genrate a Self-Signed Certificate
     printdbg "Generating dSIPRouter Self-Signed Certificates"
