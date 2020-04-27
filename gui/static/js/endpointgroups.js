@@ -2,8 +2,6 @@
 function addEndpointGroup(action) {
 
   /** Get data from the modal */
-  var modal_body = $(selector + ' .modal-body');
-
   // The default action is a POST (creating a new EndpointGroup)
   if (action == undefined) {
     action = "POST";
@@ -17,11 +15,12 @@ function addEndpointGroup(action) {
     url = "/api/v1/endpointgroups/" + gwgroupid;
   }
 
-  var requestPayload = {};
+  var requestPayload = new Object();
   requestPayload.name = modal_body.find(".name").val();
   requestPayload.calllimit = modal_body.find(".calllimit").val();
 
-  var auth = {};
+  var auth = new Object();
+  
   if (action == "POST") {
     if ($('input#ip.authtype').is(':checked')) {
       auth.type = "ip";
