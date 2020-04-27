@@ -2,8 +2,6 @@
 function addEndpointGroup(action) {
 
   /** Get data from the modal */
-
-
   // The default action is a POST (creating a new EndpointGroup)
   if (action == undefined) {
     action = "POST"
@@ -20,14 +18,11 @@ function addEndpointGroup(action) {
     url = "/api/v1/endpointgroups/" + gwgroupid
   }
 
-
   var requestPayload = new Object();
   requestPayload.name = modal_body.find(".name").val();
   requestPayload.calllimit = modal_body.find(".calllimit").val();
 
   var auth = new Object();
-
-
   if (action == "POST") {
     if ($('input#ip.authtype').is(':checked')) {
       auth.type = "ip";
@@ -46,7 +41,6 @@ function addEndpointGroup(action) {
       auth.pass = modal_body.find("#auth_password2").val();
     }
   }
-
 
   auth.user = modal_body.find(".auth_username").val();
   auth.domain = modal_body.find(".auth_domain").val();
@@ -78,7 +72,6 @@ function addEndpointGroup(action) {
 
   requestPayload.fusionpbx = fusionpbx;
 
-
   /* Process endpoints */
   endpoints = new Array();
   $("tr.endpoint").each(function(i, row) {
@@ -90,9 +83,7 @@ function addEndpointGroup(action) {
 
     endpoints.push(endpoint);
   });
-
   requestPayload.endpoints = endpoints;
-
 
   // Put into JSON Message and send over
   $.ajax({
@@ -129,37 +120,13 @@ function addEndpointGroup(action) {
   })
 }
 
-
 function updateEndpointGroup() {
   addEndpointGroup("PUT");
 }
 
-
-function deleteEndpointGroup() {
-  $.ajax({
-    type: "DELETE",
-    url: "/api/v1/endpointgroups/" + gwgroupid,
-    dataType: "json",
-    contentType: "application/json; charset=utf-8",
-    success: function(msg) {
-      reloadkamrequired();
-    }
-  });
-
-
-  $('#delete').modal('hide');
-  $('#edit').modal('hide');
-  $('#endpointgroups').DataTable().ajax.reload();
-}
-
-$('#open-EndpointGroupsAdd').click(function() {
-  clearEndpointGroupModal();
-})
-
-
-function clearEndpointGroupModal() {
+function clearEndpointGroupModal(modal_selector) {
   /** Clear out the modal */
-  var modal_body = $('#add .modal-body');
+  var modal_body = $(modal_selector).find('.modal-body');
   modal_body.find(".gwgroupid").val('');
   modal_body.find(".name").val('');
   modal_body.find(".ip_addr").val('');
@@ -180,11 +147,10 @@ function clearEndpointGroupModal() {
 
 
   // Clear out update button in add footer
-  var modal_footer = $('#add .modal-footer');
+  var modal_footer = modal_body.find('.modal-footer');
   modal_footer.find("#addButton").attr("disabled", false);
 
   // Clear out update button in add footer
-  var modal_footer = $('#edit .modal-footer');
   modal_footer.find("#updateButton").attr("disabled", false);
 
   // Remove Endpont Rows
@@ -195,28 +161,28 @@ function clearEndpointGroupModal() {
   // Make the Auth tab the default
   modal_body.find(".auth-tab").addClass("active");
 
+  // make sure userpwd options not shown
+  modal_body.find('.userpwd').addClass('hidden');
 
   /* make sure ip_addr not disabled */
   toggleElemDisabled(modal_body.find('.ip_addr'), false);
 }
 
 function displayEndpointGroup(msg) {
-  clearEndpointGroupModal();
-
   var modal_body = $('#edit .modal-body');
   modal_body.find(".name").val(msg.name);
   modal_body.find(".gwgroupid").val(msg.gwgroupid);
   modal_body.find(".calllimit").val(msg.calllimit);
 
   if (msg.auth.type == "ip") {
-    $('input#ip2.authtype').prop('checked', true);
-    $("div").find("#userpwd_enabled2").hide();
-    $("div").find("#userpwd_enabled").hide();
+    $('#ip2.authtype').prop('checked', true);
+    $("#userpwd_enabled2").addClass('hidden');
+    $("#userpwd_enabled").addClass('hidden');
   }
   else {
-    $('input#userpwd2.authtype').prop('checked', true);
-    $("div").find("#userpwd_enabled2").show();
-    $("div").find("#userpwd_enabled").show();
+    $('#userpwd2.authtype').prop('checked', true);
+    $("#userpwd_enabled2").removeClass('hidden');
+    $("#userpwd_enabled").removeClass('hidden');
   }
 
   modal_body.find(".auth_username").val(msg.auth.user);
@@ -289,7 +255,6 @@ function deleteEndpointGroup() {
   $('#edit').modal('hide');
   $('#endpointgroups').DataTable().ajax.reload();
 }
-
 
 $(document).ready(function() {
   $('#endpointgroups').DataTable({
@@ -367,8 +332,8 @@ $(document).ready(function() {
   });
 
   $('#edit').on('show.bs.modal', function() {
-    clearEndpointGroupModal();
-    //console.log("The current endpointgroup is " + gwgroupid);
+    clearEndpointGroupModal('#edit');
+
     // Show the auth tab by default when the modal shows
     var modal_body = $('#edit .modal-body');
     modal_body.find("[name='auth-toggle']").trigger('click');
@@ -402,55 +367,59 @@ $(document).ready(function() {
     table.data('Tabledit').reload();
     $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
   });
-});
 
-$(".toggle-password").click(function() {
-  var input = $($(this).attr("toggle"));
-  if (input.attr("type") == "password") {
-    input.attr("type", "text");
-    $(this).removeClass("glyphicon glyphicon-eye-close");
-    $(this).addClass("glyphicon glyphicon-eye-open");
-  }
-  else {
-    input.attr("type", "password");
-    $(this).removeClass("glyphicon glyphicon-eye-open");
-    $(this).addClass("glyphicon glyphicon-eye-close");
-  }
-});
+  $(".toggle-password").click(function() {
+    var input = $($(this).attr("toggle"));
+    if (input.attr("type") == "password") {
+      input.attr("type", "text");
+      $(this).removeClass("glyphicon glyphicon-eye-close");
+      $(this).addClass("glyphicon glyphicon-eye-open");
+    }
+    else {
+      input.attr("type", "password");
+      $(this).removeClass("glyphicon glyphicon-eye-open");
+      $(this).addClass("glyphicon glyphicon-eye-close");
+    }
+  });
 
-$("#authoptions :input").on('change click', function() {
-  var self = $('#authoptions');
-  var userpwd_div = self.find('#userpwd_enabled');
+  $("#authoptions :input").change(function() {
+    var userpwd_div = $('#userpwd_enabled');
+    var authpwd_inp = $("#auth_password");
+    var togglepwd_span = $(".toggle-password");
 
-  if (self.find('#ip').is(':checked')) {
-    userpwd_div.hide();
-  }
-  else {
-    $.ajax({
-      type: "GET",
-      url: "/api/v1/sys/generatepassword",
-      dataType: "json",
-      contentType: "application/json; charset=utf-8",
-      success: function(msg) {
-        $("#auth_password").attr("type", "text");
-        $("#auth_password").val(msg.password)
-        $(".toggle-password").removeClass("glyphicon glyphicon-eye-close");
-        $(".toggle-password").addClass("glyphicon glyphicon-eye-open");
-      }
-    });
+    if ($('#ip').is(':checked')) {
+      userpwd_div.addClass('hidden');
+    }
+    else {
+      $.ajax({
+        type: "GET",
+        url: "/api/v1/sys/generatepassword",
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        success: function(msg) {
+          authpwd_inp.attr("type", "text");
+          authpwd_inp.val(msg.password)
+          togglepwd_span.removeClass("glyphicon glyphicon-eye-close");
+          togglepwd_span.addClass("glyphicon glyphicon-eye-open");
+        }
+      });
 
-    userpwd_div.show();
-  }
-});
+      userpwd_div.removeClass('hidden');
+    }
+  });
 
-$("#authoptions2 :input").on('change click', function() {
-  var self = $('#authoptions2');
-  var userpwd_div = self.find('#userpwd_enabled');
+  $("#authoptions2 :input").change(function() {
+    var userpwd_div = $('#userpwd_enabled2');
 
-  if (self.find('#ip2').is(':checked')) {
-    userpwd_div.hide();
-  }
-  else {
-    userpwd_div.show();
-  }
+    if ($('#ip2').is(':checked')) {
+      userpwd_div.addClass('hidden');
+    }
+    else {
+      userpwd_div.removeClass('hidden');
+    }
+  });
+
+  $('#open-EndpointGroupsAdd').click(function() {
+    clearEndpointGroupModal('#add');
+  });
 });

@@ -94,7 +94,7 @@ setScriptSettings() {
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups"
     export CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
-  
+
 
     # Default MYSQL db root user values
     MYSQL_ROOT_DEF_USERNAME="root"
@@ -694,22 +694,26 @@ function configureKamailio {
             < $sqlscript
     fi
 
+    # Update schema for subscribers table
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        -e 'ALTER TABLE subscriber ADD email_address varchar(128) DEFAULT "" NOT NULL, ADD rpid varchar(128) DEFAULT "" NOT NULL;'
+
     # Install schema for custom LCR logic
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_lcr.sql
-    
+
     # Install schema for custom MaintMode logic
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_maintmode.sql
-    
-    # Install schema for Call Limit 
+
+    # Install schema for Call Limit
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_calllimit.sql
-    
-    # Install schema for Notifications 
+
+    # Install schema for Notifications
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_notification.sql
-    
+
     # Install schema for gw2gwgroup
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
@@ -813,7 +817,7 @@ function configureKamailio {
     rm -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
     ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
     ln -s ${DSIP_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
-    
+
     # kamcfg will contain plaintext passwords / tokens
     # make sure we give it reasonable permissions
     chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1075,7 +1079,7 @@ EOF
 
     # Generate the API token
     generateAPIToken
-    
+
     # Generate a unique admin password
     generatePassword
 
@@ -2824,7 +2828,7 @@ function processCMD {
                     shift
                     break
                 fi
-                
+
                 OPT="$1"
                 case $OPT in
                     -debug)

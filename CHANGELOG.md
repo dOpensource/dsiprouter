@@ -2,6 +2,22 @@
 
 
 
+### v0.60+ent pre-release fixes
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Mon, 27 Apr 2020 19:08:38 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix subscriber table reversion
+- add animation to hidden css class
+- fix endpoint groups ip auth selection issue
+
+
+---
+
+
 ### Small Fixes
 
 > Branches Affected: v0.60+ent  
