@@ -8,16 +8,16 @@ DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = b'578ea75db709b1f9d1004b4e907237fbc55475afae339c9c04914d1329b0e71f4f7aef4ac9a670bebdfc03e4c6835a38870d4303b010dcd27e5623b7825e33be'
-DSIP_SALT = b'77ea97c42a28b22875448dc713214629f99c08848da5273d6a46c82b01f79f729e08dffb8edfac936861cb41412d7297e3e50854b66961746217b7776a9e359a'
-DSIP_API_TOKEN = b'0772ddeb9da77db4d4c516c58d09a7774d889eb4852707a8a014857a51fe43338a51d0283f9406d5885c369bc2a8315b93eeafe1173c998c17d75fa12d8126d2ec6abc5a956bfef960cc1c3b49c1f2c7'
+DSIP_PASSWORD = 'admin'
+DSIP_SALT = b'898fcd1eb7c7d1448e89bf23bcc0a5bb69b3530b288a0f1549be86b625f11de24ecc13486028756dd0414ef4246f5ad0b1a47c980eee42e6d8c7a131fa014144'
+DSIP_API_TOKEN = b'f3829d31db4dba539d451a3ac4eebdd1820d3480'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b'3dedc1844427fd6281d9a01aec71702a5a0003dbc08cd0ddfe549a76e2f95b95ae40e44a5d43216f5d04e7bf5b15bcece9af36f58a9f866f6004f4f98f8c4335c1a7b5a9875f0140d2bf21fcad10d6c8'
+DSIP_IPC_PASS = b'c2402ae586450f345f5df0bfce71dce7868e6f0f7c036c13781e85e91f4554262c6c6d2179a8ca11952c4bba1cf5c494bb132867f5f0baaa6cff83bbd3a62ad355104837ba8c31dd6c0f810592dc2092'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -36,7 +36,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = '0.60+ent'
-DEBUG = False
+DEBUG = True
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
@@ -57,7 +57,7 @@ KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
-KAM_DB_PASS = b'3094cff5c41bfc5371cd953428ea3f4132e2580e0d0abdcddeb3'
+KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
@@ -67,7 +67,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = False
+SQLALCHEMY_SQL_DEBUG = True
 
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table

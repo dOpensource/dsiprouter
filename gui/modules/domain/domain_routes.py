@@ -42,7 +42,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
         PBXDomainAttr5 = DomainAttrs(did=domain, name='description', value="notes:{}".format(notes))
         PBXDomainAttr6 = DomainAttrs(did=domain, name='pbx_ip', value=gatewayIdToIP(pbx_id, db))
-        
+
         db.add(PBXDomainAttr1)
         db.add(PBXDomainAttr2)
         db.add(PBXDomainAttr3)
@@ -54,7 +54,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
     elif authtype == "msteams":
         # Set of MS Teams Proxies
         msteams_dns_endpoints=settings.MSTEAMS_DNS_ENDPOINTS
-        msteams_ip_endpointss=settings.MSTEAMS_IP_ENDPOINTS
+        msteams_ip_endpoints=settings.MSTEAMS_IP_ENDPOINTS
 
         # Attributes to specify that the domain was created manually
         PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value="{}".format(",".join(msteams_dns_endpoints)))
@@ -68,10 +68,11 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
 
-        
-        for endpoint in msteams_dns_endpoints:
-            dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(settings.EXTERNAL_IP_ADDR,domain),description='msteam_endpoint:{}'.format(endpoint))
-            db.add(dispatcher)
+        # Use the default MS Teams SIP Proxy List if one isn't defined
+        if len(pbx_list) == 0:
+            for endpoint in msteams_dns_endpoints:
+                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(settings.EXTERNAL_IP_ADDR,domain),description='msteam_endpoint:{}'.format(endpoint))
+                db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
         db.add(PBXDomainAttr2)
@@ -104,7 +105,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
         for pbx_id in pbx_list:
-            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id), description='pbx_id:{}'.format(pbx_id))
+            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id,db), description='pbx_id:{}'.format(pbx_id))
             db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
@@ -118,17 +119,24 @@ def addDomain(domain, authtype, pbxs, notes, db):
 
 @domains.route("/domains/msteams/<int:id>", methods=['GET'])
 def configureMSTeams(id):
-    
+
     db = DummySession()
-    
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
-            
+
         db = SessionLoader()
 
-        return render_template('msteams.html', domainid=id, domain="sbc3.dsiprouter.net")
-    
+        if not session.get('logged_in'):
+            return render_template('index.html')
+
+        domain_query = db.query(Domain).filter(Domain.id == id)
+        domain = domain_query.first()
+
+
+        return render_template('msteams.html', domainid=id, domain=domain)
+
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
         error = "db"
@@ -152,13 +160,13 @@ def configureMSTeams(id):
 
 @domains.route("/domains", methods=['GET'])
 def displayDomains():
-    
+
     db = DummySession()
-    
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
-            
+
         db = SessionLoader()
 
         if not session.get('logged_in'):
@@ -175,7 +183,7 @@ def displayDomains():
             on t2.did=domain_attrs.did join
             ( select did,value as domain_auth from domain_attrs where name='domain_auth' ) t3
             on t3.did=domain_attrs.did join
-            ( select did,description as creator from domain_attrs left join dr_gateways on domain_attrs.value = dr_gateways.gwid where name='created_by') t4
+            ( select did,description as creator from domain_attrs left join dr_gw_lists on domain_attrs.value = dr_gw_lists.id where name='created_by') t4
             on t4.did=domain_attrs.did;"""
 
         res2 = db.execute(sql2)
@@ -188,7 +196,7 @@ def displayDomains():
                 name = "Manually Created"
 
             pbx_lookup[row['did']] = {
-                'pbx_list': str(row['pbx_list']).strip('[]').replace("'",""),
+                'pbx_list': str(row['pbx_list']).strip('[]').replace("'","").replace(",",", "),
                 'domain_auth': row['domain_auth'],
                 'name': name,
                 'notes': notes
@@ -260,10 +268,10 @@ def addUpdateDomain():
                 domain_query.delete(synchronize_session=False)
                 db.flush()
 
-            addDomain(domainlist.split(",")[0].strip(), authtype, pbxs, notes)
+            addDomain(domainlist.split(",")[0].strip(), authtype, pbxs, notes, db)
 
         db.commit()
-        globals.reload_required = True 
+        globals.reload_required = True
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -300,7 +308,7 @@ def deleteDomain():
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
-        
+
         form = stripDictVals(request.form.to_dict())
 
         domainid = form['domain_id'] if 'domain_id' in form else ''
@@ -315,7 +323,7 @@ def deleteDomain():
         domainEntry.delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True 
+        globals.reload_required = True
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:

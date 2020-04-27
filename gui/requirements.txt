@@ -6,7 +6,6 @@ psycopg2
 psycopg2_binary
 pycrypto
 PyMySQL
-pyspark
 pytz
 requests
 SQLAlchemy

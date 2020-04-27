@@ -209,6 +209,7 @@ class Subscribers(object):
 
     pass
 
+
 class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
@@ -222,6 +223,7 @@ class dSIPLeases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
+
 
 class dSIPMaintModes(object):
     """
@@ -237,6 +239,7 @@ class dSIPMaintModes(object):
 
     pass
 
+
 class dSIPCallLimits(object):
     """
     Schema for dsip_calllimit table\n
@@ -249,6 +252,7 @@ class dSIPCallLimits(object):
         self.createdate = datetime.now()
 
     pass
+
 
 class dSIPNotification(object):
     """
@@ -271,6 +275,7 @@ class dSIPNotification(object):
 
     pass
 
+
 class dSIPHardFwd(object):
     """
     Schema for dsip_hardfwd table\n
@@ -292,6 +297,7 @@ class dSIPCDRInfo(object):
         self.gwgroupid = gwgroupid
         self.email = email
         self.send_date = send_date
+        self.last_sent = None
 
     pass
 
@@ -307,6 +313,7 @@ class dSIPFailFwd(object):
 
     pass
 
+
 class UAC(object):
     """
     Schema for uacreg table\n
@@ -321,7 +328,7 @@ class UAC(object):
         REG_IN_PROGRESS_AUTH = 8
         REG_INITIALIZED = 16
 
-    def __init__(self, uuid, username="", password="", realm="", proxy="", local_domain="", remote_domain="", flags=0):
+    def __init__(self, uuid, username="", password="", realm="", auth_username="",auth_proxy="", local_domain="", remote_domain="", flags=0):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
@@ -330,13 +337,13 @@ class UAC(object):
             self.auth_username = ""
         else:
             self.r_username = username
-            self.auth_username = username
+            self.auth_username = auth_username
 
         self.r_domain = remote_domain
         self.realm = realm
         self.auth_password = password
         self.auth_ha1 = ""
-        self.auth_proxy = proxy
+        self.auth_proxy = auth_proxy
         self.expires = 60
         self.flags = flags
         self.reg_delay = 0
@@ -377,6 +384,7 @@ class DomainAttrs(object):
         self.value = temp_value if temp_value is not None else did
 
     pass
+
 
 class Dispatcher(object):
     """
@@ -476,11 +484,10 @@ def createValidEngine(uri_list):
     except:
         raise Exception(errors)
 
-def createSessionMaker():
-    """
-    This method uses a singleton pattern and returns SessionLoader if created
-    :return:    SessionMaker() object
-    """
+
+
+def loadSession():
+    global session
 
     if 'SessionLoader' in globals():
         return globals()['SessionLoader']
@@ -512,6 +519,7 @@ def createSessionMaker():
     dsip_notification = Table('dsip_notification', metadata, autoload=True)
     dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
     dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
+    dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -542,6 +550,7 @@ def createSessionMaker():
     mapper(dSIPNotification, dsip_notification)
     mapper(dSIPHardFwd, dsip_hardfwd)
     mapper(dSIPFailFwd, dsip_failfwd)
+    mapper(dSIPCDRInfo, dsip_cdrinfo)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
@@ -620,11 +629,11 @@ class DummySession():
     def query_property(self, *args, **kwargs):
         DummySession.noop(*args, **kwargs)
 
-
 # TODO: we should be creating a queue of the valid db_engines
 # from there we can perform round robin connections and more advanced clustering
 # this does have the requirement of new session instancing per request
 
 # Make the engine and session maker global
 db_engine = createValidEngine(getDBURI())
-SessionLoader = createSessionMaker()
+SessionLoader = loadSession()
+

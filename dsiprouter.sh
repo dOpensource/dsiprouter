@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+#set -x
 #=============== dSIPRouter Management Script ==============#
 #
 # install, configure, and manage dsiprouter
@@ -64,6 +64,7 @@ setScriptSettings() {
     # Define some defaults and environment variables
     FLT_CARRIER=8
     FLT_PBX=9
+    FLT_MSTEAMS=22
     FLT_OUTBOUND=8000
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
@@ -261,7 +262,7 @@ function validateOSInfo {
         case "$DISTRO_VER" in
             9|8)
                 if [[ -z "$KAM_VERSION" ]]; then
-                   KAM_VERSION=51
+                   KAM_VERSION=53
                 fi
                 ;;
             7)
@@ -497,34 +498,39 @@ function updatePythonRuntimeSettings {
 }
 
 function configureSSL {
-    # Define the directory that will be used for storing Certificates and create that directory 
+    # Define the directory that will be used for storing Certificates and create that directory
     CERT_DIR=${DSIP_SYSTEM_CONFIG_DIR}/certs
     mkdir -p ${CERT_DIR}
-    
+
     # Check if certificates already exists.  If so, use them and exit
     if [ -f "${CERT_DIR}/dsiprouter.crt"  -a  -f "${CERT_DIR}/dsiprouter.key" ]; then
             printwarn "Certificate found in ${CERT_DIR} - using it"
             chown root:kamailio ${CERT_DIR}/dsiprouter*
             chmod g=+r ${CERT_DIR}/dsiprouter*
-	    return
+            return
     fi
 
-    # Use LetsEncrypt if Teams is Enabled
-    if (( ${TEAMS_ENABLED} == 1 )); then 
+    # Try to create cert using LetsEncrypt's first
+    #if (( ${TEAMS_ENABLED} == 1 )); then
+    	    #Open port 80 for hostname validation
+    	    firewall-cmd --zone=public --add-port=80/tcp --permanent
+	    firewall-cmd --reload
             printdbg "Generating Cert for `hostname` using LetsEncrypt"
-    	    certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
-	    if (( ${?} == 0 )); then
-		rm -rf ${CERT_DIR}/dsiprouter*
-	    	cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
-	    	cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
-    		chown root:kamailio ${CERT_DIR}/dsiprouter*
-    		chmod g=+r ${CERT_DIR}/dsiprouter*
-	  	return 
+            certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
+            if (( ${?} == 0 )); then
+                rm -rf ${CERT_DIR}/dsiprouter*
+                cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
+                cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
+                chown root:kamailio ${CERT_DIR}/dsiprouter*
+                chmod g=+r ${CERT_DIR}/dsiprouter*
+                return
             else
-            	printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
-	    fi
-    fi	    
-    
+                printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
+            fi
+	    firewall-cmd --zone=public --remove-port=80/tcp --permanent
+	    firewall-cmd --reload
+    #fi
+
     # Worst case, genrate a Self-Signed Certificate
     printdbg "Generating dSIPRouter Self-Signed Certificates"
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
@@ -532,8 +538,8 @@ function configureSSL {
     chmod g=+r ${CERT_DIR}/dsiprouter*
     	  
 
-}
 
+}
 # updates and settings in kam config that may change
 # should be run after changing settings.py or change in network configurations
 # TODO: add support for hot reloading of kam settings. i.e. using kamcmd cfg.sets <key> <val> / kamcmd cfg.seti <key> <val>
@@ -763,6 +769,8 @@ function configureKamailio {
         # sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+        sed "s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+            /tmp/defaults/address.csv  > /tmp/defaults/address.csv
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
         sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \

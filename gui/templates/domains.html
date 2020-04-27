@@ -40,7 +40,7 @@
     <td class='domain_name'>{{ row.domain }}</td>
     <td class='domain_type'>{{ row.type|domainTypeFilter() }}</td>
     {% if row.type|domainTypeFilter() == "Dynamic" %}
-    <td class='pbx_name'><a href="/pbx?id={{ pbxlookup[row.domain]['pbx_list'] }}">{{ pbxlookup[row.domain]['name']
+    <td class='pbx_name'><a href="/endpointgroups?id={{ pbxlookup[row.domain]['pbx_list'] }}">{{ pbxlookup[row.domain]['name']
       }}</a></td>
     {% else %}
     <td class='pbx_name'>Manually Created</td>

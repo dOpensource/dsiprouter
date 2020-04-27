@@ -70,10 +70,13 @@ function setCarrierGroupHandlers() {
     modal_body.find(".name").val('');
     modal_body.find(".gwlist").val('');
     modal_body.find(".authtype").val('');
+    modal_body.find(".r_username").val('');
     modal_body.find(".auth_username").val('');
     modal_body.find(".auth_password").val('');
     modal_body.find(".auth_domain").val('');
-    // update gwgroup for all modals
+    modal_body.find(".auth_proxy").val('');
+    
+   // update gwgroup for all modals
     $('.modal-body').find(".gwgroup").each(function() {
       $(this).val('');
     });
@@ -89,9 +92,11 @@ function setCarrierGroupHandlers() {
     var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
     var gwlist = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
     var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-    var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+    var r_username = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
     var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
     var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
+    var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
+    var auth_proxy = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
 
     /** Clear out the modal */
     var modal_body = $('#edit-group .modal-body');
@@ -100,9 +105,12 @@ function setCarrierGroupHandlers() {
     modal_body.find(".new_name").val('');
     modal_body.find(".gwlist").val('');
     modal_body.find(".authtype").val('');
-    modal_body.find(".auth_username").val('');
+    modal_body.find(".r_username").val('');
     modal_body.find(".auth_password").val('');
     modal_body.find(".auth_domain").val('');
+    modal_body.find(".auth_username").val('');
+    modal_body.find(".auth_proxy").val('');
+
     // update gwgroup for all modals
     $('.modal-body').find(".gwgroup").each(function() {
       $(this).val('');
@@ -113,10 +121,13 @@ function setCarrierGroupHandlers() {
     modal_body.find(".new_name").val(name);
     modal_body.find(".gwlist").val(gwlist);
     modal_body.find(".authtype").val(authtype);
-    modal_body.find(".auth_username").val(auth_username);
+    modal_body.find(".r_username").val(r_username);
     modal_body.find(".auth_password").val(auth_password);
     modal_body.find(".auth_domain").val(auth_domain);
-    // update gwgroup for all modals
+    modal_body.find(".auth_username").val(auth_username);
+    modal_body.find(".auth_proxy").val(auth_proxy);
+    
+	  // update gwgroup for all modals
     $('.modal-body').find(".gwgroup").each(function() {
       $(this).val(gwgroup);
     });

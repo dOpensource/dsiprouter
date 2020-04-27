@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # import library functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 

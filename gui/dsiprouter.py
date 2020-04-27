@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
-from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
+from database import SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
@@ -180,12 +180,12 @@ def displayCarrierGroups(gwgroup=None):
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.auth_username, UAC.auth_password, UAC.realm).filter(
+                UAC.r_username, UAC.auth_password, UAC.r_domain,UAC.auth_username,UAC.auth_proxy).filter(
                 GatewayGroups.id == gwgroup).first()]
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.auth_username, UAC.auth_password, UAC.realm).filter(GatewayGroups.description.like(typeFilter))
+                UAC.r_username, UAC.auth_password, UAC.r_domain,UAC.auth_username,UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
 
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
@@ -233,10 +233,32 @@ def addUpdateCarrierGroups():
         name = form['name']
         new_name = form['new_name'] if 'new_name' in form else ''
         authtype = form['authtype'] if 'authtype' in form else ''
+        r_username = form['r_username'] if 'r_username' in form else ''
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
-        auth_proxy = "sip:{}@{}:5060".format(auth_username, auth_domain)
+        auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else None
+        if "sip:" in auth_proxy or "sips:" in auth_proxy:
+            #Search and grab the hostname or ip address
+            #m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
+            m = re.search(':(.*@)?(.*)(:.*)?',auth_proxy)
+            if m:
+                ip_addr = hostToIP(m.group(2));
+            #Let the user set the authproxy field manually
+            pass
+        elif auth_proxy is '' or auth_proxy is None:
+            #IP Address to store in the address table
+            ip_addr = hostToIP(auth_domain)
+            #Use the r_username to auth against the auth domain
+            auth_proxy = "sip:{}@{}".format(r_username, auth_domain)
+        else:
+            ip_addr = hostToIP(auth_proxy)
+            if auth_username is '' or auth_username is None:
+                #User r_username is auth_username is empty
+                auth_proxy = "sip:{}@{}".format(r_username, auth_proxy)
+            else:
+                #Use the auth_username against the auth proxy
+                auth_proxy = "sip:{}@{}".format(auth_username,auth_proxy)
 
         # Adding
         if len(gwgroup) <= 0:
@@ -248,13 +270,12 @@ def addUpdateCarrierGroups():
             gwgroup = Gwgroup.id
 
             if authtype == "userpwd":
-                Uacreg = UAC(gwgroup, auth_username, auth_password, auth_domain, auth_proxy,
-                    settings.EXTERNAL_IP_ADDR, auth_domain)
+                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,auth_proxy=auth_proxy,
+                    local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 # Add auth_domain(aka registration server) to the gateway list
-                Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
-
             else:
                 Uacreg = UAC(gwgroup, username=gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
                 db.add(Uacreg)
@@ -273,12 +294,12 @@ def addUpdateCarrierGroups():
             else:
                 if authtype == "userpwd":
                     db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': auth_username, 'r_username': auth_username, 'auth_username': auth_username,
+                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
                          'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False)
                     Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name)))
                     Addr.delete(synchronize_session=False)
-                    Addr = Address(name + "-uac", hostToIP(auth_domain), 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                     db.add(Addr)
 
                 else:
@@ -1312,7 +1333,7 @@ def deleteInboundMapping():
     finally:
         db.close()
 
-def processInboundMappingImport(filename, gwgroupid, name, db):
+def processInboundMappingImport(filename, override_gwgroupid, name, db):
     try:
         # Adding
         f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
@@ -1324,9 +1345,12 @@ def processInboundMappingImport(filename, gwgroupid, name, db):
                 continue
 
             prefix = row[0]
-            if len(row) > 1 and gwgroupid is None:
-                gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
-            if len(row) > 2:
+            if len(row) > 0:
+                if override_gwgroupid is not None:
+                    gwgroupid = override_gwgroupid
+                else:
+                    gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
+            if len(row) > 1:
                 description = 'name:{}'.format(row[2])
             else:
                 description = 'name:{}'.format(name)
@@ -1890,7 +1914,7 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectReloadRequired():
-    return dict(reload_required=globals.reload_required, enterprise_enabled=globals.enterprise_enabled)
+    return dict(reload_required=globals.reload_required, licensed=globals.licensed)
 
 class CustomServer(Server):
     """ Customize the Flask server with our settings """
@@ -1929,7 +1953,7 @@ def syncSettings(new_fields={}, update_net=False):
     db = DummySession()
 
     try:
-        db = SessionLoader()
+        db = SessionLoader
 
         # update ip's dynamically
         if update_net:

@@ -84,8 +84,8 @@ EOF
  RUN_KAMAILIO=yes
  USER=kamailio
  GROUP=kamailio
- SHM_MEMORY=64
- PKG_MEMORY=8
+ SHM_MEMORY=128
+ PKG_MEMORY=16
  PIDFILE=/var/run/kamailio/kamailio.pid
  CFGFILE=/etc/kamailio/kamailio.cfg
  #DUMP_CORE=yes

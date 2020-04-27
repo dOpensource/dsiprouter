@@ -102,7 +102,10 @@ def getDNSNames():
 def hostToIP(host):
     """ Returns ip of host, or None on failure"""
     try:
-         return socket.gethostbyname(host)
+        # Remove any port numbers from the ip
+        if ":" in host:
+            host = host.split(":",1)[0]
+        return socket.gethostbyname(host)
     except:
         return None
 
