@@ -559,3 +559,16 @@ a.navlink {
 .selected {
   background-color: #acbad4 !important;
 }
+
+.wrapper-fieldicon-right {
+  position: relative;
+}
+
+.wrapper-fieldicon-right > span {
+  position: absolute;
+  bottom: 6px;
+  right: 12px;
+  cursor: pointer;
+  line-height: inherit;
+  top: inherit;
+}

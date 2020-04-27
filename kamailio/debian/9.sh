@@ -3,6 +3,8 @@
 (( $DEBUG == 1 )) && set -x
 
 function install {
+    local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
+
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl
     apt-get install -y logrotate rsyslog
@@ -14,13 +16,14 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
-    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* stretch.*' /etc/apt/sources.list > /dev/null
-    # If repo is not installed
-    if [ $? -eq 1 ]; then
-        echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
-        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main" >> /etc/apt/sources.list
-        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch  main" >> /etc/apt/sources.list
-    fi
+    # add repo sources to apt
+    mkdir -p /etc/apt/sources.list.d
+    (cat << EOF
+# kamailio repo's
+deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
+echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
+EOF
+    ) > ${KAM_SOURCES_LIST}
 
     # Add Key for Kamailio Repo
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
@@ -29,11 +32,7 @@ function install {
     apt-get update -y
 
     # Install Kamailio packages
-<<<<<<< HEAD
-    apt-get install -y --allow-unauthenticated --force-yes firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules
-=======
-    apt-get install -y --allow-unauthenticated --force-yes firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules kamailio-websocket-modules
->>>>>>> v0.60+ent
+    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules kamailio-websocket-modules
 
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
@@ -65,10 +64,10 @@ EOF
     reconfigureMysqlSystemdService
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    if grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    if grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -187,7 +186,7 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_TLS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
-    
+
     if [ -n "$DSIP_PORT" ]; then
         firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
     fi

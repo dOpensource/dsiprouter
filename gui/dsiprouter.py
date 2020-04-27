@@ -13,7 +13,7 @@ from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
-from database import SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
+from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
@@ -243,7 +243,7 @@ def addUpdateCarrierGroups():
             #m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
             m = re.search(':(.*@)?(.*)(:.*)?',auth_proxy)
             if m:
-                ip_addr = hostToIP(m.group(2));
+                ip_addr = hostToIP(m.group(2))
             #Let the user set the authproxy field manually
             pass
         elif auth_proxy is '' or auth_proxy is None:
@@ -253,12 +253,8 @@ def addUpdateCarrierGroups():
             auth_proxy = "sip:{}@{}".format(r_username, auth_domain)
         else:
             ip_addr = hostToIP(auth_proxy)
-            if auth_username is '' or auth_username is None:
-                #User r_username is auth_username is empty
-                auth_proxy = "sip:{}@{}".format(r_username, auth_proxy)
-            else:
-                #Use the auth_username against the auth proxy
-                auth_proxy = "sip:{}@{}".format(auth_username,auth_proxy)
+            # r_username used in register
+            auth_proxy = "sip:{}@{}".format(r_username, auth_proxy)
 
         # Adding
         if len(gwgroup) <= 0:
@@ -1538,7 +1534,7 @@ def displayOutboundRoutes():
         teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes='')
+        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=getCustomRoutes())
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)

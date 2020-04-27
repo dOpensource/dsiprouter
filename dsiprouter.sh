@@ -124,6 +124,7 @@ setScriptSettings() {
     # Force the installation of a Kamailio version by uncommenting
     #KAM_VERSION=44 # Version 4.4.x
     #KAM_VERSION=51 # Version 5.1.x
+    #KAM_VERSION=53 # Version 5.3.x
 
     # Uncomment and set this variable to an explicit Python executable file name
     # If set, the script will not try and find a Python version with 3.5 as the major release number
@@ -503,32 +504,32 @@ function configureSSL {
     mkdir -p ${CERT_DIR}
 
     # Check if certificates already exists.  If so, use them and exit
-    if [ -f "${CERT_DIR}/dsiprouter.crt"  -a  -f "${CERT_DIR}/dsiprouter.key" ]; then
-            printwarn "Certificate found in ${CERT_DIR} - using it"
-            chown root:kamailio ${CERT_DIR}/dsiprouter*
-            chmod g=+r ${CERT_DIR}/dsiprouter*
-            return
+    if [ -f "${CERT_DIR}/dsiprouter.crt" -a -f "${CERT_DIR}/dsiprouter.key" ]; then
+        printwarn "Certificate found in ${CERT_DIR} - using it"
+        chown root:kamailio ${CERT_DIR}/dsiprouter*
+        chmod g=+r ${CERT_DIR}/dsiprouter*
+        return
     fi
 
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
-    	    #Open port 80 for hostname validation
-    	    firewall-cmd --zone=public --add-port=80/tcp --permanent
-	    firewall-cmd --reload
-            printdbg "Generating Cert for `hostname` using LetsEncrypt"
-            certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
-            if (( ${?} == 0 )); then
-                rm -rf ${CERT_DIR}/dsiprouter*
-                cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
-                cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
-                chown root:kamailio ${CERT_DIR}/dsiprouter*
-                chmod g=+r ${CERT_DIR}/dsiprouter*
-                return
-            else
-                printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
-            fi
-	    firewall-cmd --zone=public --remove-port=80/tcp --permanent
-	    firewall-cmd --reload
+    #Open port 80 for hostname validation
+    firewall-cmd --zone=public --add-port=80/tcp --permanent
+    firewall-cmd --reload
+    printdbg "Generating Cert for `hostname` using LetsEncrypt"
+    certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
+    if (( ${?} == 0 )); then
+        rm -rf ${CERT_DIR}/dsiprouter*
+        cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
+        cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
+        chown root:kamailio ${CERT_DIR}/dsiprouter*
+        chmod g=+r ${CERT_DIR}/dsiprouter*
+        return
+    else
+        printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
+    fi
+    firewall-cmd --zone=public --remove-port=80/tcp --permanent
+    firewall-cmd --reload
     #fi
 
     # Worst case, genrate a Self-Signed Certificate
@@ -536,10 +537,8 @@ function configureSSL {
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
     chown root:kamailio ${CERT_DIR}/dsiprouter*
     chmod g=+r ${CERT_DIR}/dsiprouter*
-    	  
-
-
 }
+
 # updates and settings in kam config that may change
 # should be run after changing settings.py or change in network configurations
 # TODO: add support for hot reloading of kam settings. i.e. using kamcmd cfg.sets <key> <val> / kamcmd cfg.seti <key> <val>
@@ -845,9 +844,9 @@ function fixMPATH {
         fi
     done
 
-    printdbg "The Kamailio mpath has been updated to:$mpath"
     if [ "$mpath" != '' ]; then
         sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONFIG_FILE}
+        printdbg "The Kamailio mpath has been updated to: $mpath"
     else
         printerr "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
         cleanupAndExit 1
@@ -1173,8 +1172,7 @@ function installKamailio {
 
     ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
-	#Configure Certs
-	configureSSL
+	    configureSSL
         configureKamailio
         updateKamailioConfig
     else

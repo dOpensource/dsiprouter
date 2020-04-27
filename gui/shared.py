@@ -240,8 +240,6 @@ def getCustomRoutes():
             if len(match.groups()) > 0:
                 custom_routes.append(match.group(1))
 
-        for route in custom_routes:
-            print(route)
     return custom_routes
 
 def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):

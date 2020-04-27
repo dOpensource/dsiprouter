@@ -216,19 +216,16 @@ def getEndpointLease():
         prefix=''
 
         #Add the Gateways table
-
         Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
         db.add(Gateway)
         db.flush()
 
         #Add the Subscribers table
-
         Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid, email)
         db.add(Subscriber)
         db.flush()
 
         #Add to the Leases table
-
         Lease = dSIPLeases(Gateway.gwid, Subscriber.id, int(ttl))
         db.add(Lease)
         db.flush()
@@ -276,16 +273,14 @@ def revokeEndpointLease(leaseid):
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
 
         # Remove the entry in the Subscribers table
-
         Subscriber = db.query(Subscribers).filter(Subscribers.id == Lease.sid).first()
         db.delete(Subscriber)
-        # Remove the entry in the Gateway table
 
+        # Remove the entry in the Gateway table
         Gateway = db.query(Gateways).filter(Gateways.gwid == Lease.gwid).first()
         db.delete(Gateway)
 
         # Remove the entry in the Lease table
-
         db.delete(Lease)
 
         payload = {}
@@ -903,9 +898,6 @@ def getEndpointGroup(gwgroupid):
         return jsonify(status=0,error=str(ex))
 
 
-
-
-
 @api.route("/api/v1/endpointgroups", methods=['GET'])
 @api_security
 def listEndpointGroups():
@@ -1197,8 +1189,6 @@ def updateEndpointGroups(gwgroupid):
         # db.flush()
         db.rollback()
         return jsonify(status=0, error=str(ex))
-
-
 
 
 @api.route("/api/v1/endpointgroups", methods=['POST'])

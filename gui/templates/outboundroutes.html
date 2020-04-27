@@ -105,6 +105,7 @@
       <div class="form-group">
         <label>Custom Kamailio Route (Reservered for use)</label>
         <select class="routeid form-control" name="routeid" title="routeid">
+          <option value="" selected="selected">No Custom Routing (default)</option>
           {% for routeid in custom_routes %}
             <option value='{{ routeid }}'>{{ routeid }}</option>
           {% endfor %}
@@ -160,6 +161,7 @@
       <div class="form-group">
         <label>Custom Kamailio Route (Reservered for use later)</label>
         <select class="routeid form-control" name="routeid" title="routeid">
+          <option value="" selected="selected">No Custom Routing (default)</option>
           {% for routeid in custom_routes %}
             <option value='{{ routeid }}'>{{ routeid }}</option>
           {% endfor %}
