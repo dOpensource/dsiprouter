@@ -1,14 +1,16 @@
 {% extends 'table_layout.html' %}
 
+{% block custom_css %}
+{{ link_tag('msteams') }}
+{% endblock %}
+
 
 {% block table_headers %}
 
 <div class="tableAddButton">
-	<h4>Direct Routing Configuration for {{ domain }}</h4>
-  <button id='open-DomainAdd' class='btn btn-success btn-md' data-title="Configure Microsoft Teams" data-toggle="modal" data-target="#add">
-    Configure Microsoft Teams
-  </button>
-  <button id='open-DomainAdd' class='btn btn-success btn-md' data-title="Configure Microsoft Teams" data-toggle="modal" data-target="#add">
+	<h4>Microsoft Direct Routing Configuration for <font style="color:#1E8DB5;font-weight:bold">{{ domain.domain }}</font></h4>
+
+  <button id='testConnectivity' class='btn btn-success btn-md'" value='{{ domain.domain }}'>
     Test Connectivity
   </button>
 </div>
@@ -18,61 +20,34 @@
 
 {% block table %}
 <div class="container-fluid">
-                    <div class="col col-md-3">            
-                        <div class="panel-group" id="accordion">
-                          <div class="panel panel-default">
-                            <div class="panel-heading">
-                              <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">
-                                Files</a>
-                              </h4>
-                            </div>
-                            <div id="collapse1" class="panel-collapse collapse in">
-                                <ul class="list-group">
-                                    <li class="list-group-item"><span class="badge">253</span> New</li>
-                                    <li class="list-group-item"><span class="badge">17</span> Deleted</li>
-                                    <li class="list-group-item"><span class="badge">3</span> Reported</li>
-                                </ul>
-                            </div>
-                          </div>
-                          <div class="panel panel-default">
-                            <div class="panel-heading">
-                              <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapse2">
-                                Blog</a>
-                              </h4>
-                            </div>
-                            <div id="collapse2" class="panel-collapse collapse">
-                                <ul class="list-group">
-                                    <li class="list-group-item"><span class="badge">12</span> New</li>
-                                    <li class="list-group-item"><span class="badge">5</span> Deleted</li>
-                                </ul>
-                            </div>
-                          </div>
-                            <div class="panel panel-default">
-                            <div class="panel-heading">
-                              <h4 class="panel-title">
-                                <a data-toggle="collapse" data-parent="#accordion" href="#collapse3">
-                                Settings</a>
-                              </h4>
-                            </div>
-                            <div id="collapse3" class="panel-collapse collapse">
-                                <ul class="list-group">
-                                    <li class="list-group-item"><span class="badge">1</span> Users Reported</li>
-                                    <li class="list-group-item"><span class="badge">5</span> User Waiting Activation</li>
-                                </ul>
-                            </div>
-                          </div>
-                        </div> 
-                    </div>
+    <div class="col col-md-3">
+        <div class="panel-group" id="accordion">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">
+                Connectivity Status</a>
+              </h4>
+            </div>
+            <div id="collapse1" class="panel-collapse collapse in">
+                <ul class="list-group">
+										<li class="list-group-item">Hostname <span id="hostname_check" class="glyphicon glyphicon-remove" style="color:gray"></span> </li>
+										<li class="list-group-item">TLS Certificates <span id="tls_check" class="glyphicon glyphicon-remove" style="color:gray"></span> </li>
+                    <li class="list-group-item">Option Messages <span id="option_check" class="glyphicon glyphicon-remove" style="color:gray"></span></li>
+
+                </ul>
+            </div>
+          </div>
+        </div>
+    </div>
+		<div class="col col-md-9 hidden" id="configurationPanel">
+
+		</div>
 </div>
 {% endblock %}
 
 
 
 {% block custom_js %}
-<script>
-  $(document).ready(function() {
-  });
-</script>
+{{ script_tag('msteams') }}
 {% endblock %}

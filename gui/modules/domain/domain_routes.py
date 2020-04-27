@@ -85,7 +85,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
 
 
         # Check if the MSTeams IP(s) that send us OPTION messages is in the the address table
-        for endpoint_ip in msteams_ip_endpointss:
+        for endpoint_ip in msteams_ip_endpoints:
             address_query = db.query(Address).filter(Address.ip_addr == endpoint_ip).first()
             if address_query is None:
                 Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS, gwgroup=0)

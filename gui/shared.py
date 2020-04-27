@@ -117,6 +117,33 @@ def ipToHost(ip):
     except:
         return None
 
+def isCertValid(hostname,port):
+    """ Returns true if the hostname has a valid cert"""
+
+
+    import socket
+    import ssl
+
+    result={"tls_cert_valid":False,"tls_cert_details":"","tls_error":""}
+
+    try:
+
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
+
+        conn = context.wrap_socket(socket.socket(socket.AF_INET),server_hostname=hostname,server_side=False)
+        conn.connect((hostname, 5061))
+        print("SSL established. Peer: {}".format(conn.getpeercert()))
+        cert = conn.getpeercert()
+        result['tls_cert_details'] = cert
+        ssl.match_hostname(cert, hostname)
+        result['tls_cert_valid'] = True
+        return result
+
+    except Exception as ex:
+        result['tls_error'] = str(ex)
+        return result
+
 
 def objToDict(obj):
     """

@@ -374,28 +374,24 @@ a.navlink {
 
 .container.container {
   width: 100%;
+  height: 100%;
   margin: auto;
   padding: 0;
 }
 
 .left-half {
+  background-color: #f4f6f9;
   position: absolute;
   left: 0px;
   width: 60%;
   height: 100%;
 }
 
-.top-left {
-  background-image: url("/static/images/flyball_office.jpg");
-  background-repeat: no-repeat;
-  background-color: #f4f6f9;
-  background-size: contain;
-  height: 90%;
-}
-
-.bottom-left {
-  background-color: #f4f6f9;
-  height: 10%;
+.logon-image {
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
 }
 
 .right-half {

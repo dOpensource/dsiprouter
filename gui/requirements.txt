@@ -5,6 +5,7 @@ mysqlclient
 psycopg2
 psycopg2_binary
 pycrypto
+PyOpenSSL
 PyMySQL
 pytz
 requests

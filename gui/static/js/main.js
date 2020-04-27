@@ -253,6 +253,9 @@ $('#domains #open-Update').click(function() {
   modal_body.find(".pbx_name").val('');
   modal_body.find(".pbx_list").val('');
   modal_body.find(".notes").val('');
+  modal_body.find('.authtype').val([]);
+  modal_body.find('.authtype').val("");
+
 
   /* update modal fields */
   modal_body.find(".domain_id").val(domain_id);
@@ -264,7 +267,8 @@ $('#domains #open-Update').click(function() {
 
   if (authtype !== "") {
     /* Set the radio button if authtype is given */
-    modal_body.find('.authtype[data-toggle="' + authtype + '"]').trigger('click');
+    //modal_body.find('.authtype option[value="' + authtype + '"]').attr('selected', 'selected').trigger("change");
+    modal_body.find('.authtype').val(authtype)
   }
 });
 
