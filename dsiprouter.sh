@@ -771,9 +771,9 @@ function configureKamailio {
 
         # sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
-            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address_carrier.csv
         sed "s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
-            /tmp/defaults/address.csv  > /tmp/defaults/address.csv
+            /tmp/defaults/address_carrier.csv  > /tmp/defaults/address.csv
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
         sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
