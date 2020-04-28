@@ -202,7 +202,8 @@ def displayDomains():
                 'notes': notes
             }
 
-        return render_template('domains.html', rows=res, pbxlookup=pbx_lookup)
+
+        return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=healthCheck())
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)

@@ -152,6 +152,9 @@ EOF
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
     ln -s /etc/ssl/certs/ca-certificates.crt ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
 
+    # Setup dSIPRouter Module
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter.so /usr/lib/x86_64-linux-gnu/kamailio/modules/
+
     # Start Kamailio
     #systemctl start kamailio
     #return #?

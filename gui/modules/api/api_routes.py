@@ -1758,21 +1758,28 @@ def generatePassword():
     return jsonify(password=password)
 
 
+# Check if Domain is receiving replies from OPTION Messages
+# TODO:  The response coming back from Kamailio Command Line
+#        is not in proper JSON format.  The field and Attributes
+#        are missing double quotes.  So, we need to fix the JSON
+#        payload and loop thru the result vs doing a find.
 def getOptionMessageStatus(domain):
 
+    response = subprocess.check_output(['kamcmd', 'dispatcher.list'])
 
-    #commands = [
+    if response:
+        response = response.decode('utf8').replace("'", '"')
+        #print(response)
+        found_domain = response.find(domain)
+        if found_domain >= 0:
+            if response.find("FLAGS: AP",found_domain):
+                return True
+            else:
+                return False
+        else:
+            return False
 
-    #    {'method': 'dispatcher.list', 'jsonrpc': '2.0', 'id': 1}
-        #{'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
-    #]
 
-    #or cmdset in commands:
-    #    r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
-    #    print(r.json)
-
-    return_code = subprocess.call(['kamcmd', 'dispatcher.list'])
-    print(return_code)
 
 
 @api.route("/api/v1/domains/msteams/test/<string:domain>", methods=['GET'])
@@ -1780,7 +1787,7 @@ def getOptionMessageStatus(domain):
 def testConnectivity(domain):
 
     # Define a dictionary object that represents the payload
-    responsePayload = {"hostname_check":False,"tls_check":False}
+    responsePayload = {"hostname_check":False,"tls_check":False,"option_check":False}
 
     #Does the IP address of this server resolve to the domain
     domain_ip_addr = hostToIP(domain)
@@ -1795,6 +1802,7 @@ def testConnectivity(domain):
     if certInfo:
         responsePayload['tls_check'] = certInfo
 
-    getOptionMessageStatus(domain)
+    if getOptionMessageStatus(domain):
+        responsePayload['option_check'] = True
 
     return json.dumps(responsePayload)

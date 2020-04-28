@@ -30,6 +30,7 @@
     <th data-field="notes">Notes</th>
     <th></th>
     <th></th>
+    <th></th>
   </tr>
   </thead>
   <tbody>
@@ -53,14 +54,18 @@
     <td>
       <p data-placement="top" data-toggle="tooltip" title="Edit">
         <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
-                {% if pbxlookup[row.domain]['domain_auth'] == "msteams" %}
-                onclick="window.location='domains/msteams/{{ row.id }}'">
-                {% else %}
-                data-target="#edit">
-                {% endif %}
-                <span class="glyphicon glyphicon-pencil"></span>
+              data-target="#edit"><span class="glyphicon glyphicon-pencil"></span>
         </button>
       </p>
+    </td>
+    <td>
+      {% if pbxlookup[row.domain]['domain_auth'] == "msteams" %}
+      <p data-placement="top" data-toggle="tooltip" title="Test MSTeams Connectivity">
+        <button id="open-Test" class="open-Test btn btn-warning btn-xs" data-title="Test MSTeams Connectivity" data-toggle="modal"
+              onclick="window.location='domains/msteams/{{ row.id }}'">
+              <span class="glyphicon glyphicon-plane"></span></button>
+      </p>
+      {% endif %}
     </td>
     <td>
       <p data-placement="top" data-toggle="tooltip" title="Delete">
@@ -99,10 +104,15 @@
 
     <div class="form-group">
       <div class="domainauthoptions radio">
-         <select class="authtype form-control" name="authtype">
+         <select class="authtype form-control" name="authtype" onChange="processDomainType(this.value);">
 		 <option value="">Select Domain Type</option>
 		 <option value="passthru">Pass Thru to PBX</option>
-		 <option value="msteams">Microsoft Teams Direct Routing</option>
+     {% if hc == False %}(Subscription Required)
+        <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
+     {% else %}
+        <option value="msteams">Microsoft Teams Direct Routing</option>
+     {% endif %}
+
 		 <option value="local">Local Subscriber Table</option>
 		 <option value="realtime">Real Time DB</option>
 	</select>
@@ -157,10 +167,14 @@
     <div class="form-group">
       <div class="domainauthoptions radio">
 
-         <select class="authtype form-control" name="authtype">
+         <select class="authtype form-control" name="authtype" onChange="processDomainType(this.value);">
 		 <option value="">Select Domain Type</option>
 		 <option value="passthru">Pass Thru to PBX</option>
-		 <option value="msteams">Microsoft Teams Direct Routing {% if not licensed %}(Subscription Required) {% endif %}</option>
+     {% if hc == False %}(Subscription Required)
+        <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
+     {% else %}
+        <option value="msteams">Microsoft Teams Direct Routing</option>
+     {% endif %}
 		 <option value="local">Local Subscriber Table</option>
 		 <option value="realtime">Real Time DB</option>
 	</select>
@@ -219,15 +233,5 @@
 {% endblock %}
 
 {% block custom_js %}
-<script>
-  $(document).ready(function() {
-    $('#domains').DataTable({
-      "columnDefs": [
-        {"orderable": true, "targets": [1, 2, 3, 4, 5, 6, 7]},
-        {"orderable": false, "targets": [0, 8, 9]},
-      ],
-      "order": [[1, 'asc']]
-    });
-  });
-</script>
+{{ script_tag('domains') }}
 {% endblock %}

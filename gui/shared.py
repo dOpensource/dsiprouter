@@ -133,7 +133,7 @@ def isCertValid(hostname,port):
 
         conn = context.wrap_socket(socket.socket(socket.AF_INET),server_hostname=hostname,server_side=False)
         conn.connect((hostname, 5061))
-        print("SSL established. Peer: {}".format(conn.getpeercert()))
+        #print("SSL established. Peer: {}".format(conn.getpeercert()))
         cert = conn.getpeercert()
         result['tls_cert_details'] = cert
         ssl.match_hostname(cert, hostname)
@@ -144,6 +144,19 @@ def isCertValid(hostname,port):
         result['tls_error'] = str(ex)
         return result
 
+
+def healthCheck():
+    """
+    Checks the health of dsiprouter
+    """
+
+    cmdset = {"method": "dsiprouter.health_check", "jsonrpc": "2.0", "id": 1}
+    r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
+    if r is not None:
+        if r.status_code == 200:
+            return True
+
+    return False
 
 def objToDict(obj):
     """
@@ -240,6 +253,8 @@ def getCustomRoutes():
             if len(match.groups()) > 0:
                 custom_routes.append(match.group(1))
 
+        for route in custom_routes:
+            print(route)
     return custom_routes
 
 def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):

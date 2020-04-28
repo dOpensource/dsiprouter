@@ -232,57 +232,6 @@ $('#pbxs #open-Delete').click(function() {
   var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
 });
 
-// Updates the modal with the values from the endpointgroup API
-$('#domains #open-Update').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('domains');
-  var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var domain_type = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-  var pbx_name = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-  var pbx_list = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-  var notes = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
-
-
-  /** Clear out the modal */
-  var modal_body = $('#edit .modal-body');
-  modal_body.find(".domain_id").val('');
-  modal_body.find(".domain_name").val('');
-  modal_body.find(".domain_type").val('');
-  modal_body.find(".pbx_name").val('');
-  modal_body.find(".pbx_list").val('');
-  modal_body.find(".notes").val('');
-  modal_body.find('.authtype').val([]);
-  modal_body.find('.authtype').val("");
-
-
-  /* update modal fields */
-  modal_body.find(".domain_id").val(domain_id);
-  modal_body.find(".domain_name").val(domain_name);
-  modal_body.find(".domain_type").val(domain_type);
-  modal_body.find(".pbx_name").val(pbx_name);
-  modal_body.find(".pbx_list").val(pbx_list);
-  modal_body.find(".notes").val(notes);
-
-  if (authtype !== "") {
-    /* Set the radio button if authtype is given */
-    //modal_body.find('.authtype option[value="' + authtype + '"]').attr('selected', 'selected').trigger("change");
-    modal_body.find('.authtype').val(authtype)
-  }
-});
-
-$('#domains #open-Delete').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('domains');
-  var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-
-  /* update modal fields */
-  var modal_body = $('#delete .modal-body');
-  modal_body.find(".domain_id").val(domain_id);
-  modal_body.find(".domain_name").val(domain_name);
-});
 
 $('#outboundmapping #open-Update').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
