@@ -21,7 +21,7 @@ function install {
     (cat << EOF
 # kamailio repo's
 deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
-echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
+deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
