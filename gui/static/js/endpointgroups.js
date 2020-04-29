@@ -1,7 +1,12 @@
 //Add EndpointGroup
 function addEndpointGroup(action) {
 
+
+
   /** Get data from the modal */
+
+  var modal_body = $('#add .modal-body');
+
   // The default action is a POST (creating a new EndpointGroup)
   if (action == undefined) {
     action = "POST";
