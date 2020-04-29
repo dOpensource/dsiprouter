@@ -1,18 +1,18 @@
 //Add EndpointGroup
 function addEndpointGroup(action) {
 
-  /** Get data from the modal */
-  var modal_body = $(selector + ' .modal-body');
 
   // The default action is a POST (creating a new EndpointGroup)
   if (action == undefined) {
     action = "POST";
     selector = "#add";
+    modal_body = $(selector + ' .modal-body');
     url = "/api/v1/endpointgroups";
   }
   // Grab the Gateway Group ID if updating usinga PUT
   else if (action == "PUT") {
     selector = "#edit";
+    modal_body = $(selector + ' .modal-body');
     gwgroupid = modal_body.find(".gwgroupid").val();
     url = "/api/v1/endpointgroups/" + gwgroupid;
   }
@@ -150,6 +150,19 @@ function clearEndpointGroupModal(modal_selector) {
 
   // Clear out update button in add footer
   modal_footer.find("#updateButton").attr("disabled", false);
+  
+ if (modal_selector == "#add") {
+      var btn = $('#add .modal-footer').find('#addButton');
+      btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Add");
+      btn.removeClass("btn-success");
+      btn.addClass("btn-primary");
+ }
+   else {
+      var btn = $('#edit .modal-footer').find('#updateButton');
+      btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
+ }
+ btn.attr('disabled',false);
+
 
   // Remove Endpont Rows
   $("tr.endpoint").each(function(i, row) {
