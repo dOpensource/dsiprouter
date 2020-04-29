@@ -518,7 +518,7 @@ function configureSSL {
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
         chown root:kamailio ${CERT_DIR}/*
-        chmod g=+r ${CERT_DIR}/r*
+        chmod g=+r ${CERT_DIR}/*
     fi
     firewall-cmd --zone=public --remove-port=80/tcp --permanent
     firewall-cmd --reload
