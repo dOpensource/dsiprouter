@@ -123,7 +123,8 @@ setScriptSettings() {
     # updated dynamically!
 
     export EXTERNAL_IP=$(getExternalIP)
-    export EXTERNAL_FQDN=$(dig +short -x ${EXTERNAL_IP} | sed 's/\.$//')
+    #export EXTERNAL_FQDN=$(dig +short -x ${EXTERNAL_IP} | sed 's/\.$//')
+    export EXTERNAL_FQDN=$(hostname)
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
@@ -463,6 +464,25 @@ function updatePythonRuntimeSettings {
     fi
 }
 
+function renewSSLCert {
+
+    certbot certificates
+    if (( $? == 0 )); then
+    	certbot renew
+    	if (( $? == 0 )); then
+        	rm -f ${CERT_DIR}/dsiprouter*
+        	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${CERT_DIR}/dsiprouter.crt
+       		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${CERT_DIR}/dsiprouter.key
+       		chown root:kamailio ${CERT_DIR}/dsiprouter*
+        	chmod g=+r ${CERT_DIR}/dsiprouter*
+		kamcmd tls.reload
+     	fi
+    else
+        printwarn "Failed Renewing Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
+
+     fi
+}
+
 function configureSSL {
     # Define the directory that will be used for storing Certificates and create that directory
     CERT_DIR=${DSIP_SYSTEM_CONFIG_DIR}/certs
@@ -487,16 +507,18 @@ function configureSSL {
         rm -f ${CERT_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${CERT_DIR}/dsiprouter.crt
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${CERT_DIR}/dsiprouter.key
-        chown root:kamailio ${CERT_DIR}/dsiprouter*
-        chmod g=+r ${CERT_DIR}/dsiprouter*
+        chown root:kamailio ${CERT_DIR}/*
+        chmod g=+r ${CERT_DIR}/*
+	#Add Nightly Cronjob to renew certs
+	cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
     else
         printwarn "Failed Generating Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
 
         # Worst case, generate a Self-Signed Certificate
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
-        chown root:kamailio ${CERT_DIR}/dsiprouter*
-        chmod g=+r ${CERT_DIR}/dsiprouter*
+        chown root:kamailio ${CERT_DIR}/*
+        chmod g=+r ${CERT_DIR}/r*
     fi
     firewall-cmd --zone=public --remove-port=80/tcp --permanent
     firewall-cmd --reload
@@ -2100,6 +2122,8 @@ function usageOptions {
     printf "%-30s %s\n" \
         "sslenable" "-debug"
     printf "%-30s %s\n" \
+        "renewsslcert" "-debug"
+    printf "%-30s %s\n" \
         "installmodules" "-debug"
     printf "%-30s %s\n" \
         "fixmpath" "-debug"
@@ -2590,6 +2614,28 @@ function processCMD {
                 esac
             done
             ;;
+        sslrenewcert)
+            # reconfigure ssl configs
+            RUN_COMMANDS+=(renewSSLCert)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+	    ;;
         installmodules)
             # reconfigure dsiprouter modules
             RUN_COMMANDS+=(installModules)
