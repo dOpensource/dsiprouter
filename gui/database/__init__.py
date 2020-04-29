@@ -209,7 +209,6 @@ class Subscribers(object):
 
     pass
 
-
 class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
@@ -223,7 +222,6 @@ class dSIPLeases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
-
 
 class dSIPMaintModes(object):
     """
@@ -239,7 +237,6 @@ class dSIPMaintModes(object):
 
     pass
 
-
 class dSIPCallLimits(object):
     """
     Schema for dsip_calllimit table\n
@@ -252,7 +249,6 @@ class dSIPCallLimits(object):
         self.createdate = datetime.now()
 
     pass
-
 
 class dSIPNotification(object):
     """
@@ -274,7 +270,6 @@ class dSIPNotification(object):
         self.createdate = datetime.now()
 
     pass
-
 
 class dSIPHardFwd(object):
     """
@@ -312,7 +307,6 @@ class dSIPFailFwd(object):
         self.dr_groupid = dr_groupid
 
     pass
-
 
 class UAC(object):
     """
@@ -384,7 +378,6 @@ class DomainAttrs(object):
         self.value = temp_value if temp_value is not None else did
 
     pass
-
 
 class Dispatcher(object):
     """
@@ -484,10 +477,11 @@ def createValidEngine(uri_list):
     except:
         raise Exception(errors)
 
-
-
-def loadSession():
-    global session
+def createSessionMaker():
+    """
+    This method uses a singleton pattern and returns SessionLoader if created
+    :return:    SessionMaker() object
+    """
 
     if 'SessionLoader' in globals():
         return globals()['SessionLoader']
@@ -635,5 +629,4 @@ class DummySession():
 
 # Make the engine and session maker global
 db_engine = createValidEngine(getDBURI())
-SessionLoader = loadSession()
-
+SessionLoader = createSessionMaker()

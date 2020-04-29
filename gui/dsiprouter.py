@@ -1949,7 +1949,7 @@ def syncSettings(new_fields={}, update_net=False):
     db = DummySession()
 
     try:
-        db = SessionLoader
+        db = SessionLoader()
 
         # update ip's dynamically
         if update_net:

@@ -2,7 +2,7 @@ from flask import Blueprint, session, render_template
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-from database import Address,SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways
+from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Address
 from shared import *
 import settings
 import globals
@@ -105,7 +105,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
         for pbx_id in pbx_list:
-            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id,db), description='pbx_id:{}'.format(pbx_id))
+            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id), description='pbx_id:{}'.format(pbx_id))
             db.add(dispatcher)
 
         db.add(PBXDomainAttr1)

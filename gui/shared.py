@@ -1,10 +1,13 @@
-import sys, os, re, socket, requests, logging, traceback, inspect, string, random
+import sys, os, re, json, socket, requests, logging, traceback, inspect, string, random, ssl
 from calendar import monthrange
 from importlib import reload
-from flask import request, render_template, make_response, session, Response
+from flask import request, render_template, make_response
+from sqlalchemy import exc as sql_exceptions
+from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import escape
 from werkzeug.urls import iri_to_uri
 import settings
+
 
 def ipv4Test(address):
     try:
@@ -48,7 +51,6 @@ def getInternalIP():
         s.connect(("8.8.8.8", 80))
         return s.getsockname()[0]
 
-
 def getExternalIP():
     """ Returns external ip of system """
     ip = None
@@ -69,7 +71,8 @@ def getExternalIP():
             break
     return ip
 
-
+# TODO: this will return whatever is set on the system (i.e. internal FQDN)
+#       we should allow specifying the ip so external FQDN on natted systems can be resolved
 def getDNSNames():
     """ Returns ( hostname, domain, fqdn ) of system """
 
@@ -98,17 +101,15 @@ def getDNSNames():
 
     return host, domain, fqdn
 
-
 def hostToIP(host):
     """ Returns ip of host, or None on failure"""
     try:
         # Remove any port numbers from the ip
         if ":" in host:
-            host = host.split(":",1)[0]
+            host = host.split(":", 1)[0]
         return socket.gethostbyname(host)
     except:
         return None
-
 
 def ipToHost(ip):
     """ Returns hostname of ip, or None on failure"""
@@ -117,34 +118,28 @@ def ipToHost(ip):
     except:
         return None
 
-def isCertValid(hostname,port):
+def isCertValid(hostname, port):
     """ Returns true if the hostname has a valid cert"""
 
-
-    import socket
-    import ssl
-
-    result={"tls_cert_valid":False,"tls_cert_details":"","tls_error":""}
+    result = {"tls_cert_valid": False, "tls_cert_details": "", "tls_error": ""}
 
     try:
-
         context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
         context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
 
-        conn = context.wrap_socket(socket.socket(socket.AF_INET),server_hostname=hostname,server_side=False)
+        conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname, server_side=False)
         conn.connect((hostname, 5061))
-        #print("SSL established. Peer: {}".format(conn.getpeercert()))
+        # print("SSL established. Peer: {}".format(conn.getpeercert()))
         cert = conn.getpeercert()
         result['tls_cert_details'] = cert
         ssl.match_hostname(cert, hostname)
         result['tls_cert_valid'] = True
         return result
-
     except Exception as ex:
         result['tls_error'] = str(ex)
         return result
 
-
+# TODO: kam jsonrpc url should be set in settings.py / install script
 def healthCheck():
     """
     Checks the health of dsiprouter
@@ -152,10 +147,8 @@ def healthCheck():
 
     cmdset = {"method": "dsiprouter.health_check", "jsonrpc": "2.0", "id": 1}
     r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
-    if r is not None:
-        if r.status_code == 200:
-            return True
-
+    if r is not None and r.status_code == 200:
+        return True
     return False
 
 def objToDict(obj):
@@ -186,7 +179,6 @@ def rowToDict(row):
 
     return d
 
-
 def strFieldsToDict(fields_str):
     fields = {}
     for field in fields_str.split(','):
@@ -195,10 +187,8 @@ def strFieldsToDict(fields_str):
             fields[tmp[0]] = tmp[1]
     return fields
 
-
 def dictToStrFields(fields_dict):
     return ','.join("{}:{}".format(k, v) for k, v in fields_dict.items())
-
 
 def updateConfig(config_obj, field_dict, hot_reload=False):
     """
@@ -227,7 +217,6 @@ def updateConfig(config_obj, field_dict, hot_reload=False):
     except:
         IO.logerr('Problem updating the {0} configuration file').format(config_file)
 
-
 def stripDictVals(d):
     for key, val in d.items():
         if isinstance(val, str):
@@ -235,7 +224,6 @@ def stripDictVals(d):
         elif isinstance(val, int):
             d[key] = int(str(val).strip())
     return d
-
 
 def getCustomRoutes():
     """ Return custom kamailio routes from config file """
@@ -259,7 +247,6 @@ def getCustomRoutes():
 
 def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
-
 
 def generatePassword(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -285,7 +272,6 @@ def supportsColor(stream):
     except:
         # guess false in case of error
         return False
-
 
 class IO():
     """ Contains static methods for handling i/o operations """
@@ -380,7 +366,6 @@ class IO():
         def lognolvl(message):
             logging.getLogger().log(logging.NOTSET, str(message).strip())
 
-
 def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
     """
     Debugging of an exception: print and/or log frame and/or stacktrace
@@ -397,7 +382,7 @@ def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
     # get detailed exception info
     if ex is None:
         ex = exc_value
-    for k,v in vars(ex).items():
+    for k, v in vars(ex).items():
         text += "[{}]: {}\n".format(k.upper(), str(v))
 
     # determine how far we trace it back
@@ -417,12 +402,11 @@ def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
             if funcname != '<module>':
                 funcname = funcname + '()'
             text += "[FILE]: {}\n[LINE NUM]: {}\n[FUNCTION]: {}\n[SOURCE]: {}".format(filename, linenum, funcname,
-                                                                                      source)
+                source)
     if log_ex:
         IO.logerr(text)
     if print_ex:
         IO.printerr(text)
-
 
 def debugEndpoint(log_out=True, print_out=True, **kwargs):
     """
@@ -442,7 +426,7 @@ def debugEndpoint(log_out=True, print_out=True, **kwargs):
     if 'self' in frame.f_locals:
         calling_chain.append(frame.f_locals["self"].__class__)
     else:
-        for k,v in frame.f_globals.items():
+        for k, v in frame.f_globals.items():
             if not k.startswith('__') and frame.f_code.co_name in dir(v):
                 calling_chain.append(k)
                 break
@@ -464,12 +448,38 @@ def debugEndpoint(log_out=True, print_out=True, **kwargs):
     if print_out:
         IO.printdbg(text)
 
-def allowed_file(filename,ALLOWED_EXTENSIONS=set(['csv','txt','pdf','png','jpg','jpeg','gif'])):
-    return '.' in filename and \
-            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+def allowed_file(filename, ALLOWED_EXTENSIONS={'csv', 'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def showError(type="", code=500, msg=None):
     return render_template('error.html', type=type, msg=msg), code
+
+def showApiError(ex, payload={}):
+    debugException(ex)
+
+    if isinstance(ex, sql_exceptions.SQLAlchemyError):
+        payload['error'] = "db"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        else:
+            payload['msg'] = "Unknown DB Error Occurred"
+        status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
+    elif isinstance(ex, http_exceptions.HTTPException):
+        payload['error'] = "http"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        else:
+            payload['msg'] = "Unknown HTTP Error Occurred"
+        status_code = ex.code or StatusCodes.HTTP_INTERNAL_SERVER_ERROR
+    else:
+        payload['error'] = "server"
+        if len(str(ex)) > 0:
+            payload['msg'] = str(ex)
+        else:
+            payload['msg'] = "Unknown Error Occurred"
+        status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
+
+    return json.dumps(payload), status_code
 
 def redirectCustom(location, *render_args, code=302, response_cb=None, force_redirect=False):
     """
@@ -533,13 +543,13 @@ def redirectCustom(location, *render_args, code=302, response_cb=None, force_red
     # if no render_args given fill response with default redirect html
     if len(render_args) <= 0:
         response.response = '<!DOCTYPE HTML">\n' \
-            '<html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; URL={location}">' \
-            '<title>Redirecting</title></head>\n' \
-            '<body><script type="text/javascript">window.location.href={location};</script></body></html>' if force_redirect else \
-                '<body><h1>Redirecting...</h1>\n' \
-                '<p>You should be redirected automatically to target URL: ' \
-                '<a href="{location}">{display_location}</a>.  If not click the link.</p></body></html>' \
-                    .format(location=escape(location), display_location=display_location)
+                            '<html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; URL={location}">' \
+                            '<title>Redirecting</title></head>\n' \
+                            '<body><script type="text/javascript">window.location.href={location};</script></body></html>' if force_redirect else \
+            '<body><h1>Redirecting...</h1>\n' \
+            '<p>You should be redirected automatically to target URL: ' \
+            '<a href="{location}">{display_location}</a>.  If not click the link.</p></body></html>' \
+                .format(location=escape(location), display_location=display_location)
 
         response.mimetype = 'text/html'
 
@@ -556,7 +566,7 @@ def redirectCustom(location, *render_args, code=302, response_cb=None, force_red
 
     return response
 
-class status():
+class StatusCodes():
     """
     Namespace for descriptive status codes, for code readability
 

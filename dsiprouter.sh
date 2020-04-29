@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#set -x
+#
 #=============== dSIPRouter Management Script ==============#
 #
 # install, configure, and manage dsiprouter
@@ -69,7 +69,7 @@ setScriptSettings() {
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
     FLT_FWD_MIN=20000
-    WITH_SSL=0
+    WITH_SSL=1
     WITH_LCR=1
     export DEBUG=0
     export SERVERNAT=0
@@ -101,26 +101,6 @@ setScriptSettings() {
     MYSQL_ROOT_DEF_PASSWORD=""
     MYSQL_ROOT_DEF_DATABASE="mysql"
 
-    # Default SSL options
-    # If you created your own certs prior to installing set this to match your certs
-    if [ ${WITH_SSL} -eq 1 ]; then
-        SYSTEM_SSL_CERT_DIR="/etc/ssl/certs"                                    # certs general location
-        DSIP_SSL_CERT_DIR="${SYSTEM_SSL_CERT_DIR}/$(hostname -f)"               # domain specific cert dir
-        DSIP_SSL_KEY="${DSIP_SSL_CERT_DIR}/key.pem"                             # private key
-        DSIP_SSL_CHAIN="${DSIP_SSL_CERT_DIR}/chain.pem"                         # full chain cert
-        DSIP_SSL_CERT="${DSIP_SSL_CERT_DIR}/cert.pem"                           # full chain + csr cert
-        DSIP_SSL_EMAIL="admin@$(hostname -f)"                                   # email in certs (for renewal)
-        DSIP_GUI_PROTOCOL="https"                                               # protocol GUI is served on
-    else
-        DSIP_SSL_CERT_DIR=""                                                    # domain specific cert dir
-        DSIP_SSL_KEY=""                                                         # private key
-        DSIP_SSL_CHAIN=""                                                       # full chain cert
-        DSIP_SSL_CERT=""                                                        # full chain + csr cert
-        DSIP_SSL_EMAIL=""                                                       # email in certs (for renewal)
-        DSIP_GUI_PROTOCOL="http"                                                # protocol GUI is served on
-    fi
-
-
     # Force the installation of a Kamailio version by uncommenting
     #KAM_VERSION=44 # Version 4.4.x
     #KAM_VERSION=51 # Version 5.1.x
@@ -137,13 +117,13 @@ setScriptSettings() {
     export KAM_DMQ_PORT=5090
     export KAM_TLS_PORT=5061
     export KAM_WSS_PORT=4443
+    export DSIP_PORT=5000
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
 
-    export DSIP_PORT=$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
     export EXTERNAL_IP=$(getExternalIP)
-    export EXTERNAL_HOSTNAME=$(hostname)
+    export EXTERNAL_FQDN=$(dig +short -x ${EXTERNAL_IP} | sed 's/\.$//')
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
 
@@ -160,7 +140,7 @@ setScriptSettings() {
     export KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
     export KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
     export KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
-    export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
+    export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE} 2>/dev/null)}
 
     #===========================================================#
 }
@@ -220,9 +200,9 @@ function cleanupAndExit {
     unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD PATH_UPDATE_FILE SYSTEM_RTPENGINE_CONFIG_DIR SYSTEM_RTPENGINE_CONFIG_FILE SERVERNAT
     unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG DEBUG IPV6_ENABLED KAM_DMQ_PORT
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
-    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_HOSTNAME INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED GCE_ENABLED AZURE_ENABLED
-    unset SET_DSIP_PRIV_KEY SSHPASS
-    unset -f setPythonCmd reconfigureMysqlSystemdService
+    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
+    unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS
+    unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
     exit $1
@@ -355,21 +335,6 @@ EOF
 
     # make perl CPAN installs non interactive
     export PERL_MM_USE_DEFAULT=1
-
-    # SSL config checks if enabled
-    if [ ${WITH_SSL} -eq 1 ]; then
-        # check that hostname or fqdn  is set & not empty (must be set for SSL cert renewal to work)
-        if [ -z "$(hostname -f)" ]; then
-            printerr "You must configure a host name or DNS domain name to enable SSL.. Either configure your server domain or disable SSL."
-            exit 1
-        fi
-
-        # make sure SSL options are set & not empty
-        if [ -z "$DSIP_SSL_KEY" ] || [ -z "$DSIP_SSL_CERT" ] || [ -z "$DSIP_SSL_EMAIL" ]; then
-            printerr "SSL configs are invalid. Configure SSL options or disable SSL."
-            exit 1
-        fi
-    fi
 
     # fix PATH if needed
     # we are using the default install paths but these may change in the future
@@ -513,30 +478,29 @@ function configureSSL {
 
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
-    #Open port 80 for hostname validation
+    # Open port 80 for hostname validation
     firewall-cmd --zone=public --add-port=80/tcp --permanent
     firewall-cmd --reload
-    printdbg "Generating Cert for `hostname` using LetsEncrypt"
-    certbot certonly --standalone --non-interactive --agree-tos --domains `hostname` -m none@none.net
-    if (( ${?} == 0 )); then
-        rm -rf ${CERT_DIR}/dsiprouter*
-        cp  /etc/letsencrypt/live/`hostname`/fullchain.pem  ${CERT_DIR}/dsiprouter.crt
-        cp  /etc/letsencrypt/live/`hostname`/privkey.pem  ${CERT_DIR}/dsiprouter.key
+    printdbg "Generating Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
+    certbot certonly --standalone --non-interactive --agree-tos --domains ${EXTERNAL_FQDN} -m none@none.net
+    if (( $? == 0 )); then
+        rm -f ${CERT_DIR}/dsiprouter*
+        cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${CERT_DIR}/dsiprouter.crt
+        cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${CERT_DIR}/dsiprouter.key
         chown root:kamailio ${CERT_DIR}/dsiprouter*
         chmod g=+r ${CERT_DIR}/dsiprouter*
-        return
     else
-        printwarn "Failed Generating Cert for `hostname` using LetsEncrypt"
+        printwarn "Failed Generating Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
+
+        # Worst case, generate a Self-Signed Certificate
+        printdbg "Generating dSIPRouter Self-Signed Certificates"
+        openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
+        chown root:kamailio ${CERT_DIR}/dsiprouter*
+        chmod g=+r ${CERT_DIR}/dsiprouter*
     fi
     firewall-cmd --zone=public --remove-port=80/tcp --permanent
     firewall-cmd --reload
     #fi
-
-    # Worst case, genrate a Self-Signed Certificate
-    printdbg "Generating dSIPRouter Self-Signed Certificates"
-    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=`hostname`"
-    chown root:kamailio ${CERT_DIR}/dsiprouter*
-    chmod g=+r ${CERT_DIR}/dsiprouter*
 }
 
 # updates and settings in kam config that may change
@@ -554,10 +518,10 @@ function updateKamailioConfig {
     local TELEBLOCK_MEDIA_IP=${TELEBLOCK_MEDIA_IP:-$(getConfigAttrib 'TELEBLOCK_MEDIA_IP' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_MEDIA_PORT=${TELEBLOCK_MEDIA_PORT:-$(getConfigAttrib 'TELEBLOCK_MEDIA_PORT' ${DSIP_CONFIG_FILE})}
 
-    setKamailioConfigIP 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigIP 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigIP 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigIP 'EXTERNAL_HOSTNAME' "${EXTERNAL_HOSTNAME}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -866,10 +830,10 @@ installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -qq -y >/dev/null &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl gawk perl sed >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl gawk perl sed dnsutils >/dev/null
     elif cmdExists 'yum'; then
         yum update -y -q -e 0 >/dev/null &&
-        yum install -y -q -e 0 curl gawk perl sed >/dev/null
+        yum install -y -q -e 0 curl gawk perl sed bind-utils >/dev/null
     fi
 
     if (( $? != 0 )); then
@@ -998,11 +962,6 @@ function installDsiprouter {
     installModules
     # set some defaults in settings.py
     configurePythonSettings
-
-	# configure SSL
-    if [ ${WITH_SSL} -eq 1 ]; then
-        configureSSL
-    fi
 
     # for cloud images the instance-id may change (could be a clone)
     # add to startup process a password reset to ensure its set correctly
@@ -1155,7 +1114,7 @@ function uninstallDsiprouter {
 }
 
 function installKamailio {
-    local KAMDB_BACKUP_FILE="${BACKUP_DIR}/kamdb_$(date '+%Y%m%d_%H%M%S').sql"
+    local KAMDB_BACKUP_FILE="${BACKUPS_DIR}/kamdb_$(date '+%Y%m%d_%H%M%S').sql"
 
     cd ${DSIP_PROJECT_DIR}
 
@@ -1167,16 +1126,20 @@ function installKamailio {
     fi
 
     # backup and drop kam db if it exists already
-    if checkDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
-        printdbg "Backing up and dropping kamailio DB for fresh install"
-        dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > $KAMDB_BACKUP_FILE
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-            -e "DROP DATABASE kamailio;"
+    if cmdExists 'mysql'; then
+        if checkDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
+            printdbg "Backing up kamailio DB to ${KAMDB_BACKUP_FILE} before fresh install"
+            dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > $KAMDB_BACKUP_FILE
+            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
+                -e "DROP DATABASE kamailio;"
+        fi
     fi
 
     ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
-	    configureSSL
+        if [ ${WITH_SSL} -eq 1 ]; then
+            configureSSL
+        fi
         configureKamailio
         updateKamailioConfig
     else
@@ -1335,11 +1298,11 @@ installDnsmasq() {
     systemctl stop systemd-resolved 2>/dev/null
     systemctl disable systemd-resolved 2>/dev/null
 
-    # install dnsmasq and some querying tools
+    # install dnsmasq
     if cmdExists 'apt-get'; then
-        apt-get install -y dnsmasq dnsutils
+        apt-get install -y dnsmasq
     elif cmdExists 'yum'; then
-        yum install -y dnsmasq bind-utils
+        yum install -y dnsmasq
     fi
 
     # dnsmasq configuration
@@ -2185,6 +2148,24 @@ function usageOptions {
     linebreak
 }
 
+# make the output a little cleaner
+function setVerbosityLevel {
+    # quiet pkg managers when not debugging
+    if [[ "$*" != *"-debug"* ]]; then
+        if cmdExists 'apt-get'; then
+            apt-get() {
+                command apt-get -qq "$@"
+            }
+            export -f apt-get
+        elif cmdExists 'yum'; then
+            yum() {
+                command yum -q -e 0 "$@"
+            }
+            export -f yum
+        fi
+    fi
+}
+
 # prep before processing command
 function preprocessCMD {
     # Display usage options if no command is specified
@@ -2200,6 +2181,7 @@ function preprocessCMD {
     else
         initialChecks
         setPythonCmd
+        setVerbosityLevel
     fi
 }
 

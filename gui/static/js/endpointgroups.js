@@ -2,27 +2,26 @@
 function addEndpointGroup(action) {
 
   /** Get data from the modal */
+  var modal_body = $(selector + ' .modal-body');
+
   // The default action is a POST (creating a new EndpointGroup)
   if (action == undefined) {
-    action = "POST"
-    selector = "#add"
-    var modal_body = $(selector + ' .modal-body');
-    url = "/api/v1/endpointgroups"
+    action = "POST";
+    selector = "#add";
+    url = "/api/v1/endpointgroups";
   }
-
-  if (action == "PUT") {
-    selector = "#edit"
-    // Grab the Gateway Group ID if updating usinga PUT
-    var modal_body = $(selector + ' .modal-body');
+  // Grab the Gateway Group ID if updating usinga PUT
+  else if (action == "PUT") {
+    selector = "#edit";
     gwgroupid = modal_body.find(".gwgroupid").val();
-    url = "/api/v1/endpointgroups/" + gwgroupid
+    url = "/api/v1/endpointgroups/" + gwgroupid;
   }
 
-  var requestPayload = new Object();
+  var requestPayload = {};
   requestPayload.name = modal_body.find(".name").val();
   requestPayload.calllimit = modal_body.find(".calllimit").val();
 
-  var auth = new Object();
+  var auth = {};
   if (action == "POST") {
     if ($('input#ip.authtype').is(':checked')) {
       auth.type = "ip";
@@ -32,7 +31,7 @@ function addEndpointGroup(action) {
       auth.pass = modal_body.find("#auth_password").val();
     }
   }
-  if (action == "PUT") {
+  else if (action == "PUT") {
     if ($('input#ip2.authtype').is(':checked')) {
       auth.type = "ip";
     }
@@ -50,21 +49,19 @@ function addEndpointGroup(action) {
   requestPayload.strip = modal_body.find(".strip").val();
   requestPayload.prefix = modal_body.find(".prefix").val();
 
-  notifications = new Object()
-
+  notifications = {};
   notifications.overmaxcalllimit = modal_body.find(".email_over_max_calls").val();
   notifications.endpointfailure = modal_body.find(".email_endpoint_failure").val();
 
-  requestPayload.notifications = notifications
+  requestPayload.notifications = notifications;
 
-  cdr = new Object()
+  cdr = {};
   cdr.cdr_email = modal_body.find(".cdr_email").val();
   cdr.cdr_send_date = modal_body.find(".cdr_send_date").val();
 
   requestPayload.cdr = cdr
 
-  fusionpbx = new Object()
-
+  fusionpbx = {};
   fusionpbx.enabled = modal_body.find(".fusionpbx_db_enabled").val();
   fusionpbx.dbhost = modal_body.find(".fusionpbx_db_server").val();
   fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
@@ -73,9 +70,9 @@ function addEndpointGroup(action) {
   requestPayload.fusionpbx = fusionpbx;
 
   /* Process endpoints */
-  endpoints = new Array();
+  endpoints = [];
   $("tr.endpoint").each(function(i, row) {
-    endpoint = new Object();
+    endpoint = {};
     endpoint.gwid = $(this).find('td').eq(0).text();
     endpoint.hostname = $(this).find('td').eq(1).text();
     endpoint.description = $(this).find('td').eq(2).text();
@@ -202,7 +199,7 @@ function displayEndpointGroup(msg) {
 
 
   /* reset the save button*/
-  updatebtn = $('#edit .modal-footer').find("#updateButton")
+  updatebtn = $('#edit .modal-footer').find("#updateButton");
   updatebtn.removeClass("btn-success");
   updatebtn.addClass("btn-warning");
   updatebtn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
@@ -213,9 +210,9 @@ function displayEndpointGroup(msg) {
     var body = $('#endpoint-tablebody');
 
     for (endpoint in msg.endpoints) {
-      row = '<tr class="endpoint"><td name="gwid">' + msg.endpoints[endpoint].gwid + '</td>'
-      row += '<td name="hostname">' + msg.endpoints[endpoint].hostname + '</td>'
-      row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>'
+      row = '<tr class="endpoint"><td name="gwid">' + msg.endpoints[endpoint].gwid + '</td>';
+      row += '<td name="hostname">' + msg.endpoints[endpoint].hostname + '</td>';
+      row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>';
       table.append($(row));
     }
 
@@ -257,6 +254,7 @@ function deleteEndpointGroup() {
 }
 
 $(document).ready(function() {
+  // datatable init
   $('#endpointgroups').DataTable({
     "ajax": {
       "url": "/api/v1/endpointgroups",
@@ -268,6 +266,16 @@ $(document).ready(function() {
       //{ "data": "gwlist", visible: false },
     ],
     "order": [[1, 'asc']]
+  });
+
+  // datepicker init
+  var date_input = $('input[name="cdr_send_date"]'); //our date input has the name "date"
+  var container = $('.bootstrap-iso form').length > 0 ? $('.bootstrap-iso form').parent() : "body";
+  date_input.datepicker({
+    format: 'mm/dd/yyyy',
+    container: 'cdr-toggle',
+    todayHighlight: true,
+    autoclose: true,
   });
 
   $('#endpointgroups tbody').on('click', 'tr', function() {
@@ -289,8 +297,6 @@ $(document).ready(function() {
   $('#endpoint-table').Tabledit({
     //url: 'example.php',
     columns: {
-//      identifier: [0, 'id'],
-//      editable: [[1, 'col1'], [2, 'col2']],
       identifier: [0, 'gwid'],
       editable: [[1, 'hostname'], [2, 'description']],
       saveButton: true,
@@ -307,8 +313,6 @@ $(document).ready(function() {
   $('#endpoint-table2').Tabledit({
     //url: 'example.php',
     columns: {
-//      identifier: [0, 'id'],
-//      editable: [[1, 'col1'], [2, 'col2']],
       identifier: [0, 'gwid'],
       editable: [[1, 'hostname'], [2, 'description']],
       saveButton: true,
@@ -320,15 +324,6 @@ $(document).ready(function() {
 
       });
     }
-  });
-
-  var date_input = $('input[name="cdr_send_date"]'); //our date input has the name "date"
-  var container = $('.bootstrap-iso form').length > 0 ? $('.bootstrap-iso form').parent() : "body";
-  date_input.datepicker({
-    format: 'mm/dd/yyyy',
-    container: 'cdr-toggle',
-    todayHighlight: true,
-    autoclose: true,
   });
 
   $('#edit').on('show.bs.modal', function() {

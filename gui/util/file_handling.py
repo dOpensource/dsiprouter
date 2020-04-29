@@ -1,6 +1,8 @@
 import os
 from werkzeug.utils import secure_filename
 
+# TODO: files should be validated by magic bytes header as well as extension
+
 VALID_IMAGE_EXTENSIONS = {'jpg', 'jpe', 'jpeg', 'png', 'gif', 'svg', 'bmp'}
 VALID_VIDEO_EXTENSIONS = {'avi' 'flv' 'wmv' 'mov' 'mp4'}
 VALID_AUDIO_EXTENSIONS = {'wav' 'mp3' 'aac' 'ogg' 'oga' 'flac'}

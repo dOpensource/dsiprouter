@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#set -x
 
 # NOTES:
 # contains utility functions and shared variables
@@ -166,10 +165,10 @@ setKamailioConfigDburl() {
         -0777 -i -pe 's~(#!(define|trydef|redefine)\s+?'"${NAME}"'\s+)['"'"'"](?!cluster\:).*['"'"'"]~\1"${dburl}"~g' ${CONFIG_FILE}
 }
 
-# $1 == name of ip to change
-# $2 == value to change ip to
+# $1 == name of substdef to change
+# $2 == value to change substdef to
 # $3 == kamailio config file
-setKamailioConfigIP() {
+setKamailioConfigSubstdef() {
     local NAME="$1"
     local VALUE="$2"
     local CONFIG_FILE="$3"
@@ -495,7 +494,7 @@ checkDB() {
     return 1
 }
 
-# usage: dumpkDB [options] <database>
+# usage: dumpDB [options] <database>
 # options:  --user=<mysql user>
 #           --pass=<mysql password>
 #           --host=<mysql host>
