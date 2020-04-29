@@ -9,9 +9,8 @@ $(document).ready(function() {
 });
 
 
-// Resets the Add Modal 
+// Resets the Add Modal
 $('#open-DomainAdd').click(function() {
-
   /** Clear out and reset the modal */
   var modal_body = $('#add .modal-body');
   modal_body.find(".domain_name").attr('disabled',false);
@@ -58,7 +57,6 @@ $('#domains #open-Update').click(function() {
   modal_body.find('.authtype').val([]);
   modal_body.find('.authtype').val("");
 
-
   /* update modal fields */
   modal_body.find(".domain_id").val(domain_id);
   modal_body.find(".domain_name").val(domain_name);
@@ -87,26 +85,21 @@ $('#domains #open-Delete').click(function() {
 });
 
 function processDomainType(value) {
-
   var modal_body = $('.modal-body');
 
   if (value == "msteams-nosub") {
-    console.log("Clicked on authtype " + value);
-
+    //console.log("Clicked on authtype " + value);
     modal_body.find(".domain_name").attr('disabled',true);
     modal_body.find(".pbx_list").attr('disabled',true);
     modal_body.find(".notes").attr('disabled',true);
     modal_body.find(":submit").attr('disabled',true);
-
     //modal_body.find(":submit").attr('disabled',true);
   }
   else {
-
     modal_body.find(".domain_name").attr('disabled',false);
     modal_body.find(".pbx_list").attr('disabled',false);
     modal_body.find(".notes").attr('disabled',false);
     modal_body.find(":submit").attr('disabled',false);
 
   }
-
 }

@@ -75,7 +75,7 @@ function setCarrierGroupHandlers() {
     modal_body.find(".auth_password").val('');
     modal_body.find(".auth_domain").val('');
     modal_body.find(".auth_proxy").val('');
-    
+
    // update gwgroup for all modals
     $('.modal-body').find(".gwgroup").each(function() {
       $(this).val('');
@@ -126,7 +126,7 @@ function setCarrierGroupHandlers() {
     modal_body.find(".auth_domain").val(auth_domain);
     modal_body.find(".auth_username").val(auth_username);
     modal_body.find(".auth_proxy").val(auth_proxy);
-    
+
 	  // update gwgroup for all modals
     $('.modal-body').find(".gwgroup").each(function() {
       $(this).val(gwgroup);
@@ -295,6 +295,15 @@ $(document).ready(function() {
     error: function(xhr, msg, err) {
       console.error("Error [" + xhr.status + "] processing ajax call: " + msg);
     }
+  });
+
+  /* DataTable init */
+  $('#carrier-groups').DataTable({
+    "columnDefs": [
+      { "orderable": true, "targets": [1,2,3] },
+      { "orderable": false, "targets": [0,4,5,6,7,8,9,10,11] },
+    ],
+    "order": [[ 1, 'asc' ]]
   });
 
   /* update view when carriers updated */

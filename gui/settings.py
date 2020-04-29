@@ -4,20 +4,20 @@
 DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
 DSIP_CLUSTER_SYNC = True
-DSIP_PROTO = ''
+DSIP_PROTO = 'https'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
 DSIP_PASSWORD = 'admin'
-DSIP_SALT = b'555990231e7ac59a58ef6a8916e8eddfd2ff33544017ab34013b3d8c6fb975a2e5c3b0724cee3a845b239e0016fc4b92d2e641189f5089c52255126ffade6fb8'
-DSIP_API_TOKEN = b'b39f2cc56ddb343f7ef49861852925f0b2586e9df89aa9fd7ae40ebf338707e9cfd4a8807451cc76455bf0df848224c4fe944c329e7aef7d01c2950f757e99980513e5791c27b29b707521cdee74678b'
+DSIP_SALT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b'394a81ddc792536de311e31d40bce4b77b0aeed116a10d60eeec6fd777266b43c043f1adc5175a26dc98ab0adf9c0591c302d0dd8806bdb3cb253bc27e5b7def424f8f90e757be80b8312211b6f05644'
+DSIP_IPC_PASS = 'admin'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:

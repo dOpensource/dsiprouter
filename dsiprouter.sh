@@ -27,6 +27,7 @@
 # - rtp/sip/dmq ports are not dynamically set in kam config
 # - cleanup dependency installs/checks, many of these could be condensed
 # - need to create dsiprouter user/group on install and allow non-root execution
+# - should create settings.py in /etc/dsiprouter and link to /opt/dsiprouter/gui/settings.py
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -79,11 +80,12 @@ setScriptSettings() {
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
-    export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio51_dsiprouter.cfg"
+    export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/tls_dsiprouter.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
+    export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
     export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
     export SYSTEM_KAMAILIO_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg" # will be symlinked
     export SYSTEM_KAMAILIO_TLS_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/tls.cfg" # will be symlinked
@@ -92,7 +94,7 @@ setScriptSettings() {
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     export RTPENGINE_VER="mr6.1.1.1"
     export SRC_DIR="/usr/local/src"
-    export BACKUPS_DIR="/var/backups"
+    export BACKUPS_DIR="/var/backups/dsiprouter"
     export CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
 
 
@@ -123,12 +125,25 @@ setScriptSettings() {
     # updated dynamically!
 
     export EXTERNAL_IP=$(getExternalIP)
-    #export EXTERNAL_FQDN=$(dig +short -x ${EXTERNAL_IP} | sed 's/\.$//')
-    export EXTERNAL_FQDN=$(hostname)
+    export EXTERNAL_FQDN=$(dig +short -x ${EXTERNAL_IP} | sed 's/\.$//')
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
+    export INTERNAL_FQDN="$(hostname -f)"
 
-    DSIP_SERVER_DOMAIN="$(hostname -f)"
+    # TODO: tls not supported on api yet
+    if (( ${WITH_SSL} == 1 )); then
+        export DSIP_PROTO='https'
+        export DSIP_API_PROTO='http'
+        export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter.key"
+        export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter.crt"
+        export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
+    else
+        export DSIP_PROTO='https'
+        export DSIP_API_PROTO='http'
+        export DSIP_SSL_KEY=""
+        export DSIP_SSL_CERT=""
+        export DSIP_SSL_EMAIL=""
+    fi
 
     # grab root db settings from env or set to defaults
     export MYSQL_ROOT_USERNAME=${MYSQL_ROOT_USERNAME:-$MYSQL_ROOT_DEF_USERNAME}
@@ -202,7 +217,8 @@ function cleanupAndExit {
     unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG DEBUG IPV6_ENABLED KAM_DMQ_PORT
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
-    unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS
+    unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
+    unset INTERNAL_FQDN DSIP_SSL_EMAIL
     unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
@@ -314,7 +330,7 @@ function initialChecks {
     setScriptSettings
 
     # make sure dirs exist (ones that may not yet exist)
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR}
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
 
     if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
         # comment out cdrom in sources as it can halt install
@@ -398,7 +414,7 @@ export -f setPythonCmd
 
 # exported because its used throughout called scripts as well
 function reconfigureMysqlSystemdService {
-    printdbg 'Re-Configuring mysql systemd service for local or remote connection'
+    echo 'Re-Configuring mysql systemd service for local or remote connection'
 
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
@@ -436,7 +452,7 @@ function reconfigureMysqlSystemdService {
             ;;
     esac
 
-    printdbg 'Finished re-configuring mysql systemd service'
+    echo 'Finished re-configuring mysql systemd service'
 }
 export -f reconfigureMysqlSystemdService
 
@@ -447,11 +463,12 @@ function configurePythonSettings {
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_PRIV_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DSIP_SSL_CERT_DIR' "$DSIP_SSL_CERT_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DSIP_PROTO' "$DSIP_GUI_PROTOCOL" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_API_PROTO' "$DSIP_API_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
 }
 
 # update settings file based on cmdline args
@@ -465,34 +482,28 @@ function updatePythonRuntimeSettings {
 }
 
 function renewSSLCert {
-
     certbot certificates
     if (( $? == 0 )); then
     	certbot renew
     	if (( $? == 0 )); then
-        	rm -f ${CERT_DIR}/dsiprouter*
-        	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${CERT_DIR}/dsiprouter.crt
-       		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${CERT_DIR}/dsiprouter.key
-       		chown root:kamailio ${CERT_DIR}/dsiprouter*
-        	chmod g=+r ${CERT_DIR}/dsiprouter*
-		kamcmd tls.reload
+        	rm -f ${DSIP_CERTS_DIR}/dsiprouter*
+        	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
+       		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
+       		chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+        	chmod g=+r ${DSIP_CERTS_DIR}/dsiprouter*
+		    kamcmd tls.reload
      	fi
     else
         printwarn "Failed Renewing Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
-
-     fi
+    fi
 }
 
 function configureSSL {
-    # Define the directory that will be used for storing Certificates and create that directory
-    CERT_DIR=${DSIP_SYSTEM_CONFIG_DIR}/certs
-    mkdir -p ${CERT_DIR}
-
     # Check if certificates already exists.  If so, use them and exit
-    if [ -f "${CERT_DIR}/dsiprouter.crt" -a -f "${CERT_DIR}/dsiprouter.key" ]; then
-        printwarn "Certificate found in ${CERT_DIR} - using it"
-        chown root:kamailio ${CERT_DIR}/dsiprouter*
-        chmod g=+r ${CERT_DIR}/dsiprouter*
+    if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
+        printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
+        chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+        chmod g=+r ${DSIP_CERTS_DIR}/dsiprouter*
         return
     fi
 
@@ -501,24 +512,24 @@ function configureSSL {
     # Open port 80 for hostname validation
     firewall-cmd --zone=public --add-port=80/tcp --permanent
     firewall-cmd --reload
-    printdbg "Generating Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
-    certbot certonly --standalone --non-interactive --agree-tos --domains ${EXTERNAL_FQDN} -m none@none.net
+    printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
+    certbot certonly --standalone --non-interactive --agree-tos --domains ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
     if (( $? == 0 )); then
-        rm -f ${CERT_DIR}/dsiprouter*
-        cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${CERT_DIR}/dsiprouter.crt
-        cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${CERT_DIR}/dsiprouter.key
-        chown root:kamailio ${CERT_DIR}/*
-        chmod g=+r ${CERT_DIR}/*
-	#Add Nightly Cronjob to renew certs
-	cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
+        rm -f ${DSIP_CERTS_DIR}/dsiprouter*
+        cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
+        cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
+        chown root:kamailio ${DSIP_CERTS_DIR}/*
+        chmod g=+r ${DSIP_CERTS_DIR}/*
+        # Add Nightly Cronjob to renew certs
+        cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
     else
-        printwarn "Failed Generating Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
+        printwarn "Failed Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
 
         # Worst case, generate a Self-Signed Certificate
         printdbg "Generating dSIPRouter Self-Signed Certificates"
-        openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${CERT_DIR}/dsiprouter.crt -keyout ${CERT_DIR}/dsiprouter.key -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
-        chown root:kamailio ${CERT_DIR}/*
-        chmod g=+r ${CERT_DIR}/*
+        openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
+        chown root:kamailio ${DSIP_CERTS_DIR}/*
+        chmod g=+r ${DSIP_CERTS_DIR}/*
     fi
     firewall-cmd --zone=public --remove-port=80/tcp --permanent
     firewall-cmd --reload
@@ -531,7 +542,7 @@ function configureSSL {
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
-    local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})}
+    local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
     local ROLE=${ROLE:-$(getConfigAttrib 'ROLE' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_GW_ENABLED=${TELEBLOCK_GW_ENABLED:-$(getConfigAttrib 'TELEBLOCK_GW_ENABLED' ${DSIP_CONFIG_FILE})}
@@ -651,7 +662,7 @@ function updateDnsConfig {
 
 function configureKamailio {
     # copy of template kamailio configuration to dsiprouter system config dir
-    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio51_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
+    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
@@ -753,7 +764,7 @@ function configureKamailio {
         mkdir -p /tmp/defaults
 
         # copy over default gateway lists
-        cp ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv  /tmp/defaults/dr_gw_lists.csv
+        cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
 
         # sub in dynamic values
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
@@ -1136,7 +1147,8 @@ function uninstallDsiprouter {
 }
 
 function installKamailio {
-    local KAMDB_BACKUP_FILE="${BACKUPS_DIR}/kamdb_$(date '+%Y%m%d_%H%M%S').sql"
+    local KAMDB_BACKUP_DIR="${BACKUPS_DIR}/kamdb"
+    local KAMDB_BACKUP_FILE="${KAMDB_BACKUP_DIR}/$(date '+%s').sql"
 
     cd ${DSIP_PROJECT_DIR}
 
@@ -1553,10 +1565,10 @@ function displayLoginInfo {
     # Tell them how to access the URL
     printf '\n'
     printdbg "You can access the dSIPRouter web gui by going to:"
-    pprint "External IP: ${DSIP_GUI_PROTOCOL}://${EXTERNAL_IP}:${DSIP_PORT}"
+    pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
 
     if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-        pprint "Internal IP: ${DSIP_GUI_PROTOCOL}://${INTERNAL_IP}:${DSIP_PORT}"
+        pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
     fi
     printf '\n'
 }
@@ -1664,7 +1676,7 @@ function setCredentials {
 # configure kamailio DB settings
 setKamDBConfig() {
     if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
-        printwarn "kamailio is not installed.. install kamailio first"
+        printerr "kamailio is not installed.. install kamailio first"
         cleanupAndExit 1
     fi
 
@@ -2596,6 +2608,13 @@ function processCMD {
             # reconfigure ssl configs
             RUN_COMMANDS+=(configureSSL)
             shift
+
+            WITH_SSL=1
+            export DSIP_PROTO='https'
+            #export DSIP_API_PROTO='https'
+            export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter.key"
+            export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter.crt"
+            export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
 
             while (( $# > 0 )); do
                 OPT="$1"
