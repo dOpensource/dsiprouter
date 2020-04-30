@@ -2,7 +2,112 @@
 
 
 
-<<<<<<< HEAD
+### Installer / GUI Fixes
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 19:16:08 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- various GUI fixes
+- installer fixes
+
+
+---
+
+
+### Fixed issue with endpointgroup regressions
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 22:26:33 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### Fixed regression with endpointgroup
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 21:09:50 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### Fixed regression with endpointgroup
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 20:45:23 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### Packaging fixes - Changed login splash pic - Updated version from 0.60+ent to just 0.60
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 15:05:37 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### We applied commmit 4d67b83 becasue it was overriden
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Mon, 27 Apr 2020 19:08:38 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### Fixed error in install script for configuring SSL
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 11:10:57 +0000  
+> Author: root (root@sbc2.dsiprouter.net)  
+> Committer: root (root@sbc2.dsiprouter.net)  
+
+
+
+---
+
+
+### SSL Fixes - Added a renewsslcert option to dsiprouter.sh - Added a cronjob that will call renewsslcert.  It will revnew the Let's Encrypt Certificate if it needs to be renewed
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Wed, 29 Apr 2020 05:24:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.net)  
+> Committer: Mack Hendricks (mack@dopensource.net)  
+
+
+
+---
+
+
 ### Pre-release Fixes
 
 > Branches Affected: v0.60+ent  
@@ -17,31 +122,59 @@
 - fix external fqdn resolution bug
 - various code reformatting
 - remove copy of file_handling.py
-=======
-### v0.60+ent pre-release fixes
-
-> Branches Affected: v0.60+ent  
-> Tags Affected:   
-> Date: Mon, 27 Apr 2020 19:08:38 -0400  
-> Author: Tyler Moore (tmoore@goflyball.com)  
-> Committer: Tyler Moore (tmoore@goflyball.com)  
-
-- fix subscriber table reversion
-- add animation to hidden css class
-- fix endpoint groups ip auth selection issue
->>>>>>> 4d67b83... v0.60+ent pre-release fixes
 
 
 ---
 
 
-<<<<<<< HEAD
-### Fixed a regression in dsiprouter.sh - An echo command was in mistakenly packed in the sources.list file
-=======
-### Small Fixes
->>>>>>> 4d67b83... v0.60+ent pre-release fixes
+### Pre-release Fixes
+
+> Branches Affected: v0.60-regression-fixes  
+> Tags Affected:   
+> Date: Tue, 28 Apr 2020 20:25:14 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- update dispatcher settings in kam config
+- cleanup non-debug output on install
+- fix regressions in api routes
+- fix external fqdn resolution bug
+- various code reformatting
+- remove copy of file_handling.py
+
+
+---
+
+
+### Fixed an issue with importing addresses that contain MSTeams SBC's
 
 > Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Tue, 28 Apr 2020 22:44:39 +0000  
+> Author: Mack Hendricks (mack@dopensource.net)  
+> Committer: Mack Hendricks (mack@dopensource.net)  
+
+
+
+---
+
+
+### Updating the Support links
+
+> Branches Affected: v0.60+ent,v0.60-regression-fixes  
+> Tags Affected:   
+> Date: Tue, 28 Apr 2020 18:06:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.net)  
+> Committer: Mack Hendricks (mack@dopensource.net)  
+
+
+
+---
+
+
+### Fixed a regression in dsiprouter.sh - An echo command was in mistakenly packed in the sources.list file
+
+> Branches Affected: v0.60+ent,v0.60-regression-fixes  
 > Tags Affected:   
 > Date: Tue, 28 Apr 2020 14:35:10 +0000  
 > Author: root (root@sbc2.dsiprouter.net)  

@@ -17,7 +17,7 @@ DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b'5e9d6ca427ca4bb3e320072b28494736d7b2ba383132c450a5ac747d29ae35763607cfd0cca09db3f0c0d62c141cb953a76dfa7f53bb22d2ae1b4c8eb7db4c0aa18be4dad657ed407880b5371206b6c3'
+DSIP_IPC_PASS = 'admin'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:

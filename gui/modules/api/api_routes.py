@@ -1491,14 +1491,8 @@ def createBackup(gwid=None):
     Generate a backup of the database
 
     """
-    db = DummySession()
-
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
 
     try:
-        db = SessionLoader()
-
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -1524,20 +1518,8 @@ def createBackup(gwid=None):
         # return Response(lines, mimetype="text/plain",headers=headers)
         return send_file(backup_path, attachment_filename=backup_name, as_attachment=True), StatusCodes.HTTP_OK
 
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        error = "http"
-        db.rollback()
-        db.flush()
-        return jsonify(status=0, error=error)
     except Exception as ex:
-        debugException(ex)
-        error = "server"
-        db.rollback()
-        db.flush()
-        return jsonify(status=0, error=error)
-    finally:
-        db.close()
+        return showApiError(ex)
 
 @api.route("/api/v1/backupandrestore/restore", methods=['POST'])
 @api_security
