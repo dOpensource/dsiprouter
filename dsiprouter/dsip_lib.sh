@@ -113,7 +113,7 @@ getConfigAttrib() {
     local CONFIG_FILE="$2"
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
-    printf '%s' "${VALUE}" | perl -0777 -pe 's|^b?["'"'"']+(.+?)["'"'"']+$|\1|g'
+    printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
 }
 
 # $1 == attribute name
@@ -128,7 +128,7 @@ decryptConfigAttrib() {
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
     # if value is not a byte literal it isn't encrypted
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
-        printf '%s' "${VALUE}" | perl -0777 -pe 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
+        printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
     else
         ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
     fi

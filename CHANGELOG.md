@@ -2,6 +2,51 @@
 
 
 
+### v0.60 Release Bug Fixes
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 30 Apr 2020 18:58:26 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix bug in `dsiprouter/dsip_lib.sh` that caused bad kamcfg settings
+- fix uac auth bug causing improper uacreg lookup
+- add validated carrier IP's for centurylink carrier enrichment
+- add some TODO's to `dsiprouter.sh`
+- reset defaults in `gui/settings.py`
+- fix bug in `gui/shared.py` causing exceptions when debugging
+
+
+---
+
+
+### Fixed RTP selection
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 30 Apr 2020 16:03:06 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### MOTD Updates and set the protocol of the GUI to http
+
+> Branches Affected: v0.60+ent  
+> Tags Affected:   
+> Date: Thu, 30 Apr 2020 02:14:06 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
 ### Installer / GUI Fixes
 
 > Branches Affected: v0.60+ent  

@@ -28,6 +28,9 @@
 # - cleanup dependency installs/checks, many of these could be condensed
 # - need to create dsiprouter user/group on install and allow non-root execution
 # - should create settings.py in /etc/dsiprouter and link to /opt/dsiprouter/gui/settings.py
+# - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
+# - add bash command completion for dsiprouter script
+# - add to pre-commit script resetting of default passwords (settings.py,kamailio.cfg)
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files

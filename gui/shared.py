@@ -401,7 +401,7 @@ def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
 
             if funcname != '<module>':
                 funcname = funcname + '()'
-            text += "[FILE]: {}\n[LINE NUM]: {}\n[FUNCTION]: {}\n[SOURCE]: {}".format(filename, linenum, funcname,
+            text += "[FILE]: {}\n[LINE NUM]: {}\n[FUNCTION]: {}\n[SOURCE]: {}\n".format(filename, linenum, funcname,
                 source)
     if log_ex:
         IO.logerr(text)
@@ -435,12 +435,43 @@ def debugEndpoint(log_out=True, print_out=True, **kwargs):
         calling_chain.append(frame.f_code.co_name)
 
     text = "((( [DEBUG ENDPOINT]: {} )))\n".format(' -> '.join(calling_chain))
-    items_dict = objToDict(request)
-    for k, v in sorted(items_dict.items()):
-        text += '{}: {}\n'.format(k, str(v).strip())
+    text += '\n'.join((
+        '{}: {}'.format('accept_charsets', str(request.accept_charsets).strip()),
+        '{}: {}'.format('accept_encodings', str(request.accept_encodings).strip()),
+        '{}: {}'.format('accept_languages', str(request.accept_languages).strip()),
+        '{}: {}'.format('accept_mimetypes', str(request.accept_mimetypes).strip()),
+        '{}: {}'.format('access_control_request_headers', str(request.access_control_request_headers).strip()),
+        '{}: {}'.format('access_control_request_method', str(request.access_control_request_method).strip()),
+        '{}: {}'.format('access_route', str(request.access_route).strip()),
+        '{}: {}'.format('args', str(request.args).strip()),
+        '{}: {}'.format('authorization', str(request.authorization).strip()),
+        '{}: {}'.format('base_url', str(request.base_url).strip()),
+        '{}: {}'.format('blueprint', str(request.blueprint).strip()),
+        '{}: {}'.format('cache_control', str(request.cache_control).strip()),
+        '{}: {}'.format('charset', str(request.charset).strip()),
+        '{}: {}'.format('content_encoding', str(request.content_encoding).strip()),
+        '{}: {}'.format('content_length', str(request.content_length).strip()),
+        '{}: {}'.format('content_md5', str(request.content_md5).strip()),
+        '{}: {}'.format('content_type', str(request.content_type).strip()),
+        '{}: {}'.format('cookies', str(request.cookies).strip()),
+        '{}: {}'.format('files', str(request.files).strip()),
+        '{}: {}'.format('form', str(request.form).strip()),
+        '{}: {}'.format('headers', str(request.headers).strip()),
+        '{}: {}'.format('json', str(request.get_json(force=True, silent=True)).strip()),
+        '{}: {}'.format('method', str(request.method).strip()),
+        '{}: {}'.format('query_string', str(request.query_string).strip()),
+        '{}: {}'.format('referrer', str(request.referrer).strip()),
+        '{}: {}'.format('remote_addr', str(request.remote_addr).strip()),
+        '{}: {}'.format('remote_user', str(request.remote_user).strip()),
+        '{}: {}'.format('url', str(request.url).strip()),
+        '{}: {}'.format('user_agent', str(request.user_agent).strip()),
+        '{}: {}'.format('values', str(request.values).strip()),
+        '{}: {}'.format('view_args', str(request.view_args).strip()),
+    ))
+
     if len(kwargs) > 0:
         for k, v in sorted(kwargs):
-            text += "{}: {}\n".format(k, v)
+            text += "{}: {}\n".format(k, str(v).strip())
 
     if log_out:
         IO.logdbg(text)

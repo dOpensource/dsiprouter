@@ -3,14 +3,14 @@
 
 DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
-DSIP_CLUSTER_SYNC = True
+DSIP_CLUSTER_SYNC = False
 DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
 DSIP_PASSWORD = 'admin'
-DSIP_SALT = b'5ceb37b039096bbdccd62004b0ad0e66919c8f84a90788aa5761c641e274bf1936ce351a101d09e8a848342a271a558374622cc44057bcdc5fd01e60c07c123e'
-DSIP_API_TOKEN = b'0e1d199817407171af4a30a64a78a46497e509683af2b2bc7217305b93a73892a8ad1c1b69386d5720579e8c8ab498059bff6bf078d58c6eb67ef71b69b96fc66befda9233819bffaf7578c7d415125f'
+DSIP_SALT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
@@ -36,7 +36,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = '0.60'
-DEBUG = True
+DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
@@ -67,7 +67,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = True
+SQLALCHEMY_SQL_DEBUG = False
 
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table
