@@ -4,20 +4,20 @@
 DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
 DSIP_CLUSTER_SYNC = True
-DSIP_PROTO = ''
+DSIP_PROTO = 'http'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
 DSIP_PASSWORD = 'admin'
-DSIP_SALT = b'555990231e7ac59a58ef6a8916e8eddfd2ff33544017ab34013b3d8c6fb975a2e5c3b0724cee3a845b239e0016fc4b92d2e641189f5089c52255126ffade6fb8'
-DSIP_API_TOKEN = b'b39f2cc56ddb343f7ef49861852925f0b2586e9df89aa9fd7ae40ebf338707e9cfd4a8807451cc76455bf0df848224c4fe944c329e7aef7d01c2950f757e99980513e5791c27b29b707521cdee74678b'
+DSIP_SALT = b'5ceb37b039096bbdccd62004b0ad0e66919c8f84a90788aa5761c641e274bf1936ce351a101d09e8a848342a271a558374622cc44057bcdc5fd01e60c07c123e'
+DSIP_API_TOKEN = b'0e1d199817407171af4a30a64a78a46497e509683af2b2bc7217305b93a73892a8ad1c1b69386d5720579e8c8ab498059bff6bf078d58c6eb67ef71b69b96fc66befda9233819bffaf7578c7d415125f'
 DSIP_API_PROTO = 'http'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b'394a81ddc792536de311e31d40bce4b77b0aeed116a10d60eeec6fd777266b43c043f1adc5175a26dc98ab0adf9c0591c302d0dd8806bdb3cb253bc27e5b7def424f8f90e757be80b8312211b6f05644'
+DSIP_IPC_PASS = b'5e9d6ca427ca4bb3e320072b28494736d7b2ba383132c450a5ac747d29ae35763607cfd0cca09db3f0c0d62c141cb953a76dfa7f53bb22d2ae1b4c8eb7db4c0aa18be4dad657ed407880b5371206b6c3'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -36,7 +36,7 @@ DSIP_SSL_EMAIL = ''
 # dSIPRouter internal settings
 
 VERSION = '0.60'
-DEBUG = False
+DEBUG = True
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
@@ -67,7 +67,7 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = False
+SQLALCHEMY_SQL_DEBUG = True
 
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table
@@ -97,9 +97,9 @@ FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # updated dynamically! ONLY set here if you need static values
-INTERNAL_IP_ADDR = '138.197.135.116'
-INTERNAL_IP_NET = '138.197.135.*'
-EXTERNAL_IP_ADDR = '138.197.135.116'
+INTERNAL_IP_ADDR = '165.22.224.211'
+INTERNAL_IP_NET = '165.22.224.*'
+EXTERNAL_IP_ADDR = '165.22.224.211'
 EXTERNAL_FQDN = 'sbc3.dsiprouter.net'
 
 # upload folder for files
