@@ -1614,9 +1614,13 @@ def getOptionMessageStatus(domain):
     if response:
         response = response.decode('utf8').replace("'", '"')
         found_domain = response.find(domain)
-        if found_domain >= 0 and response.find("FLAGS: AP", found_domain):
-            return True
-    return False
+        if not found_domain:
+            return False
+        else:
+            found_inactive = response.find("FLAGS: IP", found_domain)
+            if found_inactive > 0:
+                return False
+    return True
 
 @api.route("/api/v1/domains/msteams/test/<string:domain>", methods=['GET'])
 @api_security
@@ -1642,12 +1646,14 @@ def testConnectivity(domain):
             # Get the IP address of the domain from Google  DNS
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']
-            answers = resolver.query(domain, 'A')
-            for a in answers:
-                # If the External IP and IP from DNS match then it passes the check
-                if a.to_text() == external_ip_addr:
-                    responsePayload['hostname_check'] = True
-
+            try:
+                answers = resolver.query(domain, 'A')
+                for a in answers:
+                 # If the External IP and IP from DNS match then it passes the check
+                    if a.to_text() == external_ip_addr:
+                        responsePayload['hostname_check'] = True
+            except:
+                pass
         # Check if Domain is the root of the CN
         # GoDaddy Certs Don't work with Microsoft Direct routing
         certInfo = isCertValid(domain,external_ip_addr,5061)

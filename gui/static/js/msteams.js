@@ -37,7 +37,12 @@ function updateConnectivtyStatus(msg) {
   else {
     $("#tls_check").addClass("glyphicon glyphicon-remove");
     $("#tls_check").css("color","red");
-    $("#tls_check_row").tooltip({'title': "Cert commonname doesn't match the domain:" + JSON.stringify(msg.tls_check.tls_cert_details), 'placement': 'right', 'trigger': 'manual','tooltipClass': 'tooltipclass'}); 
+    if (msg.tls_check.tls_cert_details == '')
+		  error_msg="Certificate was not found";
+    else
+		  error_msg="Cert commonname doesn't match the domain:" + JSON.stringify(msg.tls_check.tls_cert_details);
+	  
+	  $("#tls_check_row").tooltip({'title': error_msg, 'placement': 'right', 'trigger': 'manual','tooltipClass': 'tooltipclass'}); 
     $("#tls_check_row").tooltip('show');
   }
 
