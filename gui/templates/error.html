@@ -1,0 +1,119 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block custom_css %}
+  {{ link_tag('main') }}
+{% endblock %}
+
+{% block body %}
+
+  {% set github_url = 'https://github.com/dOpensource/dsiprouter' %}
+  {% set github_issues_url = github_url + "/issues" %}
+
+  <div class="wrapper-vertical centered">
+
+    {% if type=="db" %}
+
+      <div class="alert alert-danger container">
+        <h2><strong>DB Issue</strong></h2>
+      </div>
+
+      {% if msg is not none %}
+        <div class="alert alert-info container" style="padding: 10px 10px">
+          <p>Detailed Information: <b>{{ msg }}</b></p>
+        </div>
+      {% endif %}
+
+      <br>
+
+      <div class="alert container">
+        <p>Please check your database and try the request again!</p>
+        <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.
+        </p>
+      </div>
+
+    {% elif type=="http" %}
+
+      <div class="alert alert-danger container">
+        <h2><strong>HTTP Issue</strong></h2>
+      </div>
+
+      {% if msg is not none %}
+        <div class="alert alert-info container" style="padding: 10px 10px">
+          <p>Detailed Information: <b>{{ msg }}</b></p>
+        </div>
+      {% endif %}
+
+      <br>
+
+      <div class="alert container">
+        <p>Please check your connection and try the request again!</p>
+        <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.
+        </p>
+      </div>
+
+    {% elif type=="server" %}
+
+      <div class="alert alert-danger container">
+        <h2><strong>Server Issue</strong></h2>
+      </div>
+
+      {% if msg is not none %}
+        <div class="alert alert-info container" style="padding: 10px 10px">
+          <p>Detailed Information: <b>{{ msg }}</b></p>
+        </div>
+      {% endif %}
+
+      <br>
+
+      <div class="alert container">
+        <p>Please check your configuration and try the request again!</p>
+        <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.
+        </p>
+        <p>To submit a bug for review go to the <a href="{{ github_issues_url }}">dSIPRouter Issues</a> page and submit
+          a new
+          issue with a <strong>detailed</strong> explanation and <strong>screenshots</strong> of the issue.</p>
+      </div>
+
+    {% else %}
+
+      <div class="alert alert-danger container">
+        <h2><strong>Unknown Issue</strong></h2>
+      </div>
+
+      {% if msg is not none %}
+        <div class="alert alert-info container" style="padding: 10px 10px">
+          <p>Detailed Information: <b>{{ msg }}</b></p>
+        </div>
+      {% endif %}
+
+      <br>
+
+      <div class="alert container">
+        <p>Please check your request and try it again!</p>
+        <p>Check out the <a href="{{ github_url }}">dSIPRouter Github</a> page for more information about the platform.
+        </p>
+        <p>To submit a bug for review go to the <a href="{{ github_issues_url }}">dSIPRouter Issues</a> page and submit
+          a new
+          issue with a <strong>detailed</strong> explanation and <strong>screenshots</strong> of the issue.</p>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+{% endblock %}
+
+{% block custom_js %}
+  <script type="application/javascript">
+    /* fix section padding */
+    $('.wrap .content .content-inner').css({
+      'padding': 0
+    });
+    /* fix alert text color */
+    $('.alert > *').css({
+      'color': '#000000'
+    });
+  </script>
+{% endblock %}

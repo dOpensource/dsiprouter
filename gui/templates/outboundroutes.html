@@ -1,0 +1,247 @@
+{% extends 'table_layout.html' %}
+
+
+{% block table_headers %}
+
+  <div class="tableAddButton btn-toolbar">
+    <h4>List of Outbound Routes</h4>
+    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
+            data-target="#add">Add
+    </button>
+    <button type="submit" class='btn btn-success btn-md' onclick="location.href = '/teleblock';">Teleblock Support
+    </button>
+  </div>
+
+{% endblock %}
+
+
+{% block table %}
+
+  <table id="outboundmapping" class="table table-striped table-centered">
+    <thead>
+    <tr class='element-row'>
+      <th></th>
+      <th data-field="ruleid">Rule ID</th>
+      <th data-field="groupid" class="hidden">Group ID</th>
+      <th data-field="from_prefix">From Prefix</th>
+      <th data-field="prefix">To Prefix</th>
+      <th data-field="timerec">Recurrence</th>
+      <th data-field="priority">Priority</th>
+      <th data-field="routeid">Custom Route</th>
+      <th data-field="gwlist">Gateway List</th>
+      <th data-field="description">Name</th>
+      <th></th>
+      <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in rows %}
+      <tr class='element-row'>
+        <td><input type="checkbox" class="checkthis" value="1"/></td>
+        <td class='ruleid'>{{ row.ruleid }}</td>
+        <td class='groupid hidden'>{{ row.dr_groupid }}</td>
+        <td class='from_prefix'>{{ row.from_prefix|noneFilter() }}</td>
+        <td class='prefix'>{{ row.prefix }}</td>
+        <td class="timerec">{{ row.timerec }}</td>
+        <td class="priority">{{ row.priority }}</td>
+        <td class="routeid">{{ row.routeid }}</td>
+        <td class="gwlist">{{ row.gwlist }}</td>
+        <td class="description">{{ row.description|attrFilter('name') }}</td>
+        <td>
+          <p data-placement="top" data-toggle="tooltip" title="Edit">
+            <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit"
+                    data-toggle="modal" data-target="#edit"><span class="glyphicon glyphicon-pencil"></span>
+            </button>
+          </p>
+        </td>
+        <td>
+          <p data-placement="top" data-toggle="tooltip" title="Delete">
+            <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete"
+                    data-toggle="modal" data-target="#delete"><span class="glyphicon glyphicon-trash"></span>
+            </button>
+          </p>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}
+
+
+{% block edit_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Edit Your Outbound Route</h4>
+  </div>
+
+
+  <div class="modal-body">
+    <form action="/outboundroutes" method="POST" role="form">
+      <input class="ruleid " type="hidden" name="ruleid">
+      <input class="groupid " type="hidden" name="groupid">
+      <div class="form-group">
+        <input class="name form-control" type="text" name="name" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <input class="from_prefix form-control" type="text" name="from_prefix"
+               placeholder="From Prefix Matching (Optional)">
+      </div>
+      <div class="form-group">
+        <input class="prefix form-control" type="text" name="prefix"
+               placeholder="To Prefix Matching (Optional)">
+      </div>
+      <div class="form-group">
+        <input class="timerec form-control" type="text" name="timerec"
+               placeholder="Recurring Time (Optional)">
+      </div>
+      <div class="form-group">
+        <input class="priority form-control" type="text" name="priority"
+               placeholder="Priority (Optional: higher priorities routed first)">
+      </div>
+      <div class="form-group">
+        <label>Custom Kamailio Route (Reservered for use)</label>
+        <select class="routeid form-control" name="routeid" title="routeid">
+          <option value="" selected="selected">No Custom Routing (default)</option>
+          {% for routeid in custom_routes %}
+            <option value='{{ routeid }}'>{{ routeid }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Outbound Mappings (comma seprated list of carrier id's)</label>
+        <textarea class="gwlist form-control" rows="2" name="gwlist" title="gwlist">{{ outboundroutes }}</textarea>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Update
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block add_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Add an Outbound Route</h4>
+  </div>
+
+  <div class="modal-body">
+    <form id="addOutboundRoutes" action="/outboundroutes" method="POST" role="form">
+      <input class="ruleid " type="hidden" name="ruleid">
+      <div class="form-group">
+        <input class="name form-control" type="text" name="name" placeholder="Friendly Name (Optional)"
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <input class="from_prefix form-control" type="text" name="from_prefix"
+               placeholder="From Prefix Matching (Optional)" data-custom="tocheck">
+      </div>
+      <div class="form-group">
+        <input class="prefix form-control" type="text" name="prefix"
+               placeholder="To Prefix Matching (Optional)">
+      </div>
+      <div class="form-group">
+        <input class="timerec form-control" type="text" name="timerec"
+               placeholder="Recurring Time (Optional)">
+      </div>
+      <div class="form-group">
+        <input class="priority form-control" type="text" name="priority"
+               placeholder="Priority (Optional: higher priorities routed first)">
+      </div>
+      <div class="form-group">
+        <label>Custom Kamailio Route (Reservered for use later)</label>
+        <select class="routeid form-control" name="routeid" title="routeid">
+          <option value="" selected="selected">No Custom Routing (default)</option>
+          {% for routeid in custom_routes %}
+            <option value='{{ routeid }}'>{{ routeid }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Outbound Mappings (comma seprated list of carrier id's)</label>
+        <textarea class="gwlist form-control" rows="2" name="gwlist" required
+                  data-error="You must enter in at least 1 gateway" title="gwlist">{{ outboundroutes }}</textarea>
+        <div class="help-block with-errors"></div>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Add
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block delete_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/outboundroutesdelete" method="POST" role="form">
+      <div class="modal-body">
+        <div class="form-group">
+          <input class="ruleid form-control" type="hidden" name="ruleid">
+          <input class="groupid form-control" type="hidden" name="groupid">
+        </div>
+
+        <div class="alert alert-danger">
+          <span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
+          to delete this Record?
+        </div>
+      </div>
+
+      <div class="modal-footer ">
+        <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok-sign"></span> Yes
+        </button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><span
+            class="glyphicon glyphicon-remove"></span> No
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+{% block custom_js %}
+  <script>
+    $(document).ready(function() {
+      /* data tables */
+      $('#outboundmapping').DataTable({
+        "columnDefs": [
+          { "orderable": true, "targets": [1,3,4,5,6,7,8,9] },
+          { "orderable": false, "targets": [0,2,10,11] },
+        ],
+        "order": [[1, 'asc']]
+      });
+      /* validator */
+      var options = {
+        custom: {
+          tocheck: function($el) {
+            return $el.length > 0 && $('prefix').length > 0;
+          }
+        },
+        errors: {
+          tocheck: "You must enter a To Prefix as well.  Entering just a From prefix is not supported"
+        }
+      };
+      $('#addOutboundRoutes').validator(options);
+    });
+  </script>
+{% endblock %}

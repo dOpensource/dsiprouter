@@ -1,0 +1,14 @@
+docker
+Flask
+Flask_Script
+mysqlclient
+psycopg2
+psycopg2_binary
+pycrypto
+PyOpenSSL
+PyMySQL
+pytz
+requests
+SQLAlchemy
+Werkzeug
+dnspython

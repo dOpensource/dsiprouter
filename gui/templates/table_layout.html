@@ -1,0 +1,73 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block custom_css %}
+{% endblock %}
+
+{% block body %}
+
+  <div class="col-md-12">
+
+    <div class="wrapper-horizontal edge-centered children-align-inherit">
+      {% block table_headers %}
+      {% endblock %}
+    </div>
+
+    <br>
+    <div class="clearfix"></div>
+    <br>
+
+    <div class="table-responsive">
+      {% block table %}
+      {% endblock %}
+    </div>
+
+  </div>
+
+
+  <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="Edit" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {% block edit_modal %}
+        {% endblock %}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+
+
+  <div class="modal fade" id="add" tabindex="-1" role="dialog" aria-labelledby="Add" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {% block add_modal %}
+        {% endblock %}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+
+
+  <div class="modal fade" id="delete" tabindex="-1" role="dialog" aria-labelledby="Delete" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {% block delete_modal %}
+        {% endblock %}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  
+  <div class="modal fade" id="import" tabindex="-1" role="dialog" aria-labelledby="Import" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {% block import_modal %}
+        {% endblock %}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+
+  {% block custom_modals %}
+  {% endblock %}
+
+{% endblock %}
+
+{% block custom_js %}
+{% endblock %}

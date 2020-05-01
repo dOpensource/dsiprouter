@@ -1,0 +1,11 @@
+Flask
+Flask_Script
+psycopg2
+psycopg2_binary
+pycrypto
+PyMySQL
+pytz
+requests
+SQLAlchemy
+Werkzeug
+dnspython

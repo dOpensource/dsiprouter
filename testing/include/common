@@ -1,0 +1,234 @@
+#!/usr/bin/env bash
+
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
+
+# Ansi Colors
+ESC_SEQ="\033["
+ANSI_NONE="${ESC_SEQ}39;49;00m" # Reset colors
+ANSI_RED="${ESC_SEQ}1;31m"
+ANSI_GREEN="${ESC_SEQ}1;32m"
+ANSI_YELLOW="${ESC_SEQ}1;33m"
+ANSI_CYAN="${ESC_SEQ}1;36m"
+ANSI_WHITE="${ESC_SEQ}1;37m"
+
+# Configured by install script
+PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh"
+# Import path updates so we don't have to reload shell to test
+. ${PATH_UPDATE_FILE}
+
+# Portable Printing functions (no newline by default)
+printerr() {
+    printf "%b%s%b" "${ANSI_RED}" "$*" "${ANSI_NONE}"
+}
+
+printwarn() {
+    printf "%b%s%b" "${ANSI_YELLOW}" "$*" "${ANSI_NONE}"
+}
+
+printdbg() {
+    printf "%b%s%b" "${ANSI_GREEN}" "$*" "${ANSI_NONE}"
+}
+
+printinfo() {
+    printf "%b%s%b" "${ANSI_WHITE}" "$*" "${ANSI_NONE}"
+}
+
+pprint() {
+    printf "%b%s%b" "${ANSI_CYAN}" "$*" "${ANSI_NONE}"
+}
+
+process_result() {
+    [ $((${#1}%2)) -eq 0 ] && desc="$1" || desc="$1 "
+
+    if [ $2 -eq 0 ]; then
+        printf "%-*s %s %*s\n" $(( (100-${#desc}) / 2 )) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(( (100-${#desc}) / 2 )) "[$(printdbg 'PASS')]"
+        return 0
+    else
+        printf "%-*s %s %*s\n" $(( (100-${#desc}) / 2 )) "($(pprint $(basename ""$0"" | cut -d '.' -f 1)))" "$(printinfo ""$desc"")" $(( (100-${#desc}) / 2 )) "[$(printerr 'FAIL')]"
+        return 1
+    fi
+}
+
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+ipv4Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        local IFS='.'
+        IP=($IP)
+        if (( ${IP[0]} <= 255 && ${IP[1]} <= 255 && ${IP[2]} <= 255 && ${IP[3]} <= 255 )); then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# notes: prints external ip, or empty string if not available
+getExternalIP() {
+    local EXTERNAL_IP=""
+    local URLS=(
+        "https://ipv4.icanhazip.com"
+        "https://api.ipify.org"
+        "https://myexternalip.com/raw"
+        "https://ipecho.net/plain"
+        "https://bot.whatismyipaddress.com"
+    )
+
+    for URL in ${URLS[@]}; do
+        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break
+    done
+
+    printf '%s' "$EXTERNAL_IP"
+}
+
+# $1 == attribute name
+# $2 == python config file
+# returns: attribute value
+getConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    printf '%s' "${VALUE}" | perl -0777 -pe 's|^b?["'"'"']+(.+?)["'"'"']+$|\1|g'
+}
+
+# $1 == attribute name
+# $2 == python config file
+# returns: attribute value decrypted
+# notes: if value is not encrypted the value will be returned
+decryptConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+    local PYTHON=${PYTHON_CMD:-python3}
+
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    # if value is not a byte literal it isn't encrypted
+    if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
+        printf '%s' "${VALUE}" | perl -0777 -pe 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
+    else
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+    fi
+}
+
+# $1 == attribute name
+# $2 == attribute value
+# $3 == python config file
+# $4 == -q (quote string) | -qb (quote byte string)
+setConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    if (( $# >= 4 )); then
+        if [[ "$4" == "-q" ]]; then
+            VALUE="'${VALUE}'"
+        elif [[ "$4" == "-qb" ]]; then
+            VALUE="b'${VALUE}'"
+        fi
+    fi
+    sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the AWS metadata URL to determine if this is an AMI instance
+isInstanceAMI() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the DO metadata URL to determine if this is an Digital Ocean instance
+isInstanceDO() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/ &>/dev/null; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the GCE metadata URL to determine if this is an Google instance
+isInstanceGCE() {
+    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/; ret=$?
+    if (( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+# notes: try to access the MS Azure metadata URL to determine if this is an Azure instance
+isInstanceAZURE() {
+    curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01"; ret=$?
+    if (( $ret != 6 )) &&(( $ret != 22 )) && (( $ret != 28 )); then
+        return 0
+    fi
+    return 1
+}
+
+# TODO: support digital ocean and google cloud and microsoft azure
+# $1 == -aws | -do | -gce | -azure
+# returns: instance ID || blank string
+# notes: we try checking for exported instance variable avoid querying again
+getInstanceID() {
+    if (( ${AWS_ENABLED:-0} == 1)); then
+        curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+        ec2-metadata -i 2>/dev/null
+    elif (( ${DO_ENABLED:-0} == 1 )); then
+        curl http://169.254.169.254/metadata/v1/id 2>/dev/null
+    elif (( ${GCE_ENABLED:-0} == 1 )); then
+        curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
+    elif (( ${AZURE_ENABLED:-0} == 1 )); then
+        curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+    else
+        if isInstanceAMI; then
+            curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+            ec2-metadata -i 2>/dev/null
+        elif isInstanceDO; then
+            curl http://169.254.169.254/metadata/v1/id 2>/dev/null
+        elif isInstanceGCE; then
+            curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
+        elif isInstanceAZURE; then
+            curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+        fi
+    fi
+}
+
+# $* == string to encode (prevent splitting by slurping all the args)
+# notes: print URI encoded string
+uriEncode() {
+    perl -MURI::Escape -e 'print uri_escape shift, , q{^A-Za-z0-9\-._~/}' -- "$*"
+}
+
+# Add PBX
+# return the PBX ID
+addPBX() {
+	mysql kamailio -e "insert into dr_gateways values (null,9,'18.191.20.204',0,null,null,'name:Smoketest PBX');"
+	pbxid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest PBX%';"`
+
+	return $pbxid
+}
+
+deletePBX() {
+	mysql kamailio -e "delete from dr_gateways where description like '%Smoketest PBX%';"
+}
+
+addDomain() {
+	mysql kamailio -e "insert into domain values (null,'smoketest.com','smoketest.com',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_list',2,'64',now())";
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_type',2,'0',now())"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','created_by',2,'0',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','domain_auth',2,'passthru',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','description',2,'notes:Smoketest Domain',now());"
+	mysql kamailio -e "insert into domain_attrs values (null,'smoketest.com','pbx_ip',2,'18.191.20.204',now());"
+}
+
+deleteDomain() {
+	mysql kamailio -e "delete from domain where did='smoketest.com';"
+	mysql kamailio -e "delete from domain_attrs where did='smoketest.com';"
+}

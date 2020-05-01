@@ -1,0 +1,3 @@
+CHANGELOG.md merge=merge-changelog
+CONTRIBUTORS.md merge=merge-contributors
+*requirements.txt merge=merge-requirements

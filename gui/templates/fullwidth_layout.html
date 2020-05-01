@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+{% from 'util.jinja2.html' import link_tag, script_tag, tracked_link, img_tag %}
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+  <title>dSIPRouter {% block title %}{% endblock %}</title>
+
+  {{ link_tag('bootstrap') }}
+  {{ link_tag('bootstrap-theme') }}
+  {{ link_tag('bootstrap-toggle') }}
+  {{ link_tag('datatables.min') }}
+  {{ link_tag('highlight/{}'.format(highlight_theme|default('github'))) }}
+  {{ link_tag('main') }}
+
+  {% block custom_css %}
+  {% endblock %}
+
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="wrap">
+      <nav class="nav-bar navbar-inverse" role="navigation">
+        <div id="top-menu" class="container-fluid active">
+          <a class="navbar-brand" href="http://dopensource.com/dsiprouter"><img
+              src="{{ url_for('static', filename='images/dsiprouter_x50px.png') }}"></a>
+          <ul class="nav navbar-nav navbar-right">
+            {% if reload_required == True %}
+              <button class="btn btn-warning btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam"
+                      name="reloadkam" onclick="reloadkam(this)">Reload Kamailio
+              </button>
+            {% else %}
+              <button class="btn btn-primary btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam"
+                      name="reloadkam" onclick="reloadkam(this)">Reload Kamailio
+              </button>
+            {% endif %}
+            <!-- <form id="qform" class="navbar-form pull-left" role="search">
+               <input type="text" class="form-control" placeholder="Search" />
+             </form> -->
+            <li class="dropdown movable">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="caret"></span><span
+                  class="fa fa-4x fa-child"></span>{{ session.username }}</a>
+              <ul class="dropdown-menu" role="menu">
+                <!-- <li><a href="#"><span class="fa fa-user"></span>My Profile</a></li>
+                <li><a href="#"><span class="fa fa-gear"></span>Settings</a></li> -->
+                <li class="divider"></li>
+                <li><a href="/logout"><span class="fa fa-power-off"></span>Logout</a></li>
+              </ul>
+            </li>
+
+          </ul>
+        </div>
+      </nav>
+      <aside id="side-menu" class="aside" role="navigation">
+        <ul class="nav nav-list accordion">
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-lg fa-globe"></i><a class="navlink" href="/">Dashboard</a><i
+                class="fa fa-chevron-down"></i></div>
+            <!--  <ul class="submenu">
+               <li><a href="/">Dashboard</a></li>
+             </ul> -->
+          </li>
+
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-lg fa-users"></i><a class="navlink" href="/carriergroups">Carrier Groups</a><i
+                class="fa fa-chevron-down"></i></div>
+            <!-- <ul class="submenu">
+              <li><a href="/carriers">List Carriers</a></li>
+              <li><a href="/carriers?action=add">Add Carriers</a></li>
+            </ul> -->
+          </li>
+
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-cloud"></i><a class="navlink" href="/endpointgroups">Endpoint Groups</a><i
+                class="fa fa-chevron-down"></i></div>
+            <!-- <ul class="submenu">
+              <li><a href="/pbx">List PBX's</a></li>
+              <li><a href="/pbx?action=add">Add PBX</a></li>
+            </ul> -->
+          </li>
+
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-cloud"></i><a class="navlink" href="/domains">Domains</a><i
+                class="fa fa-chevron-down"></i></div>
+            <!-- <ul class="submenu">
+              <li><a href="/pbx">List PBX's</a></li>
+              <li><a href="/pbx?action=add">Add PBX</a></li>
+            </ul> -->
+          </li>
+
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-lg fa-map-marker"></i><a class="navlink" href="/inboundmapping">Inbound DID
+              Mapping</a><i class="fa fa-chevron-down"></i></div>
+            <!--  <ul class="submenu">
+               <li><a href="/inboundmapping">Inbound DID Mapping</a></li>
+             </ul>
+           </li> -->
+
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-lg fa-file-image-o"></i><a class="navlink" href="/outboundroutes">Global
+              Outbound Routes</a><i class="fa fa-chevron-down"></i></div>
+            <!--<ul class="submenu">
+              <li><a href="/outboundroutes">Global Outbound Routes</a></li>
+            </ul> -->
+          </li>
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-lg fa-file-image-o"></i><a class="navlink" href="/cdrs">
+              Call Detail Records</a><i class="fa fa-chevron-down"></i></div>
+            <!--<ul class="submenu">
+              <li><a href="/outboundroutes">Global Outbound Routes</a></li>
+            </ul> -->
+          </li>
+          <li class="nav-header">
+            <div class="link"><i class="fa fa-lg fa-file-image-o"></i><a class="navlink" href="#">
+             + System Settings</a><i class="fa fa-chevron-down"></i></div>
+            <ul class="submenu">
+              <li><a href="/backupandrestore">Backup and Restore</a></li>
+            </ul>
+          </li>
+
+        </ul>
+      </aside>
+
+      <!--Body content-->
+      <div class="content">
+        <div class="top-bar">
+          <div class="message-bar" style="display: none;text-align:center;">
+          </div>
+          <a href="#menu" class="side-menu-link burger">
+            <span class='burger_inside' id='bgrOne'></span>
+            <span class='burger_inside' id='bgrTwo'></span>
+            <span class='burger_inside' id='bgrThree'></span>
+          </a>
+        </div>
+        <section class="content-inner">
+          {% block body %}
+          {% endblock %}
+        </section>
+      </div>
+
+    </div>
+  </div>
+
+  {{ script_tag('jquery') }}
+  {{ script_tag('bootstrap') }}
+  {{ script_tag('bootstrap-toggle') }}
+  {{ script_tag('validator') }}
+  {{ script_tag('main') }}
+  {{ script_tag('datatables.min') }}
+  {{ script_tag('highlight/highlight.pack') }}
+
+  <script type="application/javascript">
+    window.RAPID = {};
+    $(document).ready(function() {
+      /* query param actions */
+      if (getQueryString('action') === 'add') {
+        $('#add').modal('show');
+      }
+      /* add code syntax highlighting */
+      $('pre code').each(function(i, block) {
+        hljs.highlightBlock(block);
+      });
+    });
+  </script>
+
+  {% block custom_js %}
+  {% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+.dashboard-metric {
+	font-size: 80px;
+	text-align: center;
+}
+
+.dashboard-metric-label {
+	font-size: 35px;
+	text-align: center;
+	color: #ddd;
+}

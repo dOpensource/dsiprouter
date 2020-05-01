@@ -1,0 +1,53 @@
+{% extends 'table_layout.html' %}
+
+{% block custom_css %}
+{{ link_tag('msteams') }}
+{% endblock %}
+
+
+{% block table_headers %}
+
+<div class="tableAddButton">
+	<h4>Microsoft Direct Routing Configuration for <font style="color:#1E8DB5;font-weight:bold">{{ domain.domain }}</font></h4>
+
+  <button id='testConnectivity' class='btn btn-success btn-md'" value='{{ domain.domain }}'>
+    Test Connectivity
+  </button>
+</div>
+
+{% endblock %}
+
+
+{% block table %}
+<div class="container-fluid">
+    <div class="col col-md-3">
+        <div class="panel-group" id="accordion">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">
+                Connectivity Status</a>
+              </h4>
+            </div>
+            <div id="collapse1" class="panel-collapse collapse in">
+                <ul class="list-group">
+										<li class="list-group-item">Valid DNS Hostname <span id="hostname_check" class="glyphicon glyphicon-remove" style="color:gray"></span> </li>
+										<li id="tls_check_row" class="list-group-item">TLS Certificates <span id="tls_check" class="glyphicon glyphicon-remove" style="color:gray"></span> </li>
+                    <li class="list-group-item">Option Messages <span id="option_check" class="glyphicon glyphicon-remove" style="color:gray"></span></li>
+
+                </ul>
+            </div>
+          </div>
+        </div>
+    </div>
+		<div class="col col-md-9 hidden" id="configurationPanel">
+
+		</div>
+</div>
+{% endblock %}
+
+
+
+{% block custom_js %}
+{{ script_tag('msteams') }}
+{% endblock %}

@@ -1,0 +1,43 @@
+version: '3'
+services:
+  dsiprouter:
+    build: 
+      context: .
+      dockerfile: docker/dsiprouter/dockerfile
+    image: dopensource/dsiprouter
+    volumes:
+      - .:/opt/dsiprouter
+    ports:
+      - "5000:5000"
+    environment:
+      - ENV=PROD
+      - DSIP_USER=admin
+      - DSIP_PASS=admin
+      - DSIP_DEBUG=True
+      - KAM_DB_HOST=dsiprouter-mysql
+      - KAM_DB_TYPE=mysql 
+      - KAM_DB_PORT=3306
+      - KAM_DB_NAME=kamailio
+      - KAM_DB_USER=kamailio
+      - KAM_DB_PASS=kamailiorw
+    depends_on: 
+      - dsiprouter-mysql
+    command: ["./docker/dsiprouter/wait-for-dsiprouter-mysql.sh","dsiprouter-mysql","python","dsiprouter.py","runserver"]
+
+  dsiprouter-mysql:
+    image: mysql:5.7
+    volumes:
+      - /tmp/dbdata:/var/lib/mysql
+      - ./testing/sql/v0.60+ent:/docker-entrypoint-initdb.d/
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_USER=kamailio
+      - MYSQL_PASSWORD=kamailiorw
+      - MYSQL_DATABASE=kamailio
+    healthcheck:
+      test: mysql --user=root -e "select * from kamailio.dr_gateways"
+      timeout: 45s
+      retries: 5
+

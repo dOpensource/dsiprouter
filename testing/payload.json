@@ -1,0 +1,26 @@
+{ "name": "Endpoint1",
+  "calllimit": "0",
+  "auth": { "type":"ip",
+	    "user":"mack10",
+	    "pass":"1234",
+	    "domain":"sip.dsiprouter.org"
+  },
+  "endpoints": [
+                    {"hostname":"142.131.313.1","description":"Endpoint1","maintmode":0},
+                    {"hostname":"143.131.344.2","description":"Endpoint2","maintmode":1}
+   ],
+  "strip": 0,
+  "prefix": "",
+  "notifications": {
+            "overmaxcalllimit": "mack.hendricks@gmail.com",
+            "endpointfailure": "mack.hendricks@gmail.com"
+  },
+  
+  "fusionpbx": {
+            "enabled": 1,
+            "dbhost": "13.13.24.22",
+            "dbuser": "fusiopbx",
+            "dbpass": "1234"
+            }
+    
+}

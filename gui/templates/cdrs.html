@@ -1,0 +1,120 @@
+{% extends 'table_layout.html' %}
+
+
+{% block table_headers %}
+ <div class="container">
+  <div class="pageTitle row">
+      <h4>Call Detail Records</h4>
+  </div>
+  <div class="row">
+  	<div class="btn-group col-xs-3" id="menu">
+		 <select class="btn-primary btn-md" id="endpointgroups"></select>
+		<i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>
+  	</div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block table %}
+
+  <table id="cdrs" class="table table-striped table-centered" >
+
+    <thead>
+      <tr class='element-row'>
+        <th data-field="gwid">ID</th>
+        <th data-field="call_start_time">Call Start</th>
+        <th data-field="calltype">Call Direction</th>
+        <th data-field="subscriber">Subscriber</th>
+        <th data-field="to_num">To</th>
+        <th data-field="from_num">From</th>
+        <th data-field="src_ip">Source IP</th>
+        <th data-field="dst_domain">Destination Domain</th>
+        <th data-field="duration">Call Duration</th>
+        <th data-field="sip_call_id">Call ID</th>
+      </tr>
+    </thead>
+  </table>
+{% endblock %}
+
+
+{% block custom_js %}
+
+ {{ script_tag('jquery.tabledit') }}
+
+  <script>
+
+
+    $(document).ready(function() {
+
+      $.ajax({
+       type: "GET",
+       url: "/api/v1/endpointgroups",
+       dataType: "json",
+       contentType: "application/json; charset=utf-8",
+       success: function(msg) {
+         $("#endpointgroups").append("<option value=0>Select Endpoint Group</option>");
+         for (var i = 0; i < msg.endpointgroups.length; i++) {
+             $("#endpointgroups").append("<option value='" + msg.endpointgroups[i].gwgroupid + "'>" + msg.endpointgroups[i].name + "</option>");
+         }
+
+       }
+     })
+
+     $("#endpointgroups").change(function () {
+       $("#endpointgroups option:selected").each(function() {
+        
+          loadCDRDataTable($(this).val());
+
+	  // Add the ability to download it
+	  //$("#menu").append('<i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>');
+
+       });
+      })
+
+     $('#downloadCDR').click(function(){
+	    gwgroupid = $("#endpointgroups").val();
+	    $('#wait-animation').show();
+	    document.location.href = '/api/v1/cdrs/endpointgroups/' + gwgroupid + '?type=csv';
+	    $('#wait-animation').hide();
+     });
+
+      function loadCDRDataTable(gwgroupid) {
+
+        if ( $.fn.dataTable.isDataTable( '#cdrs' ) ) {
+          table = $('#cdrs').DataTable();
+          // Clear the contents of the table
+          table.clear();
+          table.draw();
+          table.ajax.url("/api/v1/cdrs/endpointgroups/" + gwgroupid);
+          table.ajax.reload();
+        }
+        else {
+
+           $('#cdrs').DataTable({
+            "ajax": { "url":"/api/v1/cdrs/endpointgroups/" + gwgroupid,
+                      "dataSrc": "cdrs"
+              },
+              "columns": [
+              { "data": "gwid" },
+              { "data": "call_start_time" },
+              { "data": "calltype" },
+              { "data": "subscriber" },
+              { "data": "to_num" },
+              { "data": "from_num" },
+              { "data": "src_ip" },
+              { "data": "dst_domain" },
+              { "data": "duration" },
+              { "data": "sip_call_id" }
+              //{ "data": "gwlist", visible: false },
+
+              ],
+	            "pageLength": 100
+          });
+        }
+      }
+    });
+
+  </script>
+
+{% endblock %}

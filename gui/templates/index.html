@@ -1,0 +1,74 @@
+{% extends 'login_layout.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block custom_css %}
+  {{ link_tag('main') }}
+{% endblock %}
+
+{% block body %}
+  <div class="container">
+	  <div class="left-half">
+		  <img class="logon-image" src="/static/images/login-splash.jpg">
+	  </div>
+	  <div class="right-half">
+    <div id="loginbox" style="margin-top:100px;" class="mainbox col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2">
+      <div id="loginlogo" class="loginlogo">
+	<img style="padding:20px 20px;" src="{{ url_for('static', filename='images/dsiprouter_x50px.png') }}">
+      </div>
+      <div class="panel panel-info">
+        <div style="padding-top:30px" class="panel-body">
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              <ul class="alert alert-danger col-sm-12">
+                {% for message in messages %}
+                  <li>{{ message }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          {% endwith %}
+
+          <div style="display:none" id="login-alert" class="alert alert-danger col-sm-12"></div>
+
+          <form id="loginform" class="form-horizontal" role="form" action="/login" method="POST">
+
+            <div style="margin-bottom: 25px" class="input-group">
+              <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+              <input id="login-username" type="text" class="form-control" name="username" value=""
+                     placeholder="username or email" autofocus="autofocus">
+            </div>
+
+            <div style="margin-bottom: 25px" class="input-group">
+              <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+              <input id="login-password" type="password" class="form-control" name="password" placeholder="password">
+            </div>
+
+             <input id="nextpage" type="hidden"  name="nextpage" value="{{ nextpage }}">
+            <div style="margin-top:10px" class="form-group">
+              <!-- Button -->
+
+              <div class="col-sm-12 controls">
+                <button class="btn btn-success" type="submit">Login</button>
+
+              </div>
+            </div>
+
+
+            <div style="border-top: 1px solid#888; padding-top:15px; font-size:85%">
+              Built in Detroit | Version {{ version }}
+            </div>
+          </form>
+
+
+        </div>
+      </div>
+    </div>
+	  </div> <!-- End of right side -->
+  </div>
+
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('jquery') }}
+  {{ script_tag('main') }}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block css %}
+  {{ link_tag('main') }}
+{% endblock %}
+
+
+{% block body %}
+
+  <div class="col-md-12">
+    <form action="/teleblock" method="POST" role="form">
+      <div class="saveTeleblock">
+        <h4>Teleblock Settings</h4>
+        <button name='save' id='save' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
+                data-target="#add">Save
+        </button>
+      </div>
+      <hr>
+      <div class="form-group">
+      <label class="label-toggle">Global Gryphon Teleblock Support </label>
+        {% if teleblock["gw_enabled"] == "1" %}
+          <input id="toggleTeleblock" name ="gw_enabled" type="checkbox" checked title="Toggle Teleblock"
+                 data-toggle="toggle"
+                 value="{{ teleblock["gw_enabled"] }}"
+                 data-on="<span class='icon-gryphon'></span> Enabled"
+                 data-off="<span class='icon-gryphon'></span> Disabled"
+                 data-width="120px">
+        {% else %}
+          <input id="toggleTeleblock" name="gw_enabled" type="checkbox" title="Toggle Teleblock"
+                 data-toggle="toggle"
+                 value="{{ teleblock["gw_enabled"] }}"
+                 data-on="<span class='icon-gryphon'></span> Enabled"
+                 data-off="<span class='icon-gryphon'></span> Disabled"
+                 data-width="120px">
+        {% endif %}
+      </div>
+      {% if teleblock["gw_enabled"]  == "1" %}
+        <div id="teleblockOptions" class="form-group">
+      {% else %}
+        <div id="teleblockOptions" class="form-group hidden">
+      {% endif %}
+      <div class="form-group">
+        <input class="form-control " type="text" id="gw_ip" name="gw_ip" placeholder="Teleblock Gateway IP"
+               value="{{ teleblock["gw_ip"] }}">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="gw_port" name="gw_port" placeholder="Teleblock Gateway Port"
+               value="{{ teleblock["gw_port"] }}">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="media_ip" name="media_ip"
+               placeholder="Media IP for Teleblock Messages" value="{{ teleblock["media_ip"] }}">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="media_port" name="media_port"
+               placeholder="Media Port for Teleblock Messages" value="{{ teleblock["media_port"] }}">
+      </div>
+      </div> <!--End of Teleblock settings-->
+    </form>
+  </div>
+
+
+{% endblock %}
+
+{% block js %}
+{% endblock %}

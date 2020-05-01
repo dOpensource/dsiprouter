@@ -1,0 +1,232 @@
+#============================================================
+# General Ignores
+*~
+.#*
+*.
+*.slo
+*.mk
+*.mem
+*.gcda
+*.gcno
+*.la
+*.lo
+*.loT
+*.o
+*.a
+*.ncb
+*.opt
+*.plg
+*swp
+*.patch
+*.tgz
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.gz.asc
+*.tar.bz2.asc
+*.tar.xz.asc
+.FBCIndex
+.FBCLockFolder
+.deps
+.libs
+diff
+libtool
+#============================================================
+
+#============================================================
+# JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
+# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+
+# All .idea config files
+.idea*
+
+# IntelliJ
+out/
+*.iml
+*.iws
+
+# JIRA plugin
+atlassian-ide-plugin.xml
+
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+#============================================================
+
+#============================================================
+# CMake
+
+cmake-build-*/
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+#============================================================
+
+# Custom Git Hook config files
+.commit
+.fetch
+.changelog_commited
+.postcommit_disabled
+
+# Local repo git configs
+.git*
+
+# Docker configs
+.dockerignore
+
+# C extensions
+*.so
+
+#============================================================
+# Python
+
+# Byte-compiled / optimized / DLL files
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.cpython-35.pyc
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# pyenv
+.python-version
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# Django stuff:
+*.log
+.static_storage/
+.media/
+local_settings.py
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# IPython
+profile_default/
+ipython_config.py
+#============================================================
+
+#============================================================
+# Terraform / Packer
+
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Cache objects
+packer_cache/
+
+# For built boxes
+*.box
+#============================================================
+
