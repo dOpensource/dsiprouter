@@ -877,6 +877,8 @@ def updateEndpointGroups(gwgroupid):
 
         # Update Gateway Name
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
+        if Gwgroup is None:
+            raise http_exceptions.NotFound('gwgroup does not exist')
         fields = strFieldsToDict(Gwgroup.description)
         fields['name'] = requestPayload['name']
         Gwgroup.description = dictToStrFields(fields)
@@ -1629,7 +1631,7 @@ def testConnectivity(domain):
         # Define a dictionary object that represents the payload
         responsePayload = {"hostname_check":False,"tls_check":False,"option_check":False}
 
-        
+
         # Check the external ip matchs the ip set on the server
         external_ip_addr = getExternalIP()
         internal_ip_address = hostToIP(domain)
@@ -1639,10 +1641,10 @@ def testConnectivity(domain):
 
         # Try again, but use Google DNS resolver if the check fails with local DNS
         if responsePayload['hostname_check'] == False:
-        
+
             #Does the IP address of this server resolve to the domain
             import dns.resolver
-    
+
             # Get the IP address of the domain from Google  DNS
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']

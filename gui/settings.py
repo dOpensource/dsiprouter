@@ -35,7 +35,7 @@ DSIP_SSL_EMAIL = ''
 
 # dSIPRouter internal settings
 
-VERSION = '0.60'
+VERSION = '0.61'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -100,7 +100,7 @@ FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 INTERNAL_IP_ADDR = '165.22.224.211'
 INTERNAL_IP_NET = '165.22.224.*'
 EXTERNAL_IP_ADDR = '165.22.224.211'
-EXTERNAL_FQDN = 'sbc3.dsiprouter.net'
+EXTERNAL_FQDN = 'sip.dsiprouter.org'
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -110,7 +110,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = 'DO'
+CLOUD_PLATFORM = ''
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'

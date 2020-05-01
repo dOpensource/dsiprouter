@@ -82,6 +82,7 @@ setScriptSettings() {
     export IPV6_ENABLED=0
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
+    DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/tls_dsiprouter.cfg"
@@ -663,15 +664,45 @@ function updateDnsConfig {
     fi
 }
 
-function configureKamailio {
+function generateKamailioConfig {
     # copy of template kamailio configuration to dsiprouter system config dir
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 
+    # Fix the mpath
+    fixMPATH
+
+    # Enable SERVERNAT
+    if [ "$SERVERNAT" == "1" ]; then
+        enableSERVERNAT
+    fi
+
+    if (( ${WITH_LCR} == 1 )); then
+        enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+
+    # Backup kamcfg and link the dsiprouter kamcfg
+    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
+    cp -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
+    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    rm -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
+    ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
+    ln -sf ${DSIP_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
+
+    # kamcfg will contain plaintext passwords / tokens
+    # make sure we give it reasonable permissions
+    chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
+    chmod 0640 ${DSIP_KAMAILIO_CONFIG_FILE}
+}
+
+function configureKamailio {
     # make sure kamailio user and privileges exist
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
         -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
@@ -796,32 +827,7 @@ function configureKamailio {
         rm -rf /tmp/defaults
     fi
 
-    # Fix the mpath
-    fixMPATH
-
-    # Enable SERVERNAT
-    if [ "$SERVERNAT" == "1" ]; then
-        enableSERVERNAT
-    fi
-
-    if (( ${WITH_LCR} == 1 )); then
-        enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
-    else
-        disableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
-    fi
-
-    # Backup kamcfg and link the dsiprouter kamcfg
-    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
-    cp -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
-    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
-    rm -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
-    ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
-    ln -s ${DSIP_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
-
-    # kamcfg will contain plaintext passwords / tokens
-    # make sure we give it reasonable permissions
-    chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
-    chmod 0640 ${DSIP_KAMAILIO_CONFIG_FILE}
+    generateKamailioConfig
 }
 
 function enableSERVERNAT {
@@ -832,7 +838,7 @@ function enableSERVERNAT {
 }
 
 function disableSERVERNAT {
-	sed -i 's/#!define WITH_SERVERNAT/##!define WITH_SERVERNAT/' ${DSIP_KAMAILIO_CONFIG_FILE}
+	disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
 	printwarn "SERVERNAT is disabled - Restarting Kamailio is required"
 	printdbg "You can restart it by executing: systemctl restart kamailio"
@@ -840,8 +846,8 @@ function disableSERVERNAT {
 
 # Try to locate the Kamailio modules directory.  It will use the last modules directory found
 function fixMPATH {
-    for i in `find /usr -name drouting.so`; do
-        mpath=`dirname $i| grep 'modules$'`
+    for i in $(find /usr -name drouting.so); do
+        mpath=$(dirname $i| grep 'modules$')
         if [ "$mpath" != '' ]; then
             mpath=$mpath/
             break #found a mpath
@@ -849,7 +855,7 @@ function fixMPATH {
     done
 
     if [ "$mpath" != '' ]; then
-        sed -i 's#mpath=.*#mpath=\"'$mpath'\"#g' ${DSIP_KAMAILIO_CONFIG_FILE}
+        setKamailioConfigGlobal 'mpath' "${mpath}" ${DSIP_KAMAILIO_CONFIG_FILE}
         printdbg "The Kamailio mpath has been updated to: $mpath"
     else
         printerr "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
@@ -991,6 +997,8 @@ function installDsiprouter {
 
     # add dsiprouter.sh to the path
     ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
+    # add command line completion to dsiprouter.sh
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
     ln -s ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
@@ -1064,6 +1072,9 @@ EOF
     else
         ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
+
+    # Generate UUID unique to this dsiprouter instance
+    uuidgen > ${DSIP_UUID_FILE}
 
     # Generate ipc access password
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds, get_random_bytes; setCreds(ipc_creds=get_random_bytes(64))"
@@ -1142,6 +1153,8 @@ function uninstallDsiprouter {
 
     # remove dsiprouter.sh from the path
     rm -f /usr/local/bin/dsiprouter
+    # remove command line completion for dsiprouter.sh
+    rm -f /etc/bash_completion.d/dsiprouter
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -2154,11 +2167,15 @@ function usageOptions {
     printf "%-30s %s\n" \
         "setkamdbconfig" "[-debug] <[user[:pass]@]dbhost[:port][/dbname]>"
     printf "%-30s %s\n" \
+        "generatekamconfig" "-debug"
+    printf "%-30s %s\n" \
         "updatekamconfig" "-debug"
     printf "%-30s %s\n" \
         "updatertpconfig" "-debug|-servernat"
     printf "%-30s %s\n" \
         "updatednsconfig" "-debug"
+    printf "%-30s %s\n" \
+        "version|-v|--version"
     printf "%-30s %s\n" \
         "help|-h|--help"
 
@@ -2916,6 +2933,28 @@ function processCMD {
                 export KAM_DB_NAME="${NEW_KAM_DB_NAME}"
             fi
             ;;
+        generatekamconfig)
+            # generate kamailio configs from templates
+            RUN_COMMANDS+=(generateKamailioConfig)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
         updatekamconfig)
             # update kamailio config
             RUN_COMMANDS+=(updateKamailioConfig)
@@ -2986,7 +3025,11 @@ function processCMD {
                 esac
             done
             ;;
-        -h|--help|help)
+        version|-v|--version)
+            printf '%s\n' "$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})"
+            cleanupAndExit 1
+            ;;
+        help|-h|--help)
             usageOptions
             cleanupAndExit 1
             ;;

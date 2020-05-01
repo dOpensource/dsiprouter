@@ -110,7 +110,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
         for pbx_id in pbx_list:
-            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id), description='pbx_id:{}'.format(pbx_id))
+            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id, db), description='pbx_id:{}'.format(pbx_id))
             db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
