@@ -1534,7 +1534,8 @@ def displayOutboundRoutes():
         teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=getCustomRoutes())
+        #return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=getCustomRoutes())
+        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=[])
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)

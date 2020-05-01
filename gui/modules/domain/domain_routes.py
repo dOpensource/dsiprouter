@@ -25,12 +25,16 @@ def addDomain(domain, authtype, pbxs, notes, db):
     db.flush()
 
     # Check if list of PBX's
-    pbx_list = re.split(' |,',pbxs)
-    # If no list is found
+    if pbxs:
+        pbx_list = re.split(' |,',pbxs)
+    else:
+        pbx_list = []
+
+    # If list is found
     if len(pbx_list) > 1 and authtype == "passthru":
         pbx_id=pbx_list[0]
     else:
-        #Single value was submitted
+        #Else Single value was submitted
         pbx_id = pbxs
 
     # Implement Passthru authentication to the first PBX on the list.
@@ -69,7 +73,8 @@ def addDomain(domain, authtype, pbxs, notes, db):
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
 
         # Use the default MS Teams SIP Proxy List if one isn't defined
-        if len(pbx_list) == 0:
+        print("pbx list {}".format(pbx_list))
+        if len(pbx_list) == 0 or pbx_list[0] == '':
             for endpoint in msteams_dns_endpoints:
                 dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(settings.EXTERNAL_IP_ADDR,domain),description='msteam_endpoint:{}'.format(endpoint))
                 db.add(dispatcher)

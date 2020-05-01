@@ -1626,15 +1626,21 @@ def testConnectivity(domain):
         responsePayload = {"hostname_check":False,"tls_check":False,"option_check":False}
 
         #Does the IP address of this server resolve to the domain
-        domain_ip_addr = hostToIP(domain)
-        server_ip_addr = getExternalIP()
-        if domain_ip_addr == server_ip_addr:
-            responsePayload['hostname_check'] = True
+        import dns.resolver
+        
+        # Get the External IP address from an external system
+        external_ip_addr = getExternalIP()
 
+        # Get the IP address of the domain from DNS
+        answers = dns.resolver.query(domain, 'A')
+        for a in answers:
+            # If the External IP and IP from DNS match then it passes the check
+            if a.to_text() == external_ip_addr:
+                responsePayload['hostname_check'] = True
 
         # Check if Domain is the root of the CN
         # GoDaddy Certs Don't work with Microsoft Direct routing
-        certInfo = isCertValid(domain,5061)
+        certInfo = isCertValid(domain,external_ip_addr,5061)
         if certInfo:
             responsePayload['tls_check'] = certInfo
 
