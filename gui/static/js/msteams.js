@@ -17,6 +17,7 @@ function updateConnectivtyStatus(msg) {
   $("#tls_check").removeClass();
   $("#option_check").removeClass();
 
+
   //Hostname Check
   if (msg.hostname_check == true)
   {
@@ -36,6 +37,8 @@ function updateConnectivtyStatus(msg) {
   else {
     $("#tls_check").addClass("glyphicon glyphicon-remove");
     $("#tls_check").css("color","red");
+    $("#tls_check_row").tooltip({'title': "Cert commonname doesn't match the domain:" + JSON.stringify(msg.tls_check.tls_cert_details), 'placement': 'right', 'trigger': 'manual','tooltipClass': 'tooltipclass'}); 
+    $("#tls_check_row").tooltip('show');
   }
 
   //Option Check
