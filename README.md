@@ -4,6 +4,9 @@ Provides enterprise features for the dSIPRouter platform.
 
 The following features are currently supported:
 
+- Microsoft Teams Direct Routing
+- FusionPBX Proxy with Auth Domain Support
+- SIPS to SIP (aka TLS to UDP Proxy)
 - Mysql Active-Active replication
 - Pacemaker / Corosync Active-Passive floating IP
 - Call Limits
@@ -15,11 +18,13 @@ The following features are currently supported:
 
 ## What is dSIPRouter?
 
-dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables two basic use cases:
+dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables three basic use cases:
 
 - **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
 
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
+
+- **Microsoft Teams Direct Routing (Subscription Required):** Can act as proxy between Microsoft Teams and your existing SIP Infrastructure.  It can handle inbound and outbound calling.
 
 **Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
