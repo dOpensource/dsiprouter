@@ -1371,7 +1371,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
                 cdr_info = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
                 if cdr_info is not None:
                     # Write out csv to a file
-                    filename = '/tmp/{}_{}.csv'.format(gwgroupName, dateTime)
+                    filename = '/tmp/{}_{}.csv'.format(secure_filename(gwgroupName), dateTime)
                     f = open(filename, 'wb')
                     for line in lines:
                         f.write(line.encode())
