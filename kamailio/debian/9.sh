@@ -153,7 +153,11 @@ EOF
     ln -s /etc/ssl/certs/ca-certificates.crt ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
 
     # Setup dSIPRouter Module
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter.so /usr/lib/x86_64-linux-gnu/kamailio/modules/
+    KAM_VERSION=$(kamailio -v | grep version | awk '{print $3}'| sed  's/\.//g')
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
+    if [ $? -gt 0 ] then
+	echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}" 
+    fi
 
     # Start Kamailio
     #systemctl start kamailio
