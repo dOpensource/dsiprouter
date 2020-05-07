@@ -2,6 +2,20 @@
 
 
 
+### Fix Proxmox Install
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Thu, 7 May 2020 18:36:59 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- resolves dsiprouter@enterprise#36
+
+
+---
+
+
 ###   - resolves dsiprouter@enterprise#24   - resolves dsiprouter@enterprise#29   - fix custom routes issue in shared.py   - add CDR feature enhancements   - redo crontab dsiprouter integration   - create crontab integratino script   - add loading spinning to table layout   - add field validation to endpoints endpoint   - update / optimize dsip_settings table   - update settings.py adding some fields to DB   - fix typos in inboundmapping.js   - update dsip_cdrinfo table   - add cron usability functions   - increase logout timeout while in debug mode   - various changes to install scripts for cron updates   - update CDR Report fields   - add urandomChars to util.security (future use)   - seperate cdrs static code from template code
 
 > Branches Affected: v0.61  
