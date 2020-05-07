@@ -1,5 +1,9 @@
+################ Database-Backed Settings ################
+# settings in this section are synced with the DB
+
 # dSIPRouter settings
 # dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
+# unless hot reloading settings is enabled when updating settings, see shared.updateConfig()
 
 DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
@@ -96,7 +100,7 @@ FLOWROUTE_ACCESS_KEY = ''
 FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
-# updated dynamically! ONLY set here if you need static values
+# updated dynamically! These values will be overwritten
 INTERNAL_IP_ADDR = '165.22.224.211'
 INTERNAL_IP_NET = '165.22.224.*'
 EXTERNAL_IP_ADDR = '165.22.224.211'
@@ -119,17 +123,25 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = '@smtp.gmail.com'.format(MAIL_USERNAME, MAIL_SERVER)
+MAIL_DEFAULT_SENDER = '{}@{}'.format(MAIL_USERNAME, MAIL_SERVER)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
-BACKUP_FOLDER= '/tmp'
+BACKUP_FOLDER= '/var/backups/dsiprouter'
+################# End DB-Backed Settings #################
+
+################# Local-Only Settings ####################
+# settings in this section are not stored on the DB
+
+# where the project was installed
+DSIP_PROJECT_DIR = '/opt/dsiprouter'
+
+# micosoft teams settings
+MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
+MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
 
 # Where to sync settings from
 # file  - load from setting.py file
 # db    - load from dsip_settings table
 LOAD_SETTINGS_FROM = 'file'
-
-# micosoft teams settings
-MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
-MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
+############### End Local-Only Settings ##################

@@ -107,7 +107,7 @@ $(function() {
   var accordion = new Accordion($('ul.accordion'), false);
 });
 
-
+/* styling links */
 $(function() {
   $('a').each(function() {
     if ($(this).prop('href') === window.location.href) {
@@ -223,6 +223,81 @@ function descendingSearch(selector, test) {
   descendingSearch(node_list, test)
 }
 
+/*
+ * IE polyfill for reportValidity() compatibility
+ * credit: https://stackoverflow.com/questions/17550317/how-to-manually-show-a-html5-validation-message-from-a-javascript-function
+ */
+if (!HTMLFormElement.prototype.reportValidity) {
+  HTMLFormElement.prototype.reportValidity = function() {
+    if (this.checkValidity()) return true;
+    var btn = document.createElement('button');
+    this.appendChild(btn);
+    btn.click();
+    this.removeChild(btn);
+    return false;
+  }
+}
+
+/**
+ * Validate form fields in a selected node
+ * The optional test function is passed a an array of fields found
+ * Note that in this project our forms are usually the 1st child in a modal body
+ * If provided the test function should return an object of this structure:
+ *    {
+ *      result:     boolean                 - whether the test passed or failed
+ *      err_node:   element|jQuery object   - the node that caused the failure
+ *      err_msg:    String                  - the error message to display
+ *    }
+ * @param selector    String|jQuery Object  Selector for a node with fields
+ * @param test        function()            Custom validation test to run
+ * @returns           boolean               Whether the validation passed
+ */
+function validateFields(selector, test) {
+  var select_node = null;
+  if (typeof selector === 'string' || selector instanceof String) {
+    select_node = $(selector);
+  }
+  else if (selector instanceof jQuery) {
+    select_node = selector;
+  }
+  else {
+    console.err("validateFields(): invalid selector argument");
+    return false;
+  }
+
+  /* grab the fields */
+  var elems = select_node.find('input,textarea,select,output').filter(':not(:hidden)').get();
+
+  /* check the builtin form validation */
+  for (var i = 0; i < elems.length; i++) {
+    if (!elems[i].reportValidity()) {
+      return false;
+    }
+  }
+
+  /* if supplied, run the custom test function */
+  if (typeof test === 'function') {
+    var resp = test(elems);
+    if (resp.result === false) {
+      var err_elem = null;
+      if (resp.err_node instanceof jQuery) {
+        err_elem = resp.err_node.get(0);
+      }
+      else {
+        err_elem = resp.err_node;
+      }
+
+      err_elem.setCustomValidity(resp.err_msg);
+      err_elem.reportValidity();
+      setTimeout(function() {
+        err_elem.setCustomValidity('');
+      }, 2500);
+      return false;
+    }
+  }
+
+  return true;
+}
 
 
 $('#pbxs #open-Delete').click(function() {

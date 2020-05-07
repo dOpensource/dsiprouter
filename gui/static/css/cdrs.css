@@ -1,0 +1,11 @@
+#downloadCDR {
+  left: .25em;
+  cursor: pointer;
+}
+
+#cdrs_wrapper > div.btn-group, #cdrs_wrapper > div.btn-group-vertical {
+    position: absolute;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    vertical-align: middle;
+}

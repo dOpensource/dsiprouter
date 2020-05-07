@@ -21,6 +21,7 @@
     <div class="table-responsive">
       {% block table %}
       {% endblock %}
+      <img id="loading-spinner" class="hidden" src="{{ url_for('static', filename='images/spinner.svg') }}" alt=""/>
     </div>
 
   </div>
@@ -54,7 +55,7 @@
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
-  
+
   <div class="modal fade" id="import" tabindex="-1" role="dialog" aria-labelledby="Import" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">

@@ -1,7 +1,5 @@
 {% extends 'table_layout.html' %}
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.4.1/css/bootstrap-datepicker3.css"/>
-
 {% block table_headers %}
   <div class="container">
     <div class="pageTitle row">
@@ -175,11 +173,29 @@
             <input class="cdr_email form-control" type="text" name="cdr_email"
                    placeholder="Email to send CDR's">
           </div>
+          <!-- CDR report interval chooser, based on crontab design -->
+          <!-- TODO: make this a combobox -->
           <div class="form-group">
-            <input class="cdr_send_date form-control" type="text" name="cdr_send_date"
-                   placeholder="Date of month to send CDR's (eg 5)">
-          </div>
-        </div> <!-- end of cdr  tab -->
+            <label>CDR Report Interval (minute hour day month weekday)</label>
+            <div class="wrapper-horizontal centered">
+              <input class="cdr_send_minute form-control" type="text" name="cdr_send_minute" value="*"
+                     title="Minute of the hour (0-59) or (* is any minute)"
+                     pattern="\*(/([0-5]?[0-9]))?|([0-5]?[0-9])(,[0-5]?[0-9])*">
+              <input class="cdr_send_hour form-control" type="text" name="cdr_send_hour" value="*"
+                     title="Hour of the day (0-23) or (* is any hour)"
+                     pattern="\*(/(2[0-3]|1[0-9]|[0-9]))?|(2[0-3]|1[0-9]|[0-9])(,(2[0-3]|1[0-9]|[0-9]))*">
+              <input class="cdr_send_day form-control" type="text" name="cdr_send_day" value="1"
+                     title="Day of the month (1-31) or (* is any day)"
+                     pattern="\*(/(3[0-1]|[1-2][0-9]|[1-9]))?|(3[0-1]|[1-2][0-9]|[1-9])(,(3[0-1]|[1-2][0-9]|[1-9]))*">
+              <input class="cdr_send_month form-control" type="text" name="cdr_send_month" value="*"
+                     title="Month of the year (1-12) or (* is any month) or (jan-dec)"
+                     pattern="\*(/(1[0-2]|[1-9]))?|(1[0-2]|[1-9])(,(1[0-2]|[1-9]))*|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)">
+              <input class="cdr_send_weekday form-control" type="text" name="cdr_send_weekday" value="*"
+                     title="Day of the week (0-6) or (* is any weekday) or (sun-sat)"
+                     pattern="\*(/([0-6]))?|([0-6])(,[0-6])*|(sun|mon|tue|wed|thur|fri|sat)">
+            </div>
+            </div>
+          </div> <!-- end of cdr  tab -->
 
         <div id="fusionpbx" class="tab-pane fade in" name="fusion-toggle">
           <div class="form-group">
@@ -239,7 +255,7 @@ systemctl restart fail2ban</code></pre>
       </div> <!-- end of tabcontent tab -->
 
       <div class="modal-footer">
-        <button type="button" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;" onclick='updateEndpointGroup()'><span
+        <button type="button" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
             class="glyphicon glyphicon-ok-sign"></span> Update
         </button>
       </div>
@@ -297,6 +313,7 @@ systemctl restart fail2ban</code></pre>
           </li>
         </ul>
       </div>
+
       <div class="tab-content"> <!-- begin tab content -->
 
         <div id="auth2" class="tab-pane fade in active" name="auth-toggle">
@@ -365,18 +382,37 @@ systemctl restart fail2ban</code></pre>
                    placeholder="Email for Endpont Failure">
           </div>
         </div> <!-- end of notifications tab -->
+
         <div id="cdr2" class="tab-pane fade in" name="cdr-toggle">
           <div class="form-group">
             <input class="cdr_email form-control" type="text" name="cdr_email"
                    placeholder="Email to send CDR's">
           </div>
+          <!-- CDR report interval chooser, based on crontab design -->
+          <!-- TODO: make this a combobox -->
           <div class="form-group">
-            <input class="cdr_send_date form-control" type="text" name="cdr_send_date"
-                   placeholder="Date of month to send CDR's (eg 5)">
+            <label>CDR Report Interval (minute, hour, day, month, weekday)</label>
+            <div class="wrapper-horizontal centered">
+              <input class="cdr_send_minute form-control" type="text" name="cdr_send_minute" value="*"
+                     title="Minute of the hour (0-59) or (* is any minute)"
+                     pattern="\*(/([0-5]?[0-9]))?|([0-5]?[0-9])(,[0-5]?[0-9])*">
+              <input class="cdr_send_hour form-control" type="text" name="cdr_send_hour" value="*"
+                     title="Hour of the day (0-23) or (* is any hour)"
+                     pattern="\*(/(2[0-3]|1[0-9]|[0-9]))?|(2[0-3]|1[0-9]|[0-9])(,(2[0-3]|1[0-9]|[0-9]))*">
+              <input class="cdr_send_day form-control" type="text" name="cdr_send_day" value="1"
+                     title="Day of the month (1-31) or (* is any day)"
+                     pattern="\*(/(3[0-1]|[1-2][0-9]|[1-9]))?|(3[0-1]|[1-2][0-9]|[1-9])(,(3[0-1]|[1-2][0-9]|[1-9]))*">
+              <input class="cdr_send_month form-control" type="text" name="cdr_send_month" value="*"
+                     title="Month of the year (1-12) or (* is any month) or (jan-dec)"
+                     pattern="\*(/(1[0-2]|[1-9]))?|(1[0-2]|[1-9])(,(1[0-2]|[1-9]))*|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)">
+              <input class="cdr_send_weekday form-control" type="text" name="cdr_send_weekday" value="*"
+                     title="Day of the week (0-6) or (* is any weekday) or (sun-sat)"
+                     pattern="\*(/([0-6]))?|([0-6])(,[0-6])*|(sun|mon|tue|wed|thur|fri|sat)">
+            </div>
           </div>
         </div> <!-- end of cdr  tab -->
-        <div id="fusionpbx2" class="tab-pane fade in" name="fusion-toggle">
 
+        <div id="fusionpbx2" class="tab-pane fade in" name="fusion-toggle">
           <div class="form-group">
             <div class="checkbox">
               <label class="label-toggle">
@@ -434,7 +470,7 @@ systemctl restart fail2ban</code></pre>
       </div> <!-- end of tabcontent tab -->
 
       <div class="modal-footer ">
-        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;" onclick='addEndpointGroup()'><span
+        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
             class="glyphicon glyphicon-ok-sign"></span> Add
         </button>
       </div>
@@ -478,7 +514,6 @@ systemctl restart fail2ban</code></pre>
 {% block custom_js %}
 
   {{ script_tag('jquery.tabledit') }}
-  {{ script_tag('bootstrap-datepicker.min') }}
   {{ script_tag('endpointgroups') }}
 
 {% endblock %}

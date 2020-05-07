@@ -28,6 +28,7 @@ function installSQL {
 
 function install {
     installSQL
+    cronAppend "*/5 * * * * ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py api cleanleases"
     printdbg "API module installed"
 }
 

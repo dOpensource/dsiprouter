@@ -10,12 +10,12 @@ var aria = aria || {};
 var DID_LIST = DID_LIST || [];
 
 /**
- * Will load function from main.js if avilable
+ * Will load function from main.js if available
  * Otherwise will do nothing and print error to console
  * @function
  */
 var toggleElemDisabled = toggleElemDisabled || function(a,b) {
-  console.err("toggleElemDisabled() not defined, main.js must be loaded first");
+  console.error("toggleElemDisabled() not defined, main.js must be loaded first");
 };
 
 /**

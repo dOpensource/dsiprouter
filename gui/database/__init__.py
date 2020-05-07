@@ -288,11 +288,11 @@ class dSIPCDRInfo(object):
     Schema for dsip_cdrinfo table\n
     """
 
-    def __init__(self, gwgroupid, email, send_date):
+    def __init__(self, gwgroupid, email, send_interval):
         self.gwgroupid = gwgroupid
         self.email = email
-        self.send_date = send_date
-        self.last_sent = None
+        self.send_interval = send_interval
+        self.last_sent = datetime.now()
 
     pass
 

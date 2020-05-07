@@ -401,12 +401,12 @@ function setPythonCmd {
         return 0
     fi
 
-    possible_python_versions=$(find /usr/bin /usr/local/bin -name "python$REQ_PYTHON_MAJOR_VER*" -type f -executable  2>/dev/null)
+    possible_python_versions=$(find /usr/bin /usr/local/bin -name "python${REQ_PYTHON_MAJOR_VER}*" -regex ".*python.*[0-9]$" -executable  2>/dev/null)
     for i in $possible_python_versions; do
         ver=$($i -V 2>&1)
         # validate command produces viable python version
         if [ $? -eq 0 ]; then
-            echo $ver | grep $REQ_PYTHON_MAJOR_VER >/dev/null
+            echo $ver | grep "$REQ_PYTHON_MAJOR_VER" >/dev/null
             if [ $? -eq 0 ]; then
                 export PYTHON_CMD="$i"
                 return 0
@@ -473,6 +473,7 @@ function configurePythonSettings {
     setConfigAttrib 'DSIP_API_PROTO' "$DSIP_API_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
 }
 
 # update settings file based on cmdline args
@@ -872,10 +873,10 @@ installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -qq -y >/dev/null &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl gawk perl sed dnsutils >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl wget gawk perl sed git dnsutils >/dev/null
     elif cmdExists 'yum'; then
         yum update -y -q -e 0 >/dev/null &&
-        yum install -y -q -e 0 curl gawk perl sed bind-utils >/dev/null
+        yum install -y -q -e 0 curl wget gawk perl sed git bind-utils >/dev/null
     fi
 
     if (( $? != 0 )); then
@@ -1141,8 +1142,8 @@ function uninstallDsiprouter {
         removeDependsOnInit "dsiprouter.service"
     fi
 
-    # Remove crontab entry
-    echo "Removing crontab entry"
+    # Remove dsiprouter crontab entries
+    printdbg "Removing dsiprouter crontab entries"
     cronRemove 'dsiprouter_cron.py'
 
     # Remove dsip private key
@@ -1256,16 +1257,15 @@ function uninstallKamailio {
 function installModules {
     cd ${DSIP_PROJECT_DIR}
 
+    # Remove any previous dsiprouter cronjobs
+    cronRemove 'dsiprouter_cron.py'
+
     # Install / Uninstall dSIPModules
     for dir in ./gui/modules/*; do
         if [[ -e ${dir}/install.sh ]]; then
             ./${dir}/install.sh $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_ROOT_DATABASE $PYTHON_CMD
         fi
     done
-
-    # Setup dSIPRouter Cron scheduler
-    cronRemove 'dsiprouter_cron.py'
-    cronAppend "*/1 * * * *  ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py"
 }
 
 # Install Sipsak
@@ -1604,7 +1604,7 @@ function generatePassword {
     if (( $AWS_ENABLED == 1 )) || (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
         DSIP_PASSWORD=$(getInstanceID)
     else
-        DSIP_PASSWORD=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1)
+        DSIP_PASSWORD=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 32 | head -n 1)
     fi
 
     ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import setCreds; setCreds(dsip_creds='${DSIP_PASSWORD}')"

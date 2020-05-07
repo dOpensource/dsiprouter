@@ -61,6 +61,7 @@ function install {
     # Install a default self signed certificate for spinning up NGINX
     openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=MI/L=Detroit/O=dopensource.com/CN=dSIPRouter" -keyout $abspath/certs/cert.key -out $abspath/certs/cert_combined.crt
 
+    cronAppend "*/1 * * * * ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py fusionpbx sync"
 
     printdbg "FusionPBX module installed"
 }

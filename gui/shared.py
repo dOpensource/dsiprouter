@@ -215,7 +215,7 @@ def updateConfig(config_obj, field_dict, hot_reload=False):
         if hot_reload:
             reload(config_obj)
     except:
-        IO.logerr('Problem updating the {0} configuration file').format(config_file)
+        IO.logerr('Problem updating the {0} configuration file'.format(config_file))
 
 def stripDictVals(d):
     for key, val in d.items():
@@ -228,21 +228,19 @@ def stripDictVals(d):
 def getCustomRoutes():
     """ Return custom kamailio routes from config file """
     custom_routes = []
-    with open(settings.KAM_CFG_PATH, 'r') as kamcfg_file:
-        kamcfg_str = kamcfg_file.read()
+    with open(settings.KAM_CFG_PATH, 'rb') as kamcfg_file:
+        kamcfg_bytes = kamcfg_file.read()
 
-        regex = r"CUSTOM_ROUTING_START.*CUSTOM_ROUTING_END"
-        custom_routes_str = re.search(regex, kamcfg_str, flags=re.MULTILINE | re.DOTALL).group(0)
+        regex = rb'''CUSTOM_ROUTING_START.*CUSTOM_ROUTING_END'''
+        custom_routes_bytes = re.search(regex, kamcfg_bytes, flags=re.MULTILINE | re.DOTALL).group(0)
 
-        regex = r"^route\[(\w+)\]"
-        matches = re.finditer(regex, custom_routes_str, flags=re.MULTILINE)
+        regex = rb'''^route\[(\w+)\]'''
+        matches = re.finditer(regex, custom_routes_bytes, flags=re.MULTILINE)
 
         for matchnum, match in enumerate(matches):
             if len(match.groups()) > 0:
-                custom_routes.append(match.group(1))
+                custom_routes.append(match.group(1).decode('utf-8'))
 
-        for route in custom_routes:
-            print(route)
     return custom_routes
 
 def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):

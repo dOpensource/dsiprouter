@@ -37,14 +37,19 @@ settings_manager = createSettingsManager(shared_settings)
 
 @app.before_first_request
 def before_first_request():
-    log_handler = initSyslogLogger()
     # replace werkzeug and sqlalchemy loggers
+    log_handler = initSyslogLogger()
     replaceAppLoggers(log_handler)
 
 @app.before_request
 def before_request():
+    # set the session lifetime to gui inactive timeout
+    # if we are in debug mode force it to last for entire day
     session.permanent = True
-    app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
+    if settings.DEBUG:
+        app.permanent_session_lifetime = datetime.timedelta(days=1)
+    else:
+        app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
 @app.route('/')
@@ -180,12 +185,12 @@ def displayCarrierGroups(gwgroup=None):
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain,UAC.auth_username,UAC.auth_proxy).filter(
+                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(
                 GatewayGroups.id == gwgroup).first()]
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain,UAC.auth_username,UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
+                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
 
         return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
 
@@ -239,17 +244,17 @@ def addUpdateCarrierGroups():
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else None
         if "sip:" in auth_proxy or "sips:" in auth_proxy:
-            #Search and grab the hostname or ip address
-            #m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
-            m = re.search(':(.*@)?(.*)(:.*)?',auth_proxy)
+            # Search and grab the hostname or ip address
+            # m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
+            m = re.search(':(.*@)?(.*)(:.*)?', auth_proxy)
             if m:
                 ip_addr = hostToIP(m.group(2))
-            #Let the user set the authproxy field manually
+            # Let the user set the authproxy field manually
             pass
         elif auth_proxy is '' or auth_proxy is None:
-            #IP Address to store in the address table
+            # IP Address to store in the address table
             ip_addr = hostToIP(auth_domain)
-            #Use the r_username to auth against the auth domain
+            # Use the r_username to auth against the auth domain
             auth_proxy = "sip:{}@{}".format(r_username, auth_domain)
         else:
             ip_addr = hostToIP(auth_proxy)
@@ -266,7 +271,7 @@ def addUpdateCarrierGroups():
             gwgroup = Gwgroup.id
 
             if authtype == "userpwd":
-                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,auth_proxy=auth_proxy,
+                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 # Add auth_domain(aka registration server) to the gateway list
                 Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
@@ -454,7 +459,8 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                         gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
-        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid, reload_required=globals.reload_required)
+        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
+            reload_required=globals.reload_required)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -572,7 +578,6 @@ def addUpdateCarriers():
 
             # gw_fields may be updated above so set after
             Gateway.description = dictToStrFields(gw_fields)
-
 
         db.commit()
         globals.reload_required = True
@@ -1534,8 +1539,7 @@ def displayOutboundRoutes():
         teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-        #return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=getCustomRoutes())
-        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=[])
+        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=getCustomRoutes())
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1953,11 +1957,13 @@ def syncSettings(new_fields={}, update_net=False):
         db = SessionLoader()
 
         # update ip's dynamically
+        # TODO: need to create external fqdn resolution funcs
         if update_net:
             net_dict = {
                 'INTERNAL_IP_ADDR': getInternalIP(),
                 'INTERNAL_IP_NET': "{}.*".format(getInternalIP().rsplit(".", 1)[0]),
-                'EXTERNAL_IP_ADDR': getExternalIP()
+                'EXTERNAL_IP_ADDR': getExternalIP(),
+                'EXTERNAL_FQDN': settings.EXTERNAL_FQDN
             }
         else:
             net_dict = {}
@@ -1983,17 +1989,19 @@ def syncSettings(new_fields={}, update_net=False):
                  ('KAM_DB_PASS', settings.KAM_DB_PASS), ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH), ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
                  ('RTP_CFG_PATH', settings.RTP_CFG_PATH), ('SQLALCHEMY_TRACK_MODIFICATIONS', settings.SQLALCHEMY_TRACK_MODIFICATIONS),
                  ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG), ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX),
+                 ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
                  ('FLT_OUTBOUND', settings.FLT_OUTBOUND), ('FLT_INBOUND', settings.FLT_INBOUND), ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
                  ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DOMAIN', settings.DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
                  ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
                  ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP), ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
                  ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
                  ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
-                 ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET), ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
+                 ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET), ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR), ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
                  ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER), ('CLOUD_PLATFORM', settings.CLOUD_PLATFORM), ('MAIL_SERVER', settings.MAIL_SERVER),
                  ('MAIL_PORT', settings.MAIL_PORT), ('MAIL_USE_TLS', settings.MAIL_USE_TLS), ('MAIL_USERNAME', settings.MAIL_USERNAME),
                  ('MAIL_PASSWORD', settings.MAIL_PASSWORD), ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
-                 ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER), ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT)])
+                 ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER), ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT)]
+            )
 
             fields.update(new_fields)
             fields.update(net_dict)

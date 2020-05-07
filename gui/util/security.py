@@ -1,4 +1,4 @@
-import hashlib, binascii
+import os, hashlib, binascii, string
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
@@ -14,6 +14,19 @@ import settings
 # when sending encrypted data over the net asymmetric encryption is preferred
 # if credentials need to be stored/accessed in a python module, they need encoded/decoded
 #
+
+def urandomChars(length=64):
+    """
+    Return printable characters from urandom
+
+    :param length:  number of bytes to return
+    :type length:   int
+    :return:        random characters
+    :rtype:         str
+    """
+
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+    return ''.join([chars[ord(os.urandom(1)) % len(chars)] for _ in range(length)])
 
 def hashCreds(creds, salt=None):
     """

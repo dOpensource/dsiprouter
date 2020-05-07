@@ -2,10 +2,62 @@
 
 
 
-### Bug Fixes and CLI QOL Updates
+###   - resolves dsiprouter@enterprise#24   - resolves dsiprouter@enterprise#29   - fix custom routes issue in shared.py   - add CDR feature enhancements   - redo crontab dsiprouter integration   - create crontab integratino script   - add loading spinning to table layout   - add field validation to endpoints endpoint   - update / optimize dsip_settings table   - update settings.py adding some fields to DB   - fix typos in inboundmapping.js   - update dsip_cdrinfo table   - add cron usability functions   - increase logout timeout while in debug mode   - various changes to install scripts for cron updates   - update CDR Report fields   - add urandomChars to util.security (future use)   - seperate cdrs static code from template code
 
 > Branches Affected: v0.61  
 > Tags Affected:   
+> Date: Thu, 7 May 2020 17:49:42 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+
+
+---
+
+
+### Fixed issue
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Wed, 6 May 2020 21:07:18 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### Added dSIPRouter Support for Kamailio 5.3.4 - Added logic to install the dSIPRouter module based on the verison of Kamailio installed - Added source code for dSIPRouter Module
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Wed, 6 May 2020 20:47:06 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
+### CDR Monthly Email Process - Used a function that replace non-alphanumeric characters with underscores. Fixed: https://git.flyball.co/dsiprouter/enterprise/issues/34
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Tue, 5 May 2020 19:31:21 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+
+
+
+---
+
+
+### Bug Fixes and CLI QOL Updates
+
+> Branches Affected: v0.61  
+> Tags Affected: v0.61-beta  
 > Date: Fri, 1 May 2020 19:53:24 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -50,7 +102,7 @@
 ### MSTeams Fixes - Fixed Kamailio option messages for MSTeams so that it works with any domain - Fixed the Option Message Status Check - Added styling to the MSTeams Test Connectivity tooltips
 
 > Branches Affected: master,v0.60,v0.61  
-> Tags Affected: v0.60-relv0.61-beta  
+> Tags Affected: v0.60-rel  
 > Date: Fri, 1 May 2020 12:46:18 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Mack Hendricks (mack@dopensource.com)  

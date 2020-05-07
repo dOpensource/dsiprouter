@@ -14,6 +14,7 @@ from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCer
 from util.notifications import sendEmail
 from util.security import AES_CTR
 from util.file_handling import isValidFile
+from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, cronIntervalToDescription
 import settings, globals
 
 
@@ -657,15 +658,13 @@ def deleteEndpointGroup(gwgroupid):
 
         db = SessionLoader()
 
-        responsePayload = {}
+        responsePayload = {'status': "0"}
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid)
         if endpointgroup is not None:
             endpointgroup.delete(synchronize_session=False)
         else:
-            responsePayload['status'] = "0"
-            responsePayload['message'] = "The endpoint group doesn't exist"
-            return json.dumps(responsePayload)
+            raise http_exceptions.NotFound("The endpoint group doesn't exist")
 
         calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == str(gwgroupid))
         if calllimit is not None:
@@ -677,16 +676,18 @@ def deleteEndpointGroup(gwgroupid):
 
         typeFilter = "%gwgroup:{}%".format(gwgroupid)
         endpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
-        for endpoint in endpoints:
+        if endpoints is not None:
             endpoints.delete(synchronize_session=False)
 
-        n = db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid)
-        for notification in n:
-            n.delete(synchronize_session=False)
+        notifications = db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid)
+        if notifications is not None:
+            notifications.delete(synchronize_session=False)
 
         cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid)
         if cdrinfo is not None:
             cdrinfo.delete(synchronize_session=False)
+            if not deleteTaggedCronjob(gwgroupid):
+                raise Exception('Crontab entry could not be deleted')
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
@@ -790,7 +791,7 @@ def getEndpointGroup(gwgroupid):
         cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
         if cdrinfo is not None:
             responsePayload['cdr']['cdr_email'] = cdrinfo.email
-            responsePayload['cdr']['cdr_send_date'] = cdrinfo.send_date
+            responsePayload['cdr']['cdr_send_interval'] = cdrinfo.send_interval
 
         return json.dumps(responsePayload), StatusCodes.HTTP_OK
 
@@ -1019,7 +1020,7 @@ def updateEndpointGroups(gwgroupid):
 
             if endpointfailure is not None:
                 # Try to update
-                if db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).update( \
+                if db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).update(
                       {"value": endpointfailure}):
                     pass
                 else:  # Add
@@ -1033,21 +1034,26 @@ def updateEndpointGroups(gwgroupid):
         # Update CDR
         if 'cdr' in requestPayload:
             cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else None
-            cdr_send_date = requestPayload['cdr']['cdr_send_date'] if 'cdr_send_date' in requestPayload['cdr'] else None
+            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload['cdr'] else None
 
-            if len(cdr_email) > 0 and len(cdr_send_date) > 0:
+            if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
                 # Try to update
-
-                if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update({"email": cdr_email, "send_date": cdr_send_date}):
-                    pass
+                if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update({"email": cdr_email, "send_interval": cdr_send_interval}):
+                    if not updateTaggedCronjob(gwgroupid, cdr_send_interval):
+                        raise Exception('Crontab entry could not be updated')
                 else:
-                    cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_date)
+                    cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_interval)
                     db.add(cdrinfo)
+                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'), gwgroupid)
+                    if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
+                        raise Exception('Crontab entry could not be created')
             else:
-                # Removte CDR Info
+                # Remove CDR Info
                 cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
                 if cdrinfo is not None:
                     db.delete(cdrinfo)
+                    if not deleteTaggedCronjob(gwgroupid):
+                        raise Exception('Crontab entry could not be deleted')
 
         # Update FusionPBX
         if 'fusionpbx' in requestPayload:
@@ -1114,7 +1120,7 @@ def addEndpointGroups():
         },
         cdr: {
             cdr_email: <string>,
-            cdr_send_date: <string>
+            cdr_send_interval: <string>
         }
         fusionpbx: {
             enabled: <bool>,
@@ -1267,13 +1273,18 @@ def addEndpointGroups():
 
         # Enable CDR
         if 'cdr' in requestPayload:
-            cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else None
-            cdr_send_date = requestPayload['cdr']['cdr_send_date'] if 'cdr_send_date' in requestPayload['cdr'] else None
+            cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else ''
+            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload['cdr'] else ''
 
-            if len(cdr_email) > 0 and len(cdr_send_date) > 0:
-                cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_date)
+            if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
+                # create DB entry
+                cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_interval)
                 db.add(cdrinfo)
 
+                # create crontab entry
+                cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'), gwgroupid)
+                if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
+                    raise Exception('Crontab entry could not be created')
 
         # DEBUG
         # for key, value in data.items():
@@ -1294,7 +1305,23 @@ def addEndpointGroups():
         db.close()
 
 # return value should be used in an http/flask context
-def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
+def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfilter=''):
+    """
+    Generate CDRs Report for a gwgroup
+
+    :param gwgroupid:       gwgroup to generate cdr's for
+    :type gwgroupid:        int|str
+    :param type:            type of report (json|csv)
+    :type type:             str
+    :param email:           whether the report should be emailed
+    :type email:            bool
+    :param dtfilter:        time before which cdr's are not returned
+    :type dtfilter:         datetime
+    :param cdrfilter:       comma seperated cdr id's to include
+    :type cdrfilter:        str
+    :return:                returns a json response or file
+    :rtype:                 flask.Response
+    """
     db = DummySession()
 
     # Define a dictionary object that represents the payload
@@ -1302,6 +1329,10 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
 
     try:
         db = SessionLoader()
+
+        if isinstance(gwgroupid, int):
+            gwgroupid = str(gwgroupid)
+        type = type.lower()
 
         query = "select * from dr_gw_lists where id = {}".format(gwgroupid)
         gwgroup = db.execute(query).first()
@@ -1314,34 +1345,39 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
                 responsePayload['recordCount'] = "0"
                 responsePayload['message'] = "No endpoints are defined"
                 return json.dumps(responsePayload)
-
         else:
             responsePayload['status'] = "0"
             responsePayload['message'] = "Endpont group doesn't exist"
             return json.dumps(responsePayload)
 
-        query = """SELECT gwid, call_start_time, calltype AS direction, dst_username AS to_num, src_username AS from_num, src_ip, dst_domain, duration, sip_call_id
-            FROM dr_gateways, cdrs WHERE (cdrs.src_ip = substring_index(dr_gateways.address,':',1) OR cdrs.dst_domain = substring_index(dr_gateways.address,':',1))
-            AND gwid IN ({}) AND call_start_time >= '{}' ORDER BY call_start_time DESC;""".format(gwlist, dtfilter)
+        if len(cdrfilter) > 0:
+            query = """SELECT cdr_id, gwid, call_start_time, calltype AS direction, dst_username AS to_num, src_username AS from_num, src_ip, dst_domain, duration, sip_call_id
+                FROM dr_gateways, cdrs WHERE (cdrs.src_ip = substring_index(dr_gateways.address,':',1) OR cdrs.dst_domain = substring_index(dr_gateways.address,':',1))
+                AND gwid IN ({}) AND call_start_time >= '{}' AND cdr_id IN ({}) ORDER BY call_start_time DESC;""".format(gwlist, dtfilter, cdrfilter)
+        else:
+            query = """SELECT cdr_id, gwid, call_start_time, calltype AS direction, dst_username AS to_num, src_username AS from_num, src_ip, dst_domain, duration, sip_call_id
+                FROM dr_gateways, cdrs WHERE (cdrs.src_ip = substring_index(dr_gateways.address,':',1) OR cdrs.dst_domain = substring_index(dr_gateways.address,':',1))
+                AND gwid IN ({}) AND call_start_time >= '{}' ORDER BY call_start_time DESC;""".format(gwlist, dtfilter)
 
         cdrs = db.execute(query)
         rows = []
         for cdr in cdrs:
             row = {}
-            row['gwid'] = cdr[0]
-            row['call_start_time'] = str(cdr[1])
-            row['calltype'] = cdr[2]
+            row['cdr_id'] = cdr[0]
+            row['gwid'] = cdr[1]
+            row['call_start_time'] = str(cdr[2])
+            row['calltype'] = cdr[3]
 
-            if cdr[2] == "inbound":
-                row['subscriber'] = cdr[3]
-            else:
+            if cdr[3] == "inbound":
                 row['subscriber'] = cdr[4]
-            row['to_num'] = cdr[3]
-            row['from_num'] = cdr[4]
-            row['src_ip'] = cdr[5]
-            row['dst_domain'] = cdr[6]
-            row['duration'] = cdr[7]
-            row['sip_call_id'] = cdr[8]
+            else:
+                row['subscriber'] = cdr[5]
+            row['to_num'] = cdr[4]
+            row['from_num'] = cdr[5]
+            row['src_ip'] = cdr[6]
+            row['dst_domain'] = cdr[7]
+            row['duration'] = cdr[8]
+            row['sip_call_id'] = cdr[9]
             row['gwgroupName'] = gwgroupName
 
             rows.append(row)
@@ -1352,8 +1388,8 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
 
         if type == "csv":
             # Convert array to csv format
-            lines = "ID,Call Start,Call Direction,Subscriber,To,From,Source,Destination Domain,Call Duration,Call ID,Endpoint Group\r"
-            columns = ['gwid','call_start_time','calltype','subscriber','to_num','from_num','src_ip','dst_domain','duration','sip_call_id','gwgroupName']
+            lines = "CDR ID,Gateway ID,Call Start,Call Direction,Subscriber,To,From,Source,Destination Domain,Call Duration,Call ID,Endpoint Group\r"
+            columns = ['cdr_id','gwid','call_start_time','calltype','subscriber','to_num','from_num','src_ip','dst_domain','duration','sip_call_id','gwgroupName']
             for row in rows:
                 line = ""
                 for column in columns:
@@ -1362,28 +1398,25 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
                 line = line[:-1] + "\r"
                 lines += line
 
-            dateTime = time.strftime('%Y%m%d-%H%M%S')
-            attachment = "attachment; filename={}_{}.csv".format(gwgroupName, dateTime)
-            headers = {"Content-disposition": attachment}
+            # Write out csv to a file
+            now = time.strftime('%Y%m%d-%H%M%S')
+            filename = '{}_{}.csv'.format(secure_filename(gwgroupName), now)
+            filepath = '/tmp/{}'.format(filename)
+            with open(filepath, 'wb') as f:
+                for line in lines:
+                    f.write(line.encode())
 
             if email:
                 # recipients required
                 cdr_info = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
                 if cdr_info is not None:
-                    # Write out csv to a file
-                    filename = '/tmp/{}_{}.csv'.format(secure_filename(gwgroupName), dateTime)
-                    f = open(filename, 'wb')
-                    for line in lines:
-                        f.write(line.encode())
-                    f.close()
-
                     # Setup the parameters to send the email
                     data = {}
                     data['html_body'] = "<html>CDR Report for {}</html>".format(gwgroupName)
                     data['text_body'] = "CDR Report for {}".format(gwgroupName)
                     data['subject'] = "CDR Report for {}".format(gwgroupName)
                     data['attachments'] = []
-                    data['attachments'].append(filename)
+                    data['attachments'].append(filepath)
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
                     # Remove CDR's from the payload thats being returned
@@ -1392,7 +1425,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
                     responsePayload['type'] = 'email'
                     return json.dumps(responsePayload)
 
-            return Response(lines, mimetype="text/csv", headers=headers, status=StatusCodes.HTTP_OK)
+            return send_file(filepath, attachment_filename=filename, as_attachment=True), StatusCodes.HTTP_OK
         else:
             return json.dumps(responsePayload), StatusCodes.HTTP_OK
 
@@ -1405,7 +1438,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min):
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
-def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None):
+def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None):
     """
     Purpose
 
@@ -1416,16 +1449,13 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None):
         debugEndpoint()
 
     if type is None:
-        type = "JSON"
-    else:
-        type = request.args.get('type', type)
-
+        type = request.args.get('type', 'json')
     if email is None:
-        email = False
-    else:
-        email = bool(request.args.get('email', email))
+        email = bool(request.args.get('email', False))
+    if filter is None:
+        filter = request.args.get('filter', '')
 
-    return generateCDRS(gwgroupid, type, email)
+    return generateCDRS(gwgroupid, type, email, cdrfilter=filter)
 
 @api.route("/api/v1/cdrs/endpoint/<int:gwid>", methods=['GET'])
 @api_security
@@ -1447,33 +1477,28 @@ def getGatewayCDRS(gwid=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        query = "select gwid, call_start_time, calltype as direction, dst_username as \
-         number,src_ip, dst_domain, duration,sip_call_id \
+        query = "select cdr_id, gwid, call_start_time, calltype as direction, dst_username as number,src_ip, dst_domain, duration,sip_call_id \
          from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={} order by call_start_time DESC;".format(gwid)
 
         cdrs = db.execute(query)
         rows = []
         for cdr in cdrs:
             row = {}
-            row['gwid'] = cdr[0]
-            row['call_start_time'] = str(cdr[1])
-            row['calltype'] = cdr[2]
-            row['number'] = cdr[3]
-            row['src_ip'] = cdr[4]
-            row['dst_domain'] = cdr[5]
-            row['duration'] = cdr[6]
-            row['sip_call_id'] = cdr[7]
+            row['cdr_id'] = cdr[0]
+            row['gwid'] = cdr[1]
+            row['call_start_time'] = str(cdr[2])
+            row['calltype'] = cdr[3]
+            row['number'] = cdr[4]
+            row['src_ip'] = cdr[5]
+            row['dst_domain'] = cdr[6]
+            row['duration'] = cdr[7]
+            row['sip_call_id'] = cdr[8]
 
             rows.append(row)
 
-        if rows is not None:
-            responsePayload['status'] = "200"
             responsePayload['cdrs'] = rows
             responsePayload['recordCount'] = len(rows)
-        else:
             responsePayload['status'] = "200"
-            responsePayload['cdrs'] = rows
-            responsePayload['recordCount'] = len(rows)
 
         return json.dumps(responsePayload), StatusCodes.HTTP_OK
 

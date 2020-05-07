@@ -1,7 +1,15 @@
+/**
+ * Will load function from main.js if available
+ * Otherwise will do nothing and print error to console
+ * @function
+ */
+var validateFields = validateFields || function(a,b) {
+  console.error("validateFields() not defined, main.js must be loaded first");
+};
+
+
 //Add EndpointGroup
 function addEndpointGroup(action) {
-
-
   // The default action is a POST (creating a new EndpointGroup)
   if (action == undefined) {
     action = "POST";
@@ -17,12 +25,12 @@ function addEndpointGroup(action) {
     url = "/api/v1/endpointgroups/" + gwgroupid;
   }
 
-  var requestPayload = new Object();
+  var requestPayload = {};
   requestPayload.name = modal_body.find(".name").val();
   requestPayload.calllimit = modal_body.find(".calllimit").val();
 
-  var auth = new Object();
-  
+  var auth = {};
+
   if (action == "POST") {
     if ($('input#ip.authtype').is(':checked')) {
       auth.type = "ip";
@@ -58,9 +66,13 @@ function addEndpointGroup(action) {
 
   cdr = {};
   cdr.cdr_email = modal_body.find(".cdr_email").val();
-  cdr.cdr_send_date = modal_body.find(".cdr_send_date").val();
+  cdr.cdr_send_interval = modal_body.find(".cdr_send_minute").val() + ' ' +
+    modal_body.find(".cdr_send_hour").val() + ' ' +
+    modal_body.find(".cdr_send_day").val() + ' ' +
+    modal_body.find(".cdr_send_month").val() + ' ' +
+    modal_body.find(".cdr_send_weekday").val();
 
-  requestPayload.cdr = cdr
+  requestPayload.cdr = cdr;
 
   fusionpbx = {};
   fusionpbx.enabled = modal_body.find(".fusionpbx_db_enabled").val();
@@ -110,9 +122,7 @@ function addEndpointGroup(action) {
       }
       else {
         console.log("error during endpointgroup update");
-
       }
-
     },
     data: JSON.stringify(requestPayload)
   })
@@ -140,6 +150,12 @@ function clearEndpointGroupModal(modal_selector) {
   modal_body.find(".calllimit").val('');
   modal_body.find(".email_over_max_calls").val('');
   modal_body.find(".email_endpoint_failure").val('');
+  modal_body.find(".cdr_email").val('');
+  modal_body.find(".cdr_send_minute").val('*');
+  modal_body.find(".cdr_send_hour").val('*');
+  modal_body.find(".cdr_send_day").val('1');
+  modal_body.find(".cdr_send_month").val('*');
+  modal_body.find(".cdr_send_weekday").val('*');
   modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
   modal_body.find('.updateButton').attr("disabled", false);
 
@@ -150,16 +166,16 @@ function clearEndpointGroupModal(modal_selector) {
 
   // Clear out update button in add footer
   modal_footer.find("#updateButton").attr("disabled", false);
-  
+
  if (modal_selector == "#add") {
-      var btn = $('#add .modal-footer').find('#addButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Add");
-      btn.removeClass("btn-success");
-      btn.addClass("btn-primary");
+    var btn = $('#add .modal-footer').find('#addButton');
+    btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Add");
+    btn.removeClass("btn-success");
+    btn.addClass("btn-primary");
  }
    else {
-      var btn = $('#edit .modal-footer').find('#updateButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
+    var btn = $('#edit .modal-footer').find('#updateButton');
+    btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
  }
  btn.attr('disabled',false);
 
@@ -196,6 +212,9 @@ function displayEndpointGroup(msg) {
     $("#userpwd_enabled").removeClass('hidden');
   }
 
+  // parse the cdr_send_interval
+  var send_interval = msg.cdr.cdr_send_interval.split(' ');
+
   modal_body.find(".auth_username").val(msg.auth.user);
   modal_body.find("#auth_password2").val(msg.auth.pass);
   modal_body.find("#auth_password").val(msg.auth.pass);
@@ -205,7 +224,11 @@ function displayEndpointGroup(msg) {
   modal_body.find(".email_over_max_calls").val(msg.notifications.overmaxcalllimit);
   modal_body.find(".email_endpoint_failure").val(msg.notifications.endpointfailure);
   modal_body.find(".cdr_email").val(msg.cdr.cdr_email);
-  modal_body.find(".cdr_send_date").val(msg.cdr.cdr_send_date);
+  modal_body.find(".cdr_send_minute").val(send_interval[0]);
+  modal_body.find(".cdr_send_hour").val(send_interval[1]);
+  modal_body.find(".cdr_send_day").val(send_interval[2]);
+  modal_body.find(".cdr_send_month").val(send_interval[3]);
+  modal_body.find(".cdr_send_weekday").val(send_interval[4]);
   modal_body.find(".fusionpbx_db_enabled").val(msg.fusionpbx.enabled);
   modal_body.find(".fusionpbx_db_server").val(msg.fusionpbx.dbhost);
   modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
@@ -282,16 +305,7 @@ $(document).ready(function() {
     "order": [[1, 'asc']]
   });
 
-  // datepicker init
-  var date_input = $('input[name="cdr_send_date"]'); //our date input has the name "date"
-  var container = $('.bootstrap-iso form').length > 0 ? $('.bootstrap-iso form').parent() : "body";
-  date_input.datepicker({
-    format: 'mm/dd/yyyy',
-    container: 'cdr-toggle',
-    todayHighlight: true,
-    autoclose: true,
-  });
-
+  // table editing by clicking on the row
   $('#endpointgroups tbody').on('click', 'tr', function() {
     //Turn off selected on any other rows
     $('#endpointgroups').find('tr').removeClass('selected');
@@ -319,7 +333,6 @@ $(document).ready(function() {
       console.log("In Always");
       $('.tabledit-deleted-row').each(function(index, element) {
         $(this).remove();
-
       });
     }
   });
@@ -335,7 +348,6 @@ $(document).ready(function() {
       console.log("In Always");
       $('.tabledit-deleted-row').each(function(index, element) {
         $(this).remove();
-
       });
     }
   });
@@ -354,7 +366,7 @@ $(document).ready(function() {
       dataType: "json",
       contentType: "application/json; charset=utf-8",
       success: function(msg) {
-        displayEndpointGroup(msg)
+        displayEndpointGroup(msg);
       }
     })
   });
@@ -430,5 +442,37 @@ $(document).ready(function() {
 
   $('#open-EndpointGroupsAdd').click(function() {
     clearEndpointGroupModal('#add');
+  });
+
+  /* validate fields before submitting api request */
+  $('#addButton').click(function() {
+    if (validateFields('#add')) {
+      addEndpointGroup();
+      // hide the modal after 1.5 sec
+      setTimeout(function() {
+        var add_modal = $('#edit');
+        if (add_modal.is(':visible')) {add_modal.modal('hide');}
+        }, 1500);
+    }
+  });
+
+  /* validate fields before submitting api request */
+  $('#updateButton').click(function() {
+    if (validateFields('#edit')) {
+      updateEndpointGroup();
+      // hide the modal after 1.5 sec
+      setTimeout(function() {
+        var edit_modal = $('#edit');
+        if (edit_modal.is(':visible')) {edit_modal.modal('hide');}
+        }, 1500);
+    }
+  });
+
+  /* validate fields before moving to next tab */
+  $('#endpoint-nav > .nav-tabs').click({tab_panes: $('div.tab-content > div.tab-pane')}, function(ev) {
+    var current_tab = ev.data.tab_panes.filter(':not(:hidden)');
+    if (!validateFields(current_tab)) {
+        return false;
+    }
   });
 });

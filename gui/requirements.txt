@@ -12,3 +12,5 @@ requests
 SQLAlchemy
 Werkzeug
 dnspython
+python-crontab
+cron-descriptor
