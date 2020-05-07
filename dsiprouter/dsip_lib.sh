@@ -228,44 +228,32 @@ pathCheck() {
     esac
 }
 
-# returns: 0 == success, 1 == failure
+# returns: 0 == success, otherwise failure
 # notes: try to access the AWS metadata URL to determine if this is an AMI instance
 isInstanceAMI() {
-    curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null; ret=$?
-    if (( $ret != 22 )) && (( $ret != 28 )); then
-        return 0
-    fi
-    return 1
+    curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null
+    return $?
 }
 
-# returns: 0 == success, 1 == failure
+# returns: 0 == success, otherwise failure
 # notes: try to access the DO metadata URL to determine if this is an Digital Ocean instance
 isInstanceDO() {
-    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/ &>/dev/null; ret=$?
-    if (( $ret != 22 )) && (( $ret != 28 )); then
-        return 0
-    fi
-    return 1
+    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/ &>/dev/null
+    return $?
 }
 
-# returns: 0 == success, 1 == failure
+# returns: 0 == success, otherwise failure
 # notes: try to access the GCE metadata URL to determine if this is an Google instance
 isInstanceGCE() {
-    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/ &>/dev/null; ret=$?
-    if (( $ret != 6 )) && (( $ret != 22 )) && (( $ret != 28 )); then
-        return 0
-    fi
-    return 1
+    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/ &>/dev/null
+    return $?
 }
 
-# returns: 0 == success, 1 == failure
+# returns: 0 == success, otherwise failure
 # notes: try to access the MS Azure metadata URL to determine if this is an Azure instance
 isInstanceAZURE() {
-    curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01" &>/dev/null; ret=$?
-    if (( $ret != 22 )) && (( $ret != 28 )); then
-        return 0
-    fi
-    return 1
+    curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01" &>/dev/null
+    return $?
 }
 
 # returns: instance ID || blank string
