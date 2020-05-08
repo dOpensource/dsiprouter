@@ -686,8 +686,9 @@ def deleteEndpointGroup(gwgroupid):
         cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid)
         if cdrinfo is not None:
             cdrinfo.delete(synchronize_session=False)
-            if not deleteTaggedCronjob(gwgroupid):
-                raise Exception('Crontab entry could not be deleted')
+            deleteTaggedCronjob(gwgroupid)
+            #if not deleteTaggedCronjob(gwgroupid):
+            #    raise Exception('Crontab entry could not be deleted')
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
@@ -1097,7 +1098,7 @@ def updateEndpointGroups(gwgroupid):
 
 @api.route("/api/v1/endpointgroups", methods=['POST'])
 @api_security
-def addEndpointGroups():
+def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
     """
     Add Endpoint Group
     {
@@ -1148,8 +1149,12 @@ def addEndpointGroups():
 
         db = SessionLoader()
 
-        # Convert JSON message to Dictionary Object
-        requestPayload = request.get_json()
+        if data == None:
+            # Convert Request message to Dictionary Object
+            requestPayload = request.get_json()
+        else:
+            # Use the data parameter as the payload
+            requestPayload = data
 
         for parameter in requiredParameters:
             if parameter not in requestPayload:
@@ -1182,7 +1187,7 @@ def addEndpointGroups():
         if isinstance(strip, str) and len(strip) == 0:
             strip = None
 
-        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else None
+        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else ""
 
         # Setup up authentication
         authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
@@ -1239,7 +1244,7 @@ def addEndpointGroups():
 
                 if settings.DEBUG:
                     print("***{}***{}".format(hostname, name))
-
+                    
                 if hostname is not None and name is not None and len(hostname) > 0:
                     Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Gateway)
@@ -1248,6 +1253,12 @@ def addEndpointGroups():
                 if authtype == "ip":
                     Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Addr)
+                if endpointGroupType == "msteams" and domain is not None:
+                    # Update the attrs so that the third field contains the MSTeams Domain it relates too
+                    attrs = "{},{},{}".format(Gateway.gwid,settings.FLT_PBX,domain)
+                    db.query(Gateways).filter(Gateways.gwid == Gateway.gwid).update({'attrs': attrs}, synchronize_session=False)
+                    db.flush()
+
             # Update the GatewayGroup with the lists of gateways
             seperator = ","
             gwlistString = seperator.join(gwlist)

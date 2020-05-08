@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect, abort, flash, sessi
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Address
+from modules.api.api_routes import addEndpointGroups
 from shared import *
 import settings
 import globals
@@ -95,6 +96,16 @@ def addDomain(domain, authtype, pbxs, notes, db):
             if address_query is None:
                 Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS, gwgroup=0)
                 db.add(Addr)
+
+
+        # Add Endpoint group to enable Inbound Mapping
+        endpointGroup = {"name":domain,"endpoints":None}
+        endpoints = []
+        for hostname in msteams_dns_endpoints:
+            endpoints.append({"hostname":hostname,"description":"msteams_endpoint","maintmode":False});
+
+        endpointGroup['endpoints'] = endpoints
+        addEndpointGroups(endpointGroup,"msteams",domain)
 
     # Implement external authentiction to either Realtime DB or Local Subscriber table
     else:
