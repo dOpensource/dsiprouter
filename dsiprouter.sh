@@ -134,15 +134,14 @@ setScriptSettings() {
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
 
-    # TODO: tls not supported on api yet
     if (( ${WITH_SSL} == 1 )); then
         export DSIP_PROTO='https'
-        export DSIP_API_PROTO='http'
+        export DSIP_API_PROTO='https'
         export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter.key"
         export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter.crt"
         export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
     else
-        export DSIP_PROTO='https'
+        export DSIP_PROTO='http'
         export DSIP_API_PROTO='http'
         export DSIP_SSL_KEY=""
         export DSIP_SSL_CERT=""
@@ -2631,7 +2630,7 @@ function processCMD {
 
             WITH_SSL=1
             export DSIP_PROTO='https'
-            #export DSIP_API_PROTO='https'
+            export DSIP_API_PROTO='https'
             export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter.key"
             export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter.crt"
             export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"

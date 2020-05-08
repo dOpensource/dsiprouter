@@ -167,18 +167,19 @@ function clearEndpointGroupModal(modal_selector) {
   // Clear out update button in add footer
   modal_footer.find("#updateButton").attr("disabled", false);
 
- if (modal_selector == "#add") {
+  if (modal_selector == "#add") {
     var btn = $('#add .modal-footer').find('#addButton');
-    btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Add");
+    btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
     btn.removeClass("btn-success");
     btn.addClass("btn-primary");
- }
-   else {
+  }
+  else {
     var btn = $('#edit .modal-footer').find('#updateButton');
-    btn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
- }
- btn.attr('disabled',false);
-
+    btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Update");
+    btn.removeClass("btn-success");
+    btn.addClass("btn-warning");
+  }
+  btn.attr('disabled', false);
 
   // Remove Endpont Rows
   $("tr.endpoint").each(function(i, row) {
@@ -186,7 +187,9 @@ function clearEndpointGroupModal(modal_selector) {
   })
 
   // Make the Auth tab the default
-  modal_body.find(".auth-tab").addClass("active");
+  var nav_tabs = modal_body.find('#endpoint-nav .nav-tabs > li');
+  nav_tabs.removeClass("active");
+  nav_tabs.filter(".auth-tab").addClass("active");
 
   // make sure userpwd options not shown
   modal_body.find('.userpwd').addClass('hidden');
@@ -213,7 +216,7 @@ function displayEndpointGroup(msg) {
   }
 
   // parse the cdr_send_interval
-  var send_interval = msg.cdr.cdr_send_interval.split(' ');
+  var send_interval = msg.cdr.cdr_send_interval;
 
   modal_body.find(".auth_username").val(msg.auth.user);
   modal_body.find("#auth_password2").val(msg.auth.pass);
@@ -224,11 +227,14 @@ function displayEndpointGroup(msg) {
   modal_body.find(".email_over_max_calls").val(msg.notifications.overmaxcalllimit);
   modal_body.find(".email_endpoint_failure").val(msg.notifications.endpointfailure);
   modal_body.find(".cdr_email").val(msg.cdr.cdr_email);
-  modal_body.find(".cdr_send_minute").val(send_interval[0]);
-  modal_body.find(".cdr_send_hour").val(send_interval[1]);
-  modal_body.find(".cdr_send_day").val(send_interval[2]);
-  modal_body.find(".cdr_send_month").val(send_interval[3]);
-  modal_body.find(".cdr_send_weekday").val(send_interval[4]);
+  if (send_interval) {
+    send_interval = send_interval.split(' ');
+    modal_body.find(".cdr_send_minute").val(send_interval[0]);
+    modal_body.find(".cdr_send_hour").val(send_interval[1]);
+    modal_body.find(".cdr_send_day").val(send_interval[2]);
+    modal_body.find(".cdr_send_month").val(send_interval[3]);
+    modal_body.find(".cdr_send_weekday").val(send_interval[4]);
+  }
   modal_body.find(".fusionpbx_db_enabled").val(msg.fusionpbx.enabled);
   modal_body.find(".fusionpbx_db_server").val(msg.fusionpbx.dbhost);
   modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
@@ -450,7 +456,7 @@ $(document).ready(function() {
       addEndpointGroup();
       // hide the modal after 1.5 sec
       setTimeout(function() {
-        var add_modal = $('#edit');
+        var add_modal = $('#add');
         if (add_modal.is(':visible')) {add_modal.modal('hide');}
         }, 1500);
     }

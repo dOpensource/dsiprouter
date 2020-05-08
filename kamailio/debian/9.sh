@@ -124,6 +124,21 @@ INSTALL_DBUID_TABLES=yes
 EOF
     ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
+    # fix bug in kamilio v5.3.4 installer
+    if [[ "$(kamailio -V | head -1 | awk '{print $3}')" == "5.3.4" ]]; then
+        (cat << 'EOF'
+CREATE TABLE `secfilter` (
+`id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
+`action` SMALLINT DEFAULT 0 NOT NULL,
+`type` SMALLINT DEFAULT 0 NOT NULL,
+`data` VARCHAR(64) DEFAULT "" NOT NULL
+);
+CREATE INDEX secfilter_idx ON secfilter (`action`, `type`, `data`);
+INSERT INTO version (table_name, table_version) values ("secfilter","1");
+EOF
+        ) > /usr/share/kamailio/mysql/secfilter-create.sql
+    fi
+
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
@@ -156,7 +171,7 @@ EOF
     KAM_VERSION=$(kamailio -v | grep version | awk '{print $3}'| sed  's/\.//g')
     cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
     if [ $? -gt 0 ]; then
-	echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}" 
+	echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}"
 	return 1
     fi
 

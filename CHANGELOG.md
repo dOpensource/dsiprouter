@@ -2,6 +2,24 @@
 
 
 
+### Bug Fixes
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Fri, 8 May 2020 16:34:00 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- fix endpoints not shown in endpoint groups
+- fix endpoint groups wrong tabs active on re-edit
+- fix endpoint groups update button color on re-edit
+- fix regression with FLT_DIALOG in `kamailio.cfg`
+- fix http/https variable for api
+
+
+---
+
+
 ### Fix Proxmox Install
 
 > Branches Affected: v0.61  

@@ -285,7 +285,7 @@ def updateEndpoint(id):
             Gateway = db.query(Gateways).filter(Gateways.gwid == id).first()
             if Gateway != None:
                 MaintMode = dSIPMaintModes(Gateway.address, id)
-            db.add(MaintMode)
+                db.add(MaintMode)
 
         db.commit()
         responsePayload['status'] = 1
