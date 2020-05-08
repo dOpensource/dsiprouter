@@ -41,7 +41,13 @@ def addTaggedCronjob(tag, interval, cmd):
             return False
 
         cron  = CronTab(user=True)
-        job = cron.new(command=cmd, comment=tag)
+
+        matching_jobs = tuple(cron.find_comment(tag))
+        if len(matching_jobs) == 0:
+            job = cron.new(command=cmd, comment=tag)
+        else:
+            job = matching_jobs[0]
+            job.set_command(cmd)
         job.setall(interval)
 
         if not job.is_valid():
@@ -74,7 +80,12 @@ def updateTaggedCronjob(tag, interval='', cmd='', new_tag=''):
             new_tag = str(new_tag)
 
         cron = CronTab(user=True)
-        job = tuple(cron.find_comment(tag))[0]
+
+        matching_jobs = tuple(cron.find_comment(tag))
+        if len(matching_jobs) == 0:
+            job = cron.new(comment=tag)
+        else:
+            job = tuple(cron.find_comment(tag))[0]
 
         if len(interval) > 0:
             if not CronSlices.is_valid(interval):
@@ -109,6 +120,11 @@ def deleteTaggedCronjob(tag):
             tag = str(tag)
 
         cron  = CronTab(user=True)
+
+        matching_jobs = tuple(cron.find_comment(tag))
+        if len(matching_jobs) == 0:
+            return True
+
         job = tuple(cron.find_comment(tag))[0]
         cron.remove(job)
 

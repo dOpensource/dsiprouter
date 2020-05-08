@@ -2,6 +2,33 @@
 
 
 
+### Crontab Edge Case Handling
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Fri, 8 May 2020 17:20:34 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+
+- resolves dsiprouter@enterprise#38
+
+
+---
+
+
+### MSTeams Inbound Routing - Added logic that will create an endpoint group when a MSTEAMS domain is created - Updated the Kamailio.cfg will with logic to support inbound MSTEAM calls
+
+> Branches Affected: v0.61  
+> Tags Affected:   
+> Date: Fri, 8 May 2020 21:00:27 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+
+
+
+---
+
+
 ### Bug Fixes
 
 > Branches Affected: v0.61  
