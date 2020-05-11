@@ -243,6 +243,7 @@ def addUpdateCarrierGroups():
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else None
+        # Set the auth_proxy based on user input
         if "sip:" in auth_proxy or "sips:" in auth_proxy:
             # Search and grab the hostname or ip address
             # m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
@@ -260,6 +261,11 @@ def addUpdateCarrierGroups():
             ip_addr = hostToIP(auth_proxy)
             # r_username used in register
             auth_proxy = "sip:{}@{}".format(r_username, auth_proxy)
+
+        # Set the auth_username to r_username if left empty
+        if not auth_username:
+            auth_username = r_username
+
 
         # Adding
         if len(gwgroup) <= 0:
