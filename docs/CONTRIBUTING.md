@@ -8,7 +8,9 @@
 
 ### File Structure
 
-### Module Structure
+### Modules
+
+#### Structure
 
 Our module architecture has been loosely defined for a while, but we now want to define the structure and start moving all modules into this structure.  
 Each module should have these components:
@@ -28,7 +30,17 @@ For example, this is what the "***Domain***" module looks like:
 | domain*.py | gui/modules/domain/ | Contains the Python scripts |
 | domain*.sql | gui/modules/domain/ | SQL Scripts for installing the database table structure fro the module |
 
-### Plugin Structure
+#### Packaging
+
+Modules not installed during dSIPRouter install should be packaged in a zipfile with an install script. The install script should place the components defined 
+the [Structure](#structure) section into their proper locations.
+
+
+
+
+#### Auto-discovery 
+
+Modules should be automatically discoverable.  This means that a new module should become automatically available from the UI without restarting the UI
 
 
 ### API Structure
