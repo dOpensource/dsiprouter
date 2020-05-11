@@ -43,7 +43,10 @@ the [Structure](#structure) section into their proper locations.
 Modules should be automatically discoverable.  This means that a new module should become automatically available from the UI without restarting the UI
 
 
-### API Structure
+### API Structure 
+
+Todo: Assigned to Tyler
+
 ### Useability
  - Web Interface
  - Command Line
