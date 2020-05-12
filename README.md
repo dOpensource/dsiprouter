@@ -1,6 +1,6 @@
 # dSIPRouter Enterprise
 
-Provides enterprise features for the dSIPRouter platform.  
+Provides enterprise features for the dSIPRouter platform.
 
 The following features are currently supported:
 
@@ -54,6 +54,11 @@ Supported SSH authentication methods for cluster configuration:
 ### Documentation
 
 You can find our documentation here: [dSIPRouter Documentation](https://dsiprouter.readthedocs.io/en/latest)
+
+### Contributing
+
+See the [Contributing Guidelines](CONTRIBUTING.md) for more details
+A current list of contributors can be found [here](CONTRIBUTORS.md)
 
 ### Support
 

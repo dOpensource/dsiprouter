@@ -23,15 +23,15 @@ Prerequisites:
 ^^^^^^^^^^^^^^
 
 - Must run this as the root user (you can use sudo)
-- git and curl needs to be installed
-- python version 3.4 or older
+- git needs to be installed
+- The installer will handle all other dependencies
 
 
 
 Install Options
 ^^^^^^^^^^^^^^^^
 
-- Proxy SIP Traffic Only (Don't Proxy audio (RTP) traffic) 
+- Proxy SIP Traffic Only (Don't Proxy audio (RTP) traffic)
 - Proxy SIP Traffic and Audio when it detects a SIP Agent is behind NAT
 - Proxy SIP Traffic, Audio and it configures the system to work properly when the PBX's and dSIPRouter are behind a NAT.
 
