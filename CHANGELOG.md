@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-0b99b988b822007014a072eecff99e9320f2a26f
+cee2b22e64ba6774cc919fcdae767742038e3fb0
+958e418f8a950b1ed20d690b8309262d05827a01
 c7deab623214aa39432e4ef483be4e1b5b578dbf
 40e8d85965c90166eafb4425f2159949a2e764ed
 29d156221015801c663e86e15c3923c768d62caf
@@ -1520,10 +1521,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 0b99b988b822007014a072eecff99e9320f2a26f)
+[//]: # (START_SECTION cee2b22e64ba6774cc919fcdae767742038e3fb0)
+### Outbound Routes Carrier Group Selection
+
+> Commit: [cee2b22e64ba6774cc919fcdae767742038e3fb0](https://git.flyball.co/dsiprouter/enterprise/commit/cee2b22e64ba6774cc919fcdae767742038e3fb0)  
+> Date: Tue, 12 May 2020 17:00:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#27](https://git.flyball.co/dsiprouter/enterprise/issues/27)
+- add a selection dropdown to outbound routes for carrier group selection
+
+
+---
+
+[//]: # (END_SECTION cee2b22e64ba6774cc919fcdae767742038e3fb0)
+[//]: # (START_SECTION 958e418f8a950b1ed20d690b8309262d05827a01)
 ### Fix Crosslinking Issues
 
-> Commit: [0b99b988b822007014a072eecff99e9320f2a26f](https://git.flyball.co/dsiprouter/enterprise/commit/0b99b988b822007014a072eecff99e9320f2a26f)  
+> Commit: [958e418f8a950b1ed20d690b8309262d05827a01](https://git.flyball.co/dsiprouter/enterprise/commit/958e418f8a950b1ed20d690b8309262d05827a01)  
 > Date: Tue, 12 May 2020 13:28:34 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1535,7 +1553,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 0b99b988b822007014a072eecff99e9320f2a26f)
+[//]: # (END_SECTION 958e418f8a950b1ed20d690b8309262d05827a01)
 [//]: # (START_SECTION c7deab623214aa39432e4ef483be4e1b5b578dbf)
 ### Update Domain on Install
 

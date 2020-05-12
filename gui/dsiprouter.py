@@ -6,7 +6,7 @@ from collections import OrderedDict
 from importlib import reload
 from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
 from flask_script import Manager, Server
-from sqlalchemy import case, func, exc as sql_exceptions
+from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
@@ -1523,14 +1523,23 @@ def displayOutboundRoutes():
 
         db = SessionLoader()
 
+        carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
+
         rows = db.query(OutboundRoutes).filter(
             (OutboundRoutes.groupid == settings.FLT_OUTBOUND) |
             ((OutboundRoutes.groupid >= settings.FLT_LCR_MIN) &
              (OutboundRoutes.groupid < settings.FLT_FWD_MIN))).outerjoin(
-            dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).add_columns(
+            dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).outerjoin(
+            GatewayGroups, func.REPLACE(OutboundRoutes.gwlist, '#', '') == GatewayGroups.id).add_columns(
             dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid,
-            OutboundRoutes.prefix, OutboundRoutes.routeid, OutboundRoutes.gwlist,
-            OutboundRoutes.timerec, OutboundRoutes.priority, OutboundRoutes.description)
+            OutboundRoutes.prefix, OutboundRoutes.routeid, func.REPLACE(OutboundRoutes.gwlist, '#', '').label('gwgroupid'),
+            OutboundRoutes.timerec, OutboundRoutes.priority, OutboundRoutes.description,
+            GatewayGroups.description.label('gwgroup_description'), GatewayGroups.gwlist)
+
+        cgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(carrier_filter)).all()
+
+        # sort carrier groups by name
+        cgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())
 
         teleblock = {}
         teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -1539,7 +1548,8 @@ def displayOutboundRoutes():
         teleblock["media_ip"] = settings.TELEBLOCK_MEDIA_IP
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
-        return render_template('outboundroutes.html', rows=rows, teleblock=teleblock, custom_routes=getCustomRoutes())
+        return render_template('outboundroutes.html', rows=rows, cgroups=cgroups, teleblock=teleblock,
+                               custom_routes=getCustomRoutes())
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1572,21 +1582,6 @@ def addUpateOutboundRoutes():
 
     db = DummySession()
 
-    # set default values
-    # from_prefix = ""
-    prefix = ""
-    timerec = ""
-    priority = 0
-    routeid = "1"
-    gwlist = ""
-    description = ""
-    # group for the default outbound routes
-    default_gwgroup = settings.FLT_OUTBOUND
-    # id in dr_rules table
-    ruleid = None
-    from_prefix = None
-    pattern = None
-
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
@@ -1598,34 +1593,26 @@ def addUpateOutboundRoutes():
 
         form = stripDictVals(request.form.to_dict())
 
-        if form['ruleid']:
-            ruleid = form['ruleid']
-
-        groupid = form.get('groupid', default_gwgroup)
-        if isinstance(groupid, str):
-            if len(groupid) == 0 or (groupid == 'None'):
-                groupid = settings.FLT_OUTBOUND
-
         # get form data
-        if form['from_prefix']:
-            from_prefix = form['from_prefix']
-        if form['prefix']:
-            prefix = form['prefix']
-        if form['timerec']:
-            timerec = form['timerec']
-        if form['priority']:
-            priority = int(form['priority'])
-        routeid = form.get('routeid', "")
-        if form['gwlist']:
-            gwlist = form['gwlist']
-        if form['name']:
-            description = 'name:{}'.format(form['name'])
+        ruleid = form['ruleid'] if 'ruleid' in form and len(form['ruleid']) > 0 else None
+        groupid = form['groupid'] if 'groupid' in form and len(form['groupid']) > 0 \
+                                     and form['groupid'] != "None" else settings.FLT_OUTBOUND
+        from_prefix = form['from_prefix'] if 'from_prefix' in form and len(form['from_prefix']) > 0 else None
+        prefix = form['prefix'] if 'prefix' in form else ''
+        timerec = form['timerec'] if 'timerec' in form else ''
+        priority = int(form['priority']) if 'priority' in form and len(form['priority']) > 0 else 0
+        routeid = form['routeid'] if 'routeid' in form else ''
+        gwgroupid = form['gwgroupid'] if 'gwgroupid' in form and form['gwgroupid'] != "0" else ''
+        description = 'name:{}'.format(form['name']) if 'name' in form else ''
+
+        pattern = None
+        gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
 
         # Adding
         if not ruleid:
             # if len(from_prefix) > 0 and len(prefix) == 0 :
             #    return displayOutboundRoutes()
-            if from_prefix != None:
+            if from_prefix is not None:
                 print("from_prefix: {}".format(from_prefix))
 
                 # Grab the lastest groupid and increment
@@ -1764,9 +1751,9 @@ def deleteOutboundRoute():
         ruleid = form['ruleid']
 
         OMap = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).first()
-
-        d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == OMap.groupid)
-        d1.delete(synchronize_session=False)
+        if OMap:
+            d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == OMap.groupid)
+            d1.delete(synchronize_session=False)
 
         d = db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid)
         d.delete(synchronize_session=False)

@@ -223,7 +223,7 @@ function cleanupAndExit {
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
     unset INTERNAL_FQDN DSIP_SSL_EMAIL
-    unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum
+    unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
     exit $1
@@ -519,7 +519,7 @@ function configureSSL {
     firewall-cmd --zone=public --add-port=80/tcp --permanent
     firewall-cmd --reload
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
-    certbot certonly --standalone --non-interactive --agree-tos --domains ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
+    certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
     if (( $? == 0 )); then
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
@@ -2224,8 +2224,8 @@ function usageOptions {
 
 # make the output a little cleaner
 function setVerbosityLevel {
-    # quiet pkg managers when not debugging
     if [[ "$*" != *"-debug"* ]]; then
+        # quiet pkg managers when not debugging
         if cmdExists 'apt-get'; then
             apt-get() {
                 command apt-get -qq "$@"
@@ -2237,6 +2237,10 @@ function setVerbosityLevel {
             }
             export -f yum
         fi
+        # quiet make when not debugging
+        make() {
+            command make -s "$@"
+        }
     fi
 }
 

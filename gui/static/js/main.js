@@ -355,54 +355,6 @@ $('#domains #open-Delete').click(function() {
   modal_body.find(".domain_name").val(domain_name);
 });
 
-$('#outboundmapping #open-Update').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('outboundmapping');
-
-  var ruleid = $(c).find('tr:eq(' + row_index + ') > td.ruleid').text();
-  var groupid = $(c).find('tr:eq(' + row_index + ') > td.groupid').text();
-  var prefix = $(c).find('tr:eq(' + row_index + ') > td.prefix').text();
-  var from_prefix = $(c).find('tr:eq(' + row_index + ') > td.from_prefix').text();
-  var timerec = $(c).find('tr:eq(' + row_index + ') > td.timerec').text();
-  var priority = $(c).find('tr:eq(' + row_index + ') > td.priority').text();
-  var routeid = $(c).find('tr:eq(' + row_index + ') > td.routeid').text();
-  var gwlist = $(c).find('tr:eq(' + row_index + ') > td.gwlist').text();
-  var name = $(c).find('tr:eq(' + row_index + ') > td.description').text();
-
-  /** Clear out the modal */
-  var modal_body = $('#edit .modal-body');
-  modal_body.find(".ruleid").val('');
-  modal_body.find(".groupid").val('');
-  modal_body.find(".prefix").val('');
-  modal_body.find(".from_prefix").val('');
-  modal_body.find(".timerec").val('');
-  modal_body.find(".priority").val('');
-  modal_body.find(".routeid").val('');
-  modal_body.find(".gwlist").val('');
-  modal_body.find(".name").val('');
-
-  /* update modal fields */
-  modal_body.find(".ruleid").val(ruleid);
-  modal_body.find(".groupid").val(groupid);
-  modal_body.find(".prefix").val(prefix);
-  modal_body.find(".from_prefix").val(from_prefix);
-  modal_body.find(".timerec").val(timerec);
-  modal_body.find(".priority").val(priority);
-  modal_body.find(".routeid").val(routeid);
-  modal_body.find(".gwlist").val(gwlist);
-  modal_body.find(".name").val(name);
-});
-
-$('#outboundmapping #open-Delete').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('outboundmapping');
-  var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-
-  /* update modal fields */
-  var modal_body = $('#delete .modal-body');
-  modal_body.find(".ruleid").val(ruleid);
-});
-
 function reloadkamrequired() {
   var reload_button = $('#reloadkam');
 
