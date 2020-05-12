@@ -473,6 +473,7 @@ function configurePythonSettings {
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DOMAIN' "$EXTERNAL_FQDN" ${DSIP_CONFIG_FILE} -q
 }
 
 # update settings file based on cmdline args

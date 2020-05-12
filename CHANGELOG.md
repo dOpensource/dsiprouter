@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-6248fcb7cb80e597deaeeca3baeae13e66ff5174
+bb150a991ad3600c904253804801943287165b1c
+40e8d85965c90166eafb4425f2159949a2e764ed
 29d156221015801c663e86e15c3923c768d62caf
 cc096b110266d6a71ced8a3b27ba3ad9589147d8
 e71a9384f9d3b9cb5dcb280655a1fe1c86badb8e
@@ -1518,10 +1519,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 6248fcb7cb80e597deaeeca3baeae13e66ff5174)
+[//]: # (START_SECTION bb150a991ad3600c904253804801943287165b1c)
+### Update Domain on Install
+
+> Commit: [bb150a991ad3600c904253804801943287165b1c](https://git.flyball.co/dsiprouter/enterprise/commit/bb150a991ad3600c904253804801943287165b1c)  
+> Date: Tue, 12 May 2020 13:13:29 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#33](https://git.flyball.co/dsiprouter/enterprise/issues/33)
+- update DOMAIN in `settings.py` when python settings updated
+
+
+---
+
+[//]: # (END_SECTION bb150a991ad3600c904253804801943287165b1c)
+[//]: # (START_SECTION 40e8d85965c90166eafb4425f2159949a2e764ed)
 ### Update Prefix and Strip Descriptions
 
-> Commit: [6248fcb7cb80e597deaeeca3baeae13e66ff5174](https://git.flyball.co/dsiprouter/enterprise/commit/6248fcb7cb80e597deaeeca3baeae13e66ff5174)  
+> Commit: [40e8d85965c90166eafb4425f2159949a2e764ed](https://git.flyball.co/dsiprouter/enterprise/commit/40e8d85965c90166eafb4425f2159949a2e764ed)  
 > Date: Tue, 12 May 2020 12:58:57 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1534,7 +1552,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 6248fcb7cb80e597deaeeca3baeae13e66ff5174)
+[//]: # (END_SECTION 40e8d85965c90166eafb4425f2159949a2e764ed)
 [//]: # (START_SECTION 29d156221015801c663e86e15c3923c768d62caf)
 ### Update Documentation
 
