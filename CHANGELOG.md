@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-d693978da14354b53ef2871a976d616045e8a1ac
+6248fcb7cb80e597deaeeca3baeae13e66ff5174
+29d156221015801c663e86e15c3923c768d62caf
 cc096b110266d6a71ced8a3b27ba3ad9589147d8
 e71a9384f9d3b9cb5dcb280655a1fe1c86badb8e
 14dd6be9cd21681f23d8ef63bb77805b24df71e0
@@ -1517,10 +1518,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION d693978da14354b53ef2871a976d616045e8a1ac)
+[//]: # (START_SECTION 6248fcb7cb80e597deaeeca3baeae13e66ff5174)
+### Update Prefix and Strip Descriptions
+
+> Commit: [6248fcb7cb80e597deaeeca3baeae13e66ff5174](https://git.flyball.co/dsiprouter/enterprise/commit/6248fcb7cb80e597deaeeca3baeae13e66ff5174)  
+> Date: Tue, 12 May 2020 12:58:57 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#20](https://git.flyball.co/dsiprouter/enterprise/issues/20)
+- update descriptions to infer call direction supported
+
+
+---
+
+[//]: # (END_SECTION 6248fcb7cb80e597deaeeca3baeae13e66ff5174)
+[//]: # (START_SECTION 29d156221015801c663e86e15c3923c768d62caf)
 ### Update Documentation
 
-> Commit: [d693978da14354b53ef2871a976d616045e8a1ac](https://git.flyball.co/dsiprouter/enterprise/commit/d693978da14354b53ef2871a976d616045e8a1ac)  
+> Commit: [29d156221015801c663e86e15c3923c768d62caf](https://git.flyball.co/dsiprouter/enterprise/commit/29d156221015801c663e86e15c3923c768d62caf)  
 > Date: Tue, 12 May 2020 12:34:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1534,7 +1552,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION d693978da14354b53ef2871a976d616045e8a1ac)
+[//]: # (END_SECTION 29d156221015801c663e86e15c3923c768d62caf)
 [//]: # (START_SECTION cc096b110266d6a71ced8a3b27ba3ad9589147d8)
 ### Update CONTRIBUTING.md
 
