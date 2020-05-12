@@ -267,7 +267,7 @@ getInstanceID() {
     elif (( ${GCE_ENABLED:-0} == 1 )); then
         curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
     elif (( ${AZURE_ENABLED:-0} == 1 )); then
-        curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+	curl -H Metadata:true "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2017-08-01&format=text" 2>/dev/null
     else
         if isInstanceAMI; then
             curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||

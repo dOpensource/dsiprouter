@@ -133,6 +133,10 @@ setScriptSettings() {
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
+    # If reverse DNS is not working then use the hostname command
+    if [ -z "$EXTERNAL_FQDN" ]; then
+	    EXTERNAL_FQDN=INTERNAL_FQDN
+    fi
 
     if (( ${WITH_SSL} == 1 )); then
         export DSIP_PROTO='https'
