@@ -135,7 +135,7 @@ setScriptSettings() {
     export INTERNAL_FQDN="$(hostname -f)"
     # If reverse DNS is not working then use the hostname command
     if [ -z "$EXTERNAL_FQDN" ]; then
-	    EXTERNAL_FQDN=INTERNAL_FQDN
+	    EXTERNAL_FQDN=$INTERNAL_FQDN
     fi
 
     if (( ${WITH_SSL} == 1 )); then
