@@ -5,15 +5,21 @@
 # Usage:    Copy to your repo in <repo>/.git/hooks/prepare-commit-msg
 # Notes:    Adding this hook to your workflow can alleviate some merging issues
 #           caused by the automated file creation in the commit hooks
-#           This hook runs after pre-commit and before post-commit
+#           This hook runs after pre-commit and before commit-msg
 #
 
+
+# unshadow git command
+unset -f git
 # project root
-PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 # passed in when hook is called
+COMMIT_MSG_FILE="$1"
 COMMIT_SOURCE="$2"
-# indicator that post commit hooks have been disabled
+COMMIT_HASH="$3"
+# indicator that post commit hooks has been disabled
 DISABLED_INDICATOR_FILE="${PROJECT_ROOT}/.postcommit_disabled"
+
 
 # fast-forward pulls/commits/merges
 if git reflog -1 | grep -q 'Fast-forward' 2>/dev/null; then

@@ -96,6 +96,7 @@ setScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_DIR="/etc/rtpengine"
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
+    GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
     export RTPENGINE_VER="mr6.1.1.1"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
@@ -1867,6 +1868,7 @@ function removeInitService {
     printdbg "dsip-init service removed"
 }
 
+# TODO: this is unfinished
 function upgrade {
     # TODO: set / handle parsed args
     UPGRADE_RELEASE="v0.51"
@@ -1928,46 +1930,62 @@ function upgrade {
     # TODO: restart services, check for good startup
 }
 
+# TODO: add bash cmd completion for new options provided by gitwrapper.sh
 function configGitDevEnv {
-    mkdir -p ${DSIP_PROJECT_DIR}/.git/info
+    mkdir -p ${BACKUPS_DIR}/git/info ${BACKUPS_DIR}/git/hooks
+    mkdir -p ${DSIP_PROJECT_DIR}/.git/info ${DSIP_PROJECT_DIR}/.git/hooks
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/info/attributes ${DSIP_PROJECT_DIR}/.git/info/attributes.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/.git/info/attributes ${BACKUPS_DIR}/git/info/attributes 2>/dev/null
     cat ${DSIP_PROJECT_DIR}/resources/git/gitattributes >> ${DSIP_PROJECT_DIR}/.git/info/attributes
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/config ${DSIP_PROJECT_DIR}/.git/config.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/.git/config ${BACKUPS_DIR}/git/config 2>/dev/null
     cat ${DSIP_PROJECT_DIR}/resources/git/gitconfig >> ${DSIP_PROJECT_DIR}/.git/config
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/info/exclude ${DSIP_PROJECT_DIR}/.git/info/exclude.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/.git/info/exclude ${BACKUPS_DIR}/git/info/exclude 2>/dev/null
     cp -f ${DSIP_PROJECT_DIR}/resources/git/gitignore ${DSIP_PROJECT_DIR}/.git/info/exclude
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/commit-msg ${DSIP_PROJECT_DIR}/.git/commit-msg.old 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/.git/commit-msg ${BACKUPS_DIR}/git/commit-msg 2>/dev/null
     cp -f ${DSIP_PROJECT_DIR}/resources/git/commit-msg ${DSIP_PROJECT_DIR}/.git/commit-msg
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit.old 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/resources/git/pre-commit.sh ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit ${BACKUPS_DIR}/git/hooks/pre-commit 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/hooks/pre-commit ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit
     chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg.old 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/resources/git/prepare-commit-msg.sh ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg ${BACKUPS_DIR}/git/hooks/prepare-commit-msg 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/hooks/prepare-commit-msg ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg
     chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg
 
-    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/post-commit ${DSIP_PROJECT_DIR}/.git/hooks/post-commit.old 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/resources/git/post-commit.sh ${DSIP_PROJECT_DIR}/.git/hooks/post-commit
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/commit-msg ${BACKUPS_DIR}/git/hooks/commit-msg 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/hooks/commit-msg ${DSIP_PROJECT_DIR}/.git/hooks/commit-msg
+    chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/commit-msg
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/post-commit ${BACKUPS_DIR}/git/hooks/post-commit 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/hooks/post-commit ${DSIP_PROJECT_DIR}/.git/hooks/post-commit
     chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/post-commit
+
+    cp -f ${DSIP_PROJECT_DIR}/.git/hooks/pre-push ${BACKUPS_DIR}/git/hooks/pre-push 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/hooks/pre-push ${DSIP_PROJECT_DIR}/.git/hooks/pre-push
+    chmod +x ${DSIP_PROJECT_DIR}/.git/hooks/pre-push
 
     cp -f ${DSIP_PROJECT_DIR}/resources/git/merge-changelog.sh /usr/local/bin/_merge-changelog
     chmod +x /usr/local/bin/_merge-changelog
+
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/gitwrapper.sh ${GIT_UPDATE_FILE}
+    . ${GIT_UPDATE_FILE}
 }
 
 function cleanGitDevEnv {
-    mv -f ${DSIP_PROJECT_DIR}/.gitattributes.old ${DSIP_PROJECT_DIR}/.gitattributes 2>/dev/null
-    mv -f ${DSIP_PROJECT_DIR}/.git/config.old ${DSIP_PROJECT_DIR}/.git/config 2>/dev/null
-    mv -f ${DSIP_PROJECT_DIR}/.gitignore.old ${DSIP_PROJECT_DIR}/.gitignore 2>/dev/null
-    mv -f ${DSIP_PROJECT_DIR}/.git/commit-msg.old ${DSIP_PROJECT_DIR}/.git/commit-msg 2>/dev/null
-    mv -f ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit.old ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit 2>/dev/null
-    mv -f ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg.old ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg 2>/dev/null
-    mv -f ${DSIP_PROJECT_DIR}/.git/hooks/post-commit.old ${DSIP_PROJECT_DIR}/.git/hooks/post-commit 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/info/attributes ${DSIP_PROJECT_DIR}/.git/info/attributes 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/config ${DSIP_PROJECT_DIR}/.git/config 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/info/exclude ${DSIP_PROJECT_DIR}/.git/info/exclude 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/commit-msg ${DSIP_PROJECT_DIR}/.git/commit-msg 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/hooks/pre-commit ${DSIP_PROJECT_DIR}/.git/hooks/pre-commit 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/hooks/prepare-commit-msg ${DSIP_PROJECT_DIR}/.git/hooks/prepare-commit-msg 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/hooks/commit-msg ${DSIP_PROJECT_DIR}/.git/hooks/commit-msg 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/hooks/post-commit ${DSIP_PROJECT_DIR}/.git/hooks/post-commit 2>/dev/null
+    mv -f ${BACKUPS_DIR}/git/hooks/pre-push ${DSIP_PROJECT_DIR}/.git/hooks/pre-push 2>/dev/null
     rm -f /usr/local/bin/_merge-changelog
+    rm -f ${GIT_UPDATE_FILE}
 }
 
 # run install commands across a cluster of nodes

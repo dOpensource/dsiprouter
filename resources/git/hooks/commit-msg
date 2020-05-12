@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+#
+# Summary:  Reformat proposed commit message
+# Author:   DevOpSec <https://github.com/devopsec>
+# Usage:    Copy to your repo in <repo>/.git/hooks/commit-msg
+# Notes:    Adding this hook to your workflow will fix crosslinking issues
+#           caused when referencing issues in one remotee and pushing to another
+#           This hook runs after prepare-commit-msg and before post-commit
+# TODO:     Support resolving gitlab url's for merges/issues/commits
+#
+
+
+# unshadow git command
+unset -f git
+# project root
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+# indicator that we commited the changelog
+CHANGELOG_INDICATOR_FILE="${PROJECT_ROOT}/.changelog_commited"
+# indicator that post commit hooks has been disabled
+DISABLED_INDICATOR_FILE="${PROJECT_ROOT}/.postcommit_disabled"
+# should be exported by git wrapper script
+REMOTE_NAME="${REMOTE_NAME:-origin}"
+# remote info used in script
+REMOTE_URL=$(git remote get-url ${REMOTE_NAME} 2>/dev/null | perl -pe 's%(?:git\@|https\://)(.+)(?:\:|/)(.+)/(.+)\.git%https://\1/\2/\3%')
+REMOTE_SITE=$(cut -d '/' -f -3 <<<"${REMOTE_URL}")
+REMOTE_USER=$(cut -d '/' -f 4 <<<"${REMOTE_URL}")
+REMOTE_REPO=$(cut -d '/' -f 5- <<<"${REMOTE_URL}")
+# passed in when hook is called
+COMMIT_MSG_FILE="$1"
+
+
+# utility functions
+isRemoteGitlab() {
+    curl -L ${REMOTE_URL} 2>/dev/null | grep -q -ioP '<title>.*?gitlab</title>'
+    return $?
+}
+
+# reformat commit msg to follow our committing rules
+reformatCommitMsg() {
+    # replace all issues/pulls/commits with full path
+    perl -e "\$rn='${REMOTE_NAME}'; \$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
+        -e 'my $tmp=`git ls-remote $rn "pull/*head" 2>/dev/null`; @pulls=($tmp =~ m|.*/pull/(\d+)/.*|g); $pr_expr=join "|", @pulls;' \
+        -i -pe 's%(?:(?!#)([ \t]+)(?:#|GH-|${ru}/${rr}#)|^(?:GH-|${ru}/${rr}#))($pr_expr)(?!\d)%\1${rs}/${ru}/${rr}/pull/\2%gm;
+        s%(?:(?!#)([ \t]+)(?:#|GH-|${ru}/${rr}#)|^(?:GH-|${ru}/${rr}#))(\d+)%\1${rs}/${ru}/${rr}/issues/\2%gm;
+        s%(?!#)(?:${ru}@|${ru}/${rr}@|${rs}/${ru}/${rr}/commit/)?([0-9a-f]{7,40})(?!\w)%${rs}/${ru}/${rr}/commit/\1%gm' \
+        ${COMMIT_MSG_FILE} |
+        # try to fix one-liners
+        perl -e '$str=do{ local $/; <STDIN> }; if ( $str =~ m%^\w.*?(?:\n|\r\n)(?:\n|\r\n)+$% ) {
+        @lines=split(/, |\. |- /, $str); foreach(@lines) { print "$_\n"; } } else { print "$str"; }' |
+        # fix missing subject / missing double newline after subject
+        perl -0777 -pe 's%^((:[ \t]+|- ?|[ \t]+|- ?).*?[\r\n]+.*)%Updates Listed Below\n\n\1%s;
+        s%^(\w.*?(?:\n|\r\n)(?!\n|\r\n))(.*)%\1\n\2%s'
+}
+
+# don't run if hook is disabled
+# this is primarily for conflict resolution
+if [[ -e ${DISABLED_INDICATOR_FILE} ]]; then
+    exit 0
+# prevent recursion
+# we only reformat commit msg before changlog is commited
+elif [[ ! -e ${CHANGELOG_INDICATOR_FILE} ]]; then
+    reformatCommitMsg
+fi
+
+exit 0

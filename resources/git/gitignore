@@ -53,6 +53,14 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# Editorconfig files
+*.editorconfig
+#============================================================
+
+#============================================================
+# Visual Studio
+.vs*
 #============================================================
 
 #============================================================
@@ -76,6 +84,7 @@ _deps
 .fetch
 .changelog_commited
 .postcommit_disabled
+.push_remote
 
 # Local repo git configs
 .git*

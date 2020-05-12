@@ -1,0 +1,212 @@
+#!/usr/bin/env bash
+#
+# Summary:  Create a changelog on commit
+# Author:   DevOpSec <https://github.com/devopsec>
+# Notes:    Original idea from Martin Seeler <https://github.com/MartinSeeler>
+# Usage:    Copy to your repo in <repo>/.git/hooks/post-commit
+#           Alternatively the functions can be run outside of git (using -exec option)
+# Notes:    Syntax for markdown comment: [//]: # (...)
+#           All sections in the changelog are tagged within markdown comments
+# TODO:     Support resolving gitlab url's for merges/issues/commits
+#
+
+
+# unshadow git command
+unset -f git
+# project root
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+# destination changelog file
+CHANGELOG_FILE="CHANGELOG.md"
+# where we will be creating our changes
+TMP_CHANGELOG_FILE="/tmp/CHANGELOG.md"
+# title of our changelog
+CHANGELOG_TITLE="CHANGELOG"
+# indicator that we commited the changelog
+CHANGELOG_INDICATOR_FILE="${PROJECT_ROOT}/.changelog_commited"
+# indicator that post commit hooks have been disabled
+DISABLED_INDICATOR_FILE="${PROJECT_ROOT}/.postcommit_disabled"
+# should be exported by git wrapper script
+REMOTE_NAME="${REMOTE_NAME:-origin}"
+# file that will hold remote that must be pushed to
+REMOTE_FILE="${PROJECT_ROOT}/.push_remote"
+# remote info used in script
+REMOTE_URL=$(git remote get-url ${REMOTE_NAME} 2>/dev/null | perl -pe 's%(?:git\@|https\://)(.+)(?:\:|/)(.+)/(.+)\.git%https://\1/\2/\3%')
+REMOTE_SITE=$(cut -d '/' -f -3 <<<"${REMOTE_URL}")
+REMOTE_USER=$(cut -d '/' -f 4 <<<"${REMOTE_URL}")
+REMOTE_REPO=$(cut -d '/' -f 5- <<<"${REMOTE_URL}")
+
+
+# utility functions
+isRemoteGitlab() {
+    curl -L ${REMOTE_URL} 2>/dev/null | grep -q -ioP '<title>.*?gitlab</title>'
+    return $?
+}
+
+createMDRenderedSection() {
+    local NAME="$1"
+    local CONTENT="$2"
+
+    printf '%s\n' "[//]: # (START_SECTION ${NAME})"
+    printf '%s' "$CONTENT" | sed -e '$a\'
+    printf '%s\n' "[//]: # (END_SECTION ${NAME})"
+}
+
+createMDCommentSection() {
+    local NAME="$1"
+    local CONTENT="$2"
+
+    printf '%s\n' "[//]: # (START_SECTION ${NAME}"
+    printf '%s' "$CONTENT" | sed -e '$a\'
+    printf '%s\n' "END_SECTION ${NAME})"
+}
+
+removeMDRenderedSection() {
+    local NAME="$1"
+
+    perl -e "\$name='${NAME}';" -0777 \
+        -pe 's%\[//\]: # \(START_SECTION ${name}\)\n(.*?)\[//\]: # \(END_SECTION ${name}\)\n%%s'
+}
+
+removeMDRenderedSections() {
+    local NAMES=$(printf '%s' "$1" | tr '\n' '|')
+
+    perl -e "\$names='${NAMES}';" -0777 \
+        -pe 's%\[//\]: # \(START_SECTION (?:${names})\)\n(.*?)\[//\]: # \(END_SECTION (?:${names})\)\n%%sg'
+}
+
+removeMDCommentSection() {
+    local NAME="$1"
+
+    perl -e "\$name='${NAME}';" -0777 \
+        -pe 's%\[//\]: # \(START_SECTION ${name}\n(.*?)END_SECTION ${name}\)\n%%s'
+}
+
+getMDRenderedSection() {
+    local NAME="$1"
+
+    perl -e "\$name='${NAME}';" -0777 \
+        -e ' while (<>) { if (s%.*\[//\]: # \(START_SECTION ${name}\)\n(.*?)\[//\]: # \(END_SECTION ${name}\)\n.*%\1%s) { print; } }'
+}
+
+getMDCommentSection() {
+    local NAME="$1"
+
+    perl -e "\$name='${NAME}';" -0777 \
+        -e ' while (<>) { if (s%.*\[//\]: # \(START_SECTION ${name}\n(.*?)END_SECTION ${name}\)\n.*%\1%s) { print; } }'
+}
+
+# create a formatted commit section
+createCommitSection() {
+    local HASH="$1" CONTENT="" OIFS=$IFS
+
+    IFS= read -rd '' CONTENT < <(
+        # format commit header
+        git --no-pager log -n 1 --format='### %s%n%N%n%N> Commit: %H  %n%N> Date: %aD  %n%N> Author: %aN (%aE)  %n%N> Committer: %cN (%cE)  %n%N> Signed: %GS  %n%N%n%N' ${HASH} 2>/dev/null |
+        perl -e "\$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
+            -pe 's%([0-9a-f]{40})(?!\w)%[\1](${rs}/${ru}/${rr}/commit/\1)%m'
+        # format commit body
+        git log --format='%b' -n 1 ${HASH} 2>/dev/null |
+        # format issues/pulls/commits -> links
+        # delete empty lines, lines -> bullets
+        perl -e "\$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
+            -pe 's%(${rs}/${ru}/${rr}/pull/)(\d+)%[#\2](\1\2)%gm; s%(${rs}/${ru}/${rr}/issues/)(\d+)%[#\2](\1\2)%gm; s%(${rs}/${ru}/${rr}/commit/)([0-9a-f]{7})([0-9a-f]{0,33})(?!\w)%[\2](\1\2\3)%gm; s%^\s+?$%%; s%^(?:[ \t]+(?:- )?)?([^\s])%- \1%gm;'
+        # spacing between commit messages
+        printf '\n\n%s\n\n' '---'
+    )
+    createMDRenderedSection "$HASH" "$CONTENT"
+    IFS=$OIFS
+}
+
+# diff of newline delimeted string arrays (A - B)
+strarrDiff() {
+    local SKIP A="$1" B="$2"
+
+    for i in $A; do
+        SKIP=
+        for j in $B; do
+            [[ "$i" == "$j" ]] && { SKIP=1; break; }
+        done
+        [[ -n "$SKIP" ]] || printf '%s\n' "$i"
+    done
+}
+
+# create a changelog file
+createChangelog() {
+    local HEADER NEW_COMMIT_HASHES OLD_COMMIT_HASHES COMMITS_ADDED COMMITS_REMOVED
+    local NEW_CHANGELOG=1
+
+    # start at project root
+    cd ${PROJECT_ROOT}
+
+    # if exists and in correct format we update the changelog
+    # otherwise we create new changelog from scratch
+    NEW_COMMIT_HASHES=$(git --no-pager log --no-merges --format='%H')
+    if [[ -e "$CHANGELOG_FILE" ]]; then
+        OLD_COMMIT_HASHES=$(getMDCommentSection 'COMMITS')
+        if [[ -n "$OLD_COMMIT_HASHES" ]]; then
+            NEW_CHANGELOG=0
+
+            # get commits added / removed from last changelog
+            COMMITS_ADDED=$(strarrDiff "$NEW_COMMIT_HASHES" "$OLD_COMMIT_HASHES")
+            COMMITS_REMOVED=$(strarrDiff "$OLD_COMMIT_HASHES" "$NEW_COMMIT_HASHES")
+        fi
+    fi
+
+    # create the new header
+    printf -v HEADER '%s\n\n\n\n' "## $CHANGELOG_TITLE"
+
+    # create changelog from scratch
+    if (( ${NEW_CHANGELOG} == 1 )); then
+        createMDRenderedSection 'HEADER' "$HEADER" > ${CHANGELOG_FILE}
+        createMDCommentSection 'COMMITS' "$NEW_COMMIT_HASHES" >> ${CHANGELOG_FILE}
+        for HASH in $NEW_COMMIT_HASHES; do
+            createCommitSection "$HASH" >> ${CHANGELOG_FILE}
+        done
+    # create temp changelog and merge with old
+    else
+        createMDRenderedSection 'HEADER' "$HEADER" > ${TMP_CHANGELOG_FILE}
+        createMDCommentSection 'COMMITS' "$NEW_COMMIT_HASHES" >> ${TMP_CHANGELOG_FILE}
+        for HASH in $COMMITS_ADDED; do
+            createCommitSection "$HASH" >> ${TMP_CHANGELOG_FILE}
+        done
+        (
+            cat ${TMP_CHANGELOG_FILE}
+            cat ${CHANGELOG_FILE} |
+                removeMDRenderedSection 'HEADER' |
+                removeMDCommentSection 'COMMITS' |
+			    removeMDRenderedSections "$COMMITS_REMOVED"
+        ) > ${CHANGELOG_FILE}
+        rm -f ${TMP_CHANGELOG_FILE}
+    fi
+}
+
+main() {
+    touch ${CHANGELOG_INDICATOR_FILE}
+    createChangelog
+    git add ${CHANGELOG_FILE} &&
+    git commit --amend -C HEAD --no-verify &&
+    echo "$REMOTE_NAME" > ${REMOTE_FILE} &&
+    exit 0 ||
+    exit 1
+}
+
+# allow execution outside of git hook
+if (( $# > 0 )) && [[ "$1" == "-exec" ]]; then
+    main
+fi
+
+# don't run if hook is disabled
+# this is primarily for conflict resolution
+if [[ -e ${DISABLED_INDICATOR_FILE} ]]; then
+    rm -f ${DISABLED_INDICATOR_FILE}
+    exit 0
+# prevent recursion
+# since a 'commit --amend' will trigger the post-commit script again
+# we have to check if the changelog file has been commited yet
+# if changelog commited this is recursive call, do nothing
+elif [[ -e ${CHANGELOG_INDICATOR_FILE} ]]; then
+    rm -f ${CHANGELOG_INDICATOR_FILE}
+    exit 0
+else
+    main
+fi

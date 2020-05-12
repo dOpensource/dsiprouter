@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+#
+# Summary:  Create CONTRIBUTORS.md and requirements.txt on commit
+# Author:   DevOpSec <https://github.com/devopsec>
+# Usage:    Copy to your repo in <repo>/.git/hooks/pre-commit
+#           Alternatively the functions can be run outside of git (using -exec option)
+# Notes:    Requires pipreqs -> pip install pipreqs
+#           To add directories to recursive search, change INCLUDE_DIRS (its an array)
+# TODO:     Need to add automated CVE checking for python libs, such as with safety
+#           more info: https://github.com/pyupio/safety
+# TODO:     Need to add python linting / validation checks, here are a couple examples:
+#           https://github.com/pre-commit/pre-commit-hooks
+#           https://econ-project-templates.readthedocs.io/en/stable/pre-commit.html
+#
+
+
+# unshadow git command
+unset -f git
+# project root
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+# destination file
+CONTRIBUTING_FILE="CONTRIBUTORS.md"
+# indicator that we commited the changelog
+CHANGELOG_INDICATOR_FILE="${PROJECT_ROOT}/.changelog_commited"
+# where are the python projects for this repo?
+INCLUDE_DIRS=("${PROJECT_ROOT}/gui")
+# dirs to exclude from requirements
+EXCLUDE_DIRS=( )
+# destination file
+REQUIREMENTS_FILE="requirements.txt"
+# pipreqs only catches stdlib libraries
+INCLUDE_LIBS=('mysqlclient' 'docker')
+# excludes for conflicting libs
+EXCLUDE_LIBS=('docker_py' 'pyspark')
+
+
+# utility function
+joinwith() {
+    local START="$1" IFS="$2" END="$3" ARR=()
+    shift;shift;shift
+
+    for VAR in "$@"; do
+        ARR+=("${START}${VAR}${END}")
+    done
+
+    echo "${ARR[*]}"
+}
+
+# creates CONTRIBUTORS.md for project
+createContributors() {
+    local OUT_FILE="${PROJECT_ROOT}/${CONTRIBUTING_FILE}"
+
+    printf '%s\n\n%s\n\n' \
+        "## Thank you to all contributors for your hard work" \
+        "### Contributors" > ${OUT_FILE}
+
+    git shortlog -sn HEAD | grep -oP '[\s\d]*\K.*'| awk '{for (i=1; i<=NF; i++) print "- " $0}' | sort -u >> ${OUT_FILE}
+
+    git add ${OUT_FILE}
+}
+
+# creates requirements.txt for python projects
+# TODO: reformat so code is more readable
+createRequirements() {
+    local OUT_FILE=""
+    local EXCLUDE_ARGS=""
+
+    # sanity check, is this a python project?
+    if (( $(find ${INCLUDE_DIRS[@]} -type f -name "*.py" | wc -l) == 0 )); then
+        return
+    fi
+
+    if (( ${#EXCLUDE_DIRS[@]} > 0 )); then
+        EXCLUDE_ARGS="--ignore $(joinwith '' ',' '' ${EXCLUDE_DIRS[@]})"
+    fi
+
+    for PYTHON_PROJECT in ${INCLUDE_DIRS[@]}; do
+        OUT_FILE="${PYTHON_PROJECT}/${REQUIREMENTS_FILE}"
+
+        if (( ${#EXCLUDE_LIBS[@]} != 0 )); then
+            LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --print ${EXCLUDE_ARGS} ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | cut -d '=' -f 1 | grep -E -v $(joinwith '^' '|' '$' ${EXCLUDE_LIBS[@]})) )
+        else
+            LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --print ${EXCLUDE_ARGS} ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | cut -d '=' -f 1) )
+        fi
+        printf '%s\n' "${LIBS[@]}" | sort -u > ${OUT_FILE}
+
+        git add ${OUT_FILE}
+    done
+}
+
+main() {
+    # make sure un-staged and un-tracked code is not checked by this script
+    # in the future this will be more important as we add linting
+    STASH_NAME="pre-commit-$(date +%s)"
+    BACKUPS_DIR="/tmp/$(date +%s)"
+
+    # reset unstaged files before exiting even if we fail early
+    # if resetting files fail then they will still exist in backup dir
+    resetUnstagedFiles() {
+        find ${BACKUPS_DIR} -type f -print 2>/dev/null |
+            perl -e "\$bd='${BACKUPS_DIR}';" -pe 's%^${bd}/(.*)$%\1%gm' |
+            xargs sh -c 'for arg do mkdir -p "'"${PROJECT_ROOT}"'/$(dirname ${arg} 2>/dev/null)"; mv -f "'"${BACKUPS_DIR}"'/${arg}" "'"${PROJECT_ROOT}"'/${arg}"; done' _
+    }
+    trap resetUnstagedFiles EXIT
+
+    git ls-files -z -o --exclude-standard |
+        xargs -0 sh -c 'for arg do mkdir -p "'"${BACKUPS_DIR}"'/$(dirname ${arg} 2>/dev/null)"; mv -f "${arg}" "'"${BACKUPS_DIR}"'/${arg}"; done' _
+    git stash push -q -k -m "$STASH_NAME"
+    STASH_ID=$(git stash list | grep "$STASH_NAME" | cut -d ':' -f 1)
+
+    createContributors
+    createRequirements
+
+    git stash apply -q "$STASH_ID" &&
+    git stash drop -q "$STASH_ID" &&
+    exit 0 ||
+    exit 1
+}
+
+# allow execution outside of git hook
+if (( $# > 0 )) && [[ "$1" == "-exec" ]]; then
+    main
+fi
+
+# prevent recursion
+if [[ -e ${CHANGELOG_INDICATOR_FILE} ]]; then
+    exit 0
+else
+    main
+fi

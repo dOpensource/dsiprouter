@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+#
+# Summary:  Allow / Disallow push based on checks
+# Author:   DevOpSec <https://github.com/devopsec>
+# Usage:    Copy to your repo in <repo>/.git/hooks/pre-push
+# Notes:    Adding this hook to your workflow works with the git wrapper
+#           script to verify the remote url's were changed correctly
+#           This hook runs after post-commit
+#
+# Params:   This hook is called with the following parameters:
+#
+# $1 -- Name of the remote to which the push is being done
+# $2 -- URL to which the push is being done
+#
+# If pushing without using a named remote those arguments will be equal
+#
+# Information about the commits which are being pushed is supplied as lines to
+# the standard input in the form:
+#
+#   <local ref> <local sha1> <remote ref> <remote sha1>
+#
+
+
+# project root
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+# passed in when hook is called
+PUSH_REMOTE="$1"
+PUSH_URL="$2"
+# created by post-commit hook
+REMOTE_FILE="${PROJECT_ROOT}/.push_remote"
+
+
+# if remote file exists we have commits that are not pushed yet
+if [[ -e "$REMOTE_FILE" ]]; then
+    REMOTE_NAME="$(cat ${REMOTE_FILE})"
+
+    # if user is pushing to a different remote without rewriting url's fail
+    if [[ "${PUSH_REMOTE}" != "${REMOTE_NAME}" ]]; then
+        echo >&2 "Can not push to a different remote without rewriting commit msg url's"
+        echo >&2 "Recommit with the following cmd:	git commit --amend --remote=<new remote>"
+        exit 1
+    else
+        rm -f ${REMOTE_FILE}
+    fi
+fi
+
+exit 0
