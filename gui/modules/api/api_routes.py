@@ -910,9 +910,12 @@ def updateEndpointGroups(gwgroupid):
 
         # Update the AuthType userpwd settings
         if authtype == "userpwd":
-            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
-            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
-            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] else settings.DOMAIN
+            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] \
+                and len(requestPayload['auth']['user']) > 0 else None
+            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] \
+                and len(requestPayload['auth']['pass']) > 0 else None
+            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] \
+                and len(requestPayload['auth']['domain']) > 0 else settings.DOMAIN
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Auth username or password invalid")
 
@@ -1195,9 +1198,12 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
 
         if authtype == "userpwd":
             # Store Endpoint IP's in address tables
-            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] else None
-            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] else None
-            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] else settings.DOMAIN
+            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] \
+                and len(requestPayload['auth']['user']) > 0 else None
+            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] \
+                and len(requestPayload['auth']['pass']) > 0 else None
+            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] \
+                and len(requestPayload['auth']['domain']) > 0 else settings.DOMAIN
 
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Authentication Username and Password are Required")
@@ -1244,7 +1250,7 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
 
                 if settings.DEBUG:
                     print("***{}***{}".format(hostname, name))
-                    
+
                 if hostname is not None and name is not None and len(hostname) > 0:
                     Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
                     db.add(Gateway)

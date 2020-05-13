@@ -130,7 +130,8 @@ setScriptSettings() {
     # updated dynamically!
 
     export EXTERNAL_IP=$(getExternalIP)
-    export EXTERNAL_FQDN=$(dig +short -x ${EXTERNAL_IP} | sed 's/\.$//')
+    export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} | sed 's/\.$//')
+    [[ ! -n "$EXTERNAL_FQDN" ]] && export EXTERNAL_FQDN="$EXTERNAL_IP"
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
@@ -474,7 +475,6 @@ function configurePythonSettings {
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DOMAIN' "$EXTERNAL_FQDN" ${DSIP_CONFIG_FILE} -q
 }
 
 # update settings file based on cmdline args
