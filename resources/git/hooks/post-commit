@@ -98,6 +98,7 @@ getMDCommentSection() {
 # create a formatted commit section
 createCommitSection() {
     local HASH="$1" CONTENT="" OIFS=$IFS
+    local PULL_OR_MERGE=${PULL_OR_MERGE:-pull}
 
     IFS= read -rd '' CONTENT < <(
         # format commit header
@@ -109,7 +110,10 @@ createCommitSection() {
         # format issues/pulls/commits -> links
         # delete empty lines, lines -> bullets
         perl -e "\$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
-            -pe 's%(${rs}/${ru}/${rr}/pull/)(\d+)%[#\2](\1\2)%gm; s%(${rs}/${ru}/${rr}/issues/)(\d+)%[#\2](\1\2)%gm; s%(${rs}/${ru}/${rr}/commit/)([0-9a-f]{7})([0-9a-f]{0,33})(?!\w)%[\2](\1\2\3)%gm; s%^\s+?$%%; s%^(?:[ \t]+(?:- )?)?([^\s])%- \1%gm;'
+            -pe 's%(${rs}/${ru}/${rr}/'"$PULL_OR_MERGE"'/)(\d+)%[#\2](\1\2)%gm;
+            s%(${rs}/${ru}/${rr}/issues/)(\d+)%[#\2](\1\2)%gm;
+            s%(${rs}/${ru}/${rr}/commit/)([0-9a-f]{7})([0-9a-f]{0,33})(?!\w)%[\2](\1\2\3)%gm;
+            s%^\s+?$%%; s%^(?:[ \t]+(?:- )?)?([^\s])%- \1%gm;'
         # spacing between commit messages
         printf '\n\n%s\n\n' '---'
     )
@@ -137,6 +141,13 @@ createChangelog() {
 
     # start at project root
     cd ${PROJECT_ROOT}
+
+    # if gitlab we use merges if github we use pulls
+    if isRemoteGitlab; then
+        PULL_OR_MERGE="merge_requests"
+    else
+        PULL_OR_MERGE="pull"
+    fi
 
     # if exists and in correct format we update the changelog
     # otherwise we create new changelog from scratch

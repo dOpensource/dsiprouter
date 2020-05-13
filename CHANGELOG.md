@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-cee2b22e64ba6774cc919fcdae767742038e3fb0
+44ff1f43b305a37edb07dfc6d533cff4c8d6a326
+159f5320f9466298e66caccb5b483ef6e5055b77
 958e418f8a950b1ed20d690b8309262d05827a01
 c7deab623214aa39432e4ef483be4e1b5b578dbf
 40e8d85965c90166eafb4425f2159949a2e764ed
@@ -1521,10 +1522,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION cee2b22e64ba6774cc919fcdae767742038e3fb0)
+[//]: # (START_SECTION 44ff1f43b305a37edb07dfc6d533cff4c8d6a326)
+### Add Support for Gitlab in Hooks
+
+> Commit: [44ff1f43b305a37edb07dfc6d533cff4c8d6a326](https://git.flyball.co/dsiprouter/enterprise/commit/44ff1f43b305a37edb07dfc6d533cff4c8d6a326)  
+> Date: Wed, 13 May 2020 13:51:14 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#43](https://git.flyball.co/dsiprouter/enterprise/issues/43)
+
+
+---
+
+[//]: # (END_SECTION 44ff1f43b305a37edb07dfc6d533cff4c8d6a326)
+[//]: # (START_SECTION 159f5320f9466298e66caccb5b483ef6e5055b77)
 ### Outbound Routes Carrier Group Selection
 
-> Commit: [cee2b22e64ba6774cc919fcdae767742038e3fb0](https://git.flyball.co/dsiprouter/enterprise/commit/cee2b22e64ba6774cc919fcdae767742038e3fb0)  
+> Commit: [159f5320f9466298e66caccb5b483ef6e5055b77](https://git.flyball.co/dsiprouter/enterprise/commit/159f5320f9466298e66caccb5b483ef6e5055b77)  
 > Date: Tue, 12 May 2020 17:00:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1537,7 +1554,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION cee2b22e64ba6774cc919fcdae767742038e3fb0)
+[//]: # (END_SECTION 159f5320f9466298e66caccb5b483ef6e5055b77)
 [//]: # (START_SECTION 958e418f8a950b1ed20d690b8309262d05827a01)
 ### Fix Crosslinking Issues
 

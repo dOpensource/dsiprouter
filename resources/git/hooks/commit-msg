@@ -37,19 +37,36 @@ isRemoteGitlab() {
 
 # reformat commit msg to follow our committing rules
 reformatCommitMsg() {
-    # replace all issues/pulls/commits with full path
-    perl -e "\$rn='${REMOTE_NAME}'; \$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
-        -e 'my $tmp=`git ls-remote $rn "pull/*head" 2>/dev/null`; @pulls=($tmp =~ m|.*/pull/(\d+)/.*|g); $pr_expr=join "|", @pulls;' \
-        -i -pe 's%(?:(?!#)([ \t]+)(?:#|GH-|${ru}/${rr}#)|^(?:GH-|${ru}/${rr}#))($pr_expr)(?!\d)%\1${rs}/${ru}/${rr}/pull/\2%gm;
-        s%(?:(?!#)([ \t]+)(?:#|GH-|${ru}/${rr}#)|^(?:GH-|${ru}/${rr}#))(\d+)%\1${rs}/${ru}/${rr}/issues/\2%gm;
-        s%(?!#)(?:${ru}@|${ru}/${rr}@|${rs}/${ru}/${rr}/commit/)?([0-9a-f]{7,40})(?!\w)%${rs}/${ru}/${rr}/commit/\1%gm' \
-        ${COMMIT_MSG_FILE} |
+    if isRemoteGitlab; then
+        # replace all issues/merges/commits with full path
+        perl -e "\$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
+            -pe 's%(?:(?!#)([ \t]+)(?:\!|${rr}\!|${ru}/${rr}\!)|^(?:\!|${rr}\!|${ru}/${rr}\!))(\d+)%\1${rs}/${ru}/${rr}/merge_requests/\2%gm;
+            s%(?:(?!#)([ \t]+)(?:#|${rr}#|${ru}/${rr}#)|^(?:#|${rr}#|${ru}/${rr}#))(\d+)%\1${rs}/${ru}/${rr}/issues/\2%gm;
+            s%(?!#)(?:${rr}@|${ru}/${rr}@|${rs}/${ru}/${rr}/commit/)?([0-9a-f]{7,40})(?!\w)%${rs}/${ru}/${rr}/commit/\1%gm' \
+            ${COMMIT_MSG_FILE} |
         # try to fix one-liners
-        perl -e '$str=do{ local $/; <STDIN> }; if ( $str =~ m%^\w.*?(?:\n|\r\n)(?:\n|\r\n)+$% ) {
-        @lines=split(/, |\. |- /, $str); foreach(@lines) { print "$_\n"; } } else { print "$str"; }' |
+        perl -e '$str=do{ local $/; <STDIN> }; if ( $str =~ m%^\w.*?(?:\n|\r\n)(?:\n|\r\n)+$% )
+            { @lines=split(/, |\. |- /, $str); foreach(@lines) { print "$_\n"; } } else { print "$str"; }' |
         # fix missing subject / missing double newline after subject
-        perl -0777 -pe 's%^((:[ \t]+|- ?|[ \t]+|- ?).*?[\r\n]+.*)%Updates Listed Below\n\n\1%s;
-        s%^(\w.*?(?:\n|\r\n)(?!\n|\r\n))(.*)%\1\n\2%s'
+        perl -0777 -pe 's%^((:[ \t]+|- ?|[ \t]+|- ?).*?[\r\n]+.*)%Updates Listed Below\n\n\1%s; s%^(\w.*?(?:\n|\r\n)(?!\n|\r\n))(.*)%\1\n\2%s' \
+            > ${COMMIT_MSG_FILE}.tmp
+        mv -f ${COMMIT_MSG_FILE}.tmp ${COMMIT_MSG_FILE}
+    else
+        # replace all issues/pulls/commits with full path
+        perl -e "\$rn='${REMOTE_NAME}'; \$rs='${REMOTE_SITE}'; \$ru='${REMOTE_USER}'; \$rr='${REMOTE_REPO}';" \
+            -e 'my $tmp=`git ls-remote $rn "pull/*head" 2>/dev/null`; @pulls=($tmp =~ m|.*/pull/(\d+)/.*|g); $pr_expr=join "|", @pulls;' \
+            -pe 's%(?:(?!#)([ \t]+)(?:#|GH-|${ru}/${rr}#)|^(?:GH-|${ru}/${rr}#))($pr_expr)(?!\d)%\1${rs}/${ru}/${rr}/pull/\2%gm;
+            s%(?:(?!#)([ \t]+)(?:#|GH-|${ru}/${rr}#)|^(?:GH-|${ru}/${rr}#))(\d+)%\1${rs}/${ru}/${rr}/issues/\2%gm;
+            s%(?!#)(?:${ru}@|${ru}/${rr}@|${rs}/${ru}/${rr}/commit/)?([0-9a-f]{7,40})(?!\w)%${rs}/${ru}/${rr}/commit/\1%gm' \
+            ${COMMIT_MSG_FILE} |
+        # try to fix one-liners
+        perl -e '$str=do{ local $/; <STDIN> }; if ( $str =~ m%^\w.*?(?:\n|\r\n)(?:\n|\r\n)+$% )
+            { @lines=split(/, |\. |- /, $str); foreach(@lines) { print "$_\n"; } } else { print "$str"; }' |
+        # fix missing subject / missing double newline after subject
+        perl -0777 -pe 's%^((:[ \t]+|- ?|[ \t]+|- ?).*?[\r\n]+.*)%Updates Listed Below\n\n\1%s; s%^(\w.*?(?:\n|\r\n)(?!\n|\r\n))(.*)%\1\n\2%s' \
+            > ${COMMIT_MSG_FILE}.tmp
+        mv -f ${COMMIT_MSG_FILE}.tmp ${COMMIT_MSG_FILE}
+    fi
 }
 
 # don't run if hook is disabled
