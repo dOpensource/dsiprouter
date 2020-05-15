@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-13923a462f5d6a6495227fb3872210b85c682d4e
+583d616d1056afa312ef94dd10f072e25a7b0636
+52ecf3ad8b0875477bca362c855c22776df30a8b
 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc
 0e4d9929cfcf243a29b0d0da63cffaaf250fe891
 159f5320f9466298e66caccb5b483ef6e5055b77
@@ -1524,10 +1525,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 13923a462f5d6a6495227fb3872210b85c682d4e)
+[//]: # (START_SECTION 583d616d1056afa312ef94dd10f072e25a7b0636)
+### Add New Settings to Database
+
+> Commit: [583d616d1056afa312ef94dd10f072e25a7b0636](https://git.flyball.co/dsiprouter/enterprise/commit/583d616d1056afa312ef94dd10f072e25a7b0636)  
+> Date: Fri, 15 May 2020 18:11:15 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add new settings from [52ecf3a](https://git.flyball.co/dsiprouter/enterprise/commit/52ecf3ad8b0875477bca362c855c22776df30a8b) to dsip_settings table
+- add new settings to database update functions
+
+
+---
+
+[//]: # (END_SECTION 583d616d1056afa312ef94dd10f072e25a7b0636)
+[//]: # (START_SECTION 52ecf3ad8b0875477bca362c855c22776df30a8b)
 ### Add Backend Supoport for Managing Domain TLS Certs
 
-> Commit: [13923a462f5d6a6495227fb3872210b85c682d4e](https://git.flyball.co/dsiprouter/enterprise/commit/13923a462f5d6a6495227fb3872210b85c682d4e)  
+> Commit: [52ecf3ad8b0875477bca362c855c22776df30a8b](https://git.flyball.co/dsiprouter/enterprise/commit/52ecf3ad8b0875477bca362c855c22776df30a8b)  
 > Date: Fri, 15 May 2020 17:40:15 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1540,7 +1558,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 13923a462f5d6a6495227fb3872210b85c682d4e)
+[//]: # (END_SECTION 52ecf3ad8b0875477bca362c855c22776df30a8b)
 [//]: # (START_SECTION 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc)
 ### Fix Domain Setting on User/Pass Auth
 
