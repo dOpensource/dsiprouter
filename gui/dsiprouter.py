@@ -1819,6 +1819,7 @@ def reloadkam():
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_failfwd'])
         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_prefixmap'])
         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
+        return_code += subprocess.call(['kamcmd', 'tls.reload'])
 
         # -- Updating settings --
         return_code += subprocess.call(

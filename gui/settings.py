@@ -36,6 +36,7 @@ DSIP_LOG_FACILITY = 18
 DSIP_SSL_KEY = ''
 DSIP_SSL_CERT = ''
 DSIP_SSL_EMAIL = ''
+DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
@@ -65,6 +66,7 @@ KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
+KAM_TLSCFG_PATH = '/etc/kamailio/tls.cfg'
 RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # SQLAlchemy Settings

@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-ca85e3621ed8f6f77405443fafce0a2920be6d4c
+13923a462f5d6a6495227fb3872210b85c682d4e
+47c2b4bf8e54fa56e329a878ad13e001eb83d6dc
 0e4d9929cfcf243a29b0d0da63cffaaf250fe891
 159f5320f9466298e66caccb5b483ef6e5055b77
 958e418f8a950b1ed20d690b8309262d05827a01
@@ -1523,10 +1524,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION ca85e3621ed8f6f77405443fafce0a2920be6d4c)
+[//]: # (START_SECTION 13923a462f5d6a6495227fb3872210b85c682d4e)
+### Add Backend Supoport for Managing Domain TLS Certs
+
+> Commit: [13923a462f5d6a6495227fb3872210b85c682d4e](https://git.flyball.co/dsiprouter/enterprise/commit/13923a462f5d6a6495227fb3872210b85c682d4e)  
+> Date: Fri, 15 May 2020 17:40:15 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Add backend functions to support [#41](https://git.flyball.co/dsiprouter/enterprise/issues/41)
+- Make tls module reload on kamreload
+
+
+---
+
+[//]: # (END_SECTION 13923a462f5d6a6495227fb3872210b85c682d4e)
+[//]: # (START_SECTION 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc)
 ### Fix Domain Setting on User/Pass Auth
 
-> Commit: [ca85e3621ed8f6f77405443fafce0a2920be6d4c](https://git.flyball.co/dsiprouter/enterprise/commit/ca85e3621ed8f6f77405443fafce0a2920be6d4c)  
+> Commit: [47c2b4bf8e54fa56e329a878ad13e001eb83d6dc](https://git.flyball.co/dsiprouter/enterprise/commit/47c2b4bf8e54fa56e329a878ad13e001eb83d6dc)  
 > Date: Wed, 13 May 2020 14:29:07 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1541,7 +1559,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION ca85e3621ed8f6f77405443fafce0a2920be6d4c)
+[//]: # (END_SECTION 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc)
 [//]: # (START_SECTION 0e4d9929cfcf243a29b0d0da63cffaaf250fe891)
 ### Add Support for Gitlab in Hooks
 

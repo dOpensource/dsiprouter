@@ -122,7 +122,8 @@ def reloadKamailio():
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_hardfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
-            {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1}
+            {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
+            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1}
         ]
 
         for cmdset in reloadCommands:
