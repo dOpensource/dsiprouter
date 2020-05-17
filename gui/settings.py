@@ -101,9 +101,9 @@ FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # updated dynamically! These values will be overwritten
-INTERNAL_IP_ADDR = '165.22.224.211'
-INTERNAL_IP_NET = '165.22.224.*'
-EXTERNAL_IP_ADDR = '165.22.224.211'
+INTERNAL_IP_ADDR = '10.0.1.6'
+INTERNAL_IP_NET = '10.0.1.*'
+EXTERNAL_IP_ADDR = '104.211.6.6'
 EXTERNAL_FQDN = 'sip.dsiprouter.org'
 
 # upload folder for files
@@ -114,7 +114,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = ''
+CLOUD_PLATFORM = 'AZURE'
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
@@ -123,11 +123,11 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = '{}@{}'.format(MAIL_USERNAME, MAIL_SERVER)
+MAIL_DEFAULT_SENDER = '@smtp.gmail.com'.format(MAIL_USERNAME, MAIL_SERVER)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
-BACKUP_FOLDER= '/var/backups/dsiprouter'
+BACKUP_FOLDER = '/var/backups/dsiprouter'
 ################# End DB-Backed Settings #################
 
 ################# Local-Only Settings ####################
