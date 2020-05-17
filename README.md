@@ -1,17 +1,25 @@
-# dSIPRouter Enterprise
+# dSIPRouter
 
-Provides enterprise features for the dSIPRouter platform.  
+These are the features of dSIPRouter 
 
-The following features are currently supported:
-
-- Mysql Active-Active replication
-- Pacemaker / Corosync Active-Passive floating IP
-- Call Limits
-- Over Call Limit Notifications
-- Endpoint Failure Notifications
-- Failover to a DID
-- HardForward Inbound DID to an external number
-- Call Detail Records per Endpoint
+* Carrier Management
+* Endpoint Management
+  * Call Limits
+  * Over Call Limit Notifications
+  * Endpoint Failure Notifications
+* Enhanced DID Management
+  *  Failover to a DID
+  * HardForward Inbound DID to an external number
+* Call Detail Records per Endpoint
+* Microsoft Teams Support (Subscription Required)
+* High Availablity
+  * Mysql Active-Active replication
+  * Pacemaker / Corosync Active-Passive floating IP
+* FusionPBX Domain Routing Enhancements
+* Kamailio 5.3 Support
+* WebSockets Enabled by Default
+* Security 
+  * TLS Enabled by Default
 
 ## What is dSIPRouter?
 
@@ -20,6 +28,8 @@ dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into
 - **SIP Trunking services:** Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.
 
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make this really easy and scalable!
+
+- **Microsoft Teams Direct Routing:** We can provide SBC functionality that allows dSIPRouter to interconnect your existing voice infrastructure or VoIP carrier to your Microsoft Teams environment.  
 
 **Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
 
