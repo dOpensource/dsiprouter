@@ -21,6 +21,7 @@ from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from util.security import hashCreds, AES_CTR
 from util.ipc import createSettingsManager
+from util.parse_json import CreateEncoder
 import globals
 import settings
 
@@ -2094,6 +2095,9 @@ def initApp(flask_app):
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
+
+    # Set flask JSON encoder
+    flask_app.json_encoder = CreateEncoder()
 
     # Flask App Manager configs
     app_manager = Manager(flask_app, with_default_commands=False)

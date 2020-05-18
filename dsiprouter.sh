@@ -729,6 +729,10 @@ function configureKamailio {
             < $sqlscript
     fi
 
+    # Update schema for dr_gateways table
+    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        -e 'ALTER TABLE dr_gateways MODIFY pri_prefix varchar(64) DEFAULT "" NOT NULL, MODIFY attrs varchar(255) DEFAULT "" NOT NULL;'
+
     # Update schema for subscribers table
     mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         -e 'ALTER TABLE subscriber ADD email_address varchar(128) DEFAULT "" NOT NULL, ADD rpid varchar(128) DEFAULT "" NOT NULL;'

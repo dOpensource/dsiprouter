@@ -1,5 +1,6 @@
-import os, time, json, random, subprocess, requests, re
+import os, time, json, random, subprocess, requests, re, csv
 import urllib.parse as parse
+from collections import OrderedDict
 from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
@@ -66,7 +67,7 @@ def api_security(func):
                 return render_template('index.html', version=settings.VERSION)
             else:
                 payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                return json.dumps(payload), StatusCodes.HTTP_UNAUTHORIZED
+                return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
         return func(*args, **kwargs)
 
     return wrapper
@@ -137,11 +138,11 @@ def reloadKamailio():
         #        payload = '{{"jsonrpc": "2.0", "method": "cfg.seti", "params" : {},"id": 1}}'.format(key,configParameters[key])
         #
         #    r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
-        #   payloadResponse[key]=json.dumps({"status":r.status_code,"message":r.json()})
+        #   payloadResponse[key]=jsonify({"status":r.status_code,"message":r.json()})
         #    payloadResponse[key]=r.status_code
 
         globals.reload_required = False
-        return json.dumps({"results": payloadResponse}), StatusCodes.HTTP_OK
+        return jsonify({"results": payloadResponse}), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
@@ -205,7 +206,7 @@ def getEndpointLease():
         payload['ttl'] = ttl
 
         db.commit()
-        return json.dumps(payload), StatusCodes.HTTP_OK
+        return jsonify(payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -244,7 +245,7 @@ def revokeEndpointLease(leaseid):
         payload['status'] = 'revoked'
 
         db.commit()
-        return json.dumps(payload), StatusCodes.HTTP_OK
+        return jsonify(payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -291,7 +292,7 @@ def updateEndpoint(id):
         db.commit()
         responsePayload['status'] = 1
 
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except sql_exceptions.IntegrityError as ex:
         db.rollback()
@@ -385,7 +386,7 @@ def handleInboundMapping():
                     else:
                         payload['msg'] = 'No Rules Found'
 
-            return json.dumps(payload), StatusCodes.HTTP_OK
+            return jsonify(payload), StatusCodes.HTTP_OK
 
         # ===========================
         # create rule for DID mapping
@@ -431,7 +432,7 @@ def handleInboundMapping():
             globals.reload_required = True
             payload['kamreload'] = globals.reload_required
             payload['msg'] = 'Rule Created'
-            return json.dumps(payload), StatusCodes.HTTP_OK
+            return jsonify(payload), StatusCodes.HTTP_OK
 
         # ===========================
         # update rule for DID mapping
@@ -502,7 +503,7 @@ def handleInboundMapping():
             db.commit()
             globals.reload_required = True
             payload['kamreload'] = globals.reload_required
-            return json.dumps(payload), StatusCodes.HTTP_OK
+            return jsonify(payload), StatusCodes.HTTP_OK
 
         # ===========================
         # delete rule for DID mapping
@@ -535,7 +536,7 @@ def handleInboundMapping():
             globals.reload_required = True
             payload['kamreload'] = globals.reload_required
             payload['msg'] = 'Rule Deleted'
-            return json.dumps(payload), StatusCodes.HTTP_OK
+            return jsonify(payload), StatusCodes.HTTP_OK
 
         # not possible
         else:
@@ -639,7 +640,7 @@ def handleNotificationRequest():
             pass
 
         payload['msg'] = 'Email Sent'
-        return json.dumps(payload), StatusCodes.HTTP_OK
+        return jsonify(payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -698,7 +699,7 @@ def deleteEndpointGroup(gwgroupid):
         db.commit()
 
         responsePayload['status'] = 200
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -795,7 +796,7 @@ def getEndpointGroup(gwgroupid):
             responsePayload['cdr']['cdr_email'] = cdrinfo.email
             responsePayload['cdr']['cdr_send_interval'] = cdrinfo.send_interval
 
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -839,7 +840,7 @@ def listEndpointGroups():
             # Push the responsePayload
             responsePayload['endpointgroups'].append(eg)
 
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1313,7 +1314,7 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
         db.commit()
         responsePayload['msg'] = 'EndpointGroup Created'
         responsePayload['status'] = 200
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1344,6 +1345,8 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
 
     # Define a dictionary object that represents the payload
     responsePayload = {}
+    # Define here so we can cleanup in finally statement
+    csv_file = ''
 
     try:
         db = SessionLoader()
@@ -1352,77 +1355,55 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             gwgroupid = str(gwgroupid)
         type = type.lower()
 
-        query = "select * from dr_gw_lists where id = {}".format(gwgroupid)
-        gwgroup = db.execute(query).first()
+        gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
-            gwlist = gwgroup.gwlist
             gwgroupName = strFieldsToDict(gwgroup.description)['name']
-            if len(gwlist) == 0:
-                responsePayload['status'] = "0"
-                responsePayload['cdr'] = []
-                responsePayload['recordCount'] = "0"
-                responsePayload['message'] = "No endpoints are defined"
-                return json.dumps(responsePayload)
         else:
             responsePayload['status'] = "0"
             responsePayload['message'] = "Endpont group doesn't exist"
-            return json.dumps(responsePayload)
+            return jsonify(responsePayload)
 
         if len(cdrfilter) > 0:
-            query = """SELECT cdr_id, gwid, call_start_time, calltype AS direction, dst_username AS to_num, src_username AS from_num, src_ip, dst_domain, duration, sip_call_id
-                FROM dr_gateways, cdrs WHERE (cdrs.src_ip = substring_index(dr_gateways.address,':',1) OR cdrs.dst_domain = substring_index(dr_gateways.address,':',1))
-                AND gwid IN ({}) AND call_start_time >= '{}' AND cdr_id IN ({}) ORDER BY call_start_time DESC;""".format(gwlist, dtfilter, cdrfilter)
+            query = (
+                """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
+                          t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
+                          t3.id AS dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
+                          t1.src_username, t1.dst_username, t1.src_ip AS src_address, t1.dst_domain AS dst_address, t1.sip_call_id AS call_id
+                FROM cdrs t1
+                JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
+                JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
+                WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}' AND t1.cdr_id IN ({cdrfilter})
+                ORDER BY t1.call_start_time DESC;"""
+            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter, cdrfilter=cdrfilter)
         else:
-            query = """SELECT cdr_id, gwid, call_start_time, calltype AS direction, dst_username AS to_num, src_username AS from_num, src_ip, dst_domain, duration, sip_call_id
-                FROM dr_gateways, cdrs WHERE (cdrs.src_ip = substring_index(dr_gateways.address,':',1) OR cdrs.dst_domain = substring_index(dr_gateways.address,':',1))
-                AND gwid IN ({}) AND call_start_time >= '{}' ORDER BY call_start_time DESC;""".format(gwlist, dtfilter)
+            query = (
+                """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
+                          t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
+                          t3.id AS dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
+                          t1.src_username, t1.dst_username, t1.src_ip AS src_address, t1.dst_domain AS dst_address, t1.sip_call_id AS call_id
+                FROM cdrs t1
+                JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
+                JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
+                WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}'
+                ORDER BY t1.call_start_time DESC;"""
+            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
 
-        cdrs = db.execute(query)
-        rows = []
-        for cdr in cdrs:
-            row = {}
-            row['cdr_id'] = cdr[0]
-            row['gwid'] = cdr[1]
-            row['call_start_time'] = str(cdr[2])
-            row['calltype'] = cdr[3]
-
-            if cdr[3] == "inbound":
-                row['subscriber'] = cdr[4]
-            else:
-                row['subscriber'] = cdr[5]
-            row['to_num'] = cdr[4]
-            row['from_num'] = cdr[5]
-            row['src_ip'] = cdr[6]
-            row['dst_domain'] = cdr[7]
-            row['duration'] = cdr[8]
-            row['sip_call_id'] = cdr[9]
-            row['gwgroupName'] = gwgroupName
-
-            rows.append(row)
+        rows = db.execute(query)
+        cdrs = [OrderedDict(row.items()) for row in rows]
 
         responsePayload['status'] = "200"
-        responsePayload['cdrs'] = rows
-        responsePayload['recordCount'] = len(rows)
+        responsePayload['cdrs'] = cdrs
+        responsePayload['recordCount'] = len(cdrs)
 
+        # Convert array of dicts to csv format
         if type == "csv":
-            # Convert array to csv format
-            lines = "CDR ID,Gateway ID,Call Start,Call Direction,Subscriber,To,From,Source,Destination Domain,Call Duration,Call ID,Endpoint Group\r"
-            columns = ['cdr_id','gwid','call_start_time','calltype','subscriber','to_num','from_num','src_ip','dst_domain','duration','sip_call_id','gwgroupName']
-            for row in rows:
-                line = ""
-                for column in columns:
-                    line += str(row[column]) + ","
-                # Remove the last comma and add end of line return
-                line = line[:-1] + "\r"
-                lines += line
-
-            # Write out csv to a file
             now = time.strftime('%Y%m%d-%H%M%S')
-            filename = '{}_{}.csv'.format(secure_filename(gwgroupName), now)
-            filepath = '/tmp/{}'.format(filename)
-            with open(filepath, 'wb') as f:
-                for line in lines:
-                    f.write(line.encode())
+            filename = secure_filename('{}_{}.csv'.format(gwgroupName, now))
+            csv_file = '/tmp/{}'.format(filename)
+            with open(csv_file, 'w', newline='') as csv_fp:
+                dict_writer = csv.DictWriter(csv_fp, fieldnames=cdrs[0].keys())
+                dict_writer.writeheader()
+                dict_writer.writerows(cdrs)
 
             if email:
                 # recipients required
@@ -1434,18 +1415,18 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                     data['text_body'] = "CDR Report for {}".format(gwgroupName)
                     data['subject'] = "CDR Report for {}".format(gwgroupName)
                     data['attachments'] = []
-                    data['attachments'].append(filepath)
+                    data['attachments'].append(csv_file)
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
                     # Remove CDR's from the payload thats being returned
                     responsePayload.pop('cdrs')
                     responsePayload['format'] = 'csv'
                     responsePayload['type'] = 'email'
-                    return json.dumps(responsePayload)
+                    return jsonify(responsePayload)
 
-            return send_file(filepath, attachment_filename=filename, as_attachment=True), StatusCodes.HTTP_OK
+            return send_file(csv_file, attachment_filename=filename, as_attachment=True), StatusCodes.HTTP_OK
         else:
-            return json.dumps(responsePayload), StatusCodes.HTTP_OK
+            return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1453,6 +1434,8 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
         return showApiError(ex)
     finally:
         db.close()
+        if os.path.exists(csv_file):
+            os.remove(csv_file)
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
@@ -1518,7 +1501,7 @@ def getGatewayCDRS(gwid=None):
             responsePayload['recordCount'] = len(rows)
             responsePayload['status'] = "200"
 
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1708,7 +1691,7 @@ def testConnectivity(domain):
         if getOptionMessageStatus(domain):
             responsePayload['option_check'] = True
 
-        return json.dumps(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)

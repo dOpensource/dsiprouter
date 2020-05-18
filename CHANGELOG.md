@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-583d616d1056afa312ef94dd10f072e25a7b0636
+d33d5f3f2973d7c14780025a33cbc81b1c9d4a77
+606d7460776dbc264fa3822396f8ea47dd628e36
 52ecf3ad8b0875477bca362c855c22776df30a8b
 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc
 0e4d9929cfcf243a29b0d0da63cffaaf250fe891
@@ -1525,10 +1526,36 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 583d616d1056afa312ef94dd10f072e25a7b0636)
+[//]: # (START_SECTION d33d5f3f2973d7c14780025a33cbc81b1c9d4a77)
+### Map Gateway Groups to CDRs
+
+> Commit: [d33d5f3f2973d7c14780025a33cbc81b1c9d4a77](https://git.flyball.co/dsiprouter/enterprise/commit/d33d5f3f2973d7c14780025a33cbc81b1c9d4a77)  
+> Date: Mon, 18 May 2020 13:45:22 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#48](https://git.flyball.co/dsiprouter/enterprise/issues/48)
+- add mapping between CDRs and gwgroups
+- update DB tables to handle new data
+- update api routes to handle new data
+- update CDR's GUI page
+- Add more sophisticated JSON serializer
+- Cleanup `kamailio.cfg`
+- Add support in dr_gateways trigger for adding new attrs
+- Cleanup `dsip_lcr.sql` and `dsip_mainmode.sql`
+- Update GUI to make tables slightly larger / fit better
+- Update dr_gateways defaults to be more reasonable
+
+
+---
+
+[//]: # (END_SECTION d33d5f3f2973d7c14780025a33cbc81b1c9d4a77)
+[//]: # (START_SECTION 606d7460776dbc264fa3822396f8ea47dd628e36)
 ### Add New Settings to Database
 
-> Commit: [583d616d1056afa312ef94dd10f072e25a7b0636](https://git.flyball.co/dsiprouter/enterprise/commit/583d616d1056afa312ef94dd10f072e25a7b0636)  
+> Commit: [606d7460776dbc264fa3822396f8ea47dd628e36](https://git.flyball.co/dsiprouter/enterprise/commit/606d7460776dbc264fa3822396f8ea47dd628e36)  
 > Date: Fri, 15 May 2020 18:11:15 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1541,7 +1568,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 583d616d1056afa312ef94dd10f072e25a7b0636)
+[//]: # (END_SECTION 606d7460776dbc264fa3822396f8ea47dd628e36)
 [//]: # (START_SECTION 52ecf3ad8b0875477bca362c855c22776df30a8b)
 ### Add Backend Supoport for Managing Domain TLS Certs
 

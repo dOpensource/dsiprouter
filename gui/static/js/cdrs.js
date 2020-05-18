@@ -42,18 +42,19 @@
           "dataSrc": "cdrs"
         },
         "columns": [
-          {"data": "cdr_id"},
-          {"data": "gwid"},
+          {"data": "cdr_id", "orderable": false},
           {"data": "call_start_time"},
-          {"data": "calltype"},
-          {"data": "subscriber"},
-          {"data": "to_num"},
-          {"data": "from_num"},
-          {"data": "src_ip"},
-          {"data": "dst_domain"},
-          {"data": "duration"},
-          {"data": "sip_call_id"}
-          //{ "data": "gwlist", visible: false },
+          {"data": "call_duration"},
+          {"data": "call_direction"},
+          {"data": "src_gwgroupid", "visible": false, "searchable": false},
+          {"data": "src_gwgroupname"},
+          {"data": "dst_gwgroupid", "visible": false, "searchable": false},
+          {"data": "dst_gwgroupname"},
+          {"data": "src_username"},
+          {"data": "dst_username"},
+          {"data": "src_address"},
+          {"data": "dst_address"},
+          {"data": "call_id", "orderable": false}
         ],
         "order": [],
         "pageLength": 100

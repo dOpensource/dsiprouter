@@ -7,18 +7,28 @@ CREATE TRIGGER insert_dr_gateways
   FOR EACH ROW
 BEGIN
 
+  -- set explicit defaults
+  IF (NEW.gwid = 0) THEN
+    SET NEW.gwid = NULL;
+  END IF;
+  IF (NEW.attrs IS NULL) THEN
+    SET NEW.attrs = '';
+  END IF;
+
   SET @new_gwid := COALESCE(NEW.gwid, @new_gwid, (
     SELECT auto_increment
     FROM information_schema.tables
     WHERE table_name = 'dr_gateways' AND table_schema = DATABASE()));
 
-  SET NEW.attrs = CONCAT(CAST(@new_gwid AS char), ',', CAST(NEW.type AS char));
+  -- only rewrite gwid,type part of attrs
+  SET NEW.attrs = CONCAT(CAST(@new_gwid AS char), ',', CAST(NEW.type AS char),
+                         SUBSTRING(NEW.attrs, LENGTH(SUBSTRING_INDEX(NEW.attrs, ',', 2)) + 1));
   SET @new_gwid = @new_gwid + 1;
 
 END;//
 DELIMITER ;
 
--- update dr_gateways attrs column when gwid updated
+-- update dr_gateways attrs column when entry updated
 DROP TRIGGER IF EXISTS update_dr_gateways;
 DELIMITER //
 CREATE TRIGGER update_dr_gateways
@@ -27,9 +37,9 @@ CREATE TRIGGER update_dr_gateways
   FOR EACH ROW
 BEGIN
 
-  IF NOT (NEW.gwid <=> OLD.gwid AND OLD.type <=> NEW.type) THEN
-    SET NEW.attrs = CONCAT(CAST(NEW.gwid AS char), ',', CAST(NEW.type AS char));
-  END IF;
+  -- only rewrite gwid,type part of attrs
+  SET NEW.attrs = CONCAT(CAST(NEW.gwid AS char), ',', CAST(NEW.type AS char),
+                         SUBSTRING(NEW.attrs, LENGTH(SUBSTRING_INDEX(NEW.attrs, ',', 2)) + 1));
 
 END;//
 DELIMITER ;

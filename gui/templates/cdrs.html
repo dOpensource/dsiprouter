@@ -25,17 +25,19 @@
   <table id="cdrs" class="table table-striped table-centered">
     <thead>
     <tr class='element-row'>
-      <th data-field="id">CDR ID</th>
-      <th data-field="gwid">Gateway ID</th>
+      <th data-field="cdr_id">CDR ID</th>
       <th data-field="call_start_time">Call Start</th>
-      <th data-field="calltype">Call Direction</th>
-      <th data-field="subscriber">Subscriber</th>
-      <th data-field="to_num">To</th>
-      <th data-field="from_num">From</th>
-      <th data-field="src_ip">Source IP</th>
-      <th data-field="dst_domain">Destination Domain</th>
-      <th data-field="duration">Call Duration</th>
-      <th data-field="sip_call_id">Call ID</th>
+      <th data-field="call_duration">Call Duration</th>
+      <th data-field="call_direction">Call Direction</th>
+      <th data-field="src_gwgroupid" class="hidden"></th>
+      <th data-field="src_gwgroupname">Source Gateway Group</th>
+      <th data-field="dst_gwgroupid" class="hidden"></th>
+      <th data-field="dst_gwgroupname">Destination Gateway Group</th>
+      <th data-field="src_username">Source Username</th>
+      <th data-field="dst_username">Destination Username</th>
+      <th data-field="src_address">Source Address</th>
+      <th data-field="dst_address">Destination Address</th>
+      <th data-field="call_id">Call ID</th>
     </tr>
     </thead>
   </table>

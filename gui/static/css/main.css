@@ -178,7 +178,6 @@
   padding: 0;
   margin: 0;
   background: #fff;
-  padding-left: 20px;
   display: block;
   position: absolute;
   height: 900px;
@@ -205,7 +204,7 @@
   transition: all 0.4s ease;
 }
 
-.wrap ul.accordion li:not(open) last-child .link {
+.wrap ul.accordion li:not(open) :last-child .link {
   border-bottom: 0;
 }
 
@@ -292,7 +291,7 @@
   }
 
   .wrap.active .content {
-    left: 21em;
+    left: 20em;
   }
 
   .wrap.active .content #bgrOne {
@@ -328,7 +327,7 @@
   }
 
   .wrap .content {
-    left: 21em;
+    left: 20em;
     right: 0;
   }
 }
@@ -576,4 +575,9 @@ a.navlink {
   cursor: pointer;
   line-height: inherit;
   top: inherit;
+}
+
+/* force dataTables to use full table width */
+table.dataTable {
+  width: 100% !important;
 }
