@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-d33d5f3f2973d7c14780025a33cbc81b1c9d4a77
+3062b1f84a193581cf55c8a7ce7a025983a5e1a7
+a958ecfae0c0277bd5b9755e6dacdc480a98d652
 606d7460776dbc264fa3822396f8ea47dd628e36
 52ecf3ad8b0875477bca362c855c22776df30a8b
 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc
@@ -1526,10 +1527,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION d33d5f3f2973d7c14780025a33cbc81b1c9d4a77)
+[//]: # (START_SECTION 3062b1f84a193581cf55c8a7ce7a025983a5e1a7)
+###   Resolves https://git.flyball.co/dsiprouter/enterprise/issues/40   - move ami build script to more generic `build_image.sh`   - add more system hardening in `pre-snapshot.sh`   - update pw resetting to only apply to VM/VPS image on 1st boot
+
+> Commit: [3062b1f84a193581cf55c8a7ce7a025983a5e1a7](https://git.flyball.co/dsiprouter/enterprise/commit/3062b1f84a193581cf55c8a7ce7a025983a5e1a7)  
+> Date: Tue, 19 May 2020 13:47:55 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 3062b1f84a193581cf55c8a7ce7a025983a5e1a7)
+[//]: # (START_SECTION a958ecfae0c0277bd5b9755e6dacdc480a98d652)
 ### Map Gateway Groups to CDRs
 
-> Commit: [d33d5f3f2973d7c14780025a33cbc81b1c9d4a77](https://git.flyball.co/dsiprouter/enterprise/commit/d33d5f3f2973d7c14780025a33cbc81b1c9d4a77)  
+> Commit: [a958ecfae0c0277bd5b9755e6dacdc480a98d652](https://git.flyball.co/dsiprouter/enterprise/commit/a958ecfae0c0277bd5b9755e6dacdc480a98d652)  
 > Date: Mon, 18 May 2020 13:45:22 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1551,7 +1567,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION d33d5f3f2973d7c14780025a33cbc81b1c9d4a77)
+[//]: # (END_SECTION a958ecfae0c0277bd5b9755e6dacdc480a98d652)
 [//]: # (START_SECTION 606d7460776dbc264fa3822396f8ea47dd628e36)
 ### Add New Settings to Database
 

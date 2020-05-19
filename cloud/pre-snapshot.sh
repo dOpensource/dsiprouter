@@ -15,6 +15,7 @@ getDisto() {
 }
 
 # make sure all security updates are installed
+# remove insecure services (FTP, Telnet, Rlogin/Rsh)
 if cmdExists 'apt-get'; then
     # grub updates adhere to ucf not debconf
     # make sure ucf defaults to unattended upgrade
@@ -24,11 +25,18 @@ if cmdExists 'apt-get'; then
 
     apt-get -y update
     apt-get -y upgrade
+
+    apt-get -y --purge remove xinetd nis yp-tools tftpd atftpd tftpd-hpa telnetd rsh-server rsh-redone-server
+
     apt-get -y autoremove
     apt-get -y autoclean
+
 elif cmdExists 'yum'; then
     yum -y update
     yum -y upgrade
+
+    yum -y erase xinetd ypserv tftp-server telnet-server rsh-server
+
     yum -y autoremove
     yum -y clean all
 fi
@@ -95,15 +103,44 @@ Subsystem sftp /usr/lib/openssh/sftp-server
 EOF
 ) > /etc/ssh/sshd_config
 
+# delete any accounts attempting to be root
+BAD_USERS=$(joinwith '' ';' 'd' `awk -F ':' '($3 == "0") && !/root/ {print FNR}' /etc/passwd`)
+sed -i "/${BAD_USERS}/d" /etc/passwd
+
+# kernel hardening
+# source: https://www.cyberciti.biz/tips/linux-security.html
+(cat <<'EOF'
+######################################################################
+# /etc/sysctl.conf - Configuration file for setting system variables
+# See /etc/sysctl.d/ for additional system variables.
+# See sysctl.conf (5) for information.
+######################################################################
+
+# Turn on execshield
+kernel.exec-shield=1
+kernel.randomize_va_space=1
+# Enable IP spoofing protection
+net.ipv4.conf.all.rp_filter=1
+# Disable IP source routing
+net.ipv4.conf.all.accept_source_route=0
+# Ignoring broadcasts request
+net.ipv4.icmp_echo_ignore_broadcasts=1
+net.ipv4.icmp_ignore_bogus_error_messages=1
+# Make sure spoofed packets get logged
+net.ipv4.conf.all.log_martians = 1
+EOF
+) > /etc/sysctl.conf
+
 # remove logs and any information from build process
 rm -rf /tmp/* /var/tmp/*
 history -c
-cat /dev/null | tee /root/.*history
+cat /dev/null | tee /root/.*history /home/*/.*history
 unset HISTFILE
 find /var/log -mtime -1 -type f -exec truncate -s 0 {} \;
 rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
 rm -rf /var/lib/cloud/instances/*
-rm -f /root/.ssh/authorized_keys /etc/ssh/*key*
+rm -f /root/.ssh/authorized_keys /etc/ssh/*key* /home/*/.ssh/authorized_keys
+touch /etc/ssh/revoked_keys; chmod 600 /etc/ssh/revoked_keys
 dd if=/dev/zero of=/zerofile 2> /dev/null; sync; rm -f /zerofile; sync
 cat /dev/null > /var/log/lastlog; cat /dev/null > /var/log/wtmp
 

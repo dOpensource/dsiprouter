@@ -100,8 +100,7 @@ setScriptSettings() {
     export RTPENGINE_VER="mr6.1.1.1"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
-    export CLOUD_INSTALL_LOG="/var/log/dsip-cloud-install.log"
-
+    IMAGE_BUILD=${IMAGE_BUILD:-0}
 
     # Default MYSQL db root user values
     MYSQL_ROOT_DEF_USERNAME="root"
@@ -219,7 +218,7 @@ IHRvIG91ciBzcG9uc29yOiBkT3BlblNvdXJjZSAoaHR0cHM6Ly9kb3BlbnNvdXJjZS5jb20pCg==" \
 function cleanupAndExit {
     unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
     unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD PATH_UPDATE_FILE SYSTEM_RTPENGINE_CONFIG_DIR SYSTEM_RTPENGINE_CONFIG_FILE SERVERNAT
-    unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION CLOUD_INSTALL_LOG DEBUG IPV6_ENABLED KAM_DMQ_PORT
+    unset RTPENGINE_VER SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION DEBUG IPV6_ENABLED KAM_DMQ_PORT
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
@@ -1015,60 +1014,6 @@ function installDsiprouter {
     # set some defaults in settings.py
     configurePythonSettings
 
-    # for cloud images the instance-id may change (could be a clone)
-    # add to startup process a password reset to ensure its set correctly
-    if (( $AWS_ENABLED == 1 )); then
-        addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
-        addDependsOnInit "dsiprouter.service"
-
-        # Required changes for Debian-based AMI's
-        if [[ $DISTRO == "debian" ]] || [[ $DISTRO == "ubuntu" ]]; then
-            # Remove debian-sys-maint password for initial AMI scan
-            sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
-
-            # Change default password for debian-sys-maint to instance-id at next boot
-            # we must also change the corresponding password in /etc/mysql/debian.cnf
-            # to comply with AWS AMI image standards
-            # this must run at startup as well so create temp script and add to dsip-init
-            (cat << EOF
-#!/usr/bin/env bash
-
-# declare any constants imported functions rely on
-DSIP_INIT_FILE="$DSIP_INIT_FILE"
-
-# declare imported functions from library
-$(declare -f isInstanceAMI)
-$(declare -f isInstanceDO)
-$(declare -f isInstanceGCE)
-$(declare -f isInstanceAZURE)
-$(declare -f getInstanceID)
-$(declare -f removeInitCmd)
-
-# reset debian user password and remove dsip-init startup cmd
-INSTANCE_ID=\$(getInstanceID)
-mysql -e "DROP USER 'debian-sys-maint'@'localhost';
-    CREATE USER 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
-    GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
-    FLUSH PRIVILEGES;"
-
-sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
-removeInitCmd '.reset_debiansys_user.sh'
-rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-
-exit 0
-EOF
-            ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-            # note that the script will remove itself after execution
-            chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-            addInitCmd "$(type -P bash) -c '${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh >> ${CLOUD_INSTALL_LOG} 2>&1'"
-        fi
-
-    # rest of the cloud providers only need password reset to instance id
-    #elif (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
-    #    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword"
-    #    addDependsOnInit "dsiprouter.service"
-    fi
-
     # Set dsip private key (used for encryption across services) by following precedence:
     # 1:    set via cmdline arg
     # 2:    set prior to externally
@@ -1110,8 +1055,79 @@ EOF
     chown root:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
 
+    # for cloud images the instance-id may change (could be a clone)
+    # add to startup process a password reset to ensure its set correctly
+    # this is only for cloud image builds and is removed after first boot
+    if (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 )) && (( $IMAGE_BUILD == 1 )); then
+        (cat << EOF
+#!/usr/bin/env bash
+
+# declare any constants imported functions rely on
+DSIP_INIT_FILE="$DSIP_INIT_FILE"
+
+# declare imported functions from library
+$(declare -f removeInitCmd)
+
+# reset admin user password and remove startup cmd from dsip-init
+${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword
+
+removeInitCmd '.reset_admin_pass.sh'
+rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
+
+exit 0
+EOF
+        ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
+        chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
+        addInitCmd "${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh"
+
+        # Required changes for Debian-based AMI's
+        if (( $AWS_ENABLED == 1 )) && [[ $DISTRO == "debian" || $DISTRO == "ubuntu" ]]; then
+            # Remove debian-sys-maint password for initial AMI scan
+            sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
+
+            # Change default password for debian-sys-maint to instance-id at next boot
+            # we must also change the corresponding password in /etc/mysql/debian.cnf
+            # to comply with AWS AMI image standards
+            # this must run at startup as well so create temp script and add to dsip-init
+            (cat << EOF
+#!/usr/bin/env bash
+
+# declare any constants imported functions rely on
+DSIP_INIT_FILE="$DSIP_INIT_FILE"
+
+# declare imported functions from library
+$(declare -f isInstanceAMI)
+$(declare -f isInstanceDO)
+$(declare -f isInstanceGCE)
+$(declare -f isInstanceAZURE)
+$(declare -f getInstanceID)
+$(declare -f removeInitCmd)
+
+# reset debian user password and remove startup cmd from dsip-init
+INSTANCE_ID=\$(getInstanceID)
+mysql -e "DROP USER 'debian-sys-maint'@'localhost';
+    CREATE USER 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
+    GRANT ALL ON *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
+    FLUSH PRIVILEGES;"
+
+sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
+removeInitCmd '.reset_debiansys_user.sh'
+rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
+
+exit 0
+EOF
+            ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
+            # note that the script will remove itself after execution
+            chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
+            addInitCmd "${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
+        fi
+    fi
+
     # custom dsiprouter MOTD banner for ssh logins
     updateBanner
+
+    # add dependency on dsip-init service in startup boot order
+    addDependsOnInit "dsiprouter.service"
 
     # Restart dSIPRouter with new configurations
     systemctl restart dsiprouter
@@ -1143,11 +1159,8 @@ function uninstallDsiprouter {
         cleanupAndExit 1
     fi
 
-    # for AMI images remove dsip-init service dependency
-    if (( $AWS_ENABLED == 1 )) || (( $DO_ENABLED == 1 )) || (( $GCE_ENABLED == 1 )) || (( $AZURE_ENABLED == 1 )); then
-        removeInitCmd "dsiprouter.sh resetpassword"
-        removeDependsOnInit "dsiprouter.service"
-    fi
+    # remove dsip-init service dependency
+    removeDependsOnInit "dsiprouter.service"
 
     # Remove dsiprouter crontab entries
     printdbg "Removing dsiprouter crontab entries"
