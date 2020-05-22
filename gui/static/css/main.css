@@ -220,21 +220,22 @@
   transition: all 0.4s ease;
 }
 
-.wrap ul.accordion li i.fa-chevron-down {
+.wrap ul.accordion li i.glyphicon-chevron-down {
   right: 12px;
   left: auto;
   font-size: 16px;
+  padding: 5px;
 }
 
 .wrap ul.accordion li.open .link {
-  color: #FFB266;
+  color: #FF8100;
 }
 
 .wrap ul.accordion li.open i {
-  color: #FFB266;
+  color: #FF8100;
 }
 
-.wrap ul.accordion li.open i.fa-chevron-down {
+.wrap ul.accordion li.open i.glyphicon-chevron-down {
   -webkit-transform: rotate(180deg);
   -ms-transform: rotate(180deg);
   -o-transform: rotate(180deg);
@@ -252,6 +253,7 @@
 .wrap ul.accordion ul.submenu li {
   border-bottom: 1px solid #4b4a5e;
   list-style: none;
+  padding: 5px;
 }
 
 .wrap ul.accordion ul.submenu li a {
@@ -266,10 +268,11 @@
   transition: all 0.25s ease;
 }
 
+/*
 .wrap ul.accordion ul.submenu li a:hover {
   background: rgba(240, 128, 128, 0.8);
   color: #ffb266;
-}
+} */
 
 @media screen and (max-width: 768px) {
   .wrap .nav-bar .navbar-brand {

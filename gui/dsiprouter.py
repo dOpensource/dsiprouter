@@ -95,6 +95,27 @@ def backupandrestore():
         error = "server"
         return showError(type=error)
 
+@app.route('/certificates')
+def certificates():
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        if not session.get('logged_in'):
+            return render_template('index.html', version=settings.VERSION)
+        else:
+            action = request.args.get('action')
+            return render_template('certificates.html', show_add_onload=action, version=settings.VERSION)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        return showError(type=error)
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
