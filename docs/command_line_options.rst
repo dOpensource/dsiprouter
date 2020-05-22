@@ -13,10 +13,8 @@ start                                 Starts dSIPRouter
 stop                                  Stops dSIPRouter from running
 restart                               Restarts dSIPRouter after a stop
 configurekam                          Reconfigures the Kamailio configuration file based on dSIPRouter Settings
-sslenable                             Enables SSL Support
 renewsslcert                          Renew configured letsencrypt SSL certificate
 installmodules                        Install / uninstall dDSIProuter modules
-fixmpath                              Reset Kamailio's module path
 enableservernat                       Enable Server NAT
 disableservernet                      Disable Server NAT
 resetpassword                         Generate new random dSIPRouter admin account password

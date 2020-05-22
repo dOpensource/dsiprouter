@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-a18cf3401769026840c43cb98a37aa22c027335d
+22fd2b06b89c39e7ce9056659df2b178072126e5
+1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9
+33dc11da36ed72996df70997833e5510e7b45c87
 2f1aca8ae2ee142d3bb185c204ee5c64b52033ea
 a958ecfae0c0277bd5b9755e6dacdc480a98d652
 606d7460776dbc264fa3822396f8ea47dd628e36
@@ -1528,10 +1530,67 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION a18cf3401769026840c43cb98a37aa22c027335d)
+[//]: # (START_SECTION 22fd2b06b89c39e7ce9056659df2b178072126e5)
+### Bug Fixes for v0.62
+
+> Commit: [22fd2b06b89c39e7ce9056659df2b178072126e5](https://git.flyball.co/dsiprouter/enterprise/commit/22fd2b06b89c39e7ce9056659df2b178072126e5)  
+> Date: Fri, 22 May 2020 16:56:50 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#52](https://git.flyball.co/dsiprouter/enterprise/issues/52)
+- Resolves [#40](https://git.flyball.co/dsiprouter/enterprise/issues/40)
+- removed `sslenable` CLI command as this is the default now
+- removed `mpath` CLI command as this is not needed by the end user
+- update CLI command options documentation
+- update CLI tab completion for changes
+- SECURITY FIX: change hash checks to store salt with hash
+- SECURITY FIX: fix size limits on credentials and salts
+- fix logrotate not working with some services
+- fix logging hangs on systemd journal rotate
+- cleanup `dsip_lib.sh` comments
+- fix layout for `dashboard.html` and `endpointgroups.html`
+- fix edge cases for [#40](https://git.flyball.co/dsiprouter/enterprise/issues/40)
+- fix API redirection for endpointgroups endpoint, ref: [#2](https://git.flyball.co/dsiprouter/enterprise/issues/2)
+- update `dsip_settings` table to accomdate security fixes
+- add `error` endpoint to GUI so API's can redirect there
+- add several ports to python update functions in `dsiprouter.sh`
+- add hot reloading to kam update functions in `dsiprouter.sh`
+- fix bug in `dr_gateways` and `subscribers` default args
+- consolidate/update credential setting/resetting functions in `dsiprouter.sh`
+- update diplayed credentials upon install finish
+- update `help` commands documentation to be more concise
+- expand `resetpassword` command functionality
+- update several install scripts; ubuntu, debian, centos, amazon
+- add utility functions in `main.js`
+- inject settings into template context processor in `dsiprouter.py`
+- update some tests that were not working; common, 7.sh
+
+
+---
+
+[//]: # (END_SECTION 22fd2b06b89c39e7ce9056659df2b178072126e5)
+[//]: # (START_SECTION 1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9)
+### Initial commit of the certificate module
+
+> Commit: [1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9](https://git.flyball.co/dsiprouter/enterprise/commit/1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9)  
+> Date: Fri, 22 May 2020 01:49:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9)
+[//]: # (START_SECTION 33dc11da36ed72996df70997833e5510e7b45c87)
 ### Update README and CONTRIBUTING docs
 
-> Commit: [a18cf3401769026840c43cb98a37aa22c027335d](https://git.flyball.co/dsiprouter/enterprise/commit/a18cf3401769026840c43cb98a37aa22c027335d)  
+> Commit: [33dc11da36ed72996df70997833e5510e7b45c87](https://git.flyball.co/dsiprouter/enterprise/commit/33dc11da36ed72996df70997833e5510e7b45c87)  
 > Date: Tue, 19 May 2020 16:04:58 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1545,7 +1604,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION a18cf3401769026840c43cb98a37aa22c027335d)
+[//]: # (END_SECTION 33dc11da36ed72996df70997833e5510e7b45c87)
 [//]: # (START_SECTION 2f1aca8ae2ee142d3bb185c204ee5c64b52033ea)
 ###   Resolves https://git.flyball.co/dsiprouter/enterprise/issues/40   - move ami build script to more generic `build_image.sh`   - add more system hardening in `pre-snapshot.sh`   - update pw resetting to only apply to VM/VPS image on 1st boot
 

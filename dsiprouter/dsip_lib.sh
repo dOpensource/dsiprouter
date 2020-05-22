@@ -107,7 +107,7 @@ setConfigAttrib() {
 
 # $1 == attribute name
 # $2 == python config file
-# returns: attribute value
+# output: attribute value
 getConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
@@ -118,8 +118,8 @@ getConfigAttrib() {
 
 # $1 == attribute name
 # $2 == python config file
-# returns: attribute value decrypted
-# notes: if value is not encrypted the value will be returned
+# output: attribute value decrypted
+# notes: if value is not encrypted the value is output instead
 decryptConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
@@ -200,7 +200,7 @@ setRtpengineConfigAttrib() {
     sed -i -r -e "s|(${NAME}\s?=\s?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
-# notes: prints out Linux Distro name
+# output: Linux Distro name
 getDisto() {
     cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2
 }
@@ -256,7 +256,7 @@ isInstanceAZURE() {
     return $?
 }
 
-# returns: instance ID || blank string
+# output: instance ID || blank string
 # notes: we try checking for exported instance variable avoid querying again
 getInstanceID() {
     if (( ${AWS_ENABLED:-0} == 1)); then
@@ -318,6 +318,7 @@ ipv6Test() {
     return 1
 }
 
+# output: the external IP for this system
 # notes: prints external ip, or empty string if not available
 # notes: below we have measurements for average time of each service
 #        over 10 non-cached requests, in seconds, round trip
@@ -487,7 +488,7 @@ checkDB() {
 #           --pass=<mysql password>
 #           --host=<mysql host>
 #           --port=<mysql port>
-# notes: redirect output sql as needed (in shell)
+# output: dumped database as sql (redirect as needed)
 # returns: 0 on success, non zero otherwise
 dumpDB() {
     local MYSQL_DBNAME=""
@@ -532,4 +533,11 @@ dumpDB() {
         | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g';
         exit ${PIPESTATUS[0]}; ) 2>/dev/null
     return $?
+}
+
+# $1 == number of characters to get
+# output: string of random printable characters
+urandomChars() {
+    local LEN="$1"
+    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w ${LEN} 2>/dev/null | head -n 1
 }

@@ -5,7 +5,7 @@
 (( $DEBUG == 1 )) && set -x
 
 function install {
-    
+
     # Get the default version of python enabled
     VER=`python -V 2>&1`
     VER=`echo $VER | cut -d " " -f 2`
@@ -47,9 +47,9 @@ function install {
     fi
 
     # Setup Firewall for DSIP_PORT
-    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp 
-    
-   # Enable and start firewalld if not already running
+    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
+
+    # Enable and start firewalld if not already running
     systemctl enable firewalld
     systemctl restart firewalld
 
@@ -58,6 +58,11 @@ function install {
     if [ $? -eq 1 ]; then
         echo "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
+    fi
+
+    # Configure rsyslog defaults
+    if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
     fi
 
     # Setup dSIPRouter Logging

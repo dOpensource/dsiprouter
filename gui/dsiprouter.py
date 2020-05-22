@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal
+from functools import wraps
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory, g
+from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory
 from flask_script import Manager, Server
 from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
@@ -12,14 +13,14 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
-from util.security import hashCreds, AES_CTR
+from util.security import Credentials, AES_CTR
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
 import globals
@@ -73,6 +74,13 @@ def index():
         debugException(ex)
         error = "server"
         return showError(type=error)
+
+@app.route('/error')
+def displayError():
+    type = request.args.get("type", "")
+    code = int(request.args.get("code", StatusCodes.HTTP_INTERNAL_SERVER_ERROR))
+    msg = request.args.get("msg", None)
+    return showError(type, code, msg)
 
 @app.route('/backupandrestore')
 def backupandrestore():
@@ -130,27 +138,30 @@ def login():
         form = stripDictVals(request.form.to_dict())
         if 'username' not in form or 'password' not in form:
             raise http_exceptions.BadRequest('Username and Password are required')
+        elif not isinstance(form['username'], str) or not isinstance(form['password'], str):
+            raise http_exceptions.BadRequest('Username or Password is malformed')
 
         # Get Environment Variables if in debug mode
+        # This is the only case we allow plain text password comparison
         if settings.DEBUG:
             settings.DSIP_USERNAME = os.getenv('DSIP_USERNAME', settings.DSIP_USERNAME)
             settings.DSIP_PASSWORD = os.getenv('DSIP_PASSWORD', settings.DSIP_PASSWORD)
 
+        # if username valid, hash password and compare with stored password
         if form['username'] == settings.DSIP_USERNAME:
             if isinstance(settings.DSIP_PASSWORD, bytes):
-                # hash password and compare with stored password
-                pwcheck = hashCreds(form['password'], settings.DSIP_SALT)[0]
+                pwcheck = Credentials.hashCreds(form['password'], settings.DSIP_PASSWORD[Credentials.SALT_ENCODED_LEN:])
             else:
                 pwcheck = form['password']
 
             if pwcheck == settings.DSIP_PASSWORD:
                 session['logged_in'] = True
                 session['username'] = form['username']
-        else:
-            flash('wrong username or password!')
-            return render_template('index.html', version=settings.VERSION), 403
-        return redirect(url_for('index'))
+                return redirect(url_for('index'))
 
+        # if we got here auth failed
+        flash('Wrong Username or Password')
+        return redirect(url_for('index'))
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -1927,6 +1938,10 @@ def imgFilter(name):
 def injectReloadRequired():
     return dict(reload_required=globals.reload_required, licensed=globals.licensed)
 
+@app.context_processor
+def injectSettings():
+    return dict(settings=settings)
+
 class CustomServer(Server):
     """ Customize the Flask server with our settings """
 
@@ -1953,12 +1968,12 @@ def syncSettings(new_fields={}, update_net=False):
     """
     Synchronize settings.py with shared mem / db
 
-    :param new_fields:
-    :type new_fields:
-    :param update_net:
-    :type update_net:
-    :return:
-    :rtype:
+    :param new_fields:      fields to override when syncing
+    :type new_fields:       dict
+    :param update_net:      if the network settings should be updated
+    :type update_net:       bool
+    :return:                None
+    :rtype:                 None
     """
 
     db = DummySession()
@@ -1987,7 +2002,7 @@ def syncSettings(new_fields={}, update_net=False):
             fields = OrderedDict(
                 [('DSIP_ID', settings.DSIP_ID), ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID), ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
                  ('DSIP_PROTO', settings.DSIP_PROTO), ('DSIP_HOST', settings.DSIP_HOST), ('DSIP_PORT', settings.DSIP_PORT),
-                 ('DSIP_USERNAME', settings.DSIP_USERNAME), ('DSIP_PASSWORD', settings.DSIP_PASSWORD), ('DSIP_SALT', settings.DSIP_SALT),
+                 ('DSIP_USERNAME', settings.DSIP_USERNAME), ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
                  ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO), ('DSIP_API_HOST', settings.DSIP_API_HOST),
                  ('DSIP_API_PORT', settings.DSIP_API_PORT), ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY), ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
                  ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
@@ -2157,16 +2172,6 @@ def teardown():
     except:
         pass
 
-# # TODO: probably not needed anymore
-# def checkDatabase(session=None):
-#     db = session if session is not None else SessionLoader()
-#     # Check database connection is still good
-#     try:
-#         db.execute('select 1')
-#         db.flush()
-#     except sql_exceptions.SQLAlchemyError as ex:
-#         # If not, close DB connection so that the SQL engine can get another one from the pool
-#         db.close()
 
 if __name__ == "__main__":
     try:

@@ -299,6 +299,29 @@ function validateFields(selector, test) {
   return true;
 }
 
+/**
+ * Show notification in top notification bar
+ * @param msg   {string} message to display
+ * @param error {boolean} whether its an error
+ */
+function showNotification(msg, error=false) {
+  var msg_bar = $("div.message-bar");
+
+  if (error === true) {
+    msg_bar.removeClass("alert-success");
+    msg_bar.addClass("alert alert-danger");
+    msg_bar.html("<strong>Failed!</strong> " + msg);
+  }
+  else {
+    msg_bar.removeClass("alert-danger");
+    msg_bar.addClass("alert alert-success");
+    msg_bar.html("<strong>Success!</strong> " + msg);
+  }
+
+  msg_bar.show();
+  msg_bar.slideUp(3000, "linear");
+}
+
 
 $('#pbxs #open-Delete').click(function() {
   var row_index = $(this).parent().parent().parent().index() + 1;
@@ -355,49 +378,40 @@ $('#domains #open-Delete').click(function() {
   modal_body.find(".domain_name").val(domain_name);
 });
 
-function reloadkamrequired() {
+function reloadkamrequired(required=true) {
   var reload_button = $('#reloadkam');
 
-  reload_button.removeClass('btn-primary');
-  reload_button.addClass('btn-warning');
-
-
+  if (required) {
+    reload_button.removeClass('btn-primary');
+    reload_button.addClass('btn-warning');
+  }
+  else {
+    reload_button.removeClass('btn-warning');
+    reload_button.addClass('btn-primary');
+  }
 }
 
-function reloadkam(elmnt) {
-  //elmnt.style.backgroundColor = "red";
-  //elmnt.style.borderColor = "red"
-  var msg_bar = $(".message-bar");
-  var reload_button = $('#reloadkam');
-
-
+function reloadkam() {
   $.ajax({
     type: "GET",
     url: "/reloadkam",
     dataType: "json",
     success: function(msg) {
       if (msg.status === 1) {
-        msg_bar.addClass("alert alert-success");
-        msg_bar.html("<strong>Success!</strong> Kamailio was reloaded successfully!");
-        reload_button.removeClass('btn-warning');
-        reload_button.addClass('btn-primary');
+        showNotification("Kamailio was reloaded successfully!");
+        reloadkamrequired();
       }
       else {
-        msg_bar.addClass("alert alert-danger");
-        msg_bar.html("<strong>Failed!</strong> Kamailio was NOT reloaded successfully!");
+        showNotification("Kamailio was NOT reloaded successfully!", true);
       }
-
-      msg_bar.show();
-      msg_bar.slideUp(3000, "linear");
-      //elmnt.style.backgroundColor = "#337ab7";
-      //elmnt.style.borderColor = "#2e6da4";
     }
   });
 }
 
+/* TODO update to work with endpoint groups */
 function enableMaintenanceMode() {
-
 	var table=document.getElementById("pbxs");
+
 	r=1;
 	while(row=table.rows[r++]) {
 	    checkbox=row.cells[0].getElementsByClassName('checkthis');
@@ -405,12 +419,11 @@ function enableMaintenanceMode() {
 		    updateEndpoint(row,'maintmode',1);
 	    }
 	}
-
 }
 
 function disableMaintenanceMode() {
-
 	var table=document.getElementById("pbxs");
+
 	r=1;
 	while(row=table.rows[r++]) {
 	    checkbox=row.cells[0].getElementsByClassName('checkthis');
@@ -418,7 +431,6 @@ function disableMaintenanceMode() {
 		    updateEndpoint(row,'maintmode',0);
 	    }
 	}
-
 }
 
 /* Update an attribute of an endpoint
@@ -446,7 +458,6 @@ function updateEndpoint(row,attr,attrvalue) {
 					reloadkamrequired();
 				}
 				else {
-
 					$('#maintmode_' + pbxid ).html("");
 					reloadkamrequired();
 				}

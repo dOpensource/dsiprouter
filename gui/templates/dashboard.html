@@ -15,74 +15,81 @@
     <h3>Kamailio reload: {{ reloadstatus }}</h3>
 
   {% endif %}
-<h1 class="page-header">Dashboard</h1>
-<div class="row placeholders">
-            <div class="col-xs-4 col-sm-4 placeholder">
-            	<div class="dashboard-metric-label">Active SIP Messages</div>
-		<div id="dashboard_current_calls" class="dashboard-metric"></div>
-	    </div>
-            <div class="col-xs-4 col-sm-4 placeholder">
-            	<div class="dashboard-metric-label">SIP Messages in Queue</div>
-		<div id="dashboard_calls_inqueue" class="dashboard-metric"></div>
-	    </div>
-            <div class="col-xs-4 col-sm-4 placeholder">
-            	<div class="dashboard-metric-label">Total SIP Messages</div>
-		<div id="dashboard_total_calls_processed" class="dashboard-metric"></div>
-	    </div>
-</div>
-<div class="row container">
-	<div class="col-xs-4">
-		<div class="panel panel-default">
-			<div class="panel-heading">Documentation</div>
-			<div class="panel-body">
-				<ul>
-					<li>Setup SIP Trunking Service
-						<ul>
-							<li><a href="https://dsiprouter.readthedocs.io/en/latest/use-cases.html#sip-trunking-using-ip-authentication" target="_blank">Using IP Authentication</a></li>
-							<li><a href="https://dsiprouter.readthedocs.io/en/latest/use-cases.html#sip-trunking-using-username-password-authentication" target="_blank">Using Username/Password Authentication</a></li>
-						</ul>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
-	<div class="col-xs-4">
-		<div class=" panel  panel-default">
-			<div class="panel-heading">Training</div>
-			<div class="panel-body">
-				<ul>
-					<li><a href="https://dopensource.com/product/dsiprouter-admin-course/" target="_blank">dSIPRouter 1 Day Admin Course</a></li>
-				</ul>
-			</div>
-		</div>
-	</div>
-	<div class="col-xs-4">
-		<div class="panel panel-default">
-			<div class="panel-heading">Support</div>
-			<div class="panel-body">
-				<ul>
-					<li>Paid Support
-						<ul>
-							<li><a href="https://dopensource.com/dsiprouter-annual-subscriptions/" target="_blank">Annual Commercial Support</a></li>
-						</ul>
-					</li>
-					<li>Free Support
-						<ul>
-							<li><a href="https://groups.google.com/forum/#!forum/dsiprouter" target="_blank">User Forum</a></li>
-						</ul>
-					</li>
-					<li>Kamailio Consultants Directory
-						<ul>
-							<li><a href="https://www.kamailio.org/w/business-directory/" target="_black">Kamailio Business Directory</a></li>
-						</ul>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
-</div>
+  <h1 class="page-header">Dashboard</h1>
+  <div class="row placeholders">
+    <div class="col-xs-4 col-sm-4 placeholder">
+      <div class="dashboard-metric-label">Active SIP Messages</div>
+      <div id="dashboard_current_calls" class="dashboard-metric"></div>
+    </div>
+    <div class="col-xs-4 col-sm-4 placeholder">
+      <div class="dashboard-metric-label">SIP Messages in Queue</div>
+      <div id="dashboard_calls_inqueue" class="dashboard-metric"></div>
+    </div>
+    <div class="col-xs-4 col-sm-4 placeholder">
+      <div class="dashboard-metric-label">Total SIP Messages</div>
+      <div id="dashboard_total_calls_processed" class="dashboard-metric"></div>
+    </div>
+  </div>
+  <div class="row container">
+    <div class="col-xs-4">
+      <div class="panel panel-default">
+        <div class="panel-heading">Documentation</div>
+        <div class="panel-body">
+          <ul>
+            <li>Setup SIP Trunking Service
+              <ul>
+                <li><a
+                    href="https://dsiprouter.readthedocs.io/en/latest/use-cases.html#sip-trunking-using-ip-authentication"
+                    target="_blank">Using IP Authentication</a></li>
+                <li><a
+                    href="https://dsiprouter.readthedocs.io/en/latest/use-cases.html#sip-trunking-using-username-password-authentication"
+                    target="_blank">Using Username/Password Authentication</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-4">
+      <div class=" panel  panel-default">
+        <div class="panel-heading">Training</div>
+        <div class="panel-body">
+          <ul>
+            <li><a href="https://dopensource.com/product/dsiprouter-admin-course/" target="_blank">dSIPRouter 1 Day
+              Admin Course</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-xs-4">
+      <div class="panel panel-default">
+        <div class="panel-heading">Support</div>
+        <div class="panel-body">
+          <ul>
+            <li>Paid Support
+              <ul>
+                <li><a href="https://dopensource.com/dsiprouter-annual-subscriptions/" target="_blank">Annual Commercial
+                  Support</a></li>
+              </ul>
+            </li>
+            <li>Free Support
+              <ul>
+                <li><a href="https://groups.google.com/forum/#!forum/dsiprouter" target="_blank">User Forum</a></li>
+              </ul>
+            </li>
+            <li>Kamailio Consultants Directory
+              <ul>
+                <li><a href="https://www.kamailio.org/w/business-directory/" target="_black">Kamailio Business
+                  Directory</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block custom_js %}
- {{ script_tag('dashboard') }}
+  {{ script_tag('dashboard') }}
 {% endblock %}

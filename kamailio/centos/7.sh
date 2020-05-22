@@ -156,6 +156,8 @@ EOF
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
@@ -171,6 +173,11 @@ EOF
 
     # Enable Kamailio for system startup
     systemctl enable kamailio
+
+    # Configure rsyslog defaults
+    if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
+    fi
 
     # Setup kamailio Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
@@ -205,7 +212,11 @@ function uninstall {
 
     # Remove firewall rules that was created by us:
     firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/udp --permanent
-    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_SIPS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Remove kamailio Logging

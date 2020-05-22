@@ -28,83 +28,105 @@ def urandomChars(length=64):
     chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
     return ''.join([chars[ord(os.urandom(1)) % len(chars)] for _ in range(length)])
 
-def hashCreds(creds, salt=None):
+class Credentials():
     """
-    Hash credentials using pbkdf2_hmac with sha512 algo
-    :param creds:   byte string to hash
-    :param salt:    salt to hash creds with as hex encoded byte string
-    :return:        (hash, salt) as hex encoded byte strings
+    Wrapper class for credential management functions
     """
-    if not isinstance(creds, bytes):
-        creds = creds.encode('utf-8')
-    if salt is None:
-        salt = get_random_bytes(64)
-    else:
-        if not isinstance(salt, bytes):
-            salt = salt.encode('utf-8')
-        salt = binascii.unhexlify(salt)
-    if len(salt) > 64:
-        raise ValueError('Salt must be 64 bytes')
 
-    hash = hashlib.pbkdf2_hmac('sha512', creds, salt, 100000)
-    return (binascii.hexlify(hash), binascii.hexlify(salt))
+    HASH_LEN = 64
+    HASH_ENCODED_LEN = 128
+    SALT_LEN = 64
+    SALT_ENCODED_LEN = 128
+    CREDS_MAX_LEN = 64
 
+    @staticmethod
+    def hashCreds(creds, salt=None):
+        """
+        Hash credentials using pbkdf2_hmac with sha512 algo
 
-def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b''):
-    """
-    Set secure credentials, either by hashing or encrypting
-    :param dsip_creds:      dsiprouter admin password as byte string
-    :param api_creds:       dsiprouter api token as byte string
-    :param kam_creds:       kamailio db password as byte string
-    :param mail_creds:      dsiprouter mail password as byte string
-    :param ipc_creds:       dsiprouter ipc connection password as byte string
-    :return:                None
-    """
-    fields = {}
+        :param creds:   byte string to hash
+        :type creds:    bytes|str
+        :param salt:    salt to hash creds with as hex encoded byte string
+        :type salt:     bytes|str
+        :return:        hash+salt as hex encoded byte string
+        :rtype:         bytes
+        """
+        if not isinstance(creds, bytes):
+            creds = creds.encode('utf-8')
+        if salt is None:
+            salt = get_random_bytes(Credentials.SALT_LEN)
+        else:
+            if not isinstance(salt, bytes):
+                salt = salt.encode('utf-8')
+            salt = binascii.unhexlify(salt)
+        if len(salt) != Credentials.SALT_LEN:
+            raise ValueError('Salt must be {} bytes long'.format(str(Credentials.SALT_LEN)))
 
-    if len(dsip_creds) > 0:
-        if len(dsip_creds) > 64:
-            raise ValueError('dsiprouter credentials must be 64 bytes or less')
-        hash, salt = hashCreds(dsip_creds)
-        fields['DSIP_PASSWORD'] = hash
-        fields['DSIP_SALT'] = salt
+        hash = hashlib.pbkdf2_hmac('sha512', creds, salt, 100000)
+        return binascii.hexlify(hash)+binascii.hexlify(salt)
 
-    if len(api_creds) > 0:
-        if len(api_creds) > 64:
-            raise ValueError('kamailio credentials must be 64 bytes or less')
-        fields['DSIP_API_TOKEN'] = AES_CTR.encrypt(api_creds)
+    @staticmethod
+    def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b''):
+        """
+        Set secure credentials, either by hashing or encrypting\n
+        Values must be within size limit and empty values are ignored\n
 
-    if len(kam_creds) > 0:
-        if len(kam_creds) > 64:
-            raise ValueError('kamailio credentials must be 64 bytes or less')
-        fields['KAM_DB_PASS'] = AES_CTR.encrypt(kam_creds)
+        :param dsip_creds:      dsiprouter admin password as byte string
+        :type dsip_creds:       bytes|str
+        :param api_creds:       dsiprouter api token as byte string
+        :type api_creds:        bytes|str
+        :param kam_creds:       kamailio db password as byte string
+        :type kam_creds:        bytes|str
+        :param mail_creds:      dsiprouter mail password as byte string
+        :type mail_creds:       bytes|str
+        :param ipc_creds:       dsiprouter ipc connection password as byte string
+        :type ipc_creds:        bytes|str
+        :return:                None
+        :rtype:                 None
+        """
+        fields = {}
 
-    if len(mail_creds) > 0:
-        if len(mail_creds) > 64:
-            raise ValueError('mail credentials must be 64 bytes or less')
-        fields['MAIL_PASSWORD'] = AES_CTR.encrypt(mail_creds)
+        if len(dsip_creds) > 0:
+            if len(dsip_creds) > Credentials.CREDS_MAX_LEN:
+                raise ValueError('dsiprouter credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+            fields['DSIP_PASSWORD'] = Credentials.hashCreds(dsip_creds)
 
-    if len(ipc_creds) > 0:
-        if len(ipc_creds) > 64:
-            raise ValueError('mail credentials must be 64 bytes or less')
-        fields['DSIP_IPC_PASS'] = AES_CTR.encrypt(ipc_creds)
+        if len(api_creds) > 0:
+            if len(api_creds) > Credentials.CREDS_MAX_LEN:
+                raise ValueError('kamailio credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+            fields['DSIP_API_TOKEN'] = AES_CTR.encrypt(api_creds)
 
-    if settings.LOAD_SETTINGS_FROM == 'file':
-        updateConfig(settings, fields)
-    elif settings.LOAD_SETTINGS_FROM == 'db':
-        from database import SessionLoader, DummySession
-        db = DummySession()
-        try:
-            db = SessionLoader()
-            db.execute(
-                'update dsip_settings set {} where DSIP_ID={}'.format(', '.join(['{}=:{}'.format(x, x) for x in fields.keys()]), settings.DSIP_ID),
-                fields)
-            db.commit()
-        except sql_exceptions.SQLAlchemyError:
-            db.rollback()
-            raise
-        finally:
-            db.remove()
+        if len(kam_creds) > 0:
+            if len(kam_creds) > Credentials.CREDS_MAX_LEN:
+                raise ValueError('kamailio credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+            fields['KAM_DB_PASS'] = AES_CTR.encrypt(kam_creds)
+
+        if len(mail_creds) > 0:
+            if len(mail_creds) > Credentials.CREDS_MAX_LEN:
+                raise ValueError('mail credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+            fields['MAIL_PASSWORD'] = AES_CTR.encrypt(mail_creds)
+
+        if len(ipc_creds) > 0:
+            if len(ipc_creds) > Credentials.CREDS_MAX_LEN:
+                raise ValueError('mail credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+            fields['DSIP_IPC_PASS'] = AES_CTR.encrypt(ipc_creds)
+
+        if settings.LOAD_SETTINGS_FROM == 'file':
+            updateConfig(settings, fields)
+        elif settings.LOAD_SETTINGS_FROM == 'db':
+            from database import SessionLoader, DummySession
+            db = DummySession()
+            try:
+                db = SessionLoader()
+                db.execute(
+                    'update dsip_settings set {} where DSIP_ID={}'.format(', '.join(['{}=:{}'.format(x, x) for x in fields.keys()]), settings.DSIP_ID),
+                    fields)
+                db.commit()
+            except sql_exceptions.SQLAlchemyError:
+                db.rollback()
+                raise
+            finally:
+                db.remove()
 
 class AES_CTR():
     """

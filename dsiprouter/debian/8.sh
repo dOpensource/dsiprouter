@@ -38,6 +38,11 @@ function install {
     # debian v8 fails using mysqldb connector, set pymysql as default driver
     setConfigAttrib 'KAM_DB_DRIVER' 'pymysql' ${DSIP_CONFIG_FILE} -q
 
+    # Configure rsyslog defaults
+    if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
+    fi
+
     # Setup dSIPRouter Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
     touch /var/log/dsiprouter.log

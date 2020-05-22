@@ -480,7 +480,8 @@ def debugEndpoint(log_out=True, print_out=True, **kwargs):
 def allowed_file(filename, ALLOWED_EXTENSIONS={'csv', 'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def showError(type="", code=500, msg=None):
+def showError(type="", code=None, msg=None):
+    code = int(code) if code is not None else StatusCodes.HTTP_INTERNAL_SERVER_ERROR
     return render_template('error.html', type=type, msg=msg), code
 
 def showApiError(ex, payload={}):
@@ -587,8 +588,8 @@ def redirectCustom(location, *render_args, code=302, response_cb=None, force_red
         response = response_cb(response)
 
     # override return code if set from render args
-    if len(render_args) == 3:
-        response.status = code
+    # if len(render_args) == 3:
+    response.status = code
 
     # change response location
     response.headers['Location'] = location

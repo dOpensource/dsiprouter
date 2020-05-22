@@ -19,7 +19,7 @@ mysql kamailio -e "insert into dr_gw_lists values (null,'','name:Smoketest Carri
 gwgroupid=`mysql kamailio -s -N -e "select id from dr_gw_lists where description like '%Smoketest%';"`
 
 # Add Carrier
-mysql kamailio -e "insert into dr_gateways values (null,8,'demo.dsiprouter.org',0,null,null,'name:Smoketest Carrier,gwgroup:$gwgroupid');"
+mysql kamailio -e "insert into dr_gateways values (null,8,'demo.dsiprouter.org',0,'','','name:Smoketest Carrier,gwgroup:$gwgroupid');"
 gwid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest%';"`
 
 # Update the Carrier Group with the Carrier id
@@ -27,7 +27,7 @@ mysql kamailio -e "update dr_gw_lists set gwlist=$gwid where id=$gwgroupid;"
 
 # Add Carrier Username/Password Auth info
 externalip=$(getExternalIP)
-mysql kamailio -e "insert into uacreg values (null,$gwgroupid,'$username','$externalip','$username','$domain','$domain','$username','$password','','','60','1','0');"
+mysql kamailio -e "insert into uacreg values (null,$gwgroupid,'$username','$externalip','$username','$domain','$domain','$username','$password','','','60','1','0','');"
 
 # Test auth credentials of the user created
 sipsak -U -C sip:$username@$domain -s sip:$username@$host:$port -u $username -a $password -H $host -i -vvv >/dev/null
@@ -44,4 +44,4 @@ mysql kamailio -e "delete from dr_gw_lists where id=$gwgroupid;"
 mysql kamailio -e "delete from dr_gateways where gwid=$gwid;"
 mysql kamailio -e "delete from uacreg where l_uuid=$gwgroupid;"
 
-process_result "$unitname" $ret 
+process_result "$unitname" $ret

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% from 'util.jinja2.html' import link_tag, script_tag, tracked_link, img_tag %}
-<html>
+<html lang="en">
 
 <head>
 
@@ -155,6 +155,8 @@
 
   <script type="application/javascript">
     window.RAPID = {};
+    window.GUI_BASE_URL = "{{ '{}://{}:{}/'.format(settings.DSIP_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_PORT) }}";
+    window.API_BASE_URL = "{{ '{}://{}:{}/api/v1/'.format(settings.DSIP_API_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_API_PORT) }}";
     $(document).ready(function() {
       /* query param actions */
       if (getQueryString('action') === 'add') {

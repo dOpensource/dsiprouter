@@ -149,11 +149,16 @@ EOF
     # Firewall settings
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
-    firewall-cmd --zone=public --add-port=${KAM_TLS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
+
+    # Configure rsyslog defaults
+    if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
+    fi
 
     # Setup kamailio Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/kamailio.conf /etc/rsyslog.d/kamailio.conf
@@ -168,16 +173,13 @@ EOF
     ln -s /etc/ssl/certs/ca-certificates.crt ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
 
     # Setup dSIPRouter Module
-    KAM_VERSION=$(kamailio -v | grep version | awk '{print $3}'| sed  's/\.//g')
+    KAM_VERSION=$(kamailio -V | head -1 | awk '{print $3}' | sed  's/\.//g')
     cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
     if [ $? -gt 0 ]; then
-	echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}"
-	return 1
+        echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}"
+        return 1
     fi
 
-    # Start Kamailio
-    #systemctl start kamailio
-    #return #?
     return 0
 }
 
@@ -206,14 +208,10 @@ function uninstall {
     # Remove firewall rules that was created by us:
     firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/tcp --permanent
-    firewall-cmd --zone=public --remove-port=${KAM_TLS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --remove-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
-
-    if [ -n "$DSIP_PORT" ]; then
-        firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
-    fi
-
+    firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Remove kamailio Logging

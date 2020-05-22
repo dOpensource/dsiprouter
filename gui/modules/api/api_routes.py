@@ -38,22 +38,28 @@ class APIToken:
         if 'Authorization' in request.headers:
             auth_header = request.headers.get('Authorization', None)
             if auth_header is not None:
-                self.token = auth_header.split(' ')[1]
+                header_values = auth_header.split(' ')
+                if len(header_values) == 2:
+                    self.token = header_values[1]
 
     def isValid(self):
-        if self.token:
-            # Get Environment Variables if in debug mode
-            if settings.DEBUG:
-                settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
+        try:
+            if self.token:
+                # Get Environment Variables if in debug mode
+                # This is the only case we allow plain text token comparison
+                if settings.DEBUG:
+                    settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
 
-            # need to decrypt token
-            if isinstance(settings.DSIP_API_TOKEN, bytes):
-                tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-            else:
-                tokencheck = settings.DSIP_API_TOKEN
+                # need to decrypt token
+                if isinstance(settings.DSIP_API_TOKEN, bytes):
+                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+                else:
+                    tokencheck = settings.DSIP_API_TOKEN
 
-            return tokencheck == self.token
-        else:
+                return tokencheck == self.token
+
+            return False
+        except:
             return False
 
 def api_security(func):
@@ -63,8 +69,9 @@ def api_security(func):
 
         if not session.get('logged_in') and not apiToken.isValid():
             accept_header = request.headers.get('Accept', '')
-            if 'text/html' in accept_header.split(';')[0]:
-                return render_template('index.html', version=settings.VERSION)
+
+            if 'text/html' in accept_header:
+                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
             else:
                 payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
                 return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
