@@ -1,3 +1,17 @@
+/* TODO: decouple scope like other js scripts */
+
+// throw an error if required functions not defined
+if (typeof showNotification === "undefined") {
+  throw new Error("showNotification() is required and is not defined");
+}
+if (typeof descendingSearch === "undefined") {
+  throw new Error("descendingSearch() is required and is not defined");
+}
+if (typeof toggleElemDisabled === "undefined") {
+  throw new Error("toggleElemDisabled() is required and is not defined");
+}
+
+/* TODO: replace shorthands with $(document).ready(...) its more verbose */
 $(function() {
   var accordionActive = false;
 
@@ -5,8 +19,13 @@ $(function() {
     var windowWidth = $(window).width();
     var $topMenu = $('#top-menu');
     var $sideMenu = $('#side-menu');
+    var top_bar = $('.top-bar');
+    var msg_bar = $('.message-bar');
 
     if (windowWidth < 768) {
+      top_bar.show();
+      msg_bar.hide();
+
       if ($topMenu.hasClass("active")) {
         $topMenu.removeClass("active");
         $sideMenu.addClass("active");
@@ -52,6 +71,9 @@ $(function() {
       }
     }
     else {
+      top_bar.hide();
+      msg_bar.show();
+
       if ($sideMenu.hasClass("active")) {
         $sideMenu.removeClass('active');
         $topMenu.addClass('active');
@@ -72,7 +94,7 @@ $(function() {
 
   /**/
   var $menulink = $('.side-menu-link'),
-    $wrap = $('.wrap');
+      $wrap = $('.wrap');
 
   $menulink.click(function() {
     $menulink.toggleClass('active');
@@ -93,8 +115,9 @@ $(function() {
 
   Accordion.prototype.dropdown = function(e) {
     var $el = e.data.el;
-    $this = $(this),
-      $next = $this.next();
+    var $this = $(this);
+    var $next = $this.next();
+    var anchor = $this.find('a')
 
     $next.slideToggle();
     $this.parent().toggleClass('open');
@@ -107,278 +130,21 @@ $(function() {
   var accordion = new Accordion($('ul.accordion'), false);
 });
 
-/* styling links */
 $(function() {
+  /* styling links */
   $('a').each(function() {
     if ($(this).prop('href') === window.location.href) {
       $(this).removeClass('navlink');
       $(this).addClass('currentlink');
     }
   });
+  /* prevent empty links from jumping to top of page */
+  $('a[href$=\\#]').on('click', function(event) {
+    event.preventDefault();
+  });
 });
 
-/**
- * Get the value of a querystring
- * @param  {String} field The field to get the value of
- * @param  {String} url   The URL to get the value from (optional)
- * @return {String}       The field value
- */
-var getQueryString = function(field, url) {
-  var href = url ? url : window.location.href;
-  var reg = new RegExp('[?&]' + field + '=([^&#]*)', 'i');
-  var string = reg.exec(href);
-  return string ? string[1] : null;
-};
-
-/**
- * Disable / Re-enable a form submittable element
- * Use this instead of the HTML5 disabled prop
- * @param selector  String|jQuery Object    The selector for elem
- * @param disable   Boolean   Whether to disable or re-enable
- * @param child     Boolean   Whether to change cursor on child instead
- */
-function toggleElemDisabled(selector, disable, child) {
-  var select_elem = null;
-
-  if (typeof selector === 'string' || selector instanceof String) {
-    select_elem = $(selector);
-  }
-  else if (selector instanceof jQuery) {
-    select_elem = selector;
-  }
-  else {
-    console.err("toggleElemDisabled(): invalid selector argument");
-    return;
-  }
-
-  /* by default change cursor on parent not child */
-  child = child || false;
-
-  if (disable) {
-    if (!child) {
-      select_elem.parent().css({'cursor': 'not-allowed'});
-    }
-    else {
-      select_elem.css({'cursor': 'not-allowed'});
-    }
-    select_elem.css({
-      'background-color': '#EEEEEE',
-      'opacity': '0.7',
-      'pointer-events': 'none'
-    });
-    select_elem.prop('readonly', true);
-    select_elem.prop('tabindex', -1);
-    select_elem.prop('disabled', true);
-  }
-  else {
-    if (!child) {
-      select_elem.parent().removeAttr('style');
-    }
-    select_elem.removeAttr('style');
-    select_elem.prop('readonly', false);
-    select_elem.prop('tabindex', 0);
-    select_elem.prop('disabled', false);
-  }
-}
-
-/**
- * Recursively search DOM tree until test is true
- * Starts at and includes selected node, tests each desc
- * Note that test callback applies to jQuery objects throughout
- * @param selector   String|jQuery Object  The selector for start node
- * @param test       function()            Test to apply to each node
- * @return           jQuery Object|null    Returns found node or null
- */
-function descendingSearch(selector, test) {
-  var select_node = null;
-  if (typeof selector === 'string' || selector instanceof String) {
-    select_node = $(selector);
-  }
-  else if (selector instanceof jQuery) {
-    select_node = selector;
-  }
-  else {
-    return null;
-  }
-
-  var num_nodes = select_node.length || 0;
-  if (num_nodes > 1) {
-    for (var i = 0; i < num_nodes; i++) {
-        if (test(select_node[i])) {
-          return select_node[i];
-      }
-    }
-  }
-  else {
-    if (test(select_node)) {
-        return select_node;
-      }
-  }
-
-  node_list = select_node.children();
-  if (node_list.length <= 0) {
-    return null;
-  }
-
-  descendingSearch(node_list, test)
-}
-
-/*
- * IE polyfill for reportValidity() compatibility
- * credit: https://stackoverflow.com/questions/17550317/how-to-manually-show-a-html5-validation-message-from-a-javascript-function
- */
-if (!HTMLFormElement.prototype.reportValidity) {
-  HTMLFormElement.prototype.reportValidity = function() {
-    if (this.checkValidity()) return true;
-    var btn = document.createElement('button');
-    this.appendChild(btn);
-    btn.click();
-    this.removeChild(btn);
-    return false;
-  }
-}
-
-/**
- * Validate form fields in a selected node
- * The optional test function is passed a an array of fields found
- * Note that in this project our forms are usually the 1st child in a modal body
- * If provided the test function should return an object of this structure:
- *    {
- *      result:     boolean                 - whether the test passed or failed
- *      err_node:   element|jQuery object   - the node that caused the failure
- *      err_msg:    String                  - the error message to display
- *    }
- * @param selector    String|jQuery Object  Selector for a node with fields
- * @param test        function()            Custom validation test to run
- * @returns           boolean               Whether the validation passed
- */
-function validateFields(selector, test) {
-  var select_node = null;
-  if (typeof selector === 'string' || selector instanceof String) {
-    select_node = $(selector);
-  }
-  else if (selector instanceof jQuery) {
-    select_node = selector;
-  }
-  else {
-    console.err("validateFields(): invalid selector argument");
-    return false;
-  }
-
-  /* grab the fields */
-  var elems = select_node.find('input,textarea,select,output').filter(':not(:hidden)').get();
-
-  /* check the builtin form validation */
-  for (var i = 0; i < elems.length; i++) {
-    if (!elems[i].reportValidity()) {
-      return false;
-    }
-  }
-
-  /* if supplied, run the custom test function */
-  if (typeof test === 'function') {
-    var resp = test(elems);
-    if (resp.result === false) {
-      var err_elem = null;
-      if (resp.err_node instanceof jQuery) {
-        err_elem = resp.err_node.get(0);
-      }
-      else {
-        err_elem = resp.err_node;
-      }
-
-      err_elem.setCustomValidity(resp.err_msg);
-      err_elem.reportValidity();
-      setTimeout(function() {
-        err_elem.setCustomValidity('');
-      }, 2500);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Show notification in top notification bar
- * @param msg   {string} message to display
- * @param error {boolean} whether its an error
- */
-function showNotification(msg, error=false) {
-  var msg_bar = $("div.message-bar");
-
-  if (error === true) {
-    msg_bar.removeClass("alert-success");
-    msg_bar.addClass("alert alert-danger");
-    msg_bar.html("<strong>Failed!</strong> " + msg);
-  }
-  else {
-    msg_bar.removeClass("alert-danger");
-    msg_bar.addClass("alert alert-success");
-    msg_bar.html("<strong>Success!</strong> " + msg);
-  }
-
-  msg_bar.show();
-  msg_bar.slideUp(3000, "linear");
-}
-
-
-$('#pbxs #open-Delete').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('endpointgroups');
-  var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var name = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-});
-
-// Updates the modal with the values from the endpointgroup API
-$('#domains #open-Update').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('domains');
-  var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-  var domain_type = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-  var pbx_name = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-  var authtype = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-  var pbx_list = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-  var notes = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
-
-
-  /** Clear out the modal */
-  var modal_body = $('#edit .modal-body');
-  modal_body.find(".domain_id").val('');
-  modal_body.find(".domain_name").val('');
-  modal_body.find(".domain_type").val('');
-  modal_body.find(".pbx_name").val('');
-  modal_body.find(".pbx_list").val('');
-  modal_body.find(".notes").val('');
-
-  /* update modal fields */
-  modal_body.find(".domain_id").val(domain_id);
-  modal_body.find(".domain_name").val(domain_name);
-  modal_body.find(".domain_type").val(domain_type);
-  modal_body.find(".pbx_name").val(pbx_name);
-  modal_body.find(".pbx_list").val(pbx_list);
-  modal_body.find(".notes").val(notes);
-
-  if (authtype !== "") {
-    /* Set the radio button if authtype is given */
-    modal_body.find('.authtype[data-toggle="' + authtype + '"]').trigger('click');
-  }
-});
-
-$('#domains #open-Delete').click(function() {
-  var row_index = $(this).parent().parent().parent().index() + 1;
-  var c = document.getElementById('domains');
-  var domain_id = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-  var domain_name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-
-  /* update modal fields */
-  var modal_body = $('#delete .modal-body');
-  modal_body.find(".domain_id").val(domain_id);
-  modal_body.find(".domain_name").val(domain_name);
-});
-
-function reloadkamrequired(required=true) {
+function reloadkamrequired(required = true) {
   var reload_button = $('#reloadkam');
 
   if (required) {
@@ -408,178 +174,145 @@ function reloadkam() {
   });
 }
 
-/* TODO update to work with endpoint groups */
-function enableMaintenanceMode() {
-	var table=document.getElementById("pbxs");
-
-	r=1;
-	while(row=table.rows[r++]) {
-	    checkbox=row.cells[0].getElementsByClassName('checkthis');
-	    if (checkbox[0].checked) {
-		    updateEndpoint(row,'maintmode',1);
-	    }
-	}
-}
-
-function disableMaintenanceMode() {
-	var table=document.getElementById("pbxs");
-
-	r=1;
-	while(row=table.rows[r++]) {
-	    checkbox=row.cells[0].getElementsByClassName('checkthis');
-	    if (checkbox[0].checked) {
-		    updateEndpoint(row,'maintmode',0);
-	    }
-	}
-}
-
+/* TODO: do we have a use for this anymore? */
 /* Update an attribute of an endpoint
 /* row - Javascript DOM that contains the row of the PBX
  * attr - is the attribute that we want to update
  */
-function updateEndpoint(row,attr,attrvalue) {
+// function updateEndpoint(row, attr, attrvalue) {
+//   checkbox = row.cells[0].getElementsByClassName('checkthis');
+//   pbxid = checkbox[0].value;
+//   requestPayload = '{"maintmode":' + attrvalue + '}';
+//
+//   $.ajax({
+//     type: "POST",
+//     url: "/api/v1/endpoint/" + pbxid,
+//     dataType: "json",
+//     contentType: "application/json; charset=utf-8",
+//     success: function (msg) {
+//       if (msg.status === 1) {
+//         //Uncheck the Checkbox
+//         if (attr === 'maintmode') {
+//           $('#checkbox_' + pbxid)[0].checked = false;
+//           if (attrvalue == 1) {
+//             $('#maintmode_' + pbxid).html("<span class='glyphicon glyphicon-wrench'>");
+//             reloadkamrequired();
+//           }
+//           else {
+//             $('#maintmode_' + pbxid).html("");
+//             reloadkamrequired();
+//           }
+//         }
+//       }
+//
+//     },
+//     data: requestPayload
+//   });
+// }
 
-	checkbox=row.cells[0].getElementsByClassName('checkthis');
-  pbxid = checkbox[0].value;
-  requestPayload = '{"maintmode":' +  attrvalue + '}';
+/* TODO: update to work with endpoint groups */
+// function enableMaintenanceMode() {
+//   var table = document.getElementById("pbxs");
+//
+//   r = 1;
+//   while (row = table.rows[r++]) {
+//     checkbox = row.cells[0].getElementsByClassName('checkthis');
+//     if (checkbox[0].checked) {
+//       updateEndpoint(row, 'maintmode', 1);
+//     }
+//   }
+// }
 
-	$.ajax({
-		type: "POST",
-		url: "/api/v1/endpoint/" + pbxid,
-		dataType: "json",
-		contentType: "application/json; charset=utf-8",
-		success: function(msg) {
-			if (msg.status === 1) {
-				//Uncheck the Checkbox
-				if (attr === 'maintmode') {
-				$('#checkbox_' + pbxid )[0].checked=false;
-				if (attrvalue == 1) {
-					$('#maintmode_' + pbxid ).html("<span class='glyphicon glyphicon-wrench'>");
-					reloadkamrequired();
-				}
-				else {
-					$('#maintmode_' + pbxid ).html("");
-					reloadkamrequired();
-				}
-				}
-			}
+/* TODO: update to work with endpoint groups */
+// function disableMaintenanceMode() {
+//   var table = document.getElementById("pbxs");
+//
+//   r = 1;
+//   while (row = table.rows[r++]) {
+//     checkbox = row.cells[0].getElementsByClassName('checkthis');
+//     if (checkbox[0].checked) {
+//       updateEndpoint(row, 'maintmode', 0);
+//     }
+//   }
+// }
 
-		},
-		data: requestPayload
-
-	});
-}
-
-/* listener for fusionPBX toggle */
-$('.modal-body .toggleFusionPBXDomain').change(function() {
-  var modal = $(this).closest('div.modal');
-  var modal_body = modal.find('.modal-body');
-
-  if ($(this).is(":checked") || $(this).prop("checked")) {
-    modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
-    modal_body.find('.fusionpbx_db_enabled').val(1);
-
-    /* uncheck other toggles */
-    //modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
+$(document).ready(function() {
+  /* query param actions */
+  if (getQueryString('action') === 'add') {
+    $('#add').modal('show');
   }
-  else {
-    modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
-    modal_body.find('.fusionpbx_db_enabled').val(0);
-  }
-});
 
-/* listener for freePBX toggle */
-$('.modal-body .toggleFreePBXDomain').change(function() {
-  var modal = $(this).closest('div.modal');
-  var modal_body = modal.find('.modal-body');
-
-  if ($(this).is(":checked") || $(this).prop("checked")) {
-    modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
-    modal_body.find('.freepbx_enabled').val(1);
-
-    /* uncheck other toggles */
-    modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-  }
-  else {
-    modal_body.find('.FreePBXDomainOptions').addClass("hidden");
-    modal_body.find('.freepbx_enabled').val(0);
-  }
-});
-
-/* listener for teleblock toggle */
-$('#toggleTeleblock').change(function() {
-  if ($(this).is(":checked") || $(this).prop("checked")) {
-    $('#teleblockOptions').removeClass("hidden");
-    $(this).val("1");
-    $(this).bootstrapToggle('on');
-  }
-  else {
-    $('#teleblockOptions').addClass("hidden");
-    $(this).val("0");
-    $(this).bootstrapToggle('off');
-  }
-});
-
-/* listener for authtype radio buttons */
-$('.authoptions.radio').get().forEach(function(elem) {
-  elem.addEventListener('click', function(e) {
-    var target_radio = $(e.target);
-    /* keep descending down DOM tree until input hit */
-    target_radio = descendingSearch($(e.target), function(node) {
-      return node.get(0).nodeName.toLowerCase() === "input"
-    });
-    if (target_radio === null) {
-      return false;
-    }
-    var auth_radios = $(e.currentTarget).find('input[type="radio"]');
-    var modal_body = $(this).closest('.modal-body');
-    var hide_show_ids = [];
-    $.each(auth_radios, function() {
-      hide_show_ids.push('#' + $(this).data('toggle'));
-    });
-    var hide_show_divs = modal_body.find(hide_show_ids.join(', '));
-
-    if (target_radio.is(":checked") || target_radio.prop("checked")) {
-      /* enable ip_addr on ip auth in #edit modal only */
-      if ($(this).closest('div.modal').attr('id').toLowerCase().indexOf('edit') > -1) {
-        if (target_radio.data('toggle') === "ip_enabled") {
-          toggleElemDisabled(modal_body.find('input.ip_addr'), false);
-        }
-        else {
-          toggleElemDisabled(modal_body.find('input.ip_addr'), true);
-        }
+  /* listener for authtype radio buttons */
+  $('.authoptions.radio').get().forEach(function(elem) {
+    elem.addEventListener('click', function(e) {
+      var target_radio = $(e.target);
+      /* keep descending down DOM tree until input hit */
+      target_radio = descendingSearch($(e.target), function(node) {
+        return node.get(0).nodeName.toLowerCase() === "input"
+      });
+      if (target_radio === null) {
+        return false;
       }
-
-      /* change value of authtype inputs */
-      modal_body.find('.authtype').val(target_radio.data('toggle').split('_')[0]);
-
-      /* show correct div's */
-      $.each(hide_show_divs, function(i, elem) {
-        if (target_radio.data('toggle') === $(elem).attr('name')) {
-          $(elem).removeClass("hidden");
-        }
-        else {
-          $(elem).addClass("hidden");
-        }
+      var auth_radios = $(e.currentTarget).find('input[type="radio"]');
+      var modal_body = $(this).closest('.modal-body');
+      var hide_show_ids = [];
+      $.each(auth_radios, function() {
+        hide_show_ids.push('#' + $(this).data('toggle'));
       });
-    }
-    else {
-      /* change value of authtype inputs */
-      modal_body.find('.authtype').val('');
+      var hide_show_divs = modal_body.find(hide_show_ids.join(', '));
 
-      /* show correct div's */
+      if (target_radio.is(":checked") || target_radio.prop("checked")) {
+        /* enable ip_addr on ip auth in #edit modal only */
+        if ($(this).closest('div.modal').attr('id').toLowerCase().indexOf('edit') > -1) {
+          if (target_radio.data('toggle') === "ip_enabled") {
+            toggleElemDisabled(modal_body.find('input.ip_addr'), false);
+          }
+          else {
+            toggleElemDisabled(modal_body.find('input.ip_addr'), true);
+          }
+        }
 
-      $.each(hide_show_divs, function(i, elem) {
-        if (target_radio.data('toggle') === $(elem).attr('name')) {
-          $(elem).addClass("hidden");
-        }
-        else {
-          $(elem).removeClass("hidden");
-        }
-      });
-    }
-    /* trickle down DOM tree (capture event) */
-  }, true);
+        /* change value of authtype inputs */
+        modal_body.find('.authtype').val(target_radio.data('toggle').split('_')[0]);
+
+        /* show correct div's */
+        $.each(hide_show_divs, function(i, elem) {
+          if (target_radio.data('toggle') === $(elem).attr('name')) {
+            $(elem).removeClass("hidden");
+          }
+          else {
+            $(elem).addClass("hidden");
+          }
+        });
+      }
+      else {
+        /* change value of authtype inputs */
+        modal_body.find('.authtype').val('');
+
+        /* show correct div's */
+
+        $.each(hide_show_divs, function(i, elem) {
+          if (target_radio.data('toggle') === $(elem).attr('name')) {
+            $(elem).addClass("hidden");
+          }
+          else {
+            $(elem).removeClass("hidden");
+          }
+        });
+      }
+      /* trickle down DOM tree (capture event) */
+    }, true);
+  });
+
+  /* remove non-printable ascii chars on paste */
+  $('form input[type!="hidden"]').on("paste", function() {
+    $(this).val(this.value.replace(/[^\x20-\x7E]+/g, ''))
+  });
+
+  /* make sure autofocus is honored on loaded modals */
+  $('.modal').on('shown.bs.modal', function() {
+    $(this).find('[autofocus]').focus();
+  });
 });
 
 /* handle multiple modal stacking */
@@ -595,14 +328,4 @@ $(window).on('show.bs.modal', function(e) {
 $(window).on('hide.bs.modal', function(e) {
   modal = $(e.target);
   modal.css('z-index', '1050');
-});
-
-/* remove non-printable ascii chars on paste */
-$('form input[type!="hidden"]').on("paste", function() {
-  $(this).val(this.value.replace(/[^\x20-\x7E]+/g, ''))
-});
-
-/* make sure autofocus is honored on loaded modals */
-$('.modal').on('shown.bs.modal', function() {
-  $(this).find('[autofocus]').focus();
 });

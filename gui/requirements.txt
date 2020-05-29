@@ -3,6 +3,7 @@ dnspython
 docker
 Flask
 Flask_Script
+Flask_WTF
 mysqlclient
 psycopg2
 pycryptodome

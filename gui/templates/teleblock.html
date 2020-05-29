@@ -1,16 +1,16 @@
 {% extends 'fullwidth_layout.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Teleblock Configuration{% endblock %}
 
-{% block css %}
-  {{ link_tag('main') }}
+{% block custom_css %}
 {% endblock %}
-
 
 {% block body %}
 
   <div class="col-md-12">
     <form action="/teleblock" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
       <div class="saveTeleblock">
         <h4>Teleblock Settings</h4>
         <button name='save' id='save' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
@@ -64,5 +64,6 @@
 
 {% endblock %}
 
-{% block js %}
+{% block custom_js %}
+  {{ script_tag('teleblock') }}
 {% endblock %}

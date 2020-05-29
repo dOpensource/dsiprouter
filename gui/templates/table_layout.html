@@ -7,23 +7,15 @@
 
 {% block body %}
 
-  <div class="col-md-12">
+  <div class="wrapper-horizontal edge-centered children-align-inherit content-header">
+    {% block table_headers %}
+    {% endblock %}
+  </div>
 
-    <div class="wrapper-horizontal edge-centered children-align-inherit">
-      {% block table_headers %}
-      {% endblock %}
-    </div>
-
-    <br>
-    <div class="clearfix"></div>
-    <br>
-
-    <div class="table-responsive">
-      {% block table %}
-      {% endblock %}
-      <img id="loading-spinner" class="hidden" src="{{ url_for('static', filename='images/spinner.svg') }}" alt=""/>
-    </div>
-
+  <div class="table-responsive content-section">
+    {% block table %}
+    {% endblock %}
+    <img id="loading-spinner" class="hidden" src="{{ url_for('static', filename='images/spinner.svg') }}" alt=""/>
   </div>
 
 

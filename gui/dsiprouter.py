@@ -7,6 +7,7 @@ from collections import OrderedDict
 from importlib import reload
 from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory
 from flask_script import Manager, Server
+from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
@@ -31,6 +32,7 @@ import settings
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
+csrf = CSRFProtect(app)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
@@ -129,11 +131,15 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
         'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     try:
         if (settings.DEBUG):
             debugEndpoint()
+
+        # redirect GET requests to index
+        if request.method == 'GET':
+            return redirect(url_for('index'))
 
         form = stripDictVals(request.form.to_dict())
         if 'username' not in form or 'password' not in form:
@@ -225,7 +231,7 @@ def displayCarrierGroups(gwgroup=None):
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
                 UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
 
-        return render_template('carriergroups.html', rows=res, API_URL=request.url_root)
+        return render_template('carriergroups.html', rows=res)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -2113,7 +2119,7 @@ def initApp(flask_app):
     globals.initialize()
 
     # Setup the Flask session manager with a random secret key
-    flask_app.secret_key = os.urandom(12)
+    flask_app.secret_key = os.urandom(32)
 
     # Add jinja2 filters
     flask_app.jinja_env.filters["attrFilter"] = attrFilter
@@ -2124,6 +2130,7 @@ def initApp(flask_app):
 
     # Add jinja2 functions
     flask_app.jinja_env.globals.update(zip=zip)
+    flask_app.jinja_env.globals.update(jsonLoads=json.loads)
 
     # Dynamically update settings
     syncSettings(update_net=True)
@@ -2139,7 +2146,7 @@ def initApp(flask_app):
     app_manager = Manager(flask_app, with_default_commands=False)
     app_manager.add_command('runserver', CustomServer())
 
-    # trap SIGHUP signals
+    # trap signals we handle
     signal.signal(signal.SIGHUP, sigHandler)
     signal.signal(signal.SIGUSR1, sigHandler)
     signal.signal(signal.SIGUSR2, sigHandler)
