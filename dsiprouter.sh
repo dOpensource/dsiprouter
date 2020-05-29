@@ -2731,7 +2731,7 @@ function processCMD {
                 esac
             done
             ;;
-        sslrenewcert)
+        renewsslcert)
             # reconfigure ssl configs
             RUN_COMMANDS+=(renewSSLCert)
             shift

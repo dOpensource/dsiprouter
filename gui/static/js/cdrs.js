@@ -88,4 +88,5 @@
       document.location.href = '/api/v1/cdrs/endpointgroups/' + gwgroupid + '?type=csv&filter=' + getFilteredCdrIds().join(',');
     });
   });
+
 })(window, document);

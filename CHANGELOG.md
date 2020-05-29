@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-22fd2b06b89c39e7ce9056659df2b178072126e5
+87d28e72938a7def38f59cd29e48f899aa2b5c85
+682677ce50baefea11903b0c868a4f5efedbefb2
 1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9
 33dc11da36ed72996df70997833e5510e7b45c87
 2f1aca8ae2ee142d3bb185c204ee5c64b52033ea
@@ -1530,10 +1531,31 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 22fd2b06b89c39e7ce9056659df2b178072126e5)
+[//]: # (START_SECTION 87d28e72938a7def38f59cd29e48f899aa2b5c85)
+### Frontend Updates
+
+> Commit: [87d28e72938a7def38f59cd29e48f899aa2b5c85](https://git.flyball.co/dsiprouter/enterprise/commit/87d28e72938a7def38f59cd29e48f899aa2b5c85)  
+> Date: Fri, 29 May 2020 09:54:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- Resolves [#2](https://git.flyball.co/dsiprouter/enterprise/issues/2)
+- Updates [#54](https://git.flyball.co/dsiprouter/enterprise/issues/54)
+- refactor frontend to be more modular
+- add CSRF protection
+- add error handling to frontend for API calls
+- possible fixes for [#53](https://git.flyball.co/dsiprouter/enterprise/issues/53)
+
+
+---
+
+[//]: # (END_SECTION 87d28e72938a7def38f59cd29e48f899aa2b5c85)
+[//]: # (START_SECTION 682677ce50baefea11903b0c868a4f5efedbefb2)
 ### Bug Fixes for v0.62
 
-> Commit: [22fd2b06b89c39e7ce9056659df2b178072126e5](https://git.flyball.co/dsiprouter/enterprise/commit/22fd2b06b89c39e7ce9056659df2b178072126e5)  
+> Commit: [682677ce50baefea11903b0c868a4f5efedbefb2](https://git.flyball.co/dsiprouter/enterprise/commit/682677ce50baefea11903b0c868a4f5efedbefb2)  
 > Date: Fri, 22 May 2020 16:56:50 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1571,7 +1593,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 22fd2b06b89c39e7ce9056659df2b178072126e5)
+[//]: # (END_SECTION 682677ce50baefea11903b0c868a4f5efedbefb2)
 [//]: # (START_SECTION 1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9)
 ### Initial commit of the certificate module
 

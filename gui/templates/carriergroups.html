@@ -1,18 +1,20 @@
 {% extends 'table_layout.html' %}
 
+{% block title %}Carrier Groups{% endblock %}
+
 {% block custom_css %}
   {{ link_tag('carriergroups') }}
 {% endblock %}
 
 {% block table_headers %}
+  <div>
+    <h3>List of Carrier Groups</h3>
+  </div>
+
   <div class="tableAddButton">
-    <h4>List of Carrier Groups</h4>
     <button id='open-CarrierGroupAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
             data-target="#add-group"> Add
     </button>
-  </div>
-
-  <div class="navBarButtons">
   </div>
 {% endblock %}
 
@@ -78,6 +80,7 @@
 
   <div class="modal-body">
     <form class="gwform" action="/carriers" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" class="gwid" name="gwid">
       <input type="hidden" class="gwgroup" name="gwgroup" value="{{ gwgroup|noneFilter() }}">
 
@@ -119,6 +122,7 @@
 
   <div class="modal-body">
     <form class="gwform" action="/carriers" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" class="gwid" name="gwid">
       <input type="hidden" class="gwgroup" name="gwgroup" value="{{ gwgroup|noneFilter() }}">
 
@@ -159,6 +163,7 @@
 
   <div class="modal-body">
     <form class="gwform" action="/carrierdelete" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" class="gwid" name="gwid">
       <input type="hidden" class="name" name="name">
       <input type="hidden" class="gwgroup" name="gwgroup" value="{{ gwgroup|noneFilter() }}">
@@ -214,6 +219,7 @@
            <!-- config form -->
           <div class="hidden" name="config-toggle" style="padding-top: 15px;">
             <form class="gwgroupform" action="/carriergroups" method="POST" role="form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" class="gwgroup" name="gwgroup">
               <input type="hidden" class="name" name="name">
               <input type="hidden" class="gwlist" name="gwlist">
@@ -234,6 +240,7 @@
           <!-- auth form -->
           <div class="hidden" name="auth-toggle">
             <form class="gwgroupform" action="/carriergroups" method="POST" role="form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" class="gwgroup" name="gwgroup">
               <input type="hidden" class="name" name="name">
               <input type="hidden" class="gwlist" name="gwlist">
@@ -323,6 +330,7 @@
 
         <div class="modal-body">
           <form class="gwgroupform" action="/carriergroups" method="POST" role="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" class="gwgroup" name="gwgroup">
             <input type="hidden" class="gwlist" name="gwlist">
 
@@ -393,6 +401,7 @@
 
         <div class="modal-body">
           <form class="gwgroupform" action="/carriergroupdelete" method="POST" role="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" class="gwgroup" name="gwgroup">
             <input type="hidden" class="name" name="name">
             <input type="hidden" class="gwlist" name="gwlist">
@@ -417,9 +426,5 @@
 {% endblock %}
 
 {% block custom_js %}
-  <script>
-    var API_URL = "{{ API_URL }}";
-  </script>
-
   {{ script_tag('carriergroups') }}
 {% endblock %}

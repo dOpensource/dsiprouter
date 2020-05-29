@@ -1,22 +1,21 @@
 {% extends 'table_layout.html' %}
 
+{% block title %}Call Detail Records{% endblock %}
+
 {% block custom_css %}
   {{ link_tag('cdrs') }}
 {% endblock %}
 
 {% block table_headers %}
-  <div class="container">
-    <div class="pageTitle">
-      <h4>Call Detail Records</h4>
-    </div>
-    <div class="row">
-      <div class="btn-group col-xs-3" id="menu">
-        <select class="btn-primary btn-md" id="endpointgroups">
-          <option class="hidden" value="0" selected disabled>Select Endpoint Group</option>
-        </select>
-        <i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>
-      </div>
-    </div>
+  <div>
+    <h3>Call Detail Records</h3>
+  </div>
+
+  <div class="btn-group col-xs-3" id="menu">
+    <select class="btn-primary btn-md" id="endpointgroups">
+      <option class="hidden" value="0" selected disabled>Select Endpoint Group</option>
+    </select>
+    <i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>
   </div>
 {% endblock %}
 
@@ -41,7 +40,6 @@
     </tr>
     </thead>
   </table>
-
 {% endblock %}
 
 

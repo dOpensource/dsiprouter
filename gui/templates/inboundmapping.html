@@ -5,9 +5,11 @@
 {% endblock %}
 
 {% block table_headers %}
+  <div>
+    <h3>List of Inbound Mappings</h3>
+  </div>
 
   <div class="tableAddButton">
-    <h4>List of Inbound Mappings</h4>
     <button id='open-Add' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
             data-target="#add">Add
     </button>
@@ -15,7 +17,6 @@
             data-target="#import">Import DID
     </button>
   </div>
-
 {% endblock %}
 
 
@@ -98,6 +99,7 @@
 
   <div class="modal-body">
     <form action="/inboundmapping" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="ruleid" type="hidden" name="ruleid">
       <input class="hf_ruleid" type="hidden" name="hf_ruleid">
       <input class="ff_ruleid" type="hidden" name="ff_ruleid">
@@ -250,6 +252,7 @@
 
   <div class="modal-body">
     <form action="/inboundmapping" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="ruleid" type="hidden" name="ruleid">
 
       <div class="form-group">
@@ -398,6 +401,7 @@
 
   <div class="modal-body">
     <form action="/inboundmappingdelete" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="ruleid" type="hidden" name="ruleid">
       <input class="hf_ruleid" type="hidden" name="hf_ruleid">
       <input class="ff_ruleid" type="hidden" name="ff_ruleid">
@@ -429,6 +433,7 @@
 
   <div class="modal-body">
     <form action="/inboundmappingimport" method="POST" role="form" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="ruleid" type="hidden" name="ruleid">
       <input class="hf_ruleid" type="hidden" name="hf_ruleid">
       <input class="ff_ruleid" type="hidden" name="ff_ruleid">
@@ -556,11 +561,9 @@
 {% endblock %}
 
 {% block custom_js %}
-
   {{ script_tag('combobox') }}
-  <script>
+  <script type="application/javascript">
     var DID_LIST = JSON.parse("{{ imported_dids }}") || [];
   </script>
   {{ script_tag('inboundmapping') }}
-
 {% endblock %}

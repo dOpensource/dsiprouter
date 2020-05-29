@@ -7,6 +7,7 @@
   <meta charset="utf-8">
   <title>dSIPRouter {% block title %}{% endblock %}</title>
 
+  <!-- inherited CSS -->
   {{ link_tag('bootstrap') }}
   {{ link_tag('bootstrap-theme') }}
   {{ link_tag('bootstrap-toggle') }}
@@ -14,6 +15,7 @@
   {{ link_tag('highlight/{}'.format(highlight_theme|default('github'))) }}
   {{ link_tag('main') }}
 
+  <!-- custom CSS -->
   {% block custom_css %}
   {% endblock %}
 
@@ -38,6 +40,7 @@
               </button>
             {% endif %}
             <!-- <form id="qform" class="navbar-form pull-left" role="search">
+               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                <input type="text" class="form-control" placeholder="Search" />
              </form> -->
             <li class="dropdown movable">
@@ -127,15 +130,15 @@
 
       <!--Body content-->
       <div class="content">
-        <div class="top-bar">
-          <div class="message-bar" style="display: none;text-align:center;">
-          </div>
+        <div class="top-bar" style="display: none;">
+          <div class="message-bar" style="text-align: center;"></div>
           <a href="#menu" class="side-menu-link burger">
             <span class='burger_inside' id='bgrOne'></span>
             <span class='burger_inside' id='bgrTwo'></span>
             <span class='burger_inside' id='bgrThree'></span>
           </a>
         </div>
+
         <section class="content-inner">
           {% block body %}
           {% endblock %}
@@ -145,23 +148,26 @@
     </div>
   </div>
 
+  <!-- inherited JS -->
   {{ script_tag('jquery') }}
+  <script type="application/javascript">
+    /* globals set in window attributes */
+    window.RAPID = {};
+    window.GUI_BASE_URL = "{{ '{}://{}:{}/'.format(settings.DSIP_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_PORT) }}";
+    window.API_BASE_URL = "{{ '{}://{}:{}/api/v1/'.format(settings.DSIP_API_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_API_PORT) }}";
+  </script>
+  {{ script_tag('util') }}
+  <script type="application/javascript">
+    {% include 'includes/overrides.js' %}
+  </script>
   {{ script_tag('bootstrap') }}
   {{ script_tag('bootstrap-toggle') }}
   {{ script_tag('validator') }}
   {{ script_tag('main') }}
   {{ script_tag('datatables.min') }}
   {{ script_tag('highlight/highlight.pack') }}
-
   <script type="application/javascript">
-    window.RAPID = {};
-    window.GUI_BASE_URL = "{{ '{}://{}:{}/'.format(settings.DSIP_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_PORT) }}";
-    window.API_BASE_URL = "{{ '{}://{}:{}/api/v1/'.format(settings.DSIP_API_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_API_PORT) }}";
     $(document).ready(function() {
-      /* query param actions */
-      if (getQueryString('action') === 'add') {
-        $('#add').modal('show');
-      }
       /* add code syntax highlighting */
       $('pre code').each(function(i, block) {
         hljs.highlightBlock(block);
@@ -169,6 +175,7 @@
     });
   </script>
 
+  <!-- custom JS -->
   {% block custom_js %}
   {% endblock %}
 

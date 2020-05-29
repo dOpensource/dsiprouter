@@ -1,17 +1,24 @@
-;(function (window, document) {
+;(function(window, document) {
   'use strict';
 
-  // globals for this script
-  var gwgroupid;
+  // throw an error if required functions not defined
+  if (typeof validateFields === "undefined") {
+    throw new Error("validateFields() is required and is not defined");
+  }
+  if (typeof showNotification === "undefined") {
+    throw new Error("showNotification() is required and is not defined");
+  }
+  if (typeof toggleElemDisabled === "undefined") {
+    throw new Error("toggleElemDisabled() is required and is not defined");
+  }
 
-  /**
-   * Will load function from main.js if available
-   * Otherwise will do nothing and print error to console
-   * @function
-   */
-  var validateFields = validateFields || function(a,b) {
-    console.error("validateFields() not defined, main.js must be loaded first");
-  };
+  // throw an error if required globals not defined
+  if (typeof API_BASE_URL === "undefined") {
+    throw new Error("API_BASE_URL is required and is not defined");
+  }
+
+  // global variables/constants for this script
+  var gwgroupid;
 
   // Add EndpointGroup
   function addEndpointGroup(action) {
@@ -22,14 +29,14 @@
       action = "POST";
       selector = "#add";
       modal_body = $(selector + ' .modal-body');
-      url = window.API_BASE_URL + "endpointgroups";
+      url = API_BASE_URL + "endpointgroups";
     }
     // Grab the Gateway Group ID if updating usinga PUT
     else if (action == "PUT") {
       selector = "#edit";
       modal_body = $(selector + ' .modal-body');
       gwgroupid = modal_body.find(".gwgroupid").val();
-      url = window.API_BASE_URL +  "endpointgroups/" + gwgroupid;
+      url = API_BASE_URL + "endpointgroups/" + gwgroupid;
     }
 
     var requestPayload = {};
@@ -74,10 +81,10 @@
     var cdr = {};
     cdr.cdr_email = modal_body.find(".cdr_email").val();
     cdr.cdr_send_interval = modal_body.find(".cdr_send_minute").val() + ' ' +
-      modal_body.find(".cdr_send_hour").val() + ' ' +
-      modal_body.find(".cdr_send_day").val() + ' ' +
-      modal_body.find(".cdr_send_month").val() + ' ' +
-      modal_body.find(".cdr_send_weekday").val();
+        modal_body.find(".cdr_send_hour").val() + ' ' +
+        modal_body.find(".cdr_send_day").val() + ' ' +
+        modal_body.find(".cdr_send_month").val() + ' ' +
+        modal_body.find(".cdr_send_weekday").val();
 
     requestPayload.cdr = cdr;
 
@@ -110,13 +117,15 @@
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(requestPayload),
       success: function(response, textStatus, jqXHR) {
+        var btn;
+
         // Update the Add Button to say saved
         if (action == "POST") {
-          var btn = $('#add .modal-footer').find('#addButton');
+          btn = $('#add .modal-footer').find('#addButton');
           btn.removeClass("btn-primary");
         }
         else {
-          var btn = $('#edit .modal-footer').find('#updateButton');
+          btn = $('#edit .modal-footer').find('#updateButton');
           btn.removeClass("btn-warning");
         }
 
@@ -126,29 +135,6 @@
         //Uncheck the Checkbox
         reloadkamrequired();
         $('#endpointgroups').DataTable().ajax.reload();
-      },
-      statusCode: {
-        400: function(response, textStatus, jqXHR) {
-          // bad input show error in page
-          showNotification(response.msg, true);
-        },
-        401: function(response, textStatus, jqXHR) {
-          // unauthorized goto index for login
-          window.location.href = "/index";
-        },
-        403: function(response, textStatus, jqXHR) {
-          // forbidden show error in page
-          showNotification(response.msg, true);
-        },
-        404: function(response, textStatus, jqXHR) {
-          // not found show error in page
-          showNotification(response.msg, true);
-        }
-      },
-      error: function(response, textStatus, jqXHR) {
-        // unhandled error goto error page
-        window.location.href = window.GUI_BASE_URL + "error?type=" + response.type + "&code=" +
-          textStatus + "&msg=" + response.msg;
       }
     })
   }
@@ -184,7 +170,6 @@
     modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
     modal_body.find('.updateButton').attr("disabled", false);
 
-
     // Clear out update button in add footer
     var modal_footer = modal_body.find('.modal-footer');
     modal_footer.find("#addButton").attr("disabled", false);
@@ -192,14 +177,15 @@
     // Clear out update button in add footer
     modal_footer.find("#updateButton").attr("disabled", false);
 
+    var btn;
     if (modal_selector == "#add") {
-      var btn = $('#add .modal-footer').find('#addButton');
+      btn = $('#add .modal-footer').find('#addButton');
       btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
       btn.removeClass("btn-success");
       btn.addClass("btn-primary");
     }
     else {
-      var btn = $('#edit .modal-footer').find('#updateButton');
+      btn = $('#edit .modal-footer').find('#updateButton');
       btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Update");
       btn.removeClass("btn-success");
       btn.addClass("btn-warning");
@@ -211,10 +197,9 @@
       $(this).remove();
     })
 
-    // Make the Auth tab the default
-    var nav_tabs = modal_body.find('#endpoint-nav .nav-tabs > li');
-    nav_tabs.removeClass("active");
-    nav_tabs.filter(".auth-tab").addClass("active");
+    /* start endpoint-nav on first tab */
+    modal_body.find('#endpoint-nav .nav-tabs > li').removeClass("active");
+    modal_body.find('#endpoint-nav > .nav-tabs a').first().trigger('click');
 
     // make sure userpwd options not shown
     modal_body.find('.userpwd').addClass('hidden');
@@ -265,13 +250,11 @@
     modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
     modal_body.find(".fusionpbx_db_password").val(msg.fusionpbx.dbpass);
 
-
     /* reset the save button*/
     var updatebtn = $('#edit .modal-footer').find("#updateButton");
     updatebtn.removeClass("btn-success");
     updatebtn.addClass("btn-warning");
     updatebtn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
-
 
     if (msg.endpoints) {
       var table = $('#endpoint-table');
@@ -308,35 +291,12 @@
   function deleteEndpointGroup() {
     $.ajax({
       type: "DELETE",
-      url: "/api/v1/endpointgroups/" + gwgroupid,
+      url: API_BASE_URL + "endpointgroups/" + gwgroupid,
       dataType: "json",
       contentType: "application/json; charset=utf-8",
       success: function(msg) {
         reloadkamrequired();
-      },
-      statusCode: {
-      400: function(response, textStatus, jqXHR) {
-        // bad input show error in page
-        showNotification(response.msg, true);
-      },
-      401: function(response, textStatus, jqXHR) {
-        // unauthorized goto index for login
-        window.location.href = "/index";
-      },
-      403: function(response, textStatus, jqXHR) {
-        // forbidden show error in page
-        showNotification(response.msg, true);
-      },
-      404: function(response, textStatus, jqXHR) {
-        // not found show error in page
-        showNotification(response.msg, true);
       }
-    },
-    error: function(response, textStatus, jqXHR) {
-      // unhandled error goto error page
-      window.location.href = window.GUI_BASE_URL + "error?type=" + response.type + "&code=" +
-        textStatus + "&msg=" + response.msg;
-    }
     });
 
     $('#delete').modal('hide');
@@ -348,7 +308,7 @@
     // datatable init
     $('#endpointgroups').DataTable({
       "ajax": {
-        "url": "/api/v1/endpointgroups",
+        "url": API_BASE_URL + "endpointgroups",
         "dataSrc": "endpointgroups"
       },
       "columns": [
@@ -384,7 +344,7 @@
         saveButton: true,
       },
       onAlways: function() {
-        console.log("In Always");
+        //console.log("In Always");
         $('.tabledit-deleted-row').each(function(index, element) {
           $(this).remove();
         });
@@ -399,7 +359,7 @@
         saveButton: true,
       },
       onAlways: function() {
-        console.log("In Always");
+        //console.log("In Always");
         $('.tabledit-deleted-row').each(function(index, element) {
           $(this).remove();
         });
@@ -416,34 +376,11 @@
       // Put into JSON Message and send over
       $.ajax({
         type: "GET",
-        url: "/api/v1/endpointgroups/" + gwgroupid,
+        url: API_BASE_URL + "endpointgroups/" + gwgroupid,
         dataType: "json",
         contentType: "application/json; charset=utf-8",
         success: function(msg) {
           displayEndpointGroup(msg);
-        },
-        statusCode: {
-          400: function(response, textStatus, jqXHR) {
-            // bad input show error in page
-            showNotification(response.msg, true);
-          },
-          401: function(response, textStatus, jqXHR) {
-            // unauthorized goto index for login
-            window.location.href = "/index";
-          },
-          403: function(response, textStatus, jqXHR) {
-            // forbidden show error in page
-            showNotification(response.msg, true);
-          },
-          404: function(response, textStatus, jqXHR) {
-            // not found show error in page
-            showNotification(response.msg, true);
-          }
-        },
-        error: function(response, textStatus, jqXHR) {
-          // unhandled error goto error page
-          window.location.href = window.GUI_BASE_URL + "error?type=" + response.type + "&code=" +
-            textStatus + "&msg=" + response.msg;
         }
       })
     });
@@ -464,6 +401,42 @@
       table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
       table.data('Tabledit').reload();
       $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
+    });
+
+    /* listener for fusionPBX toggle */
+    $('.modal-body .toggleFusionPBXDomain').change(function() {
+      var modal = $(this).closest('div.modal');
+      var modal_body = modal.find('.modal-body');
+
+      if ($(this).is(":checked") || $(this).prop("checked")) {
+        modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
+        modal_body.find('.fusionpbx_db_enabled').val(1);
+
+        /* uncheck other toggles */
+        //modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
+      }
+      else {
+        modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+        modal_body.find('.fusionpbx_db_enabled').val(0);
+      }
+    });
+
+    /* listener for freePBX toggle */
+    $('.modal-body .toggleFreePBXDomain').change(function() {
+      var modal = $(this).closest('div.modal');
+      var modal_body = modal.find('.modal-body');
+
+      if ($(this).is(":checked") || $(this).prop("checked")) {
+        modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
+        modal_body.find('.freepbx_enabled').val(1);
+
+        /* uncheck other toggles */
+        modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+      }
+      else {
+        modal_body.find('.FreePBXDomainOptions').addClass("hidden");
+        modal_body.find('.freepbx_enabled').val(0);
+      }
     });
 
     $(".toggle-password").click(function() {
@@ -491,7 +464,7 @@
       else {
         $.ajax({
           type: "GET",
-          url: "/api/v1/sys/generatepassword",
+          url: API_BASE_URL + "sys/generatepassword",
           dataType: "json",
           contentType: "application/json; charset=utf-8",
           success: function(msg) {
@@ -499,29 +472,6 @@
             authpwd_inp.val(msg.password)
             togglepwd_span.removeClass("glyphicon glyphicon-eye-close");
             togglepwd_span.addClass("glyphicon glyphicon-eye-open");
-          },
-          statusCode: {
-            400: function(response, textStatus, jqXHR) {
-              // bad input show error in page
-              showNotification(response.msg, true);
-            },
-            401: function(response, textStatus, jqXHR) {
-              // unauthorized goto index for login
-              window.location.href = "/index";
-            },
-            403: function(response, textStatus, jqXHR) {
-              // forbidden show error in page
-              showNotification(response.msg, true);
-            },
-            404: function(response, textStatus, jqXHR) {
-              // not found show error in page
-              showNotification(response.msg, true);
-            }
-          },
-          error: function(response, textStatus, jqXHR) {
-            // unhandled error goto error page
-            window.location.href = window.GUI_BASE_URL + "error?type=" + response.type + "&code=" +
-              textStatus + "&msg=" + response.msg;
           }
         });
 
@@ -551,8 +501,10 @@
         // hide the modal after 1.5 sec
         setTimeout(function() {
           var add_modal = $('#add');
-          if (add_modal.is(':visible')) {add_modal.modal('hide');}
-          }, 1500);
+          if (add_modal.is(':visible')) {
+            add_modal.modal('hide');
+          }
+        }, 1500);
       }
     });
 
@@ -563,8 +515,10 @@
         // hide the modal after 1.5 sec
         setTimeout(function() {
           var edit_modal = $('#edit');
-          if (edit_modal.is(':visible')) {edit_modal.modal('hide');}
-          }, 1500);
+          if (edit_modal.is(':visible')) {
+            edit_modal.modal('hide');
+          }
+        }, 1500);
       }
     });
 
@@ -572,8 +526,9 @@
     $('#endpoint-nav > .nav-tabs').click({tab_panes: $('div.tab-content > div.tab-pane')}, function(ev) {
       var current_tab = ev.data.tab_panes.filter(':not(:hidden)');
       if (!validateFields(current_tab)) {
-          return false;
+        return false;
       }
     });
   });
+
 })(window, document);

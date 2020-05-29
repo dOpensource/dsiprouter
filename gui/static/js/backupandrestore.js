@@ -1,31 +1,47 @@
-$('#start-Backup').click(function() {
-  $('#wait-animation').show();
-  document.location.href = '/api/v1/backupandrestore/backup';
-  $('#wait-animation').hide();
-});
+;(function(window, document) {
+  'use strict';
 
-$('#restore-backup').submit(function(event) {
-  event.preventDefault();
-  var formData = new FormData($(this)[0]);
-  $.ajax({
-    url: '/api/v1/backupandrestore/restore',
-    type: 'POST',
-    data: formData,
-    async: false,
-    cache: false,
-    contentType: false,
-    processData: false,
-    success: function(response) {
-      if (response.status == "200") {
-        displaymessage("<strong>Database was restored</strong>", "success");
-        reloadkamrequired();
-      }
-      else {
-        displaymessage("<strong>Database was NOT restored</strong>", "error");
-      }
-    }
+  // throw an error if required functions not defined
+  if (typeof showNotification === "undefined") {
+    throw new Error("showNotification() is required and is not defined");
+  }
+
+  // throw an error if required globals not defined
+  if (typeof API_BASE_URL === "undefined") {
+    throw new Error("API_BASE_URL is required and is not defined");
+  }
+
+  $('#start-Backup').click(function() {
+    var wait_animation = $('#wait-animation');
+    wait_animation.show();
+    window.location.href = API_BASE_URL + 'backupandrestore/backup';
+    wait_animation.hide();
   });
 
-  return false;
+  $('#restore-backup').submit(function(event) {
+    event.preventDefault();
+    var formData = new FormData($(this)[0]);
 
-});
+    $.ajax({
+      url: API_BASE_URL + 'backupandrestore/restore',
+      type: 'POST',
+      data: formData,
+      async: false,
+      cache: false,
+      contentType: false,
+      processData: false,
+      success: function(response) {
+        if (response.status == "200") {
+          showNotification("Database was restored");
+          reloadkamrequired();
+        }
+        else {
+          showNotification("Database was NOT restored", true);
+        }
+      }
+    });
+
+    return false;
+  });
+
+})(window, document);
