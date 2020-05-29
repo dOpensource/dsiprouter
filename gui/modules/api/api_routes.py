@@ -15,6 +15,7 @@ from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCer
 from util.notifications import sendEmail
 from util.security import AES_CTR
 from util.file_handling import isValidFile
+from util.kamtls import *
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, cronIntervalToDescription
 import settings, globals
 
@@ -1702,3 +1703,69 @@ def testConnectivity(domain):
 
     except Exception as ex:
         return showApiError(ex)
+
+@api.route("/api/v1/certificates", methods=['GET'])
+@api.route("/api/v1/certificates/<string:domain>", methods=['GET'])
+@api_security
+def getCertificates(domain=None):
+    try:
+        responsePayload= getCustomTLSConfigs()
+        return jsonify(responsePayload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
+@api.route("/api/v1/certificates", methods=['POST'])
+@api_security
+def createCertificate():
+    """
+    {
+        domain: <string>
+        ip: <int>
+        port: <int>
+        server_name_mode: <int>
+    }
+    """
+    db = DummySession()
+
+    
+    # Convert Request message to Dictionary Object
+    requestPayload = request.get_json()
+    
+    # Define a dictionary object that represents the payload
+    responsePayload = {}
+    
+    # Check parameters and raise exception if missing required parameters
+    requiredParameters = ['domain']
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+
+        for parameter in requiredParameters:
+            if parameter not in requestPayload:
+                raise http_exceptions.BadRequest("Request Argument '{}' is Required".format(parameter))
+            elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
+                raise http_exceptions.BadRequest("Value for Request Argument '{}' is Not Valid".format(parameter))
+
+
+        # Process Request
+        domain  = requestPayload['domain']
+        ip = requestPayload['ip'] if 'ip' in requestPayload else settings.EXTERNAL_IP_ADDR
+        port = requestPayload['port'] if 'port' in requestPayload else 5061
+        server_name_mode= requestPayload['server_name_mode'] if 'server_name_mode' in requestPayload else KAM_TLS_SNI_ALL
+
+        result = addCustomTLSConfig(domain,ip,port,server_name_mode)
+        if result is None:
+            raise Exception
+        else:
+            responsePayload['status'] = "200"
+            responsePayload['msg'] = "Certificate Created"
+            return jsonify(responsePayload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+

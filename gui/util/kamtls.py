@@ -1,6 +1,10 @@
 import re, socket
 import settings
 
+#Server name matching options
+KAM_TLS_SNI_ALL = 1
+KAM_TLS_SNI_SUBDOMAINS = 2
+KAM_TLS_SNI_DOMAIN = 3
 
 def createCustomTLSConfig(domain, ip, port, server_name_mode):
     return [
