@@ -1,7 +1,12 @@
 ;(function (window, document) {
   'use strict';
 
-  // globals for this scope
+  // throw an error if required globals not defined
+  if (typeof API_BASE_URL === "undefined") {
+    throw new Error("API_BASE_URL is required and is not defined");
+  }
+
+  // globals for this script
   var epgroup_select = $("#endpointgroups");
   var loading_spinner = $('#loading-spinner');
 
@@ -31,14 +36,14 @@
       // Clear the contents of the table
       table.clear();
       table.draw();
-      table.ajax.url("/api/v1/cdrs/endpointgroups/" + gwgroupid);
+      table.ajax.url(API_BASE_URL + "cdrs/endpointgroups/" + gwgroupid);
       table.ajax.reload();
     }
     // datatable init
     else {
       $('#cdrs').DataTable({
         "ajax": {
-          "url": "/api/v1/cdrs/endpointgroups/" + gwgroupid,
+          "url": API_BASE_URL + "cdrs/endpointgroups/" + gwgroupid,
           "dataSrc": "cdrs"
         },
         "columns": [
@@ -68,12 +73,12 @@
     // get endpoint group data
     $.ajax({
       type: "GET",
-      url: "/api/v1/endpointgroups",
+      url: API_BASE_URL + "/api/v1/endpointgroups",
       dataType: "json",
       contentType: "application/json; charset=utf-8",
-      success: function (msg) {
-        for (var i = 0; i < msg.endpointgroups.length; i++) {
-          epgroup_select.append("<option value='" + msg.endpointgroups[i].gwgroupid + "'>" + msg.endpointgroups[i].name + "</option>");
+      success: function (response, textStatus, jqXHR) {
+        for (var i = 0; i < response.data.length; i++) {
+          epgroup_select.append("<option value='" + response.data[i].gwgroupid + "'>" + response.data[i].name + "</option>");
         }
       }
     })
@@ -85,7 +90,7 @@
 
     $('#downloadCDR').click(function () {
       var gwgroupid = $("#endpointgroups").val();
-      document.location.href = '/api/v1/cdrs/endpointgroups/' + gwgroupid + '?type=csv&filter=' + getFilteredCdrIds().join(',');
+      window.location.href = '/api/v1/cdrs/endpointgroups/' + gwgroupid + '?type=csv&filter=' + getFilteredCdrIds().join(',');
     });
   });
 

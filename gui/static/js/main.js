@@ -165,7 +165,7 @@ function reloadkam() {
     success: function(msg) {
       if (msg.status === 1) {
         showNotification("Kamailio was reloaded successfully!");
-        reloadkamrequired();
+        reloadkamrequired(false);
       }
       else {
         showNotification("Kamailio was NOT reloaded successfully!", true);
@@ -241,6 +241,11 @@ $(document).ready(function() {
   if (getQueryString('action') === 'add') {
     $('#add').modal('show');
   }
+
+  /* kam reload button listener */
+  $('#reloadkam').click(function() {
+    reloadkam(this);
+  });
 
   /* listener for authtype radio buttons */
   $('.authoptions.radio').get().forEach(function(elem) {

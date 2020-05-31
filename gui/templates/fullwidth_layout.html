@@ -32,11 +32,11 @@
           <ul class="nav navbar-nav navbar-right">
             {% if reload_required == True %}
               <button class="btn btn-warning btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam"
-                      name="reloadkam" onclick="reloadkam(this)">Reload Kamailio
+                      name="reloadkam">Reload Kamailio
               </button>
             {% else %}
               <button class="btn btn-primary btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam"
-                      name="reloadkam" onclick="reloadkam(this)">Reload Kamailio
+                      name="reloadkam">Reload Kamailio
               </button>
             {% endif %}
             <!-- <form id="qform" class="navbar-form pull-left" role="search">
@@ -151,10 +151,17 @@
   <!-- inherited JS -->
   {{ script_tag('jquery') }}
   <script type="application/javascript">
-    /* globals set in window attributes */
-    window.RAPID = {};
-    window.GUI_BASE_URL = "{{ '{}://{}:{}/'.format(settings.DSIP_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_PORT) }}";
-    window.API_BASE_URL = "{{ '{}://{}:{}/api/v1/'.format(settings.DSIP_API_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_API_PORT) }}";
+    /* globals set in window properties */
+    Object.defineProperty(window, "GUI_BASE_URL", {
+      configurable: false,
+      writable: false,
+      value: "{{ '{}://{}:{}/'.format(settings.DSIP_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_PORT) }}"
+    });
+    Object.defineProperty(window, "API_BASE_URL", {
+      configurable: false,
+      writable: false,
+      value: "{{ '{}://{}:{}/api/v1/'.format(settings.DSIP_API_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_API_PORT) }}"
+    });
   </script>
   {{ script_tag('util') }}
   <script type="application/javascript">

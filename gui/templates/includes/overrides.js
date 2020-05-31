@@ -22,29 +22,32 @@
   const OLD_FETCH = window.fetch;
 
   function requestErrorHandler(status, error_msg) {
-    if (status === 400) {
+    if (status < 400) {
+      // not an error, likely a direct call to error handler
+    }
+    else if (status === 400) {
       // bad input show error in page
-      console.error('HTTP Error: ' + status.toString() + ' ' + error_msg)
+      console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
       showNotification(error_msg, true);
     }
     else if (status === 401) {
       // unauthorized goto index for login
-      console.error('HTTP Error: ' + status.toString() + ' ' + error_msg)
+      console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
       window.location.href = GUI_BASE_URL + "index";
     }
     else if (status === 403) {
       // forbidden show error in page
-      console.error('HTTP Error: ' + status.toString() + ' ' + error_msg)
+      console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
       showNotification(error_msg, true);
     }
     else if (status === 404) {
       // not found show error in page
-      console.error('HTTP Error: ' + status.toString() + ' ' + error_msg)
+      console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
       showNotification(error_msg, true);
     }
     else {
-        // unhandled error goto error page
-      console.error('HTTP Error: ' + status.toString() + ' ' + error_msg)
+      // unhandled error goto error page
+      console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
       window.location.href = GUI_BASE_URL + "error?type=http&code=" +
           status.toString() + "&msg=" + error_msg;
     }

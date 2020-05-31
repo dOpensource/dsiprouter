@@ -16,14 +16,11 @@
 <body>
 
   <div class="container">
-
     {% block body %}
     {% endblock %}
-
   </div>
 
   {{ script_tag('jquery') }}
-  {{ script_tag('main') }}
 
   {% block custom_js %}
   {% endblock %}

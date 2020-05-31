@@ -5,7 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-87d28e72938a7def38f59cd29e48f899aa2b5c85
+8528e1235365c502d85567d679c807a932b04587
+8cf4a51e31112475d0e67fe0ff6faa555f59e71a
+f33d6146ddd5dbb8fd4a5f5555aa430788c85c72
+806831ba03e3a5265bed7022d3d723751c2c6eac
+1ee4502f9b109ca2c06d030c1ec12c1b733348a4
+e1523407df5d05d6019b36faac922ca53fc603e5
 682677ce50baefea11903b0c868a4f5efedbefb2
 1d22d38baeffde8996987d5fe2a6fbf91ad3a4b9
 33dc11da36ed72996df70997833e5510e7b45c87
@@ -1531,10 +1536,91 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 87d28e72938a7def38f59cd29e48f899aa2b5c85)
+[//]: # (START_SECTION 8528e1235365c502d85567d679c807a932b04587)
+### Fixup GUI and API Issues
+
+> Commit: [8528e1235365c502d85567d679c807a932b04587](https://git.flyball.co/dsiprouter/enterprise/commit/8528e1235365c502d85567d679c807a932b04587)  
+> Date: Sun, 31 May 2020 18:26:18 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- Resolves [#55](https://git.flyball.co/dsiprouter/enterprise/issues/55)
+- fixed various endpoint group bugs
+- fixed reload button issue on specific pages
+- fixed edge case for request error handler
+- started refactoring endpoint groups for new architecture
+- made url globals read only in `fullwidth_layout.html`
+
+
+---
+
+[//]: # (END_SECTION 8528e1235365c502d85567d679c807a932b04587)
+[//]: # (START_SECTION 8cf4a51e31112475d0e67fe0ff6faa555f59e71a)
+### Added a default .gitignore file and added settings.py to it
+
+> Commit: [8cf4a51e31112475d0e67fe0ff6faa555f59e71a](https://git.flyball.co/dsiprouter/enterprise/commit/8cf4a51e31112475d0e67fe0ff6faa555f59e71a)  
+> Date: Sat, 30 May 2020 01:26:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8cf4a51e31112475d0e67fe0ff6faa555f59e71a)
+[//]: # (START_SECTION f33d6146ddd5dbb8fd4a5f5555aa430788c85c72)
+### Put the default settings.py file back
+
+> Commit: [f33d6146ddd5dbb8fd4a5f5555aa430788c85c72](https://git.flyball.co/dsiprouter/enterprise/commit/f33d6146ddd5dbb8fd4a5f5555aa430788c85c72)  
+> Date: Sat, 30 May 2020 01:18:08 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f33d6146ddd5dbb8fd4a5f5555aa430788c85c72)
+[//]: # (START_SECTION 806831ba03e3a5265bed7022d3d723751c2c6eac)
+### mend
+
+> Commit: [806831ba03e3a5265bed7022d3d723751c2c6eac](https://git.flyball.co/dsiprouter/enterprise/commit/806831ba03e3a5265bed7022d3d723751c2c6eac)  
+> Date: Fri, 29 May 2020 14:23:26 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 806831ba03e3a5265bed7022d3d723751c2c6eac)
+[//]: # (START_SECTION 1ee4502f9b109ca2c06d030c1ec12c1b733348a4)
+### Added API's for managing certs
+
+> Commit: [1ee4502f9b109ca2c06d030c1ec12c1b733348a4](https://git.flyball.co/dsiprouter/enterprise/commit/1ee4502f9b109ca2c06d030c1ec12c1b733348a4)  
+> Date: Fri, 29 May 2020 14:20:09 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1ee4502f9b109ca2c06d030c1ec12c1b733348a4)
+[//]: # (START_SECTION e1523407df5d05d6019b36faac922ca53fc603e5)
 ### Frontend Updates
 
-> Commit: [87d28e72938a7def38f59cd29e48f899aa2b5c85](https://git.flyball.co/dsiprouter/enterprise/commit/87d28e72938a7def38f59cd29e48f899aa2b5c85)  
+> Commit: [e1523407df5d05d6019b36faac922ca53fc603e5](https://git.flyball.co/dsiprouter/enterprise/commit/e1523407df5d05d6019b36faac922ca53fc603e5)  
 > Date: Fri, 29 May 2020 09:54:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1551,7 +1637,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 87d28e72938a7def38f59cd29e48f899aa2b5c85)
+[//]: # (END_SECTION e1523407df5d05d6019b36faac922ca53fc603e5)
 [//]: # (START_SECTION 682677ce50baefea11903b0c868a4f5efedbefb2)
 ### Bug Fixes for v0.62
 

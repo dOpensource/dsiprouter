@@ -12,7 +12,7 @@
 
   <div class="tableAddButton">
     <div class="btn-group mr-2">
-      <button id='open-EndpointGroupsAdd' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal"
+      <button id='open-EndpointGroupsAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
               data-target="#add">
         Add
       </button>
@@ -77,9 +77,6 @@
       <div class="form-group">
         <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls"
                autocomplete="off">
-        {% if (enterprise_enabled == False) %}
-          <a href="/upgrade/calllimit" [Enterprise]/>
-        {% endif %}
       </div>
 
       <!-- nav tabs -->
@@ -145,13 +142,13 @@
               <th>PBX ID</th>
               <th>Hostname/IP</th>
               <th>Description</th>
+              <th><button class="btn btn-success btn-md" type="button" id="updateEndpointRow">Add Row</button></th>
             </tr>
             </thead>
             <tbody id="endpoint-tablebody">
 
             </tbody>
           </table>
-          <button type="button" id="updateEndpointRow">Add Row</button>
         </div> <!-- enf of endpoints tab -->
 
         <div id="config" class="tab-pane fade in" name="config-toggle">
@@ -364,13 +361,13 @@ systemctl restart fail2ban</code></pre>
               <th>PBX ID</th>
               <th>Hostname/IP</th>
               <th>Description</th>
+              <th><button class="btn btn-success btn-md" type="button" id="updateEndpointRow">Add Row</button></th>
             </tr>
             </thead>
             <tbody id="endpoint-tablebody2">
 
             </tbody>
           </table>
-          <button type="button" id="addEndpointRow">Add Row</button>
         </div> <!-- enf of endpoints tab -->
 
         <div id="config2" class="tab-pane fade in" name="config-toggle">
@@ -515,7 +512,7 @@ systemctl restart fail2ban</code></pre>
       </div>
 
       <div class="modal-footer ">
-        <button type="button" class="btn btn-success" onclick="deleteEndpointGroup()"><span
+        <button id="deleteButton" type="button" class="btn btn-success"><span
             class="glyphicon glyphicon-ok-sign"></span> Yes
         </button>
         <button type="button" class="btn btn-default" data-dismiss="modal"><span

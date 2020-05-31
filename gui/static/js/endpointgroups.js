@@ -11,6 +11,9 @@
   if (typeof toggleElemDisabled === "undefined") {
     throw new Error("toggleElemDisabled() is required and is not defined");
   }
+  if (typeof reloadkamrequired === "undefined") {
+    throw new Error("reloadkamrequired() is required and is not defined");
+  }
 
   // throw an error if required globals not defined
   if (typeof API_BASE_URL === "undefined") {
@@ -18,25 +21,34 @@
   }
 
   // global variables/constants for this script
+  // TODO: find a way to pass these values around gwgroupid instead of using global
   var gwgroupid;
+  var gwgroup_table = $('').DataTable();
 
   // Add EndpointGroup
   function addEndpointGroup(action) {
     var selector, modal_body, url;
 
     // The default action is a POST (creating a new EndpointGroup)
-    if (action == undefined) {
+    if (typeof action === "undefined") {
+      action = "POST";
+    }
+
+    if (action === "POST") {
       action = "POST";
       selector = "#add";
       modal_body = $(selector + ' .modal-body');
       url = API_BASE_URL + "endpointgroups";
     }
-    // Grab the Gateway Group ID if updating usinga PUT
-    else if (action == "PUT") {
+    // Grab the Gateway Group ID if updating using a PUT
+    else if (action === "PUT") {
       selector = "#edit";
       modal_body = $(selector + ' .modal-body');
       gwgroupid = modal_body.find(".gwgroupid").val();
       url = API_BASE_URL + "endpointgroups/" + gwgroupid;
+    }
+    else {
+      throw new Error("addEndpointGroup(): action must be either POST or PUT");
     }
 
     var requestPayload = {};
@@ -45,7 +57,7 @@
 
     var auth = {};
 
-    if (action == "POST") {
+    if (action === "POST") {
       if ($('input#ip.authtype').is(':checked')) {
         auth.type = "ip";
       }
@@ -54,7 +66,7 @@
         auth.pass = modal_body.find("#auth_password").val();
       }
     }
-    else if (action == "PUT") {
+    else if (action === "PUT") {
       if ($('input#ip2.authtype').is(':checked')) {
         auth.type = "ip";
       }
@@ -109,6 +121,15 @@
     });
     requestPayload.endpoints = endpoints;
 
+    // set payload defaults for numbers
+    // doing it here allows us to keep placeholder on the input
+    if (requestPayload.calllimit.length === 0) {
+      requestPayload.calllimit = 0;
+    }
+    if (requestPayload.strip.length === 0) {
+      requestPayload.strip = 0;
+    }
+
     // Put into JSON Message and send over
     $.ajax({
       type: action,
@@ -118,9 +139,10 @@
       data: JSON.stringify(requestPayload),
       success: function(response, textStatus, jqXHR) {
         var btn;
+        var gwgroupid_int = response.data[0].gwgroupid;
 
-        // Update the Add Button to say saved
-        if (action == "POST") {
+        // Update the Add Button and the table
+        if (action === "POST") {
           btn = $('#add .modal-footer').find('#addButton');
           btn.removeClass("btn-primary");
         }
@@ -132,9 +154,22 @@
         btn.addClass("btn-success");
         btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
         btn.attr("disabled", true);
-        //Uncheck the Checkbox
+
         reloadkamrequired();
-        $('#endpointgroups').DataTable().ajax.reload();
+        if (action === "POST") {
+          gwgroup_table.row.add({
+            "name": requestPayload.name,
+            "gwgroupid": gwgroupid_int
+          }).draw();
+        }
+        else {
+          gwgroup_table.row(function(idx, data, node) {
+            return data.gwgroupid === gwgroupid_int;
+          }).data({
+            "name": requestPayload.name,
+            "gwgroupid": gwgroupid_int
+          }).draw();
+        }
       }
     })
   }
@@ -208,13 +243,13 @@
     toggleElemDisabled(modal_body.find('.ip_addr'), false);
   }
 
-  function displayEndpointGroup(msg) {
+  function displayEndpointGroup(gwgroup_data) {
     var modal_body = $('#edit .modal-body');
-    modal_body.find(".name").val(msg.name);
-    modal_body.find(".gwgroupid").val(msg.gwgroupid);
-    modal_body.find(".calllimit").val(msg.calllimit);
+    modal_body.find(".name").val(gwgroup_data.name);
+    modal_body.find(".gwgroupid").val(gwgroup_data.gwgroupid);
+    modal_body.find(".calllimit").val(gwgroup_data.calllimit);
 
-    if (msg.auth.type == "ip") {
+    if (gwgroup_data.auth.type == "ip") {
       $('#ip2.authtype').prop('checked', true);
       $("#userpwd_enabled2").addClass('hidden');
       $("#userpwd_enabled").addClass('hidden');
@@ -226,17 +261,17 @@
     }
 
     // parse the cdr_send_interval
-    var send_interval = msg.cdr.cdr_send_interval;
+    var send_interval = gwgroup_data.cdr.cdr_send_interval;
 
-    modal_body.find(".auth_username").val(msg.auth.user);
-    modal_body.find("#auth_password2").val(msg.auth.pass);
-    modal_body.find("#auth_password").val(msg.auth.pass);
-    modal_body.find(".auth_domain").val(msg.auth.domain);
-    modal_body.find(".strip").val(msg.strip);
-    modal_body.find(".prefix").val(msg.prefix);
-    modal_body.find(".email_over_max_calls").val(msg.notifications.overmaxcalllimit);
-    modal_body.find(".email_endpoint_failure").val(msg.notifications.endpointfailure);
-    modal_body.find(".cdr_email").val(msg.cdr.cdr_email);
+    modal_body.find(".auth_username").val(gwgroup_data.auth.user);
+    modal_body.find("#auth_password2").val(gwgroup_data.auth.pass);
+    modal_body.find("#auth_password").val(gwgroup_data.auth.pass);
+    modal_body.find(".auth_domain").val(gwgroup_data.auth.domain);
+    modal_body.find(".strip").val(gwgroup_data.strip);
+    modal_body.find(".prefix").val(gwgroup_data.prefix);
+    modal_body.find(".email_over_max_calls").val(gwgroup_data.notifications.overmaxcalllimit);
+    modal_body.find(".email_endpoint_failure").val(gwgroup_data.notifications.endpointfailure);
+    modal_body.find(".cdr_email").val(gwgroup_data.cdr.cdr_email);
     if (send_interval) {
       send_interval = send_interval.split(' ');
       modal_body.find(".cdr_send_minute").val(send_interval[0]);
@@ -245,10 +280,10 @@
       modal_body.find(".cdr_send_month").val(send_interval[3]);
       modal_body.find(".cdr_send_weekday").val(send_interval[4]);
     }
-    modal_body.find(".fusionpbx_db_enabled").val(msg.fusionpbx.enabled);
-    modal_body.find(".fusionpbx_db_server").val(msg.fusionpbx.dbhost);
-    modal_body.find(".fusionpbx_db_username").val(msg.fusionpbx.dbuser);
-    modal_body.find(".fusionpbx_db_password").val(msg.fusionpbx.dbpass);
+    modal_body.find(".fusionpbx_db_enabled").val(gwgroup_data.fusionpbx.enabled);
+    modal_body.find(".fusionpbx_db_server").val(gwgroup_data.fusionpbx.dbhost);
+    modal_body.find(".fusionpbx_db_username").val(gwgroup_data.fusionpbx.dbuser);
+    modal_body.find(".fusionpbx_db_password").val(gwgroup_data.fusionpbx.dbpass);
 
     /* reset the save button*/
     var updatebtn = $('#edit .modal-footer').find("#updateButton");
@@ -256,21 +291,21 @@
     updatebtn.addClass("btn-warning");
     updatebtn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
 
-    if (msg.endpoints) {
+    if (gwgroup_data.endpoints) {
       var table = $('#endpoint-table');
       var body = $('#endpoint-tablebody');
 
-      for (var endpoint in msg.endpoints) {
-        var row = '<tr class="endpoint"><td name="gwid">' + msg.endpoints[endpoint].gwid + '</td>';
-        row += '<td name="hostname">' + msg.endpoints[endpoint].hostname + '</td>';
-        row += '<td name="description">' + msg.endpoints[endpoint].description + '</td></tr>';
+      for (var i = 0; i < gwgroup_data.endpoints.length; i++) {
+        var row = '<tr class="endpoint"><td name="gwid">' + gwgroup_data.endpoints[i].gwid.toString() + '</td>';
+        row += '<td name="hostname">' + gwgroup_data.endpoints[i].hostname + '</td>';
+        row += '<td name="description">' + gwgroup_data.endpoints[i].description + '</td></tr>';
         table.append($(row));
       }
 
       table.data('Tabledit').reload();
     }
 
-    if (msg.fusionpbx.enabled) {
+    if (gwgroup_data.fusionpbx.enabled) {
       modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
     }
     else {
@@ -278,7 +313,7 @@
     }
 
 
-    if (msg.auth.type == "userpwd") {
+    if (gwgroup_data.auth.type == "userpwd") {
       /* userpwd auth enabled, Set the radio button to true */
       modal_body.find('.authtype[data-toggle="userpwd_enabled"]').trigger('click');
     }
@@ -289,27 +324,29 @@
   }
 
   function deleteEndpointGroup() {
+    var gwgroupid_int = parseInt(gwgroupid, 10);
+
     $.ajax({
       type: "DELETE",
       url: API_BASE_URL + "endpointgroups/" + gwgroupid,
       dataType: "json",
       contentType: "application/json; charset=utf-8",
-      success: function(msg) {
+      success: function(response, textStatus, jqXHR) {
         reloadkamrequired();
+        $('#delete').modal('hide');
+        $('#edit').modal('hide');
+        gwgroup_table.row(function (idx, data, node) {
+            return data.gwgroupid === gwgroupid_int;
+        }).remove().draw();
       }
     });
-
-    $('#delete').modal('hide');
-    $('#edit').modal('hide');
-    $('#endpointgroups').DataTable().ajax.reload();
   }
 
   $(document).ready(function() {
     // datatable init
-    $('#endpointgroups').DataTable({
+    gwgroup_table = $('#endpointgroups').DataTable({
       "ajax": {
-        "url": API_BASE_URL + "endpointgroups",
-        "dataSrc": "endpointgroups"
+        "url": API_BASE_URL + "endpointgroups"
       },
       "columns": [
         {"data": "name"},
@@ -336,33 +373,53 @@
       }
     });
 
-    $('#endpoint-table').Tabledit({
-      //url: 'example.php',
+    /* edit modal tabledit init */
+    var endpoint_table1 = $('#endpoint-table');
+    endpoint_table1.Tabledit({
       columns: {
         identifier: [0, 'gwid'],
         editable: [[1, 'hostname'], [2, 'description']],
         saveButton: true,
       },
-      onAlways: function() {
-        //console.log("In Always");
-        $('.tabledit-deleted-row').each(function(index, element) {
-          $(this).remove();
-        });
+      ajaxSetup: function(action, serialize) {
+        var self = endpoint_table1.data('Tabledit');
+
+        if (action === self.settings.buttons.edit.action) {
+          self.globals.lastEditedRow.removeClass(self.settings.dangerClass).addClass(self.settings.warningClass);
+          setTimeout(function() {
+              self.globals.tableObject.find('tr.' + self.settings.warningClass).removeClass(self.settings.warningClass);
+          }, 1400);
+        }
+        else if (action === self.settings.buttons.delete.action) {
+          self.globals.lastDeletedRow.remove();
+        }
+
+        return false;
       }
     });
 
-    $('#endpoint-table2').Tabledit({
-      //url: 'example.php',
+    /* add modal tabledit init */
+    var endpoint_table2 = $('#endpoint-table2');
+    endpoint_table2.Tabledit({
       columns: {
         identifier: [0, 'gwid'],
         editable: [[1, 'hostname'], [2, 'description']],
         saveButton: true,
       },
-      onAlways: function() {
-        //console.log("In Always");
-        $('.tabledit-deleted-row').each(function(index, element) {
-          $(this).remove();
-        });
+      ajaxSetup: function(action, serialize) {
+        var self = endpoint_table2.data('Tabledit');
+
+        if (action === self.settings.buttons.edit.action) {
+          self.globals.lastEditedRow.removeClass(self.settings.dangerClass).addClass(self.settings.warningClass);
+          setTimeout(function() {
+              self.globals.tableObject.find('tr.' + self.settings.warningClass).removeClass(self.settings.warningClass);
+          }, 1400);
+        }
+        else if (action === self.settings.buttons.delete.action) {
+          self.globals.lastDeletedRow.remove();
+        }
+
+        return false;
       }
     });
 
@@ -379,8 +436,8 @@
         url: API_BASE_URL + "endpointgroups/" + gwgroupid,
         dataType: "json",
         contentType: "application/json; charset=utf-8",
-        success: function(msg) {
-          displayEndpointGroup(msg);
+        success: function(response, textStatus, jqXHR) {
+          displayEndpointGroup(response.data[0]);
         }
       })
     });
@@ -467,9 +524,9 @@
           url: API_BASE_URL + "sys/generatepassword",
           dataType: "json",
           contentType: "application/json; charset=utf-8",
-          success: function(msg) {
+          success: function(response, textStatus, jqXHR) {
             authpwd_inp.attr("type", "text");
-            authpwd_inp.val(msg.password)
+            authpwd_inp.val(response.password)
             togglepwd_span.removeClass("glyphicon glyphicon-eye-close");
             togglepwd_span.addClass("glyphicon glyphicon-eye-open");
           }
@@ -520,6 +577,11 @@
           }
         }, 1500);
       }
+    });
+
+    /* handler for deleting endpoint group */
+    $('#deleteButton').click(function() {
+      deleteEndpointGroup();
     });
 
     /* validate fields before moving to next tab */
