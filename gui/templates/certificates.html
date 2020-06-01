@@ -3,6 +3,7 @@
 {% block title %}Certificates{% endblock %}
 
 {% block custom_css %}
+ {{ link_tag('certificates') }}
 {% endblock %}
 
 {% block table_headers %}
@@ -11,14 +12,9 @@
   </div>
 
   <div class="tableAddButton">
-    <button id='open-EndpointGroupsAdd' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal"
-            data-target="#upload">
-      Upload
-    </button>
-
-    <button id='open-EndpointGroupsAdd' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal"
-            data-target="#generate">
-      Generate
+    <button id='open-GenerateAdd' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal"
+            data-target="#add">
+     Add
     </button>
   </div>
 {% endblock %}
@@ -273,212 +269,44 @@ systemctl restart fail2ban</code></pre>
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-    <h4 class="modal-title custom_align" id="Heading">Add Endpoint Group Details</h4>
+    <h4 class="modal-title custom_align" id="Heading">Add Certificate</h4>
   </div>
 
   <div class="modal-body">
     <form action="/endpointgroups" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <input class="gwid" type="hidden" name="gwid">
-      <input class="gwgroup" type="hidden" name="gwgroup">
 
       <div class="form-group">
-        <input class="name form-control" type="text" name="name" placeholder="Friendly Name(Optional)"
+        <input class="form-control" type="text" id="domain" name="domain" placeholder="Domain name for the certificate"
                autofocus="autofocus">
       </div>
-      <!-- <div class="form-group">
-        <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
-      </div> -->
       <div class="form-group">
-        <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls"
-               autocomplete="off">
-        {% if (enterprise_enabled == False) %}
-          <a href="/upgrade/calllimit" [Enterprise]/>
-        {% endif %}
-      </div>
-      <!-- nav tabs -->
-      <div id="endpoint-nav" class="navbar">
-        <ul class="nav nav-tabs">
-          <li role="presentation" class="active">
-            <a href="#auth2" name="auth-toggle" data-toggle="tab">Auth</a>
-          </li>
-          <li role="presentation">
-            <a href="#endpoints2" name="endpoints-toggle" data-toggle="tab">Endpoints</a>
-          </li>
-          <li role="presentation">
-            <a href="#config2" name="config-toggle" data-toggle="tab">Config</a>
-          </li>
-          <li role="presentation">
-            <a href="#notifications2" name="notifications-toggle" data-toggle="tab">Notifications</a>
-          </li>
-          <li role="presentation">
-            <a href="#cdr2" name="cdr-toggle" data-toggle="tab">CDR</a>
-          </li>
-          <li role="presentation">
-            <a href="#fusionpbx2" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
-          </li>
-        </ul>
-      </div>
-
-      <div class="tab-content"> <!-- begin tab content -->
-
-        <div id="auth2" class="tab-pane fade in active" name="auth-toggle">
-          <div class="form-group">
-            <div id="authoptions" class="btn-group" data-toggle="buttons">
-              <label><input class="authtype" type="radio" name="authtype" id="ip" value="ip" checked> IP
-                Auth</label>
-              <label><input class="authtype" type="radio" name="authtype" id="userpwd" value="userpwd">
-                Username/Password
-                Auth</label>
-            </div>
-          </div>
-
-          <div id="userpwd_enabled" class="userpwd">
-            <p>Please enter a username and password for the PBX/Endpoint you want to register to. Specify domain if
-              different than the default domain: <b>{{ DEFAULT_auth_domain }}</b></p>
-            <div class="form-group">
-              <input class="auth_username form-control" type="text" name="auth_username"
-                     placeholder="Auth Username">
-            </div>
-            <div class="form-group wrapper-fieldicon-right">
-              <input id="auth_password" class="form-control" type="password" name="auth_password"
-                     placeholder="Auth Password">
-              <span toggle="#auth_password" class="field-icon toggle-password glyphicon glyphicon-eye-close"></span>
-            </div>
-            <div class="form-group">
-              <input class="auth_domain form-control" typead="text" name="auth_domain"
-                     placeholder="Auth Domain (optional)">
-            </div>
-          </div>
-        </div> <!-- end of auth tab -->
-
-        <div id="endpoints2" class="tab-pane fade in" name="endpoints-toggle">
-          <table id="endpoint-table2" class="table">
-            <thead>
-            <tr>
-              <th>PBX ID</th>
-              <th>Hostname/IP</th>
-              <th>Description</th>
-            </tr>
-            </thead>
-            <tbody id="endpoint-tablebody2">
-
-            </tbody>
-          </table>
-          <button type="button" id="addEndpointRow">Add Row</button>
-        </div> <!-- enf of endpoints tab -->
-
-        <div id="config2" class="tab-pane fade in" name="config-toggle">
-          <div class="form-group">
-            <input class="strip form-control" type="text" name="strip"
-                   placeholder="# of characters to strip from RURI (inbound calls)">
-          </div>
-          <div class="form-group">
-            <input class="prefix form-control" type="text" name="prefix"
-                   placeholder="The characters to prefix to a RURI (inbound calls)">
-          </div>
-        </div> <!-- end of config tab -->
-
-        <div id="notifications2" class="tab-pane fade in" name="notifications-toggle">
-          <div class="form-group">
-            <input class="email_over_max_calls form-control" type="text" name="email_over_max_calls"
-                   placeholder="Email for Over Max Concurrent Calls">
-          </div>
-          <div class="form-group">
-            <input class="email_endpoint_failure form-control" type="text" name="email_endpoint_failure"
-                   placeholder="Email for Endpont Failure">
-          </div>
-        </div> <!-- end of notifications tab -->
-
-        <div id="cdr2" class="tab-pane fade in" name="cdr-toggle">
-          <div class="form-group">
-            <input class="cdr_email form-control" type="text" name="cdr_email"
-                   placeholder="Email to send CDR's">
-          </div>
-          <!-- CDR report interval chooser, based on crontab design -->
-          <!-- TODO: make this a combobox -->
-          <div class="form-group">
-            <label>CDR Report Interval (minute, hour, day, month, weekday)</label>
-            <div class="wrapper-horizontal centered">
-              <input class="cdr_send_minute form-control" type="text" name="cdr_send_minute" value="*"
-                     title="Minute of the hour (0-59) or (* is any minute)"
-                     pattern="\*(/([0-5]?[0-9]))?|([0-5]?[0-9])(,[0-5]?[0-9])*">
-              <input class="cdr_send_hour form-control" type="text" name="cdr_send_hour" value="*"
-                     title="Hour of the day (0-23) or (* is any hour)"
-                     pattern="\*(/(2[0-3]|1[0-9]|[0-9]))?|(2[0-3]|1[0-9]|[0-9])(,(2[0-3]|1[0-9]|[0-9]))*">
-              <input class="cdr_send_day form-control" type="text" name="cdr_send_day" value="1"
-                     title="Day of the month (1-31) or (* is any day)"
-                     pattern="\*(/(3[0-1]|[1-2][0-9]|[1-9]))?|(3[0-1]|[1-2][0-9]|[1-9])(,(3[0-1]|[1-2][0-9]|[1-9]))*">
-              <input class="cdr_send_month form-control" type="text" name="cdr_send_month" value="*"
-                     title="Month of the year (1-12) or (* is any month) or (jan-dec)"
-                     pattern="\*(/(1[0-2]|[1-9]))?|(1[0-2]|[1-9])(,(1[0-2]|[1-9]))*|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)">
-              <input class="cdr_send_weekday form-control" type="text" name="cdr_send_weekday" value="*"
-                     title="Day of the week (0-6) or (* is any weekday) or (sun-sat)"
-                     pattern="\*(/([0-6]))?|([0-6])(,[0-6])*|(sun|mon|tue|wed|thur|fri|sat)">
-            </div>
-          </div>
-        </div> <!-- end of cdr  tab -->
-
-        <div id="fusionpbx2" class="tab-pane fade in" name="fusion-toggle">
-          <div class="form-group">
-            <div class="checkbox">
-              <label class="label-toggle">
-                <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                       data-on="<span class='icon-fusionpbx'></span> Enabled"
-                       data-off="<span class='icon-fusionpbx'></span> Disabled"
-                       data-width="125px">
-                FusionPBX Domain Support
+            <div id="certtypeoptions" class="btn-group" data-toggle="buttons">
+              <label><input type="radio" name="certtype" id="certtype_generate" value="generate" checked> 
+              Generate
               </label>
+              <label><input type="radio" name="certtype" id="certtype_upload" value="upload">
+              Upload
+	      </label>
             </div>
-            <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
-          </div>
-          <div class="alert alert-warning pre-scrollable">
+       </div>
+      <div id="generate">
+      	<div class="alert alert-warning pre-scrollable hide" id="terminalDiv">
             <strong>
-              You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
-              Replace &lt;ip address&gt; with the ip address of this server.
+		    Access this server via ssh and execute the command below.  Follow the instructions and click the "Add Certificate" button when complete<br><br>
             </strong>
-            <pre><code class="bash">sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
-iptables -A INPUT -p tcp -s &lt;ip address&gt;/32 --dport 5432 -j ACCEPT
-iptables-save > /etc/iptables/rules.v4
-# Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
-echo -e "host    all             all            &lt;ip address&gt;/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
-/etc/init.d/postgresql restart
-# Run this command if your using fail2ban
-sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
-systemctl restart fail2ban</code></pre>
+	    <pre><code class="bash" id="terminalCommand">
+	    dsiprouter generatecert
+           </code></pre>
           </div>
-          <div class="form-group">
-            <input class="fusionpbx_db_server form-control" type="text" name="fusionpbx_db_server"
-                   placeholder="FusionPBX Database IP or Hostname">
-          </div>
-          <div class="form-group">
-            <input class="fusionpbx_db_username form-control" type="text" name="fusionpbx_db_username"
-                   placeholder="FusionPBX DB Username">
-          </div>
-          <div class="form-group">
-            <input class="fusionpbx_db_password form-control" type="password" name="fusionpbx_db_password"
-                   placeholder="FusionPBX DB Password(Optional)">
-          </div>
-        </div> <!-- end of fusionpbx tab -->
-
-        <div class="FreePBXDomainOptions form-group hidden">
-          <div class="alert alert-warning pre-scrollable">
-            <strong>
-              Run these commands as root on the FreePBX server.
-              Replace values within angle brackets '&lt;value&gt;' with your own values.
-            </strong>
-            <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
-iptables-save
-# Run this command if your using fail2ban
-sed -i -r 's|(ignoreip = .*)|\1 &lt;ip address&gt;/32|' /etc/fail2ban/jail.conf
-systemctl restart fail2ban</code></pre>
-          </div>
-        </div> <!-- end of freepbx tab -->
-      </div> <!-- end of tabcontent tab -->
+        </div> 
+      </div> <!-- end of generate tab -->
+      <div id="upload">
+      </div> <!-- end of upload tab -->
 
       <div class="modal-footer ">
         <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Add
+            class="glyphicon glyphicon-ok-sign"></span> Add Certifcate
         </button>
       </div>
     </form>
@@ -524,6 +352,6 @@ systemctl restart fail2ban</code></pre>
 
 {% block custom_js %}
   {{ script_tag('jquery.tabledit') }}
-  {{ script_tag('endpointgroups') }}
+  {{ script_tag('certificates') }}
 {% endblock %}
 
