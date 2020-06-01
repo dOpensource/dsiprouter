@@ -2,17 +2,17 @@
 
 ### Contributors
 
+- Mack
+- Mack Hendricks
+- Mat Murdock
+- Nicole
+- Omari S. King
+- Tyler Moore
 - dopensource
 - hailthemelody
 - jornsby
 - littleguga
-- Mack
-- Mack Hendricks
 - matmurdock
-- Mat Murdock
 - mhendricks
 - ncannon01
-- Nicole
-- Omari S. King
 - root
-- Tyler Moore

@@ -1,9 +1,12 @@
 /*!
  * Tabledit v1.2.3 (https://github.com/markcell/jQuery-Tabledit)
  * Copyright (c) 2015 Celso Marques
+ * Copyright (c) 2020 dOpenSource
  * Licensed under MIT (https://github.com/markcell/jQuery-Tabledit/blob/master/LICENSE)
  *
  * Modified draw to be public, and plugin can now be accessed via $(table).data('Tabledit') so new rows can be added dynamically
+ * Modified settings to be public, plugin settings can be accessed / modified after initialization
+ * Created globals to access some basic globals from outside the library
  *
  */
 
@@ -11,6 +14,7 @@
  * @description Inline editor for HTML tables compatible with Bootstrap
  * @version 1.2.3
  * @author Celso Marques
+ * @author Tyler Moore
  */
 
 if (typeof jQuery === 'undefined') {
@@ -25,7 +29,6 @@ if (typeof jQuery === 'undefined') {
             throw new Error('Tabledit only works when applied to a table.');
         }
 
-        var $table = $(element);
         var plugin = this;
 
         var defaults = {
@@ -76,11 +79,13 @@ if (typeof jQuery === 'undefined') {
             onAjax: function() { return; }
         };
 
-        var settings = $.extend(true, defaults, options);
-
-        var $lastEditedRow = 'undefined';
-        var $lastDeletedRow = 'undefined';
-        var $lastRestoredRow = 'undefined';
+        plugin.settings = $.extend(true, defaults, options);
+        plugin.globals = {
+            "tableObject": $(element),
+            "lastEditedRow": "undefined",
+            "lastDeletedRow": "undefined",
+            "lastRestoredRow": "undefined"
+        };
 
         /**
          * Draw Tabledit structure (identifier column, editable columns, toolbar column).
@@ -91,34 +96,34 @@ if (typeof jQuery === 'undefined') {
             columns: {
                 identifier: function() {
                     // Hide identifier column.
-                    if (settings.hideIdentifier) {
-                        $table.find('th:nth-child(' + parseInt(settings.columns.identifier[0]) + 1 + '), tbody td:nth-child(' + parseInt(settings.columns.identifier[0]) + 1 + ')').hide();
+                    if (plugin.settings.hideIdentifier) {
+                        plugin.globals.tableObject.find('th:nth-child(' + parseInt(plugin.settings.columns.identifier[0]) + 1 + '), tbody td:nth-child(' + parseInt(plugin.settings.columns.identifier[0]) + 1 + ')').hide();
                     }
 
-                    var $td = $table.find('tbody tr:not([data-tabledit-done]) td:nth-child(' + (parseInt(settings.columns.identifier[0]) + 1) + ')');
+                    var $td = plugin.globals.tableObject.find('tbody tr:not([data-tabledit-done]) td:nth-child(' + (parseInt(plugin.settings.columns.identifier[0]) + 1) + ')');
 
                     $td.each(function() {
                         // Create hidden input with row identifier.
                         var span = '<span class="tabledit-span tabledit-identifier">' + $(this).text() + '</span>';
-                        var input = '<input class="tabledit-input tabledit-identifier" type="hidden" name="' + settings.columns.identifier[1] + '" value="' + $(this).text() + '" disabled>';
+                        var input = '<input class="tabledit-input tabledit-identifier" type="hidden" name="' + plugin.settings.columns.identifier[1] + '" value="' + $(this).text() + '" disabled>';
 
                         // Add elements to table cell.
                         $(this).html(span + input);
 
                         // Add attribute "id" to table row.
-                        $(this).parent('tr').attr(settings.rowIdentifier, $(this).text());
+                        $(this).parent('tr').attr(plugin.settings.rowIdentifier, $(this).text());
                     });
                 },
                 editable: function() {
-                    for (var i = 0; i < settings.columns.editable.length; i++) {
-                        var $td = $table.find('tbody tr:not([data-tabledit-done]) td:nth-child(' + (parseInt(settings.columns.editable[i][0]) + 1) + ')');
+                    for (var i = 0; i < plugin.settings.columns.editable.length; i++) {
+                        var $td = plugin.globals.tableObject.find('tbody tr:not([data-tabledit-done]) td:nth-child(' + (parseInt(plugin.settings.columns.editable[i][0]) + 1) + ')');
 
                         $td.each(function() {
                             // Get text of this cell.
                             var text = $(this).text();
 
                             // Add pointer as cursor.
-                            if (!settings.editButton) {
+                            if (!plugin.settings.editButton) {
                                 $(this).css('cursor', 'pointer');
                             }
 
@@ -126,12 +131,12 @@ if (typeof jQuery === 'undefined') {
                             var span = '<span class="tabledit-span">' + text + '</span>';
 
                             // Check if exists the third parameter of editable array.
-                            if (typeof settings.columns.editable[i][2] !== 'undefined') {
+                            if (typeof plugin.settings.columns.editable[i][2] !== 'undefined') {
                                 // Create select element.
-                                var input = '<select class="tabledit-input ' + settings.inputClass + '" name="' + settings.columns.editable[i][1] + '" style="display: none;" disabled>';
+                                var input = '<select class="tabledit-input ' + plugin.settings.inputClass + '" name="' + plugin.settings.columns.editable[i][1] + '" style="display: none;" disabled>';
 
                                 // Create options for select element.
-                                $.each(jQuery.parseJSON(settings.columns.editable[i][2]), function(index, value) {
+                                $.each(jQuery.parseJSON(plugin.settings.columns.editable[i][2]), function(index, value) {
                                     if (text === value) {
                                         input += '<option value="' + index + '" selected>' + value + '</option>';
                                     } else {
@@ -143,7 +148,7 @@ if (typeof jQuery === 'undefined') {
                                 input += '</select>';
                             } else {
                                 // Create text input element.
-                                var input = '<input class="tabledit-input ' + settings.inputClass + '" type="text" name="' + settings.columns.editable[i][1] + '" value="' + $(this).text() + '" style="display: none;" disabled>';
+                                var input = '<input class="tabledit-input ' + plugin.settings.inputClass + '" type="text" name="' + plugin.settings.columns.editable[i][1] + '" value="' + $(this).text() + '" style="display: none;" disabled>';
                             }
 
                             // Add elements and class "view" to table cell.
@@ -153,7 +158,7 @@ if (typeof jQuery === 'undefined') {
                     }
                 },
                 toolbar: function() {
-                    if (settings.editButton || settings.deleteButton) {
+                    if (plugin.settings.editButton || plugin.settings.deleteButton) {
                         var editButton = '';
                         var deleteButton = '';
                         var saveButton = '';
@@ -161,40 +166,40 @@ if (typeof jQuery === 'undefined') {
                         var confirmButton = '';
 
                         // Add toolbar column header if not exists.
-                        if ($table.find('th.tabledit-toolbar-column').length === 0) {
-                            $table.find('tr:first').append('<th class="tabledit-toolbar-column"></th>');
+                        if (plugin.globals.tableObject.find('th.tabledit-toolbar-column').length === 0) {
+                            plugin.globals.tableObject.find('tr:first').append('<th class="tabledit-toolbar-column"></th>');
                         }
 
                         // Create edit button.
-                        if (settings.editButton) {
-                            editButton = '<button type="button" class="tabledit-edit-button ' + settings.buttons.edit.class + '" style="float: none;">' + settings.buttons.edit.html + '</button>';
+                        if (plugin.settings.editButton) {
+                            editButton = '<button type="button" class="tabledit-edit-button ' + plugin.settings.buttons.edit.class + '" style="float: none;">' + plugin.settings.buttons.edit.html + '</button>';
                         }
 
                         // Create delete button.
-                        if (settings.deleteButton) {
-                            deleteButton = '<button type="button" class="tabledit-delete-button ' + settings.buttons.delete.class + '" style="float: none;">' + settings.buttons.delete.html + '</button>';
-                            confirmButton = '<button type="button" class="tabledit-confirm-button ' + settings.buttons.confirm.class + '" style="display: none; float: none;">' + settings.buttons.confirm.html + '</button>';
+                        if (plugin.settings.deleteButton) {
+                            deleteButton = '<button type="button" class="tabledit-delete-button ' + plugin.settings.buttons.delete.class + '" style="float: none;">' + plugin.settings.buttons.delete.html + '</button>';
+                            confirmButton = '<button type="button" class="tabledit-confirm-button ' + plugin.settings.buttons.confirm.class + '" style="display: none; float: none;">' + plugin.settings.buttons.confirm.html + '</button>';
                         }
 
                         // Create save button.
-                        if (settings.editButton && settings.saveButton) {
-                            saveButton = '<button type="button" class="tabledit-save-button ' + settings.buttons.save.class + '" style="display: none; float: none;">' + settings.buttons.save.html + '</button>';
+                        if (plugin.settings.editButton && plugin.settings.saveButton) {
+                            saveButton = '<button type="button" class="tabledit-save-button ' + plugin.settings.buttons.save.class + '" style="display: none; float: none;">' + plugin.settings.buttons.save.html + '</button>';
                         }
 
                         // Create restore button.
-                        if (settings.deleteButton && settings.restoreButton) {
-                            restoreButton = '<button type="button" class="tabledit-restore-button ' + settings.buttons.restore.class + '" style="display: none; float: none;">' + settings.buttons.restore.html + '</button>';
+                        if (plugin.settings.deleteButton && plugin.settings.restoreButton) {
+                            restoreButton = '<button type="button" class="tabledit-restore-button ' + plugin.settings.buttons.restore.class + '" style="display: none; float: none;">' + plugin.settings.buttons.restore.html + '</button>';
                         }
 
-                        var toolbar = '<div class="tabledit-toolbar ' + settings.toolbarClass + '" style="text-align: left;">\n\
-                                           <div class="' + settings.groupClass + '" style="float: none;">' + editButton + deleteButton + '</div>\n\
+                        var toolbar = '<div class="tabledit-toolbar ' + plugin.settings.toolbarClass + '" style="text-align: left;">\n\
+                                           <div class="' + plugin.settings.groupClass + '" style="float: none;">' + editButton + deleteButton + '</div>\n\
                                            ' + saveButton + '\n\
                                            ' + confirmButton + '\n\
                                            ' + restoreButton + '\n\
                                        </div></div>';
 
                         // Add toolbar column cells.
-                        $table.find('tr:gt(0):not([data-tabledit-done])').append('<td style="white-space: nowrap; width: 1%;">' + toolbar + '</td>').attr('data-tabledit-done', 1);
+                        plugin.globals.tableObject.find('tr:gt(0):not([data-tabledit-done])').append('<td style="white-space: nowrap; width: 1%;">' + toolbar + '</td>').attr('data-tabledit-done', 1);
                     }
                 }
             }
@@ -218,7 +223,7 @@ if (typeof jQuery === 'undefined') {
                 // Add "view" class and remove "edit" class in td element.
                 $(td).addClass('tabledit-view-mode').removeClass('tabledit-edit-mode');
                 // Update toolbar buttons.
-                if (settings.editButton) {
+                if (plugin.settings.editButton) {
                     $tr.find('button.tabledit-save-button').hide();
                     $tr.find('button.tabledit-edit-button').removeClass('active').blur();
                 }
@@ -236,13 +241,13 @@ if (typeof jQuery === 'undefined') {
                 // Enable and show input element.
                 $input.prop('disabled', false).show();
                 // Focus on input element.
-                if (settings.autoFocus) {
+                if (plugin.settings.autoFocus) {
                     $input.focus();
                 }
                 // Add "edit" class and remove "view" class in td element.
                 $(td).addClass('tabledit-edit-mode').removeClass('tabledit-view-mode');
                 // Update toolbar buttons.
-                if (settings.editButton) {
+                if (plugin.settings.editButton) {
                     $tr.find('button.tabledit-edit-button').addClass('active');
                     $tr.find('button.tabledit-save-button').show();
                 }
@@ -275,7 +280,7 @@ if (typeof jQuery === 'undefined') {
             },
             submit: function(td) {
                 // Send AJAX request to server.
-                var ajaxResult = ajax(settings.buttons.edit.action);
+                var ajaxResult = ajax(plugin.settings.buttons.edit.action);
 
                 if (ajaxResult === false) {
                     return;
@@ -295,7 +300,7 @@ if (typeof jQuery === 'undefined') {
                 });
 
                 // Set last edited column and row.
-                $lastEditedRow = $(td).parent('tr');
+                plugin.globals.lastEditedRow = $(td).parent('tr');
             }
         };
 
@@ -307,16 +312,16 @@ if (typeof jQuery === 'undefined') {
         var Delete = {
             reset: function(td) {
                 // Reset delete button to initial status.
-                $table.find('.tabledit-confirm-button').hide();
+                plugin.globals.tableObject.find('.tabledit-confirm-button').hide();
                 // Remove "active" class in delete button.
-                $table.find('.tabledit-delete-button').removeClass('active').blur();
+                plugin.globals.tableObject.find('.tabledit-delete-button').removeClass('active').blur();
             },
             submit: function(td) {
                 Delete.reset(td);
                 // Enable identifier hidden input.
                 $(td).parent('tr').find('input.tabledit-identifier').attr('disabled', false);
                 // Send AJAX request to server.
-                var ajaxResult = ajax(settings.buttons.delete.action);
+                var ajaxResult = ajax(plugin.settings.buttons.delete.action);
                 // Disable identifier hidden input.
                 $(td).parents('tr').find('input.tabledit-identifier').attr('disabled', true);
 
@@ -327,15 +332,15 @@ if (typeof jQuery === 'undefined') {
                 // Add class "deleted" to row.
                 $(td).parent('tr').addClass('tabledit-deleted-row');
                 // Hide table row.
-                $(td).parent('tr').addClass(settings.mutedClass).find('.tabledit-toolbar button:not(.tabledit-restore-button)').attr('disabled', true);
+                $(td).parent('tr').addClass(plugin.settings.mutedClass).find('.tabledit-toolbar button:not(.tabledit-restore-button)').attr('disabled', true);
                 // Show restore button.
                 $(td).find('.tabledit-restore-button').show();
                 // Set last deleted row.
-                $lastDeletedRow = $(td).parent('tr');
+                plugin.globals.lastDeletedRow = $(td).parent('tr');
             },
             confirm: function(td) {
                 // Reset all cells in edit mode.
-                $table.find('td.tabledit-edit-mode').each(function() {
+                plugin.globals.tableObject.find('td.tabledit-edit-mode').each(function() {
                     Edit.reset(this);
                 });
                 // Add "active" class in delete button.
@@ -347,7 +352,7 @@ if (typeof jQuery === 'undefined') {
                 // Enable identifier hidden input.
                 $(td).parent('tr').find('input.tabledit-identifier').attr('disabled', false);
                 // Send AJAX request to server.
-                var ajaxResult = ajax(settings.buttons.restore.action);
+                var ajaxResult = ajax(plugin.settings.buttons.restore.action);
                 // Disable identifier hidden input.
                 $(td).parents('tr').find('input.tabledit-identifier').attr('disabled', true);
 
@@ -358,11 +363,11 @@ if (typeof jQuery === 'undefined') {
                 // Remove class "deleted" to row.
                 $(td).parent('tr').removeClass('tabledit-deleted-row');
                 // Hide table row.
-                $(td).parent('tr').removeClass(settings.mutedClass).find('.tabledit-toolbar button').attr('disabled', false);
+                $(td).parent('tr').removeClass(plugin.settings.mutedClass).find('.tabledit-toolbar button').attr('disabled', false);
                 // Hide restore button.
                 $(td).find('.tabledit-restore-button').hide();
                 // Set last restored row.
-                $lastRestoredRow = $(td).parent('tr');
+                plugin.globals.lastRestoredRow = $(td).parent('tr');
             }
         };
 
@@ -373,40 +378,40 @@ if (typeof jQuery === 'undefined') {
          */
         function ajax(action)
         {
-            var serialize = $table.find('.tabledit-input').serialize() + '&action=' + action;
+            var serialize = plugin.globals.tableObject.find('.tabledit-input').serialize() + '&action=' + action;
 
-            var result = settings.onAjax(action, serialize);
+            var result = plugin.settings.onAjax(action, serialize);
 
             if (result === false) {
                 return false;
             }
 
-            var jqXHR = $.post(settings.url, serialize, function(data, textStatus, jqXHR) {
-                if (action === settings.buttons.edit.action) {
-                    $lastEditedRow.removeClass(settings.dangerClass).addClass(settings.warningClass);
+            var jqXHR = $.post(plugin.settings.url, serialize, function(data, textStatus, jqXHR) {
+                if (action === plugin.settings.buttons.edit.action) {
+                    plugin.globals.lastEditedRow.removeClass(plugin.settings.dangerClass).addClass(plugin.settings.warningClass);
                     setTimeout(function() {
-                        //$lastEditedRow.removeClass(settings.warningClass);
-                        $table.find('tr.' + settings.warningClass).removeClass(settings.warningClass);
+                        //plugin.globals.lastEditedRow.removeClass(plugin.settings.warningClass);
+                        plugin.globals.tableObject.find('tr.' + plugin.settings.warningClass).removeClass(plugin.settings.warningClass);
                     }, 1400);
                 }
 
-                settings.onSuccess(data, textStatus, jqXHR);
+                plugin.settings.onSuccess(data, textStatus, jqXHR);
             }, 'json');
 
             jqXHR.fail(function(jqXHR, textStatus, errorThrown) {
-                if (action === settings.buttons.delete.action) {
-                    $lastDeletedRow.removeClass(settings.mutedClass).addClass(settings.dangerClass);
-                    $lastDeletedRow.find('.tabledit-toolbar button').attr('disabled', false);
-                    $lastDeletedRow.find('.tabledit-toolbar .tabledit-restore-button').hide();
-                } else if (action === settings.buttons.edit.action) {
-                    $lastEditedRow.addClass(settings.dangerClass);
+                if (action === plugin.settings.buttons.delete.action) {
+                    plugin.globals.lastDeletedRow.removeClass(plugin.settings.mutedClass).addClass(plugin.settings.dangerClass);
+                    plugin.globals.lastDeletedRow.find('.tabledit-toolbar button').attr('disabled', false);
+                    plugin.globals.lastDeletedRow.find('.tabledit-toolbar .tabledit-restore-button').hide();
+                } else if (action === plugin.settings.buttons.edit.action) {
+                    plugin.globals.lastEditedRow.addClass(plugin.settings.dangerClass);
                 }
 
-                settings.onFail(jqXHR, textStatus, errorThrown);
+                plugin.settings.onFail(jqXHR, textStatus, errorThrown);
             });
 
             jqXHR.always(function() {
-                settings.onAlways();
+                plugin.settings.onAlways();
             });
 
             return jqXHR;
@@ -416,25 +421,25 @@ if (typeof jQuery === 'undefined') {
         plugin.Draw.columns.editable();
         plugin.Draw.columns.toolbar();
 
-        settings.onDraw();
+        plugin.settings.onDraw();
 
         plugin.reload = function() {
-            $lastEditedRow = 'undefined';
-            $lastDeletedRow = 'undefined';
-            $lastRestoredRow = 'undefined';
+            plugin.globals.lastEditedRow = 'undefined';
+            plugin.globals.lastDeletedRow = 'undefined';
+            plugin.globals.lastRestoredRow = 'undefined';
             plugin.Draw.columns.identifier();
             plugin.Draw.columns.editable();
             plugin.Draw.columns.toolbar();
-            settings.onDraw();
+            plugin.settings.onDraw();
         };
 
-        if (settings.deleteButton) {
+        if (plugin.settings.deleteButton) {
             /**
              * Delete one row.
              *
              * @param {object} event
              */
-            $table.on('click', 'button.tabledit-delete-button', function(event) {
+            plugin.globals.tableObject.on('click', 'button.tabledit-delete-button', function(event) {
                 if (event.handled !== true) {
                     event.preventDefault();
 
@@ -458,7 +463,7 @@ if (typeof jQuery === 'undefined') {
              *
              * @param {object} event
              */
-            $table.on('click', 'button.tabledit-confirm-button', function(event) {
+            plugin.globals.tableObject.on('click', 'button.tabledit-confirm-button', function(event) {
                 if (event.handled !== true) {
                     event.preventDefault();
 
@@ -471,13 +476,13 @@ if (typeof jQuery === 'undefined') {
             });
         }
 
-        if (settings.restoreButton) {
+        if (plugin.settings.restoreButton) {
             /**
              * Restore one row.
              *
              * @param {object} event
              */
-            $table.on('click', 'button.tabledit-restore-button', function(event) {
+            plugin.globals.tableObject.on('click', 'button.tabledit-restore-button', function(event) {
                 if (event.handled !== true) {
                     event.preventDefault();
 
@@ -488,13 +493,13 @@ if (typeof jQuery === 'undefined') {
             });
         }
 
-        if (settings.editButton) {
+        if (plugin.settings.editButton) {
             /**
              * Activate edit mode on all columns.
              *
              * @param {object} event
              */
-            $table.on('click', 'button.tabledit-edit-button', function(event) {
+            plugin.globals.tableObject.on('click', 'button.tabledit-edit-button', function(event) {
                 if (event.handled !== true) {
                     event.preventDefault();
 
@@ -504,7 +509,7 @@ if (typeof jQuery === 'undefined') {
                     var activated = $button.hasClass('active');
 
                     // Change to view mode columns that are in edit mode.
-                    Edit.reset($table.find('td.tabledit-edit-mode'));
+                    Edit.reset(plugin.globals.tableObject.find('td.tabledit-edit-mode'));
 
                     if (!activated) {
                         // Change to edit mode for all columns in reverse way.
@@ -522,7 +527,7 @@ if (typeof jQuery === 'undefined') {
              *
              * @param {object} event
              */
-            $table.on('click', 'button.tabledit-save-button', function(event) {
+            plugin.globals.tableObject.on('click', 'button.tabledit-save-button', function(event) {
                 if (event.handled !== true) {
                     event.preventDefault();
 
@@ -538,12 +543,12 @@ if (typeof jQuery === 'undefined') {
              *
              * @param {object} event
              */
-            $table.on(settings.eventType, 'tr:not(.tabledit-deleted-row) td.tabledit-view-mode', function(event) {
+            plugin.globals.tableObject.on(plugin.settings.eventType, 'tr:not(.tabledit-deleted-row) td.tabledit-view-mode', function(event) {
                 if (event.handled !== true) {
                     event.preventDefault();
 
                     // Reset all td's in edit mode.
-                    Edit.reset($table.find('td.tabledit-edit-mode'));
+                    Edit.reset(plugin.globals.tableObject.find('td.tabledit-edit-mode'));
 
                     // Change to edit mode.
                     Mode.edit(this);
@@ -555,7 +560,7 @@ if (typeof jQuery === 'undefined') {
             /**
              * Change event when input is a select element.
              */
-            $table.on('change', 'select.tabledit-input:visible', function() {
+            plugin.globals.tableObject.on('change', 'select.tabledit-input:visible', function() {
                 if (event.handled !== true) {
                     // Submit and update the column.
                     Edit.submit($(this).parent('td'));
@@ -570,10 +575,10 @@ if (typeof jQuery === 'undefined') {
              * @param {object} event
              */
             $(document).on('click', function(event) {
-                var $editMode = $table.find('.tabledit-edit-mode');
+                var $editMode = plugin.globals.tableObject.find('.tabledit-edit-mode');
                 // Reset visible edit mode column.
                 if (!$editMode.is(event.target) && $editMode.has(event.target).length === 0) {
-                    Edit.reset($table.find('.tabledit-input:visible').parent('td'));
+                    Edit.reset(plugin.globals.tableObject.find('.tabledit-input:visible').parent('td'));
                 }
             });
         }
@@ -585,8 +590,8 @@ if (typeof jQuery === 'undefined') {
          */
         $(document).on('keyup', function(event) {
             // Get input element with focus or confirmation button.
-            var $input = $table.find('.tabledit-input:visible');
-            var $button = $table.find('.tabledit-confirm-button');
+            var $input = plugin.globals.tableObject.find('.tabledit-input:visible');
+            var $button = plugin.globals.tableObject.find('.tabledit-confirm-button');
 
             if ($input.length > 0) {
                 var $td = $input.parents('td');
@@ -599,7 +604,7 @@ if (typeof jQuery === 'undefined') {
             // Key?
             switch (event.keyCode) {
                 case 9:  // Tab.
-                    if (!settings.editButton) {
+                    if (!plugin.settings.editButton) {
                         Edit.submit($td);
                         Mode.edit($td.closest('td').next());
                     }

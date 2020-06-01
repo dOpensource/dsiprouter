@@ -10,8 +10,8 @@ from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
     dSIPCallLimits, InboundMapping, dSIPCDRInfo
-from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, debugEndpoint, StatusCodes, \
-    strFieldsToDict, IO
+from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
+    debugEndpoint, StatusCodes, strFieldsToDict, IO
 from util.notifications import sendEmail
 from util.security import AES_CTR
 from util.file_handling import isValidFile
@@ -23,7 +23,7 @@ import settings, globals
 api = Blueprint('api', __name__)
 
 # TODO: we need to standardize our response payload, preferably we can create a custom response class
-#       proposed format:    { 'error': '', 'msg': '', 'kamreload': True/False, 'data': {...} }
+#       proposed format:    { 'error': '', 'msg': '', 'kamreload': True/False, 'data': [] }
 #                           error:      error string if one occurred (db|http|server)
 #                           msg:        response message string
 #                           kamreload:  bool, whether kam requires a reload
@@ -356,10 +356,12 @@ def handleInboundMapping():
             # get single rule by ruleid
             rule_id = request.args.get('ruleid')
             if rule_id is not None:
-                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).first()
+                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
+                    InboundMapping.ruleid == rule_id).first()
                 if res is not None:
                     data = rowToDict(res)
-                    data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'name': strFieldsToDict(data['description'])['name'],
+                    data = {'ruleid': data['ruleid'], 'did': data['prefix'],
+                            'name': strFieldsToDict(data['description'])['name'],
                             'servers': data['gwlist'].split(',')}
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
@@ -374,7 +376,8 @@ def handleInboundMapping():
                         InboundMapping.prefix == did_pattern).first()
                     if res is not None:
                         data = rowToDict(res)
-                        data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'name': strFieldsToDict(data['description'])['name'],
+                        data = {'ruleid': data['ruleid'], 'did': data['prefix'],
+                                'name': strFieldsToDict(data['description'])['name'],
                                 'servers': data['gwlist'].split(',')}
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
@@ -387,7 +390,8 @@ def handleInboundMapping():
                     if len(res) > 0:
                         for row in res:
                             data = rowToDict(row)
-                            data = {'ruleid': data['ruleid'], 'did': data['prefix'], 'name': strFieldsToDict(data['description'])['name'],
+                            data = {'ruleid': data['ruleid'], 'did': data['prefix'],
+                                    'name': strFieldsToDict(data['description'])['name'],
                                     'servers': data['gwlist'].split(',')}
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
@@ -424,14 +428,16 @@ def handleInboundMapping():
                     raise http_exceptions.BadRequest('Invalid Server ID')
             for c in data['did']:
                 if c not in PREFIX_ALLOWED_CHARS:
-                    raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
+                    raise http_exceptions.BadRequest(
+                        'DID improperly formatted. Allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
 
             gwlist = ','.join(data['servers'])
             prefix = data['did']
             description = 'name:{}'.format(data['name']) if 'name' in data else ''
 
             # don't allow duplicate entries
-            if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
+            if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(
+                    InboundMapping.groupid == settings.FLT_INBOUND).scalar():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             db.add(IMap)
@@ -477,7 +483,8 @@ def handleInboundMapping():
             if 'did' in data:
                 for c in data['did']:
                     if c not in PREFIX_ALLOWED_CHARS:
-                        raise http_exceptions.BadRequest('DID improperly formatted, allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
+                        raise http_exceptions.BadRequest(
+                            'DID improperly formatted. Allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
                 updates['prefix'] = data['did']
             if 'name' in data:
                 updates['description'] = 'name:{}'.format(data['name'])
@@ -485,7 +492,8 @@ def handleInboundMapping():
             # update single rule by ruleid
             rule_id = request.args.get('ruleid')
             if rule_id is not None:
-                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id).update(
+                res = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
+                    InboundMapping.ruleid == rule_id).update(
                     updates, synchronize_session=False)
                 if res > 0:
                     payload['msg'] = 'Rule Updated'
@@ -525,7 +533,8 @@ def handleInboundMapping():
             # delete single rule by ruleid
             rule_id = request.args.get('ruleid')
             if rule_id is not None:
-                rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(InboundMapping.ruleid == rule_id)
+                rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
+                    InboundMapping.ruleid == rule_id)
                 rule.delete(synchronize_session=False)
 
             # delete single rule by did
@@ -697,7 +706,7 @@ def deleteEndpointGroup(gwgroupid):
         if cdrinfo is not None:
             cdrinfo.delete(synchronize_session=False)
             deleteTaggedCronjob(gwgroupid)
-            #if not deleteTaggedCronjob(gwgroupid):
+            # if not deleteTaggedCronjob(gwgroupid):
             #    raise Exception('Crontab entry could not be deleted')
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
@@ -721,28 +730,27 @@ def deleteEndpointGroup(gwgroupid):
 def getEndpointGroup(gwgroupid):
     db = DummySession()
 
+    responsePayload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    gwgroup_data = {}
+
     try:
         if settings.DEBUG:
             debugEndpoint()
 
         db = SessionLoader()
 
-        responsePayload = {}
-        strip = 0
-        prefix = ""
-
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointgroup is not None:
-            responsePayload['name'] = strFieldsToDict(endpointgroup.description)['name']
+            gwgroup_data['name'] = strFieldsToDict(endpointgroup.description)['name']
         else:
             raise http_exceptions.NotFound("Endpoint Group Does Not Exist")
 
         # Send back the gateway groupid that was requested
-        responsePayload['gwgroupid'] = gwgroupid
+        gwgroup_data['gwgroupid'] = gwgroupid
 
         calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == str(gwgroupid)).first()
         if calllimit is not None:
-            responsePayload['calllimit'] = calllimit.limit
+            gwgroup_data['calllimit'] = calllimit.limit
 
         # Check to see if a subscriber record exists.  If so, auth is userpwd
         auth = {}
@@ -755,9 +763,9 @@ def getEndpointGroup(gwgroupid):
         else:
             auth['type'] = "ip"
 
-        responsePayload['auth'] = auth
+        gwgroup_data['auth'] = auth
 
-        responsePayload['endpoints'] = []
+        gwgroup_data['endpoints'] = []
         typeFilter = "%gwgroup:{}%".format(gwgroupid)
 
         endpointList = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
@@ -772,9 +780,9 @@ def getEndpointGroup(gwgroupid):
                 ep['description'] = strFieldsToDict(endpoint.description)['name']
                 ep['maintmode'] = ""
 
-                responsePayload['endpoints'].append(ep)
-                responsePayload['strip'] = endpoint.strip
-                responsePayload['prefix'] = endpoint.pri_prefix
+                gwgroup_data['endpoints'].append(ep)
+                gwgroup_data['strip'] = endpoint.strip
+                gwgroup_data['prefix'] = endpoint.pri_prefix
 
         # Notifications
         notifications = {}
@@ -787,22 +795,25 @@ def getEndpointGroup(gwgroupid):
             if notification.type == 1:
                 notifications['endpointfailure'] = notification.value
 
-        responsePayload['notifications'] = notifications
+        gwgroup_data['notifications'] = notifications
 
-        responsePayload['fusionpbx'] = {}
+        gwgroup_data['fusionpbx'] = {}
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid).first()
         if domainmapping is not None:
-            responsePayload['fusionpbx']['enabled'] = "1"
-            responsePayload['fusionpbx']['dbhost'] = domainmapping.db_host
-            responsePayload['fusionpbx']['dbuser'] = domainmapping.db_username
-            responsePayload['fusionpbx']['dbpass'] = domainmapping.db_password
+            gwgroup_data['fusionpbx']['enabled'] = "1"
+            gwgroup_data['fusionpbx']['dbhost'] = domainmapping.db_host
+            gwgroup_data['fusionpbx']['dbuser'] = domainmapping.db_username
+            gwgroup_data['fusionpbx']['dbpass'] = domainmapping.db_password
 
         # CDR info
-        responsePayload['cdr'] = {}
+        gwgroup_data['cdr'] = {}
         cdrinfo = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
         if cdrinfo is not None:
-            responsePayload['cdr']['cdr_email'] = cdrinfo.email
-            responsePayload['cdr']['cdr_send_interval'] = cdrinfo.send_interval
+            gwgroup_data['cdr']['cdr_email'] = cdrinfo.email
+            gwgroup_data['cdr']['cdr_send_interval'] = cdrinfo.send_interval
+
+        responsePayload['data'].append(gwgroup_data)
+        responsePayload['msg'] = 'Endpoint group found'
 
         return jsonify(responsePayload), StatusCodes.HTTP_OK
 
@@ -813,14 +824,15 @@ def getEndpointGroup(gwgroupid):
     finally:
         db.close()
 
+# TODO: should reuse getEndpointGroup() function and return all settings for each gwgroup
 @api.route("/api/v1/endpointgroups", methods=['GET'])
 @api_security
 def listEndpointGroups():
     db = DummySession()
 
-    responsePayload = {}
-    responsePayload['endpointgroups'] = []
-    typeFilter = "%type:{}%".format(settings.FLT_PBX)
+    # defaults.. keep data returned separate from returned metadata
+    responsePayload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    typeFilter = "%type:{}%".format(str(settings.FLT_PBX))
 
     try:
         if settings.DEBUG:
@@ -831,22 +843,17 @@ def listEndpointGroups():
         endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
 
         for endpointgroup in endpointgroups:
-            # Create a dictionary object
-            eg = {}
-
-            # Store the gateway group id
-            eg['gwgroupid'] = endpointgroup.id
-
             # Grap the description field, which is comma seperated key/value pair
             fields = strFieldsToDict(endpointgroup.description)
 
-            # Pull out the name value
-            eg['name'] = fields['name']
+            # append summary of endpoint group data
+            responsePayload['data'].append({
+                'gwgroupid': endpointgroup.id,
+                'name': fields['name'],
+                'gwlist': endpointgroup.gwlist
+            })
 
-            eg['gwlist'] = endpointgroup.gwlist
-
-            # Push the responsePayload
-            responsePayload['endpointgroups'].append(eg)
+        responsePayload['msg'] = 'Endpoint groups found'
 
         return jsonify(responsePayload), StatusCodes.HTTP_OK
 
@@ -857,13 +864,96 @@ def listEndpointGroups():
     finally:
         db.close()
 
+@api.route("/api/v1/endpointgroups", methods=['PUT'])
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['PUT'])
 @api_security
-def updateEndpointGroups(gwgroupid):
+def updateEndpointGroups(gwgroupid=None):
+    """
+    Update a single Endpoint Group\n
+    The gwgroupid can be provided in url path or payload
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+
+            name: <string>,
+            calllimit: <int>,
+            auth: {
+                type: "ip"|"userpwd",
+                user: <string>
+                pass: <string>
+                domain: <string>
+            },
+            endpoints [
+                {
+                    hostname:<string>,
+                    description:<string>,
+                    maintmode:<bool>
+                },
+                ...
+            ],
+            strip: <int>,
+            prefix: <string>,
+            notifications: {
+                overmaxcalllimit: <string>,
+                endpointfailure: <string>
+            },
+            cdr: {
+                cdr_email: <string>,
+                cdr_send_interval: <string>
+            }
+            fusionpbx: {
+                enabled: <bool>,
+                dbhost: <string>,
+                dbuser: <string>,
+                dbpass: <string>
+            }
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <string>,
+            msg: <string>,
+            kamreload: <bool>,
+            data: [
+                {
+                    gwgroupid: <int>,
+                    endpoints: [
+                        <int>,
+                        ...
+                    ]
+                }
+            ]
+        }
+    """
+
     db = DummySession()
 
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
+    # dr_routing prefix matching supported characters
+    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
+    # TODO: we should move this to non-db synced section of settings.py
+    PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "calllimit": int, "auth": dict,
+                               "strip": str, "prefix": str, "notifications": dict, "cdr": dict,
+                               "fusionpbx": dict, "endpoints": list}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'gwgroupid'}
+
+    # defaults.. keep data returned separate from returned metadata
+    responsePayload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': [] }
+    gwgroup_data = {}
 
     try:
         if (settings.DEBUG):
@@ -871,61 +961,78 @@ def updateEndpointGroups(gwgroupid):
 
         db = SessionLoader()
 
-        # Set the status to 0, update it to 1 if the update is successful
-        responsePayload['status'] = 0
-        responsePayload['gwgroupid'] = None
+        # get request data
+        content_type = str.lower(request.headers.get('Content-Type'))
+        if 'multipart/form-data' in content_type:
+            requestPayload = request.form.to_dict(flat=False)
+        elif 'application/x-www-form-urlencoded' in content_type:
+            requestPayload = request.form.to_dict(flat=False)
+        else:
+            requestPayload = request.get_json(force=True)
+        if gwgroupid is not None:
+            gwgroupid = int(gwgroupid)
+            gwgroupid_str = str(gwgroupid)
+            requestPayload['gwgroupid'] = gwgroupid
+        else:
+            if 'gwgroupid' in requestPayload:
+                gwgroupid = int(requestPayload['gwgroupid'])
+                requestPayload['gwgroupid'] = gwgroupid
+            gwgroupid_str = str(gwgroupid)
 
-        # Covert JSON message to Dictionary Object
-        requestPayload = request.get_json()
+        # sanity checks
+        for k, v in requestPayload.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                try:
+                    requestPayload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                    continue
+                except:
+                    raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+        for k in REQUIRED_ARGS:
+            if k not in REQUIRED_ARGS:
+                raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
+        if 'prefix' in requestPayload:
+            for c in requestPayload['prefix']:
+                if c not in PREFIX_ALLOWED_CHARS:
+                    raise http_exceptions.BadRequest(
+                        "Request argument 'prefix' not valid. Allowed characters: {}".format(','.join(PREFIX_ALLOWED_CHARS)))
 
-        # Check parameters and raise exception if missing required parameters
-        requiredParameters = ['name']
-
-        for parameter in requiredParameters:
-            if parameter not in requestPayload:
-                raise http_exceptions.BadRequest("Required parameter '{}' missing".format(parameter))
-            elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
-                raise http_exceptions.BadRequest("Required parameter '{}' invalid".format(parameter))
-
-        # Update Gateway Name
+        # Update gateway group name
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if Gwgroup is None:
             raise http_exceptions.NotFound('gwgroup does not exist')
+        gwgroup_data['gwgroupid'] = gwgroupid
         fields = strFieldsToDict(Gwgroup.description)
         fields['name'] = requestPayload['name']
         Gwgroup.description = dictToStrFields(fields)
-        db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update({'description': Gwgroup.description}, synchronize_session=False)
+        db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
+            {'description': Gwgroup.description}, synchronize_session=False)
 
-        # Update Concurrent connections
-        calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
-        if calllimit is not None and len(calllimit) > 0:
-            if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update({'limit': calllimit}, synchronize_session=False):
-                db.flush()
+        # Update concurrent call limit
+        calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else 0
+        if calllimit > -1:
+            if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update(
+                    {'limit': calllimit}, synchronize_session=False):
+                pass
             else:
-                if isinstance(calllimit, str):
-                    calllimit = int(calllimit)
-                if calllimit > -1:
-                    CallLimit = dSIPCallLimits(gwgroupid,calllimit)
-                    db.add(CallLimit)
+                CallLimit = dSIPCallLimits(gwgroupid_str, str(calllimit))
+                db.add(CallLimit)
 
         # Number of characters to strip and prefix
-        strip = requestPayload['strip'] if 'strip' in requestPayload else ""
-        if isinstance(strip, str):
-            if len(strip) == 0:
-                strip = None
-        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else None
+        strip = int(requestPayload['strip']) if 'strip' in requestPayload else 0
+        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else ""
 
         authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
                                                      'type' in requestPayload['auth'] else ""
-
         # Update the AuthType userpwd settings
         if authtype == "userpwd":
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] \
-                and len(requestPayload['auth']['user']) > 0 else None
+                                                         and len(requestPayload['auth']['user']) > 0 else None
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] \
-                and len(requestPayload['auth']['pass']) > 0 else None
+                                                         and len(requestPayload['auth']['pass']) > 0 else None
             authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] \
-                and len(requestPayload['auth']['domain']) > 0 else settings.DOMAIN
+                                                             and len(requestPayload['auth']['domain']) > 0 else settings.DOMAIN
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Auth username or password invalid")
 
@@ -933,17 +1040,18 @@ def updateEndpointGroups(gwgroupid):
             currentSubscriberInfo = db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
             if currentSubscriberInfo is not None:
                 if authuser == currentSubscriberInfo.username and authpass == currentSubscriberInfo.password \
-                      and authdomain == currentSubscriberInfo.domain:
+                        and authdomain == currentSubscriberInfo.domain:
                     pass  # The subscriber info is the same - no need to update
                 else:  # Check if the new username and domain is unique
-                    if db.query(Subscribers).filter(Subscribers.username == authuser, Subscribers.domain == authdomain).scalar():
+                    if db.query(Subscribers).filter(Subscribers.username == authuser,
+                                                    Subscribers.domain == authdomain).scalar():
                         raise http_exceptions.BadRequest("Subscriber username already taken")
                     else:  # Update the Subscriber Info
                         currentSubscriberInfo.username = authuser
                         currentSubscriberInfo.password = authpass
                         currentSubscriberInfo.domain = authdomain
             else:  # Create a new Suscriber entry
-                Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
+                Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid_str)
                 db.add(Subscriber)
 
         # Delete the Subscriber info if IP is selected
@@ -955,110 +1063,120 @@ def updateEndpointGroups(gwgroupid):
         # Update endpoints
         # Get List of existing endpoints
         # If endpoint sent over is not in the existing endpoint list then remove it
-        typeFilter = "%gwgroup:{}%".format(gwgroupid)
-        currentEndpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
+        gwgroupFilter = "%gwgroup:{}%".format(gwgroupid_str)
+        currentEndpoints = db.query(Gateways).filter(Gateways.description.like(gwgroupFilter)).all()
 
-        IO.loginfo("****Before Endpoints****")
-        if "endpoints" in requestPayload:
-            gwlist = []
-            for endpoint in requestPayload['endpoints']:
-                # gwid is really the gwid. If gwid is empty then this is a new endpoint
-                if len(endpoint['gwid']) == 0:
-                    hostname = endpoint['hostname'] if 'hostname' in endpoint else None
-                    name = endpoint['description'] if 'description' in endpoint else None
-                    if hostname is not None and name is not None and len(hostname) > 0:
-                        Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
-                        db.add(Gateway)
-                        db.flush()
-                        gwlist.append(str(Gateway.gwid))
-                        if authtype == "ip":
-                            Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=str(gwgroupid))
-                            db.add(Addr)
-                        pass  # Move to the next endpoint
-                # Check if it exists in the currentEndpoints and update
-                else:
-                    for currentEndpoint in currentEndpoints:
-                        IO.loginfo("endpoint pbx: {},currentEndpont: {},".format(endpoint['gwid'], currentEndpoint.gwid))
-                        if int(endpoint['gwid']) == currentEndpoint.gwid:
-                            IO.loginfo("Match:endpoint pbx: {},currentEndpont: {}".format(endpoint['gwid'], currentEndpoint.gwid))
-                            fields['name'] = endpoint['description']
-                            fields['gwgroup'] = gwgroupid
-                            description = dictToStrFields(fields)
-                            if db.query(Gateways).filter(Gateways.gwid == currentEndpoint.gwid).update(
-                                  {"address": endpoint['hostname'], "description": description}, synchronize_session=False):
-                                IO.loginfo("adding gateway: {}".format(str(endpoint['gwid'])))
-                                gwlist.append(str(endpoint['gwid']))
-                                if authtype == "ip":
-                                    db.query(Address).filter(and_(Address.ip_addr == currentEndpoint.address, Address.tag.like(typeFilter))).update(
-                                        {"ip_addr": endpoint['hostname']}, synchronize_session=False)
+        endpoints = requestPayload['endpoints'] if "endpoints" in requestPayload else []
+        gwlist = []
+        for endpoint in endpoints:
+            gwid_str = str(endpoint['gwid'])
 
-            db.commit()
-
-            if len(gwlist) > 0:
-                seperator = ","
-                gwlistString = seperator.join(gwlist)
-                IO.loginfo("gwlist: {}".format(gwlistString))
-                # Remove any gateways that aren't on the list
-                # db.query(Gateways).filter(and_(Gateways.gwid.notin_([gwlistString]),Gateways.description.like(typeFilter))).delete(synchronize_session=False)
-                query = "DELETE FROM dr_gateways WHERE dr_gateways.gwid NOT IN ({}) AND dr_gateways.description LIKE '%gwgroup:{}%'".format(
-                    gwlistString, gwgroupid)
-                db.execute(query)
-                db.commit()
-
-            if len(gwlist) == 0:
-                db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                    {"gwlist": ""}, synchronize_session=False)
-                # Remove all gateways for that Endpoint group because the endpoint group is empty
-                db.query(Gateways).filter(Gateways.description.like(typeFilter)).delete(synchronize_session=False)
+            # If gwid is empty then this is a new endpoint
+            if len(gwid_str) == 0:
+                hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
+                name = endpoint['description'] if 'description' in endpoint else ''
+                if len(hostname) > 0:
+                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid_str)
+                    db.add(Gateway)
+                    db.flush()
+                    gwlist.append(Gateway.gwid)
+                    if authtype == "ip":
+                        Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=gwgroupid_str)
+                        db.add(Addr)
+            # Check if it exists in the currentEndpoints and update
             else:
-                db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                    {"gwlist": gwlistString}, synchronize_session=False)
+                gwid = int(endpoint['gwid'])
+
+                for currentEndpoint in currentEndpoints:
+                    IO.loginfo("endpoint pbx: {}, currentEndpoint: {},".format(gwid_str, currentEndpoint.gwid))
+
+                    if gwid == currentEndpoint.gwid:
+                        IO.loginfo("Match on endpoint pbx: {}, currentEndpoint: {}".format(gwid_str, currentEndpoint.gwid))
+                        fields['name'] = endpoint['description']
+                        fields['gwgroup'] = gwgroupid_str
+                        description = dictToStrFields(fields)
+
+                        if db.query(Gateways).filter(Gateways.gwid == currentEndpoint.gwid).update(
+                                {"description": description, "address": endpoint['hostname'], "strip": strip, "pri_prefix": prefix},
+                                synchronize_session=False):
+                            IO.loginfo("adding gateway: {}".format(gwid_str))
+                            gwlist.append(gwid)
+                            if authtype == "ip":
+                                db.query(Address).filter(Address.ip_addr == currentEndpoint.address).filter(
+                                    Address.tag.like(gwgroupFilter)).update(
+                                    {"ip_addr": endpoint['hostname']}, synchronize_session=False)
+
+        gwgroup_data['endpoints'] = gwlist
+
+        # sync session before updating again and format gwlist for db
+        db.flush()
+        gwlist_str = ','.join([str(gw) for gw in gwlist])
+
+        # gateways provided, remove any that aren't on the list
+        if len(gwlist) > 0:
+            db.query(Gateways).filter(Gateways.gwid.notin_(gwlist)).filter(
+                Gateways.description.like(gwgroupFilter)).delete(synchronize_session=False)
+            db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
+                {"gwlist": gwlist_str}, synchronize_session=False)
+        # Remove all gateways for that Endpoint group because the endpoint group is empty
+        else:
+            db.query(Gateways).filter(Gateways.description.like(gwgroupFilter)).delete(synchronize_session=False)
+            db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
+                {"gwlist": ""}, synchronize_session=False)
 
         # Update notifications
         if 'notifications' in requestPayload:
-            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] if 'overmaxcalllimit' in requestPayload['notifications'] else None
-            endpointfailure = requestPayload['notifications']['endpointfailure'] if 'endpointfailure' in requestPayload['notifications'] else None
+            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] \
+                if 'overmaxcalllimit' in requestPayload['notifications'] else None
+            endpointfailure = requestPayload['notifications']['endpointfailure'] \
+                if 'endpointfailure' in requestPayload['notifications'] else None
 
             if overmaxcalllimit is not None:
                 # Try to update
-                if db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 0)).update(
-                      {"value": overmaxcalllimit}):
+                if db.query(dSIPNotification).filter(
+                        and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 0)).update(
+                        {"value": overmaxcalllimit}):
                     pass
                 else:  # Add
-                    type = 0
-                    notification = dSIPNotification(gwgroupid, type, 0, overmaxcalllimit)
+                    notif_type = 0
+                    notification = dSIPNotification(gwgroupid, notif_type, 0, overmaxcalllimit)
                     db.add(notification)
                 # Remove
             else:
-                db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 0)).delete()
+                db.query(dSIPNotification).filter(
+                    and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 0)).delete()
 
             if endpointfailure is not None:
                 # Try to update
-                if db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).update(
-                      {"value": endpointfailure}):
+                if db.query(dSIPNotification).filter(
+                        and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).update(
+                        {"value": endpointfailure}):
                     pass
                 else:  # Add
-                    type = 1
-                    notification = dSIPNotification(gwgroupid, type, 0, endpointfailure)
+                    notif_type = 1
+                    notification = dSIPNotification(gwgroupid, notif_type, 0, endpointfailure)
                     db.add(notification)
                 # Remove
             else:
-                db.query(dSIPNotification).filter(and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).delete()
+                db.query(dSIPNotification).filter(
+                    and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).delete()
 
         # Update CDR
         if 'cdr' in requestPayload:
             cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else None
-            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload['cdr'] else None
+            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload[
+                'cdr'] else None
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
                 # Try to update
-                if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update({"email": cdr_email, "send_interval": cdr_send_interval}):
+                if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update(
+                        {"email": cdr_email, "send_interval": cdr_send_interval}):
                     if not updateTaggedCronjob(gwgroupid, cdr_send_interval):
                         raise Exception('Crontab entry could not be updated')
                 else:
                     cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_interval)
                     db.add(cdrinfo)
-                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'), gwgroupid)
+                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'), gwgroupid_str)
                     if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
                         raise Exception('Crontab entry could not be created')
             else:
@@ -1071,7 +1189,8 @@ def updateEndpointGroups(gwgroupid):
 
         # Update FusionPBX
         if 'fusionpbx' in requestPayload:
-            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
+            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload[
+                'fusionpbx'] else None
             fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
             fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
             fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
@@ -1082,13 +1201,14 @@ def updateEndpointGroups(gwgroupid):
             # Update
             if fusionpbxenabled == 1:
                 # Update
-                if db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid).update( \
-                      {"pbx_id": gwgroupid, "db_host": fusionpbxdbhost, "db_username": fusionpbxdbuser, "db_password": fusionpbxdbpass}):
+                if db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid).update(
+                        {"pbx_id": gwgroupid, "db_host": fusionpbxdbhost, "db_username": fusionpbxdbuser,
+                         "db_password": fusionpbxdbpass}):
                     pass
                 else:
                     # Create new record
-                    domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, \
-                        fusionpbxdbpass, type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+                    domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
+                                                           type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
                     db.add(domainmapping)
             # Delete
             elif fusionpbxenabled == 0:
@@ -1096,10 +1216,14 @@ def updateEndpointGroups(gwgroupid):
 
         db.commit()
 
+        responsePayload['msg'] = 'Endpoint group updated'
+        responsePayload['data'].append(gwgroup_data)
+
         return jsonify(
             message='EndpointGroup Updated',
             gwgroupid=gwgroupid,
-            status="200"
+            status="200",
+            kamreload = globals.reload_required
         ), StatusCodes.HTTP_OK
 
     except Exception as ex:
@@ -1109,43 +1233,95 @@ def updateEndpointGroups(gwgroupid):
     finally:
         db.close()
 
+
+# TODO: fix up like updateEnpointGroups()
 @api.route("/api/v1/endpointgroups", methods=['POST'])
 @api_security
-def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
+def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     """
-    Add Endpoint Group
-    {
-        name: <string>
-        calllimit: <int>,
-        auth: { type: "ip"|"userpwd",
+    Add a single Endpoint Group
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            name: <string>,
+            calllimit: <int>,
+            auth: {
+                type: "ip"|"userpwd",
                 user: <string>
                 pass: <string>
                 domain: <string>
-        },
-        endpoints [
-                    {hostname:<string>,description:<string>,maintmode:<bool>},
-                    {hostname:<string>,description:<string>,maintmode:<bool>}
-                  ],
-        strip: <int>
-        prefix: <string>
-        notifications: {
-            overmaxcalllimit: <string>,
-            endpointfailure" <string>
-        },
-        cdr: {
-            cdr_email: <string>,
-            cdr_send_interval: <string>
-        }
-        fusionpbx: {
-            enabled: <bool>,
-            dbhost: <string>,
-            dbuser: <string>,
-            dbpass: <string>
+            },
+            endpoints [
+                {
+                    hostname:<string>,
+                    description:<string>,
+                    maintmode:<bool>
+                },
+                ...
+            ],
+            strip: <int>,
+            prefix: <string>,
+            notifications: {
+                overmaxcalllimit: <string>,
+                endpointfailure: <string>
+            },
+            cdr: {
+                cdr_email: <string>,
+                cdr_send_interval: <string>
             }
-    }
+            fusionpbx: {
+                enabled: <bool>,
+                dbhost: <string>,
+                dbuser: <string>,
+                dbpass: <string>
+            }
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <string>,
+            msg: <string>,
+            kamreload: <bool>,
+            data: [
+                {
+                    gwgroupid: <int>,
+                    endpoints: [
+                        <int>,
+                        ...
+                    ]
+                }
+            ]
+        }
     """
 
     db = DummySession()
+
+    # dr_routing prefix matching supported characters
+    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
+    # TODO: we should move this to non-db synced section of settings.py
+    PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "calllimit": int, "auth": dict,
+                               "strip": str, "prefix": str, "notifications": dict, "cdr": dict,
+                               "fusionpbx": dict, "endpoints": list}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'gwgroupid'}
+
+    # TODO: update to use standardized response payload
+    # defaults.. keep data returned separate from returned metadata
+    responsePayload = { 'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': [] }
 
     # Check parameters and raise exception if missing required parameters
     requiredParameters = ['name']
@@ -1209,23 +1385,27 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
         if authtype == "userpwd":
             # Store Endpoint IP's in address tables
             authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] \
-                and len(requestPayload['auth']['user']) > 0 else None
+                                                         and len(requestPayload['auth']['user']) > 0 else None
             authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] \
-                and len(requestPayload['auth']['pass']) > 0 else None
+                                                         and len(requestPayload['auth']['pass']) > 0 else None
             authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] \
-                and len(requestPayload['auth']['domain']) > 0 else settings.DOMAIN
+                                                             and len(
+                requestPayload['auth']['domain']) > 0 else settings.DOMAIN
 
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Authentication Username and Password are Required")
-            if db.query(Subscribers).filter(Subscribers.username == authuser, Subscribers.domain == authdomain).scalar():
-                raise sql_exceptions.SQLAlchemyError('DB Entry Taken for Username {} in Domain {}'.format(authuser, authdomain))
+            if db.query(Subscribers).filter(Subscribers.username == authuser,
+                                            Subscribers.domain == authdomain).scalar():
+                raise sql_exceptions.SQLAlchemyError(
+                    'DB Entry Taken for Username {} in Domain {}'.format(authuser, authdomain))
             else:
                 Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid)
                 db.add(Subscriber)
 
         # Enable FusionPBX Support for the Endpoint Group
         if 'fusionpbx' in requestPayload:
-            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload['fusionpbx'] else None
+            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload[
+                'fusionpbx'] else None
             fusionpbxdbonly = requestPayload['fusionpbx']['dbonly'] if 'dbonly' in requestPayload['fusionpbx'] else None
             fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
             fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
@@ -1271,20 +1451,23 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
                     db.add(Addr)
                 if endpointGroupType == "msteams" and domain is not None:
                     # Update the attrs so that the third field contains the MSTeams Domain it relates too
-                    attrs = "{},{},{}".format(Gateway.gwid,settings.FLT_PBX,domain)
-                    db.query(Gateways).filter(Gateways.gwid == Gateway.gwid).update({'attrs': attrs}, synchronize_session=False)
+                    attrs = "{},{},{}".format(Gateway.gwid, settings.FLT_PBX, domain)
+                    db.query(Gateways).filter(Gateways.gwid == Gateway.gwid).update({'attrs': attrs},
+                                                                                    synchronize_session=False)
                     db.flush()
 
             # Update the GatewayGroup with the lists of gateways
             seperator = ","
-            gwlistString = seperator.join(gwlist)
+            gwlist_str = seperator.join(gwlist)
             db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                {'gwlist': gwlistString}, synchronize_session=False)
+                {'gwlist': gwlist_str}, synchronize_session=False)
 
         # Setup notifications
         if 'notifications' in requestPayload:
-            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] if 'overmaxcalllimit' in requestPayload['notifications'] else None
-            endpointfailure = requestPayload['notifications']['endpointfailure'] if 'endpointfailure' in requestPayload['notifications'] else None
+            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] \
+                if 'overmaxcalllimit' in requestPayload['notifications'] else None
+            endpointfailure = requestPayload['notifications']['endpointfailure'] \
+                if 'endpointfailure' in requestPayload['notifications'] else None
 
             if overmaxcalllimit is not None:
                 type = dSIPNotification.FLAGS.TYPE_OVERLIMIT.value
@@ -1301,7 +1484,8 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
         # Enable CDR
         if 'cdr' in requestPayload:
             cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else ''
-            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload['cdr'] else ''
+            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload[
+                'cdr'] else ''
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
                 # create DB entry
@@ -1309,19 +1493,15 @@ def addEndpointGroups(data=None,endpointGroupType=None,domain=None):
                 db.add(cdrinfo)
 
                 # create crontab entry
-                cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'), gwgroupid)
+                cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'),
+                                                         gwgroupid)
                 if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
                     raise Exception('Crontab entry could not be created')
 
-        # DEBUG
-        # for key, value in data.items():
-        #    print(key,value)
-        #
-        # send_email(recipients=recipients, text_body=text_body,data=None)
-
         db.commit()
-        responsePayload['msg'] = 'EndpointGroup Created'
-        responsePayload['status'] = 200
+
+        responsePayload['msg'] = 'Endpoint group created'
+        responsePayload['data'].append(gwgroupid)
         return jsonify(responsePayload), StatusCodes.HTTP_OK
 
     except Exception as ex:
@@ -1487,7 +1667,8 @@ def getGatewayCDRS(gwid=None):
             debugEndpoint()
 
         query = "select cdr_id, gwid, call_start_time, calltype as direction, dst_username as number,src_ip, dst_domain, duration,sip_call_id \
-         from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={} order by call_start_time DESC;".format(gwid)
+         from dr_gateways,cdrs where cdrs.src_ip = dr_gateways.address and gwid={} order by call_start_time DESC;".format(
+            gwid)
 
         cdrs = db.execute(query)
         rows = []
@@ -1540,11 +1721,13 @@ def createBackup(gwid=None):
         else:
             kampass = settings.KAM_DB_PASS
 
-        dumpcmd = ['/usr/bin/mysqldump', '--single-transaction', '--opt', '--routines', '--triggers', '--hex-blob', '-h', settings.KAM_DB_HOST, '-u',
+        dumpcmd = ['/usr/bin/mysqldump', '--single-transaction', '--opt', '--routines', '--triggers', '--hex-blob',
+                   '-h', settings.KAM_DB_HOST, '-u',
                    settings.KAM_DB_USER, '-p{}'.format(kampass), '-B', settings.KAM_DB_NAME]
         with open(backup_path, 'wb') as fp:
             dump = subprocess.Popen(dumpcmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]
-            dump = re.sub(rb'''DEFINER=[`"\'][a-zA-Z0-9_%]*[`"\']@[`"\'][a-zA-Z0-9_%]*[`"\']''', b'', dump, flags=re.MULTILINE)
+            dump = re.sub(rb'''DEFINER=[`"\'][a-zA-Z0-9_%]*[`"\']@[`"\'][a-zA-Z0-9_%]*[`"\']''', b'', dump,
+                          flags=re.MULTILINE)
             dump = re.sub(rb'ENGINE=MyISAM', b'ENGINE=InnoDB', dump, flags=re.MULTILINE)
             fp.write(dump)
 
@@ -1556,6 +1739,7 @@ def createBackup(gwid=None):
 
     except Exception as ex:
         return showApiError(ex)
+
 
 @api.route("/api/v1/backupandrestore/restore", methods=['POST'])
 @api_security
@@ -1614,7 +1798,8 @@ def restoreBackup():
         if len(KAM_DB_PASS) == 0:
             restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-D', settings.KAM_DB_NAME]
         else:
-            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-p{}'.format(KAM_DB_PASS), '-D', settings.KAM_DB_NAME]
+            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-p{}'.format(KAM_DB_PASS),
+                          '-D', settings.KAM_DB_NAME]
 
         with open(restore_path, 'rb') as fp:
             subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
@@ -1644,7 +1829,6 @@ def generatePassword():
 #        are missing double quotes.  So, we need to fix the JSON
 #        payload and loop thru the result vs doing a find.
 def getOptionMessageStatus(domain):
-
     response = subprocess.check_output(['kamcmd', 'dispatcher.list'])
 
     if response:
@@ -1663,8 +1847,7 @@ def getOptionMessageStatus(domain):
 def testConnectivity(domain):
     try:
         # Define a dictionary object that represents the payload
-        responsePayload = {"hostname_check":False,"tls_check":False,"option_check":False}
-
+        responsePayload = {"hostname_check": False, "tls_check": False, "option_check": False}
 
         # Check the external ip matchs the ip set on the server
         external_ip_addr = getExternalIP()
@@ -1676,7 +1859,7 @@ def testConnectivity(domain):
         # Try again, but use Google DNS resolver if the check fails with local DNS
         if responsePayload['hostname_check'] == False:
 
-            #Does the IP address of this server resolve to the domain
+            # Does the IP address of this server resolve to the domain
             import dns.resolver
 
             # Get the IP address of the domain from Google  DNS
@@ -1685,14 +1868,14 @@ def testConnectivity(domain):
             try:
                 answers = resolver.query(domain, 'A')
                 for a in answers:
-                 # If the External IP and IP from DNS match then it passes the check
+                    # If the External IP and IP from DNS match then it passes the check
                     if a.to_text() == external_ip_addr:
                         responsePayload['hostname_check'] = True
             except:
                 pass
         # Check if Domain is the root of the CN
         # GoDaddy Certs Don't work with Microsoft Direct routing
-        certInfo = isCertValid(domain,external_ip_addr,5061)
+        certInfo = isCertValid(domain, external_ip_addr, 5061)
         if certInfo:
             responsePayload['tls_check'] = certInfo
 
@@ -1728,13 +1911,13 @@ def createCertificate():
     """
     db = DummySession()
 
-    
+
     # Convert Request message to Dictionary Object
     requestPayload = request.get_json()
-    
+
     # Define a dictionary object that represents the payload
     responsePayload = {}
-    
+
     # Check parameters and raise exception if missing required parameters
     requiredParameters = ['domain']
 
