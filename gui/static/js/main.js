@@ -218,11 +218,14 @@ $(document).ready(function() {
       type: "GET",
       url: API_BASE_URL + "kamailio/reload",
       dataType: "json",
+      global: false,
       success: function(response, text_status, xhr) {
-        showNotification("Kamailio was reloaded successfully");
+        reloadKamRequired(false);
+        showNotification("Kamailio was reloaded");
       },
       error: function(xhr, text_status, error_msg) {
-        showNotification("Kamailio was NOT reloaded successfully", true);
+        error_msg = JSON.parse(xhr.responseText)["msg"];
+        showNotification("Kamailio was NOT reloaded: " + error_msg, true);
       }
     });
   });

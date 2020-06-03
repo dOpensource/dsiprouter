@@ -27,7 +27,7 @@
   const NOCSRF_REQUEST_METHOD_REGEX = new RegExp(/^(GET|HEAD|OPTIONS|TRACE)$/, 'i');
   const OLD_FETCH = window.fetch;
 
-  function requestErrorHandler(status, error_msg) {
+  function requestErrorHandler(status, error_msg, error_type="http") {
     if (status < 400) {
       // not an error, likely a direct call to error handler
     }
@@ -54,7 +54,7 @@
     else {
       // unhandled error goto error page
       console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
-      window.location.href = GUI_BASE_URL + "error?type=http&code=" +
+      window.location.href = GUI_BASE_URL + "error?type=" + error_type + "&code=" +
           status.toString() + "&msg=" + error_msg;
     }
   }
@@ -70,11 +70,21 @@
   });
   $(document).ajaxError(function(event, xhr, settings, error_msg) {
     // handle HTTP errors, may redirect
-    requestErrorHandler(xhr.status, xhr.statusText);
+    try {
+      // try updating error message and type
+      var data = JSON.parse(xhr.responseText);
+      var error_type = data["error"];
+      error_msg = data["msg"];
+      requestErrorHandler(xhr.status, error_msg, error_type);
+    }
+    catch(error) {
+      // non-JSON response or no error info in response, use defaults
+      requestErrorHandler(xhr.status, xhr.statusText);
+    }
   });
   $(document).ajaxComplete(function(event, xhr, settings) {
-    // try updating kam reload button
     try {
+      // try updating kam reload button
       reloadKamRequired(JSON.parse(xhr.responseText)["kamreload"]);
     }
     catch(error) {
@@ -94,14 +104,22 @@
     }
     return OLD_FETCH.call(this, resource, init).then(function(response) {
       // handle HTTP errors, may redirect
-      requestErrorHandler(response.status, response.statusText);
-      // try updating kam reload button
       try {
-          reloadKamRequired(JSON.parse(response.text())["kamreload"]);
+        var data = JSON.parse(response.text());
+        // try updating kam reload button
+        if (data.hasOwnProperty("kamreload")) {
+          reloadKamRequired(data["kamreload"]);
+        }
+        // try updating error message and type
+        var error_type = data["error"];
+        var error_msg = data["msg"];
+        requestErrorHandler(response.status, error_msg, error_type);
       }
       catch(error) {
-         // non-JSON response or no kamreload in response, continue
+        // non-JSON response or no error info in response, use defaults
+        requestErrorHandler(response.status, response.statusText);
       }
+
       // pass on the response
       return response;
     }).catch(function(error) {

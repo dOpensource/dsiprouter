@@ -492,8 +492,8 @@ def showApiError(ex, payload={}):
         status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
     elif isinstance(ex, http_exceptions.HTTPException):
         payload['error'] = "http"
-        if len(str(ex)) > 0:
-            payload['msg'] = str(ex)
+        if len(ex.description) > 0:
+            payload['msg'] = ex.description
         else:
             payload['msg'] = "Unknown HTTP Error Occurred"
         status_code = ex.code or StatusCodes.HTTP_INTERNAL_SERVER_ERROR

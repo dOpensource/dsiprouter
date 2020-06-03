@@ -1,4 +1,4 @@
-import os, time, json, random, subprocess, requests, re, csv
+import os, time, json, random, subprocess, requests, re, csv, types
 import urllib.parse as parse
 from collections import OrderedDict
 from functools import wraps
@@ -164,7 +164,11 @@ def reloadKamailio():
         for cmdset in reload_cmds:
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
             if r.status_code >= 400:
-                ex = http_exceptions.HTTPException(r.reason)
+                try:
+                    msg = r.json()['error']['message']
+                except:
+                    msg = r.reason
+                ex = http_exceptions.HTTPException(msg)
                 ex.code = r.status_code
                 raise ex
 

@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-e132018a0d0e001d95bced7f76b5201ccf88d76b
+b3efdaaaf377ce3a3b3490972942404de67c3097
+e4defd9cd3b98b19fd9b2a50c95559a37d26765f
 65b76a75e8c8a28560f096d3ae61df52aae053ca
 87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f
 698ab1c7481fad6fedeaa698dcc4d7b00deea0bc
@@ -1540,10 +1541,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION e132018a0d0e001d95bced7f76b5201ccf88d76b)
+[//]: # (START_SECTION b3efdaaaf377ce3a3b3490972942404de67c3097)
+### Improved Error Handling
+
+> Commit: [b3efdaaaf377ce3a3b3490972942404de67c3097](https://git.flyball.co/dsiprouter/enterprise/commit/b3efdaaaf377ce3a3b3490972942404de67c3097)  
+> Date: Wed, 3 Jun 2020 16:49:10 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- allow error messages to propogate to error handler
+- handle error in same page on kamailio reload error
+- set kamailio uac reg reload limit to 30 sec
+
+
+---
+
+[//]: # (END_SECTION b3efdaaaf377ce3a3b3490972942404de67c3097)
+[//]: # (START_SECTION e4defd9cd3b98b19fd9b2a50c95559a37d26765f)
 ###   Resolves https://git.flyball.co/dsiprouter/enterprise/issues/55   - implements some standardization as mentioned in https://git.flyball.co/dsiprouter/enterprise/issues/49   - fixes endpoint group update/add   - fixes endpoint add/update/delete   - fixes call limit default   - fixes kam reload for API   - extends `jquery.tableEdit` functionality   - added comments in API for future updates   - abstract request data handling into `shared.py`   - use `util.security.py` funcs for password generation   - fix API login timeout redirection url   - fix dashboard stats update to match API kam reload   - fix CA certificate format issue for debian OS   - reset settings.py defaults
 
-> Commit: [e132018a0d0e001d95bced7f76b5201ccf88d76b](https://git.flyball.co/dsiprouter/enterprise/commit/e132018a0d0e001d95bced7f76b5201ccf88d76b)  
+> Commit: [e4defd9cd3b98b19fd9b2a50c95559a37d26765f](https://git.flyball.co/dsiprouter/enterprise/commit/e4defd9cd3b98b19fd9b2a50c95559a37d26765f)  
 > Date: Wed, 3 Jun 2020 14:40:44 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1554,7 +1573,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION e132018a0d0e001d95bced7f76b5201ccf88d76b)
+[//]: # (END_SECTION e4defd9cd3b98b19fd9b2a50c95559a37d26765f)
 [//]: # (START_SECTION 65b76a75e8c8a28560f096d3ae61df52aae053ca)
 ### mend
 
