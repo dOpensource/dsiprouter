@@ -136,7 +136,7 @@
       data: JSON.stringify(requestPayload),
       success: function(response, textStatus, jqXHR) {
         var btn;
-        var gwgroupid_int = response.data[0];
+        var gwgroupid_int = response.data[0].gwgroupid;
 
         // Update the Add Button and the table
         if (action === "POST") {

@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-b3efdaaaf377ce3a3b3490972942404de67c3097
+dbb3d93c748ecea3842a13dc4eb7d93d471ff160
+b3873d2aad6a8a8d58f65a369499771db8162013
 e4defd9cd3b98b19fd9b2a50c95559a37d26765f
 65b76a75e8c8a28560f096d3ae61df52aae053ca
 87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f
@@ -1541,10 +1542,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION b3efdaaaf377ce3a3b3490972942404de67c3097)
+[//]: # (START_SECTION dbb3d93c748ecea3842a13dc4eb7d93d471ff160)
+### Fix Endpoint Group Table Update
+
+> Commit: [dbb3d93c748ecea3842a13dc4eb7d93d471ff160](https://git.flyball.co/dsiprouter/enterprise/commit/dbb3d93c748ecea3842a13dc4eb7d93d471ff160)  
+> Date: Wed, 3 Jun 2020 17:20:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix typo in `endpointgroups.js` causing updating in GUI to fail
+
+
+---
+
+[//]: # (END_SECTION dbb3d93c748ecea3842a13dc4eb7d93d471ff160)
+[//]: # (START_SECTION b3873d2aad6a8a8d58f65a369499771db8162013)
 ### Improved Error Handling
 
-> Commit: [b3efdaaaf377ce3a3b3490972942404de67c3097](https://git.flyball.co/dsiprouter/enterprise/commit/b3efdaaaf377ce3a3b3490972942404de67c3097)  
+> Commit: [b3873d2aad6a8a8d58f65a369499771db8162013](https://git.flyball.co/dsiprouter/enterprise/commit/b3873d2aad6a8a8d58f65a369499771db8162013)  
 > Date: Wed, 3 Jun 2020 16:49:10 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1558,7 +1575,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION b3efdaaaf377ce3a3b3490972942404de67c3097)
+[//]: # (END_SECTION b3873d2aad6a8a8d58f65a369499771db8162013)
 [//]: # (START_SECTION e4defd9cd3b98b19fd9b2a50c95559a37d26765f)
 ###   Resolves https://git.flyball.co/dsiprouter/enterprise/issues/55   - implements some standardization as mentioned in https://git.flyball.co/dsiprouter/enterprise/issues/49   - fixes endpoint group update/add   - fixes endpoint add/update/delete   - fixes call limit default   - fixes kam reload for API   - extends `jquery.tableEdit` functionality   - added comments in API for future updates   - abstract request data handling into `shared.py`   - use `util.security.py` funcs for password generation   - fix API login timeout redirection url   - fix dashboard stats update to match API kam reload   - fix CA certificate format issue for debian OS   - reset settings.py defaults
 
