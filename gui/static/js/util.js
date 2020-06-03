@@ -208,8 +208,8 @@
 
   /**
    * Show notification in top notification bar
-   * @param msg   {string} message to display
-   * @param error {boolean} whether its an error
+   * @param {String} msg      message to display
+   * @param {Boolean} error   whether its an error
    */
   window.showNotification = function(msg, error = false) {
     var top_bar = $('.top-bar');
@@ -230,6 +230,25 @@
     top_bar.slideUp(3000, function() {
       top_bar.hide();
     });
+  };
+
+  /**
+   * Update reload kamailio button to indicate if reload is required
+   * @param {Boolean} required    whether a reload is required
+   */
+  window.reloadKamRequired = function(required = true) {
+    var reload_button = $('#reloadkam');
+
+    if (reload_button.length > 0) {
+      if (required) {
+        reload_button.removeClass('btn-primary');
+        reload_button.addClass('btn-warning');
+      }
+      else {
+        reload_button.removeClass('btn-warning');
+        reload_button.addClass('btn-primary');
+      }
+    }
   };
 
 })(window, document);

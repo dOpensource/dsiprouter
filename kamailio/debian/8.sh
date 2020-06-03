@@ -167,7 +167,7 @@ EOF
 
     # Setup Kamailio to use the CA cert's that are shipped with the OS
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
-    ln -s /etc/ssl/certs/ca-certificates.crt ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
+    openssl x509 -in /etc/ssl/certs/ca-certificates.crt -out ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
 
     # Setup dSIPRouter Module
     KAM_VERSION=$(kamailio -V | head -1 | awk '{print $3}' | sed  's/\.//g')

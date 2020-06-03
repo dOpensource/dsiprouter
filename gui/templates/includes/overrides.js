@@ -6,10 +6,16 @@
   // in the future we may switch to overriding XMLHttpRequest instead of using ajax methods
   // ref: https://stackoverflow.com/questions/14527360/can-i-set-a-global-header-for-all-ajax-requests
   // ref: https://jsfiddle.net/cferdinandi/2mc2wnc7/
+  // ref: https://jsfiddle.net/0bjfLey9/1
+  // note that in the ajax implementation the global error handler runs AFTER any locally set error handlers
+  // the inverse is true for the fetch implementation, the global error handler runs BEFORE user catch blocks
 
   // throw an error if required functions not defined
   if (typeof showNotification === "undefined") {
     throw new Error("showNotification() is required and is not defined");
+  }
+  if (typeof reloadKamRequired === "undefined") {
+    throw new Error("reloadKamRequired() is required and is not defined");
   }
 
   // throw an error if required globals not defined
@@ -33,7 +39,7 @@
     else if (status === 401) {
       // unauthorized goto index for login
       console.error('requestErrorHandler(): ' + status.toString() + ' ' + error_msg)
-      window.location.href = GUI_BASE_URL + "index";
+      window.location.href = GUI_BASE_URL;
     }
     else if (status === 403) {
       // forbidden show error in page
@@ -53,9 +59,9 @@
     }
   }
 
-  // set anti-CSRF token for ajax requests
-  // then set error handler for ajax requests
+  // override ajax defaults
   $.ajaxSetup({
+    // set anti-CSRF token
     beforeSend: function(xhr, settings) {
       if (!NOCSRF_REQUEST_METHOD_REGEX.test(settings.type) && !this.crossDomain) {
         xhr.setRequestHeader("X-CSRF-Token", "{{ csrf_token() }}");
@@ -63,11 +69,22 @@
     }
   });
   $(document).ajaxError(function(event, xhr, settings, error_msg) {
+    // handle HTTP errors, may redirect
     requestErrorHandler(xhr.status, xhr.statusText);
   });
+  $(document).ajaxComplete(function(event, xhr, settings) {
+    // try updating kam reload button
+    try {
+      reloadKamRequired(JSON.parse(xhr.responseText)["kamreload"]);
+    }
+    catch(error) {
+      // non-JSON response or no kamreload in response, continue
+    }
+  });
 
-  // set anti-CSRF token for fetch requests
+  // override fetch defaults
   window.fetch = function(resource, init) {
+    // set anti-CSRF token
     // if init is undefined then method is GET and no anti-CSRF token needed
     if (init !== undefined && init.hasOwnProperty('method') && !NOCSRF_REQUEST_METHOD_REGEX.test(init.method)) {
       if (!(init.hasOwnProperty('mode') && init.mode.toLowerCase() === 'cors')) {
@@ -76,9 +93,21 @@
       }
     }
     return OLD_FETCH.call(this, resource, init).then(function(response) {
+      // handle HTTP errors, may redirect
       requestErrorHandler(response.status, response.statusText);
+      // try updating kam reload button
+      try {
+          reloadKamRequired(JSON.parse(response.text())["kamreload"]);
+      }
+      catch(error) {
+         // non-JSON response or no kamreload in response, continue
+      }
+      // pass on the response
+      return response;
     }).catch(function(error) {
-      requestErrorHandler(0, error.message);
+      requestErrorHandler(500, error.message);
+      // if error handler doesn't redirect, reject the promise
+      return Promise.reject(error);
     });
   };
 

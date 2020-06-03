@@ -36,6 +36,7 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
     ]
 
 # TODO: error handling, return None, return true or false
+# TODO: allow option for get/filter for single domain config
 def getCustomTLSConfigs():
     """
     Return kamailio TLS configs for additional domains

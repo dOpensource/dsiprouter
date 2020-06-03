@@ -12,15 +12,15 @@ DSIP_PROTO = 'https'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = b'c4367d53b0992f253a0abc74021410a863390e233faaece3043c9e41619764e56e41f71641a6bc6bd25eecb169586f62538746d97b975b6daa67266da6e1f2b72f34eac6f90b72a3b7f5b9c900ec4151231d46c6909e00cb3813817bb7d1e0abf12194e5c0d4d50e345e34512562fd292909ddeec8f7ab3367dbc6f8eb48adb7'
-DSIP_API_TOKEN = b'f1d14443e71ce5266edc982f1461d4e7e83f9f34394cd44416434be4b293a049671cd5f91229ad90ac55bbd05c722d4334930ced01901acd4e1024d944309e1f1f35dd9f99daea09baa49f57e3ac0fcc'
+DSIP_PASSWORD = 'admin'
+DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'https'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b'3769cb4e880c867aac044d0788d6a442ce126b61e9c4a0759b7104e661e0f173f22a14cfc5e6842656f828039218e5a272b31edfe92a2f7283bdca410c953e7fea15e5e1e71b590454143149346bfe46'
+DSIP_IPC_PASS = 'admin'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -32,9 +32,9 @@ DSIP_LOG_FACILITY = 18
 # dSIPRouter SSL settings
 # ssl key / cert are absolute paths
 # email for re-certification must match certs
-DSIP_SSL_KEY = '/etc/dsiprouter/certs/dsiprouter.key'
-DSIP_SSL_CERT = '/etc/dsiprouter/certs/dsiprouter.crt'
-DSIP_SSL_EMAIL = 'admin@sbc.dsiprouter.net'
+DSIP_SSL_KEY = ''
+DSIP_SSL_CERT = ''
+DSIP_SSL_EMAIL = ''
 DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
@@ -61,7 +61,7 @@ KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
-KAM_DB_PASS = b'b312d079e7e7649cd1505f966fde74f01fcc8890d017bfd2008fdd3e076bf46722db41522453307469c28281277d3895a887dff4390fc0d1dfc385ab8d9d48859c96b6236125565ec65664a6a9e7163c'
+KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
@@ -115,7 +115,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = 'DO'
+CLOUD_PLATFORM = ''
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
@@ -124,7 +124,7 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter 1-1 <>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings

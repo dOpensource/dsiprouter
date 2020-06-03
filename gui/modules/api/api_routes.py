@@ -11,16 +11,17 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
     dSIPCallLimits, InboundMapping, dSIPCDRInfo
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
-    debugEndpoint, StatusCodes, strFieldsToDict, IO
+    debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData
 from util.notifications import sendEmail
-from util.security import AES_CTR
+from util.security import AES_CTR, urandomChars
 from util.file_handling import isValidFile
 from util.kamtls import *
-from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, cronIntervalToDescription
+from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
+    cronIntervalToDescription
 import settings, globals
 
-
 api = Blueprint('api', __name__)
+
 
 # TODO: we need to standardize our response payload, preferably we can create a custom response class
 #       proposed format:    { 'error': '', 'msg': '', 'kamreload': True/False, 'data': [] }
@@ -63,6 +64,7 @@ class APIToken:
         except:
             return False
 
+
 def api_security(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -80,46 +82,51 @@ def api_security(func):
 
     return wrapper
 
+
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
 @api_security
 def getKamailioStats():
-    db = DummySession()
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    stats_data = {'current': 0}
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
+        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+        if r.status_code >= 400:
+            ex = http_exceptions.HTTPException(r.reason)
+            ex.code = r.status_code
+            raise ex
 
-        payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
-        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=payload)
-
-        return r.text, StatusCodes.HTTP_OK
+        response_payload['msg'] = 'Successfully retrieved kamailio stats'
+        response_payload['data'].append(r.json()['result'])
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
-        db.rollback()
-        db.flush()
         return showApiError(ex)
-    finally:
-        db.close()
+
 
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
 @api_security
 def reloadKamailio():
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        payloadResponse = {}
-        configParameters = {}
-        # TODO: Get the configuration parameters to be updatable via the API
-        # configParameters['cfg.sets:teleblock-gw_up'] = 'teleblock, gw_ip' + str(settings.TELEBLOCK_GW_IP)
-        # configParameters['cfg.sets:teleblock-media_ip'] ='"teleblock", "media_ip",' +  str(settings.TELEBLOCK_MEDIA_IP)
-        # configParameters['cfg.seti:teleblock-gw_enabled'] ='"teleblock", "gw_enabled",' +  str(settings.TELEBLOCK_GW_ENABLED)
-        # configParameters['cfg.seti:teleblock-gw_port'] ='"teleblock", "gw_port",' +  str(settings.TELEBLOCK_GW_PORT)
-        # configParameters['cfg.seti:teleblock-media_port'] ='"teleblock", "gw_media_port,' +  str(settings.TELEBLOCK_MEDIA_PORT)
+        # format some settings for kam config
+        dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
+        if isinstance(settings.DSIP_API_TOKEN, bytes):
+            dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+        else:
+            dsip_api_token = settings.DSIP_API_TOKEN
 
-        reloadCommands = [
+        reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
@@ -132,33 +139,58 @@ def reloadKamailio():
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
             {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1}
+            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
+            {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'role', settings.ROLE]},
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_server', dsip_api_url]},
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_token', dsip_api_token]}
         ]
 
-        for cmdset in reloadCommands:
+        if settings.TELEBLOCK_GW_ENABLED:
+            reload_cmds.append(
+                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+                 'params': ['teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)]})
+            reload_cmds.append(
+                {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
+                 'params': ['teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)]})
+            reload_cmds.append(
+                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+                 'params': ['teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)]})
+            reload_cmds.append(
+                {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
+                 'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
+
+        for cmdset in reload_cmds:
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
-            payloadResponse[cmdset['method']] = r.status_code
+            if r.status_code >= 400:
+                ex = http_exceptions.HTTPException(r.reason)
+                ex.code = r.status_code
+                raise ex
 
-        # for key in configParameters:
-        #    if "cfgs.sets" in key:
-        #        payload = '{{"jsonrpc": "2.0", "method": "cfg.sets", "params" : [{}],"id": 1}}'.format(key,configParameters[key])
-        #    elif "cfgi.seti" in key:
-        #        payload = '{{"jsonrpc": "2.0", "method": "cfg.seti", "params" : {},"id": 1}}'.format(key,configParameters[key])
-        #
-        #    r = requests.get('http://127.0.0.1:5060/api/kamailio',json=payload)
-        #   payloadResponse[key]=jsonify({"status":r.status_code,"message":r.json()})
-        #    payloadResponse[key]=r.status_code
-
+        response_payload['msg'] = 'Kamailio reload succeeded'
         globals.reload_required = False
-        return jsonify({"results": payloadResponse}), StatusCodes.HTTP_OK
+        response_payload['kamreload'] = False
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
 
+
+# TODO: this func actually adds an endpoint lease
+#       it should be renamed and changed to use POST method
+# TODO: the last lease id/username generated must be tracked (just query DB)
+#       and used to determine next lease id, otherwise conflicts may occur
 @api.route("/api/v1/endpoint/lease", methods=['GET'])
 @api_security
 def getEndpointLease():
     db = DummySession()
+
+    DEF_PASSWORD_LEN = 32
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    lease_data = {}
 
     try:
         if (settings.DEBUG):
@@ -178,7 +210,7 @@ def getEndpointLease():
         rand_num = random.randint(1, 200)
         name = "lease" + str(rand_num)
         auth_username = name
-        auth_password = generatePassword()
+        auth_password = urandomChars(DEF_PASSWORD_LEN)
         auth_domain = settings.DOMAIN
         if settings.DSIP_API_HOST:
             api_hostname = settings.DSIP_API_HOST
@@ -205,16 +237,18 @@ def getEndpointLease():
         db.add(Lease)
         db.flush()
 
-        payload = {}
-        payload['leaseid'] = Lease.id
-        payload['username'] = auth_username
-        payload['password'] = auth_password
-        payload['hostname'] = api_hostname
-        payload['domain'] = auth_domain
-        payload['ttl'] = ttl
+        lease_data['leaseid'] = Lease.id
+        lease_data['username'] = auth_username
+        lease_data['password'] = auth_password
+        lease_data['hostname'] = api_hostname
+        lease_data['domain'] = auth_domain
+        lease_data['ttl'] = ttl
 
         db.commit()
-        return jsonify(payload), StatusCodes.HTTP_OK
+        response_payload['data'].append(lease_data)
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -223,10 +257,14 @@ def getEndpointLease():
     finally:
         db.close()
 
-@api.route("/api/v1/endpoint/lease/<int:leaseid>/revoke", methods=['PUT'])
+
+@api.route("/api/v1/endpoint/lease/<int:leaseid>/revoke", methods=['DELETE'])
 @api_security
 def revokeEndpointLease(leaseid):
     db = DummySession()
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if (settings.DEBUG):
@@ -248,12 +286,10 @@ def revokeEndpointLease(leaseid):
         # Remove the entry in the Lease table
         db.delete(Lease)
 
-        payload = {}
-        payload['leaseid'] = leaseid
-        payload['status'] = 'revoked'
-
         db.commit()
-        return jsonify(payload), StatusCodes.HTTP_OK
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -262,13 +298,14 @@ def revokeEndpointLease(leaseid):
     finally:
         db.close()
 
+
 @api.route("/api/v1/endpoint/<int:id>", methods=['POST'])
 @api_security
 def updateEndpoint(id):
     db = DummySession()
 
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if (settings.DEBUG):
@@ -276,21 +313,18 @@ def updateEndpoint(id):
 
         db = SessionLoader()
 
-        # Set the status to 0, update it to 1 if the update is successful
-        responsePayload['status'] = 0
-
         # Covert JSON message to Dictionary Object
-        requestPayload = request.get_json()
+        request_payload = getRequestData()
 
         # Only handling the maintmode attribute on this release
-        if 'maintmode' not in requestPayload:
+        if 'maintmode' not in request_payload:
             raise http_exceptions.BadRequest('maintmode attribute missing')
 
-        if requestPayload['maintmode'] == 0:
+        if request_payload['maintmode'] == 0:
             MaintMode = db.query(dSIPMaintModes).filter(dSIPMaintModes.gwid == id).first()
             if MaintMode:
                 db.delete(MaintMode)
-        elif requestPayload['maintmode'] == 1:
+        elif request_payload['maintmode'] == 1:
             # Lookup Gateway ip adddess
             Gateway = db.query(Gateways).filter(Gateways.gwid == id).first()
             if Gateway != None:
@@ -298,15 +332,15 @@ def updateEndpoint(id):
                 db.add(MaintMode)
 
         db.commit()
-        responsePayload['status'] = 1
-
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except sql_exceptions.IntegrityError as ex:
         db.rollback()
         db.flush()
-        responsePayload['msg'] = "endpoint {} is already in maintmode".format(id)
-        return showApiError(ex, responsePayload)
+        response_payload['msg'] = "endpoint {} is already in maintmode".format(id)
+        return showApiError(ex, response_payload)
     except Exception as ex:
         db.rollback()
         db.flush()
@@ -314,7 +348,8 @@ def updateEndpoint(id):
     finally:
         db.close()
 
-# TODO: we should obviously optimize this and cleanup reused code
+
+# TODO: we should optimize this and cleanup reused code
 @api.route("/api/v1/inboundmapping", methods=['GET', 'POST', 'PUT', 'DELETE'])
 @api_security
 def handleInboundMapping():
@@ -326,7 +361,7 @@ def handleInboundMapping():
 
     # dr_routing prefix matching supported characters
     # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
-    # TODO: we should move this somewhere shared between gui and api
+    # TODO: we should move this to settings.py as a non-db backed setting
     PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
 
     # use a whitelist to avoid possible SQL Injection vulns
@@ -335,7 +370,7 @@ def handleInboundMapping():
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name'}
 
-    # defaults.. keep data returned seperate from returned metadata
+    # defaults.. keep data returned separate from returned metadata
     payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
@@ -404,8 +439,7 @@ def handleInboundMapping():
         # create rule for DID mapping
         # ===========================
         elif request.method == "POST":
-            # TODO: should we enforce strict mimetype matching?
-            data = request.get_json(force=True)
+            data = getRequestData()
 
             # sanity checks
             for arg in data:
@@ -457,8 +491,7 @@ def handleInboundMapping():
                 if arg not in VALID_REQUEST_ARGS:
                     raise http_exceptions.BadRequest("Request argument not recognized")
 
-            # TODO: should we enforce strict mimetype matching?
-            data = request.get_json(force=True)
+            data = getRequestData()
             updates = {}
 
             # sanity checks
@@ -551,7 +584,7 @@ def handleInboundMapping():
 
             db.commit()
             globals.reload_required = True
-            payload['kamreload'] = globals.reload_required
+            payload['kamreload'] = True
             payload['msg'] = 'Rule Deleted'
             return jsonify(payload), StatusCodes.HTTP_OK
 
@@ -566,6 +599,7 @@ def handleInboundMapping():
     finally:
         db.close()
 
+
 @api.route("/api/v1/notification/gwgroup", methods=['POST'])
 @api_security
 def handleNotificationRequest():
@@ -579,8 +613,8 @@ def handleNotificationRequest():
     VALID_REQUEST_DATA_ARGS = {'gwgroupid': int, 'type': int, 'text_body': str,
                                'gwid': int, 'subject': str, 'sender': str}
 
-    # defaults.. keep data returned seperate from returned metadata
-    payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if (settings.DEBUG):
@@ -592,17 +626,7 @@ def handleNotificationRequest():
         # create and send notification
         # ============================
 
-        content_type = str.lower(request.headers.get('Content-Type'))
-        if 'multipart/form-data' in content_type:
-            data = request.form.to_dict(flat=False)
-        elif 'application/x-www-form-urlencoded' in content_type:
-            data = request.form.to_dict(flat=False)
-        else:
-            data = request.get_json(force=True)
-
-        # fix data if client is sloppy (http_async_client)
-        if request.headers.get('User-Agent') == 'http_async_client':
-            data = json.loads(list(data)[0])
+        data = getRequestData()
 
         # sanity checks
         for k, v in data.items():
@@ -656,8 +680,8 @@ def handleNotificationRequest():
         elif notification_row.method == dSIPNotification.FLAGS.METHOD_SLACK.value:
             pass
 
-        payload['msg'] = 'Email Sent'
-        return jsonify(payload), StatusCodes.HTTP_OK
+        response_payload['msg'] = 'Email Sent'
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -666,18 +690,20 @@ def handleNotificationRequest():
     finally:
         db.close()
 
+
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['DELETE'])
 @api_security
 def deleteEndpointGroup(gwgroupid):
     db = DummySession()
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
         db = SessionLoader()
-
-        responsePayload = {'status': "0"}
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid)
         if endpointgroup is not None:
@@ -714,9 +740,10 @@ def deleteEndpointGroup(gwgroupid):
             domainmapping.delete(synchronize_session=False)
 
         db.commit()
-
-        responsePayload['status'] = 200
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        response_payload['status'] = 200
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -725,12 +752,13 @@ def deleteEndpointGroup(gwgroupid):
     finally:
         db.close()
 
+
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
 def getEndpointGroup(gwgroupid):
     db = DummySession()
 
-    responsePayload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     gwgroup_data = {}
 
     try:
@@ -766,7 +794,6 @@ def getEndpointGroup(gwgroupid):
         gwgroup_data['auth'] = auth
 
         gwgroup_data['endpoints'] = []
-        typeFilter = "%gwgroup:{}%".format(gwgroupid)
 
         endpointList = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointList is not None:
@@ -812,10 +839,10 @@ def getEndpointGroup(gwgroupid):
             gwgroup_data['cdr']['cdr_email'] = cdrinfo.email
             gwgroup_data['cdr']['cdr_send_interval'] = cdrinfo.send_interval
 
-        responsePayload['data'].append(gwgroup_data)
-        responsePayload['msg'] = 'Endpoint group found'
+        response_payload['data'].append(gwgroup_data)
+        response_payload['msg'] = 'Endpoint group found'
 
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -824,6 +851,7 @@ def getEndpointGroup(gwgroupid):
     finally:
         db.close()
 
+
 # TODO: should reuse getEndpointGroup() function and return all settings for each gwgroup
 @api.route("/api/v1/endpointgroups", methods=['GET'])
 @api_security
@@ -831,7 +859,7 @@ def listEndpointGroups():
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    responsePayload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     typeFilter = "%type:{}%".format(str(settings.FLT_PBX))
 
     try:
@@ -847,15 +875,14 @@ def listEndpointGroups():
             fields = strFieldsToDict(endpointgroup.description)
 
             # append summary of endpoint group data
-            responsePayload['data'].append({
+            response_payload['data'].append({
                 'gwgroupid': endpointgroup.id,
                 'name': fields['name'],
                 'gwlist': endpointgroup.gwlist
             })
 
-        responsePayload['msg'] = 'Endpoint groups found'
-
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        response_payload['msg'] = 'Endpoint groups found'
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -863,6 +890,7 @@ def listEndpointGroups():
         return showApiError(ex)
     finally:
         db.close()
+
 
 @api.route("/api/v1/endpointgroups", methods=['PUT'])
 @api.route("/api/v1/endpointgroups/<int:gwgroupid>", methods=['PUT'])
@@ -945,14 +973,14 @@ def updateEndpointGroups(gwgroupid=None):
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "calllimit": int, "auth": dict,
-                               "strip": str, "prefix": str, "notifications": dict, "cdr": dict,
+                               "strip": int, "prefix": str, "notifications": dict, "cdr": dict,
                                "fusionpbx": dict, "endpoints": list}
 
     # ensure requred args are provided
     REQUIRED_ARGS = {'gwgroupid'}
 
     # defaults.. keep data returned separate from returned metadata
-    responsePayload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': [] }
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     gwgroup_data = {}
 
     try:
@@ -962,41 +990,37 @@ def updateEndpointGroups(gwgroupid=None):
         db = SessionLoader()
 
         # get request data
-        content_type = str.lower(request.headers.get('Content-Type'))
-        if 'multipart/form-data' in content_type:
-            requestPayload = request.form.to_dict(flat=False)
-        elif 'application/x-www-form-urlencoded' in content_type:
-            requestPayload = request.form.to_dict(flat=False)
-        else:
-            requestPayload = request.get_json(force=True)
+        request_payload = getRequestData()
+
         if gwgroupid is not None:
             gwgroupid = int(gwgroupid)
             gwgroupid_str = str(gwgroupid)
-            requestPayload['gwgroupid'] = gwgroupid
+            request_payload['gwgroupid'] = gwgroupid
         else:
-            if 'gwgroupid' in requestPayload:
-                gwgroupid = int(requestPayload['gwgroupid'])
-                requestPayload['gwgroupid'] = gwgroupid
+            if 'gwgroupid' in request_payload:
+                gwgroupid = int(request_payload['gwgroupid'])
+                request_payload['gwgroupid'] = gwgroupid
             gwgroupid_str = str(gwgroupid)
 
         # sanity checks
-        for k, v in requestPayload.items():
+        for k, v in request_payload.items():
             if k not in VALID_REQUEST_DATA_ARGS.keys():
                 raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
             if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
                 try:
-                    requestPayload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                    request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
                     continue
                 except:
                     raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
         for k in REQUIRED_ARGS:
             if k not in REQUIRED_ARGS:
                 raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
-        if 'prefix' in requestPayload:
-            for c in requestPayload['prefix']:
+        if 'prefix' in request_payload:
+            for c in request_payload['prefix']:
                 if c not in PREFIX_ALLOWED_CHARS:
                     raise http_exceptions.BadRequest(
-                        "Request argument 'prefix' not valid. Allowed characters: {}".format(','.join(PREFIX_ALLOWED_CHARS)))
+                        "Request argument 'prefix' not valid. Allowed characters: {}".format(
+                            ','.join(PREFIX_ALLOWED_CHARS)))
 
         # Update gateway group name
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
@@ -1004,13 +1028,13 @@ def updateEndpointGroups(gwgroupid=None):
             raise http_exceptions.NotFound('gwgroup does not exist')
         gwgroup_data['gwgroupid'] = gwgroupid
         fields = strFieldsToDict(Gwgroup.description)
-        fields['name'] = requestPayload['name']
+        fields['name'] = request_payload['name']
         Gwgroup.description = dictToStrFields(fields)
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
             {'description': Gwgroup.description}, synchronize_session=False)
 
         # Update concurrent call limit
-        calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else 0
+        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else -1
         if calllimit > -1:
             if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update(
                     {'limit': calllimit}, synchronize_session=False):
@@ -1018,21 +1042,26 @@ def updateEndpointGroups(gwgroupid=None):
             else:
                 CallLimit = dSIPCallLimits(gwgroupid_str, str(calllimit))
                 db.add(CallLimit)
+        else:
+            Calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid)
+            if Calllimit is not None:
+                Calllimit.delete(synchronize_session=False)
 
         # Number of characters to strip and prefix
-        strip = int(requestPayload['strip']) if 'strip' in requestPayload else 0
-        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else ""
+        strip = request_payload['strip'] if 'strip' in request_payload else 0
+        prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
 
-        authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
-                                                     'type' in requestPayload['auth'] else ""
+        authtype = request_payload['auth']['type'] if 'auth' in request_payload and \
+                                                     'type' in request_payload['auth'] else ""
         # Update the AuthType userpwd settings
         if authtype == "userpwd":
-            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] \
-                                                         and len(requestPayload['auth']['user']) > 0 else None
-            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] \
-                                                         and len(requestPayload['auth']['pass']) > 0 else None
-            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] \
-                                                             and len(requestPayload['auth']['domain']) > 0 else settings.DOMAIN
+            authuser = request_payload['auth']['user'] if 'user' in request_payload['auth'] \
+                                                         and len(request_payload['auth']['user']) > 0 else None
+            authpass = request_payload['auth']['pass'] if 'pass' in request_payload['auth'] \
+                                                         and len(request_payload['auth']['pass']) > 0 else None
+            authdomain = request_payload['auth']['domain'] if 'domain' in request_payload['auth'] \
+                                                             and len(
+                request_payload['auth']['domain']) > 0 else settings.DOMAIN
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Auth username or password invalid")
 
@@ -1066,7 +1095,7 @@ def updateEndpointGroups(gwgroupid=None):
         gwgroupFilter = "%gwgroup:{}%".format(gwgroupid_str)
         currentEndpoints = db.query(Gateways).filter(Gateways.description.like(gwgroupFilter)).all()
 
-        endpoints = requestPayload['endpoints'] if "endpoints" in requestPayload else []
+        endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
         gwlist = []
         for endpoint in endpoints:
             gwid_str = str(endpoint['gwid'])
@@ -1091,13 +1120,15 @@ def updateEndpointGroups(gwgroupid=None):
                     IO.loginfo("endpoint pbx: {}, currentEndpoint: {},".format(gwid_str, currentEndpoint.gwid))
 
                     if gwid == currentEndpoint.gwid:
-                        IO.loginfo("Match on endpoint pbx: {}, currentEndpoint: {}".format(gwid_str, currentEndpoint.gwid))
+                        IO.loginfo(
+                            "Match on endpoint pbx: {}, currentEndpoint: {}".format(gwid_str, currentEndpoint.gwid))
                         fields['name'] = endpoint['description']
                         fields['gwgroup'] = gwgroupid_str
                         description = dictToStrFields(fields)
 
                         if db.query(Gateways).filter(Gateways.gwid == currentEndpoint.gwid).update(
-                                {"description": description, "address": endpoint['hostname'], "strip": strip, "pri_prefix": prefix},
+                                {"description": description, "address": endpoint['hostname'], "strip": strip,
+                                 "pri_prefix": prefix},
                                 synchronize_session=False):
                             IO.loginfo("adding gateway: {}".format(gwid_str))
                             gwlist.append(gwid)
@@ -1125,11 +1156,11 @@ def updateEndpointGroups(gwgroupid=None):
                 {"gwlist": ""}, synchronize_session=False)
 
         # Update notifications
-        if 'notifications' in requestPayload:
-            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] \
-                if 'overmaxcalllimit' in requestPayload['notifications'] else None
-            endpointfailure = requestPayload['notifications']['endpointfailure'] \
-                if 'endpointfailure' in requestPayload['notifications'] else None
+        if 'notifications' in request_payload:
+            overmaxcalllimit = request_payload['notifications']['overmaxcalllimit'] \
+                if 'overmaxcalllimit' in request_payload['notifications'] else None
+            endpointfailure = request_payload['notifications']['endpointfailure'] \
+                if 'endpointfailure' in request_payload['notifications'] else None
 
             if overmaxcalllimit is not None:
                 # Try to update
@@ -1162,9 +1193,9 @@ def updateEndpointGroups(gwgroupid=None):
                     and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).delete()
 
         # Update CDR
-        if 'cdr' in requestPayload:
-            cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else None
-            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload[
+        if 'cdr' in request_payload:
+            cdr_email = request_payload['cdr']['cdr_email'] if 'cdr_email' in request_payload['cdr'] else None
+            cdr_send_interval = request_payload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in request_payload[
                 'cdr'] else None
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
@@ -1176,7 +1207,8 @@ def updateEndpointGroups(gwgroupid=None):
                 else:
                     cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_interval)
                     db.add(cdrinfo)
-                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'), gwgroupid_str)
+                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'),
+                                                             gwgroupid_str)
                     if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
                         raise Exception('Crontab entry could not be created')
             else:
@@ -1188,12 +1220,12 @@ def updateEndpointGroups(gwgroupid=None):
                         raise Exception('Crontab entry could not be deleted')
 
         # Update FusionPBX
-        if 'fusionpbx' in requestPayload:
-            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload[
+        if 'fusionpbx' in request_payload:
+            fusionpbxenabled = request_payload['fusionpbx']['enabled'] if 'enabled' in request_payload[
                 'fusionpbx'] else None
-            fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
-            fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
-            fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
+            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] if 'dbhost' in request_payload['fusionpbx'] else None
+            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] if 'dbuser' in request_payload['fusionpbx'] else None
+            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] if 'dbpass' in request_payload['fusionpbx'] else None
 
             # Convert fusionpbxenabled variable to int
             if isinstance(fusionpbxenabled, str):
@@ -1216,15 +1248,11 @@ def updateEndpointGroups(gwgroupid=None):
 
         db.commit()
 
-        responsePayload['msg'] = 'Endpoint group updated'
-        responsePayload['data'].append(gwgroup_data)
-
-        return jsonify(
-            message='EndpointGroup Updated',
-            gwgroupid=gwgroupid,
-            status="200",
-            kamreload = globals.reload_required
-        ), StatusCodes.HTTP_OK
+        response_payload['msg'] = 'Endpoint group updated'
+        response_payload['data'].append(gwgroup_data)
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1312,25 +1340,13 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "calllimit": int, "auth": dict,
-                               "strip": str, "prefix": str, "notifications": dict, "cdr": dict,
-                               "fusionpbx": dict, "endpoints": list}
+    VALID_REQUEST_DATA_ARGS = {
+        "name": str, "calllimit": int, "auth": dict, "strip": int, "prefix": str,
+        "notifications": dict, "cdr": dict, "fusionpbx": dict, "endpoints": list
+    }
 
-    # ensure requred args are provided
-    REQUIRED_ARGS = {'gwgroupid'}
-
-    # TODO: update to use standardized response payload
     # defaults.. keep data returned separate from returned metadata
-    responsePayload = { 'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': [] }
-
-    # Check parameters and raise exception if missing required parameters
-    requiredParameters = ['name']
-
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
-    # Set the status to 0, update it to 1 if the update is successful
-    responsePayload['status'] = 0
-    responsePayload['gwgroupid'] = None
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if settings.DEBUG:
@@ -1340,57 +1356,57 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         if data == None:
             # Convert Request message to Dictionary Object
-            requestPayload = request.get_json()
+            request_payload = getRequestData()
         else:
             # Use the data parameter as the payload
-            requestPayload = data
+            request_payload = data
 
-        for parameter in requiredParameters:
-            if parameter not in requestPayload:
-                raise http_exceptions.BadRequest("Request Argument '{}' is Required".format(parameter))
-            elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
-                raise http_exceptions.BadRequest("Value for Request Argument '{}' is Not Valid".format(parameter))
+        # sanity checks
+        for k, v in request_payload.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                try:
+                    request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                    continue
+                except:
+                    raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+        if 'prefix' in request_payload:
+            for c in request_payload['prefix']:
+                if c not in PREFIX_ALLOWED_CHARS:
+                    raise http_exceptions.BadRequest(
+                        "Request argument 'prefix' not valid. Allowed characters: {}".format(
+                            ','.join(PREFIX_ALLOWED_CHARS)))
 
         # Process Gateway Name
-        name = requestPayload['name']
+        name = request_payload['name']
         Gwgroup = GatewayGroups(name, type=settings.FLT_PBX)
         db.add(Gwgroup)
         db.flush()
         gwgroupid = Gwgroup.id
-        responsePayload['gwgroupid'] = gwgroupid
 
-        # Call limit
-        # if calllimit is not None and isinstance(calllimit, int) and calllimit > 0:
-        #     CallLimit = dSIPCallLimits(gwgroupid, calllimit)
-        #     db.add(CallLimit)
-
-        calllimit = requestPayload['calllimit'] if 'calllimit' in requestPayload else None
-        if calllimit is not None and len(calllimit) > 0:
-            calllimit = int(calllimit)
-            if calllimit > -1:
-                CallLimit = dSIPCallLimits(gwgroupid, calllimit)
-                db.add(CallLimit)
+        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else -1
+        if calllimit > -1:
+            CallLimit = dSIPCallLimits(gwgroupid, calllimit)
+            db.add(CallLimit)
 
         # Number of characters to strip and prefix
-        strip = requestPayload['strip'] if 'strip' in requestPayload else ""
-        if isinstance(strip, str) and len(strip) == 0:
-            strip = None
-
-        prefix = requestPayload['prefix'] if 'prefix' in requestPayload else ""
+        strip = request_payload['strip'] if 'strip' in request_payload else 0
+        prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
 
         # Setup up authentication
-        authtype = requestPayload['auth']['type'] if 'auth' in requestPayload and \
-                                                     'type' in requestPayload['auth'] else ""
+        authtype = request_payload['auth']['type'] if 'auth' in request_payload and \
+                                                     'type' in request_payload['auth'] else ""
 
         if authtype == "userpwd":
             # Store Endpoint IP's in address tables
-            authuser = requestPayload['auth']['user'] if 'user' in requestPayload['auth'] \
-                                                         and len(requestPayload['auth']['user']) > 0 else None
-            authpass = requestPayload['auth']['pass'] if 'pass' in requestPayload['auth'] \
-                                                         and len(requestPayload['auth']['pass']) > 0 else None
-            authdomain = requestPayload['auth']['domain'] if 'domain' in requestPayload['auth'] \
+            authuser = request_payload['auth']['user'] if 'user' in request_payload['auth'] \
+                                                         and len(request_payload['auth']['user']) > 0 else None
+            authpass = request_payload['auth']['pass'] if 'pass' in request_payload['auth'] \
+                                                         and len(request_payload['auth']['pass']) > 0 else None
+            authdomain = request_payload['auth']['domain'] if 'domain' in request_payload['auth'] \
                                                              and len(
-                requestPayload['auth']['domain']) > 0 else settings.DOMAIN
+                request_payload['auth']['domain']) > 0 else settings.DOMAIN
 
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Authentication Username and Password are Required")
@@ -1403,13 +1419,13 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 db.add(Subscriber)
 
         # Enable FusionPBX Support for the Endpoint Group
-        if 'fusionpbx' in requestPayload:
-            fusionpbxenabled = requestPayload['fusionpbx']['enabled'] if 'enabled' in requestPayload[
+        if 'fusionpbx' in request_payload:
+            fusionpbxenabled = request_payload['fusionpbx']['enabled'] if 'enabled' in request_payload[
                 'fusionpbx'] else None
-            fusionpbxdbonly = requestPayload['fusionpbx']['dbonly'] if 'dbonly' in requestPayload['fusionpbx'] else None
-            fusionpbxdbhost = requestPayload['fusionpbx']['dbhost'] if 'dbhost' in requestPayload['fusionpbx'] else None
-            fusionpbxdbuser = requestPayload['fusionpbx']['dbuser'] if 'dbuser' in requestPayload['fusionpbx'] else None
-            fusionpbxdbpass = requestPayload['fusionpbx']['dbpass'] if 'dbpass' in requestPayload['fusionpbx'] else None
+            fusionpbxdbonly = request_payload['fusionpbx']['dbonly'] if 'dbonly' in request_payload['fusionpbx'] else None
+            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] if 'dbhost' in request_payload['fusionpbx'] else None
+            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] if 'dbuser' in request_payload['fusionpbx'] else None
+            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] if 'dbpass' in request_payload['fusionpbx'] else None
 
             # Convert fusionpbxenabled variable to int
             if isinstance(fusionpbxenabled, str):
@@ -1425,16 +1441,16 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                     endpoint = {}
                     endpoint['hostname'] = fusionpbxdbhost
                     endpoint['description'] = "FusionPBX Server"
-                    if "endpoints" not in requestPayload:
-                        requestPayload['endpoints'] = []
-                    requestPayload['endpoints'].append(endpoint)
+                    if "endpoints" not in request_payload:
+                        request_payload['endpoints'] = []
+                    request_payload['endpoints'].append(endpoint)
 
         # Setup Endpoints
-        if "endpoints" in requestPayload:
+        if "endpoints" in request_payload:
             # Store the gateway lists
             gwlist = []
             # Store Endpoint IP's in address tables
-            for endpoint in requestPayload['endpoints']:
+            for endpoint in request_payload['endpoints']:
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else None
                 name = endpoint['description'] if 'description' in endpoint else None
 
@@ -1463,28 +1479,28 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 {'gwlist': gwlist_str}, synchronize_session=False)
 
         # Setup notifications
-        if 'notifications' in requestPayload:
-            overmaxcalllimit = requestPayload['notifications']['overmaxcalllimit'] \
-                if 'overmaxcalllimit' in requestPayload['notifications'] else None
-            endpointfailure = requestPayload['notifications']['endpointfailure'] \
-                if 'endpointfailure' in requestPayload['notifications'] else None
+        if 'notifications' in request_payload:
+            overmaxcalllimit = request_payload['notifications']['overmaxcalllimit'] \
+                if 'overmaxcalllimit' in request_payload['notifications'] else None
+            endpointfailure = request_payload['notifications']['endpointfailure'] \
+                if 'endpointfailure' in request_payload['notifications'] else None
 
             if overmaxcalllimit is not None:
-                type = dSIPNotification.FLAGS.TYPE_OVERLIMIT.value
+                notif_type = dSIPNotification.FLAGS.TYPE_OVERLIMIT.value
                 method = dSIPNotification.FLAGS.METHOD_EMAIL.value
-                notification = dSIPNotification(gwgroupid, type, method, overmaxcalllimit)
+                notification = dSIPNotification(gwgroupid, notif_type, method, overmaxcalllimit)
                 db.add(notification)
 
             if endpointfailure is not None:
-                type = dSIPNotification.FLAGS.TYPE_GWFAILURE.value
+                notif_type = dSIPNotification.FLAGS.TYPE_GWFAILURE.value
                 method = dSIPNotification.FLAGS.METHOD_EMAIL.value
-                notification = dSIPNotification(gwgroupid, type, method, endpointfailure)
+                notification = dSIPNotification(gwgroupid, notif_type, method, endpointfailure)
                 db.add(notification)
 
         # Enable CDR
-        if 'cdr' in requestPayload:
-            cdr_email = requestPayload['cdr']['cdr_email'] if 'cdr_email' in requestPayload['cdr'] else ''
-            cdr_send_interval = requestPayload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in requestPayload[
+        if 'cdr' in request_payload:
+            cdr_email = request_payload['cdr']['cdr_email'] if 'cdr_email' in request_payload['cdr'] else ''
+            cdr_send_interval = request_payload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in request_payload[
                 'cdr'] else ''
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
@@ -1500,9 +1516,11 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         db.commit()
 
-        responsePayload['msg'] = 'Endpoint group created'
-        responsePayload['data'].append(gwgroupid)
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        response_payload['msg'] = 'Endpoint group created'
+        response_payload['data'].append(gwgroupid)
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1511,6 +1529,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     finally:
         db.close()
 
+
+# TODO: standardize response payload (use data param)
+# TODO: stop shadowing builtin functions! -> type == builtin
 # return value should be used in an http/flask context
 def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfilter=''):
     """
@@ -1531,9 +1552,9 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
     """
     db = DummySession()
 
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
-    # Define here so we can cleanup in finally statement
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    # define here so we can cleanup in finally statement
     csv_file = ''
 
     try:
@@ -1547,9 +1568,9 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
         if gwgroup is not None:
             gwgroupName = strFieldsToDict(gwgroup.description)['name']
         else:
-            responsePayload['status'] = "0"
-            responsePayload['message'] = "Endpont group doesn't exist"
-            return jsonify(responsePayload)
+            response_payload['status'] = "0"
+            response_payload['message'] = "Endpont group doesn't exist"
+            return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
             query = (
@@ -1579,9 +1600,9 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
         rows = db.execute(query)
         cdrs = [OrderedDict(row.items()) for row in rows]
 
-        responsePayload['status'] = "200"
-        responsePayload['cdrs'] = cdrs
-        responsePayload['recordCount'] = len(cdrs)
+        response_payload['status'] = "200"
+        response_payload['cdrs'] = cdrs
+        response_payload['recordCount'] = len(cdrs)
 
         # Convert array of dicts to csv format
         if type == "csv":
@@ -1607,14 +1628,14 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
                     # Remove CDR's from the payload thats being returned
-                    responsePayload.pop('cdrs')
-                    responsePayload['format'] = 'csv'
-                    responsePayload['type'] = 'email'
-                    return jsonify(responsePayload)
+                    response_payload.pop('cdrs')
+                    response_payload['format'] = 'csv'
+                    response_payload['type'] = 'email'
+                    return jsonify(response_payload)
 
             return send_file(csv_file, attachment_filename=filename, as_attachment=True), StatusCodes.HTTP_OK
         else:
-            return jsonify(responsePayload), StatusCodes.HTTP_OK
+            return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1624,6 +1645,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
         db.close()
         if os.path.exists(csv_file):
             os.remove(csv_file)
+
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
@@ -1646,6 +1668,8 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None):
 
     return generateCDRS(gwgroupid, type, email, cdrfilter=filter)
 
+
+# TODO: standardize response payload (use data param)
 @api.route("/api/v1/cdrs/endpoint/<int:gwid>", methods=['GET'])
 @api_security
 def getGatewayCDRS(gwid=None):
@@ -1657,8 +1681,8 @@ def getGatewayCDRS(gwid=None):
     """
     db = DummySession()
 
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         db = SessionLoader()
@@ -1686,11 +1710,11 @@ def getGatewayCDRS(gwid=None):
 
             rows.append(row)
 
-            responsePayload['cdrs'] = rows
-            responsePayload['recordCount'] = len(rows)
-            responsePayload['status'] = "200"
+            response_payload['cdrs'] = rows
+            response_payload['recordCount'] = len(rows)
+            response_payload['status'] = "200"
 
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -1699,15 +1723,16 @@ def getGatewayCDRS(gwid=None):
     finally:
         db.close()
 
+
 @api.route("/api/v1/backupandrestore/backup", methods=['GET'])
 @api_security
-def createBackup(gwid=None):
+def createBackup():
     """
-    Purpose
-
     Generate a backup of the database
-
     """
+
+    # define here so we can cleanup in finally statement
+    backup_path = ''
 
     try:
         if (settings.DEBUG):
@@ -1739,35 +1764,26 @@ def createBackup(gwid=None):
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        if os.path.exists(backup_path):
+            os.remove(backup_path)
 
 
 @api.route("/api/v1/backupandrestore/restore", methods=['POST'])
 @api_security
 def restoreBackup():
     """
-    Purpose
-
     Restore backup of the database
-
     """
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        content_type = str.lower(request.headers.get('Content-Type'))
-        if 'multipart/form-data' in content_type:
-            data = request.form.to_dict(flat=True)
-        elif 'application/x-www-form-urlencoded' in content_type:
-            data = request.form.to_dict(flat=True)
-        else:
-            data = request.get_json(force=True)
-
-        # fix data if client is sloppy (http_async_client)
-        if request.headers.get('User-Agent') == 'http_async_client':
-            data = json.loads(list(data)[0])
+        data = getRequestData()
 
         KAM_DB_USER = settings.KAM_DB_USER
         KAM_DB_PASS = settings.KAM_DB_PASS
@@ -1778,13 +1794,11 @@ def restoreBackup():
                 KAM_DB_PASS = str(data.get('db_password'))
 
         if 'file' not in request.files:
-            responsePayload['status'] = "400"
             raise http_exceptions.BadRequest("No file was sent")
 
         file = request.files['file']
 
         if file.filename == '':
-            responsePayload['status'] = "400"
             raise http_exceptions.BadRequest("No file name was sent")
 
         if file and allowed_file(file.filename, ALLOWED_EXTENSIONS={'sql'}):
@@ -1792,7 +1806,6 @@ def restoreBackup():
             restore_path = os.path.join(settings.BACKUP_FOLDER, filename)
             file.save(restore_path)
         else:
-            responsePayload['status'] = "400"
             raise http_exceptions.BadRequest("Improper file upload")
 
         if len(KAM_DB_PASS) == 0:
@@ -1804,61 +1817,85 @@ def restoreBackup():
         with open(restore_path, 'rb') as fp:
             subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
 
-        responsePayload['status'] = "200"
-        responsePayload['msg'] = "The restore was successful"
-
-        return responsePayload, StatusCodes.HTTP_OK
+        response_payload['msg'] = "The restore was successful"
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return response_payload, StatusCodes.HTTP_OK
 
     except Exception as ex:
-        return showApiError(ex, responsePayload)
+        return showApiError(ex, response_payload)
 
-# Generates a password with a length of 32 charactors
+
 @api.route("/api/v1/sys/generatepassword", methods=['GET'])
 @api_security
 def generatePassword():
-    chars = "abcdefghijklmnopqrstvwxyz0123456789"
-    password = ''
-    for c in range(32):
-        password += random.choice(chars)
-    return jsonify(password=password), StatusCodes.HTTP_OK
+    """
+    Generate a random password
+    """
+
+    DEF_PASSWORD_LEN = 32
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        response_payload['data'].append(urandomChars(DEF_PASSWORD_LEN))
+        response_payload['msg'] = 'Succesfully generated password'
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex, response_payload)
 
 
-# Check if Domain is receiving replies from OPTION Messages
 # TODO:  The response coming back from Kamailio Command Line
 #        is not in proper JSON format.  The field and Attributes
 #        are missing double quotes.  So, we need to fix the JSON
 #        payload and loop thru the result vs doing a find.
+#        Or if we do a JSONRPC call instead we will get proper JSON
 def getOptionMessageStatus(domain):
+    """
+    Check if Domain is receiving replies from OPTION Messages
+    :param domain:  domain to check
+    :type domain:   str
+    :return:        whether domain handled OPTION message correctly
+    :rtype:         bool
+    """
+
     response = subprocess.check_output(['kamcmd', 'dispatcher.list'])
 
-    if response:
-        response = response.decode('utf8').replace("'", '"')
-        found_domain = response.find(domain)
-        if not found_domain:
+    if not response:
+        return False
+
+    response_formatted = response.decode('utf8').replace("'", '"')
+    found_domain = response_formatted.find(domain)
+
+    if not found_domain:
+        return False
+    else:
+        found_inactive = response_formatted.find("FLAGS: IP", found_domain)
+        if found_inactive > 0:
             return False
-        else:
-            found_inactive = response.find("FLAGS: IP", found_domain)
-            if found_inactive > 0:
-                return False
+
     return True
+
 
 @api.route("/api/v1/domains/msteams/test/<string:domain>", methods=['GET'])
 @api_security
 def testConnectivity(domain):
-    try:
-        # Define a dictionary object that represents the payload
-        responsePayload = {"hostname_check": False, "tls_check": False, "option_check": False}
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
-        # Check the external ip matchs the ip set on the server
+    try:
+        test_data = {"hostname_check": False, "tls_check": False, "option_check": False}
+
         external_ip_addr = getExternalIP()
         internal_ip_address = hostToIP(domain)
 
+        # Check the external ip matchs the ip set on the server
         if external_ip_addr == internal_ip_address:
-            responsePayload['hostname_check'] = True
-
+            test_data['hostname_check'] = True
         # Try again, but use Google DNS resolver if the check fails with local DNS
-        if responsePayload['hostname_check'] == False:
-
+        else:
             # Does the IP address of this server resolve to the domain
             import dns.resolver
 
@@ -1870,53 +1907,72 @@ def testConnectivity(domain):
                 for a in answers:
                     # If the External IP and IP from DNS match then it passes the check
                     if a.to_text() == external_ip_addr:
-                        responsePayload['hostname_check'] = True
+                        test_data['hostname_check'] = True
             except:
                 pass
+
         # Check if Domain is the root of the CN
         # GoDaddy Certs Don't work with Microsoft Direct routing
         certInfo = isCertValid(domain, external_ip_addr, 5061)
         if certInfo:
-            responsePayload['tls_check'] = certInfo
+            test_data['tls_check'] = certInfo
 
+        # check if domain can process OPTIONS messages
         if getOptionMessageStatus(domain):
-            responsePayload['option_check'] = True
+            test_data['option_check'] = True
 
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        response_payload['msg'] = 'Tests ran without error'
+        response_payload['data'].append(test_data)
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
 
+
+# TODO: implement GET for single domain
 @api.route("/api/v1/certificates", methods=['GET'])
 @api.route("/api/v1/certificates/<string:domain>", methods=['GET'])
 @api_security
 def getCertificates(domain=None):
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
     try:
-        responsePayload= getCustomTLSConfigs()
-        return jsonify(responsePayload), StatusCodes.HTTP_OK
+        # if domain is not None:
+        #     domain_configs = getCustomTLSConfigs(domain)
+        # else:
+        domain_configs = getCustomTLSConfigs()
+
+        response_payload['msg'] = 'Certificates found'
+        response_payload['data'].append(domain_configs)
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
+
 
 @api.route("/api/v1/certificates", methods=['POST'])
 @api_security
 def createCertificate():
     """
+    Create TLS cert for a domain
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
     {
-        domain: <string>
-        ip: <int>
+        domain: <string>,
+        ip: <int>,
         port: <int>
         server_name_mode: <int>
     }
     """
-    db = DummySession()
 
-
-    # Convert Request message to Dictionary Object
-    requestPayload = request.get_json()
-
-    # Define a dictionary object that represents the payload
-    responsePayload = {}
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     # Check parameters and raise exception if missing required parameters
     requiredParameters = ['domain']
@@ -1925,30 +1981,29 @@ def createCertificate():
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
-
+        request_payload = getRequestData()
 
         for parameter in requiredParameters:
-            if parameter not in requestPayload:
+            if parameter not in request_payload:
                 raise http_exceptions.BadRequest("Request Argument '{}' is Required".format(parameter))
-            elif requestPayload[parameter] is None or len(requestPayload[parameter]) == 0:
+            elif request_payload[parameter] is None or len(request_payload[parameter]) == 0:
                 raise http_exceptions.BadRequest("Value for Request Argument '{}' is Not Valid".format(parameter))
 
-
         # Process Request
-        domain  = requestPayload['domain']
-        ip = requestPayload['ip'] if 'ip' in requestPayload else settings.EXTERNAL_IP_ADDR
-        port = requestPayload['port'] if 'port' in requestPayload else 5061
-        server_name_mode= requestPayload['server_name_mode'] if 'server_name_mode' in requestPayload else KAM_TLS_SNI_ALL
+        domain = request_payload['domain']
+        ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
+        port = request_payload['port'] if 'port' in request_payload else 5061
+        server_name_mode = request_payload[
+            'server_name_mode'] if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
 
-        result = addCustomTLSConfig(domain,ip,port,server_name_mode)
+        result = addCustomTLSConfig(domain, ip, port, server_name_mode)
         if result is None:
-            raise Exception
-        else:
-            responsePayload['status'] = "200"
-            responsePayload['msg'] = "Certificate Created"
-            return jsonify(responsePayload), StatusCodes.HTTP_OK
+            raise Exception('Certificate creation failed')
+
+        response_payload['msg'] = "Certificate creation succeeded"
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
-

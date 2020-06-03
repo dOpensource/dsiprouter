@@ -5,7 +5,11 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-8528e1235365c502d85567d679c807a932b04587
+e132018a0d0e001d95bced7f76b5201ccf88d76b
+65b76a75e8c8a28560f096d3ae61df52aae053ca
+87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f
+698ab1c7481fad6fedeaa698dcc4d7b00deea0bc
+d57d36e0580f4dc5dc69536825fd7f26dfe9b77d
 8cf4a51e31112475d0e67fe0ff6faa555f59e71a
 f33d6146ddd5dbb8fd4a5f5555aa430788c85c72
 806831ba03e3a5265bed7022d3d723751c2c6eac
@@ -1536,10 +1540,70 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 8528e1235365c502d85567d679c807a932b04587)
+[//]: # (START_SECTION e132018a0d0e001d95bced7f76b5201ccf88d76b)
+###   Resolves https://git.flyball.co/dsiprouter/enterprise/issues/55   - implements some standardization as mentioned in https://git.flyball.co/dsiprouter/enterprise/issues/49   - fixes endpoint group update/add   - fixes endpoint add/update/delete   - fixes call limit default   - fixes kam reload for API   - extends `jquery.tableEdit` functionality   - added comments in API for future updates   - abstract request data handling into `shared.py`   - use `util.security.py` funcs for password generation   - fix API login timeout redirection url   - fix dashboard stats update to match API kam reload   - fix CA certificate format issue for debian OS   - reset settings.py defaults
+
+> Commit: [e132018a0d0e001d95bced7f76b5201ccf88d76b](https://git.flyball.co/dsiprouter/enterprise/commit/e132018a0d0e001d95bced7f76b5201ccf88d76b)  
+> Date: Wed, 3 Jun 2020 14:40:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e132018a0d0e001d95bced7f76b5201ccf88d76b)
+[//]: # (START_SECTION 65b76a75e8c8a28560f096d3ae61df52aae053ca)
+### mend
+
+> Commit: [65b76a75e8c8a28560f096d3ae61df52aae053ca](https://git.flyball.co/dsiprouter/enterprise/commit/65b76a75e8c8a28560f096d3ae61df52aae053ca)  
+> Date: Tue, 2 Jun 2020 21:41:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 65b76a75e8c8a28560f096d3ae61df52aae053ca)
+[//]: # (START_SECTION 87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f)
+### Certificates Module - Added SQL to store the certs in the DB - Added the standard install script
+
+> Commit: [87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f](https://git.flyball.co/dsiprouter/enterprise/commit/87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f)  
+> Date: Tue, 2 Jun 2020 21:40:30 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 87b771ec8ea8ec5fcbf08c24fcbf2c34ae76db9f)
+[//]: # (START_SECTION 698ab1c7481fad6fedeaa698dcc4d7b00deea0bc)
+### Certificates - Added UI components to allow a user to select Generate or Upload a certificate
+
+> Commit: [698ab1c7481fad6fedeaa698dcc4d7b00deea0bc](https://git.flyball.co/dsiprouter/enterprise/commit/698ab1c7481fad6fedeaa698dcc4d7b00deea0bc)  
+> Date: Mon, 1 Jun 2020 13:22:09 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 698ab1c7481fad6fedeaa698dcc4d7b00deea0bc)
+[//]: # (START_SECTION d57d36e0580f4dc5dc69536825fd7f26dfe9b77d)
 ### Fixup GUI and API Issues
 
-> Commit: [8528e1235365c502d85567d679c807a932b04587](https://git.flyball.co/dsiprouter/enterprise/commit/8528e1235365c502d85567d679c807a932b04587)  
+> Commit: [d57d36e0580f4dc5dc69536825fd7f26dfe9b77d](https://git.flyball.co/dsiprouter/enterprise/commit/d57d36e0580f4dc5dc69536825fd7f26dfe9b77d)  
 > Date: Sun, 31 May 2020 18:26:18 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1556,7 +1620,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 8528e1235365c502d85567d679c807a932b04587)
+[//]: # (END_SECTION d57d36e0580f4dc5dc69536825fd7f26dfe9b77d)
 [//]: # (START_SECTION 8cf4a51e31112475d0e67fe0ff6faa555f59e71a)
 ### Added a default .gitignore file and added settings.py to it
 

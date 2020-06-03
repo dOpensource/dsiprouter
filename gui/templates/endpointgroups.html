@@ -294,9 +294,6 @@ systemctl restart fail2ban</code></pre>
       <div class="form-group">
         <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls"
                autocomplete="off">
-        {% if (enterprise_enabled == False) %}
-          <a href="/upgrade/calllimit" [Enterprise]/>
-        {% endif %}
       </div>
       <!-- nav tabs -->
       <div id="endpoint-nav" class="navbar">
@@ -361,7 +358,7 @@ systemctl restart fail2ban</code></pre>
               <th>PBX ID</th>
               <th>Hostname/IP</th>
               <th>Description</th>
-              <th><button class="btn btn-success btn-md" type="button" id="updateEndpointRow">Add Row</button></th>
+              <th><button class="btn btn-success btn-md" type="button" id="addEndpointRow">Add Row</button></th>
             </tr>
             </thead>
             <tbody id="endpoint-tablebody2">

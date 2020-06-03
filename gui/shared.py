@@ -1,7 +1,7 @@
 import sys, os, re, json, socket, requests, logging, traceback, inspect, string, random, ssl
 from calendar import monthrange
 from importlib import reload
-from flask import request, render_template, make_response
+from flask import request, render_template, make_response, jsonify
 from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import escape
@@ -243,12 +243,6 @@ def getCustomRoutes():
 
     return custom_routes
 
-def generateID(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
-def generatePassword(size=10, chars=string.ascii_lowercase + string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
 def monthdelta(dt, delta):
     """ Return dt with a delta month change (neg or pos) """
     m, y = (dt.month + delta) % 12, dt.year + (dt.month + delta - 1) // 12
@@ -408,7 +402,9 @@ def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
 
 def debugEndpoint(log_out=True, print_out=True, **kwargs):
     """
-    Debug an endpoint, must be run within request context
+    Debug an endpoint\n
+    Must be run within request context
+
     :param log_out:       True | False
     :param print_out:     True | False
     :param kwargs:        Any args to print / log (<key=value> key word pairs)
@@ -509,7 +505,7 @@ def showApiError(ex, payload={}):
             payload['msg'] = "Unknown Error Occurred"
         status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
 
-    return json.dumps(payload), status_code
+    return jsonify(payload), status_code
 
 def redirectCustom(location, *render_args, code=302, response_cb=None, force_redirect=False):
     """
@@ -595,6 +591,37 @@ def redirectCustom(location, *render_args, code=302, response_cb=None, force_red
     response.headers['Location'] = location
 
     return response
+
+def getRequestData():
+    """
+    Get data from request formatted as dict\n
+    Must be run within request context
+
+    -----
+
+    The following data formats are supported:
+
+    - multipart forms
+    - url encoded forms
+    - JSON body
+
+    :return:        request data
+    :rtype:         dict
+    """
+
+    content_type = str.lower(request.headers.get('Content-Type', ''))
+    if 'multipart/form-data' in content_type:
+        data = request.form.to_dict(flat=False)
+    elif 'application/x-www-form-urlencoded' in content_type:
+        data = request.form.to_dict(flat=False)
+    else:
+        data = request.get_json(force=True)
+
+    # fix data if client is sloppy (http_async_client)
+    if request.headers.get('User-Agent') == 'http_async_client':
+        data = json.loads(list(data)[0])
+
+    return data
 
 class StatusCodes():
     """

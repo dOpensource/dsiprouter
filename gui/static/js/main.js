@@ -11,6 +11,11 @@ if (typeof toggleElemDisabled === "undefined") {
   throw new Error("toggleElemDisabled() is required and is not defined");
 }
 
+// throw an error if required globals not defined
+if (typeof API_BASE_URL === "undefined") {
+  throw new Error("API_BASE_URL is required and is not defined");
+}
+
 /* TODO: replace shorthands with $(document).ready(...) its more verbose */
 $(function() {
   var accordionActive = false;
@@ -144,36 +149,6 @@ $(function() {
   });
 });
 
-function reloadkamrequired(required = true) {
-  var reload_button = $('#reloadkam');
-
-  if (required) {
-    reload_button.removeClass('btn-primary');
-    reload_button.addClass('btn-warning');
-  }
-  else {
-    reload_button.removeClass('btn-warning');
-    reload_button.addClass('btn-primary');
-  }
-}
-
-function reloadkam() {
-  $.ajax({
-    type: "GET",
-    url: "/reloadkam",
-    dataType: "json",
-    success: function(msg) {
-      if (msg.status === 1) {
-        showNotification("Kamailio was reloaded successfully!");
-        reloadkamrequired(false);
-      }
-      else {
-        showNotification("Kamailio was NOT reloaded successfully!", true);
-      }
-    }
-  });
-}
-
 /* TODO: do we have a use for this anymore? */
 /* Update an attribute of an endpoint
 /* row - Javascript DOM that contains the row of the PBX
@@ -189,22 +164,17 @@ function reloadkam() {
 //     url: "/api/v1/endpoint/" + pbxid,
 //     dataType: "json",
 //     contentType: "application/json; charset=utf-8",
-//     success: function (msg) {
-//       if (msg.status === 1) {
-//         //Uncheck the Checkbox
-//         if (attr === 'maintmode') {
-//           $('#checkbox_' + pbxid)[0].checked = false;
-//           if (attrvalue == 1) {
-//             $('#maintmode_' + pbxid).html("<span class='glyphicon glyphicon-wrench'>");
-//             reloadkamrequired();
-//           }
-//           else {
-//             $('#maintmode_' + pbxid).html("");
-//             reloadkamrequired();
-//           }
+//     success: function(response, text_status, xhr) {
+//       // uncheck the Checkbox
+//       if (attr === 'maintmode') {
+//         $('#checkbox_' + pbxid)[0].checked = false;
+//         if (attrvalue == 1) {
+//           $('#maintmode_' + pbxid).html("<span class='glyphicon glyphicon-wrench'>");
+//         }
+//         else {
+//           $('#maintmode_' + pbxid).html("");
 //         }
 //       }
-//
 //     },
 //     data: requestPayload
 //   });
@@ -244,7 +214,17 @@ $(document).ready(function() {
 
   /* kam reload button listener */
   $('#reloadkam').click(function() {
-    reloadkam(this);
+    $.ajax({
+      type: "GET",
+      url: API_BASE_URL + "kamailio/reload",
+      dataType: "json",
+      success: function(response, text_status, xhr) {
+        showNotification("Kamailio was reloaded successfully");
+      },
+      error: function(xhr, text_status, error_msg) {
+        showNotification("Kamailio was NOT reloaded successfully", true);
+      }
+    });
   });
 
   /* listener for authtype radio buttons */

@@ -80,9 +80,9 @@
       url: "/api/v1/domains/msteams/test/" + domain,
       dataType: "json",
       contentType: "application/json; charset=utf-8",
-      success: function(msg) {
+      success: function(response, text_status, xhr) {
         // Update the display
-        updateConnectivtyStatus(msg)
+        updateConnectivtyStatus(response.data[0])
       }
     });
 

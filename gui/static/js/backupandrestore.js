@@ -30,14 +30,11 @@
       cache: false,
       contentType: false,
       processData: false,
-      success: function(response) {
-        if (response.status == "200") {
-          showNotification("Database was restored");
-          reloadkamrequired();
-        }
-        else {
-          showNotification("Database was NOT restored", true);
-        }
+      success: function(response, text_status, xhr) {
+        showNotification("Database was restored");
+      },
+      error: function(xhr, text_status, error_msg) {
+        showNotification("Database was NOT restored", true);
       }
     });
 

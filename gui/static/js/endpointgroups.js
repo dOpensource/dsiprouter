@@ -11,9 +11,6 @@
   if (typeof toggleElemDisabled === "undefined") {
     throw new Error("toggleElemDisabled() is required and is not defined");
   }
-  if (typeof reloadkamrequired === "undefined") {
-    throw new Error("reloadkamrequired() is required and is not defined");
-  }
 
   // throw an error if required globals not defined
   if (typeof API_BASE_URL === "undefined") {
@@ -124,7 +121,7 @@
     // set payload defaults for numbers
     // doing it here allows us to keep placeholder on the input
     if (requestPayload.calllimit.length === 0) {
-      requestPayload.calllimit = 0;
+      requestPayload.calllimit = -1;
     }
     if (requestPayload.strip.length === 0) {
       requestPayload.strip = 0;
@@ -139,7 +136,7 @@
       data: JSON.stringify(requestPayload),
       success: function(response, textStatus, jqXHR) {
         var btn;
-        var gwgroupid_int = response.data[0].gwgroupid;
+        var gwgroupid_int = response.data[0];
 
         // Update the Add Button and the table
         if (action === "POST") {
@@ -155,7 +152,6 @@
         btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
         btn.attr("disabled", true);
 
-        reloadkamrequired();
         if (action === "POST") {
           gwgroup_table.row.add({
             "name": requestPayload.name,
@@ -332,7 +328,6 @@
       dataType: "json",
       contentType: "application/json; charset=utf-8",
       success: function(response, textStatus, jqXHR) {
-        reloadkamrequired();
         $('#delete').modal('hide');
         $('#edit').modal('hide');
         gwgroup_table.row(function (idx, data, node) {
@@ -381,21 +376,8 @@
         editable: [[1, 'hostname'], [2, 'description']],
         saveButton: true,
       },
-      ajaxSetup: function(action, serialize) {
-        var self = endpoint_table1.data('Tabledit');
-
-        if (action === self.settings.buttons.edit.action) {
-          self.globals.lastEditedRow.removeClass(self.settings.dangerClass).addClass(self.settings.warningClass);
-          setTimeout(function() {
-              self.globals.tableObject.find('tr.' + self.settings.warningClass).removeClass(self.settings.warningClass);
-          }, 1400);
-        }
-        else if (action === self.settings.buttons.delete.action) {
-          self.globals.lastDeletedRow.remove();
-        }
-
-        return false;
-      }
+      ajaxDisabled: true,
+      restoreButton: false
     });
 
     /* add modal tabledit init */
@@ -406,21 +388,8 @@
         editable: [[1, 'hostname'], [2, 'description']],
         saveButton: true,
       },
-      ajaxSetup: function(action, serialize) {
-        var self = endpoint_table2.data('Tabledit');
-
-        if (action === self.settings.buttons.edit.action) {
-          self.globals.lastEditedRow.removeClass(self.settings.dangerClass).addClass(self.settings.warningClass);
-          setTimeout(function() {
-              self.globals.tableObject.find('tr.' + self.settings.warningClass).removeClass(self.settings.warningClass);
-          }, 1400);
-        }
-        else if (action === self.settings.buttons.delete.action) {
-          self.globals.lastDeletedRow.remove();
-        }
-
-        return false;
-      }
+      ajaxDisabled: true,
+      restoreButton: false
     });
 
     $('#edit').on('show.bs.modal', function() {
@@ -444,7 +413,7 @@
 
     $('#addEndpointRow').click(function() {
       var table = $('#endpoint-table2');
-      var body = $('#endpoint-tablebody2');
+      //var body = $('#endpoint-tablebody2');
       //var nextId = body.find('tr').length + 1;
       table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
       table.data('Tabledit').reload();
@@ -453,7 +422,7 @@
 
     $('#updateEndpointRow').click(function() {
       var table = $('#endpoint-table');
-      var body = $('#endpoint-tablebody');
+      //var body = $('#endpoint-tablebody');
       //var nextId = body.find('tr').length + 1;
       table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
       table.data('Tabledit').reload();
@@ -526,7 +495,7 @@
           contentType: "application/json; charset=utf-8",
           success: function(response, textStatus, jqXHR) {
             authpwd_inp.attr("type", "text");
-            authpwd_inp.val(response.password)
+            authpwd_inp.val(response.data[0])
             togglepwd_span.removeClass("glyphicon glyphicon-eye-close");
             togglepwd_span.addClass("glyphicon glyphicon-eye-open");
           }

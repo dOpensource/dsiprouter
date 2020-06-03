@@ -7,7 +7,8 @@
  * Modified draw to be public, and plugin can now be accessed via $(table).data('Tabledit') so new rows can be added dynamically
  * Modified settings to be public, plugin settings can be accessed / modified after initialization
  * Created globals to access some basic globals from outside the library
- *
+ * Allowed disabling of ajax requests, using new setting ajaxDisabled
+ * Delete row permanently if restore button not enabled
  */
 
 /**
@@ -41,6 +42,8 @@ if (typeof jQuery === 'undefined') {
             mutedClass: 'text-muted',
             eventType: 'click',
             rowIdentifier: 'id',
+            ajaxDisabled: false,
+            removeOnDelete: false,
             hideIdentifier: false,
             autoFocus: true,
             editButton: true,
@@ -82,9 +85,9 @@ if (typeof jQuery === 'undefined') {
         plugin.settings = $.extend(true, defaults, options);
         plugin.globals = {
             "tableObject": $(element),
-            "lastEditedRow": "undefined",
-            "lastDeletedRow": "undefined",
-            "lastRestoredRow": "undefined"
+            "lastEditedRow": $(),
+            "lastDeletedRow": $(),
+            "lastRestoredRow": $()
         };
 
         /**
@@ -329,14 +332,20 @@ if (typeof jQuery === 'undefined') {
                     return;
                 }
 
-                // Add class "deleted" to row.
-                $(td).parent('tr').addClass('tabledit-deleted-row');
-                // Hide table row.
-                $(td).parent('tr').addClass(plugin.settings.mutedClass).find('.tabledit-toolbar button:not(.tabledit-restore-button)').attr('disabled', true);
-                // Show restore button.
-                $(td).find('.tabledit-restore-button').show();
-                // Set last deleted row.
-                plugin.globals.lastDeletedRow = $(td).parent('tr');
+                // delete permanently if restore button not enabled
+                if (plugin.settings.restoreButton === false) {
+                    $(td).parent('tr').remove();
+                }
+                else {
+                    // Add class "deleted" to row.
+                    $(td).parent('tr').addClass('tabledit-deleted-row');
+                    // Hide table row.
+                    $(td).parent('tr').addClass(plugin.settings.mutedClass).find('.tabledit-toolbar button:not(.tabledit-restore-button)').attr('disabled', true);
+                    // Show restore button.
+                    $(td).find('.tabledit-restore-button').show();
+                    // Set last deleted row.
+                    plugin.globals.lastDeletedRow = $(td).parent('tr');
+                }
             },
             confirm: function(td) {
                 // Reset all cells in edit mode.
@@ -378,6 +387,29 @@ if (typeof jQuery === 'undefined') {
          */
         function ajax(action)
         {
+            if (plugin.settings.ajaxDisabled) {
+                try {
+                    if (action === plugin.settings.buttons.edit.action) {
+                        plugin.globals.lastEditedRow.removeClass(plugin.settings.dangerClass).addClass(plugin.settings.warningClass);
+                        setTimeout(function() {
+                            plugin.globals.tableObject.find('tr.' + plugin.settings.warningClass).removeClass(plugin.settings.warningClass);
+                        }, 1400);
+                    }
+                    return true;
+                }
+                catch(error) {
+                    if (action === plugin.settings.buttons.delete.action) {
+                        plugin.globals.lastDeletedRow.removeClass(plugin.settings.mutedClass).addClass(plugin.settings.dangerClass);
+                        plugin.globals.lastDeletedRow.find('.tabledit-toolbar button').attr('disabled', false);
+                        plugin.globals.lastDeletedRow.find('.tabledit-toolbar .tabledit-restore-button').hide();
+                    }
+                    else if (action === plugin.settings.buttons.edit.action) {
+                        plugin.globals.lastEditedRow.addClass(plugin.settings.dangerClass);
+                    }
+                    return false;
+                }
+            }
+
             var serialize = plugin.globals.tableObject.find('.tabledit-input').serialize() + '&action=' + action;
 
             var result = plugin.settings.onAjax(action, serialize);
@@ -424,9 +456,9 @@ if (typeof jQuery === 'undefined') {
         plugin.settings.onDraw();
 
         plugin.reload = function() {
-            plugin.globals.lastEditedRow = 'undefined';
-            plugin.globals.lastDeletedRow = 'undefined';
-            plugin.globals.lastRestoredRow = 'undefined';
+            plugin.globals.lastEditedRow = $();
+            plugin.globals.lastDeletedRow = $();
+            plugin.globals.lastRestoredRow = $();
             plugin.Draw.columns.identifier();
             plugin.Draw.columns.editable();
             plugin.Draw.columns.toolbar();
