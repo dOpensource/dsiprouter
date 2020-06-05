@@ -9,7 +9,7 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
-    dSIPCallLimits, InboundMapping, dSIPCDRInfo
+    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData
 from util.notifications import sendEmail
@@ -1938,17 +1938,35 @@ def testConnectivity(domain):
 @api.route("/api/v1/certificates/<string:domain>", methods=['GET'])
 @api_security
 def getCertificates(domain=None):
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    db = DummySession()
+
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    gwgroup_data = {}
 
     try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
         # else:
-        domain_configs = getCustomTLSConfigs()
+        #domain_configs = getCustomTLSConfigs()
 
-        response_payload['msg'] = 'Certificates found'
-        response_payload['data'].append(domain_configs)
+        certificates = db.query(dSIPCertificates).all()
+
+        for certificate in certificates:
+
+            # append summary of endpoint group data
+            response_payload['data'].append({
+                'id': certificate.id,
+                'domain': certificate.domain,
+                'type': certificate.type,
+                'assigned_domains': ''
+            })
+
+        response_payload['msg'] = 'Certificates found' if len(certificates) > 0 else 'No Certificates'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:

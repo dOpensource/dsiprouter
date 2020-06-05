@@ -308,6 +308,19 @@ class dSIPFailFwd(object):
 
     pass
 
+class dSIPCertificates(object):
+    """
+    Schema for dsip_certificates table\n
+    """
+
+    def __init__(self, id, domain, type, cert, key):
+        self.id = id
+        self.domain = domain
+        self.type = type
+        self.key = key
+
+    pass
+
 class UAC(object):
     """
     Schema for uacreg table\n
@@ -514,6 +527,7 @@ def createSessionMaker():
     dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
     dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
     dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
+    dsip_certificates = Table('dsip_certificates', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -545,6 +559,7 @@ def createSessionMaker():
     mapper(dSIPHardFwd, dsip_hardfwd)
     mapper(dSIPFailFwd, dsip_failfwd)
     mapper(dSIPCDRInfo, dsip_cdrinfo)
+    mapper(dSIPCertificates, dsip_certificates)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
