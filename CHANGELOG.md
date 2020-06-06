@@ -5,7 +5,10 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-dbb3d93c748ecea3842a13dc4eb7d93d471ff160
+b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8
+3657bfd59850a0b74e2a94c53c72348513abcf50
+31359590de49b8f5098a8568432929555645689e
+9fab8dbf3eee065837301bec528982ffc32c6089
 b3873d2aad6a8a8d58f65a369499771db8162013
 e4defd9cd3b98b19fd9b2a50c95559a37d26765f
 65b76a75e8c8a28560f096d3ae61df52aae053ca
@@ -1542,10 +1545,63 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION dbb3d93c748ecea3842a13dc4eb7d93d471ff160)
+[//]: # (START_SECTION b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8)
+### v0.62 Fixes
+
+> Commit: [b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8](https://git.flyball.co/dsiprouter/enterprise/commit/b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8)  
+> Date: Sat, 6 Jun 2020 03:04:17 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix endpoint group address table mapping
+- update default gateways to match address table mapping
+- add support for ipv6 in a majority of functions
+- add support for uri parsing
+- fix uacreg entry handling in GUI routes
+- fix endpoint group error on add
+- fix error handling when modal visible
+- update python docstring documentation
+
+
+---
+
+[//]: # (END_SECTION b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8)
+[//]: # (START_SECTION 3657bfd59850a0b74e2a94c53c72348513abcf50)
+### Certificates - Added support for adding certificates
+
+> Commit: [3657bfd59850a0b74e2a94c53c72348513abcf50](https://git.flyball.co/dsiprouter/enterprise/commit/3657bfd59850a0b74e2a94c53c72348513abcf50)  
+> Date: Fri, 5 Jun 2020 23:24:55 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3657bfd59850a0b74e2a94c53c72348513abcf50)
+[//]: # (START_SECTION 31359590de49b8f5098a8568432929555645689e)
+### Initial commit of LetsEncrypt functions
+
+> Commit: [31359590de49b8f5098a8568432929555645689e](https://git.flyball.co/dsiprouter/enterprise/commit/31359590de49b8f5098a8568432929555645689e)  
+> Date: Fri, 5 Jun 2020 20:52:58 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 31359590de49b8f5098a8568432929555645689e)
+[//]: # (START_SECTION 9fab8dbf3eee065837301bec528982ffc32c6089)
 ### Fix Endpoint Group Table Update
 
-> Commit: [dbb3d93c748ecea3842a13dc4eb7d93d471ff160](https://git.flyball.co/dsiprouter/enterprise/commit/dbb3d93c748ecea3842a13dc4eb7d93d471ff160)  
+> Commit: [9fab8dbf3eee065837301bec528982ffc32c6089](https://git.flyball.co/dsiprouter/enterprise/commit/9fab8dbf3eee065837301bec528982ffc32c6089)  
 > Date: Wed, 3 Jun 2020 17:20:46 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1557,7 +1613,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION dbb3d93c748ecea3842a13dc4eb7d93d471ff160)
+[//]: # (END_SECTION 9fab8dbf3eee065837301bec528982ffc32c6089)
 [//]: # (START_SECTION b3873d2aad6a8a8d58f65a369499771db8162013)
 ### Improved Error Handling
 

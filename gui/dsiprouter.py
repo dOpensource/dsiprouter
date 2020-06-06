@@ -14,7 +14,8 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
+    safeUriToHost, safeFormatSipUri
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
@@ -38,6 +39,8 @@ shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
 
 # TODO: unit testing per component
+# TODO: many of these routes could use some updating...
+#       possibly look into this as well when reworking the architecture for API
 
 @app.before_first_request
 def before_first_request():
@@ -281,74 +284,70 @@ def addUpdateCarrierGroups():
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
-        auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else None
-        if "sip:" in auth_proxy or "sips:" in auth_proxy:
-            # Search and grab the hostname or ip address
-            # m = re.search(':.+?@(.*):?(.*)?',auth_proxy)
-            m = re.search(':(.*@)?(.*)(:.*)?', auth_proxy)
-            if m:
-                ip_addr = hostToIP(m.group(2))
-            # Let the user set the authproxy field manually
-            pass
-        elif auth_proxy is '' or auth_proxy is None:
-            # IP Address to store in the address table
-            ip_addr = hostToIP(auth_domain)
-            # Use the r_username to auth against the auth domain
-            auth_proxy = "sip:{}@{}".format(r_username, auth_domain)
-        else:
-            ip_addr = hostToIP(auth_proxy)
-            # r_username used in register
-            auth_proxy = "sip:{}@{}".format(r_username, auth_proxy)
+        auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
+
+        # format data
+        auth_domain = safeUriToHost(auth_domain)
+        if auth_domain is None:
+            raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
+        if len(auth_proxy) == 0:
+            auth_proxy = auth_domain
+        auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
+        if auth_proxy is None:
+            raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
 
         # Adding
         if len(gwgroup) <= 0:
-            print(name)
-
             Gwgroup = GatewayGroups(name, type=settings.FLT_CARRIER)
             db.add(Gwgroup)
             db.flush()
             gwgroup = Gwgroup.id
 
+            # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd":
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
-                # Add auth_domain(aka registration server) to the gateway list
-                Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
-            else:
-                Uacreg = UAC(gwgroup, username=gwgroup, local_domain=settings.EXTERNAL_IP_ADDR, flags=UAC.FLAGS.REG_DISABLED.value)
-                db.add(Uacreg)
 
         # Updating
         else:
             # config form
             if len(new_name) > 0:
                 Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-                fields = strFieldsToDict(Gwgroup.description)
-                fields['name'] = new_name
-                Gwgroup.description = dictToStrFields(fields)
-                db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).update({'description': Gwgroup.description}, synchronize_session=False)
+                gwgroup_fields = strFieldsToDict(Gwgroup.description)
+                old_name = gwgroup_fields['name']
+                gwgroup_fields['name'] = new_name
+                Gwgroup.description = dictToStrFields(gwgroup_fields)
+
+                Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(old_name))).first()
+                if Addr is not None:
+                    addr_fields = strFieldsToDict(Addr.tag)
+                    addr_fields['name'] = 'name:{}-uac'.format(new_name)
+                    Addr.tag = dictToStrFields(addr_fields)
 
             # auth form
             else:
                 if authtype == "userpwd":
-                    db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
+                    # update uacreg if exists, otherwise create
+                    if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                         {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False)
-                    Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name)))
-                    Addr.delete(synchronize_session=False)
-                    Addr = Address(name + "-uac", ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                    db.add(Addr)
+                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
+                        Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
+                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
+                        db.add(Uacreg)
 
+                    # update address if exists, otherwise create
+                    if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
+                        {'ip_addr': auth_domain}, synchronize_session=False):
+                        Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                        db.add(Addr)
                 else:
-                    db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': '', 'r_username': '', 'auth_username': '', 'auth_password': '', 'r_domain': '',
-                         'realm': '', 'auth_proxy': '', 'flags': UAC.FLAGS.REG_DISABLED.value},
-                        synchronize_session=False)
-                    Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name)))
-                    Addr.delete(synchronize_session=False)
+                    # delete uacreg and address if they exist
+                    db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
+                    db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
 
         db.commit()
         globals.reload_required = True
@@ -589,7 +588,7 @@ def addUpdateCarriers():
 
             # if address exists update
             address_exists = False
-            if 'addr_id' in gw_fields:
+            if 'addr_id' in gw_fields and len(gw_fields['addr_id']) > 0:
                 Addr = db.query(Address).filter(Address.id == gw_fields['addr_id']).first()
 
                 # if entry is non existent handle in next block
@@ -605,7 +604,7 @@ def addUpdateCarriers():
                     Addr.tag = dictToStrFields(addr_fields)
 
             # otherwise create the address
-            if 'addr_id' not in gw_fields or address_exists == False:
+            if not address_exists:
                 if len(gwgroup) > 0:
                     Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 else:
@@ -739,7 +738,7 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('endpointgroups.html', DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
+        return render_template('endpointgroups.html')
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -762,7 +761,7 @@ def displayCDRS():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('cdrs.html', DEFAULT_AUTH_DOMAIN=settings.DOMAIN)
+        return render_template('cdrs.html')
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)

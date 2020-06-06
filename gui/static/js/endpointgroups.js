@@ -50,7 +50,10 @@
 
     var requestPayload = {};
     requestPayload.name = modal_body.find(".name").val();
-    requestPayload.calllimit = modal_body.find(".calllimit").val();
+    var call_limit = modal_body.find(".calllimit").val();
+    if (call_limit.length > 0) {
+      requestPayload.calllimit = parseInt(call_limit, 10);
+    }
 
     var auth = {};
 
@@ -105,24 +108,26 @@
 
     requestPayload.fusionpbx = fusionpbx;
 
-    /* Process endpoints */
+    /* Process endpoints (empty endpoints are ignored) */
     var endpoints = [];
     $("tr.endpoint").each(function(i, row) {
       var endpoint = {};
-      endpoint.gwid = $(this).find('td').eq(0).text();
+      var gwid = $(this).find('td').eq(0).text();
+      if (gwid.length > 0) {
+        endpoint.gwid = parseInt(gwid, 10);
+      }
       endpoint.hostname = $(this).find('td').eq(1).text();
       endpoint.description = $(this).find('td').eq(2).text();
       //endpoint.maintmode = $(this).find('td').eq(3).text();
 
-      endpoints.push(endpoint);
+      if (!(endpoint.hostname.length === 0 && endpoint.description.length === 0)) {
+        endpoints.push(endpoint);
+      }
     });
     requestPayload.endpoints = endpoints;
 
     // set payload defaults for numbers
     // doing it here allows us to keep placeholder on the input
-    if (requestPayload.calllimit.length === 0) {
-      requestPayload.calllimit = -1;
-    }
     if (requestPayload.strip.length === 0) {
       requestPayload.strip = 0;
     }

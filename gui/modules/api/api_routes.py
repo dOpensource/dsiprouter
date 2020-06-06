@@ -11,7 +11,7 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
     dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
-    debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData
+    debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars
 from util.file_handling import isValidFile
@@ -222,12 +222,12 @@ def getEndpointLease():
             api_hostname = getExternalIP()
 
         # Set some defaults
-        ip_addr = ''
+        host_addr = ''
         strip = ''
         prefix = ''
 
         # Add the Gateways table
-        Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_PBX)
+        Gateway = Gateways(name, host_addr, strip, prefix, settings.FLT_PBX)
         db.add(Gateway)
         db.flush()
 
@@ -911,7 +911,6 @@ def updateEndpointGroups(gwgroupid=None):
     .. code-block:: json
 
         {
-
             name: <string>,
             calllimit: <int>,
             auth: {
@@ -922,9 +921,9 @@ def updateEndpointGroups(gwgroupid=None):
             },
             endpoints [
                 {
+                    gwid:<int>,
                     hostname:<string>,
-                    description:<string>,
-                    maintmode:<bool>
+                    description:<string>
                 },
                 ...
             ],
@@ -1031,15 +1030,15 @@ def updateEndpointGroups(gwgroupid=None):
         if Gwgroup is None:
             raise http_exceptions.NotFound('gwgroup does not exist')
         gwgroup_data['gwgroupid'] = gwgroupid
-        fields = strFieldsToDict(Gwgroup.description)
-        fields['name'] = request_payload['name']
-        Gwgroup.description = dictToStrFields(fields)
+        gwgroup_desc_dict = strFieldsToDict(Gwgroup.description)
+        gwgroup_desc_dict['name'] = request_payload['name'] if 'name' in request_payload else ''
+        Gwgroup.description = dictToStrFields(gwgroup_desc_dict)
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
             {'description': Gwgroup.description}, synchronize_session=False)
 
         # Update concurrent call limit
-        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else -1
-        if calllimit > -1:
+        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else None
+        if calllimit is not None and calllimit > -1:
             if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update(
                     {'limit': calllimit}, synchronize_session=False):
                 pass
@@ -1051,20 +1050,20 @@ def updateEndpointGroups(gwgroupid=None):
             if Calllimit is not None:
                 Calllimit.delete(synchronize_session=False)
 
-        # Number of characters to strip and prefix
+        # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
+        authtype = request_payload['auth']['type'] \
+            if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
 
-        authtype = request_payload['auth']['type'] if 'auth' in request_payload and \
-                                                     'type' in request_payload['auth'] else ""
         # Update the AuthType userpwd settings
         if authtype == "userpwd":
-            authuser = request_payload['auth']['user'] if 'user' in request_payload['auth'] \
-                                                         and len(request_payload['auth']['user']) > 0 else None
-            authpass = request_payload['auth']['pass'] if 'pass' in request_payload['auth'] \
-                                                         and len(request_payload['auth']['pass']) > 0 else None
-            authdomain = request_payload['auth']['domain'] if 'domain' in request_payload['auth'] \
-                                                             and len(
+            authuser = request_payload['auth']['user'] \
+                if 'user' in request_payload['auth'] and len(request_payload['auth']['user']) > 0 else None
+            authpass = request_payload['auth']['pass'] \
+                if 'pass' in request_payload['auth'] and len(request_payload['auth']['pass']) > 0 else None
+            authdomain = request_payload['auth']['domain'] \
+                if 'domain' in request_payload['auth'] and len(
                 request_payload['auth']['domain']) > 0 else settings.DOMAIN
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Auth username or password invalid")
@@ -1096,68 +1095,144 @@ def updateEndpointGroups(gwgroupid=None):
         # Update endpoints
         # Get List of existing endpoints
         # If endpoint sent over is not in the existing endpoint list then remove it
-        gwgroupFilter = "%gwgroup:{}%".format(gwgroupid_str)
-        currentEndpoints = db.query(Gateways).filter(Gateways.description.like(gwgroupFilter)).all()
-
-        endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
+        gwgroup_filter = "%gwgroup:{}%".format(gwgroupid_str)
+        current_endpoints_lut = {
+            x.gwid: {'address': x.address, 'description_dict': strFieldsToDict(x.description)} \
+            for x in db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).all()
+        }
+        updated_endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
+        unprocessed_endpoints_lut = {}
         gwlist = []
-        for endpoint in endpoints:
-            gwid_str = str(endpoint['gwid'])
+
+        # endpoints to add unconditionally
+        for endpoint in updated_endpoints:
+            gwid = endpoint['gwid'] if 'gwid' in endpoint else None
 
             # If gwid is empty then this is a new endpoint
-            if len(gwid_str) == 0:
+            if gwid is None:
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
                 name = endpoint['description'] if 'description' in endpoint else ''
-                if len(hostname) > 0:
-                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid_str)
-                    db.add(Gateway)
+                if len(hostname) == 0:
+                    raise http_exceptions.BadRequest("Endpoint hostname/address is required")
+
+                if authtype == "ip":
+                    sip_addr = safeUriToHost(hostname, default_port=5060)
+                    if sip_addr is None:
+                        raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+                    host_addr = safeStripPort(sip_addr)
+
+                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    db.add(Addr)
                     db.flush()
-                    gwlist.append(Gateway.gwid)
-                    if authtype == "ip":
-                        Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=gwgroupid_str)
-                        db.add(Addr)
-            # Check if it exists in the currentEndpoints and update
+                    Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
+                                       addr_id=Addr.id)
+                else:
+                    Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
+
+                db.add(Gateway)
+                db.flush()
+                gwlist.append(Gateway.gwid)
+
+            # Process separately
             else:
-                gwid = int(endpoint['gwid'])
+                unprocessed_endpoints_lut[gwid] = {
+                    'hostname': endpoint['hostname'],
+                    'name': endpoint['description']
+                }
 
-                for currentEndpoint in currentEndpoints:
-                    IO.loginfo("endpoint pbx: {}, currentEndpoint: {},".format(gwid_str, currentEndpoint.gwid))
+        # conditionally adding/updating/deleting endpoints (using set theory)
+        # generally endpoints won't be added with gwid specified but its possible
+        current_gwids = set(current_endpoints_lut.keys())
+        updated_gwids = set(unprocessed_endpoints_lut.keys())
+        add_gwids = updated_gwids - current_gwids
+        upd_gwids = current_gwids & updated_gwids
+        del_gwids = current_gwids - updated_gwids
 
-                    if gwid == currentEndpoint.gwid:
-                        IO.loginfo(
-                            "Match on endpoint pbx: {}, currentEndpoint: {}".format(gwid_str, currentEndpoint.gwid))
-                        fields['name'] = endpoint['description']
-                        fields['gwgroup'] = gwgroupid_str
-                        description = dictToStrFields(fields)
+        # conditional endpoints to add
+        for gwid in add_gwids:
+            endpoint = unprocessed_endpoints_lut[gwid]
 
-                        if db.query(Gateways).filter(Gateways.gwid == currentEndpoint.gwid).update(
-                                {"description": description, "address": endpoint['hostname'], "strip": strip,
-                                 "pri_prefix": prefix},
-                                synchronize_session=False):
-                            IO.loginfo("adding gateway: {}".format(gwid_str))
-                            gwlist.append(gwid)
-                            if authtype == "ip":
-                                db.query(Address).filter(Address.ip_addr == currentEndpoint.address).filter(
-                                    Address.tag.like(gwgroupFilter)).update(
-                                    {"ip_addr": endpoint['hostname']}, synchronize_session=False)
+            hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
+            name = endpoint['name'] if 'name' in endpoint else ''
+            if len(hostname) == 0:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
+            if authtype == "ip":
+                sip_addr = safeUriToHost(hostname, default_port=5060)
+                if sip_addr is None:
+                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+                host_addr = safeStripPort(sip_addr)
+
+                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                db.add(Addr)
+                db.flush()
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id)
+            else:
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
+
+            # we ignore the given gwid and allow DB to assign one instead
+            db.add(Gateway)
+            db.flush()
+            gwlist.append(Gateway.gwid)
+
+        # conditional endpoints to update
+        for gwid in upd_gwids:
+            endpoint = unprocessed_endpoints_lut[gwid]
+            current_endpoint = current_endpoints_lut[gwid]
+
+            # allow updating single fields (if not provided set to current value)
+            endpoint_fields = current_endpoint['description_dict']
+            hostname = endpoint['hostname'] if 'hostname' in endpoint else current_endpoint['address']
+            name = endpoint['name'] if 'name' in endpoint else endpoint_fields['name']
+            endpoint_fields['name'] = name
+            if len(hostname) == 0:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is required")
+
+            if authtype == "ip":
+                sip_addr = safeUriToHost(hostname, default_port=5060)
+                if sip_addr is None:
+                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+                host_addr = safeStripPort(sip_addr)
+
+                # if address exists update, otherwise create it
+                address_exists = False
+                if 'addr_id' in endpoint_fields and len(endpoint_fields['addr_id']) > 0:
+                    Addr = db.query(Address).filter(Address.id == endpoint_fields['addr_id']).first()
+
+                    if Addr is not None:
+                        address_exists = True
+
+                        Addr.ip_addr = host_addr
+                        addr_fields = strFieldsToDict(Addr.tag)
+                        addr_fields['name'] = name
+                        addr_fields['gwgroup'] = gwgroupid_str
+                        Addr.tag = dictToStrFields(addr_fields)
+
+                if not address_exists:
+                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+
+                    db.add(Addr)
+                    db.flush()
+                    endpoint_fields['addr_id'] = str(Addr.id)
+
+            # update the endpoint
+            db.query(Gateways).filter(Gateways.gwid == gwid).update(
+                {"description": dictToStrFields(endpoint_fields), "address": sip_addr, "strip": strip,
+                 "pri_prefix": prefix}, synchronize_session=False)
+
+            gwlist.append(gwid)
+
+        # conditional endpoints to delete
+        # we also cleanup house here in case of stray entries
+        db.query(Gateways).filter(Gateways.gwid.in_(del_gwids)).delete(synchronize_session=False)
+        db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(
+            Gateways.gwid.notin_(gwlist)).delete(synchronize_session=False)
+
+        # set return gwlist and update the endpoint group's gwlist
         gwgroup_data['endpoints'] = gwlist
-
-        # sync session before updating again and format gwlist for db
-        db.flush()
         gwlist_str = ','.join([str(gw) for gw in gwlist])
-
-        # gateways provided, remove any that aren't on the list
-        if len(gwlist) > 0:
-            db.query(Gateways).filter(Gateways.gwid.notin_(gwlist)).filter(
-                Gateways.description.like(gwgroupFilter)).delete(synchronize_session=False)
-            db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                {"gwlist": gwlist_str}, synchronize_session=False)
-        # Remove all gateways for that Endpoint group because the endpoint group is empty
-        else:
-            db.query(Gateways).filter(Gateways.description.like(gwgroupFilter)).delete(synchronize_session=False)
-            db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                {"gwlist": ""}, synchronize_session=False)
+        db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
+            {"gwlist": gwlist_str}, synchronize_session=False)
 
         # Update notifications
         if 'notifications' in request_payload:
@@ -1168,39 +1243,39 @@ def updateEndpointGroups(gwgroupid=None):
 
             if overmaxcalllimit is not None:
                 # Try to update
-                if db.query(dSIPNotification).filter(
-                        and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 0)).update(
-                        {"value": overmaxcalllimit}):
+                if db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
+                        dSIPNotification.type == 0).update({"value": overmaxcalllimit}):
                     pass
-                else:  # Add
+                # Otherwise Add
+                else:
                     notif_type = 0
                     notification = dSIPNotification(gwgroupid, notif_type, 0, overmaxcalllimit)
                     db.add(notification)
-                # Remove
+            # Remove
             else:
-                db.query(dSIPNotification).filter(
-                    and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 0)).delete()
+                db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
+                    dSIPNotification.type == 0).delete()
 
             if endpointfailure is not None:
                 # Try to update
-                if db.query(dSIPNotification).filter(
-                        and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).update(
-                        {"value": endpointfailure}):
+                if db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
+                        dSIPNotification.type == 1).update({"value": endpointfailure}):
                     pass
-                else:  # Add
+                # Otherwise Add
+                else:
                     notif_type = 1
                     notification = dSIPNotification(gwgroupid, notif_type, 0, endpointfailure)
                     db.add(notification)
-                # Remove
+            # Remove
             else:
-                db.query(dSIPNotification).filter(
-                    and_(dSIPNotification.gwgroupid == gwgroupid, dSIPNotification.type == 1)).delete()
+                db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
+                    dSIPNotification.type == 1).delete()
 
         # Update CDR
         if 'cdr' in request_payload:
             cdr_email = request_payload['cdr']['cdr_email'] if 'cdr_email' in request_payload['cdr'] else None
-            cdr_send_interval = request_payload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in request_payload[
-                'cdr'] else None
+            cdr_send_interval = request_payload['cdr']['cdr_send_interval'] \
+                if 'cdr_send_interval' in request_payload['cdr'] else None
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
                 # Try to update
@@ -1225,11 +1300,14 @@ def updateEndpointGroups(gwgroupid=None):
 
         # Update FusionPBX
         if 'fusionpbx' in request_payload:
-            fusionpbxenabled = request_payload['fusionpbx']['enabled'] if 'enabled' in request_payload[
-                'fusionpbx'] else None
-            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] if 'dbhost' in request_payload['fusionpbx'] else None
-            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] if 'dbuser' in request_payload['fusionpbx'] else None
-            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] if 'dbpass' in request_payload['fusionpbx'] else None
+            fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
+                if 'enabled' in request_payload['fusionpbx'] else None
+            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
+                if 'dbhost' in request_payload['fusionpbx'] else None
+            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
+                if 'dbuser' in request_payload['fusionpbx'] else None
+            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] \
+                if 'dbpass' in request_payload['fusionpbx'] else None
 
             # Convert fusionpbxenabled variable to int
             if isinstance(fusionpbxenabled, str):
@@ -1291,8 +1369,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             endpoints [
                 {
                     hostname:<string>,
-                    description:<string>,
-                    maintmode:<bool>
+                    description:<string>
                 },
                 ...
             ],
@@ -1351,6 +1428,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
     # defaults.. keep data returned separate from returned metadata
     response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    gwgroup_data = {}
 
     try:
         if settings.DEBUG:
@@ -1388,29 +1466,30 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         db.add(Gwgroup)
         db.flush()
         gwgroupid = Gwgroup.id
+        gwgroup_data['gwgroupid'] = gwgroupid
 
-        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else -1
-        if calllimit > -1:
+        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else None
+        if calllimit is not None and calllimit > -1:
             CallLimit = dSIPCallLimits(gwgroupid, calllimit)
             db.add(CallLimit)
 
-        # Number of characters to strip and prefix
+        # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
-
-        # Setup up authentication
-        authtype = request_payload['auth']['type'] if 'auth' in request_payload and \
-                                                     'type' in request_payload['auth'] else ""
+        authtype = request_payload['auth']['type'] \
+            if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
 
         if authtype == "userpwd":
             # Store Endpoint IP's in address tables
-            authuser = request_payload['auth']['user'] if 'user' in request_payload['auth'] \
-                                                         and len(request_payload['auth']['user']) > 0 else None
-            authpass = request_payload['auth']['pass'] if 'pass' in request_payload['auth'] \
-                                                         and len(request_payload['auth']['pass']) > 0 else None
-            authdomain = request_payload['auth']['domain'] if 'domain' in request_payload['auth'] \
-                                                             and len(
-                request_payload['auth']['domain']) > 0 else settings.DOMAIN
+            authuser = request_payload['auth']['user'] \
+                if 'user' in request_payload['auth'] \
+                   and len(request_payload['auth']['user']) > 0 else None
+            authpass = request_payload['auth']['pass'] \
+                if 'pass' in request_payload['auth'] \
+                   and len(request_payload['auth']['pass']) > 0 else None
+            authdomain = request_payload['auth']['domain'] \
+                if 'domain' in request_payload['auth'] \
+                   and len(request_payload['auth']['domain']) > 0 else settings.DOMAIN
 
             if authuser == None or authpass == None:
                 raise http_exceptions.BadRequest("Authentication Username and Password are Required")
@@ -1424,12 +1503,16 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         # Enable FusionPBX Support for the Endpoint Group
         if 'fusionpbx' in request_payload:
-            fusionpbxenabled = request_payload['fusionpbx']['enabled'] if 'enabled' in request_payload[
-                'fusionpbx'] else None
-            fusionpbxdbonly = request_payload['fusionpbx']['dbonly'] if 'dbonly' in request_payload['fusionpbx'] else None
-            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] if 'dbhost' in request_payload['fusionpbx'] else None
-            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] if 'dbuser' in request_payload['fusionpbx'] else None
-            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] if 'dbpass' in request_payload['fusionpbx'] else None
+            fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
+                if 'enabled' in request_payload['fusionpbx'] else None
+            fusionpbxdbonly = request_payload['fusionpbx']['dbonly'] \
+                if 'dbonly' in request_payload['fusionpbx'] else None
+            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
+                if 'dbhost' in request_payload['fusionpbx'] else None
+            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
+                if 'dbuser' in request_payload['fusionpbx'] else None
+            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] \
+                if 'dbpass' in request_payload['fusionpbx'] else None
 
             # Convert fusionpbxenabled variable to int
             if isinstance(fusionpbxenabled, str):
@@ -1450,37 +1533,48 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                     request_payload['endpoints'].append(endpoint)
 
         # Setup Endpoints
-        if "endpoints" in request_payload:
-            # Store the gateway lists
-            gwlist = []
-            # Store Endpoint IP's in address tables
-            for endpoint in request_payload['endpoints']:
-                hostname = endpoint['hostname'] if 'hostname' in endpoint else None
-                name = endpoint['description'] if 'description' in endpoint else None
+        endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
+        gwlist = []
 
-                if settings.DEBUG:
-                    print("***{}***{}".format(hostname, name))
+        # endpoints to add unconditionally
+        for endpoint in endpoints:
+            hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
+            name = endpoint['description'] if 'description' in endpoint else ''
+            if len(hostname) == 0:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
-                if hostname is not None and name is not None and len(hostname) > 0:
-                    Gateway = Gateways(name, hostname, strip, prefix, settings.FLT_PBX, gwgroup=str(gwgroupid))
-                    db.add(Gateway)
-                    db.flush()
-                    gwlist.append(str(Gateway.gwid))
-                if authtype == "ip":
-                    Addr = Address(name, hostname, 32, settings.FLT_PBX, gwgroup=str(gwgroupid))
-                    db.add(Addr)
-                if endpointGroupType == "msteams" and domain is not None:
-                    # Update the attrs so that the third field contains the MSTeams Domain it relates too
-                    attrs = "{},{},{}".format(Gateway.gwid, settings.FLT_PBX, domain)
-                    db.query(Gateways).filter(Gateways.gwid == Gateway.gwid).update({'attrs': attrs},
-                                                                                    synchronize_session=False)
-                    db.flush()
+            # For MSTeams the third attrs field contains the Domain it relates too
+            # the first two fields are always stripped and replaced by our triggers
+            if endpointGroupType == "msteams" and domain is not None:
+                attrs = '0,0,{}'.format(domain)
+            else:
+                attrs = ''
 
-            # Update the GatewayGroup with the lists of gateways
-            seperator = ","
-            gwlist_str = seperator.join(gwlist)
-            db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                {'gwlist': gwlist_str}, synchronize_session=False)
+            if authtype == "ip":
+                sip_addr = safeUriToHost(hostname, default_port=5060)
+                if sip_addr is None:
+                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+                host_addr = safeStripPort(sip_addr)
+
+                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                db.add(Addr)
+                db.flush()
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
+                                   attrs=attrs)
+            else:
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
+
+            db.add(Gateway)
+            db.flush()
+            gwlist.append(Gateway.gwid)
+
+        # set return gwlist and update the endpoint group's gwlist
+        gwgroup_data['endpoints'] = gwlist
+        gwlist_str = ','.join([str(gw) for gw in gwlist])
+
+        # Update the GatewayGroup with the lists of gateways
+        db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
+            {'gwlist': gwlist_str}, synchronize_session=False)
 
         # Setup notifications
         if 'notifications' in request_payload:
@@ -1503,9 +1597,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         # Enable CDR
         if 'cdr' in request_payload:
-            cdr_email = request_payload['cdr']['cdr_email'] if 'cdr_email' in request_payload['cdr'] else ''
-            cdr_send_interval = request_payload['cdr']['cdr_send_interval'] if 'cdr_send_interval' in request_payload[
-                'cdr'] else ''
+            cdr_email = request_payload['cdr']['cdr_email'] \
+                if 'cdr_email' in request_payload['cdr'] else ''
+            cdr_send_interval = request_payload['cdr']['cdr_send_interval'] \
+                if 'cdr_send_interval' in request_payload['cdr'] else ''
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
                 # create DB entry
@@ -1521,7 +1616,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         db.commit()
 
         response_payload['msg'] = 'Endpoint group created'
-        response_payload['data'].append(gwgroupid)
+        response_payload['data'].append(gwgroup_data)
         globals.reload_required = True
         response_payload['kamreload'] = True
         return jsonify(response_payload), StatusCodes.HTTP_OK
@@ -1893,7 +1988,7 @@ def testConnectivity(domain):
         test_data = {"hostname_check": False, "tls_check": False, "option_check": False}
 
         external_ip_addr = getExternalIP()
-        internal_ip_address = hostToIP(domain)
+        internal_ip_address = hostToIP(safeUriToHost(domain))
 
         # Check the external ip matchs the ip set on the server
         if external_ip_addr == internal_ip_address:
