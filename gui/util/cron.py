@@ -9,7 +9,7 @@ def getTaggedCronjob(tag):
     Get a cronjob from current user's crontab by its tag
 
     :param tag:     tag specified when creating
-    :type tag:      str
+    :type tag:      str|int
     :return:        cronjob entry or None
     :rtype:         CronTab|None
     """
@@ -26,7 +26,7 @@ def addTaggedCronjob(tag, interval, cmd):
     Adds a tagged cronjob to current user's crontab
 
     :param tag:         tag for new entry
-    :type tag:          str
+    :type tag:          str|int
     :param interval:    crontab interval
     :type interval:     str
     :param cmd:         crontab cmd to run
@@ -63,13 +63,13 @@ def updateTaggedCronjob(tag, interval='', cmd='', new_tag=''):
     Update a tagged cronjob in the current user's crontab
 
     :param tag:         tag of existing entry
-    :type tag:          str
+    :type tag:          str|int
     :param interval:    new crontab interval
     :type interval:     str
     :param cmd:         new crontab cmd to run
     :type cmd:          str
     :param new_tag:     new tag for entry
-    :type new_tag:      str
+    :type new_tag:      str|int
     :return:            whether it succeeded
     :rtype:             bool
     """
@@ -111,7 +111,7 @@ def deleteTaggedCronjob(tag):
     Delete a tagged cronjob from the existing user's crontab
 
     :param tag:     tag of existing entry
-    :type tag:      str
+    :type tag:      str|int
     :return:        whether it succeeded
     :rtype:         bool
     """

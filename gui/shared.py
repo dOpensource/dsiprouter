@@ -101,22 +101,245 @@ def getDNSNames():
 
     return host, domain, fqdn
 
+# TODO: make sure we aren't resolving to DNSMasq internal domains
+#       (local.cluster,localhost,etc..)
 def hostToIP(host):
-    """ Returns ip of host, or None on failure"""
+    """
+    Convert host to IP Address\n
+    Supports conversion to IPv4 and IPv6\n
+    IPv4 takes priority and is tried first
+
+    :param host:        hostname/fqdn to convert to IP
+    :type host:         str
+    :return:            IP address of host
+    :rtype:             str|None
+    """
+
     try:
-        # Remove any port numbers from the ip
-        if ":" in host:
-            host = host.split(":", 1)[0]
-        return socket.gethostbyname(host)
+        return socket.getaddrinfo(host, 0, socket.AF_INET)[0][4][0]
     except:
-        return None
+        pass
+    try:
+        return socket.getaddrinfo(host, 0, socket.AF_INET6)[0][4][0]
+    except:
+        pass
+    return None
 
 def ipToHost(ip):
-    """ Returns hostname of ip, or None on failure"""
+    """
+    Converts IP Address to hostname\n
+    Supports conversion from IPv4 and IPv6
+
+    :param ip:      IP address to convert
+    :type ip:       str
+    :return:        hostname for IP
+    :rtype:         str|None
+    """
+
     try:
         return socket.gethostbyaddr(ip)[0]
     except:
         return None
+
+def parseSipUri(uri):
+    """
+    Parse SIP URI into its components
+
+    components dict format:
+
+    .. code-block:: python
+
+        res = {
+            'proto': <str|None>,
+            'user': <str|None>,
+            'ipv6': <str|None>,
+            'ipv4': <str|None>,
+            'host': <str|None>,
+            'port': <int|None>,
+            'params': <dict|None>
+        }
+
+    :param uri:     SIP URI to parse
+    :type uri:      str
+    :return:        components of SIP URI
+    :rtype:         dict|None
+    """
+
+    match = re.search(
+        (r'^'
+         r'(?:(?P<proto>[a-zA-Z]+):)?'
+         r'(?:(?P<user>[a-zA-Z0-9\-_.]+)@)?'
+         r'(?:'
+         r'(?:\[?(?P<ipv6>(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\]?)|'
+         r'(?P<ipv4>(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))|'
+         r'(?P<host>(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9])\.)*(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]))'
+         r')'
+         r'(?::(?P<port>[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?'
+         r'(?:;(?P<params>[^\s]*))?'
+         r'$'),
+        uri)
+    if match:
+        res = match.groupdict()
+        if res['port'] is not None:
+            res['port'] = int(res['port'])
+        if res['params'] is not None:
+            res['params'] = {x[0]: (x[1] if len(x) == 2 else True) for x in [y.split('=', 1) for y in res['params'].split(';')]}
+        return res
+    return None
+
+def parseGenericUri(uri):
+    """
+    Parse Generic URI into its components (as generic as possible)\n
+    Port is the only part type casted (parse delimited fields accordingly)
+
+    components dict format:
+
+    .. code-block:: python
+
+        res = {
+            'proto': <str|None>,
+            'userpw': <str|None>,
+            'ipv6': <str|None>,
+            'ipv4': <str|None>,
+            'host': <str|None>,
+            'port': <int|None>,
+            'path': <str|None>,
+            'params': <str|None>
+        }
+
+    :param uri:     URI to parse
+    :type uri:      str
+    :return:        components of URI
+    :rtype:         dict|None
+    """
+
+    match = re.search(
+        (r'^'
+         r'(?:(?P<proto>[a-zA-Z]+):/?/?)?'
+         r'(?:(?P<userpw>[a-zA-Z0-9\-_.]+(?::.+)?)(?:@))?'
+         r'(?:'
+         r'(?:\[?(?P<ipv6>(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\]?)|'
+         r'(?P<ipv4>(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))|'
+         r'(?P<host>(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9_][a-zA-Z0-9\-_]*[a-zA-Z0-9])\.)*(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]))'
+         r')'
+         r'(?::(?P<port>[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?'
+         r'(?P<path>/[^\s?;]*)?'
+         r'(?:(?:[?;])(?P<params>.*))?'
+         r'$'),
+        uri)
+    if match:
+        res = match.groupdict()
+        if res['port'] is not None:
+            res['port'] = int(res['port'])
+        return res
+    return None
+
+
+def safeUriToHost(uri, default_port=None):
+    """
+    Strips non-host parts and converges on the host\n
+    Supports IPv4, IPv6, and FQDN addresses as the host\n
+    Optionally formats with port if default port is set
+
+    :param uri:             uri to extract host from
+    :type uri:              str
+    :param default_port:    default port if not found
+    :type default_port:     int
+    :return:                host or host:port if port set
+    :rtype:                 str|None
+    """
+
+    ipv6_port_format = False
+    parts = parseGenericUri(uri)
+    if parts is None:
+        return None
+
+    if parts['ipv4'] is not None:
+        res = parts['ipv4']
+    elif parts['ipv6'] is not None:
+        res = parts['ipv6']
+        ipv6_port_format = True
+    elif parts['host'] is not None:
+        res = parts['host']
+    else:
+        res = None
+
+    if res is not None and default_port is not None:
+        if parts['port'] is not None:
+            port = str(parts['port'])
+        else:
+            port = str(default_port)
+
+        if ipv6_port_format:
+            res = '[{}]'.format(res)
+        res = '{}:{}'.format(res, port)
+    return res
+
+def safeStripPort(address):
+    """
+    Strip port from address\n
+    Properly strips on IPv6, IPv4, and FQDN addresses
+
+    :param address:     address to strip port from
+    :type address:      str
+    :return:            address with port stripped
+    :rtype:             str
+    """
+
+    match = re.search(
+        (r'^'
+         r'(?P<host>.*?)'
+         r'(?::(?P<port>[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?'
+         r'$'),
+        address)
+    if match:
+        res = match.groupdict()['host']
+        if res[0] == '[' and res[-1] == ']':
+            res = res[1:-1]
+    else:
+        res = address
+    return res
+
+def safeFormatSipUri(uri, default_proto='sip', default_user='', default_port=5060, default_params={}):
+    """
+    Given a SIP URI of questionable validity, parse out the good stuff, and fill in the rest
+
+    :param uri:             URI to format / validate
+    :type uri:              str
+    :param default_proto:   default protocol if missing
+    :type default_proto:    str
+    :param default_user:    default user if missing
+    :type default_user:     str
+    :param default_port:    default port if missing
+    :type default_port:     int
+    :param default_params:  default SIP parameters
+    :type default_params:   dict
+    :return:                SIP URI safely formatted
+    :rtype:                 str|None
+    """
+
+    parts = parseSipUri(uri)
+    if parts is None:
+        return None
+
+    if parts['ipv4'] is not None:
+        host = parts['ipv4']
+    elif parts['ipv6'] is not None:
+        host = '[{}]'.format(parts['ipv6'])
+    elif parts['host'] is not None:
+        host = parts['host']
+    else:
+        return None
+
+    proto = parts['proto'] if parts['proto'] is not None else default_proto
+    user = parts['user'] if parts['user'] is not None else default_user
+    port = str(parts['port']) if parts['port'] is not None else str(default_port)
+
+    tmp = parts['params'] if parts['params'] is not None else default_params
+    params = ';'.join([('='.join([x[0],str(x[1])]) if not isinstance(x[1], bool) else x[0]) for x in tmp.items()])
+
+    return proto + ':' + (user + '@' if len(user) > 0 else '') + \
+           host + ':' + port + (';' + params if len(params) > 0 else '')
 
 def isCertValid(hostname, externalip, port=5061):
     """ Returns true if the hostname has a valid cert"""

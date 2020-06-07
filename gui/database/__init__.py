@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
 from sqlalchemy import exc as sql_exceptions
 import settings
-from shared import IO, debugException, hostToIP, dictToStrFields
+from shared import IO, debugException, safeUriToHost, dictToStrFields
 from util.security import AES_CTR
 
 
@@ -28,21 +28,24 @@ if settings.KAM_DB_TYPE == "mysql":
 class Gateways(object):
     """
     Schema for dr_gateways table\n
-    Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gateways>`_
+    Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gateways>`_\n
+    Allowed address types: SIP URI, IP address or DNS domain name\n
+    The address field can be a full SIP URI, partial URI, or only host; where host portion is an IP or FQDN
     """
 
-    def __init__(self, name, ip_addr, strip, prefix, type, gwgroup=None, addr_id=None):
+    def __init__(self, name, address, strip, prefix, type, gwgroup=None, addr_id=None, attrs=''):
         description = {"name": name}
         if gwgroup is not None:
             description["gwgroup"] = str(gwgroup)
         if addr_id is not None:
             description['addr_id'] = str(addr_id)
 
-        self.description = dictToStrFields(description)
-        self.address = ip_addr
+        self.type = type
+        self.address = address
         self.strip = strip
         self.pri_prefix = prefix
-        self.type = type
+        self.attrs = attrs
+        self.description = dictToStrFields(description)
 
     pass
 
@@ -61,18 +64,21 @@ class GatewayGroups(object):
 class Address(object):
     """
     Schema for address table\n
-    Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-address>`_
+    Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-address>`_\n
+    Allowed address types: exact IP address, subnet IP address or DNS domain name\n
+    The ip_addr field is either an IP address or DNS domain name; mask field is for subnet
     """
 
-    def __init__(self, name, ip_addr, mask, type, gwgroup=None):
+    def __init__(self, name, ip_addr, mask, type, gwgroup=None, port=0):
         tag = {"name": name}
         if gwgroup is not None:
             tag["gwgroup"] = str(gwgroup)
 
-        self.tag = dictToStrFields(tag)
+        self.grp = type
         self.ip_addr = ip_addr
         self.mask = mask
-        self.grp = type
+        self.port = port
+        self.tag = dictToStrFields(tag)
 
     pass
 
@@ -356,6 +362,7 @@ class UAC(object):
         self.expires = 60
         self.flags = flags
         self.reg_delay = 0
+        self.socket = ''
 
     pass
 
@@ -389,7 +396,7 @@ class DomainAttrs(object):
         self.name = name
         self.type = type
         self.last_modified = last_modified
-        temp_value = value if value is not None else hostToIP(did)
+        temp_value = value if value is not None else safeUriToHost(did)
         self.value = temp_value if temp_value is not None else did
 
     pass

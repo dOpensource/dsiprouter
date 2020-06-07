@@ -214,6 +214,7 @@
   window.showNotification = function(msg, error = false) {
     var top_bar = $('.top-bar');
     var msg_bar = $('.message-bar');
+    var visible_modals = $('.modal').filter(':not(:hidden)');
 
     if (error === true) {
       msg_bar.removeClass("alert-success");
@@ -226,6 +227,7 @@
       msg_bar.html("<strong>Success!</strong> " + msg);
     }
 
+    visible_modals.modal('hide');
     top_bar.show();
     top_bar.slideUp(3000, function() {
       top_bar.hide();
