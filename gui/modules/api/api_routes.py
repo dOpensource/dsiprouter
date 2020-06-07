@@ -1,4 +1,4 @@
-import os, time, json, random, subprocess, requests, re, csv, types
+import os, time, json, random, subprocess, requests, re, csv, types,base64
 import urllib.parse as parse
 from collections import OrderedDict
 from functools import wraps
@@ -18,6 +18,7 @@ from util.file_handling import isValidFile
 from util.kamtls import *
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
     cronIntervalToDescription
+from util.letsencrypt import *
 import settings, globals
 
 api = Blueprint('api', __name__)
@@ -1993,6 +1994,11 @@ def createCertificate():
     }
     """
 
+    db = DummySession()
+
+    CERT_TYPE_GENERATED = "generated"
+    CERT_TYPE_UPLOADED = "uploaded"
+
     # defaults.. keep data returned separate from returned metadata
     response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
@@ -2002,6 +2008,8 @@ def createCertificate():
     try:
         if settings.DEBUG:
             debugEndpoint()
+
+        db = SessionLoader()
 
         request_payload = getRequestData()
 
@@ -2017,15 +2025,83 @@ def createCertificate():
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload[
             'server_name_mode'] if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
+        key =  request_payload['key'] if 'key' in request_payload else None
+        cert = request_payload['cert'] if 'cert' in request_payload else None
+        email = request_payload['email'] if 'email'in request_payload else "admin@" + settings.DOMAIN
+
+        # Request Certificate via Let's Encrypt
+        if key is None and cert is None:
+            type = CERT_TYPE_GENERATED
+            if settings.DEBUG:
+                # Use the LetsEncrypt Staging Server
+                key,cert=generateCertificate(domain,email,debug=True)
+            else:
+                # Use the LetsEncrypt Prod Server
+                key,cert=generateCertificate(domain,email)
+
+        # Convert Certificate and key to base64 so that they can be stored in the database
+        cert_base64 = base64.b64encode(cert.encode('ascii'))
+        key_base64 = base64.b64encode(key.encode('ascii'))
+
+        # Store Certificate in dSIPCertificate Table
+        certificate = dSIPCertificates(domain, type, email, cert_base64, key_base64)
+
+        db.add(certificate)
+
+        # Write the Kamailio TLS Configuration
 
         result = addCustomTLSConfig(domain, ip, port, server_name_mode)
         if result is None:
-            raise Exception('Certificate creation failed')
+            raise Exception('Failed to add Certificate to Kamailio')
+
+        db.commit()
 
         response_payload['msg'] = "Certificate creation succeeded"
+        response_payload['data'].append({"id":certificate.id})
         globals.reload_required = True
         response_payload['kamreload'] = True
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
+
+@api.route("/api/v1/certificates/<string:domain>", methods=['DELETE'])
+@api_security
+def deleteCertificates(domain=None):
+    db = DummySession()
+
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    gwgroup_data = {}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # if domain is not None:
+        #     domain_configs = getCustomTLSConfigs(domain)
+        # else:
+        #domain_configs = getCustomTLSConfigs()
+
+        certificates = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
+
+        db.delete(certificates)
+
+        #Remove the certificate from the file system
+        deleteCertificate(domain)
+
+        #Remove from Kamailio TLS
+        deleteCustomTLSConfig(domain)
+
+        db.commit()
+        response_payload['msg'] = 'Certificate Deleted'
+        response_payload['data'].append({"id":certificates.id})
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()

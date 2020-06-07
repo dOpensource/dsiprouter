@@ -15,9 +15,9 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
             'require_certificate = yes\n'
             'private_key = {certs_dir}/{domain}/dsiprouter.key\n'
             'certificate = {certs_dir}/{domain}/dsiprouter.crt\n'
-            'ca_list = {certs_dir}/{domain}/cacert.pem\n'
+            'ca_list = {certs_dir}/cacert.pem\n'
             'server_name = {domain}\n'
-            'server_name_mode = {name_mode}\n'
+            'server_name_mode = {name_mode}\n\n'
         ).format(ip=ip, port=port, certs_dir=settings.DSIP_CERTS_DIR, domain=domain,
                  name_mode=server_name_mode).encode('utf-8'),
         (
@@ -27,7 +27,7 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
             'require_certificate = yes\n'
             'private_key = {certs_dir}/{domain}/dsiprouter.key\n'
             'certificate = {certs_dir}/{domain}/dsiprouter.crt\n'
-            'ca_list = {certs_dir}/{domain}/cacert.pem\n'
+            'ca_list = {certs_dir}/cacert.pem\n'
             'server_name = {domain}\n'
             'server_name_mode = {name_mode}\n'
             'server_id = {domain}\n'

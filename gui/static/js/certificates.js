@@ -18,9 +18,31 @@
   }
 
 	var ENTITY="certificates";
-	var table = $('').DataTable();
+  var id;
+	var table;
 
-	function add(action) {
+  function clear(modal_selector) {
+    /** Clear out the modal */
+    var modal_body = $(modal_selector).find('.modal-body');
+
+    var btn;
+    if (modal_selector == "#add") {
+      btn = $('#add .modal-footer').find('#addButton');
+      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
+      btn.removeClass("btn-success");
+      btn.addClass("btn-primary");
+    }
+    else {
+      btn = $('#edit .modal-footer').find('#updateButton');
+      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Update");
+      btn.removeClass("btn-success");
+      btn.addClass("btn-warning");
+    }
+    btn.attr('disabled', false);
+
+  }
+
+	function addEntity(action) {
 		var selector, modal_body, url;
 
 		// The default action is a POST (creating a new EndpointGroup)
@@ -73,8 +95,10 @@
 
         if (action === "POST") {
           table.row.add({
+            "id": id_int,
             "domain": requestPayload.domain,
-            "id": id_int
+            "type": requestPayload.type,
+            "assigned_domains": ''
           }).draw();
         }
         else {
@@ -89,10 +113,28 @@
     });
 	}
 
+function deleteEntity() {
+    var id_int = parseInt(id, 10);
+
+    $.ajax({
+      type: "DELETE",
+      url: API_BASE_URL + ENTITY + "/" + id,
+      dataType: "json",
+      contentType: "application/json; charset=utf-8",
+      success: function(response, textStatus, jqXHR) {
+        $('#delete').modal('hide');
+        $('#edit').modal('hide');
+        table.row(function (idx, data, node) {
+            //return data.id === id_int;
+            return data.domain === id;
+        }).remove().draw();
+      }
+    });
+  }
 
 	$(document).ready(function() {
 		// datatable init
-		var table = $('#' + ENTITY).DataTable({
+		table = $('#' + ENTITY).DataTable({
 			"ajax": {
 				"url": API_BASE_URL + ENTITY
 			},
@@ -117,17 +159,21 @@
 			else {
 				//table.$('tr.selected').removeClass('selected');
 				$(this).addClass('selected');
-				var id = $(this).find('td').eq(1).text()
+				id = $(this).find('td').eq(1).text()
 				//console.log(gwgroupid);
 				$('#edit').modal('show');
 			}
 		});
 
 
+$('#open-Add').click(function() {
+      clear('#add');
+});
+
 /* validate fields before submitting api request */
 $('#addButton').click(function() {
 		if (validateFields('#add')) {
-			add();
+			addEntity();
 			// hide the modal after 1.5 sec
 			setTimeout(function() {
 
@@ -138,6 +184,11 @@ $('#addButton').click(function() {
 				}
 			}, 1500);
 		}
+});
+
+/* handler for deleting endpoint group */
+$('#deleteButton').click(function() {
+  deleteEntity();
 });
 
 $("#domain").keyup(function () {

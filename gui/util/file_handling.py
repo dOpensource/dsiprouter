@@ -1,4 +1,5 @@
 import os
+import grp, pwd
 from werkzeug.utils import secure_filename
 
 # TODO: files should be validated by magic bytes header as well as extension
@@ -67,3 +68,15 @@ def saveUpload(file, savedir, filetype):
         result['file'] = filename
 
     return result
+
+def change_permissions_recursive(path, mode):
+    for root, dirs, files in os.walk(path, topdown=False):
+        for dir in [os.path.join(root,d) for d in dirs]:
+            os.chmod(dir, mode)
+    for file in [os.path.join(root, f) for f in files]:
+            os.chmod(file, mode)
+
+def change_owner(path,user,group):
+    uid = pwd.getpwnam(user).pw_uid
+    gid = grp.getgrnam(group).gr_gid
+    os.chown(path, uid, gid)
