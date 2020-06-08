@@ -5,7 +5,11 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8
+182ab4724b9a1c84d17f6855f809162f310ec815
+06bbc86f9ac496d95efd98bca3d26a7089d56c94
+c49afc5cca89af0112ce7bcc046a993e37363552
+e73013afd487afb3ea4b564fc29f101d9412d629
+601657baf95fe3ce7884389bb00695bf7bb4330b
 3657bfd59850a0b74e2a94c53c72348513abcf50
 31359590de49b8f5098a8568432929555645689e
 9fab8dbf3eee065837301bec528982ffc32c6089
@@ -1545,10 +1549,73 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8)
+[//]: # (START_SECTION 182ab4724b9a1c84d17f6855f809162f310ec815)
+### Fix Carrier Group Issue
+
+> Commit: [182ab4724b9a1c84d17f6855f809162f310ec815](https://git.flyball.co/dsiprouter/enterprise/commit/182ab4724b9a1c84d17f6855f809162f310ec815)  
+> Date: Mon, 8 Jun 2020 08:29:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix issue causing server error on parsing auth type
+
+
+---
+
+[//]: # (END_SECTION 182ab4724b9a1c84d17f6855f809162f310ec815)
+[//]: # (START_SECTION 06bbc86f9ac496d95efd98bca3d26a7089d56c94)
+### Change Deafults for Start/Stop/Restart commands
+
+> Commit: [06bbc86f9ac496d95efd98bca3d26a7089d56c94](https://git.flyball.co/dsiprouter/enterprise/commit/06bbc86f9ac496d95efd98bca3d26a7089d56c94)  
+> Date: Mon, 8 Jun 2020 07:56:28 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- make start/stop/restart CLI commands default to only dsiprouter
+- add command line completion for new command options
+
+
+---
+
+[//]: # (END_SECTION 06bbc86f9ac496d95efd98bca3d26a7089d56c94)
+[//]: # (START_SECTION c49afc5cca89af0112ce7bcc046a993e37363552)
+### Certificates - Can now upload certificates - TODO: Fix table update after upload, finish update and fix kamtls output of certs
+
+> Commit: [c49afc5cca89af0112ce7bcc046a993e37363552](https://git.flyball.co/dsiprouter/enterprise/commit/c49afc5cca89af0112ce7bcc046a993e37363552)  
+> Date: Mon, 8 Jun 2020 03:48:57 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c49afc5cca89af0112ce7bcc046a993e37363552)
+[//]: # (START_SECTION e73013afd487afb3ea4b564fc29f101d9412d629)
+### Certificate Management - Completed the ability to Add a Certficate - Completed the ability to Delete a Certificate - TODO: Add Upload Cert Capability
+
+> Commit: [e73013afd487afb3ea4b564fc29f101d9412d629](https://git.flyball.co/dsiprouter/enterprise/commit/e73013afd487afb3ea4b564fc29f101d9412d629)  
+> Date: Sun, 7 Jun 2020 00:25:55 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e73013afd487afb3ea4b564fc29f101d9412d629)
+[//]: # (START_SECTION 601657baf95fe3ce7884389bb00695bf7bb4330b)
 ### v0.62 Fixes
 
-> Commit: [b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8](https://git.flyball.co/dsiprouter/enterprise/commit/b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8)  
+> Commit: [601657baf95fe3ce7884389bb00695bf7bb4330b](https://git.flyball.co/dsiprouter/enterprise/commit/601657baf95fe3ce7884389bb00695bf7bb4330b)  
 > Date: Sat, 6 Jun 2020 03:04:17 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1567,7 +1634,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION b1e41147d67fa28155c8fc3c1d8a1d173e0e35b8)
+[//]: # (END_SECTION 601657baf95fe3ce7884389bb00695bf7bb4330b)
 [//]: # (START_SECTION 3657bfd59850a0b74e2a94c53c72348513abcf50)
 ### Certificates - Added support for adding certificates
 

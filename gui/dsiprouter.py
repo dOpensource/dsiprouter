@@ -287,14 +287,15 @@ def addUpdateCarrierGroups():
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
 
         # format data
-        auth_domain = safeUriToHost(auth_domain)
-        if auth_domain is None:
-            raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
-        if len(auth_proxy) == 0:
-            auth_proxy = auth_domain
-        auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
-        if auth_proxy is None:
-            raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
+        if authtype == "userpwd":
+            auth_domain = safeUriToHost(auth_domain)
+            if auth_domain is None:
+                raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
+            if len(auth_proxy) == 0:
+                auth_proxy = auth_domain
+            auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
+            if auth_proxy is None:
+                raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
 
         # Adding
         if len(gwgroup) <= 0:
