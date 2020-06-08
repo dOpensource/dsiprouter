@@ -1043,7 +1043,7 @@ function installDsiprouter {
 
     # Generate unique credentials for our services
     RESET_DSIP_CREDS=1 RESET_API_CREDS=1 RESET_KAM_CREDS=1 RESET_IPC_CREDS=1
-    resetPassword
+    resetPassword 2>/dev/null
 
     # Restrict access to settings and private key
     chown root:root ${DSIP_PRIV_KEY}

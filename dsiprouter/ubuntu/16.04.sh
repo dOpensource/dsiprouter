@@ -5,7 +5,7 @@
 function install {
     # Install dependencies for dSIPRouter
     apt-get install -y build-essential curl python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev \
-        firewalld logrotate rsyslog perl libev-dev
+        firewalld logrotate rsyslog perl libev-dev uuid-runtime
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)

@@ -30,7 +30,7 @@ function install {
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     yum install -y firewalld
     yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
-    yum install -y logrotate rsyslog perl libev-devel
+    yum install -y logrotate rsyslog perl libev-devel util-linux
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
