@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-7e7a5f998fc64e1e23fa3dc8ea5ff65fec246a9c
+afe6d60c37152064fd55c85e2b0f1eea728bf7ef
+5c7816d4ae274af72fadf354bffe70319e4bacdc
 f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9
 330d69481ece2323d04de2ac8f5b496e503f24cc
 b6e233d04a02cfbee6e25e62d8f033510b08e527
@@ -1558,10 +1559,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 7e7a5f998fc64e1e23fa3dc8ea5ff65fec246a9c)
+[//]: # (START_SECTION afe6d60c37152064fd55c85e2b0f1eea728bf7ef)
+### Fix Misordered Logic in Endpoint Groups URI Parsing
+
+> Commit: [afe6d60c37152064fd55c85e2b0f1eea728bf7ef](https://git.flyball.co/dsiprouter/enterprise/commit/afe6d60c37152064fd55c85e2b0f1eea728bf7ef)  
+> Date: Mon, 8 Jun 2020 16:30:01 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix URI parsing for endpoint groups
+
+
+---
+
+[//]: # (END_SECTION afe6d60c37152064fd55c85e2b0f1eea728bf7ef)
+[//]: # (START_SECTION 5c7816d4ae274af72fadf354bffe70319e4bacdc)
 ### Fix API Regressions
 
-> Commit: [7e7a5f998fc64e1e23fa3dc8ea5ff65fec246a9c](https://git.flyball.co/dsiprouter/enterprise/commit/7e7a5f998fc64e1e23fa3dc8ea5ff65fec246a9c)  
+> Commit: [5c7816d4ae274af72fadf354bffe70319e4bacdc](https://git.flyball.co/dsiprouter/enterprise/commit/5c7816d4ae274af72fadf354bffe70319e4bacdc)  
 > Date: Mon, 8 Jun 2020 16:20:29 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1573,7 +1590,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 7e7a5f998fc64e1e23fa3dc8ea5ff65fec246a9c)
+[//]: # (END_SECTION 5c7816d4ae274af72fadf354bffe70319e4bacdc)
 [//]: # (START_SECTION f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9)
 ### Fixed issue with certificates
 

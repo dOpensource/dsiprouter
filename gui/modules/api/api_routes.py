@@ -1116,10 +1116,11 @@ def updateEndpointGroups(gwgroupid=None):
                 if len(hostname) == 0:
                     raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
+                sip_addr = safeUriToHost(hostname, default_port=5060)
+                if sip_addr is None:
+                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+
                 if authtype == "ip":
-                    sip_addr = safeUriToHost(hostname, default_port=5060)
-                    if sip_addr is None:
-                        raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
                     host_addr = safeStripPort(sip_addr)
 
                     Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
@@ -1158,10 +1159,11 @@ def updateEndpointGroups(gwgroupid=None):
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
+            sip_addr = safeUriToHost(hostname, default_port=5060)
+            if sip_addr is None:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+
             if authtype == "ip":
-                sip_addr = safeUriToHost(hostname, default_port=5060)
-                if sip_addr is None:
-                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
                 host_addr = safeStripPort(sip_addr)
 
                 Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
@@ -1189,10 +1191,11 @@ def updateEndpointGroups(gwgroupid=None):
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
+            sip_addr = safeUriToHost(hostname, default_port=5060)
+            if sip_addr is None:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+
             if authtype == "ip":
-                sip_addr = safeUriToHost(hostname, default_port=5060)
-                if sip_addr is None:
-                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
                 host_addr = safeStripPort(sip_addr)
 
                 # if address exists update, otherwise create it
@@ -1551,10 +1554,11 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             else:
                 attrs = ''
 
+            sip_addr = safeUriToHost(hostname, default_port=5060)
+            if sip_addr is None:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+
             if authtype == "ip":
-                sip_addr = safeUriToHost(hostname, default_port=5060)
-                if sip_addr is None:
-                    raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
                 host_addr = safeStripPort(sip_addr)
 
                 Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
