@@ -1942,7 +1942,6 @@ def getCertificates(domain=None):
     db = DummySession()
 
     response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-    gwgroup_data = {}
 
     try:
         if settings.DEBUG:
@@ -2027,8 +2026,8 @@ def createCertificate():
         domain = request_payload['domain']
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
-        server_name_mode = request_payload[
-            'server_name_mode'] if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
+        server_name_mode = request_payload['server_name_mode'] \
+            if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
         key =  request_payload['key'] if 'key' in request_payload else None
         cert = request_payload['cert'] if 'cert' in request_payload else None
         email = request_payload['email'] if 'email'in request_payload else "admin@" + settings.DOMAIN
@@ -2049,19 +2048,16 @@ def createCertificate():
 
         # Store Certificate in dSIPCertificate Table
         certificate = dSIPCertificates(domain, type, email, cert_base64, key_base64)
-
         db.add(certificate)
 
         # Write the Kamailio TLS Configuration
-
-        result = addCustomTLSConfig(domain, ip, port, server_name_mode)
-        if result is None:
+        if not addCustomTLSConfig(domain, ip, port, server_name_mode):
             raise Exception('Failed to add Certificate to Kamailio')
 
         db.commit()
 
         response_payload['msg'] = "Certificate creation succeeded"
-        response_payload['data'].append({"id":certificate.id})
+        response_payload['data'].append({"id": certificate.id})
         globals.reload_required = True
         response_payload['kamreload'] = True
         return jsonify(response_payload), StatusCodes.HTTP_OK
@@ -2079,7 +2075,6 @@ def deleteCertificates(domain=None):
     db = DummySession()
 
     response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-    gwgroup_data = {}
 
     try:
         if settings.DEBUG:
@@ -2092,19 +2087,17 @@ def deleteCertificates(domain=None):
         # else:
         #domain_configs = getCustomTLSConfigs()
 
-        certificates = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
+        Certificates = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain)
+        Certificates.delete(synchronize_session=False)
 
-        db.delete(certificates)
-
-        #Remove the certificate from the file system
+        # Remove the certificate from the file system
         deleteCertificate(domain)
 
-        #Remove from Kamailio TLS
+        # Remove from Kamailio TLS
         deleteCustomTLSConfig(domain)
 
         db.commit()
         response_payload['msg'] = 'Certificate Deleted'
-        response_payload['data'].append({"id":certificates.id})
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
@@ -2181,21 +2174,18 @@ def uploadCertificates(domain=None):
 
         # Store Certificate in dSIPCertificate Table
         certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
-
         db.add(certificate)
-
-        db.commit()
 
         # Write the Kamailio TLS Configuration
         if not addCustomTLSConfig(domain, ip, port, server_name_mode):
             raise Exception('Failed to add Certificate to Kamailio')
 
+        db.commit()
 
         response_payload['msg'] = "Certificate and Key were uploaded"
         globals.reload_required = True
         response_payload['kamreload'] = True
-        return response_payload, StatusCodes.HTTP_OK
-
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()

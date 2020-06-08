@@ -85,7 +85,7 @@ setScriptSettings() {
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
-    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/tls_dsiprouter.cfg"
+    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
@@ -2752,7 +2752,7 @@ function processCMD {
                 START_DSIPROUTER=1
             else
                 STOP_DSIPROUTER=0
-                START_DSIPROUTER=1
+                START_DSIPROUTER=0
             fi
 
             while (( $# > 0 )); do
