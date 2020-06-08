@@ -1,14 +1,38 @@
 import re, socket
 import settings
 
-#Server name matching options
+# Server name matching options
+KAM_TLS_SNI_DOMAIN = 0
 KAM_TLS_SNI_ALL = 1
 KAM_TLS_SNI_SUBDOMAINS = 2
-KAM_TLS_SNI_DOMAIN = 3
+
+# header formats per domain profile
+DOMAIN_START_HEADER = '#========== {domain}_start ==========#'
+DOMAIN_END_HEADER = '#========== {domain}_end ==========#'
+
 
 def createCustomTLSConfig(domain, ip, port, server_name_mode):
-    return [
-        (
+    """
+    Create a Domain TLS Profile string for the Kamailio TLS Config\n
+    Reference: https://kamailio.org/docs/modules/5.3.x/modules/tls.html
+
+    :param domain:              domain profile to create
+    :type domain:               str
+    :param ip:                  ip kamailio will match for profile
+    :type ip:                   str
+    :param port:                port kamailio will match for profile
+    :type port:                 int|str
+    :param server_name_mode:    server name matching mode
+    :type server_name_mode:     int|str
+    :return:                    tls config for a custom domain
+    :rtype:                     str
+    """
+
+    port = str(port)
+    server_name_mode = str(server_name_mode)
+
+    return (
+        DOMAIN_START_HEADER + '\n' + (
             '[server:{ip}:{port}]\n'
             'method = TLSv1.2+\n'
             'verify_certificate = yes\n'
@@ -17,10 +41,8 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
             'certificate = {certs_dir}/{domain}/dsiprouter.crt\n'
             'ca_list = {certs_dir}/cacert.pem\n'
             'server_name = {domain}\n'
-            'server_name_mode = {name_mode}\n\n'
-        ).format(ip=ip, port=port, certs_dir=settings.DSIP_CERTS_DIR, domain=domain,
-                 name_mode=server_name_mode).encode('utf-8'),
-        (
+            'server_name_mode = {name_mode}\n'
+            '\n'
             '[client:{ip}:{port}]\n'
             'method = TLSv1.2+\n'
             'verify_certificate = yes\n'
@@ -31,121 +53,160 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
             'server_name = {domain}\n'
             'server_name_mode = {name_mode}\n'
             'server_id = {domain}\n'
-        ).format(ip=ip, port=port, certs_dir=settings.DSIP_CERTS_DIR, domain=domain,
-                name_mode=server_name_mode).encode('utf-8')
-    ]
+        ) + DOMAIN_END_HEADER + '\n\n'
+    ).format(ip=ip, port=port, certs_dir=settings.DSIP_CERTS_DIR, domain=domain, name_mode=server_name_mode)
+
 
 # TODO: error handling, return None, return true or false
 # TODO: allow option for get/filter for single domain config
-def getCustomTLSConfigs():
+def getCustomTLSConfigs(domain_filter=None):
     """
-    Return kamailio TLS configs for additional domains
-    return syntax: { 'domain_ip:domain_port': { 'server': {<server config>}, 'client': {<client config>} } }
+    Get kamailio TLS configs for additional domains\n
+    Server and client domain/ip/port are assumed to be the same\n
+    The optional domain filter returns domains & subdomains that match
+
+    Returned Data Format:
+
+    .. code-block:: python
+
+        {
+            '<domain>': {
+                'ip': '<str>',
+                'port': '<int>'
+                'server': {<server params>},
+                'client': {<client params>}
+            },
+            ...
+        }
+
+    :param domain_filter:   filter on this domain / subdomains
+    :type domain_filter:    str
+    :return:                TLS configs for custom domain profiles
+    :rtype:                 dict|None
     """
+
     custom_configs = {}
 
     try:
         with open(settings.KAM_TLSCFG_PATH, 'rb') as kamtlscfg_file:
             kamtlscfg_bytes = kamtlscfg_file.read()
 
-            regex = rb'''(####### CUSTOM_DOMAINS_START #########\n.*?####### CUSTOM_DOMAINS_END #########\n?)'''
-            custom_tls_bytes = re.search(regex, kamtlscfg_bytes, flags=re.DOTALL).group(1)
+            if domain_filter is None:
+                regex = DOMAIN_START_HEADER.format(domain=r'(?P<domain>.*?)').encode('utf-8') + \
+                        rb'''\n(?:\[server\:(?!default)(?P<server_ip>.*?)\:(?P<server_port>.*?)\])\n(?P<server_params>.*?)\n(?=\[|#)\n*''' + \
+                        rb'''(?:\[client\:(?!default)(?P<client_ip>.*?)\:(?P<client_port>.*?)\])\n(?P<client_params>.*?)(?=\[|#)''' + \
+                        DOMAIN_END_HEADER.format(domain=r'(?P=domain)').encode('utf-8')
+            else:
+                regex = DOMAIN_START_HEADER.format(domain=r'(?P<domain>(?:.*?\.)*{})'.format(domain_filter)).encode('utf-8') + \
+                        rb'''\n(?:\[server\:(?!default)(?P<server_ip>.*?)\:(?P<server_port>.*?)\])\n(?P<server_params>.*?)\n(?=\[|#)\n*''' + \
+                        rb'''(?:\[client\:(?!default)(?P<client_ip>.*?)\:(?P<client_port>.*?)\])\n(?P<client_params>.*?)(?=\[|#)''' + \
+                        DOMAIN_END_HEADER.format(domain=r'(?P=domain)').encode('utf-8')
+            matches = [x.groupdict() for x in re.finditer(regex, kamtlscfg_bytes, flags=re.DOTALL | re.MULTILINE)]
 
-            regex = rb'''(?:\[server\:(.*?)\])\n(.*?)(?=\[|#)'''
-            matches = re.findall(regex, custom_tls_bytes, flags=re.DOTALL)
-            for server in matches:
-                server_name = server[0].decode('utf-8')
-                server_config_strs = server[1].decode('utf-8').rstrip().split('\n')
-                custom_configs[server_name] = {
-                    'server': {x.split(' = ')[0]:x.split(' = ')[1] for x in server_config_strs}
-                }
-
-            regex = rb'''(?:\[client\:(.*?)\])\n(.*?)(?=\[|#)'''
-            matches = re.findall(regex, custom_tls_bytes, flags=re.DOTALL)
-            for client in matches:
-                client_name = client[0].decode('utf-8')
-                client_config_strs = client[1].decode('utf-8').rstrip().split('\n')
-                custom_configs[client_name]['client'] = {
-                    x.split(' = ')[0]:x.split(' = ')[1] for x in client_config_strs
+            for match in matches:
+                domain = match['domain'].decode('utf-8')
+                server_config_strs = match['server_params'].decode('utf-8').rstrip().split('\n')
+                client_config_strs = match['client_params'].decode('utf-8').rstrip().split('\n')
+                custom_configs[domain] = {
+                    'ip': match['server_ip'].decode('utf-8'),
+                    'port': int(match['server_port'].decode('utf-8')),
+                    'server': {x.split(' = ')[0]: x.split(' = ')[1] for x in server_config_strs},
+                    'client': {x.split(' = ')[0]: x.split(' = ')[1] for x in client_config_strs}
                 }
 
         return custom_configs
     except:
         return None
 
-def addCustomTLSConfig(domain, ip='', port='5061', server_name_mode='0'):
+
+def addCustomTLSConfig(domain, ip='', port=5061, server_name_mode=KAM_TLS_SNI_DOMAIN):
     """
     Add an additional domain to kamailio TLS configs
+
+    :param domain:              domain profile to create
+    :type domain:               str
+    :param ip:                  ip kamailio will match for profile
+    :type ip:                   str
+    :param port:                port kamailio will match for profile
+    :type port:                 int|str
+    :param server_name_mode:    server name matching mode
+    :type server_name_mode:     int|str
+    :return:                    whether addition succeeded
+    :rtype:                     bool
     """
 
     try:
         if len(ip) == 0:
             ip = socket.getaddrinfo(domain, 0, family=socket.AF_INET, flags=socket.AI_CANONNAME)[0][4][0]
-        server_config_bytes, client_config_bytes = createCustomTLSConfig(domain, ip, port, server_name_mode)
+        domain_config_bytes = createCustomTLSConfig(domain, ip, port, server_name_mode).encode('utf-8')
 
         with open(settings.KAM_TLSCFG_PATH, 'r+b') as kamtlscfg_file:
-            kamtlscfg_bytes = kamtlscfg_file.read()
-
-            regex = rb'''(.*####### CUSTOM_DOMAINS_START #########\n)(.*?)(####### CUSTOM_DOMAINS_END #########\n?.*)'''
-            kamtlscfg_bytes = re.sub(regex, rb''.join([rb'\1\2\n', server_config_bytes, client_config_bytes, rb'\3']), kamtlscfg_bytes, flags=re.DOTALL)
-            kamtlscfg_file.seek(0,0)
-            kamtlscfg_file.write(kamtlscfg_bytes)
+            kamtlscfg_file.seek(0, 2)
+            kamtlscfg_file.write(domain_config_bytes)
 
         return True
     except:
         return False
 
-def updateCustomTLSConfig(domain, ip='', port='5061', server_name_mode='0'):
+
+def updateCustomTLSConfig(domain, ip=None, port=None, server_name_mode=None):
     """
-    Update an additional domain in kamailio TLS configs
+    Add an additional domain to kamailio TLS configs
+
+    :param domain:              domain profile to update
+    :type domain:               str
+    :param ip:                  ip kamailio will match for profile
+    :type ip:                   str
+    :param port:                port kamailio will match for profile
+    :type port:                 int|str
+    :param server_name_mode:    server name matching mode
+    :type server_name_mode:     int|str
+    :return:                    whether update succeeded
+    :rtype:                     bool
     """
 
     try:
-        if len(ip) == 0:
-            ip = socket.getaddrinfo(domain, 0, family=socket.AF_INET, flags=socket.AI_CANONNAME)[0][4][0]
-        server_config_bytes, client_config_bytes = createCustomTLSConfig(domain, ip, port, server_name_mode)
+        domain_configs = getCustomTLSConfigs(domain)
+        if domain not in domain_configs:
+            return False
+        else:
+            domain_data = domain_configs[domain]
 
-        with open(settings.KAM_TLSCFG_PATH, 'r+b') as kamtlscfg_file:
-            kamtlscfg_bytes = kamtlscfg_file.read()
+        ip = ip if ip is not None else domain_data['ip']
+        port = port if port is not None else domain_data['port']
+        server_name_mode = server_name_mode if server_name_mode is not None \
+            else domain_data['server']['server_name_mode']
 
-            regex = rb'''(####### CUSTOM_DOMAINS_START #########\n.*?####### CUSTOM_DOMAINS_END #########\n?)'''
-            custom_tls_bytes = re.search(regex, kamtlscfg_bytes, flags=re.DOTALL).group(1)
-
-            regex = rb'''(?:\n?\[(?:server|client)\:''' + ip.encode('utf-8') + rb'\:' + port.encode('utf-8') + \
-                     rb'''\])\n(.*?server_name \= ''' + domain.encode('utf-8') + rb'''.*?)(?=\[|#)'''
-            custom_tls_bytes = re.sub(regex, rb''.join([rb'\n', server_config_bytes, client_config_bytes]), custom_tls_bytes, flags=re.DOTALL)
-
-            regex = rb'''(.*)####### CUSTOM_DOMAINS_START #########\n(.*?)####### CUSTOM_DOMAINS_END #########\n?(.*)'''
-            kamtlscfg_bytes = re.sub(regex, rb''.join([rb'\1', custom_tls_bytes, rb'\3']), kamtlscfg_bytes, flags=re.DOTALL)
-            kamtlscfg_file.seek(0,0)
-            kamtlscfg_file.write(kamtlscfg_bytes)
+        if not deleteCustomTLSConfig(domain):
+            return False
+        if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+            return False
 
         return True
     except:
         return False
 
-def deleteCustomTLSConfig(domain, ip='', port='5061'):
+
+def deleteCustomTLSConfig(domain):
     """
     Delete an additional domain in kamailio TLS configs
+
+    :param domain:          domain profile to delete
+    :type domain:           str
+    :return:                whether delete succeeded
+    :rtype:                 bool
     """
 
     try:
-        if len(ip) == 0:
-            ip = socket.getaddrinfo(domain, 0, family=socket.AF_INET, flags=socket.AI_CANONNAME)[0][4][0]
         with open(settings.KAM_TLSCFG_PATH, 'r+b') as kamtlscfg_file:
             kamtlscfg_bytes = kamtlscfg_file.read()
 
-            regex = rb'''(####### CUSTOM_DOMAINS_START #########\n.*?####### CUSTOM_DOMAINS_END #########\n?)'''
-            custom_tls_bytes = re.search(regex, kamtlscfg_bytes, flags=re.DOTALL).group(1)
-
-            regex = rb'''(?:\n?\[(?:server|client)\:''' + ip.encode('utf-8') + rb'\:' + port.encode('utf-8') + \
-                     rb'''\])\n(.*?server_name \= ''' + domain.encode('utf-8') + rb'''.*?)(?=\[|#)'''
-            custom_tls_bytes = re.sub(regex, b'', custom_tls_bytes, flags=re.DOTALL)
-
-            regex = rb'''(####### CUSTOM_DOMAINS_START #########\n)(.*?)(####### CUSTOM_DOMAINS_END #########\n?)'''
-            kamtlscfg_bytes = re.sub(regex, rb''.join([rb'\1', custom_tls_bytes, rb'\3']), kamtlscfg_bytes, flags=re.DOTALL)
-            kamtlscfg_file.seek(0,0)
-            kamtlscfg_file.write(kamtlscfg_bytes)
+            regex = DOMAIN_START_HEADER.format(domain=domain).encode() + rb'.*?' + \
+                    DOMAIN_END_HEADER.format(domain=domain).encode() + rb'\n*'
+            custom_tls_bytes = re.sub(regex, b'', kamtlscfg_bytes, flags=re.DOTALL | re.MULTILINE)
+            kamtlscfg_file.truncate(0)
+            kamtlscfg_file.seek(0, 0)
+            kamtlscfg_file.write(custom_tls_bytes)
 
         return True
     except:

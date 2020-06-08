@@ -5,7 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-481c6b193dba05a9ab7ae44541df6793670faae8
+969514dad7d5bed517353abf88c9820ed83c4644
+b6e233d04a02cfbee6e25e62d8f033510b08e527
+cd5df131c230e5f47b03dd5a93bcfc9d0b17b019
+cb2428d137a134aff9dbb3bc8a61b9bde38d8f36
+3b91672c6c9c1357190caf3369545b5150fad649
+3f5074c9b8147552ec8e1592d74df60c9e46a50e
 2aed9209cbce02686c61aca1c580907f2b174df4
 b5de18522aa45387382973031ce9c4861cbc8422
 06bbc86f9ac496d95efd98bca3d26a7089d56c94
@@ -1551,10 +1556,87 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 481c6b193dba05a9ab7ae44541df6793670faae8)
+[//]: # (START_SECTION 969514dad7d5bed517353abf88c9820ed83c4644)
+### Fix Kamailio TLS Config Handling
+
+> Commit: [969514dad7d5bed517353abf88c9820ed83c4644](https://git.flyball.co/dsiprouter/enterprise/commit/969514dad7d5bed517353abf88c9820ed83c4644)  
+> Date: Mon, 8 Jun 2020 15:09:32 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- improve regex and config management in `kamtls.py`
+- fix small bug in CLI restart command defaults
+
+
+---
+
+[//]: # (END_SECTION 969514dad7d5bed517353abf88c9820ed83c4644)
+[//]: # (START_SECTION b6e233d04a02cfbee6e25e62d8f033510b08e527)
+### Removed acme for testing
+
+> Commit: [b6e233d04a02cfbee6e25e62d8f033510b08e527](https://git.flyball.co/dsiprouter/enterprise/commit/b6e233d04a02cfbee6e25e62d8f033510b08e527)  
+> Date: Mon, 8 Jun 2020 18:38:34 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b6e233d04a02cfbee6e25e62d8f033510b08e527)
+[//]: # (START_SECTION cd5df131c230e5f47b03dd5a93bcfc9d0b17b019)
+### Cron Services - Changed the permissions of the file to 744 so that it's executable
+
+> Commit: [cd5df131c230e5f47b03dd5a93bcfc9d0b17b019](https://git.flyball.co/dsiprouter/enterprise/commit/cd5df131c230e5f47b03dd5a93bcfc9d0b17b019)  
+> Date: Mon, 8 Jun 2020 18:22:50 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cd5df131c230e5f47b03dd5a93bcfc9d0b17b019)
+[//]: # (START_SECTION cb2428d137a134aff9dbb3bc8a61b9bde38d8f36)
+### Removed josepy
+
+> Commit: [cb2428d137a134aff9dbb3bc8a61b9bde38d8f36](https://git.flyball.co/dsiprouter/enterprise/commit/cb2428d137a134aff9dbb3bc8a61b9bde38d8f36)  
+> Date: Mon, 8 Jun 2020 18:08:34 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cb2428d137a134aff9dbb3bc8a61b9bde38d8f36)
+[//]: # (START_SECTION 3b91672c6c9c1357190caf3369545b5150fad649)
+### Certificates - Changed out version of josepy module - Changed the error handling of adding Kam certificates to the TLS config
+
+> Commit: [3b91672c6c9c1357190caf3369545b5150fad649](https://git.flyball.co/dsiprouter/enterprise/commit/3b91672c6c9c1357190caf3369545b5150fad649)  
+> Date: Mon, 8 Jun 2020 17:22:23 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3b91672c6c9c1357190caf3369545b5150fad649)
+[//]: # (START_SECTION 3f5074c9b8147552ec8e1592d74df60c9e46a50e)
 ### Fix Command Parsing for Commands with Defaults
 
-> Commit: [481c6b193dba05a9ab7ae44541df6793670faae8](https://git.flyball.co/dsiprouter/enterprise/commit/481c6b193dba05a9ab7ae44541df6793670faae8)  
+> Commit: [3f5074c9b8147552ec8e1592d74df60c9e46a50e](https://git.flyball.co/dsiprouter/enterprise/commit/3f5074c9b8147552ec8e1592d74df60c9e46a50e)  
 > Date: Mon, 8 Jun 2020 09:44:26 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1566,7 +1648,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 481c6b193dba05a9ab7ae44541df6793670faae8)
+[//]: # (END_SECTION 3f5074c9b8147552ec8e1592d74df60c9e46a50e)
 [//]: # (START_SECTION 2aed9209cbce02686c61aca1c580907f2b174df4)
 ### Changed the order of PyOpenSSL
 
