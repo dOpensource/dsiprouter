@@ -62,7 +62,7 @@
 		var type;
 
 		requestPayload.domain = modal_body.find("#domain").val();
-		if (modal_body.find(".certtype_generate").is(':checked')) {
+		if (modal_body.find("#certtype_generate").is(':checked')) {
 				requestPayload.type = "generated"
         addGenerated(requestPayload)
 		}
