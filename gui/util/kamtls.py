@@ -57,8 +57,6 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
     ).format(ip=ip, port=port, certs_dir=settings.DSIP_CERTS_DIR, domain=domain, name_mode=server_name_mode)
 
 
-# TODO: error handling, return None, return true or false
-# TODO: allow option for get/filter for single domain config
 def getCustomTLSConfigs(domain_filter=None):
     """
     Get kamailio TLS configs for additional domains\n
