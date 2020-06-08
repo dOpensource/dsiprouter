@@ -9,7 +9,7 @@ cron_descriptor
 cryptography
 dnspython
 docker
-josepy
+josepy==1.3.0
 mysqlclient
 pem
 psycopg2

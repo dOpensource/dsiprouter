@@ -2159,7 +2159,6 @@ def uploadCertificates(domain=None):
           if re.search('crt|cert',filename):
               filename = "dsiprouter.crt"
               cert=file.read()
-              print(cert)
           elif re.search('key|pem',filename):
               filename = "dsiprouter.key"
               key=file.read()
@@ -2188,8 +2187,7 @@ def uploadCertificates(domain=None):
         db.commit()
 
         # Write the Kamailio TLS Configuration
-        result = addCustomTLSConfig(domain, ip, port, server_name_mode)
-        if result is None:
+        if not addCustomTLSConfig(domain, ip, port, server_name_mode):
             raise Exception('Failed to add Certificate to Kamailio')
 
 
