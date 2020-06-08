@@ -832,16 +832,12 @@ function configureKamailio {
             ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
         sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
             ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
-        sed "s/EXTERNAL_IP/$EXTERNAL_IP/g" \
-            ${DSIP_DEFAULTS_DIR}/uacreg.csv > /tmp/defaults/uacreg.csv
 
         # import default carriers
         mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
         mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
-        mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=',' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/uacreg.csv
         mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
         mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
@@ -2645,6 +2641,13 @@ function processCMD {
             RUN_COMMANDS+=(start)
             shift
 
+            # process debug option before parsing others
+            if [[ "$1" == "-debug" ]]; then
+                export DEBUG=1
+                set -x
+                shift
+            fi
+
             # default to only starting dsip gui
             if (( $# == 0 )); then
                 START_DSIPROUTER=1
@@ -2655,11 +2658,6 @@ function processCMD {
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
                     -all|--all)
                         START_DSIPROUTER=1
                         START_KAMAILIO=1
@@ -2692,6 +2690,13 @@ function processCMD {
             RUN_COMMANDS+=(stop)
             shift
 
+            # process debug option before parsing others
+            if [[ "$1" == "-debug" ]]; then
+                export DEBUG=1
+                set -x
+                shift
+            fi
+
             # default to only stopping dsip gui
             if (( $# == 0 )); then
                 STOP_DSIPROUTER=1
@@ -2702,11 +2707,6 @@ function processCMD {
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
                     -all|--all)
                         STOP_DSIPROUTER=1
                         STOP_KAMAILIO=1
@@ -2739,6 +2739,13 @@ function processCMD {
             RUN_COMMANDS+=(stop)
             shift
 
+            # process debug option before parsing others
+            if [[ "$1" == "-debug" ]]; then
+                export DEBUG=1
+                set -x
+                shift
+            fi
+
             # default to only restarting dsip gui
             if (( $# == 0 )); then
                 STOP_DSIPROUTER=1
@@ -2751,11 +2758,6 @@ function processCMD {
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
                     -all|--all)
                         STOP_DSIPROUTER=1
                         START_DSIPROUTER=1
@@ -2908,6 +2910,13 @@ function processCMD {
             RUN_COMMANDS+=(setCloudPlatform resetPassword displayLoginInfo)
             shift
 
+            # process debug option before parsing others
+            if [[ "$1" == "-debug" ]]; then
+                export DEBUG=1
+                set -x
+                shift
+            fi
+
             # default to only resetting dsip gui password
             if (( $# == 0 )); then
                 RESET_DSIP_CREDS=1
@@ -2918,11 +2927,6 @@ function processCMD {
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
                     -all|--all)
                         RESET_DSIP_CREDS=1
                         RESET_API_CREDS=1

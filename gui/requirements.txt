@@ -2,7 +2,6 @@ Flask
 Flask_Script
 Flask_WTF
 PyMySQL
-pyOpenSSL
 SQLAlchemy
 Werkzeug
 acme.hello
@@ -14,6 +13,7 @@ josepy
 mysqlclient
 pem
 psycopg2
+pyOpenSSL
 pycryptodome
 python_crontab
 pytz

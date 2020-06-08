@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-182ab4724b9a1c84d17f6855f809162f310ec815
+481c6b193dba05a9ab7ae44541df6793670faae8
+2aed9209cbce02686c61aca1c580907f2b174df4
+b5de18522aa45387382973031ce9c4861cbc8422
 06bbc86f9ac496d95efd98bca3d26a7089d56c94
 c49afc5cca89af0112ce7bcc046a993e37363552
 e73013afd487afb3ea4b564fc29f101d9412d629
@@ -1549,10 +1551,41 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 182ab4724b9a1c84d17f6855f809162f310ec815)
+[//]: # (START_SECTION 481c6b193dba05a9ab7ae44541df6793670faae8)
+### Fix Command Parsing for Commands with Defaults
+
+> Commit: [481c6b193dba05a9ab7ae44541df6793670faae8](https://git.flyball.co/dsiprouter/enterprise/commit/481c6b193dba05a9ab7ae44541df6793670faae8)  
+> Date: Mon, 8 Jun 2020 09:44:26 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- parse debug option before checking for num of args
+
+
+---
+
+[//]: # (END_SECTION 481c6b193dba05a9ab7ae44541df6793670faae8)
+[//]: # (START_SECTION 2aed9209cbce02686c61aca1c580907f2b174df4)
+### Changed the order of PyOpenSSL
+
+> Commit: [2aed9209cbce02686c61aca1c580907f2b174df4](https://git.flyball.co/dsiprouter/enterprise/commit/2aed9209cbce02686c61aca1c580907f2b174df4)  
+> Date: Mon, 8 Jun 2020 13:26:22 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2aed9209cbce02686c61aca1c580907f2b174df4)
+[//]: # (START_SECTION b5de18522aa45387382973031ce9c4861cbc8422)
 ### Fix Carrier Group Issue
 
-> Commit: [182ab4724b9a1c84d17f6855f809162f310ec815](https://git.flyball.co/dsiprouter/enterprise/commit/182ab4724b9a1c84d17f6855f809162f310ec815)  
+> Commit: [b5de18522aa45387382973031ce9c4861cbc8422](https://git.flyball.co/dsiprouter/enterprise/commit/b5de18522aa45387382973031ce9c4861cbc8422)  
 > Date: Mon, 8 Jun 2020 08:29:09 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1564,7 +1597,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 182ab4724b9a1c84d17f6855f809162f310ec815)
+[//]: # (END_SECTION b5de18522aa45387382973031ce9c4861cbc8422)
 [//]: # (START_SECTION 06bbc86f9ac496d95efd98bca3d26a7089d56c94)
 ### Change Deafults for Start/Stop/Restart commands
 
