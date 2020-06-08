@@ -274,7 +274,7 @@ systemctl restart fail2ban</code></pre>
   </div>
 
   <div class="modal-body">
-    <form action="/endpointgroups" method="POST" role="form">
+    <form id="addCertificateForm" action="#" method="POST" role="form" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
       <div class="form-group">
@@ -300,9 +300,12 @@ systemctl restart fail2ban</code></pre>
 	    dsiprouter generatecert
            </code></pre>
           </div>
-        </div>
-      </div> <!-- end of generate tab -->
-      <div id="upload">
+        </div><!-- end of generate tab -->
+
+      <div id="upload" class="form-group hide">
+
+          <input type="file" name="certandkey" multiple>
+
       </div> <!-- end of upload tab -->
 
       <div class="modal-footer ">

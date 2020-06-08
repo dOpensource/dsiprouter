@@ -21,6 +21,7 @@
   var id;
 	var table;
 
+
   function clear(modal_selector) {
     /** Clear out the modal */
     var modal_body = $(modal_selector).find('.modal-body');
@@ -63,11 +64,40 @@
 		requestPayload.domain = modal_body.find("#domain").val();
 		if (modal_body.find(".certtype_generate").is(':checked')) {
 				requestPayload.type = "generated"
+        addGenerated(requestPayload)
 		}
 		else {
 				requestPayload.type = "uploaded"
+        addUploaded(requestPayload)
 		}
+}
 
+
+function addUploaded (requestPayload) {
+
+  var formData = new FormData(document.querySelector('#addCertificateForm'))
+
+  $.ajax({
+    url: API_BASE_URL + ENTITY + "/upload/" + requestPayload.domain,
+    type: 'POST',
+    data: formData,
+    async: false,
+    cache: false,
+    contentType: false,
+    processData: false,
+    success: function(response, text_status, xhr) {
+      showNotification("Certificates were uploaded");
+    },
+    error: function(xhr, text_status, error_msg) {
+      showNotification("Certificates were NOT uploaded", true);
+    }
+  });
+
+  return false;
+
+}
+
+function addGenerated(requestPayload) {
 		// Put into JSON Message and send over
     $.ajax({
       type: action,
