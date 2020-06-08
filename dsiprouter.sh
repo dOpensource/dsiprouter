@@ -1477,13 +1477,15 @@ uninstallDnsmasq() {
 }
 
 function start {
-    cd ${DSIP_PROJECT_DIR}
+    local START_DSIPROUTER=${START_DSIPROUTER:-1}
+    local START_KAMAILIO=${START_KAMAILIO:-0}
+    local START_RTPENGINE=${START_RTPENGINE:-0}
 
-    # propagate settings to the app config
+    # propagate runtime settings to the app config
     updatePythonRuntimeSettings
 
-    # Start Kamailio if it was installed
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
+    # Start Kamailio if told to and installed
+    if (( $START_KAMAILIO == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
         systemctl start kamailio
         # Make sure process is still running
         if ! systemctl is-active --quiet kamailio; then
@@ -1494,8 +1496,8 @@ function start {
         fi
     fi
 
-    # Start RTPEngine if it was installed
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled ]; then
+    # Start RTPEngine if told to and installed
+    if (( $START_RTPENGINE == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled ]; then
         systemctl start rtpengine
         # Make sure process is still running
         if ! systemctl is-active --quiet rtpengine; then
@@ -1506,11 +1508,11 @@ function start {
         fi
     fi
 
-    # Start the dSIPRouter if it was installed
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
+    # Start the dSIPRouter if told to and installed
+    if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         if [ $DEBUG -eq 1 ]; then
             # keep it in the foreground, only used for debugging issues
-            ${PYTHON_CMD} ./gui/dsiprouter.py runserver
+            ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py runserver
             # Make sure process is still running
             PID=$!
             if ! ps -p ${PID} &>/dev/null; then
@@ -1535,14 +1537,15 @@ function start {
 }
 
 function stop {
-    cd ${DSIP_PROJECT_DIR}
+    local STOP_DSIPROUTER=${STOP_DSIPROUTER:-1}
+    local STOP_KAMAILIO=${STOP_KAMAILIO:-0}
+    local STOP_RTPENGINE=${STOP_RTPENGINE:-0}
 
-    # propagate settings to the app config
+    # propagate runtime settings to the app config
     updatePythonRuntimeSettings
 
-
-    # Stop Kamailio if it was installed
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
+    # Stop Kamailio if told to and installed
+    if (( $STOP_KAMAILIO == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
         systemctl stop kamailio
         # Make sure process is not running
         if systemctl is-active --quiet kamailio; then
@@ -1553,8 +1556,8 @@ function stop {
         fi
     fi
 
-    # Stop RTPEngine if it was installed
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled ]; then
+    # Stop RTPEngine if told to and installed
+    if (( $STOP_RTPENGINE == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled ]; then
         systemctl stop rtpengine
         # Make sure process is not running
         if systemctl is-active --quiet rtpengine; then
@@ -1565,8 +1568,8 @@ function stop {
         fi
     fi
 
-    # Stop the dSIPRouter if it was installed
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
+    # Stop the dSIPRouter if told to and installed
+    if (( $STOP_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         # normal startup, fork as background process
         systemctl stop dsiprouter
         # Make sure process is not running
@@ -1680,8 +1683,6 @@ EOF
     else
         printdbg 'Credentials have been updated'
     fi
-
-    displayLoginInfo
 }
 
 # updates credentials in dsip / kam config files / kam db
@@ -2246,11 +2247,11 @@ function usageOptions {
     printf "%-30s %s\n" \
         "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
     printf "%-30s %s\n" \
-        "start" "[-debug]"
+        "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "stop" "[-debug]"
+        "stop" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "restart" "[-debug]"
+        "restart" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
         "configurekam" "[-debug|-servernat]"
     printf "%-30s %s\n" \
@@ -2640,9 +2641,16 @@ function processCMD {
             fi
             ;;
         start)
-            # start all the installed services
+            # start installed services
             RUN_COMMANDS+=(start)
             shift
+
+            # default to only starting dsip gui
+            if (( $# == 0 )); then
+                START_DSIPROUTER=1
+            else
+                START_DSIPROUTER=0
+            fi
 
             while (( $# > 0 )); do
                 OPT="$1"
@@ -2650,6 +2658,24 @@ function processCMD {
                     -debug)
                         export DEBUG=1
                         set -x
+                        shift
+                        ;;
+                    -all|--all)
+                        START_DSIPROUTER=1
+                        START_KAMAILIO=1
+                        START_RTPENGINE=1
+                        shift
+                        ;;
+                    -dsip|--dsiprouter)
+                        START_DSIPROUTER=1
+                        shift
+                        ;;
+                    -kam|--kamailio)
+                        START_KAMAILIO=1
+                        shift
+                        ;;
+                    -rtp|--rtpengine)
+                        START_RTPENGINE=1
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -2662,9 +2688,16 @@ function processCMD {
             done
             ;;
         stop)
-            # stop all the installed services
+            # stop installed services
             RUN_COMMANDS+=(stop)
             shift
+
+            # default to only stopping dsip gui
+            if (( $# == 0 )); then
+                STOP_DSIPROUTER=1
+            else
+                STOP_DSIPROUTER=0
+            fi
 
             while (( $# > 0 )); do
                 OPT="$1"
@@ -2672,6 +2705,24 @@ function processCMD {
                     -debug)
                         export DEBUG=1
                         set -x
+                        shift
+                        ;;
+                    -all|--all)
+                        STOP_DSIPROUTER=1
+                        STOP_KAMAILIO=1
+                        STOP_RTPENGINE=1
+                        shift
+                        ;;
+                    -dsip|--dsiprouter)
+                        STOP_DSIPROUTER=1
+                        shift
+                        ;;
+                    -kam|--kamailio)
+                        STOP_KAMAILIO=1
+                        shift
+                        ;;
+                    -rtp|--rtpengine)
+                        STOP_RTPENGINE=1
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -2684,9 +2735,18 @@ function processCMD {
             done
             ;;
         restart)
-            # restart all the installed services
-            RUN_COMMANDS+=(stop start)
+            # restart installed services
+            RUN_COMMANDS+=(stop)
             shift
+
+            # default to only restarting dsip gui
+            if (( $# == 0 )); then
+                STOP_DSIPROUTER=1
+                START_DSIPROUTER=1
+            else
+                STOP_DSIPROUTER=0
+                START_DSIPROUTER=1
+            fi
 
             while (( $# > 0 )); do
                 OPT="$1"
@@ -2694,6 +2754,30 @@ function processCMD {
                     -debug)
                         export DEBUG=1
                         set -x
+                        shift
+                        ;;
+                    -all|--all)
+                        STOP_DSIPROUTER=1
+                        START_DSIPROUTER=1
+                        STOP_KAMAILIO=1
+                        START_KAMAILIO=1
+                        STOP_RTPENGINE=1
+                        START_RTPENGINE=1
+                        shift
+                        ;;
+                    -dsip|--dsiprouter)
+                        STOP_DSIPROUTER=1
+                        START_DSIPROUTER=1
+                        shift
+                        ;;
+                    -kam|--kamailio)
+                        STOP_KAMAILIO=1
+                        START_KAMAILIO=1
+                        shift
+                        ;;
+                    -rtp|--rtpengine)
+                        STOP_RTPENGINE=1
+                        START_RTPENGINE=1
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -2821,7 +2905,7 @@ function processCMD {
             ;;
         resetpassword)
             # reset secure credentials
-            RUN_COMMANDS+=(setCloudPlatform resetPassword)
+            RUN_COMMANDS+=(setCloudPlatform resetPassword displayLoginInfo)
             shift
 
             # default to only resetting dsip gui password
