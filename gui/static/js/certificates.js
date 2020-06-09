@@ -32,6 +32,7 @@
       btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
       btn.removeClass("btn-success");
       btn.addClass("btn-primary");
+      modal_body.find('#domain').val("");
     }
     else {
       btn = $('#edit .modal-footer').find('#updateButton');
@@ -44,9 +45,9 @@
   }
 
 	function addEntity(action) {
-		var selector, modal_body, url;
+		var selector, modal_body
 
-		// The default action is a POST (creating a new EndpointGroup)
+		// The default action is a POST
 		if (typeof action === "undefined") {
 			action = "POST";
 		}
@@ -55,25 +56,31 @@
 			action = "POST";
 			selector = "#add";
 			modal_body = $(selector + ' .modal-body');
-			url = API_BASE_URL + ENTITY;
+
+		}
+    else if (action === "PUT") {
+			action = "PUT";
+			selector = "#edit";
+			modal_body = $(selector + ' .modal-body');
+
 		}
 
 		var requestPayload = {};
 		var type;
 
 		requestPayload.domain = modal_body.find("#domain").val();
-		if (modal_body.find("#certtype_generate").is(':checked')) {
+		if (modal_body.find("#certtype_generate").is(':checked') || (modal_body.find("#certtype_generate2").is(':checked'))) {
 				requestPayload.type = "generated"
-        addGenerated(requestPayload)
+        addGenerated(requestPayload,action)
 		}
 		else {
 				requestPayload.type = "uploaded"
-        addUploaded(requestPayload)
+        addUploaded(requestPayload,action)
 		}
 }
 
 
-function addUploaded (requestPayload) {
+function addUploaded (requestPayload,action) {
 
   var formData = new FormData(document.querySelector('#addCertificateForm'))
 
@@ -86,7 +93,33 @@ function addUploaded (requestPayload) {
     contentType: false,
     processData: false,
     success: function(response, text_status, xhr) {
+      var btn;
+      var id_int = response.data[0].id;
+
+      // Update the Add Button and the table
+      if (action === "POST") {
+        btn = $('#add .modal-footer').find('#addButton');
+        btn.removeClass("btn-primary");
+      }
+      else {
+        btn = $('#edit .modal-footer').find('#updateButton');
+        btn.removeClass("btn-warning");
+      }
+
+      btn.addClass("btn-success");
+      btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
+      btn.attr("disabled", true);
+
       showNotification("Certificates were uploaded");
+
+      if (action === "POST") {
+        table.row.add({
+          "id": id_int,
+          "domain": requestPayload.domain,
+          "type": requestPayload.type,
+          "assigned_domains": ''
+        }).draw();
+      }
     },
     error: function(xhr, text_status, error_msg) {
       showNotification("Certificates were NOT uploaded", true);
@@ -97,20 +130,34 @@ function addUploaded (requestPayload) {
 
 }
 
-function addGenerated(requestPayload) {
+function addGenerated(requestPayload,action) {
 		// Put into JSON Message and send over
+      if (action === "POST")
+          var btn = $('#add .modal-footer').find('#addButton').prop('disabled', true);
+      else {
+        var btn = $('#edit .modal-footer').find('#updateButton').prop('disabled', true);
+      }
+
     $.ajax({
       type: action,
-      url: url,
+      url: API_BASE_URL + ENTITY,
       dataType: "json",
       contentType: "application/json; charset=utf-8",
       data: JSON.stringify(requestPayload),
       success: function(response, textStatus, jqXHR) {
-        var btn;
+
         var id_int = response.data[0].id;
+
+        setTimeout(function() {
+  			var add_modal = $('#add');
+  				if (add_modal.is(':visible')) {
+  					add_modal.modal('hide');
+  				}
+  			}, 1500);
 
         // Update the Add Button and the table
         if (action === "POST") {
+
           btn = $('#add .modal-footer').find('#addButton');
           btn.removeClass("btn-primary");
         }
@@ -131,14 +178,14 @@ function addGenerated(requestPayload) {
             "assigned_domains": ''
           }).draw();
         }
-        else {
+      /*  else {
           table.row(function(idx, data, node) {
             return data.id === id_int;
           }).data({
             "domain": requestPayload.domain,
             "id": id_int
           }).draw();
-        }
+        }*/
       }
     });
 	}
@@ -158,6 +205,8 @@ function deleteEntity() {
             //return data.id === id_int;
             return data.domain === id;
         }).remove().draw();
+
+        showNotification("Certificate was deleted");
       }
     });
   }
@@ -203,14 +252,21 @@ $('#open-Add').click(function() {
 /* validate fields before submitting api request */
 $('#addButton').click(function() {
 		if (validateFields('#add')) {
-			addEntity();
+			addEntity('POST');
+
+		}
+});
+
+$('#updateButton').click(function() {
+		if (validateFields('#edit')) {
+			addEntity('PUT');
 			// hide the modal after 1.5 sec
 			setTimeout(function() {
 
 
-			var add_modal = $('#add');
-				if (add_modal.is(':visible')) {
-					add_modal.modal('hide');
+			var edit_modal = $('#edit');
+				if (edit_modal.is(':visible')) {
+					edit_modal.modal('hide');
 				}
 			}, 1500);
 		}
@@ -237,18 +293,58 @@ $("#domain").keyup(function () {
 
 })
 
-$("#certtype_generate").change(function () {
+
+
+$("#certtype_generate2").change(function () {
 
 	$("#generate").removeClass("hide");
-	$("#upload").addClass("hide");
+	$("#uploaded").addClass("hide");
 })
 
-$("#certtype_upload").change(function () {
+$("#certtype_upload2").change(function () {
 
 	$("#generate").addClass("hide");
-	$("#upload").removeClass("hide");
+	$("#uploaded").removeClass("hide");
 })
 
+
+$('#edit').on('show.bs.modal', function() {
+  clear('#edit');
+
+  // Show the auth tab by default when the modal shows
+  var modal_body = $('#edit .modal-body');
+
+  // Put into JSON Message and send over
+  $.ajax({
+    type: "GET",
+    url: API_BASE_URL + ENTITY + "/" + id,
+    dataType: "json",
+    contentType: "application/json; charset=utf-8",
+    success: function(response, textStatus, jqXHR) {
+
+      modal_body.find("#domain").val(response.data[0].domain)
+      if (response.data[0].type == "generated") {
+        modal_body.find("#certtype_generate2").prop('checked', true);
+      }
+      else if (response.data[0].type == "uploaded") {
+        modal_body.find("#certtype_upload2").prop('checked', true);
+      }
+    },
+      error: function(response, text_status, error_msg) {
+        showNotification("Could not obtain certificate", true);
+      }
+  })
+});
+
+$(document).ajaxStart(function(){
+  // Show image container
+  $("#loader").show();
+});
+$(document).ajaxComplete(function(){
+  // Hide image container
+  $("#loader").hide();
+
+});
 
 $(".close").click(function () {
 

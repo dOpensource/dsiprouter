@@ -1953,8 +1953,10 @@ def getCertificates(domain=None):
         #     domain_configs = getCustomTLSConfigs(domain)
         # else:
         #domain_configs = getCustomTLSConfigs()
-
-        certificates = db.query(dSIPCertificates).all()
+        if domain == None:
+            certificates = db.query(dSIPCertificates).all()
+        else:
+            certificates = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).all()
 
         for certificate in certificates:
 
@@ -1977,7 +1979,7 @@ def getCertificates(domain=None):
         db.close()
 
 
-@api.route("/api/v1/certificates", methods=['POST'])
+@api.route("/api/v1/certificates", methods=['POST','PUT'])
 @api_security
 def createCertificate():
     """
@@ -2035,26 +2037,45 @@ def createCertificate():
         # Request Certificate via Let's Encrypt
         if key is None and cert is None:
             type = CERT_TYPE_GENERATED
-            if settings.DEBUG:
-                # Use the LetsEncrypt Staging Server
-                key,cert=generateCertificate(domain,email,debug=True)
-            else:
-                # Use the LetsEncrypt Prod Server
-                key,cert=generateCertificate(domain,email)
+            try:
+                if settings.DEBUG:
+                    # Use the LetsEncrypt Staging Server
+
+                    key,cert=generateCertificate(domain,email,debug=True)
+
+                else:
+                    # Use the LetsEncrypt Prod Server
+                    key,cert=generateCertificate(domain,email)
+
+            except Exception as ex:
+                globals.reload_required = False
+                raise http_exceptions.BadRequest("Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
+
 
         # Convert Certificate and key to base64 so that they can be stored in the database
         cert_base64 = base64.b64encode(cert.encode('ascii'))
         key_base64 = base64.b64encode(key.encode('ascii'))
 
-        # Store Certificate in dSIPCertificate Table
-        certificate = dSIPCertificates(domain, type, email, cert_base64, key_base64)
-        db.add(certificate)
 
-        # Write the Kamailio TLS Configuration
-        if not addCustomTLSConfig(domain, ip, port, server_name_mode):
-            raise Exception('Failed to add Certificate to Kamailio')
+        #Check if the domain exists.  If so, update versus writing new
+        certificate = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
+        if certificate is not None:
+            #Update
+            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update({'email':email,'type':type,'cert':cert_base64,'key':key_base64})
+            db.commit()
+            # Update the Kamailio TLS Configuration
+            if not updateCustomTLSConfig(domain, ip, port, server_name_mode):
+                raise Exception('Failed to add Certificate to Kamailio')
 
-        db.commit()
+        else:
+            # Store a new Certificate in dSIPCertificate Table
+            certificate = dSIPCertificates(domain, type, email, cert_base64, key_base64)
+            db.commit()
+            db.add(certificate)
+            # Write the Kamailio TLS Configuration
+            if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+                raise Exception('Failed to add Certificate to Kamailio')
+
 
         response_payload['msg'] = "Certificate creation succeeded"
         response_payload['data'].append({"id": certificate.id})
@@ -2183,6 +2204,7 @@ def uploadCertificates(domain=None):
         db.commit()
 
         response_payload['msg'] = "Certificate and Key were uploaded"
+        response_payload['data'].append({"id": certificate.id})
         globals.reload_required = True
         response_payload['kamreload'] = True
         return jsonify(response_payload), StatusCodes.HTTP_OK
