@@ -5,7 +5,11 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-969514dad7d5bed517353abf88c9820ed83c4644
+1288bd1cde40a29543401a1786cd7e06433017e9
+25b99e1b211e78ecb9ed20cb803594b1959b3000
+5c7816d4ae274af72fadf354bffe70319e4bacdc
+f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9
+330d69481ece2323d04de2ac8f5b496e503f24cc
 b6e233d04a02cfbee6e25e62d8f033510b08e527
 cd5df131c230e5f47b03dd5a93bcfc9d0b17b019
 cb2428d137a134aff9dbb3bc8a61b9bde38d8f36
@@ -1556,10 +1560,73 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 969514dad7d5bed517353abf88c9820ed83c4644)
+[//]: # (START_SECTION 1288bd1cde40a29543401a1786cd7e06433017e9)
+### Add uuidgen Dependency to Install
+
+> Commit: [1288bd1cde40a29543401a1786cd7e06433017e9](https://git.flyball.co/dsiprouter/enterprise/commit/1288bd1cde40a29543401a1786cd7e06433017e9)  
+> Date: Mon, 8 Jun 2020 16:48:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix missing uuidgen binary on install
+
+
+---
+
+[//]: # (END_SECTION 1288bd1cde40a29543401a1786cd7e06433017e9)
+[//]: # (START_SECTION 25b99e1b211e78ecb9ed20cb803594b1959b3000)
+### Fix Misordered Logic in Endpoint Groups URI Parsing
+
+> Commit: [25b99e1b211e78ecb9ed20cb803594b1959b3000](https://git.flyball.co/dsiprouter/enterprise/commit/25b99e1b211e78ecb9ed20cb803594b1959b3000)  
+> Date: Mon, 8 Jun 2020 16:30:01 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix URI parsing for endpoint groups
+
+
+---
+
+[//]: # (END_SECTION 25b99e1b211e78ecb9ed20cb803594b1959b3000)
+[//]: # (START_SECTION 5c7816d4ae274af72fadf354bffe70319e4bacdc)
+### Fix API Regressions
+
+> Commit: [5c7816d4ae274af72fadf354bffe70319e4bacdc](https://git.flyball.co/dsiprouter/enterprise/commit/5c7816d4ae274af72fadf354bffe70319e4bacdc)  
+> Date: Mon, 8 Jun 2020 16:20:29 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- fix regressions from bad merge
+
+
+---
+
+[//]: # (END_SECTION 5c7816d4ae274af72fadf354bffe70319e4bacdc)
+[//]: # (START_SECTION f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9)
+### Fixed issue with certificates
+
+> Commit: [f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9](https://git.flyball.co/dsiprouter/enterprise/commit/f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9)  
+> Date: Mon, 8 Jun 2020 19:24:04 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9)
+[//]: # (START_SECTION 330d69481ece2323d04de2ac8f5b496e503f24cc)
 ### Fix Kamailio TLS Config Handling
 
-> Commit: [969514dad7d5bed517353abf88c9820ed83c4644](https://git.flyball.co/dsiprouter/enterprise/commit/969514dad7d5bed517353abf88c9820ed83c4644)  
+> Commit: [330d69481ece2323d04de2ac8f5b496e503f24cc](https://git.flyball.co/dsiprouter/enterprise/commit/330d69481ece2323d04de2ac8f5b496e503f24cc)  
 > Date: Mon, 8 Jun 2020 15:09:32 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1572,7 +1639,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 969514dad7d5bed517353abf88c9820ed83c4644)
+[//]: # (END_SECTION 330d69481ece2323d04de2ac8f5b496e503f24cc)
 [//]: # (START_SECTION b6e233d04a02cfbee6e25e62d8f033510b08e527)
 ### Removed acme for testing
 

@@ -9,7 +9,7 @@ function install {
     # Install dependencies for dSIPRouter
     apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
     apt-get install -y --allow-unauthenticated libmysqlclient-dev libmariadb-client-lgpl-dev
-    apt-get install -y logrotate rsyslog perl pandoc sngrep libev-dev
+    apt-get install -y logrotate rsyslog perl pandoc sngrep libev-dev uuid-runtime
     easy_install3 pip
 
     # create dsiprouter user and group

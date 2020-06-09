@@ -319,8 +319,8 @@ class dSIPCertificates(object):
     Schema for dsip_certificates table\n
     """
 
-    def __init__(self, domain, type, email ,cert, key):
-        
+    def __init__(self, domain, type, email, cert, key):
+
         self.domain = domain
         self.type = type
         self.email = email
