@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-1288bd1cde40a29543401a1786cd7e06433017e9
+c7d721bd8e139568d0a877d026f1fe93ceb1bae9
+a37c39557a4ba52f53f4e83454a363bd778f1a3f
+34de2c54dcb4b73865783cc24ca0b96969b1e87e
 25b99e1b211e78ecb9ed20cb803594b1959b3000
 5c7816d4ae274af72fadf354bffe70319e4bacdc
 f43cae7dfbb13d56ea9a8c3d1d816b2e4fe1cfc9
@@ -1560,10 +1562,45 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 1288bd1cde40a29543401a1786cd7e06433017e9)
+[//]: # (START_SECTION c7d721bd8e139568d0a877d026f1fe93ceb1bae9)
+### Fixes for v0.62 Release
+
+> Commit: [c7d721bd8e139568d0a877d026f1fe93ceb1bae9](https://git.flyball.co/dsiprouter/enterprise/commit/c7d721bd8e139568d0a877d026f1fe93ceb1bae9)  
+> Date: Wed, 10 Jun 2020 06:34:06 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- Resolves [#53](https://git.flyball.co/dsiprouter/enterprise/issues/53)
+- fix carrier group and endpoint group listener issues
+- fix improper record route handling
+- add example improvements for fusionpbx sync
+- fix carrier group delete exceptions on UAC DNE
+
+
+---
+
+[//]: # (END_SECTION c7d721bd8e139568d0a877d026f1fe93ceb1bae9)
+[//]: # (START_SECTION a37c39557a4ba52f53f4e83454a363bd778f1a3f)
+### Certificates - Completed Add, Update and Delete of Certificates
+
+> Commit: [a37c39557a4ba52f53f4e83454a363bd778f1a3f](https://git.flyball.co/dsiprouter/enterprise/commit/a37c39557a4ba52f53f4e83454a363bd778f1a3f)  
+> Date: Tue, 9 Jun 2020 08:49:40 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a37c39557a4ba52f53f4e83454a363bd778f1a3f)
+[//]: # (START_SECTION 34de2c54dcb4b73865783cc24ca0b96969b1e87e)
 ### Add uuidgen Dependency to Install
 
-> Commit: [1288bd1cde40a29543401a1786cd7e06433017e9](https://git.flyball.co/dsiprouter/enterprise/commit/1288bd1cde40a29543401a1786cd7e06433017e9)  
+> Commit: [34de2c54dcb4b73865783cc24ca0b96969b1e87e](https://git.flyball.co/dsiprouter/enterprise/commit/34de2c54dcb4b73865783cc24ca0b96969b1e87e)  
 > Date: Mon, 8 Jun 2020 16:48:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1575,7 +1612,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 1288bd1cde40a29543401a1786cd7e06433017e9)
+[//]: # (END_SECTION 34de2c54dcb4b73865783cc24ca0b96969b1e87e)
 [//]: # (START_SECTION 25b99e1b211e78ecb9ed20cb803594b1959b3000)
 ### Fix Misordered Logic in Endpoint Groups URI Parsing
 

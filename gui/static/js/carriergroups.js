@@ -7,6 +7,8 @@
   }
 
   function setCarrierGroupHandlers() {
+    var carriergroups_tbody = $('#carrier-groups tbody');
+
     $('#carrier-nav').click(function(e) {
       var target_link = $(e.target);
 
@@ -92,7 +94,7 @@
       modal_body.find('.authtype[data-toggle="ip_enabled"]').trigger('click');
     });
 
-    $('#carrier-groups #open-Update').click(function() {
+    carriergroups_tbody.on('click', '#open-Update', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('carrier-groups');
       var gwgroup = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -164,7 +166,7 @@
       $('#carrier-nav > .nav-tabs').find('a').first().trigger('click');
     });
 
-    $('#carrier-groups #open-Delete').click(function() {
+    carriergroups_tbody.on('click','#open-Delete', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('carrier-groups');
       var gwgroup = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -180,7 +182,9 @@
   }
 
   function setCarrierHandlers() {
-    $('#open-CarrierAdd').click(function() {
+    var carriers_tbody = $('#carriers tbody');
+
+    $('#open-CarrierAdd').on('click', function() {
       /** Clear out the modal */
       var modal_body = $('#add .modal-body');
       modal_body.find(".gwid").val('');
@@ -194,7 +198,7 @@
     });
 
 
-    $('#carriers #open-Update').click(function() {
+    carriers_tbody.on('click', '#open-Update', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('carriers');
       var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -219,7 +223,7 @@
       modal_body.find(".prefix").val(prefix);
     });
 
-    $('#carriers #open-Delete').click(function() {
+    carriers_tbody.on('click', '#open-Delete', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('carriers');
       var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();

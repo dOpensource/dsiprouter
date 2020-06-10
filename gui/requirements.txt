@@ -4,10 +4,12 @@ Flask_WTF
 PyMySQL
 SQLAlchemy
 Werkzeug
+acme.hello
 cron_descriptor
 cryptography
 dnspython
 docker
+josepy
 mysqlclient
 pem
 psycopg2

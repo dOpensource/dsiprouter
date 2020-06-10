@@ -399,7 +399,10 @@ def deleteCarrierGroups():
 
         Addrs = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(gwgroup)))
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup)
-        Uac = db.query(UAC).filter(UAC.l_uuid == Gwgroup.first().id)
+        gwgroup_row = Gwgroup.first()
+        if gwgroup_row is not None:
+            Uac = db.query(UAC).filter(UAC.l_uuid == gwgroup_row.id)
+            Uac.delete(synchronize_session=False)
 
         # validate this group has gateways assigned to it
         if len(gwlist) > 0:
@@ -408,7 +411,6 @@ def deleteCarrierGroups():
 
         Addrs.delete(synchronize_session=False)
         Gwgroup.delete(synchronize_session=False)
-        Uac.delete(synchronize_session=False)
 
         db.commit()
         globals.reload_required = True

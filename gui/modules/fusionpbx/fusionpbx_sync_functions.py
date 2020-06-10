@@ -7,6 +7,10 @@ from database import Domain, DomainAttrs, dSIPMultiDomainMapping
 from util.security import AES_CTR
 
 
+# TODO: error handling here is pretty bad, we need to establish connection from main func and pass conn/cursors to sub funcs
+#       I implemented an exmaple in sync_needed() of proper connection / cursor handling, we need to move that to the entry func
+#       i.e. run_sync() should utilize the proper handling of the connections/cursors and pass them to sub functions
+
 # Obtain a set of FusionPBX systems that contains domains that Kamailio will route traffic to.
 def get_sources(db):
     # Dictionary object to hold the set of source FusionPBX systems
@@ -29,7 +33,7 @@ def get_sources(db):
             # Store the PBX_ID as the key and the entire row as the value
             sources[row[1]] = row
     except Exception as e:
-        print(e)
+        print(str(e))
 
     return sources
 
@@ -56,7 +60,7 @@ def drop_fusionpbx_domains(source, db):
         if len(pbx_domain_list) > 0:
             c.execute("""DELETE FROM domain WHERE id IN({})""".format(pbx_domain_list))
 
-        if len(pbx_attr_list > 0):
+        if len(pbx_attr_list) > 0:
             c.execute("""DELETE FROM domain_attrs WHERE id IN({})""".format(pbx_attr_list))
 
         db.commit()
@@ -169,7 +173,7 @@ def sync_db(source, dest):
         # Remove lock file
         os.remove("./.sync-lock")
 
-        print(e)
+        print(str(e))
 
 
 def reloadkam(kamcmd_path):
@@ -263,7 +267,7 @@ def update_nginx(sources):
         print("created a container")
     except Exception as e:
         os.remove("./.sync-lock")
-        print(e)
+        print(str(e))
 
 
 def sync_needed(source, dest):
@@ -289,22 +293,27 @@ def sync_needed(source, dest):
 
     need_sync = True
 
+    fpbx_conn = None
+    fpbx_curs = None
+    kam_conn = None
+    kam_curs = None
+
     # Trying connecting to the databases
     try:
 
         # Get a connection to Kamailio Server DB
-        db = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
-        c = db.cursor()
-        if c is not None:
+        kam_conn = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
+        kam_curs = kam_conn.cursor()
+        if kam_curs is not None:
             print("[sync_needed] Connection to Kamailio DB:{} database was successful".format(kam_hostname))
 
         # Get a connection to the FusionPBX Server
-        conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
-        if conn is not None:
+        fpbx_conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
+        if fpbx_conn is not None:
             print("[sync_needed] Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
-        cur = conn.cursor()
-        cur.execute("""select domain_name from v_domains where domain_enabled='true'""")
-        rows = cur.fetchall()
+        fpbx_curs = fpbx_conn.cursor()
+        fpbx_curs.execute("""select domain_name from v_domains where domain_enabled='true'""")
+        rows = fpbx_curs.fetchall()
         if rows is not None:
             domain_name_str = ""
 
@@ -319,24 +328,35 @@ def sync_needed(source, dest):
             print("[sync_needed] Hashed String of domains: {}".format(domain_name_str_hash))
             if domain_name_str_hash == pbx_domain_list_hash:
                 # Sync not needed.  Will update the syncstatus=2 to denote a domain change was not detected
-                c.execute("""update dsip_multidomain_mapping set syncstatus=2, lastsync=NOW()""")
+                kam_curs.execute("""update dsip_multidomain_mapping set syncstatus=2, lastsync=NOW()""")
+                kam_conn.commit()
                 need_sync = False
-                return need_sync
         else:
             # No domains yet, so no need to sync
-            c.execute("""update dsip_multidomain_mapping set syncstatus=3, lastsync=NOW()""")
+            kam_curs.execute("""update dsip_multidomain_mapping set syncstatus=3, lastsync=NOW()""")
+            kam_conn.commit()
             need_sync = False
-            return need_sync
 
         return need_sync
 
     except Exception as e:
-        print(e)
-        error = "update dsip_multidomain_mapping set syncstatus=4, lastsync=NOW(),syncerror='{}'".format(e)
-        c.execute(error)
+        error = str(e)
+        print(error)
+        try:
+            kam_conn.rollback()
+            kam_curs.execute("update dsip_multidomain_mapping set syncstatus=4, lastsync=NOW(),syncerror='{}'".format())
+            kam_conn.commit()
+        except:
+            pass
     finally:
-        db.commit()
-        db.close()
+        if fpbx_conn is not None:
+            fpbx_conn.close()
+        if fpbx_curs is not None:
+            fpbx_curs.close()
+        if kam_curs is not None:
+            kam_curs.close()
+        if kam_conn is not None:
+            kam_conn.close()
 
 
 def run_sync(settings):
@@ -383,7 +403,7 @@ def run_sync(settings):
             sources = list(sources.keys())
             update_nginx(sources)
     except Exception as e:
-        print(e)
+        print(str(e))
     finally:
         # Remove lock file
         os.remove("./.sync-lock")

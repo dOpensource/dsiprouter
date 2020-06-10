@@ -416,7 +416,7 @@
       })
     });
 
-    $('#addEndpointRow').click(function() {
+    $('#addEndpointRow').on('click', function() {
       var table = $('#endpoint-table2');
       //var body = $('#endpoint-tablebody2');
       //var nextId = body.find('tr').length + 1;
@@ -425,7 +425,7 @@
       $("#endpoint-table2" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
     });
 
-    $('#updateEndpointRow').click(function() {
+    $('#updateEndpointRow').on('click', function() {
       var table = $('#endpoint-table');
       //var body = $('#endpoint-tablebody');
       //var nextId = body.find('tr').length + 1;
@@ -470,7 +470,7 @@
       }
     });
 
-    $(".toggle-password").click(function() {
+    $(".toggle-password").on('click', function() {
       var input = $($(this).attr("toggle"));
       if (input.attr("type") == "password") {
         input.attr("type", "text");
@@ -526,7 +526,10 @@
     });
 
     /* validate fields before submitting api request */
-    $('#addButton').click(function() {
+    $('#addButton').click(function(ev) {
+      /* prevent form default submit */
+      ev.preventDefault();
+
       if (validateFields('#add')) {
         addEndpointGroup();
         // hide the modal after 1.5 sec
@@ -540,7 +543,10 @@
     });
 
     /* validate fields before submitting api request */
-    $('#updateButton').click(function() {
+    $('#updateButton').click(function(ev) {
+      /* prevent form default submit */
+      ev.preventDefault();
+
       if (validateFields('#edit')) {
         updateEndpointGroup();
         // hide the modal after 1.5 sec
@@ -551,6 +557,9 @@
           }
         }, 1500);
       }
+
+      /* prevent page reload */
+      return false;
     });
 
     /* handler for deleting endpoint group */
