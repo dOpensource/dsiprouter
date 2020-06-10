@@ -29,9 +29,9 @@ EXCLUDE_DIRS=( )
 # destination file
 REQUIREMENTS_FILE="requirements.txt"
 # pipreqs only catches stdlib libraries
-INCLUDE_LIBS=('mysqlclient' 'docker')
+INCLUDE_LIBS=('mysqlclient' 'docker' 'certbot')
 # excludes for conflicting libs
-EXCLUDE_LIBS=('docker_py' 'pyspark')
+EXCLUDE_LIBS=('docker_py' 'pyspark' 'acme.hello' 'josepy')
 
 
 # utility function

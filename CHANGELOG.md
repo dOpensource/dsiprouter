@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-c7d721bd8e139568d0a877d026f1fe93ceb1bae9
+69951a4bdea4ca8db1d851abfcb24ca4ff9235d9
+dd215cc504ee085a031aac6577c81ad8ae753a7f
+e391260463b04eeaed6769f316c95ff9088b3a43
 a37c39557a4ba52f53f4e83454a363bd778f1a3f
 34de2c54dcb4b73865783cc24ca0b96969b1e87e
 25b99e1b211e78ecb9ed20cb803594b1959b3000
@@ -1562,10 +1564,42 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION c7d721bd8e139568d0a877d026f1fe93ceb1bae9)
+[//]: # (START_SECTION 69951a4bdea4ca8db1d851abfcb24ca4ff9235d9)
+### Update PreCommit Hook with Requirements Changes
+
+> Commit: [69951a4bdea4ca8db1d851abfcb24ca4ff9235d9](https://git.flyball.co/dsiprouter/enterprise/commit/69951a4bdea4ca8db1d851abfcb24ca4ff9235d9)  
+> Date: Wed, 10 Jun 2020 10:21:42 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- add certbot to forced includes
+- add acme and josepy to forced excludes
+
+
+---
+
+[//]: # (END_SECTION 69951a4bdea4ca8db1d851abfcb24ca4ff9235d9)
+[//]: # (START_SECTION dd215cc504ee085a031aac6577c81ad8ae753a7f)
+### Removed the acme and josepy from requirements.txt and just added in certbot
+
+> Commit: [dd215cc504ee085a031aac6577c81ad8ae753a7f](https://git.flyball.co/dsiprouter/enterprise/commit/dd215cc504ee085a031aac6577c81ad8ae753a7f)  
+> Date: Wed, 10 Jun 2020 11:38:45 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION dd215cc504ee085a031aac6577c81ad8ae753a7f)
+[//]: # (START_SECTION e391260463b04eeaed6769f316c95ff9088b3a43)
 ### Fixes for v0.62 Release
 
-> Commit: [c7d721bd8e139568d0a877d026f1fe93ceb1bae9](https://git.flyball.co/dsiprouter/enterprise/commit/c7d721bd8e139568d0a877d026f1fe93ceb1bae9)  
+> Commit: [e391260463b04eeaed6769f316c95ff9088b3a43](https://git.flyball.co/dsiprouter/enterprise/commit/e391260463b04eeaed6769f316c95ff9088b3a43)  
 > Date: Wed, 10 Jun 2020 06:34:06 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1581,7 +1615,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION c7d721bd8e139568d0a877d026f1fe93ceb1bae9)
+[//]: # (END_SECTION e391260463b04eeaed6769f316c95ff9088b3a43)
 [//]: # (START_SECTION a37c39557a4ba52f53f4e83454a363bd778f1a3f)
 ### Certificates - Completed Add, Update and Delete of Certificates
 

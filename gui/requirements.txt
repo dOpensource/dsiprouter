@@ -4,6 +4,7 @@ Flask_WTF
 PyMySQL
 SQLAlchemy
 Werkzeug
+certbot
 cron_descriptor
 cryptography
 dnspython
@@ -16,4 +17,3 @@ pycryptodome
 python_crontab
 pytz
 requests
-certbot
