@@ -73,7 +73,7 @@
     // get endpoint group data
     $.ajax({
       type: "GET",
-      url: API_BASE_URL + "/api/v1/endpointgroups",
+      url: API_BASE_URL + "cdrs/endpointgroups",
       dataType: "json",
       contentType: "application/json; charset=utf-8",
       success: function (response, textStatus, jqXHR) {
@@ -90,7 +90,7 @@
 
     $('#downloadCDR').click(function () {
       var gwgroupid = $("#endpointgroups").val();
-      window.location.href = '/api/v1/cdrs/endpointgroups/' + gwgroupid + '?type=csv&filter=' + getFilteredCdrIds().join(',');
+      window.location.href = API_BASE_URL + 'cdrs/endpointgroups/' + gwgroupid + '?type=csv&filter=' + getFilteredCdrIds().join(',');
     });
   });
 

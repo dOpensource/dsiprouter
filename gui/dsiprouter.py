@@ -15,7 +15,7 @@ from werkzeug.utils import secure_filename
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
-    safeUriToHost, safeFormatSipUri
+    safeUriToHost, safeFormatSipUri, safeStripPort
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
@@ -547,18 +547,26 @@ def addUpdateCarriers():
         gwid = form['gwid']
         gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
         name = form['name'] if len(form['name']) > 0 else ''
-        ip_addr = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
+        hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
+
+        if len(hostname) == 0:
+            raise http_exceptions.BadRequest("Carrier hostname/address is required")
+
+        sip_addr = safeUriToHost(hostname, default_port=5060)
+        if sip_addr is None:
+            raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+        host_addr = safeStripPort(sip_addr)
 
         # Adding
         if len(gwid) <= 0:
             if len(gwgroup) > 0:
-                Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Addr)
                 db.flush()
 
-                Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
                 db.add(Gateway)
                 db.flush()
 
@@ -570,17 +578,17 @@ def addUpdateCarriers():
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
             else:
-                Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER)
+                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
                 db.add(Addr)
                 db.flush()
 
-                Gateway = Gateways(name, ip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
                 db.add(Gateway)
 
         # Updating
         else:
             Gateway = db.query(Gateways).filter(Gateways.gwid == gwid).first()
-            Gateway.address = ip_addr
+            Gateway.address = sip_addr
             Gateway.strip = strip
             Gateway.pri_prefix = prefix
 
@@ -598,7 +606,7 @@ def addUpdateCarriers():
                 if Addr is not None:
                     address_exists = True
 
-                    Addr.ip_addr = ip_addr
+                    Addr.ip_addr = host_addr
                     addr_fields = strFieldsToDict(Addr.tag)
                     addr_fields['name'] = name
 
@@ -609,9 +617,9 @@ def addUpdateCarriers():
             # otherwise create the address
             if not address_exists:
                 if len(gwgroup) > 0:
-                    Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 else:
-                    Addr = Address(name, ip_addr, 32, settings.FLT_CARRIER)
+                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
 
                 db.add(Addr)
                 db.flush()
@@ -845,6 +853,7 @@ def addUpdateEndpointGroups():
     finally:
         db.close()
 
+# TODO: is this route still in use?
 @app.route('/pbxdelete', methods=['POST'])
 def deletePBX():
     """
@@ -1825,79 +1834,80 @@ def deleteOutboundRoute():
     finally:
         db.close()
 
-@app.route('/reloadkam')
-def reloadkam():
-    """
-    Soft Reload of kamailio modules and settings
-    """
-
-    prev_reload_val = globals.reload_required
-
-    try:
-        if not session.get('logged_in'):
-            return redirect(url_for('index'))
-
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        # format some settings for kam config
-        dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
-        if isinstance(settings.DSIP_API_TOKEN, bytes):
-            dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-        else:
-            dsip_api_token = settings.DSIP_API_TOKEN
-
-        # -- Reloading modules --
-        return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
-        return_code += subprocess.call(['kamcmd', 'drouting.reload'])
-        return_code += subprocess.call(['kamcmd', 'domain.reload'])
-        return_code += subprocess.call(['kamcmd', 'dispatcher.reload'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'gw2gwgroup'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_hardfwd'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_failfwd'])
-        return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_prefixmap'])
-        return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
-        return_code += subprocess.call(['kamcmd', 'tls.reload'])
-
-        # -- Updating settings --
-        return_code += subprocess.call(
-            ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
-
-        if settings.TELEBLOCK_GW_ENABLED:
-            return_code += subprocess.call(
-                ['kamcmd', 'cfg.sets', 'teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)])
-            return_code += subprocess.call(
-                ['kamcmd', 'cfg.seti', 'teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)])
-            return_code += subprocess.call(
-                ['kamcmd', 'cfg.sets', 'teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)])
-            return_code += subprocess.call(
-                ['kamcmd', 'cfg.seti', 'teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)])
-
-        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'role', settings.ROLE])
-        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_server', dsip_api_url])
-        return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_token', dsip_api_token])
-
-        session['last_page'] = request.headers['Referer']
-
-        if return_code == 0:
-            status_code = 1
-            globals.reload_required = False
-        else:
-            status_code = 0
-            globals.reload_required = prev_reload_val
-        return json.dumps({"status": status_code})
-
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        error = "http"
-        return showError(type=error)
-    except Exception as ex:
-        debugException(ex)
-        error = "server"
-        return showError(type=error)
+# TODO: deprecated, has been superseded by API endpoint reloadKamailio()
+# @app.route('/reloadkam')
+# def reloadkam():
+#     """
+#     Soft Reload of kamailio modules and settings
+#     """
+#
+#     prev_reload_val = globals.reload_required
+#
+#     try:
+#         if not session.get('logged_in'):
+#             return redirect(url_for('index'))
+#
+#         if (settings.DEBUG):
+#             debugEndpoint()
+#
+#         # format some settings for kam config
+#         dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
+#         if isinstance(settings.DSIP_API_TOKEN, bytes):
+#             dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+#         else:
+#             dsip_api_token = settings.DSIP_API_TOKEN
+#
+#         # -- Reloading modules --
+#         return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
+#         return_code += subprocess.call(['kamcmd', 'drouting.reload'])
+#         return_code += subprocess.call(['kamcmd', 'domain.reload'])
+#         return_code += subprocess.call(['kamcmd', 'dispatcher.reload'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'gw2gwgroup'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_hardfwd'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_failfwd'])
+#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_prefixmap'])
+#         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
+#         return_code += subprocess.call(['kamcmd', 'tls.reload'])
+#
+#         # -- Updating settings --
+#         return_code += subprocess.call(
+#             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
+#
+#         if settings.TELEBLOCK_GW_ENABLED:
+#             return_code += subprocess.call(
+#                 ['kamcmd', 'cfg.sets', 'teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)])
+#             return_code += subprocess.call(
+#                 ['kamcmd', 'cfg.seti', 'teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)])
+#             return_code += subprocess.call(
+#                 ['kamcmd', 'cfg.sets', 'teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)])
+#             return_code += subprocess.call(
+#                 ['kamcmd', 'cfg.seti', 'teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)])
+#
+#         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'role', settings.ROLE])
+#         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_server', dsip_api_url])
+#         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_token', dsip_api_token])
+#
+#         session['last_page'] = request.headers['Referer']
+#
+#         if return_code == 0:
+#             status_code = 1
+#             globals.reload_required = False
+#         else:
+#             status_code = 0
+#             globals.reload_required = prev_reload_val
+#         return json.dumps({"status": status_code})
+#
+#     except http_exceptions.HTTPException as ex:
+#         debugException(ex)
+#         error = "http"
+#         return showError(type=error)
+#     except Exception as ex:
+#         debugException(ex)
+#         error = "server"
+#         return showError(type=error)
 
 # custom jinja filters
 def yesOrNoFilter(list, field):

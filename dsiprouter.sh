@@ -582,14 +582,14 @@ function updateKamailioConfig {
 
     # hot reloading global settings
     if systemctl is-active --quiet kamailio 2>/dev/null; then
-        kamcmd cfg.sets server role ${ROLE}
-        kamcmd cfg.sets server api_server ${DSIP_API_BASEURL}
-        kamcmd cfg.sets server api_token ${DSIP_API_TOKEN}
-        kamcmd cfg.seti teleblock gw_enabled ${TELEBLOCK_GW_ENABLED}
-        kamcmd cfg.sets teleblock gw_ip ${TELEBLOCK_GW_IP}
-        kamcmd cfg.seti teleblock gw_port ${TELEBLOCK_GW_PORT}
-        kamcmd cfg.sets teleblock media_ip ${TELEBLOCK_MEDIA_IP}
-        kamcmd cfg.seti teleblock media_port ${TELEBLOCK_MEDIA_PORT}
+        sendKamCmd cfg.sets server role "${ROLE}" &>/dev/null
+        sendKamCmd cfg.sets server api_server "${DSIP_API_BASEURL}" &>/dev/null
+        sendKamCmd cfg.sets server api_token "${DSIP_API_TOKEN}" &>/dev/null
+        sendKamCmd cfg.seti teleblock gw_enabled "${TELEBLOCK_GW_ENABLED}" &>/dev/null
+        sendKamCmd cfg.sets teleblock gw_ip "${TELEBLOCK_GW_IP}" &>/dev/null
+        sendKamCmd cfg.seti teleblock gw_port "${TELEBLOCK_GW_PORT}" &>/dev/null
+        sendKamCmd cfg.sets teleblock media_ip "${TELEBLOCK_MEDIA_IP}" &>/dev/null
+        sendKamCmd cfg.seti teleblock media_port "${TELEBLOCK_MEDIA_PORT}" &>/dev/null
     fi
 
     # check for cluster db connection and set kam db config settings appropriately
@@ -2736,7 +2736,7 @@ function processCMD {
             ;;
         restart)
             # restart installed services
-            RUN_COMMANDS+=(stop)
+            RUN_COMMANDS+=(stop start)
             shift
 
             # process debug option before parsing others

@@ -304,6 +304,7 @@ def revokeEndpointLease(leaseid):
         db.close()
 
 
+# TODO: is this endpoint still used?
 @api.route("/api/v1/endpoint/<int:id>", methods=['POST'])
 @api_security
 def updateEndpoint(id):
@@ -1034,8 +1035,7 @@ def updateEndpointGroups(gwgroupid=None):
         gwgroup_desc_dict = strFieldsToDict(Gwgroup.description)
         gwgroup_desc_dict['name'] = request_payload['name'] if 'name' in request_payload else ''
         Gwgroup.description = dictToStrFields(gwgroup_desc_dict)
-        db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-            {'description': Gwgroup.description}, synchronize_session=False)
+        db.flush()
 
         # Update concurrent call limit
         calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else None
@@ -1066,8 +1066,12 @@ def updateEndpointGroups(gwgroupid=None):
             authdomain = request_payload['auth']['domain'] \
                 if 'domain' in request_payload['auth'] and len(
                 request_payload['auth']['domain']) > 0 else settings.DOMAIN
-            if authuser == None or authpass == None:
+            authdomain = safeUriToHost(authdomain)
+
+            if authuser is None or authpass is None:
                 raise http_exceptions.BadRequest("Auth username or password invalid")
+            if authdomain is None:
+                raise http_exceptions.BadRequest("Auth domain is malformed")
 
             # Get the existing username and domain_name if it exists
             currentSubscriberInfo = db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
@@ -1248,7 +1252,7 @@ def updateEndpointGroups(gwgroupid=None):
             if overmaxcalllimit is not None:
                 # Try to update
                 if db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
-                        dSIPNotification.type == 0).update({"value": overmaxcalllimit}):
+                        dSIPNotification.type == 0).update({"value": overmaxcalllimit}, synchronize_session=False):
                     pass
                 # Otherwise Add
                 else:
@@ -1258,12 +1262,12 @@ def updateEndpointGroups(gwgroupid=None):
             # Remove
             else:
                 db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
-                    dSIPNotification.type == 0).delete()
+                    dSIPNotification.type == 0).delete(synchronize_session=False)
 
             if endpointfailure is not None:
                 # Try to update
                 if db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
-                        dSIPNotification.type == 1).update({"value": endpointfailure}):
+                        dSIPNotification.type == 1).update({"value": endpointfailure}, synchronize_session=False):
                     pass
                 # Otherwise Add
                 else:
@@ -1273,18 +1277,20 @@ def updateEndpointGroups(gwgroupid=None):
             # Remove
             else:
                 db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid).filter(
-                    dSIPNotification.type == 1).delete()
+                    dSIPNotification.type == 1).delete(synchronize_session=False)
 
         # Update CDR
         if 'cdr' in request_payload:
-            cdr_email = request_payload['cdr']['cdr_email'] if 'cdr_email' in request_payload['cdr'] else None
+            cdr_email = request_payload['cdr']['cdr_email'] \
+                if 'cdr_email' in request_payload['cdr'] else None
             cdr_send_interval = request_payload['cdr']['cdr_send_interval'] \
                 if 'cdr_send_interval' in request_payload['cdr'] else None
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
                 # Try to update
                 if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update(
-                        {"email": cdr_email, "send_interval": cdr_send_interval}):
+                        {"email": cdr_email, "send_interval": cdr_send_interval},
+                        synchronize_session=False):
                     if not updateTaggedCronjob(gwgroupid, cdr_send_interval):
                         raise Exception('Crontab entry could not be updated')
                 else:
@@ -1321,7 +1327,7 @@ def updateEndpointGroups(gwgroupid=None):
                 # Update
                 if db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid).update(
                         {"pbx_id": gwgroupid, "db_host": fusionpbxdbhost, "db_username": fusionpbxdbuser,
-                         "db_password": fusionpbxdbpass}):
+                         "db_password": fusionpbxdbpass}, synchronize_session=False):
                     pass
                 else:
                     # Create new record
@@ -1330,7 +1336,8 @@ def updateEndpointGroups(gwgroupid=None):
                     db.add(domainmapping)
             # Delete
             elif fusionpbxenabled == 0:
-                db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid).delete()
+                db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid).delete(
+                    synchronize_session=False)
 
         db.commit()
 
@@ -1494,9 +1501,13 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             authdomain = request_payload['auth']['domain'] \
                 if 'domain' in request_payload['auth'] \
                    and len(request_payload['auth']['domain']) > 0 else settings.DOMAIN
+            authdomain = safeUriToHost(authdomain)
 
-            if authuser == None or authpass == None:
-                raise http_exceptions.BadRequest("Authentication Username and Password are Required")
+            if authuser is None or authpass is None:
+                raise http_exceptions.BadRequest("Auth username or password invalid")
+            if authdomain is None:
+                raise http_exceptions.BadRequest("Auth domain is malformed")
+
             if db.query(Subscribers).filter(Subscribers.username == authuser,
                                             Subscribers.domain == authdomain).scalar():
                 raise sql_exceptions.SQLAlchemyError(

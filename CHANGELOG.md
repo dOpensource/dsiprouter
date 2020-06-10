@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-69951a4bdea4ca8db1d851abfcb24ca4ff9235d9
+7c70b5896d514a18c52f292b900f67f835d7c374
+c250876b72f02c2288d02ae211d5c0b7920bf981
 dd215cc504ee085a031aac6577c81ad8ae753a7f
 e391260463b04eeaed6769f316c95ff9088b3a43
 a37c39557a4ba52f53f4e83454a363bd778f1a3f
@@ -1564,10 +1565,30 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 69951a4bdea4ca8db1d851abfcb24ca4ff9235d9)
+[//]: # (START_SECTION 7c70b5896d514a18c52f292b900f67f835d7c374)
+### Continued V0.62 Bug Fixes
+
+> Commit: [7c70b5896d514a18c52f292b900f67f835d7c374](https://git.flyball.co/dsiprouter/enterprise/commit/7c70b5896d514a18c52f292b900f67f835d7c374)  
+> Date: Wed, 10 Jun 2020 17:29:47 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- Resolves [#59](https://git.flyball.co/dsiprouter/enterprise/issues/59)
+- fixed restart CLI cmd missing start function
+- fixed kamcmd empty string processing when updating kamailio
+- fixed `pre-snapshot.sh` missing function definition
+- fixed CDR endpoint URL's malformed
+
+
+---
+
+[//]: # (END_SECTION 7c70b5896d514a18c52f292b900f67f835d7c374)
+[//]: # (START_SECTION c250876b72f02c2288d02ae211d5c0b7920bf981)
 ### Update PreCommit Hook with Requirements Changes
 
-> Commit: [69951a4bdea4ca8db1d851abfcb24ca4ff9235d9](https://git.flyball.co/dsiprouter/enterprise/commit/69951a4bdea4ca8db1d851abfcb24ca4ff9235d9)  
+> Commit: [c250876b72f02c2288d02ae211d5c0b7920bf981](https://git.flyball.co/dsiprouter/enterprise/commit/c250876b72f02c2288d02ae211d5c0b7920bf981)  
 > Date: Wed, 10 Jun 2020 10:21:42 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1580,7 +1601,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 69951a4bdea4ca8db1d851abfcb24ca4ff9235d9)
+[//]: # (END_SECTION c250876b72f02c2288d02ae211d5c0b7920bf981)
 [//]: # (START_SECTION dd215cc504ee085a031aac6577c81ad8ae753a7f)
 ### Removed the acme and josepy from requirements.txt and just added in certbot
 

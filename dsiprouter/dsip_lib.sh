@@ -541,3 +541,39 @@ urandomChars() {
     local LEN="$1"
     tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w ${LEN} 2>/dev/null | head -n 1
 }
+
+# $1 == prefix for each arg
+# $2 == delimiter between args
+# $3 == suffix for each arg
+# $@ == args to join
+joinwith() {
+    local START="$1" IFS="$2" END="$3" ARR=()
+    shift;shift;shift
+
+    for VAR in "$@"; do
+        ARR+=("${START}${VAR}${END}")
+    done
+
+    echo "${ARR[*]}"
+}
+
+# $1 == rpc command
+# $@ == rpc args
+# output: output returned from kamailio
+# returns: curl return code (ref: man 1 curl)
+# note: curl will timeout after 3 seconds
+sendKamCmd() {
+    local CMD="$1" PARAMS="" KAM_API_URL='http://127.0.0.1:5060/api/kamailio'
+    shift
+    local ARGS=("$@")
+
+    if [[ "$CMD" == "cfg.seti" ]]; then
+        local LAST_ARG="${ARGS[$#-1]}"
+        unset "ARGS[$#-1]"
+        PARAMS='['$(joinwith '"' ',' '"' "${ARGS[@]}")",${LAST_ARG}"']'
+    else
+        PARAMS='['$(joinwith '"' ',' '"' "$@")']'
+    fi
+
+    curl -s -m 3 -X GET -d '{"method": "'"${CMD}"'", "jsonrpc": "2.0", "id": 1, "params": '"${PARAMS}"'}' ${KAM_API_URL}
+}

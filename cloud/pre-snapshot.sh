@@ -13,6 +13,16 @@ cmdExists() {
 getDisto() {
     cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2
 }
+joinwith() {
+    local START="$1" IFS="$2" END="$3" ARR=()
+    shift;shift;shift
+
+    for VAR in "$@"; do
+        ARR+=("${START}${VAR}${END}")
+    done
+
+    echo "${ARR[*]}"
+}
 
 # make sure all security updates are installed
 # remove insecure services (FTP, Telnet, Rlogin/Rsh)
