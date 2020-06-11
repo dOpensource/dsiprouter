@@ -155,12 +155,12 @@
     Object.defineProperty(window, "GUI_BASE_URL", {
       configurable: false,
       writable: false,
-      value: "{{ '{}://{}:{}/'.format(settings.DSIP_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_PORT) }}"
+      value: "{{ settings.DSIP_PROTO }}" + "://" + window.location.hostname + ":" + "{{ settings.DSIP_PORT }}" + "/"
     });
     Object.defineProperty(window, "API_BASE_URL", {
       configurable: false,
       writable: false,
-      value: "{{ '{}://{}:{}/api/v1/'.format(settings.DSIP_API_PROTO, settings.EXTERNAL_IP_ADDR, settings.DSIP_API_PORT) }}"
+      value: "{{ settings.DSIP_API_PROTO }}" + "://" + window.location.hostname + ":" + "{{ settings.DSIP_API_PORT }}" + "/api/v1/"
     });
   </script>
   {{ script_tag('util') }}

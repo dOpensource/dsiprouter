@@ -72,7 +72,7 @@
     var domain = testconn_obj.val();
 
     //Disable Test Connectivity Button
-    runTests.prop('disabled', true);
+    testconn_obj.prop('disabled', true);
 
     //Run Test using API
     $.ajax({
@@ -87,7 +87,7 @@
     });
 
     //Enable Test Connectivity Button
-    runTests.prop('disabled', false);
+    testconn_obj.prop('disabled', false);
   }
 
   /* once DOM is ready init variables and listeners */
