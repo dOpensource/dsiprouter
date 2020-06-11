@@ -57,7 +57,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
     <div class="form-group">
-      <input class="form-control" type="text" id="domain" name="domain" placeholder="Domain name for the certificate"
+      <input class="form-control" type="text" id="domain2" name="domain" placeholder="Domain name for the certificate"
              autofocus="autofocus">
     </div>
     <div class="form-group">
@@ -71,12 +71,12 @@
           </div>
      </div>
     <div id="generate2">
-      <div class="alert alert-warning pre-scrollable hide" id="terminalDiv">
+      <div class="alert alert-warning pre-scrollable hide" id="terminalDiv2">
           <strong>
-      Access this server via ssh and execute the command below.  Follow the instructions and click the "Add Certificate" button when complete<br><br>
+      Access this server via ssh and execute the command below.  Follow the instructions and upload the certificate<br><br>
           </strong>
-    <pre><code class="bash" id="terminalCommand">
-    dsiprouter generatecert
+    <pre><code class="bash" id="terminalCommand2">
+
          </code></pre>
         </div>
       </div><!-- end of generate tab -->
@@ -126,7 +126,7 @@
       <div id="generate">
       	<div class="alert alert-warning pre-scrollable hide" id="terminalDiv">
             <strong>
-		    Access this server via ssh and execute the command below.  Follow the instructions and click the "Add Certificate" button when complete<br><br>
+		    Access this server via ssh and execute the command below.  Follow the instructions and upload the certificate<br><br>
             </strong>
 	    <pre><code class="bash" id="terminalCommand">
 	    dsiprouter generatecert

@@ -56,19 +56,21 @@
 			action = "POST";
 			selector = "#add";
 			modal_body = $(selector + ' .modal-body');
+      requestPayload.domain = modal_body.find("#domain").val();
 
 		}
     else if (action === "PUT") {
 			action = "PUT";
 			selector = "#edit";
 			modal_body = $(selector + ' .modal-body');
+      requestPayload.domain = modal_body.find("#domain2").val();
 
 		}
 
 		var requestPayload = {};
 		var type;
 
-		requestPayload.domain = modal_body.find("#domain").val();
+
 		if (modal_body.find("#certtype_generate").is(':checked') || (modal_body.find("#certtype_generate2").is(':checked'))) {
 				requestPayload.type = "generated"
         addGenerated(requestPayload,action)
@@ -261,15 +263,6 @@ $('#addButton').click(function() {
 $('#updateButton').click(function() {
 		if (validateFields('#edit')) {
 			addEntity('PUT');
-			// hide the modal after 1.5 sec
-			setTimeout(function() {
-
-
-			var edit_modal = $('#edit');
-				if (edit_modal.is(':visible')) {
-					edit_modal.modal('hide');
-				}
-			}, 1500);
 		}
 });
 
@@ -283,17 +276,42 @@ $("#domain").keyup(function () {
 	console.log(value);
 	if (value.includes("*")) {
 
-		var command = "dsiprouter generatecert ";
-		$("#terminalCommand").text(command + value);
+		var command = "certonly --manual -d ";
+    command = command + value;
+    command = command + " --server https://acme-v02.api.letsencrypt.org/directory";
+		$("#terminalCommand").text(command);
 		$("#terminalDiv").removeClass("hide");
+    $("#certtype_upload").prop('checked', true);
+    $("#certtype_generated").prop('checked', false);
 	}
 	else {
 
 		$("#terminalDiv").addClass("hide");
+
 	}
 
 })
 
+$("#domain2").keyup(function () {
+	var value = document.getElementById("domain").value;
+	console.log(value);
+	if (value.includes("*")) {
+
+		var command = "certonly --manual -d ";
+    command = command + value;
+    command = command + " --server https://acme-v02.api.letsencrypt.org/directory";
+		$("#terminalCommand2").text(command);
+		$("#terminalDiv2").removeClass("hide");
+    $("#certtype_upload2").prop('checked', true);
+    $("#certtype_generated2").prop('checked', false);
+	}
+	else {
+
+		$("#terminalDiv").addClass("hide");
+    
+	}
+
+})
 
 
 $("#certtype_generate2").change(function () {
@@ -335,7 +353,7 @@ $('#edit').on('show.bs.modal', function() {
     contentType: "application/json; charset=utf-8",
     success: function(response, textStatus, jqXHR) {
 
-      modal_body.find("#domain").val(response.data[0].domain)
+      modal_body.find("#domain2").val(response.data[0].domain)
       if (response.data[0].type == "generated") {
         modal_body.find("#certtype_generate2").prop('checked', true);
       }
