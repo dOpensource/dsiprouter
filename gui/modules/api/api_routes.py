@@ -2179,8 +2179,8 @@ def createCertificate():
         else:
             # Store a new Certificate in dSIPCertificate Table
             certificate = dSIPCertificates(domain, type, email, cert_base64, key_base64)
-            db.commit()
             db.add(certificate)
+            db.commit()
             # Write the Kamailio TLS Configuration
             if not addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
@@ -2227,7 +2227,10 @@ def deleteCertificates(domain=None):
         deleteCustomTLSConfig(domain)
 
         db.commit()
+        
         response_payload['msg'] = 'Certificate Deleted'
+        globals.reload_required = True
+        response_payload['kamreload'] = True
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
@@ -2281,11 +2284,15 @@ def uploadCertificates(domain=None):
           filename = secure_filename(file.filename)
           if re.search('crt|cert',filename):
               filename = "dsiprouter.crt"
-              cert=file.read()
+              file.save(os.path.join(cert_domain_dir, filename))
+              file.seek(0,0)
+              cert = ''.join(map(str,file.readlines()))
           elif re.search('key|pem',filename):
               filename = "dsiprouter.key"
-              key=file.read()
-          file.save(os.path.join(cert_domain_dir, filename))
+              file.save(os.path.join(cert_domain_dir, filename))
+              file.seek(0,0)
+              key= ''.join(map(str,file.readlines()))
+
 
         if key is None or cert is None:
             raise http_exceptions.BadRequest("A certificate and key file must be provided")
@@ -2299,8 +2306,8 @@ def uploadCertificates(domain=None):
         change_owner(cert_file,"root","kamailio")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
-        cert_base64 = base64.b64encode(cert)
-        key_base64 = base64.b64encode(key)
+        cert_base64 = base64.b64encode(bytes(cert,'utf-8'))
+        key_base64 = base64.b64encode(bytes(key,'utf-8'))
 
         # Store Certificate in dSIPCertificate Table
         certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)

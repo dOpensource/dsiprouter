@@ -239,8 +239,9 @@ function deleteEntity() {
 				//table.$('tr.selected').removeClass('selected');
 				$(this).addClass('selected');
 				id = $(this).find('td').eq(1).text()
-				//console.log(gwgroupid);
-				$('#edit').modal('show');
+				if (id != "") {
+				      $('#edit').modal('show');
+      }
 			}
 		});
 
@@ -297,11 +298,23 @@ $("#domain").keyup(function () {
 
 $("#certtype_generate2").change(function () {
 
+	$("#generate2").removeClass("hide");
+	$("#uploaded2").addClass("hide");
+})
+
+$("#certtype_upload2").change(function () {
+
+	$("#generate2").addClass("hide");
+	$("#uploaded2").removeClass("hide");
+})
+
+$("#certtype_generate").change(function () {
+
 	$("#generate").removeClass("hide");
 	$("#uploaded").addClass("hide");
 })
 
-$("#certtype_upload2").change(function () {
+$("#certtype_upload").change(function () {
 
 	$("#generate").addClass("hide");
 	$("#uploaded").removeClass("hide");
@@ -328,6 +341,8 @@ $('#edit').on('show.bs.modal', function() {
       }
       else if (response.data[0].type == "uploaded") {
         modal_body.find("#certtype_upload2").prop('checked', true);
+        $("#uploaded2").removeClass("hide");
+
       }
     },
       error: function(response, text_status, error_msg) {
