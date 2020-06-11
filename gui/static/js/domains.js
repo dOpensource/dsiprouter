@@ -105,6 +105,20 @@
       modal_body.find(".domain_id").val(domain_id);
       modal_body.find(".domain_name").val(domain_name);
     });
-  });
 
+   $('#add .authtype').change(function() {
+      	var modal_body = $('#add .modal-body');
+        var type = modal_body.find('.authtype').val();
+   	
+	processDomainType(type);
+   });
+   
+  $('#edit .authtype').change(function() {
+      	var modal_body = $('#edit .modal-body');
+        var type = modal_body.find('.authtype').val();
+   	
+	processDomainType(type);
+   });
+
+  });
 })(window, document);
