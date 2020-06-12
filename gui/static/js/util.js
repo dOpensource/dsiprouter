@@ -229,7 +229,7 @@
 
     visible_modals.modal('hide');
     top_bar.show();
-    top_bar.slideUp(3000, function() {
+    top_bar.slideUp(10000, function() {
       top_bar.hide();
     });
   };

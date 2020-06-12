@@ -73,7 +73,7 @@
     // get endpoint group data
     $.ajax({
       type: "GET",
-      url: API_BASE_URL + "cdrs/endpointgroups",
+      url: API_BASE_URL + "endpointgroups",
       dataType: "json",
       contentType: "application/json; charset=utf-8",
       success: function (response, textStatus, jqXHR) {
