@@ -113,12 +113,16 @@
         <input class="form-control" type="text" id="domain" name="domain" placeholder="Domain name for the certificate"
                autofocus="autofocus">
       </div>
+      <div class="form-check">
+	<input type="checkbox" class="form-check-input" id="replace_default_cert" name="replace_default_cert"  value="true" checked>
+	<label class="form-check-label" for="replace_default_cert">Replace the default certificate</label>
+      </div>
       <div class="form-group">
             <div id="certtypeoptions" class="btn-group" data-toggle="buttons">
-              <label><input type="radio" name="certtype" id="certtype_generate" value="generated" checked>
+              <label><input type="radio" name="certtype" id="certtype_generate" value="generated">
               Generate
               </label>
-              <label><input type="radio" name="certtype" id="certtype_upload" value="uploaded">
+              <label><input type="radio" name="certtype" id="certtype_upload" value="uploaded" checked>
               Upload
 	      </label>
             </div>
@@ -136,7 +140,8 @@
 
       <div id="uploaded" class="form-group hide">
 
-          <input type="file" name="certandkey" multiple>
+	  <label class="form-check-label" for="certandkey">Select certificate (.crt or .cert) and private key file (.key or .pem)</label>
+          <input type="file" id="certandkey" name="certandkey" multiple>
 
       </div> <!-- end of upload tab -->
 

@@ -347,15 +347,19 @@ def isCertValid(hostname, externalip, port=5061):
     result = {"tls_cert_valid": False, "tls_cert_details": "", "tls_error": ""}
 
     try:
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        #context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+        #context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
+        context.load_default_certs()
+        cipher = "ECDHE-RSA-AES256-GCM-SHA384"
+        context.set_ciphers(cipher)
 
         conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname, server_side=False)
         conn.connect((externalip, port))
         # print("SSL established. Peer: {}".format(conn.getpeercert()))
         cert = conn.getpeercert()
         result['tls_cert_details'] = cert
-        ssl.match_hostname(cert, hostname)
+        #ssl.match_hostname(cert, hostname)
         result['tls_cert_valid'] = True
         return result
     except Exception as ex:

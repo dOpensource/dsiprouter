@@ -46,6 +46,8 @@
 
 	function addEntity(action) {
 		var selector, modal_body
+		var requestPayload = {};
+		
 
 		// The default action is a POST
 		if (typeof action === "undefined") {
@@ -56,19 +58,17 @@
 			action = "POST";
 			selector = "#add";
 			modal_body = $(selector + ' .modal-body');
-      requestPayload.domain = modal_body.find("#domain").val();
+      requestPayload.domain = modal_body.find("#domain").val()
 
 		}
     else if (action === "PUT") {
 			action = "PUT";
 			selector = "#edit";
 			modal_body = $(selector + ' .modal-body');
-      requestPayload.domain = modal_body.find("#domain2").val();
+      requestPayload.domain = modal_body.find("#domain2").val()
 
 		}
 
-		var requestPayload = {};
-		var type;
 
 
 		if (modal_body.find("#certtype_generate").is(':checked') || (modal_body.find("#certtype_generate2").is(':checked'))) {
@@ -276,15 +276,16 @@ $("#domain").keyup(function () {
 	console.log(value);
 	if (value.includes("*")) {
 
-		var command = "certonly --manual -d ";
+		var command = "certbot certonly --manual -d ";
     command = command + value;
     command = command + " --server https://acme-v02.api.letsencrypt.org/directory";
 		$("#terminalCommand").text(command);
 		$("#terminalDiv").removeClass("hide");
-    $("#certtype_upload").prop('checked', true);
-    $("#certtype_generated").prop('checked', false);
+    $("#certtype_generated").prop('checked', true);
+      var btn = $('#add .modal-footer').find('#addButton');
+      btn.attr('disabled', true);
 	}
-	else {
+	else{
 
 		$("#terminalDiv").addClass("hide");
 
@@ -297,13 +298,14 @@ $("#domain2").keyup(function () {
 	console.log(value);
 	if (value.includes("*")) {
 
-		var command = "certonly --manual -d ";
+		var command = "certbot certonly --manual -d ";
     command = command + value;
     command = command + " --server https://acme-v02.api.letsencrypt.org/directory";
 		$("#terminalCommand2").text(command);
 		$("#terminalDiv2").removeClass("hide");
-    $("#certtype_upload2").prop('checked', true);
-    $("#certtype_generated2").prop('checked', false);
+    $("#certtype_generated2").prop('checked', true);
+      var btn = $('#edit .modal-footer').find('#editButton');
+      btn.attr('disabled', true);
 	}
 	else {
 
@@ -336,6 +338,29 @@ $("#certtype_upload").change(function () {
 
 	$("#generate").addClass("hide");
 	$("#uploaded").removeClass("hide");
+			
+})
+
+$("#replace_default_cert").change(function () {
+
+	if ($("#replace_default_cert").is(':checked')) {
+		$("#domain").val("default");
+		$("#domain").attr('disabled',true);
+	}
+	else {
+		$("#domain").val("");
+		$("#domain").attr('disabled',false);
+
+	}
+
+})
+
+
+$('#add').on('show.bs.modal', function() {
+	
+	$("#replace_default_cert").attr('checked',true);
+	$("#replace_default_cert").trigger("change");
+	$("#certtype_upload").trigger("change");
 })
 
 

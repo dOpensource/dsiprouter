@@ -30,8 +30,8 @@
     else {
       tlscheck_obj.addClass("glyphicon glyphicon-remove");
       tlscheck_obj.css("color", "red");
-      if (msg.tls_check.tls_cert_details == '') {
-        tlscheck_msg = "Certificate was not found";
+      if (msg.tls_check.tls_error.length > 0) {
+        tlscheck_msg = msg.tls_check.tls_error;
       }
       else {
         tlscheck_msg = "Cert commonname doesn't match the domain:" + JSON.stringify(msg.tls_check.tls_cert_details);
