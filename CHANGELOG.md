@@ -5,7 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-7c70b5896d514a18c52f292b900f67f835d7c374
+1557cf1929a943f5e8aa9c52a8eb1585b8951fc6
+9069634da8b9b8f0aa037702d4ec0394458ded10
+86645a3177b6281d66e1b4e35e1811b52338c11c
+678dd84fab164bc2c7b31437ba1a98a982d50aee
+e05fdf5204a0b9955e4d8f1ed38fab19a2c8b1d9
+5622efa5487a31dce38ca45e71ff7208bba67778
 c250876b72f02c2288d02ae211d5c0b7920bf981
 dd215cc504ee085a031aac6577c81ad8ae753a7f
 e391260463b04eeaed6769f316c95ff9088b3a43
@@ -1565,10 +1570,93 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 7c70b5896d514a18c52f292b900f67f835d7c374)
+[//]: # (START_SECTION 1557cf1929a943f5e8aa9c52a8eb1585b8951fc6)
+### v0.621 Bug Fixes
+
+> Commit: [1557cf1929a943f5e8aa9c52a8eb1585b8951fc6](https://git.flyball.co/dsiprouter/enterprise/commit/1557cf1929a943f5e8aa9c52a8eb1585b8951fc6)  
+> Date: Thu, 18 Jun 2020 23:25:38 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#61](https://git.flyball.co/dsiprouter/enterprise/issues/61)
+- Resolves [#63](https://git.flyball.co/dsiprouter/enterprise/issues/63)
+- Workaround for TLS reload bug [kam upstream issue]
+- Move prefix char definition to non-db backed settings
+- Improve reformat URI kam route
+- Add route priority handling to kam gwgroup lookup
+- Fix missing endif in kam nat route
+- Fix issues with precommit hook
+
+
+---
+
+[//]: # (END_SECTION 1557cf1929a943f5e8aa9c52a8eb1585b8951fc6)
+[//]: # (START_SECTION 9069634da8b9b8f0aa037702d4ec0394458ded10)
+### Fixes - Fixed Javascript errors in Domains and MSTeams Validation Pages - Removed logic to convert OS certs to PEM.  They are already in PEM format
+
+> Commit: [9069634da8b9b8f0aa037702d4ec0394458ded10](https://git.flyball.co/dsiprouter/enterprise/commit/9069634da8b9b8f0aa037702d4ec0394458ded10)  
+> Date: Thu, 11 Jun 2020 23:16:36 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9069634da8b9b8f0aa037702d4ec0394458ded10)
+[//]: # (START_SECTION 86645a3177b6281d66e1b4e35e1811b52338c11c)
+### Fixed an issue that prevented the Domain authtype to disable the other fields
+
+> Commit: [86645a3177b6281d66e1b4e35e1811b52338c11c](https://git.flyball.co/dsiprouter/enterprise/commit/86645a3177b6281d66e1b4e35e1811b52338c11c)  
+> Date: Thu, 11 Jun 2020 18:42:01 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 86645a3177b6281d66e1b4e35e1811b52338c11c)
+[//]: # (START_SECTION 678dd84fab164bc2c7b31437ba1a98a982d50aee)
+### Added support for manually creating wildcard certs
+
+> Commit: [678dd84fab164bc2c7b31437ba1a98a982d50aee](https://git.flyball.co/dsiprouter/enterprise/commit/678dd84fab164bc2c7b31437ba1a98a982d50aee)  
+> Date: Thu, 11 Jun 2020 02:57:06 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 678dd84fab164bc2c7b31437ba1a98a982d50aee)
+[//]: # (START_SECTION e05fdf5204a0b9955e4d8f1ed38fab19a2c8b1d9)
+### Certificates - Fixed issues with Adding, Updating and Delete Certifcates
+
+> Commit: [e05fdf5204a0b9955e4d8f1ed38fab19a2c8b1d9](https://git.flyball.co/dsiprouter/enterprise/commit/e05fdf5204a0b9955e4d8f1ed38fab19a2c8b1d9)  
+> Date: Thu, 11 Jun 2020 02:07:07 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e05fdf5204a0b9955e4d8f1ed38fab19a2c8b1d9)
+[//]: # (START_SECTION 5622efa5487a31dce38ca45e71ff7208bba67778)
 ### Continued V0.62 Bug Fixes
 
-> Commit: [7c70b5896d514a18c52f292b900f67f835d7c374](https://git.flyball.co/dsiprouter/enterprise/commit/7c70b5896d514a18c52f292b900f67f835d7c374)  
+> Commit: [5622efa5487a31dce38ca45e71ff7208bba67778](https://git.flyball.co/dsiprouter/enterprise/commit/5622efa5487a31dce38ca45e71ff7208bba67778)  
 > Date: Wed, 10 Jun 2020 17:29:47 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1584,7 +1672,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 7c70b5896d514a18c52f292b900f67f835d7c374)
+[//]: # (END_SECTION 5622efa5487a31dce38ca45e71ff7208bba67778)
 [//]: # (START_SECTION c250876b72f02c2288d02ae211d5c0b7920bf981)
 ### Update PreCommit Hook with Requirements Changes
 

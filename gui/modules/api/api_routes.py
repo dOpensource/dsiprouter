@@ -127,6 +127,8 @@ def reloadKamailio():
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 
+        # Pulled tls.reload out of the reload process due to issues
+        #{'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
 
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
@@ -367,11 +369,6 @@ def handleInboundMapping():
 
     db = DummySession()
 
-    # dr_routing prefix matching supported characters
-    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
-    # TODO: we should move this to settings.py as a non-db backed setting
-    PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
-
     # use a whitelist to avoid possible SQL Injection vulns
     VALID_REQUEST_ARGS = {'ruleid', 'did'}
 
@@ -469,9 +466,9 @@ def handleInboundMapping():
                 except:
                     raise http_exceptions.BadRequest('Invalid Server ID')
             for c in data['did']:
-                if c not in PREFIX_ALLOWED_CHARS:
+                if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                     raise http_exceptions.BadRequest(
-                        'DID improperly formatted. Allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
+                        'DID improperly formatted. Allowed characters: {}'.format(','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
 
             gwlist = ','.join(data['servers'])
             prefix = data['did']
@@ -523,9 +520,9 @@ def handleInboundMapping():
                 updates['gwlist'] = ','.join(data['servers'])
             if 'did' in data:
                 for c in data['did']:
-                    if c not in PREFIX_ALLOWED_CHARS:
+                    if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                         raise http_exceptions.BadRequest(
-                            'DID improperly formatted. Allowed characters: {}'.format(','.join(PREFIX_ALLOWED_CHARS)))
+                            'DID improperly formatted. Allowed characters: {}'.format(','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
                 updates['prefix'] = data['did']
             if 'name' in data:
                 updates['description'] = 'name:{}'.format(data['name'])
@@ -973,11 +970,6 @@ def updateEndpointGroups(gwgroupid=None):
 
     db = DummySession()
 
-    # dr_routing prefix matching supported characters
-    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
-    # TODO: we should move this to non-db synced section of settings.py
-    PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
-
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "calllimit": int, "auth": dict,
                                "strip": int, "prefix": str, "notifications": dict, "cdr": dict,
@@ -1024,10 +1016,10 @@ def updateEndpointGroups(gwgroupid=None):
                 raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
         if 'prefix' in request_payload:
             for c in request_payload['prefix']:
-                if c not in PREFIX_ALLOWED_CHARS:
+                if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                     raise http_exceptions.BadRequest(
                         "Request argument 'prefix' not valid. Allowed characters: {}".format(
-                            ','.join(PREFIX_ALLOWED_CHARS)))
+                            ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
 
         # Update gateway group name
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
@@ -1428,11 +1420,6 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
     db = DummySession()
 
-    # dr_routing prefix matching supported characters
-    # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
-    # TODO: we should move this to non-db synced section of settings.py
-    PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
-
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
         "name": str, "calllimit": int, "auth": dict, "strip": int, "prefix": str,
@@ -1468,10 +1455,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                     raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
         if 'prefix' in request_payload:
             for c in request_payload['prefix']:
-                if c not in PREFIX_ALLOWED_CHARS:
+                if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                     raise http_exceptions.BadRequest(
                         "Request argument 'prefix' not valid. Allowed characters: {}".format(
-                            ','.join(PREFIX_ALLOWED_CHARS)))
+                            ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
 
         # Process Gateway Name
         name = request_payload['name']
@@ -2230,7 +2217,7 @@ def deleteCertificates(domain=None):
         deleteCustomTLSConfig(domain)
 
         db.commit()
-        
+
         response_payload['msg'] = 'Certificate Deleted'
         globals.reload_required = True
         response_payload['kamreload'] = True

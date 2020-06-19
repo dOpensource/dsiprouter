@@ -88,10 +88,23 @@ createRequirements() {
     done
 }
 
+# make sure kamailio config ifdefs are closed properly
+checkIfDefs() {
+    if ! ${PROJECT_ROOT}/resources/check_ifdefs.py >/dev/null; then
+        exit 1
+    fi
+}
+
+# make sure merge conflicts are all handled
+checkMergeConflicts() {
+    if [[ "$(git diff-index --cached -G '^<<<<<<< HEAD' HEAD)" != "" ]]; then
+        exit 1
+    fi
+}
+
 main() {
     # make sure un-staged and un-tracked code is not checked by this script
     # in the future this will be more important as we add linting
-    STASH_NAME="pre-commit-$(date +%s)"
     BACKUPS_DIR="/tmp/$(date +%s)"
 
     # reset unstaged files before exiting even if we fail early
@@ -105,16 +118,16 @@ main() {
 
     git ls-files -z -o --exclude-standard |
         xargs -0 sh -c 'for arg do mkdir -p "'"${BACKUPS_DIR}"'/$(dirname ${arg} 2>/dev/null)"; mv -f "${arg}" "'"${BACKUPS_DIR}"'/${arg}"; done' _
-    git stash push -q -k -m "$STASH_NAME"
-    STASH_ID=$(git stash list | grep "$STASH_NAME" | cut -d ':' -f 1)
+    git ls-files -z -m --exclude-standard |
+        xargs -0 sh -c 'for arg do mkdir -p "'"${BACKUPS_DIR}"'/$(dirname ${arg} 2>/dev/null)"; cp -f "${arg}" "'"${BACKUPS_DIR}"'/${arg}"; done' _
+    git checkout -- ${PROJECT_ROOT}
 
+    checkMergeConflicts
+    checkIfDefs
     createContributors
     createRequirements
 
-    git stash apply -q "$STASH_ID" &&
-    git stash drop -q "$STASH_ID" &&
-    exit 0 ||
-    exit 1
+    exit 0
 }
 
 # allow execution outside of git hook
