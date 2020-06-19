@@ -9,6 +9,7 @@ Flask_WTF
 mysqlclient
 pem
 psycopg2
+psycopg2_binary
 pycryptodome
 PyMySQL
 pyOpenSSL

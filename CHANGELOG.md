@@ -5,7 +5,13 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-1557cf1929a943f5e8aa9c52a8eb1585b8951fc6
+e27c6e072bd6eededba948b8985af5718a58f6c8
+a129fb2eb5e4099d82d15e92ba1f83db88606ee7
+07d2fd16487913f7174e0e7d2e626f50121c344c
+f7f14a6b4c8f1bdba9975f6da08e88385185c229
+885cb512a28f28cf7a9bfbaa294398bfab2044ed
+c67c821d22016544fd0cb52111314ce64e9020a0
+d720a5ed18a74aa50c1e53eb486b8b62ac36c713
 9069634da8b9b8f0aa037702d4ec0394458ded10
 86645a3177b6281d66e1b4e35e1811b52338c11c
 678dd84fab164bc2c7b31437ba1a98a982d50aee
@@ -1570,10 +1576,58 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 1557cf1929a943f5e8aa9c52a8eb1585b8951fc6)
+[//]: # (START_SECTION e27c6e072bd6eededba948b8985af5718a58f6c8)
 ### v0.621 Bug Fixes
 
-> Commit: [1557cf1929a943f5e8aa9c52a8eb1585b8951fc6](https://git.flyball.co/dsiprouter/enterprise/commit/1557cf1929a943f5e8aa9c52a8eb1585b8951fc6)  
+> Commit: [e27c6e072bd6eededba948b8985af5718a58f6c8](https://git.flyball.co/dsiprouter/enterprise/commit/e27c6e072bd6eededba948b8985af5718a58f6c8)  
+> Date: Fri, 19 Jun 2020 14:28:14 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix missing parenthesis in kam cfg
+- add failure check to requirements creation in hook
+- rename async as identifier was shadowing builtin
+
+
+---
+
+[//]: # (END_SECTION e27c6e072bd6eededba948b8985af5718a58f6c8)
+[//]: # (START_SECTION a129fb2eb5e4099d82d15e92ba1f83db88606ee7)
+### Add merge conflict check to pre-commit
+
+> Commit: [a129fb2eb5e4099d82d15e92ba1f83db88606ee7](https://git.flyball.co/dsiprouter/enterprise/commit/a129fb2eb5e4099d82d15e92ba1f83db88606ee7)  
+> Date: Fri, 19 Jun 2020 17:07:41 +0000  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a129fb2eb5e4099d82d15e92ba1f83db88606ee7)
+[//]: # (START_SECTION 07d2fd16487913f7174e0e7d2e626f50121c344c)
+### Update requirements.txt
+
+> Commit: [07d2fd16487913f7174e0e7d2e626f50121c344c](https://git.flyball.co/dsiprouter/enterprise/commit/07d2fd16487913f7174e0e7d2e626f50121c344c)  
+> Date: Fri, 19 Jun 2020 17:06:24 +0000  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 07d2fd16487913f7174e0e7d2e626f50121c344c)
+[//]: # (START_SECTION f7f14a6b4c8f1bdba9975f6da08e88385185c229)
+### v0.621 Bug Fixes
+
+> Commit: [f7f14a6b4c8f1bdba9975f6da08e88385185c229](https://git.flyball.co/dsiprouter/enterprise/commit/f7f14a6b4c8f1bdba9975f6da08e88385185c229)  
 > Date: Thu, 18 Jun 2020 23:25:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1592,7 +1646,55 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 1557cf1929a943f5e8aa9c52a8eb1585b8951fc6)
+[//]: # (END_SECTION f7f14a6b4c8f1bdba9975f6da08e88385185c229)
+[//]: # (START_SECTION 885cb512a28f28cf7a9bfbaa294398bfab2044ed)
+### Document FusionPBX UI Proxy - Resolves #62
+
+> Commit: [885cb512a28f28cf7a9bfbaa294398bfab2044ed](https://git.flyball.co/dsiprouter/enterprise/commit/885cb512a28f28cf7a9bfbaa294398bfab2044ed)  
+> Date: Fri, 19 Jun 2020 16:27:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 885cb512a28f28cf7a9bfbaa294398bfab2044ed)
+[//]: # (START_SECTION c67c821d22016544fd0cb52111314ce64e9020a0)
+### Certificates
+
+> Commit: [c67c821d22016544fd0cb52111314ce64e9020a0](https://git.flyball.co/dsiprouter/enterprise/commit/c67c821d22016544fd0cb52111314ce64e9020a0)  
+> Date: Fri, 19 Jun 2020 14:50:12 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Added support for updating the default Certificate #Resolves #65
+- - Changed the renewsslcert command so that it doesn't renew the default cert if it was uploaded
+- - Added a cacert.pem that just contains the MSTeams Root Certs
+
+
+---
+
+[//]: # (END_SECTION c67c821d22016544fd0cb52111314ce64e9020a0)
+[//]: # (START_SECTION d720a5ed18a74aa50c1e53eb486b8b62ac36c713)
+### 0.62 Fixes - Pull tls.reload out of the Reload API for now - Fixed issues with uploading a certificate.  Users must restart Kamailio for a cert to become active - Change the message bar slideup time from 3 secs to 10 seconds - Fixed an issue with the CDR page giving a Failed alert when clicking on the CDR page
+
+> Commit: [d720a5ed18a74aa50c1e53eb486b8b62ac36c713](https://git.flyball.co/dsiprouter/enterprise/commit/d720a5ed18a74aa50c1e53eb486b8b62ac36c713)  
+> Date: Fri, 12 Jun 2020 06:28:11 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d720a5ed18a74aa50c1e53eb486b8b62ac36c713)
 [//]: # (START_SECTION 9069634da8b9b8f0aa037702d4ec0394458ded10)
 ### Fixes - Fixed Javascript errors in Domains and MSTeams Validation Pages - Removed logic to convert OS certs to PEM.  They are already in PEM format
 

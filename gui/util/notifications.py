@@ -3,12 +3,12 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from util.decorator import async
+from util.decorator import pyasync
 from util.security import AES_CTR
 from shared import debugException
 import settings
 
-@async
+@pyasync
 def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAULT_SUBJECT,
                sender=settings.MAIL_DEFAULT_SENDER, data=None, attachments=[]):
     """
