@@ -296,6 +296,8 @@ def addUpdateCarrierGroups():
             auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
             if auth_proxy is None:
                 raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
+            if len(auth_username) == 0:
+                auth_username = r_username
 
         # Adding
         if len(gwgroup) <= 0:

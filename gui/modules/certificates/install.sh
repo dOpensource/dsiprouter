@@ -15,7 +15,7 @@ function installSQL {
 
     if [ ${MERGE_DATA} -eq 1 ]; then
 	    printwarn "The table already exists. Merging table data"
-	    (cat ${DSIP_PROJECT_DIR}/gui/modules/api/api.sql;
+	    (cat ${DSIP_PROJECT_DIR}/gui/modules/certificates/certificates.sql;
             mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
                 --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" ${KAM_DB_NAME} dsip_certificates
         ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME

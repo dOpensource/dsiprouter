@@ -137,6 +137,10 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 # where the project was installed
 DSIP_PROJECT_DIR = '/opt/dsiprouter'
 
+# dr_routing prefix matching supported characters
+# refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>
+DID_PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
+
 # micosoft teams settings
 MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
 MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
