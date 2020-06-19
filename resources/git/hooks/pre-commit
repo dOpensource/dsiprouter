@@ -88,8 +88,16 @@ createRequirements() {
     done
 }
 
+# make sure kamailio config ifdefs are closed properly
 checkIfDefs() {
     if ! ${PROJECT_ROOT}/resources/check_ifdefs.py >/dev/null; then
+        exit 1
+    fi
+}
+
+# make sure merge conflicts are all handled
+checkMergeConflicts() {
+    if [[ "$(git diff-index --cached -G '^<<<<<<< HEAD' HEAD)" != "" ]]; then
         exit 1
     fi
 }
@@ -114,6 +122,7 @@ main() {
         xargs -0 sh -c 'for arg do mkdir -p "'"${BACKUPS_DIR}"'/$(dirname ${arg} 2>/dev/null)"; cp -f "${arg}" "'"${BACKUPS_DIR}"'/${arg}"; done' _
     git checkout -- ${PROJECT_ROOT}
 
+    checkMergeConflicts
     checkIfDefs
     createContributors
     createRequirements
