@@ -338,6 +338,29 @@ $("#certtype_upload").change(function () {
 
 	$("#generate").addClass("hide");
 	$("#uploaded").removeClass("hide");
+			
+})
+
+$("#replace_default_cert").change(function () {
+
+	if ($("#replace_default_cert").is(':checked')) {
+		$("#domain").val("default");
+		$("#domain").attr('disabled',true);
+	}
+	else {
+		$("#domain").val("");
+		$("#domain").attr('disabled',false);
+
+	}
+
+})
+
+
+$('#add').on('show.bs.modal', function() {
+	
+	$("#replace_default_cert").attr('checked',true);
+	$("#replace_default_cert").trigger("change");
+	$("#certtype_upload").trigger("change");
 })
 
 

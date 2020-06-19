@@ -109,7 +109,7 @@ def perform_http01(client_acme, challb, orderr):
 
 
 
-def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PROD,cert_dir=None,debug=None):
+def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PROD,cert_dir=None,debug=None,default=None):
 
     # Create account key
     acc_key = jose.JWKRSA(
@@ -144,8 +144,12 @@ def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PR
     # Store the certificates
     if cert_dir is None:
         cert_dir = CERT_DIR
-
-    cert_domain_dir = "{}/{}".format(cert_dir,domain)
+    
+    if default == True:
+        cert_domain_dir = CERT_DIR
+    else:
+        cert_domain_dir = "{}/{}".format(cert_dir,domain)
+    
     if not os.path.exists(cert_domain_dir):
         os.makedirs(cert_domain_dir)
 

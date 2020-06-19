@@ -127,13 +127,12 @@ def reloadKamailio():
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 
-            # Pulled tls.reload out of the reload process due to issues
-            #{'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
 
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
+            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'dispatcher.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
@@ -165,6 +164,7 @@ def reloadKamailio():
                  'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
 
         for cmdset in reload_cmds:
+            print("Cmd: {}".format(cmdset))
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
             if r.status_code >= 400:
                 try:
@@ -2142,6 +2142,7 @@ def createCertificate():
         server_name_mode = request_payload['server_name_mode'] \
             if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
         key =  request_payload['key'] if 'key' in request_payload else None
+        replace_default_cert =  request_payload['replace_default_cert'] if 'replace_default_cert' in request_payload else None
         cert = request_payload['cert'] if 'cert' in request_payload else None
         email = request_payload['email'] if 'email'in request_payload else "admin@" + settings.DOMAIN
 
@@ -2152,11 +2153,11 @@ def createCertificate():
                 if settings.DEBUG:
                     # Use the LetsEncrypt Staging Server
 
-                    key,cert=generateCertificate(domain,email,debug=True)
+                    key,cert=generateCertificate(domain,email,debug=True,default=replace_default_cert)
 
                 else:
                     # Use the LetsEncrypt Prod Server
-                    key,cert=generateCertificate(domain,email)
+                    key,cert=generateCertificate(domain,email,default=replace_default_cert)
 
             except Exception as ex:
                 globals.reload_required = False
@@ -2262,8 +2263,13 @@ def uploadCertificates(domain=None):
             domain = data['domain'][0]
             print(domain)
         else:
-            raise http_exceptions.BadRequest("No domain was sent")
+            domain = "default"
 
+        if 'replace_default_cert' in data.keys():
+            replace_default_cert =  data['replace_default_cert'][0]
+        else:
+            replace_default_cert = None
+        
         ip = settings.EXTERNAL_IP_ADDR
         port = 5061
         server_name_mode = KAM_TLS_SNI_ALL
@@ -2272,7 +2278,13 @@ def uploadCertificates(domain=None):
         key = None
 
         cert_dir = settings.DSIP_CERTS_DIR
-        cert_domain_dir = "{}/{}".format(cert_dir,domain)
+        if replace_default_cert == "true":
+            # Replacing the default cert
+            cert_domain_dir = "{}".format(cert_dir)
+        else:
+            # Adding a another domain cert
+            cert_domain_dir = "{}/{}".format(cert_dir,domain)
+
         # Create a directory for the domain
         if not os.path.exists(cert_domain_dir):
             os.makedirs(cert_domain_dir)
@@ -2315,9 +2327,10 @@ def uploadCertificates(domain=None):
         certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
         db.add(certificate)
 
-        # Write the Kamailio TLS Configuration
-        if not addCustomTLSConfig(domain, ip, port, server_name_mode):
-            raise Exception('Failed to add Certificate to Kamailio')
+        if not replace_default_cert:
+            # Write the Kamailio TLS Configuration if it's not the default
+            if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+                raise Exception('Failed to add Certificate to Kamailio')
 
         db.commit()
 
