@@ -36,7 +36,6 @@
 - Security
   - TLS Enabled by Default
   - Rate-limiting / DOS protection
-  - Automatic IP bans with Fail2Ban
   - Teleblock blacklist support
 - Microsoft Teams Support (Subscription Required)
 - WebSockets Enabled by Default
