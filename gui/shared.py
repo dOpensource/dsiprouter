@@ -347,14 +347,10 @@ def isCertValid(hostname, externalip, port=5061):
     result = {"tls_cert_valid": False, "tls_cert_details": "", "tls_error": ""}
 
     try:
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        #context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        #context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
-        context.load_default_certs()
-        cipher = "ECDHE-RSA-AES256-GCM-SHA384"
-        context.set_ciphers(cipher)
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile="/etc/dsiprouter/certs/dsiprouter.crt")
+        context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
 
-        conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname, server_side=False)
+        conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname)
         conn.connect((externalip, port))
         # print("SSL established. Peer: {}".format(conn.getpeercert()))
         cert = conn.getpeercert()
@@ -364,6 +360,11 @@ def isCertValid(hostname, externalip, port=5061):
         return result
     except Exception as ex:
         result['tls_error'] = str(ex)
+        # Return valid even if the cert can't be validated.  We just want to validate
+        # the ability to connect using the cert.  
+        if "certificate verify failed" in result['tls_error']:
+            result['tls_cert_valid'] = True
+            
         return result
 
 # TODO: kam jsonrpc url should be set in settings.py / install script
