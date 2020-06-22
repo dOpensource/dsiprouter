@@ -1,4 +1,4 @@
-# dSIPRouter SBC Platform
+# dSIPRouter Platform
 
 > VoIP Service Management Simplified
 
