@@ -362,9 +362,6 @@ def isCertValid(hostname, externalip, port=5061):
         result['tls_error'] = str(ex)
         # Return valid even if the cert can't be validated.  We just want to validate
         # the ability to connect using the cert.  
-        if "certificate verify failed" in result['tls_error']:
-            result['tls_cert_valid'] = True
-            
         return result
 
 # TODO: kam jsonrpc url should be set in settings.py / install script
