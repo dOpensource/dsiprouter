@@ -270,9 +270,20 @@ def safeUriToHost(uri, default_port=None):
         else:
             port = str(default_port)
 
+        if parts['params'] is not None:
+            params = str(parts['params'])
+        else:
+            params = None
+
         if ipv6_port_format:
             res = '[{}]'.format(res)
-        res = '{}:{}'.format(res, port)
+            return res
+
+        if params is not None:
+            res = '{}:{};{}'.format(res,port,params)
+        else:
+            res = '{}:{}'.format(res, port)
+            
     return res
 
 def safeStripPort(address):
