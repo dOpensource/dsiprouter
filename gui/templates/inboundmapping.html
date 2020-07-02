@@ -454,7 +454,7 @@
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
           <option class="hidden" value="" selected disabled>Override Endpoint Group (Optional)</option>
           {% for epgroup in epgroups %}
-            <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
+            <option value="#{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
           {% endfor %}
         </select>
       </div>
