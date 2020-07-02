@@ -2066,6 +2066,7 @@ def getCertificates(domain=None):
                 'assigned_domains': ''
             })
 
+        db.commit()
         response_payload['msg'] = 'Certificates found' if len(certificates) > 0 else 'No Certificates'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
