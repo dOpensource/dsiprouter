@@ -759,7 +759,7 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('endpointgroups.html')
+        return render_template('endpointgroups.html',dsiprouter_ip=settings.EXTERNAL_IP_ADDR)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
