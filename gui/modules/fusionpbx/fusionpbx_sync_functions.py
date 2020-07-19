@@ -5,7 +5,7 @@ import subprocess
 import docker
 from database import Domain, DomainAttrs, dSIPMultiDomainMapping
 from util.security import AES_CTR
-
+from shared import safeUriToHost
 
 # TODO: error handling here is pretty bad, we need to establish connection from main func and pass conn/cursors to sub funcs
 #       I implemented an exmaple in sync_needed() of proper connection / cursor handling, we need to move that to the entry func
@@ -214,7 +214,7 @@ def update_nginx(sources):
 
     serverList = ""
     for source in sources:
-        serverList += "server " + str(source) + ":443;\n"
+        serverList += "server " + safeUriToHost(str(source)) + ":443;\n"
 
     # print(serverList)
     script_dir = os.path.dirname(os.path.abspath(__file__))
