@@ -5,7 +5,18 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-e27c6e072bd6eededba948b8985af5718a58f6c8
+6a1f73ea817c0b1f830cfbf50ab7de13540763cd
+ee98cfaa069f12ca4469caeaea2301c10537df5b
+cb0805ff8bb419be0862283bf395e10eadb32792
+accaa33ba8bde121822be1af560944207b1c1c39
+947ce453dd787b1d398e5935f768abb3034ba42b
+fa64ad6c012d104c56280cfb9799297a7884fca4
+7c7385b77478d340b548fe63613efb6e0dbafdc2
+3259ebdc73fe4256876a2d0652bdcd0ae186629c
+5c76eeb103ca9ee1627db466461f7d428c5763d0
+1b1add09d1e189297a0198fd0189b0a505616106
+03976c746507769e95416b888af101e01d8a3361
+c949e68309974eec224f3709667ab2e73d2edf80
 a129fb2eb5e4099d82d15e92ba1f83db88606ee7
 07d2fd16487913f7174e0e7d2e626f50121c344c
 f7f14a6b4c8f1bdba9975f6da08e88385185c229
@@ -78,6 +89,8 @@ b617dfc5df3a6d6a93ecafb79fbd1291295392b7
 af0745134f8e9d7efa14ff0cbff2bf05e76bb7c5
 371bbf536cbd2982f2f25647e885b061a71b662a
 877e46d801a3a6f47a1cb04231ec22a251c1d05d
+0208e6faccfd390c8948c344869d283bd0612369
+43a3d3db002f3040cb7d4807d65cb4b157ed563e
 6e2961f62120e0784b352802f032a7e023a41705
 ab88f69fa9fd45e21854fae16956f47b474595c2
 6117350ddcd962e464318e8757399155507cb48f
@@ -1576,10 +1589,179 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION e27c6e072bd6eededba948b8985af5718a58f6c8)
+[//]: # (START_SECTION 6a1f73ea817c0b1f830cfbf50ab7de13540763cd)
+### Fixes for CSRF and Unregister
+
+> Commit: [6a1f73ea817c0b1f830cfbf50ab7de13540763cd](https://git.flyball.co/dsiprouter/enterprise/commit/6a1f73ea817c0b1f830cfbf50ab7de13540763cd)  
+> Date: Thu, 2 Jul 2020 13:09:39 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix external ua -> api csrf error
+- fix autoregister entries not being removed on unregister
+- cleanup kam config
+
+
+---
+
+[//]: # (END_SECTION 6a1f73ea817c0b1f830cfbf50ab7de13540763cd)
+[//]: # (START_SECTION ee98cfaa069f12ca4469caeaea2301c10537df5b)
+### Adding db.commit() Resolves https://github.com/dOpensource/dsiprouter/issues/238
+
+> Commit: [ee98cfaa069f12ca4469caeaea2301c10537df5b](https://git.flyball.co/dsiprouter/enterprise/commit/ee98cfaa069f12ca4469caeaea2301c10537df5b)  
+> Date: Sun, 28 Jun 2020 13:39:01 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ee98cfaa069f12ca4469caeaea2301c10537df5b)
+[//]: # (START_SECTION cb0805ff8bb419be0862283bf395e10eadb32792)
+### Fix for transport=tls parameter missing Resolves https://git.flyball.co/dsiprouter/enterprise/issues/71
+
+> Commit: [cb0805ff8bb419be0862283bf395e10eadb32792](https://git.flyball.co/dsiprouter/enterprise/commit/cb0805ff8bb419be0862283bf395e10eadb32792)  
+> Date: Fri, 26 Jun 2020 11:59:16 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cb0805ff8bb419be0862283bf395e10eadb32792)
+[//]: # (START_SECTION accaa33ba8bde121822be1af560944207b1c1c39)
+### Updated the version number
+
+> Commit: [accaa33ba8bde121822be1af560944207b1c1c39](https://git.flyball.co/dsiprouter/enterprise/commit/accaa33ba8bde121822be1af560944207b1c1c39)  
+> Date: Tue, 23 Jun 2020 10:37:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION accaa33ba8bde121822be1af560944207b1c1c39)
+[//]: # (START_SECTION 947ce453dd787b1d398e5935f768abb3034ba42b)
+### Updating dSIPRouter 5.3.5
+
+> Commit: [947ce453dd787b1d398e5935f768abb3034ba42b](https://git.flyball.co/dsiprouter/enterprise/commit/947ce453dd787b1d398e5935f768abb3034ba42b)  
+> Date: Mon, 22 Jun 2020 15:03:43 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 947ce453dd787b1d398e5935f768abb3034ba42b)
+[//]: # (START_SECTION fa64ad6c012d104c56280cfb9799297a7884fca4)
+### Updated dSIPRouter license module for Kamailio 5.35
+
+> Commit: [fa64ad6c012d104c56280cfb9799297a7884fca4](https://git.flyball.co/dsiprouter/enterprise/commit/fa64ad6c012d104c56280cfb9799297a7884fca4)  
+> Date: Mon, 22 Jun 2020 13:45:36 +0000  
+> Author: root (root@sbc2.dsiprouter.net)  
+> Committer: root (root@sbc2.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fa64ad6c012d104c56280cfb9799297a7884fca4)
+[//]: # (START_SECTION 7c7385b77478d340b548fe63613efb6e0dbafdc2)
+### Fixed issue with certificate validation
+
+> Commit: [7c7385b77478d340b548fe63613efb6e0dbafdc2](https://git.flyball.co/dsiprouter/enterprise/commit/7c7385b77478d340b548fe63613efb6e0dbafdc2)  
+> Date: Mon, 22 Jun 2020 12:49:23 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7c7385b77478d340b548fe63613efb6e0dbafdc2)
+[//]: # (START_SECTION 3259ebdc73fe4256876a2d0652bdcd0ae186629c)
+### Updated README
+
+> Commit: [3259ebdc73fe4256876a2d0652bdcd0ae186629c](https://git.flyball.co/dsiprouter/enterprise/commit/3259ebdc73fe4256876a2d0652bdcd0ae186629c)  
+> Date: Mon, 22 Jun 2020 04:48:39 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3259ebdc73fe4256876a2d0652bdcd0ae186629c)
+[//]: # (START_SECTION 5c76eeb103ca9ee1627db466461f7d428c5763d0)
+### Updated README
+
+> Commit: [5c76eeb103ca9ee1627db466461f7d428c5763d0](https://git.flyball.co/dsiprouter/enterprise/commit/5c76eeb103ca9ee1627db466461f7d428c5763d0)  
+> Date: Mon, 22 Jun 2020 04:45:51 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5c76eeb103ca9ee1627db466461f7d428c5763d0)
+[//]: # (START_SECTION 1b1add09d1e189297a0198fd0189b0a505616106)
+### Fixed MSTeam Test Connectivity Feature
+
+> Commit: [1b1add09d1e189297a0198fd0189b0a505616106](https://git.flyball.co/dsiprouter/enterprise/commit/1b1add09d1e189297a0198fd0189b0a505616106)  
+> Date: Mon, 22 Jun 2020 04:19:41 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Changed the logic so that the TLS check just validates the connection to the Kamailio Server using the SNI
+
+
+---
+
+[//]: # (END_SECTION 1b1add09d1e189297a0198fd0189b0a505616106)
+[//]: # (START_SECTION 03976c746507769e95416b888af101e01d8a3361)
+### Added the Carrier Outboind and Inbound Enrichments back in
+
+> Commit: [03976c746507769e95416b888af101e01d8a3361](https://git.flyball.co/dsiprouter/enterprise/commit/03976c746507769e95416b888af101e01d8a3361)  
+> Date: Mon, 22 Jun 2020 03:35:48 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 03976c746507769e95416b888af101e01d8a3361)
+[//]: # (START_SECTION c949e68309974eec224f3709667ab2e73d2edf80)
 ### v0.621 Bug Fixes
 
-> Commit: [e27c6e072bd6eededba948b8985af5718a58f6c8](https://git.flyball.co/dsiprouter/enterprise/commit/e27c6e072bd6eededba948b8985af5718a58f6c8)  
+> Commit: [c949e68309974eec224f3709667ab2e73d2edf80](https://git.flyball.co/dsiprouter/enterprise/commit/c949e68309974eec224f3709667ab2e73d2edf80)  
 > Date: Fri, 19 Jun 2020 14:28:14 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1593,7 +1775,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION e27c6e072bd6eededba948b8985af5718a58f6c8)
+[//]: # (END_SECTION c949e68309974eec224f3709667ab2e73d2edf80)
 [//]: # (START_SECTION a129fb2eb5e4099d82d15e92ba1f83db88606ee7)
 ### Add merge conflict check to pre-commit
 
@@ -2803,6 +2985,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 877e46d801a3a6f47a1cb04231ec22a251c1d05d)
+[//]: # (START_SECTION 0208e6faccfd390c8948c344869d283bd0612369)
+### Update README.md
+
+> Commit: [0208e6faccfd390c8948c344869d283bd0612369](https://git.flyball.co/dsiprouter/enterprise/commit/0208e6faccfd390c8948c344869d283bd0612369)  
+> Date: Fri, 1 May 2020 13:44:06 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0208e6faccfd390c8948c344869d283bd0612369)
+[//]: # (START_SECTION 43a3d3db002f3040cb7d4807d65cb4b157ed563e)
+### Update README.md
+
+> Commit: [43a3d3db002f3040cb7d4807d65cb4b157ed563e](https://git.flyball.co/dsiprouter/enterprise/commit/43a3d3db002f3040cb7d4807d65cb4b157ed563e)  
+> Date: Fri, 1 May 2020 13:42:32 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 43a3d3db002f3040cb7d4807d65cb4b157ed563e)
 [//]: # (START_SECTION 6e2961f62120e0784b352802f032a7e023a41705)
 ### MSTeams Fixes - Fixed Kamailio option messages for MSTeams so that it works with any domain - Fixed the Option Message Status Check - Added styling to the MSTeams Test Connectivity tooltips
 

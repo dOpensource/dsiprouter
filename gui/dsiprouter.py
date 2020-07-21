@@ -34,6 +34,7 @@ app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
 csrf = CSRFProtect(app)
+csrf.exempt(api)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
@@ -58,6 +59,13 @@ def before_request():
     else:
         app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
+
+@api.before_request
+def api_before_request():
+    # for ua to api w/ api token disable csrf
+    # we only want csrf checks on service to service requests
+    if 'Authorization' not in request.headers:
+        csrf.protect()
 
 @app.route('/')
 def index():
@@ -751,7 +759,7 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('endpointgroups.html')
+        return render_template('endpointgroups.html',dsiprouter_ip=settings.EXTERNAL_IP_ADDR)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
