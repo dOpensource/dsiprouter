@@ -1230,6 +1230,13 @@ def updateEndpointGroups(gwgroupid=None):
         db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(
             Gateways.gwid.notin_(gwlist)).delete(synchronize_session=False)
 
+        # get addr_id from gateway description then delete
+        del_addr_id = [
+            current_endpoints_lut[ep]['description_dict']['addr_id'] for ep in current_endpoints_lut if ep in del_gwids
+        ]
+        db.query(Address).filter(Address.tag.like(gwgroup_filter)).filter(
+            Address.id.in_(del_addr_id)).delete(synchronize_session=False)
+
         # set return gwlist and update the endpoint group's gwlist
         gwgroup_data['endpoints'] = gwlist
         gwlist_str = ','.join([str(gw) for gw in gwlist])
@@ -2257,7 +2264,7 @@ def uploadCertificates(domain=None):
             replace_default_cert =  data['replace_default_cert'][0]
         else:
             replace_default_cert = None
-        
+
         ip = settings.EXTERNAL_IP_ADDR
         port = 5061
         server_name_mode = KAM_TLS_SNI_ALL
