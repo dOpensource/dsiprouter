@@ -1231,9 +1231,7 @@ def updateEndpointGroups(gwgroupid=None):
             Gateways.gwid.notin_(gwlist)).delete(synchronize_session=False)
 
         # get addr_id from gateway description then delete
-        del_addr_id = [
-            current_endpoints_lut[ep]['description_dict']['addr_id'] for ep in current_endpoints_lut if ep in del_gwids
-        ]
+        del_addr_id = [el[1]['description_dict']['addr_id'] for el in current_endpoints_lut.items() if el[0] in del_gwids and 'addr_id' in el[1]['description_dict']]
         db.query(Address).filter(Address.tag.like(gwgroup_filter)).filter(
             Address.id.in_(del_addr_id)).delete(synchronize_session=False)
 
