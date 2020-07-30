@@ -9,7 +9,6 @@ function install {
     # Install required libraries
     apt-get install -y logrotate rsyslog
     apt-get install -y firewalld
-    apt-get install -y debhelper
     apt-get install -y iptables-dev
     apt-get install -y libcurl4-openssl-dev
     apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
@@ -27,30 +26,13 @@ function install {
     apt-get install -y module-assistant
     apt-get install -y dkms
 
-    # try upgrading debhelper with backports if lower ver than 10
-    CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
-    if (( ${CURRENT_VERSION:-0} < 10 )); then
-        CODENAME=$(cat /etc/os-release | grep '^VERSION=' | cut -d '(' -f 2 | cut -d ')' -f 1)
-        BACKPORT_REPO="${CODENAME}-backports"
-        apt-get install -y -t ${BACKPORT_REPO} debhelper
-
-        # if current backports fail (again aws repo's are not very reliable) try and older repo
-        if [ $? -ne 0 ]; then
-            printf '%s\n%s\n' \
-                "deb http://archive.debian.org/debian-archive/debian/ ${CODENAME}-backports main" \
-                "deb-src http://archive.debian.org/debian-archive/debian/ ${CODENAME}-backports main" \
-                > /etc/apt/sources.list.d/tmp-backports.list
-            apt-get -o Acquire::Check-Valid-Until=false update -y
-
-            apt-get -o Acquire::Check-Valid-Until=false install -y -t ${BACKPORT_REPO} debhelper
-            rm -f /etc/apt/sources.list.d/tmp-backports.list
-        fi
-
-        # pin debhelper package to stay on backports repo
-        printf '%s\n%s\n%s\n' \
-            "Package: debhelper" \
-            "Pin: release n=${BACKPORT_REPO}" \
-            "Pin-Priority: 750" > /etc/apt/preferences.d/debhelper
+    # debian stretch needs a few newer packages
+    CODENAME="$(lsb_release -c -s)"
+    if [[ "$CODENAME" == "stretch" ]]; then
+        apt-get install -y -t buster libarchive13
+        apt-get install -y -t ${CODENAME}-backports debhelper init-system-helpers
+    else
+        apt-get install -y debhelper
     fi
 
     # create rtpengine user and group
@@ -58,21 +40,40 @@ function install {
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
 
+    # build deb packages and install
     cd ${SRC_DIR}
-    rm -rf rtpengine.bak 2>/dev/null
-    mv -f rtpengine rtpengine.bak 2>/dev/null
-    git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
-    cd rtpengine
-    ./debian/flavors/no_ngcp
-    dpkg-buildpackage
-    cd ..
-    dpkg -i ngcp-rtpengine-daemon_*
-    dpkg -i ngcp-rtpengine-iptables_*
-    dpkg -i ngcp-rtpengine-kernel-source_*
-    dpkg -i ngcp-rtpengine-kernel-dkms_*
+
+    # TODO: this needs replaced with a better build process (maybe cpack?)
+    CODEC_VER=1.0.4
+    rm -rf bcg729-${CODEC_VER}.bak 2>/dev/null
+    mv -f bcg729-${CODEC_VER} bcg729-${CODEC_VER}.bak 2>/dev/null
+    curl -s https://codeload.github.com/BelledonneCommunications/bcg729/tar.gz/${CODEC_VER} > bcg729_${CODEC_VER}.orig.tar.gz &&
+    tar -xf bcg729_${CODEC_VER}.orig.tar.gz &&
+    cd bcg729-${CODEC_VER} &&
+    git clone https://github.com/ossobv/bcg729-deb.git debian &&
+    dpkg-buildpackage -us -uc -sa &&
+    cd .. &&
+    dpkg -i ./libbcg729-*.deb
 
     if [ $? -ne 0 ]; then
-        echo "Problem installing RTPEngine DEB's"
+        printerr "Problem installing G729 Codec"
+        exit 1
+    fi
+
+    rm -rf rtpengine.bak 2>/dev/null
+    mv -f rtpengine rtpengine.bak 2>/dev/null
+    git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER} &&
+    cd rtpengine &&
+    if [[ -e "$(pwd)/debian/flavors/no_ngcp" ]]; then
+        ./debian/flavors/no_ngcp
+    fi &&
+    dpkg-buildpackage &&
+    cd .. &&
+    dpkg -i ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
+        ngcp-rtpengine-kernel-dkms_*.deb ./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
+
+    if [ $? -ne 0 ]; then
+        printerr "Problem installing RTPEngine DEB's"
         exit 1
     fi
 

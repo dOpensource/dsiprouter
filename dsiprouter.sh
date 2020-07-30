@@ -97,7 +97,7 @@ setScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
-    export RTPENGINE_VER="mr6.1.1.1"
+    export RTPENGINE_VER="mr8.4.1.3"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
@@ -2115,7 +2115,7 @@ clusterInstall() { (
 
     # guarantee key will be destroyed when subshell exits
     cleanupHandler() { rm -f ${TMP_PRIV_KEY}; }
-    trap cleanupHandler EXIT
+    trap cleanupHandler EXIT SIGHUP SIGINT SIGQUIT SIGTERM
 
     # loop through nodes to:
     #  - validate conn

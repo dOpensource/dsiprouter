@@ -8,7 +8,7 @@ function install() {
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'base'
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    yum install -y psmisc curl wget sed gawk vim perl firewalld
+    yum install -y psmisc curl wget sed gawk vim perl firewalld uuid-devel
     yum install -y logrotate rsyslog
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server

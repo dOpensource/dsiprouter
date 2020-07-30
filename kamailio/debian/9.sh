@@ -6,7 +6,7 @@ function install {
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
 
     # Install Dependencies
-    apt-get install -y curl wget sed gawk vim perl
+    apt-get install -y curl wget sed gawk vim perl uuid-dev
     apt-get install -y logrotate rsyslog
 
     # create kamailio user and group
@@ -32,7 +32,8 @@ EOF
     apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules kamailio-websocket-modules
+    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules \
+        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules
 
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
