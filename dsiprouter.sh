@@ -2258,6 +2258,8 @@ function usageOptions {
     printf "%-30s %s\n" \
         "renewsslcert" "[-debug]"
     printf "%-30s %s\n" \
+        "configuresslcert" "[-debug|-f|--force]"
+    printf "%-30s %s\n" \
         "installmodules" "[-debug]"
     printf "%-30s %s\n" \
         "enableservernat" "[-debug]"
@@ -2844,6 +2846,33 @@ function processCMD {
                 esac
             done
 	    ;;
+	configuresslcert)
+            # reconfigure ssl configs
+            RUN_COMMANDS+=(configureSSL)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -f|--force)
+                        rm -f $DSIP_CERTS_DIR/dsiprouter.crt
+                        rm -f $DSIP_CERTS_DIR/dsiprouter.key
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
         installmodules)
             # reconfigure dsiprouter modules
             RUN_COMMANDS+=(installModules)
