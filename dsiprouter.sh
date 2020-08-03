@@ -7,6 +7,8 @@
 #========================== NOTES ==========================#
 #
 # Supported OS:
+# - Debian 11 (bullseye) (BETA)
+# - Debian 10 (buster) (BETA)
 # - Debian 9 (stretch)
 # - Debian 8 (jessie)
 # - CentOS 7
@@ -101,6 +103,9 @@ setScriptSettings() {
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
+    APT_OFFICIAL_SOURCES="/etc/apt/sources.list.d/official-releases.list"
+    APT_OFFICIAL_PREFS="/etc/apt/preferences.d/official-releases.pref"
+    YUM_OFFICIAL_REPOS="/etc/yum.repos.d/official-releases.repo"
 
     # Default MYSQL db root user values
     MYSQL_ROOT_DEF_USERNAME="root"
@@ -262,10 +267,23 @@ function setOSInfo {
 function validateOSInfo {
     if [[ "$DISTRO" == "debian" ]]; then
         case "$DISTRO_VER" in
-            9|8)
-                if [[ -z "$KAM_VERSION" ]]; then
-                   KAM_VERSION=53
-                fi
+            11)
+                printwarn "Your Operating System Version is in BETA support and may not function properly. Issues can be tracked at https://github.com/dOpensource/dsiprouter/"
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=990 APT_SID_PRIORITY=500
+                ;;
+            10)
+                printwarn "Your Operating System Version is in BETA support and may not function properly. Issues can be tracked at https://github.com/dOpensource/dsiprouter/"
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=990 APT_BULLSEYE_PRIORITY=500 APT_SID_PRIORITY=100
+                ;;
+            9)
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=990 APT_BUSTER_PRIORITY=500 APT_BULLSEYE_PRIORITY=100 APT_SID_PRIORITY=50
+                ;;
+            8)
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=990 APT_STRETCH_PRIORITY=500 APT_BUSTER_PRIORITY=100 APT_BULLSEYE_PRIORITY=50 APT_SID_PRIORITY=50
                 ;;
             7)
                 printerr "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
@@ -904,10 +922,76 @@ installScriptRequirements() {
 
     if (( $? != 0 )); then
         printerr 'Could not install script requirements'
-        exit 1
+        cleanupAndExit 1
     else
         printdbg 'One-time script requirements installed'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.requirementsinstalled
+    fi
+}
+
+# Configure system repo sources to ensure we get the right package versions
+# TODO: support configuring ubuntu/centos/amazon linux repo's
+#       - ubuntu refs:
+#       https://repogen.simplylinux.ch/
+#       https://mirrors.ustc.edu.cn/repogen/
+#       https://gist.github.com/rhuancarlos/c4d3c0cf4550db5326dca8edf1e76800
+#       - centos refs:
+#       https://unix.stackexchange.com/questions/52666/how-do-i-install-the-stock-centos-repositories
+#       https://wiki.centos.org/PackageManagement/Yum/Priorities
+configureSystemRepos() {
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]; then
+        return
+    fi
+
+    printdbg 'Configuring system repositories'
+    if [[ "$DISTRO" == "debian" ]]; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/apt/debian/official-releases.list ${APT_OFFICIAL_SOURCES}
+        envsubst < ${DSIP_PROJECT_DIR}/resources/apt/debian/official-releases.pref > ${APT_OFFICIAL_PREFS}
+        apt-get update -y
+    elif [[ "$DISTRO" == "centos" ]]; then
+        # TODO: create official repo file (centos repo's)
+        # TODO: install yum priorities plugin
+        # TODO: set priorities on official repo
+
+        true
+    elif [[ "$DISTRO" == "amazon" ]]; then
+        # TODO: create official repo file (centos or amazon repo's? probably centos w/ less priority than amazon repo's)
+        # TODO: install yum priorities plugin
+        # TODO: set priorities on official repo
+
+        true
+    elif [[ "$DISTRO" == "ubuntu" ]]; then
+        # TODO: create official repo list
+        # TODO: create preferences and set priorities for ubuntu specific versions
+#        cp -f ${DSIP_PROJECT_DIR}/resources/apt/ubuntu/official-releases.list ${APT_OFFICIAL_SOURCES}
+#        envsubst < ${DSIP_PROJECT_DIR}/resources/apt/ubuntu/official-releases.pref > ${APT_OFFICIAL_PREFS}
+#        apt-get update -y
+
+        true
+    fi
+
+    if (( $? != 0 )); then
+        printerr 'Could not configure system repositories'
+        cleanupAndExit 1
+    else
+        printdbg 'System repositories configured successfully'
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
+    fi
+}
+
+# remove dsiprouter system configs
+removeDsipSystemConfig() {
+    rm -rf ${DSIP_SYSTEM_CONFIG_DIR}
+
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]; then
+        if cmdExists 'apt-get'; then
+            rm -f ${APT_OFFICIAL_SOURCES}
+            rm -f ${APT_OFFICIAL_PREFS}
+            apt-get update -y
+        elif cmdExists 'yum'; then
+            rm -f ${YUM_OFFICIAL_REPOS}
+            yum update -y
+        fi
     fi
 }
 
@@ -2370,8 +2454,8 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
-            # always create the init service and always install sipsak
-            RUN_COMMANDS+=(setCloudPlatform createInitService)
+            # always add official repo's, set platform, and create init service
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
             shift
 
             while (( $# > 0 )); do
@@ -2550,9 +2634,10 @@ function processCMD {
                         RUN_COMMANDS+=(uninstallKamailio uninstallDnsmasq)
                         shift
                         ;;
-                    -all|--all)    # only remove init and system config dir if all services will be removed (dependency for others)
+                    # only remove init and system config dir if all services will be removed (dependency for others)
+                    # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
+                    -all|--all)
                         DEFAULT_SERVICES=0
-                        removeDsipSystemConfig() { rm -rf ${DSIP_SYSTEM_CONFIG_DIR}; }
                         RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
                         shift
                         ;;
