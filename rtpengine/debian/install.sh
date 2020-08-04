@@ -25,6 +25,7 @@ function install {
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
+    apt-get install -y unzip
 
     # debian stretch needs a few newer packages
     CODENAME="$(lsb_release -c -s)"
@@ -70,7 +71,8 @@ function install {
     dpkg-buildpackage &&
     cd .. &&
     dpkg -i ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
-        ngcp-rtpengine-kernel-dkms_*.deb ./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
+        ngcp-rtpengine-kernel-dkms_*.deb 
+    #./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
 
     if [ $? -ne 0 ]; then
         printerr "Problem installing RTPEngine DEB's"
