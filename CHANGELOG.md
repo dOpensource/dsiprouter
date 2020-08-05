@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-9c98d6b5fb415dfe6c5005100ee8a3675e8b1a00
+0985aec49baec93c873e104a05532d64ec575702
+586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f
 f4a320d63763ef5598ad98eb5f9a4da8648736a5
 e2a8fa552f782c6dfe955ffd66bc3576c55d72d8
 c95f0c44e4c765d890aec8214205e51820224161
@@ -1634,10 +1635,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 9c98d6b5fb415dfe6c5005100ee8a3675e8b1a00)
+[//]: # (START_SECTION 0985aec49baec93c873e104a05532d64ec575702)
+### Fix Kamailio Versioning
+
+> Commit: [0985aec49baec93c873e104a05532d64ec575702](https://git.flyball.co/dsiprouter/enterprise/commit/0985aec49baec93c873e104a05532d64ec575702)  
+> Date: Wed, 5 Aug 2020 16:56:04 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add apt preferences for kamailio repo
+
+
+---
+
+[//]: # (END_SECTION 0985aec49baec93c873e104a05532d64ec575702)
+[//]: # (START_SECTION 586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f)
 ### RTPEngine Upgrade Patches for Debian
 
-> Commit: [9c98d6b5fb415dfe6c5005100ee8a3675e8b1a00](https://git.flyball.co/dsiprouter/enterprise/commit/9c98d6b5fb415dfe6c5005100ee8a3675e8b1a00)  
+> Commit: [586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f](https://git.flyball.co/dsiprouter/enterprise/commit/586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f)  
 > Date: Mon, 3 Aug 2020 17:49:25 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1650,7 +1667,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 9c98d6b5fb415dfe6c5005100ee8a3675e8b1a00)
+[//]: # (END_SECTION 586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f)
 [//]: # (START_SECTION f4a320d63763ef5598ad98eb5f9a4da8648736a5)
 ### Updated Kamailio config to fix error
 
