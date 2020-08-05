@@ -66,7 +66,7 @@ createRequirements() {
     local EXCLUDE_ARGS=""
 
     # sanity check, is this a python project?
-    if (( $(find ${INCLUDE_DIRS[@]} -type f -name "*.py" | wc -l) == 0 )); then
+    if (( $(find ${INCLUDE_DIRS[@]} -type f -name "*.py" 2>/dev/null | wc -l) == 0 )); then
         return
     fi
 
@@ -94,9 +94,9 @@ createRequirements() {
     done
 }
 
-# make sure kamailio config ifdefs are closed properly
-checkIfDefs() {
-    if ! ${PROJECT_ROOT}/resources/check_ifdefs.py >/dev/null; then
+# prevent some common syntax errors from getting committed
+checkSyntaxErrors() {
+    if ! _git_check_syntax >/dev/null; then
         exit 1
     fi
 }
@@ -129,7 +129,7 @@ main() {
     git checkout -- ${PROJECT_ROOT}
 
     checkMergeConflicts
-    checkIfDefs
+    checkSyntaxErrors
     createContributors
     createRequirements
 

@@ -2061,6 +2061,9 @@ function configGitDevEnv {
     cp -f ${DSIP_PROJECT_DIR}/resources/git/merge-changelog.sh /usr/local/bin/_merge-changelog
     chmod +x /usr/local/bin/_merge-changelog
 
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/check_syntax.py /usr/local/bin/_git_check_syntax
+    chmod +x /usr/local/bin/_git_check_syntax
+
     cp -f ${DSIP_PROJECT_DIR}/resources/git/gitwrapper.sh ${GIT_UPDATE_FILE}
     . ${GIT_UPDATE_FILE}
 }
@@ -2076,6 +2079,7 @@ function cleanGitDevEnv {
     mv -f ${BACKUPS_DIR}/git/hooks/post-commit ${DSIP_PROJECT_DIR}/.git/hooks/post-commit 2>/dev/null
     mv -f ${BACKUPS_DIR}/git/hooks/pre-push ${DSIP_PROJECT_DIR}/.git/hooks/pre-push 2>/dev/null
     rm -f /usr/local/bin/_merge-changelog
+    rm -f /usr/local/bin/_git_check_syntax
     rm -f ${GIT_UPDATE_FILE}
 }
 
