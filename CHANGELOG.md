@@ -5,7 +5,21 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-6a1f73ea817c0b1f830cfbf50ab7de13540763cd
+0985aec49baec93c873e104a05532d64ec575702
+586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f
+f4a320d63763ef5598ad98eb5f9a4da8648736a5
+e2a8fa552f782c6dfe955ffd66bc3576c55d72d8
+c95f0c44e4c765d890aec8214205e51820224161
+acd96690acb1d5298b429816a5ddf2aa5ad7b8ea
+96f140127d8092590d12f6a0f0474779b780ae44
+deef4bcbe3f9b1ffdb112370672b49a29a34f6af
+35ddd3d327dff18a151fcdb52767fddd27e9736f
+0121f1cb99c979c68027b16660ccca25a9acc43b
+37aaa51a4282e6843a16f560ee3cae2333564562
+7ee0942d174d95cb9acf7aca092a883c43fc6cdd
+c5bb21e63eecd953a2585a0874f447a43d760aec
+06f03f513ada2fad54be0a113646e44146bb982d
+5cc24e46160f96401ed15304bb893a10fef3ceae
 ee98cfaa069f12ca4469caeaea2301c10537df5b
 cb0805ff8bb419be0862283bf395e10eadb32792
 accaa33ba8bde121822be1af560944207b1c1c39
@@ -67,6 +81,10 @@ e1523407df5d05d6019b36faac922ca53fc603e5
 33dc11da36ed72996df70997833e5510e7b45c87
 2f1aca8ae2ee142d3bb185c204ee5c64b52033ea
 a958ecfae0c0277bd5b9755e6dacdc480a98d652
+7e3ae78ed13627dc420cac7016921ec85d4aa947
+3d9118d7f619649dd6cbfedf510fc94cc8365ac3
+51d6bafff4fc1e0cbbb8e2f55efcc959da4722a3
+53dbbfe3e7d9e264e3706f3a76bd668b6995f805
 606d7460776dbc264fa3822396f8ea47dd628e36
 52ecf3ad8b0875477bca362c855c22776df30a8b
 47c2b4bf8e54fa56e329a878ad13e001eb83d6dc
@@ -76,7 +94,14 @@ a958ecfae0c0277bd5b9755e6dacdc480a98d652
 c7deab623214aa39432e4ef483be4e1b5b578dbf
 40e8d85965c90166eafb4425f2159949a2e764ed
 29d156221015801c663e86e15c3923c768d62caf
+cbae76acf8e8549ce8b510ee9e5bf10b9665dce8
+3916bd328bf72d08f372edb7f79a0d6958cc4f6a
+211cb4b9731b40e36b51c4f1e29b0b5491e280ad
+adc817e32355e6f5339c35c0c83dd521cb0ad9c8
+4db9e48d53dc3b098158a30c418a65ce1d095c24
+0fcecf8474d694bbd425388b62c67925786c472d
 cc096b110266d6a71ced8a3b27ba3ad9589147d8
+0e8a5f3c97049b8e101820d33c521215e46c9d28
 e71a9384f9d3b9cb5dcb280655a1fe1c86badb8e
 14dd6be9cd21681f23d8ef63bb77805b24df71e0
 e8668ea90a39405a3518b3a02071ad1f94ae6476
@@ -162,11 +187,32 @@ cd8dbc26b3cd8def1aa00e8391bbaf18c01530b1
 817a8062a283827aa22d90a8d5aaa201310effac
 c2027be6c0363d6a0011bb6df9948ba734021921
 fcd9ef8c7d66d8b2af645be760aa0f99a3c3cbac
+fe4e90763318d06f134b4093e7fec2f9dfd74dcf
+efa8d3fb5a9c3c28325df28cfe4244711020be28
+a4875920e015c40c97023e103cdfa28b21282e37
+0a1b04837ef6f9793989fc65d48bad9c7df94bea
+f55a391d94e4da8c5eaf3ffeeab3a2e27ad6adc9
+fe9218330241deaf90871bbdef5a671634bce81e
+2c2a83c592a934a35346e5dd9467fa8c4820dc60
+df92443f24256ca322a777b2e39623a4373fb681
+c4cd5ad10f765a8afc4f33e31fbf919c765507ec
+5c507275ea83d7164daedc690b3f8c8879b21e83
+0f44d04cf565cc434ad0d76e7a48e41e882acd5a
+50ffb4ad4a36804c57a6897a101a9d4a937104d4
+91ed94f3e7ba639bcbbd97ee5319416bd64890d4
+750a611301607ec8613ffa1e07ce863362a27570
+b183b1e717e37c7243b99ec18b8d697aa8b0a1fc
+c13ff8da9d0e6d04c5f530a992501fd1ff3c3992
+a5eac062f964e5485f309248e295d8f0110b2dd7
+224322a9885f4b5b452d96bfc68a226ca0a02bd3
+a0824bac4caeee87b7f21e22d362f29c9dc8843a
+6fcc6255f4eb63135e4c714d65638c524f8278bc
 dda982bfbd1c8a2f3879197c08b04775eb95be82
 3db8d9052c1a7e486657de0b16945b9e2f6cec2b
 2d57dbb72c691d6b333499718de50c954ff8acca
 b1e0868ef0edb473718fdfc8494ea0e3fe54722c
 41529c00be9ed9586eec0e9407c83cff258c0c8e
+c88b214251333b7350b10b27fa2dae683ef3b602
 c7bb17fc14cbbc27ac46b7ee34dd8287301a76db
 5defb56428352d12eb1a9ff27755c37cf9c7cac2
 a92d2e3aa03be1a7bc634f5ba71e085a8a48fe89
@@ -1589,10 +1635,194 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 6a1f73ea817c0b1f830cfbf50ab7de13540763cd)
+[//]: # (START_SECTION 0985aec49baec93c873e104a05532d64ec575702)
+### Fix Kamailio Versioning
+
+> Commit: [0985aec49baec93c873e104a05532d64ec575702](https://git.flyball.co/dsiprouter/enterprise/commit/0985aec49baec93c873e104a05532d64ec575702)  
+> Date: Wed, 5 Aug 2020 16:56:04 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add apt preferences for kamailio repo
+
+
+---
+
+[//]: # (END_SECTION 0985aec49baec93c873e104a05532d64ec575702)
+[//]: # (START_SECTION 586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f)
+### RTPEngine Upgrade Patches for Debian
+
+> Commit: [586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f](https://git.flyball.co/dsiprouter/enterprise/commit/586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f)  
+> Date: Mon, 3 Aug 2020 17:49:25 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add apt repo configuration to install process
+- update rtpengine install to fix debian dependecy issues
+
+
+---
+
+[//]: # (END_SECTION 586cc5d9e7aebfef68491efcdd2d2621ae8b6b4f)
+[//]: # (START_SECTION f4a320d63763ef5598ad98eb5f9a4da8648736a5)
+### Updated Kamailio config to fix error
+
+> Commit: [f4a320d63763ef5598ad98eb5f9a4da8648736a5](https://git.flyball.co/dsiprouter/enterprise/commit/f4a320d63763ef5598ad98eb5f9a4da8648736a5)  
+> Date: Mon, 3 Aug 2020 13:04:26 +0000  
+> Author: root (root@sbc3.dsiprouter.net)  
+> Committer: root (root@sbc3.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f4a320d63763ef5598ad98eb5f9a4da8648736a5)
+[//]: # (START_SECTION e2a8fa552f782c6dfe955ffd66bc3576c55d72d8)
+### Configure SSL from Command Line - Added a feature that allows a user to configure the system wide/default cert from the command line - The user can force the certificate to be re-generated by using a -f or --force
+
+> Commit: [e2a8fa552f782c6dfe955ffd66bc3576c55d72d8](https://git.flyball.co/dsiprouter/enterprise/commit/e2a8fa552f782c6dfe955ffd66bc3576c55d72d8)  
+> Date: Sun, 2 Aug 2020 16:45:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e2a8fa552f782c6dfe955ffd66bc3576c55d72d8)
+[//]: # (START_SECTION c95f0c44e4c765d890aec8214205e51820224161)
+### Added the Let's Encrypt Root Certificate
+
+> Commit: [c95f0c44e4c765d890aec8214205e51820224161](https://git.flyball.co/dsiprouter/enterprise/commit/c95f0c44e4c765d890aec8214205e51820224161)  
+> Date: Sun, 2 Aug 2020 16:26:05 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c95f0c44e4c765d890aec8214205e51820224161)
+[//]: # (START_SECTION acd96690acb1d5298b429816a5ddf2aa5ad7b8ea)
+### WIP: Current MSTeams Changes
+
+> Commit: [acd96690acb1d5298b429816a5ddf2aa5ad7b8ea](https://git.flyball.co/dsiprouter/enterprise/commit/acd96690acb1d5298b429816a5ddf2aa5ad7b8ea)  
+> Date: Thu, 30 Jul 2020 14:19:36 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add current work in progress for msteams bug fixes
+
+
+---
+
+[//]: # (END_SECTION acd96690acb1d5298b429816a5ddf2aa5ad7b8ea)
+[//]: # (START_SECTION 96f140127d8092590d12f6a0f0474779b780ae44)
+### Fixed the FusionPBX Sync function -  Resolves #https://github.com/dOpensource/dsiprouter/issues/247
+
+> Commit: [96f140127d8092590d12f6a0f0474779b780ae44](https://git.flyball.co/dsiprouter/enterprise/commit/96f140127d8092590d12f6a0f0474779b780ae44)  
+> Date: Sun, 19 Jul 2020 22:51:57 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 96f140127d8092590d12f6a0f0474779b780ae44)
+[//]: # (START_SECTION deef4bcbe3f9b1ffdb112370672b49a29a34f6af)
+### Enhancements to work with FusionPBX Domain Support  - Resolves #https://github.com/dOpensource/dsiprouter/issues/245
+
+> Commit: [deef4bcbe3f9b1ffdb112370672b49a29a34f6af](https://git.flyball.co/dsiprouter/enterprise/commit/deef4bcbe3f9b1ffdb112370672b49a29a34f6af)  
+> Date: Sat, 18 Jul 2020 02:41:16 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION deef4bcbe3f9b1ffdb112370672b49a29a34f6af)
+[//]: # (START_SECTION 35ddd3d327dff18a151fcdb52767fddd27e9736f)
+### Made is easier to execute the commands that are needed to enable FusionPBX pass-thru
+
+> Commit: [35ddd3d327dff18a151fcdb52767fddd27e9736f](https://git.flyball.co/dsiprouter/enterprise/commit/35ddd3d327dff18a151fcdb52767fddd27e9736f)  
+> Date: Sat, 18 Jul 2020 02:25:35 +0000  
+> Author: root (root@sbc4.dsiprouter.net)  
+> Committer: root (root@sbc4.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 35ddd3d327dff18a151fcdb52767fddd27e9736f)
+[//]: # (START_SECTION 0121f1cb99c979c68027b16660ccca25a9acc43b)
+### Fixes to handle SIP Updates - Resolves #https://github.com/dOpensource/dsiprouter/issues/245
+
+> Commit: [0121f1cb99c979c68027b16660ccca25a9acc43b](https://git.flyball.co/dsiprouter/enterprise/commit/0121f1cb99c979c68027b16660ccca25a9acc43b)  
+> Date: Wed, 15 Jul 2020 16:59:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0121f1cb99c979c68027b16660ccca25a9acc43b)
+[//]: # (START_SECTION 37aaa51a4282e6843a16f560ee3cae2333564562)
+### Kamailio fix for tls issue Resolves #https://git.flyball.co/dsiprouter/enterprise/issues/71
+
+> Commit: [37aaa51a4282e6843a16f560ee3cae2333564562](https://git.flyball.co/dsiprouter/enterprise/commit/37aaa51a4282e6843a16f560ee3cae2333564562)  
+> Date: Tue, 14 Jul 2020 12:14:02 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 37aaa51a4282e6843a16f560ee3cae2333564562)
+[//]: # (START_SECTION 7ee0942d174d95cb9acf7aca092a883c43fc6cdd)
+### Fixed the tls_config parameters
+
+> Commit: [7ee0942d174d95cb9acf7aca092a883c43fc6cdd](https://git.flyball.co/dsiprouter/enterprise/commit/7ee0942d174d95cb9acf7aca092a883c43fc6cdd)  
+> Date: Thu, 2 Jul 2020 18:58:14 +0000  
+> Author: root (root@sbc2.dsiprouter.net)  
+> Committer: root (root@sbc2.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7ee0942d174d95cb9acf7aca092a883c43fc6cdd)
+[//]: # (START_SECTION c5bb21e63eecd953a2585a0874f447a43d760aec)
 ### Fixes for CSRF and Unregister
 
-> Commit: [6a1f73ea817c0b1f830cfbf50ab7de13540763cd](https://git.flyball.co/dsiprouter/enterprise/commit/6a1f73ea817c0b1f830cfbf50ab7de13540763cd)  
+> Commit: [c5bb21e63eecd953a2585a0874f447a43d760aec](https://git.flyball.co/dsiprouter/enterprise/commit/c5bb21e63eecd953a2585a0874f447a43d760aec)  
 > Date: Thu, 2 Jul 2020 13:09:39 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1606,7 +1836,37 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 6a1f73ea817c0b1f830cfbf50ab7de13540763cd)
+[//]: # (END_SECTION c5bb21e63eecd953a2585a0874f447a43d760aec)
+[//]: # (START_SECTION 06f03f513ada2fad54be0a113646e44146bb982d)
+### Inbound DID Import - Fixed the endpoint override.  Resolves https://git.flyball.co/dsiprouter/enterprise/issues/72 - Placed the sample CSV template into the proper diretory so that it could be downloaded
+
+> Commit: [06f03f513ada2fad54be0a113646e44146bb982d](https://git.flyball.co/dsiprouter/enterprise/commit/06f03f513ada2fad54be0a113646e44146bb982d)  
+> Date: Thu, 2 Jul 2020 10:06:56 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 06f03f513ada2fad54be0a113646e44146bb982d)
+[//]: # (START_SECTION 5cc24e46160f96401ed15304bb893a10fef3ceae)
+### Added a sample csv file to gui/static/template Resolves https://git.flyball.co/dsiprouter/enterprise/issues/72
+
+> Commit: [5cc24e46160f96401ed15304bb893a10fef3ceae](https://git.flyball.co/dsiprouter/enterprise/commit/5cc24e46160f96401ed15304bb893a10fef3ceae)  
+> Date: Sun, 28 Jun 2020 09:43:23 -0700  
+> Author: Mack Hendricks (mack@dopensource.net)  
+> Committer: Mack Hendricks (mack@dopensource.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5cc24e46160f96401ed15304bb893a10fef3ceae)
 [//]: # (START_SECTION ee98cfaa069f12ca4469caeaea2301c10537df5b)
 ### Adding db.commit() Resolves https://github.com/dOpensource/dsiprouter/issues/238
 
@@ -2623,6 +2883,68 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a958ecfae0c0277bd5b9755e6dacdc480a98d652)
+[//]: # (START_SECTION 7e3ae78ed13627dc420cac7016921ec85d4aa947)
+### Update README.md
+
+> Commit: [7e3ae78ed13627dc420cac7016921ec85d4aa947](https://git.flyball.co/dsiprouter/enterprise/commit/7e3ae78ed13627dc420cac7016921ec85d4aa947)  
+> Date: Sun, 17 May 2020 12:21:30 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7e3ae78ed13627dc420cac7016921ec85d4aa947)
+[//]: # (START_SECTION 3d9118d7f619649dd6cbfedf510fc94cc8365ac3)
+### Update README.md
+
+> Commit: [3d9118d7f619649dd6cbfedf510fc94cc8365ac3](https://git.flyball.co/dsiprouter/enterprise/commit/3d9118d7f619649dd6cbfedf510fc94cc8365ac3)  
+> Date: Sun, 17 May 2020 12:20:43 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3d9118d7f619649dd6cbfedf510fc94cc8365ac3)
+[//]: # (START_SECTION 51d6bafff4fc1e0cbbb8e2f55efcc959da4722a3)
+### Removed dnsmasq from the -all install parameter
+
+> Commit: [51d6bafff4fc1e0cbbb8e2f55efcc959da4722a3](https://git.flyball.co/dsiprouter/enterprise/commit/51d6bafff4fc1e0cbbb8e2f55efcc959da4722a3)  
+> Date: Sun, 17 May 2020 14:32:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 51d6bafff4fc1e0cbbb8e2f55efcc959da4722a3)
+[//]: # (START_SECTION 53dbbfe3e7d9e264e3706f3a76bd668b6995f805)
+### Enrichment Framework
+
+> Commit: [53dbbfe3e7d9e264e3706f3a76bd668b6995f805](https://git.flyball.co/dsiprouter/enterprise/commit/53dbbfe3e7d9e264e3706f3a76bd668b6995f805)  
+> Date: Sun, 17 May 2020 00:00:48 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Added support for Inbound Enrichment
+- - Added Enrichment procedure for SignalWire
+
+
+---
+
+[//]: # (END_SECTION 53dbbfe3e7d9e264e3706f3a76bd668b6995f805)
 [//]: # (START_SECTION 606d7460776dbc264fa3822396f8ea47dd628e36)
 ### Add New Settings to Database
 
@@ -2777,6 +3099,97 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 29d156221015801c663e86e15c3923c768d62caf)
+[//]: # (START_SECTION cbae76acf8e8549ce8b510ee9e5bf10b9665dce8)
+### Fixed regression with gui/settings.py
+
+> Commit: [cbae76acf8e8549ce8b510ee9e5bf10b9665dce8](https://git.flyball.co/dsiprouter/enterprise/commit/cbae76acf8e8549ce8b510ee9e5bf10b9665dce8)  
+> Date: Tue, 12 May 2020 06:03:52 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cbae76acf8e8549ce8b510ee9e5bf10b9665dce8)
+[//]: # (START_SECTION 3916bd328bf72d08f372edb7f79a0d6958cc4f6a)
+### mend
+
+> Commit: [3916bd328bf72d08f372edb7f79a0d6958cc4f6a](https://git.flyball.co/dsiprouter/enterprise/commit/3916bd328bf72d08f372edb7f79a0d6958cc4f6a)  
+> Date: Tue, 12 May 2020 05:25:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3916bd328bf72d08f372edb7f79a0d6958cc4f6a)
+[//]: # (START_SECTION 211cb4b9731b40e36b51c4f1e29b0b5491e280ad)
+### Azure Fixes - Fixed bug with INTERNAL_FQDN
+
+> Commit: [211cb4b9731b40e36b51c4f1e29b0b5491e280ad](https://git.flyball.co/dsiprouter/enterprise/commit/211cb4b9731b40e36b51c4f1e29b0b5491e280ad)  
+> Date: Tue, 12 May 2020 05:22:22 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 211cb4b9731b40e36b51c4f1e29b0b5491e280ad)
+[//]: # (START_SECTION adc817e32355e6f5339c35c0c83dd521cb0ad9c8)
+### Azure Installation Fixes - Added logic to use the hostname command for the hostname if dig can't perform a reverse lookup based on the IP address - Changed the URL used to obtain the vmID from the Azure Metadata service
+
+> Commit: [adc817e32355e6f5339c35c0c83dd521cb0ad9c8](https://git.flyball.co/dsiprouter/enterprise/commit/adc817e32355e6f5339c35c0c83dd521cb0ad9c8)  
+> Date: Tue, 12 May 2020 04:44:19 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION adc817e32355e6f5339c35c0c83dd521cb0ad9c8)
+[//]: # (START_SECTION 4db9e48d53dc3b098158a30c418a65ce1d095c24)
+### Azure Installation Fixes - Added logic to use the hostname command for the hostname if dig can't perform a reverse lookup based on the IP address - Changed the URL used to obtain the vmID from the Azure Metadata service
+
+> Commit: [4db9e48d53dc3b098158a30c418a65ce1d095c24](https://git.flyball.co/dsiprouter/enterprise/commit/4db9e48d53dc3b098158a30c418a65ce1d095c24)  
+> Date: Tue, 12 May 2020 04:42:16 +0000  
+> Author: root (root@sbc.dsiprouter.net)  
+> Committer: root (root@sbc.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4db9e48d53dc3b098158a30c418a65ce1d095c24)
+[//]: # (START_SECTION 0fcecf8474d694bbd425388b62c67925786c472d)
+### Carrier Groups
+
+> Commit: [0fcecf8474d694bbd425388b62c67925786c472d](https://git.flyball.co/dsiprouter/enterprise/commit/0fcecf8474d694bbd425388b62c67925786c472d)  
+> Date: Mon, 11 May 2020 22:00:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- resolves dsiprouter@enterprise#39
+
+
+---
+
+[//]: # (END_SECTION 0fcecf8474d694bbd425388b62c67925786c472d)
 [//]: # (START_SECTION cc096b110266d6a71ced8a3b27ba3ad9589147d8)
 ### Update CONTRIBUTING.md
 
@@ -2792,6 +3205,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION cc096b110266d6a71ced8a3b27ba3ad9589147d8)
+[//]: # (START_SECTION 0e8a5f3c97049b8e101820d33c521215e46c9d28)
+### MSTeams Inbound Integration - Fixed the Kamailio logic so that the contact is not being re-written. Hence, allowing the ACk to be accepted by MSTeams
+
+> Commit: [0e8a5f3c97049b8e101820d33c521215e46c9d28](https://git.flyball.co/dsiprouter/enterprise/commit/0e8a5f3c97049b8e101820d33c521215e46c9d28)  
+> Date: Mon, 11 May 2020 15:42:33 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0e8a5f3c97049b8e101820d33c521215e46c9d28)
 [//]: # (START_SECTION e71a9384f9d3b9cb5dcb280655a1fe1c86badb8e)
 ### Update CONTRIBUTING.md
 
@@ -4145,6 +4573,306 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION fcd9ef8c7d66d8b2af645be760aa0f99a3c3cbac)
+[//]: # (START_SECTION fe4e90763318d06f134b4093e7fec2f9dfd74dcf)
+### Update settings.py
+
+> Commit: [fe4e90763318d06f134b4093e7fec2f9dfd74dcf](https://git.flyball.co/dsiprouter/enterprise/commit/fe4e90763318d06f134b4093e7fec2f9dfd74dcf)  
+> Date: Mon, 4 Nov 2019 03:48:25 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fe4e90763318d06f134b4093e7fec2f9dfd74dcf)
+[//]: # (START_SECTION efa8d3fb5a9c3c28325df28cfe4244711020be28)
+### Update domains.rst
+
+> Commit: [efa8d3fb5a9c3c28325df28cfe4244711020be28](https://git.flyball.co/dsiprouter/enterprise/commit/efa8d3fb5a9c3c28325df28cfe4244711020be28)  
+> Date: Mon, 4 Nov 2019 03:45:57 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION efa8d3fb5a9c3c28325df28cfe4244711020be28)
+[//]: # (START_SECTION a4875920e015c40c97023e103cdfa28b21282e37)
+### Update supported_configurations.rst
+
+> Commit: [a4875920e015c40c97023e103cdfa28b21282e37](https://git.flyball.co/dsiprouter/enterprise/commit/a4875920e015c40c97023e103cdfa28b21282e37)  
+> Date: Mon, 4 Nov 2019 03:21:36 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a4875920e015c40c97023e103cdfa28b21282e37)
+[//]: # (START_SECTION 0a1b04837ef6f9793989fc65d48bad9c7df94bea)
+### Update supported_configurations.rst
+
+> Commit: [0a1b04837ef6f9793989fc65d48bad9c7df94bea](https://git.flyball.co/dsiprouter/enterprise/commit/0a1b04837ef6f9793989fc65d48bad9c7df94bea)  
+> Date: Mon, 4 Nov 2019 03:19:17 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0a1b04837ef6f9793989fc65d48bad9c7df94bea)
+[//]: # (START_SECTION f55a391d94e4da8c5eaf3ffeeab3a2e27ad6adc9)
+### Update domains.rst
+
+> Commit: [f55a391d94e4da8c5eaf3ffeeab3a2e27ad6adc9](https://git.flyball.co/dsiprouter/enterprise/commit/f55a391d94e4da8c5eaf3ffeeab3a2e27ad6adc9)  
+> Date: Mon, 4 Nov 2019 01:54:57 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f55a391d94e4da8c5eaf3ffeeab3a2e27ad6adc9)
+[//]: # (START_SECTION fe9218330241deaf90871bbdef5a671634bce81e)
+### Update supported_configurations.rst
+
+> Commit: [fe9218330241deaf90871bbdef5a671634bce81e](https://git.flyball.co/dsiprouter/enterprise/commit/fe9218330241deaf90871bbdef5a671634bce81e)  
+> Date: Mon, 4 Nov 2019 01:37:43 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fe9218330241deaf90871bbdef5a671634bce81e)
+[//]: # (START_SECTION 2c2a83c592a934a35346e5dd9467fa8c4820dc60)
+### Update supported_configurations.rst
+
+> Commit: [2c2a83c592a934a35346e5dd9467fa8c4820dc60](https://git.flyball.co/dsiprouter/enterprise/commit/2c2a83c592a934a35346e5dd9467fa8c4820dc60)  
+> Date: Mon, 4 Nov 2019 01:20:21 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2c2a83c592a934a35346e5dd9467fa8c4820dc60)
+[//]: # (START_SECTION df92443f24256ca322a777b2e39623a4373fb681)
+### Update supported_configurations.rst
+
+> Commit: [df92443f24256ca322a777b2e39623a4373fb681](https://git.flyball.co/dsiprouter/enterprise/commit/df92443f24256ca322a777b2e39623a4373fb681)  
+> Date: Sun, 3 Nov 2019 17:55:27 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION df92443f24256ca322a777b2e39623a4373fb681)
+[//]: # (START_SECTION c4cd5ad10f765a8afc4f33e31fbf919c765507ec)
+### Update supported_configurations.rst
+
+> Commit: [c4cd5ad10f765a8afc4f33e31fbf919c765507ec](https://git.flyball.co/dsiprouter/enterprise/commit/c4cd5ad10f765a8afc4f33e31fbf919c765507ec)  
+> Date: Sun, 3 Nov 2019 17:45:00 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c4cd5ad10f765a8afc4f33e31fbf919c765507ec)
+[//]: # (START_SECTION 5c507275ea83d7164daedc690b3f8c8879b21e83)
+### Update supported_configurations.rst
+
+> Commit: [5c507275ea83d7164daedc690b3f8c8879b21e83](https://git.flyball.co/dsiprouter/enterprise/commit/5c507275ea83d7164daedc690b3f8c8879b21e83)  
+> Date: Sun, 3 Nov 2019 17:42:28 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5c507275ea83d7164daedc690b3f8c8879b21e83)
+[//]: # (START_SECTION 0f44d04cf565cc434ad0d76e7a48e41e882acd5a)
+### Update supported_configurations.rst
+
+> Commit: [0f44d04cf565cc434ad0d76e7a48e41e882acd5a](https://git.flyball.co/dsiprouter/enterprise/commit/0f44d04cf565cc434ad0d76e7a48e41e882acd5a)  
+> Date: Sun, 3 Nov 2019 17:40:34 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0f44d04cf565cc434ad0d76e7a48e41e882acd5a)
+[//]: # (START_SECTION 50ffb4ad4a36804c57a6897a101a9d4a937104d4)
+### Update supported_configurations.rst
+
+> Commit: [50ffb4ad4a36804c57a6897a101a9d4a937104d4](https://git.flyball.co/dsiprouter/enterprise/commit/50ffb4ad4a36804c57a6897a101a9d4a937104d4)  
+> Date: Sun, 3 Nov 2019 17:30:19 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 50ffb4ad4a36804c57a6897a101a9d4a937104d4)
+[//]: # (START_SECTION 91ed94f3e7ba639bcbbd97ee5319416bd64890d4)
+### Update supported_configurations.rst
+
+> Commit: [91ed94f3e7ba639bcbbd97ee5319416bd64890d4](https://git.flyball.co/dsiprouter/enterprise/commit/91ed94f3e7ba639bcbbd97ee5319416bd64890d4)  
+> Date: Sun, 3 Nov 2019 17:28:58 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 91ed94f3e7ba639bcbbd97ee5319416bd64890d4)
+[//]: # (START_SECTION 750a611301607ec8613ffa1e07ce863362a27570)
+### Update supported_configurations.rst
+
+> Commit: [750a611301607ec8613ffa1e07ce863362a27570](https://git.flyball.co/dsiprouter/enterprise/commit/750a611301607ec8613ffa1e07ce863362a27570)  
+> Date: Sun, 3 Nov 2019 17:27:36 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 750a611301607ec8613ffa1e07ce863362a27570)
+[//]: # (START_SECTION b183b1e717e37c7243b99ec18b8d697aa8b0a1fc)
+### Made Pass Thru authentication the default method
+
+> Commit: [b183b1e717e37c7243b99ec18b8d697aa8b0a1fc](https://git.flyball.co/dsiprouter/enterprise/commit/b183b1e717e37c7243b99ec18b8d697aa8b0a1fc)  
+> Date: Sun, 3 Nov 2019 22:23:06 +0000  
+> Author: root (root@dSIPRouterMackv0523Hotfix-0.localdomain)  
+> Committer: root (root@dSIPRouterMackv0523Hotfix-0.localdomain)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b183b1e717e37c7243b99ec18b8d697aa8b0a1fc)
+[//]: # (START_SECTION c13ff8da9d0e6d04c5f530a992501fd1ff3c3992)
+### Fixed #102 for both FreePBX with chan_sip and FusionPBX with Sofia.
+
+> Commit: [c13ff8da9d0e6d04c5f530a992501fd1ff3c3992](https://git.flyball.co/dsiprouter/enterprise/commit/c13ff8da9d0e6d04c5f530a992501fd1ff3c3992)  
+> Date: Sun, 3 Nov 2019 21:26:59 +0000  
+> Author: root (root@dSIPMack0523hotfix-0.localdomain)  
+> Committer: root (root@dSIPMack0523hotfix-0.localdomain)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c13ff8da9d0e6d04c5f530a992501fd1ff3c3992)
+[//]: # (START_SECTION a5eac062f964e5485f309248e295d8f0110b2dd7)
+### Fixed logic that checks if dSIPRouter is running on a cloud provider.  The Google Cloud Check was not evaluating correctly and resulted in setting an empty string password for the admin user.
+
+> Commit: [a5eac062f964e5485f309248e295d8f0110b2dd7](https://git.flyball.co/dsiprouter/enterprise/commit/a5eac062f964e5485f309248e295d8f0110b2dd7)  
+> Date: Sat, 2 Nov 2019 21:52:56 +1100  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a5eac062f964e5485f309248e295d8f0110b2dd7)
+[//]: # (START_SECTION 224322a9885f4b5b452d96bfc68a226ca0a02bd3)
+### FusionPBX Extension to Extension Dialing - This fix should resovle issues with users being able to do Extension to Extension calls on FusionPBX
+
+> Commit: [224322a9885f4b5b452d96bfc68a226ca0a02bd3](https://git.flyball.co/dsiprouter/enterprise/commit/224322a9885f4b5b452d96bfc68a226ca0a02bd3)  
+> Date: Mon, 14 Oct 2019 04:04:18 +0000  
+> Author: root (root@dSIP0523SSLEnable-0.localdomain)  
+> Committer: root (root@dSIP0523SSLEnable-0.localdomain)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 224322a9885f4b5b452d96bfc68a226ca0a02bd3)
+[//]: # (START_SECTION a0824bac4caeee87b7f21e22d362f29c9dc8843a)
+### Fixed issue with ServerNAT being enabled by default
+
+> Commit: [a0824bac4caeee87b7f21e22d362f29c9dc8843a](https://git.flyball.co/dsiprouter/enterprise/commit/a0824bac4caeee87b7f21e22d362f29c9dc8843a)  
+> Date: Sun, 13 Oct 2019 07:15:48 +0000  
+> Author: root (root@dSIP0523SSLEnable-0.localdomain)  
+> Committer: root (root@dSIP0523SSLEnable-0.localdomain)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a0824bac4caeee87b7f21e22d362f29c9dc8843a)
+[//]: # (START_SECTION 6fcc6255f4eb63135e4c714d65638c524f8278bc)
+### Location information is now stored under extension@<ip address of dsip>
+
+> Commit: [6fcc6255f4eb63135e4c714d65638c524f8278bc](https://git.flyball.co/dsiprouter/enterprise/commit/6fcc6255f4eb63135e4c714d65638c524f8278bc)  
+> Date: Sun, 13 Oct 2019 02:43:02 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6fcc6255f4eb63135e4c714d65638c524f8278bc)
 [//]: # (START_SECTION dda982bfbd1c8a2f3879197c08b04775eb95be82)
 ### Fix pre-commit hook
 
@@ -4237,6 +4965,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 41529c00be9ed9586eec0e9407c83cff258c0c8e)
+[//]: # (START_SECTION c88b214251333b7350b10b27fa2dae683ef3b602)
+### Hotfix for 401/407 reply not sent on Pass Through Auth
+
+> Commit: [c88b214251333b7350b10b27fa2dae683ef3b602](https://git.flyball.co/dsiprouter/enterprise/commit/c88b214251333b7350b10b27fa2dae683ef3b602)  
+> Date: Wed, 2 Oct 2019 16:53:56 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION c88b214251333b7350b10b27fa2dae683ef3b602)
 [//]: # (START_SECTION c7bb17fc14cbbc27ac46b7ee34dd8287301a76db)
 ### Update RTPEngine Default Config
 

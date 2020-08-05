@@ -27,11 +27,11 @@ function install {
     apt-get install -y dkms
     apt-get install -y unzip
 
-    # debian stretch needs a few newer packages
+    # debian jessie/stretch need a few newer packages
     CODENAME="$(lsb_release -c -s)"
-    if [[ "$CODENAME" == "stretch" ]]; then
+    if [[ "$CODENAME" == "jessie" ]] || [[ "$CODENAME" == "stretch" ]]; then
         apt-get install -y -t buster libarchive13
-        apt-get install -y -t ${CODENAME}-backports debhelper init-system-helpers
+        apt-get install -y -t stretch-backports debhelper init-system-helpers
     else
         apt-get install -y debhelper
     fi

@@ -1,0 +1,62 @@
+#-------------------------------------------------------------------
+# packages from debian 8 (jessie) release
+#-------------------------------------------------------------------
+deb http://deb.debian.org/debian/ jessie main contrib non-free
+#deb-src http://deb.debian.org/debian/ jessie main contrib non-free
+
+deb http://deb.debian.org/debian/ jessie-updates main contrib non-free
+#deb-src http://deb.debian.org/debian/ jessie-updates main contrib non-free
+
+deb http://deb.debian.org/debian-security jessie/updates main
+#deb-src http://deb.debian.org/debian-security jessie/updates main
+
+#-------------------------------------------------------------------
+# packages from debian 9 (stretch) release
+#-------------------------------------------------------------------
+deb http://deb.debian.org/debian/ stretch main contrib non-free
+#deb-src http://deb.debian.org/debian/ stretch main contrib non-free
+
+deb http://deb.debian.org/debian/ stretch-updates main contrib non-free
+#deb-src http://deb.debian.org/debian/ stretch-updates main contrib non-free
+
+deb http://deb.debian.org/debian-security stretch/updates main
+#deb-src http://deb.debian.org/debian-security stretch/updates main
+
+deb http://deb.debian.org/debian stretch-backports main
+#deb-src http://deb.debian.org/debian stretch-backports main
+
+#-------------------------------------------------------------------
+# packages from debian 10 (buster) release
+#-------------------------------------------------------------------
+deb http://deb.debian.org/debian/ buster main contrib non-free
+#deb-src http://deb.debian.org/debian/ buster main contrib non-free
+
+deb http://deb.debian.org/debian/ buster-updates main contrib non-free
+#deb-src http://deb.debian.org/debian/ buster-updates main contrib non-free
+
+deb http://deb.debian.org/debian-security buster/updates main
+#deb-src http://deb.debian.org/debian-security buster/updates main
+
+deb http://deb.debian.org/debian buster-backports main
+#deb-src http://deb.debian.org/debian buster-backports main
+
+#-------------------------------------------------------------------
+# packages from debian 11 (bullseye) release
+#-------------------------------------------------------------------
+deb http://deb.debian.org/debian/ bullseye main contrib non-free
+#deb-src http://deb.debian.org/debian/ bullseye main contrib non-free
+
+deb http://deb.debian.org/debian/ bullseye-updates main contrib non-free
+#deb-src http://deb.debian.org/debian/ bullseye-updates main contrib non-free
+
+deb http://deb.debian.org/debian-security bullseye-security main
+#deb-src http://deb.debian.org/debian-security bullseye-security main
+
+deb http://deb.debian.org/debian bullseye-backports main
+#deb-src http://deb.debian.org/debian bullseye-backports main
+
+#-------------------------------------------------------------------
+# packages from debian 12 (sid) release
+#-------------------------------------------------------------------
+deb http://deb.debian.org/debian/ sid main contrib non-free
+#deb-src http://deb.debian.org/debian/ sid main contrib non-free
