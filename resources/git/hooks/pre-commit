@@ -88,9 +88,11 @@ createRequirements() {
             exit 1
         fi
 
-        printf '%s\n' "${LIBS[@]}" | sort -u > ${OUT_FILE}
-
-        git add ${OUT_FILE}
+        # only create requirements.txt if we found dependencies
+        if (( ${#LIB[@]} > 0 )); then
+            printf '%s\n' "${LIBS[@]}" | sort -u > ${OUT_FILE}
+            git add ${OUT_FILE}
+        fi
     done
 }
 
