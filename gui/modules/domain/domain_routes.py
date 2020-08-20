@@ -77,7 +77,13 @@ def addDomain(domain, authtype, pbxs, notes, db):
         print("pbx list {}".format(pbx_list))
         if len(pbx_list) == 0 or pbx_list[0] == '':
             for endpoint in msteams_dns_endpoints:
-                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(settings.EXTERNAL_IP_ADDR,domain),description='msteam_endpoint:{}'.format(endpoint))
+                # Logic to handle when dSIPRouter is behind NAT (aka servernat is enabled)
+                if settings.EXTERNAL_IP_ADDR != settings.INTERNAL_IP_ADDR:
+                    socket_addr = settings.INTERNAL_IP_ADDR
+                else:
+                    socket_addr = settings.EXTERNAL_IP_ADDR
+
+                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr,domain),description='msteam_endpoint:{}'.format(endpoint))
                 db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
