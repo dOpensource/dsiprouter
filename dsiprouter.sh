@@ -1959,8 +1959,61 @@ function removeInitService {
     printdbg "dsip-init service removed"
 }
 
-# TODO: this is unfinished
+
 function upgrade {
+
+    CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
+
+    # Check if already upgraded
+    #rel = $((`echo "$CURRENT_RELEASE" == "$UPGRADE_RELEASE" | bc`))
+    #if [ $rel -eq 1 ]; then
+
+
+    #    pprint "dSIPRouter is already updated to $UPGRADE_RELEASE!"
+    #    return
+
+    #fi
+
+    # Return an error if the release doesn't exist
+   git branch -r | grep  -e "$UPGRADE_RELEASE$">null
+   if [ "$?" -eq 1 ]; then
+
+        printdbg "The $UPGRADE_RELEASE release doesn't exist. Please select another release"
+        return 1
+
+   fi
+
+   return
+
+    BACKUP_DIR="/var/backups"
+    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
+    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
+    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
+
+    cp -r ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
+    cp -r ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
+
+    #Stash any changes so that GIU will allow us to pull down a new release
+    git stash
+    git checkout $UPGRADE_RELEASE
+    git stash apply
+
+    updateKamailioConfig
+    ret = $?
+    generateKamailioConfig
+    ret = $ret + $?
+
+    if [ $ret -eq 0 ]; then
+        # Upgrade the version
+       setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
+    fi
+    # Restart Kamailio
+    systemctl restart kamailio
+
+}
+
+# TODO: this is unfinished
+function upgradeOld {
     # TODO: set / handle parsed args
     UPGRADE_RELEASE="v0.51"
 
@@ -2246,6 +2299,8 @@ function usageOptions {
         " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>]"
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
+    printf "%-30s %s\n" \
+        "upgrade" "[-debug] <-rel|--release <release number>>"
     printf "%-30s %s\n" \
         "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
     printf "%-30s %s\n" \
@@ -2789,6 +2844,40 @@ function processCMD {
                         STOP_RTPENGINE=1
                         START_RTPENGINE=1
                         shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+	upgrade)
+            # reconfigure kamailio configs
+            RUN_COMMANDS+=(upgrade)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -rel|--release)
+			shift
+			if [ -z "$1" ]; then
+				printerr "Please specify a release tag (ie 0.34)"
+                        	usageOptions
+                        	cleanupAndExit 1
+			 else	    
+                       		export UPGRADE_RELEASE=$1
+
+			 fi
+                         shift
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
