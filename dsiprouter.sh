@@ -553,6 +553,7 @@ function configureSSL {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
+    set -x 
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
@@ -1961,7 +1962,14 @@ function removeInitService {
 
 
 function upgrade {
-
+    
+    KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
+    KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
+    KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
+    KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
+    KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
+    DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+    
     CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
 
     # Check if already upgraded
@@ -1983,8 +1991,6 @@ function upgrade {
 
    fi
 
-   return
-
     BACKUP_DIR="/var/backups"
     CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
     mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
@@ -1993,23 +1999,24 @@ function upgrade {
     cp -r ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
     cp -r ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
 
-    #Stash any changes so that GIU will allow us to pull down a new release
-    git stash
-    git checkout $UPGRADE_RELEASE
-    git stash apply
+    #Stash any changes so that GUI will allow us to pull down a new release
+    #git stash
+    #git checkout $UPGRADE_RELEASE
+    #git stash apply
 
     updateKamailioConfig
-    ret = $?
+    ret=$?
     generateKamailioConfig
-    ret = $ret + $?
+    ret=$((ret + $?))
 
     if [ $ret -eq 0 ]; then
         # Upgrade the version
        setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
-    fi
-    # Restart Kamailio
-    systemctl restart kamailio
-
+    
+    	# Restart Kamailio
+    	systemctl restart kamailio
+    	systemctl restart dsiprouter
+     fi
 }
 
 # TODO: this is unfinished
