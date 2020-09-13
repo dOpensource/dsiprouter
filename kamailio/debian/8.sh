@@ -3,6 +3,9 @@
 (( $DEBUG == 1 )) && set -x
 
 function install {
+    local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
+    local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
+
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev
     apt-get install -y logrotate rsyslog
@@ -14,18 +17,29 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
-    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* jessie.*' /etc/apt/sources.list > /dev/null
-    # If repo is not installed
-    if [ $? -eq 1 ]; then
-        echo -e "\n# kamailio repo's" >> /etc/apt/sources.list
-        echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main" >> /etc/apt/sources.list
-        echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} jessie main" >> /etc/apt/sources.list
-    fi
+    # add repo sources to apt
+    CODENAME="$(lsb_release -c -s)"
+    mkdir -p /etc/apt/sources.list.d
+    (cat << EOF
+# kamailio repo's
+deb http://deb.kamailio.org/kamailio${KAM_VERSION} ${CODENAME} main
+#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} ${CODENAME} main
+EOF
+    ) > ${KAM_SOURCES_LIST}
+
+    # give higher precedence to packages from kamailio repo
+    mkdir -p /etc/apt/preferences.d
+    (cat << 'EOF'
+Package: *
+Pin: origin deb.kamailio.org
+Pin-Priority: 1000
+EOF
+    ) > ${KAM_PREFS_CONF}
 
     # Add Key for Kamailio Repo
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
-    # Update the repo
+    # Update repo sources cache
     apt-get update -y
 
     # Install Kamailio packages

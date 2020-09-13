@@ -4,6 +4,7 @@
 
 function install {
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
+    local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev
@@ -21,14 +22,23 @@ function install {
     (cat << EOF
 # kamailio repo's
 deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
-deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
+#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
 EOF
     ) > ${KAM_SOURCES_LIST}
+
+    # give higher precedence to packages from kamailio repo
+    mkdir -p /etc/apt/preferences.d
+    (cat << 'EOF'
+Package: *
+Pin: origin deb.kamailio.org
+Pin-Priority: 1000
+EOF
+    ) > ${KAM_PREFS_CONF}
 
     # Add Key for Kamailio Repo
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
-    # Update the repo
+    # Update repo sources cache
     apt-get update -y
 
     # Install Kamailio packages
