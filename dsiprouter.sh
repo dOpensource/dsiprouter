@@ -1622,7 +1622,7 @@ function displayLoginInfo {
 
     printdbg "You can access the Kamailio DB here"
     pprint "Database Host: ${KAM_DB_HOST}:${KAM_DB_PORT}"
-    pprint "Datebase Name: ${KAM_DB_NAME}"
+    pprint "Database Name: ${KAM_DB_NAME}"
     printf '\n'
 }
 
