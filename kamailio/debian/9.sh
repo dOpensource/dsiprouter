@@ -7,7 +7,7 @@ function install {
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
 
     # Install Dependencies
-    apt-get install -y curl wget sed gawk vim perl uuid-dev
+    apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
     apt-get install -y logrotate rsyslog
 
     # create kamailio user and group
@@ -42,8 +42,14 @@ EOF
     apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules \
+    apt-get install -y --allow-unauthenticated default-mysql-server ||
+        apt-get install -y --allow-unauthenticated mariadb-server
+    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules kamailio-extra-modules \
         kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules
+
+    # get info about the kamailio install for later use in script
+    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
+    KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
@@ -75,10 +81,10 @@ EOF
     reconfigureMysqlSystemdService
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    if ! grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -120,9 +126,11 @@ EOF
     # TODO: we should set STORE_PLAINTEXT_PW to 0, this is not default but would need tested
     (cat << EOF
 DBENGINE=MYSQL
-DBHOST=${KAM_DB_HOST}
-DBPORT=${KAM_DB_PORT}
-DBNAME=${KAM_DB_NAME}
+DBHOST="${KAM_DB_HOST}"
+DBPORT="${KAM_DB_PORT}"
+DBNAME="${KAM_DB_NAME}"
+DBROUSER="${KAM_DB_USER}"
+DBROPW="${KAM_DB_PASS}"
 DBRWUSER="${KAM_DB_USER}"
 DBRWPW="${KAM_DB_PASS}"
 DBROOTUSER="${MYSQL_ROOT_USERNAME}"
@@ -131,12 +139,12 @@ CHARSET=utf8
 INSTALL_EXTRA_TABLES=yes
 INSTALL_PRESENCE_TABLES=yes
 INSTALL_DBUID_TABLES=yes
-# STORE_PLAINTEXT_PW=0
+#STORE_PLAINTEXT_PW=0
 EOF
     ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
     # fix bug in kamilio v5.3.4 installer
-    if [[ "$(kamailio -V | head -1 | awk '{print $3}')" == "5.3.4" ]]; then
+    if [[ "$KAM_VERSION_FULL" == "5.3.4" ]]; then
         (cat << 'EOF'
 CREATE TABLE `secfilter` (
 `id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
@@ -184,12 +192,12 @@ EOF
     cp ${DSIP_PROJECT_DIR}/kamailio/cacert_dsiprouter.pem ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
 
     # Setup dSIPRouter Module
-    KAM_VERSION=$(kamailio -V | head -1 | awk '{print $3}' | sed  's/\.//g')
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
-    if [ $? -gt 0 ]; then
-        echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}"
-        return 1
-    fi
+    rm -rf /tmp/kamailio 2>/dev/null
+    git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
+    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
+    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
+    cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
+    return 1
 
     return 0
 }
