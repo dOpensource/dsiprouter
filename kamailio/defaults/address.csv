@@ -1,14 +1,14 @@
-null;FLT_CARRIER;54.172.60.0;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.172.60.1;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.172.60.2;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.172.60.3;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.0;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.1;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.2;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.3;32;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.60.0;23;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;34.203.250.0;23;0;name:Twilio Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.0;24;0;name:Twilio Carrier,gwgroup:1
+null;FLT_CARRIER;54.172.60.0;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.172.60.1;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.172.60.2;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.172.60.3;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.244.51.0;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.244.51.1;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.244.51.2;32;0;name:Twilio NA Inbound,gwgroup:1
+null;FLT_CARRIER;54.244.51.3;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.244.60.0;23;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;34.203.250.0;23;0;name:Twilio NA Inbound Carrier,gwgroup:1
+null;FLT_CARRIER;54.244.51.0;24;0;name:Twilio NA Inbound Carrier,gwgroup:1
 null;FLT_CARRIER;52.41.52.34;32;0;name:Skyetel North West Inbound,gwgroup:2
 null;FLT_CARRIER;52.8.201.128;32;0;name:Skyetel South West Inbound,gwgroup:2
 null;FLT_CARRIER;52.60.138.31;32;0;name:Skyetel North East Inbound,gwgroup:2
