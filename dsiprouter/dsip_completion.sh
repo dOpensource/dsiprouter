@@ -20,6 +20,7 @@ _dsiprouter() {
         restart
         configurekam
         renewsslcert
+	configuresslcert
         installmodules
         enableservernat
         disableservernat
@@ -47,6 +48,7 @@ _dsiprouter() {
         [restart]=''
         [configurekam]=''
         [renewsslcert]=''
+        [configuresslcert]='--force'
         [installmodules]=''
         [enableservernat]=''
         [disableservernat]=''
@@ -101,6 +103,7 @@ _dsiprouter() {
         [restart]='-debug -all -kam -dsip -rtp'
         [configurekam]='-debug -servernat'
         [renewsslcert]='-debug'
+        [configuresslcert]='-debug -f'
         [installmodules]='-debug'
         [enableservernat]='-debug'
         [disableservernat]='-debug'

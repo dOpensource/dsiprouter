@@ -97,7 +97,7 @@
       modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
     });
 
-    $('#inboundmapping #open-Update').click(function() {
+    $('#inboundmapping').on('click', '#open-Update', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('inboundmapping');
       var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -158,7 +158,7 @@
       }
     });
 
-    $('#inboundmapping #open-Delete').click(function() {
+    $('#inboundmapping').on('click', '#open-Delete', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('inboundmapping');
       var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();

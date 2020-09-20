@@ -7,6 +7,8 @@
 #========================== NOTES ==========================#
 #
 # Supported OS:
+# - Debian 11 (bullseye) (BETA)
+# - Debian 10 (buster) (BETA)
 # - Debian 9 (stretch)
 # - Debian 8 (jessie)
 # - CentOS 7
@@ -97,10 +99,14 @@ setScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
+    #export RTPENGINE_VER="mr8.4.1.3"
     export RTPENGINE_VER="mr6.1.1.1"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
+    APT_OFFICIAL_SOURCES="/etc/apt/sources.list.d/official-releases.list"
+    APT_OFFICIAL_PREFS="/etc/apt/preferences.d/official-releases.pref"
+    YUM_OFFICIAL_REPOS="/etc/yum.repos.d/official-releases.repo"
 
     # Default MYSQL db root user values
     MYSQL_ROOT_DEF_USERNAME="root"
@@ -162,6 +168,13 @@ setScriptSettings() {
     export KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE} 2>/dev/null)}
 
+    # grab credential max lengths from python files for later use
+    # we use perl bcuz python may not be installed when this is run
+    export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'HASHED_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
+        perl -pe 's%.*HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
+    export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
+        perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
+
     #===========================================================#
 }
 
@@ -222,7 +235,7 @@ function cleanupAndExit {
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
-    unset INTERNAL_FQDN DSIP_SSL_EMAIL
+    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN
     unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
@@ -262,10 +275,23 @@ function setOSInfo {
 function validateOSInfo {
     if [[ "$DISTRO" == "debian" ]]; then
         case "$DISTRO_VER" in
-            9|8)
-                if [[ -z "$KAM_VERSION" ]]; then
-                   KAM_VERSION=53
-                fi
+            11)
+                printwarn "Your Operating System Version is in BETA support and may not function properly. Issues can be tracked at https://github.com/dOpensource/dsiprouter/"
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=990 APT_SID_PRIORITY=500
+                ;;
+            10)
+                printwarn "Your Operating System Version is in BETA support and may not function properly. Issues can be tracked at https://github.com/dOpensource/dsiprouter/"
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=990 APT_BULLSEYE_PRIORITY=500 APT_SID_PRIORITY=100
+                ;;
+            9)
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=990 APT_BUSTER_PRIORITY=500 APT_BULLSEYE_PRIORITY=100 APT_SID_PRIORITY=50
+                ;;
+            8)
+                KAM_VERSION=${KAM_VERSION:-53}
+                export APT_JESSIE_PRIORITY=990 APT_STRETCH_PRIORITY=500 APT_BUSTER_PRIORITY=100 APT_BULLSEYE_PRIORITY=50 APT_SID_PRIORITY=50
                 ;;
             7)
                 printerr "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
@@ -418,12 +444,10 @@ export -f setPythonCmd
 
 # exported because its used throughout called scripts as well
 function reconfigureMysqlSystemdService {
-    echo 'Re-Configuring mysql systemd service for local or remote connection'
-
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
     case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl stop mysql
@@ -455,8 +479,6 @@ function reconfigureMysqlSystemdService {
             printf '%s' 'remote' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
             ;;
     esac
-
-    echo 'Finished re-configuring mysql systemd service'
 }
 export -f reconfigureMysqlSystemdService
 
@@ -552,6 +574,7 @@ function configureSSL {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
+    #set -x 
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
@@ -733,7 +756,8 @@ function configureKamailio {
         -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'localhost';" \
-        -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';"
+        -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';" \
+        -e "FLUSH PRIVILEGES;"
 
     # Install schema for drouting module
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"  $KAM_DB_NAME \
@@ -782,8 +806,8 @@ function configureKamailio {
         < ${DSIP_DEFAULTS_DIR}/dsip_cdrinfo.sql
 
     # Install schema for dsip_settings
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-        < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql
+    envsubst < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql |
+        mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"
 
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
     sed -e "s|FLT_INBOUND_REPLACE|${FLT_INBOUND}|g" ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
@@ -818,7 +842,7 @@ function configureKamailio {
 #    resetIncrementers "uacreg"
 
     # Import Default Carriers
-    if [ -e $(type -P mysqlimport) ]; then
+    if cmdExists 'mysqlimport'; then
         mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
             -e "delete from address where grp=$FLT_CARRIER"
 
@@ -870,13 +894,7 @@ function disableSERVERNAT {
 
 # Try to locate the Kamailio modules directory.  It will use the last modules directory found
 function fixMPATH {
-    for i in $(find /usr -name drouting.so); do
-        mpath=$(dirname $i| grep 'modules$')
-        if [ "$mpath" != '' ]; then
-            mpath=$mpath/
-            break #found a mpath
-        fi
-    done
+    mpath=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h/' -quit 2>/dev/null)
 
     if [ "$mpath" != '' ]; then
         setKamailioConfigGlobal 'mpath' "${mpath}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -904,10 +922,76 @@ installScriptRequirements() {
 
     if (( $? != 0 )); then
         printerr 'Could not install script requirements'
-        exit 1
+        cleanupAndExit 1
     else
         printdbg 'One-time script requirements installed'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.requirementsinstalled
+    fi
+}
+
+# Configure system repo sources to ensure we get the right package versions
+# TODO: support configuring ubuntu/centos/amazon linux repo's
+#       - ubuntu refs:
+#       https://repogen.simplylinux.ch/
+#       https://mirrors.ustc.edu.cn/repogen/
+#       https://gist.github.com/rhuancarlos/c4d3c0cf4550db5326dca8edf1e76800
+#       - centos refs:
+#       https://unix.stackexchange.com/questions/52666/how-do-i-install-the-stock-centos-repositories
+#       https://wiki.centos.org/PackageManagement/Yum/Priorities
+configureSystemRepos() {
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]; then
+        return
+    fi
+
+    printdbg 'Configuring system repositories'
+    if [[ "$DISTRO" == "debian" ]]; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/apt/debian/official-releases.list ${APT_OFFICIAL_SOURCES}
+        envsubst < ${DSIP_PROJECT_DIR}/resources/apt/debian/official-releases.pref > ${APT_OFFICIAL_PREFS}
+        apt-get update -y
+    elif [[ "$DISTRO" == "centos" ]]; then
+        # TODO: create official repo file (centos repo's)
+        # TODO: install yum priorities plugin
+        # TODO: set priorities on official repo
+
+        true
+    elif [[ "$DISTRO" == "amazon" ]]; then
+        # TODO: create official repo file (centos or amazon repo's? probably centos w/ less priority than amazon repo's)
+        # TODO: install yum priorities plugin
+        # TODO: set priorities on official repo
+
+        true
+    elif [[ "$DISTRO" == "ubuntu" ]]; then
+        # TODO: create official repo list
+        # TODO: create preferences and set priorities for ubuntu specific versions
+#        cp -f ${DSIP_PROJECT_DIR}/resources/apt/ubuntu/official-releases.list ${APT_OFFICIAL_SOURCES}
+#        envsubst < ${DSIP_PROJECT_DIR}/resources/apt/ubuntu/official-releases.pref > ${APT_OFFICIAL_PREFS}
+#        apt-get update -y
+
+        true
+    fi
+
+    if (( $? != 0 )); then
+        printerr 'Could not configure system repositories'
+        cleanupAndExit 1
+    else
+        printdbg 'System repositories configured successfully'
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
+    fi
+}
+
+# remove dsiprouter system configs
+removeDsipSystemConfig() {
+    rm -rf ${DSIP_SYSTEM_CONFIG_DIR}
+
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]; then
+        if cmdExists 'apt-get'; then
+            rm -f ${APT_OFFICIAL_SOURCES}
+            rm -f ${APT_OFFICIAL_PREFS}
+            apt-get update -y
+        elif cmdExists 'yum'; then
+            rm -f ${YUM_OFFICIAL_REPOS}
+            yum update -y
+        fi
     fi
 }
 
@@ -1185,10 +1269,10 @@ function uninstallDsiprouter {
 }
 
 function installKamailio {
+    local NOW=$(date '+%s')
     local KAMDB_BACKUP_DIR="${BACKUPS_DIR}/kamdb"
-    local KAMDB_BACKUP_FILE="${KAMDB_BACKUP_DIR}/$(date '+%s').sql"
-
-    cd ${DSIP_PROJECT_DIR}
+    local KAMDB_DATABASE_BACKUP_FILE="${KAMDB_BACKUP_DIR}/db-${NOW}.sql"
+    local KAMDB_USER_BACKUP_FILE="${KAMDB_BACKUP_DIR}/user-${NOW}.sql"
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
         printwarn "kamailio is already installed"
@@ -1198,16 +1282,21 @@ function installKamailio {
     fi
 
     # backup and drop kam db if it exists already
+    mkdir -p ${KAMDB_BACKUP_DIR}
     if cmdExists 'mysql'; then
         if checkDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
-            printdbg "Backing up kamailio DB to ${KAMDB_BACKUP_FILE} before fresh install"
-            dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > $KAMDB_BACKUP_FILE
+            printdbg "Backing up kamailio DB to ${KAMDB_DATABASE_BACKUP_FILE} before fresh install"
+            dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > ${KAMDB_DATABASE_BACKUP_FILE}
             mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-                -e "DROP DATABASE kamailio;"
+                -e "DROP DATABASE $KAM_DB_NAME;"
+            printdbg "Backing up kamailio DB Users to ${KAMDB_USER_BACKUP_FILE} before fresh install"
+            dumpDBUser --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" "${KAM_DB_USER}@${KAM_DB_NAME}" > ${KAMDB_USER_BACKUP_FILE}
+            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
+                -e "DROP USER IF EXISTS '$KAM_DB_USER'@'%'; DROP USER IF EXISTS '$KAM_DB_USER'@'localhost';"
         fi
     fi
 
-    ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
+    ${DSIP_PROJECT_DIR}/kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
         if [ ${WITH_SSL} -eq 1 ]; then
             configureSSL
@@ -1622,7 +1711,7 @@ function displayLoginInfo {
 
     printdbg "You can access the Kamailio DB here"
     pprint "Database Host: ${KAM_DB_HOST}:${KAM_DB_PORT}"
-    pprint "Datebase Name: ${KAM_DB_NAME}"
+    pprint "Database Name: ${KAM_DB_NAME}"
     printf '\n'
 }
 
@@ -1958,8 +2047,67 @@ function removeInitService {
     printdbg "dsip-init service removed"
 }
 
-# TODO: this is unfinished
+
 function upgrade {
+    
+    KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
+    KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
+    KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
+    KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
+    KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
+    DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+    
+    CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
+
+    # Check if already upgraded
+    #rel = $((`echo "$CURRENT_RELEASE" == "$UPGRADE_RELEASE" | bc`))
+    #if [ $rel -eq 1 ]; then
+
+
+    #    pprint "dSIPRouter is already updated to $UPGRADE_RELEASE!"
+    #    return
+
+    #fi
+
+    # Return an error if the release doesn't exist
+   git branch -r | grep  -e "$UPGRADE_RELEASE$">null
+   if [ "$?" -eq 1 ]; then
+
+        printdbg "The $UPGRADE_RELEASE release doesn't exist. Please select another release"
+        return 1
+
+   fi
+
+    BACKUP_DIR="/var/backups"
+    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
+    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
+    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
+
+    cp -r ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
+    cp -r ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
+
+    #Stash any changes so that GUI will allow us to pull down a new release
+    #git stash
+    #git checkout $UPGRADE_RELEASE
+    #git stash apply
+
+    updateKamailioConfig
+    ret=$?
+    generateKamailioConfig
+    ret=$((ret + $?))
+
+    if [ $ret -eq 0 ]; then
+        # Upgrade the version
+       setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
+    
+    	# Restart Kamailio
+    	systemctl restart kamailio
+    	systemctl restart dsiprouter
+     fi
+}
+
+# TODO: this is unfinished
+function upgradeOld {
     # TODO: set / handle parsed args
     UPGRADE_RELEASE="v0.51"
 
@@ -2060,6 +2208,9 @@ function configGitDevEnv {
     cp -f ${DSIP_PROJECT_DIR}/resources/git/merge-changelog.sh /usr/local/bin/_merge-changelog
     chmod +x /usr/local/bin/_merge-changelog
 
+    cp -f ${DSIP_PROJECT_DIR}/resources/git/check_syntax.py /usr/local/bin/_git_check_syntax
+    chmod +x /usr/local/bin/_git_check_syntax
+
     cp -f ${DSIP_PROJECT_DIR}/resources/git/gitwrapper.sh ${GIT_UPDATE_FILE}
     . ${GIT_UPDATE_FILE}
 }
@@ -2075,6 +2226,7 @@ function cleanGitDevEnv {
     mv -f ${BACKUPS_DIR}/git/hooks/post-commit ${DSIP_PROJECT_DIR}/.git/hooks/post-commit 2>/dev/null
     mv -f ${BACKUPS_DIR}/git/hooks/pre-push ${DSIP_PROJECT_DIR}/.git/hooks/pre-push 2>/dev/null
     rm -f /usr/local/bin/_merge-changelog
+    rm -f /usr/local/bin/_git_check_syntax
     rm -f ${GIT_UPDATE_FILE}
 }
 
@@ -2086,7 +2238,7 @@ function cleanGitDevEnv {
 #       or we could check for install and decrypt/store creds before replcaing key and re-encrypting
 clusterInstall() { (
     local TMP_PRIV_KEY="${DSIP_PROJECT_DIR}/dsip_privkey"
-    local SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -c aes256-ctr,aes256-gcm@openssh.com,aes256-cbc"
+    local SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
     local SSH_HOSTS=() SSH_CMDS=() SSH_PWDS=() SCP_CMDS=()
     local USER PASS HOST PORT SSH_REMOTE_HOST SSH_OPTS SCP_OPTS
     local SSH_CMD="ssh" SCP_CMD="scp" DEBUG=${DEBUG:-0}
@@ -2114,8 +2266,11 @@ clusterInstall() { (
     chmod 0400 ${TMP_PRIV_KEY}
 
     # guarantee key will be destroyed when subshell exits
-    cleanupHandler() { rm -f ${TMP_PRIV_KEY}; }
-    trap cleanupHandler EXIT
+    cleanupHandler() {
+        rm -f ${TMP_PRIV_KEY}
+        trap - EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+    }
+    trap 'cleanupHandler $?' EXIT SIGHUP SIGINT SIGQUIT SIGTERM
 
     # loop through nodes to:
     #  - validate conn
@@ -2204,18 +2359,22 @@ clusterInstall() { (
             set -x
         fi
 
-        # make sure dirs exist before moving project files
-        mkdir -p ${DSIP_PROJECT_DIR}
-        mv -f /tmp/dsiprouter ${DSIP_PROJECT_DIR}
+        # reset relative local vars for remote filesystem
+        DSIP_PROJECT_DIR="/opt/dsiprouter"
+        TMP_PRIV_KEY="\${DSIP_PROJECT_DIR}/dsip_privkey"
+
+        # setting up project files on node
+        rm -rf \${DSIP_PROJECT_DIR}
+        mv -f /tmp/dsiprouter \${DSIP_PROJECT_DIR}
 
         # setup cluster private key on node
         mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
-        mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
+        mv -f \${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
         chown root:root ${DSIP_PRIV_KEY}
         chmod 0400 ${DSIP_PRIV_KEY}
 
         # run script command
-        ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+        DSIP_ID=$((i+1)) \${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
 EOSSH
         if (( $? != 0 )); then
             printerr "Remote install on ${SSH_HOSTS[$i]} failed"
@@ -2246,6 +2405,8 @@ function usageOptions {
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
+        "upgrade" "[-debug] <-rel|--release <release number>>"
+    printf "%-30s %s\n" \
         "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
@@ -2257,6 +2418,8 @@ function usageOptions {
         "configurekam" "[-debug|-servernat]"
     printf "%-30s %s\n" \
         "renewsslcert" "[-debug]"
+    printf "%-30s %s\n" \
+        "configuresslcert" "[-debug|-f|--force]"
     printf "%-30s %s\n" \
         "installmodules" "[-debug]"
     printf "%-30s %s\n" \
@@ -2368,8 +2531,8 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
-            # always create the init service and always install sipsak
-            RUN_COMMANDS+=(setCloudPlatform createInitService)
+            # always add official repo's, set platform, and create init service
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
             shift
 
             while (( $# > 0 )); do
@@ -2548,9 +2711,10 @@ function processCMD {
                         RUN_COMMANDS+=(uninstallKamailio uninstallDnsmasq)
                         shift
                         ;;
-                    -all|--all)    # only remove init and system config dir if all services will be removed (dependency for others)
+                    # only remove init and system config dir if all services will be removed (dependency for others)
+                    # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
+                    -all|--all)
                         DEFAULT_SERVICES=0
-                        removeDsipSystemConfig() { rm -rf ${DSIP_SYSTEM_CONFIG_DIR}; }
                         RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
                         shift
                         ;;
@@ -2796,6 +2960,40 @@ function processCMD {
                 esac
             done
             ;;
+	upgrade)
+            # reconfigure kamailio configs
+            RUN_COMMANDS+=(upgrade)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -rel|--release)
+			shift
+			if [ -z "$1" ]; then
+				printerr "Please specify a release tag (ie 0.34)"
+                        	usageOptions
+                        	cleanupAndExit 1
+			 else	    
+                       		export UPGRADE_RELEASE=$1
+
+			 fi
+                         shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
         configurekam)
             # reconfigure kamailio configs
             RUN_COMMANDS+=(configureKamailio updateKamailioConfig)
@@ -2844,6 +3042,33 @@ function processCMD {
                 esac
             done
 	    ;;
+	configuresslcert)
+            # reconfigure ssl configs
+            RUN_COMMANDS+=(configureSSL)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -f|--force)
+                        rm -f $DSIP_CERTS_DIR/dsiprouter.crt
+                        rm -f $DSIP_CERTS_DIR/dsiprouter.key
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
         installmodules)
             # reconfigure dsiprouter modules
             RUN_COMMANDS+=(installModules)

@@ -1,0 +1,18 @@
+gitlabBuilds(builds: ['build', 'test', 'artifacts']) {
+
+  stage('build') { gitlabCommitStatus(name: 'build') {
+    sh "./gradlew --no-daemon clean build"
+  }}
+
+  stage('test') { gitlabCommitStatus(name: 'test') {
+    sh "./gradlew --no-daemon check"
+  }}
+
+  stage('artifacts') { gitlabCommitStatus(name: 'artifacts') {
+    archiveArtifacts artifacts: '**/build/libs/*.jar', fingerprint: true, onlyIfSuccessful: true
+    step([$class: 'JavadocArchiver', javadocDir: 'thrifty-compiler/build/docs/javadoc/', keepAll: false])
+    step([$class: 'JavadocArchiver', javadocDir: 'thrifty-schema/build/docs/javadoc/', keepAll: false])
+    step([$class: 'JavadocArchiver', javadocDir: 'thrifty-java-codegen/build/docs/javadoc/', keepAll: false])
+    step([$class: 'JavadocArchiver', javadocDir: 'thrifty-runtime/build/docs/javadoc/', keepAll: false])
+  }}
+}

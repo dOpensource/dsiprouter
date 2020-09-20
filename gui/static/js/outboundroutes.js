@@ -24,7 +24,7 @@
     });
 
     /* listeners */
-    $('#outboundmapping #open-Update').click(function () {
+    $('#outboundmapping').on('click', '#open-Update', function () {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('outboundmapping');
 
@@ -64,7 +64,7 @@
       modal_body.find("select.routeid").val(routeid);
     });
 
-    $('#outboundmapping #open-Delete').click(function () {
+    $('#outboundmapping').on('click','#open-Delete', function () {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('outboundmapping');
       var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
