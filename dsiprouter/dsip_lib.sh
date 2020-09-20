@@ -476,8 +476,8 @@ checkDB() {
     done
 
     local CHECK=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-        -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$MYSQL_DBNAME';")
-    if [[ -n "$CHECK" ]] && [[ "$CHECK" == "$MYSQL_DB" ]]; then
+        -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$MYSQL_DBNAME';" 2>/dev/null)
+    if [[ -n "$CHECK" ]]; then
         return 0
     fi
     return 1
@@ -531,6 +531,63 @@ dumpDB() {
     (mysqldump --single-transaction --opt --routines --triggers --hex-blob \
         --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${MYSQL_DBNAME} 2>/dev/null \
         | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g';
+        exit ${PIPESTATUS[0]}; ) 2>/dev/null
+    return $?
+}
+
+# usage: dumpDBUser [options] <user>@<database>
+# options:  --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+# output: dumped database user as sql (redirect as needed)
+# returns: 0 on success, non zero otherwise
+dumpDBUser() {
+    local MYSQL_DBNAME=""
+    local MYSQL_DBUSER=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+
+    while (( $# > 0 )); do
+        # last arg is user and database
+        if (( $# == 1 )); then
+            MYSQL_DBUSER=$(printf '%s' "$1" | cut -d '@' -f 1)
+            MYSQL_DBNAME=$(printf '%s' "$1" | cut -d '@' -f 2)
+            shift
+            break
+        fi
+
+        case "$1" in
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # not valid option skip
+                shift
+                ;;
+        esac
+    done
+
+    (mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+        -e "SELECT DISTINCT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user='${MYSQL_DBUSER}'" 2>/dev/null \
+        | mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" 2>/dev/null \
+        | sed 's/$/;/g' \
+        | awk '!x[$0]++' &&
+        printf '%s\n' 'FLUSH PRIVILEGES;';
         exit ${PIPESTATUS[0]}; ) 2>/dev/null
     return $?
 }

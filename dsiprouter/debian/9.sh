@@ -7,8 +7,8 @@
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
-    apt-get install -y --allow-unauthenticated '(default-)?libmysqlclient-dev|libmariadbclient-dev'
+    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld 
+    apt-get install -y --allow-unauthenticated libmariadbclient-dev 
     apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
 
     # create dsiprouter user and group
@@ -71,7 +71,10 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
+    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld 
+    apt-get remove -y --allow-unauthenticated libmariadbclient-dev 
+    apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
+    #apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
