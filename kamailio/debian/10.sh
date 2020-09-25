@@ -21,8 +21,8 @@ function install {
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
 # kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
+deb http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
+#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
