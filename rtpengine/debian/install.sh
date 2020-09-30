@@ -26,10 +26,11 @@ function install {
     apt-get install -y module-assistant
     apt-get install -y dkms
     apt-get install -y unzip
+    apt-get install -y libavresample-dev
 
     # debian jessie/stretch need a few newer packages
     CODENAME="$(lsb_release -c -s)"
-    if [[ "$CODENAME" == "jessie" ]] || [[ "$CODENAME" == "stretch" ]]; then
+    if [[ "$CODENAME" == "jessie" ]] || [[ "$CODENAME" == "stretch" ]] || [[ "$CODENAME" == "buster" ]]; then
         apt-get install -y -t buster libarchive13
         apt-get install -y -t stretch-backports debhelper init-system-helpers
     else
