@@ -11,15 +11,15 @@ function install {
     if [[ "$VER" =~ 3.6 ]]; then
        yum remove -y rs-epel-release
        yum remove -y python36  python36-libs python36-devel python36-pip
-       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+       yum install -y https://centos8.iuscommunity.org/ius-release.rpm
        yum install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 3 ]]; then
        yum remove -y rs-epel-release
        yum remove -y python3* python3*-libs python3*-devel python3*-pip
-       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+       yum install -y https://centos8.iuscommunity.org/ius-release.rpm
        yum install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 2.7 ]]; then
-        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y https://centos8.iuscommunity.org/ius-release.rpm
         yum install -y python36u python36u-libs python36u-devel python36u-pip
     fi
 
