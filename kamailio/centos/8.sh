@@ -71,12 +71,12 @@ EOF
 
     # Add the Kamailio repos to yum
     (cat << 'EOF'
-[home_kamailio_v5.1.x-rpms]
-name=RPM Packages for Kamailio v5.1.x (CentOS_8)
+[home_kamailio_v5.3.x-rpms]
+name=RPM Packages for Kamailio v5.3.x (CentOS_8)
 type=rpm-md
-baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_7/
+baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_8/
 gpgcheck=1
-gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_7/repodata/repomd.xml.key
+gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_8/repodata/repomd.xml.key
 enabled=1
 EOF
     ) > /etc/yum.repos.d/kamailio.repo
