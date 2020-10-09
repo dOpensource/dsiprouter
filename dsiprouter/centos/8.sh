@@ -1,4 +1,6 @@
-N_CMD=python3.5
+#!/usr/bin/env bash
+
+#PYTHON_CMD=python3.5
 
 (( $DEBUG == 1 )) && set -x
 
@@ -9,26 +11,26 @@ function install {
     VER=`echo $VER | cut -d " " -f 2`
     # Uninstall 3.6 and install a specific version of 3.6 if already installed
     if [[ "$VER" =~ 3.6 ]]; then
-       yum remove -y rs-epel-release
-       yum remove -y python36  python36-libs python36-devel python36-pip
-       yum install -y https://centos8.iuscommunity.org/ius-release.rpm
-       yum install -y python36u python36u-libs python36u-devel python36u-pip
+       dnf remove -y rs-epel-release
+       dnf remove -y python36  python36-libs python36-devel python36-pip
+       dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
+       dnf install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 3 ]]; then
-       yum remove -y rs-epel-release
-       yum remove -y python3* python3*-libs python3*-devel python3*-pip
-       yum install -y https://centos8.iuscommunity.org/ius-release.rpm
-       yum install -y python36u python36u-libs python36u-devel python36u-pip
+       dnf remove -y rs-epel-release
+       dnf remove -y python3* python3*-libs python3*-devel python3*-pip
+       dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
+       dnf install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 2.7 ]]; then
-        yum install -y https://centos8.iuscommunity.org/ius-release.rpm
-        yum install -y python36u python36u-libs python36u-devel python36u-pip
+        dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
+        dnf install -y python36u python36u-libs python36u-devel python36u-pip
     fi
 
    # Install dependencies for dSIPRouter
-    yum install -y yum-utils
-    yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    yum install -y firewalld
-    yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
-    yum install -y logrotate rsyslog perl libev-devel util-linux
+    dnf install -y dnf-utils
+    dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
+    dnf install -y firewalld
+    dnf install -y python36 python36-libs python36-devel python36-pip MySQL-python
+    dnf install -y logrotate rsyslog perl libev-devel util-linux
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -95,9 +97,9 @@ function uninstall {
         exit 0
     fi
 
-    yum remove -y python36u\*
-    yum remove -y ius-release
-    yum groupremove -y "Development Tools"
+    dnf remove -y python36u\*
+    dnf remove -y ius-release
+    dnf groupremove -y "Development Tools"
 
     # Remove the repos
     rm -f /etc/yum.repos.d/ius*
