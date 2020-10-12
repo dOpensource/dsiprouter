@@ -9,6 +9,8 @@ function install() {
     dnf groupinstall -y 'Development Tools'
     dnf install -y psmisc curl wget sed gawk vim epel-release perl firewalld libuuid-devel openssl-devel
     dnf install -y logrotate rsyslog
+    dnf install -y mysql-server
+    systemctl start mysqld.service
 
     ln -s /usr/share/mariadb/ /usr/share/mysql
     # Make sure no extra configs present on fresh install
