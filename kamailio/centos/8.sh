@@ -10,7 +10,6 @@ function install() {
     dnf install -y psmisc curl wget sed gawk vim epel-release perl firewalld libuuid-devel openssl-devel
     dnf install -y logrotate rsyslog
 
-    dnf install -y mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
