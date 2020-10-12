@@ -12,7 +12,7 @@ function install {
     # Uninstall 3.6 and install a specific version of 3.6 if already installed
     if [[ "$VER" =~ 3.6 ]]; then
        dnf remove -y rs-epel-release
-       dnf remove -y python36  python36-libs python36-devel python36-pip
+       dnf remove -y python36 python36-devel 
        dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
        dnf install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 3 ]]; then
@@ -29,7 +29,7 @@ function install {
     dnf install -y dnf-utils
     dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     dnf install -y firewalld
-    dnf install -y python36 python36-libs python36-devel python36-pip MySQL-python
+    dnf install -y python36 python36-devel 
     dnf install -y logrotate rsyslog perl libev-devel util-linux
 
     # create dsiprouter user and group
