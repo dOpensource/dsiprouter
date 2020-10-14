@@ -12,15 +12,15 @@ DSIP_PROTO = 'https'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = 'admin'
-DSIP_API_TOKEN = 'admin'
+DSIP_PASSWORD = b'109173e0f8018794e23591e02ebab7985168f1dac7f6c3c820c822e889dd30dbfc109223088e7660f5f63df4f951880ded29207f2dc1089765992280997ab9846ccaf0f7b5a48fafb0a07d276c42e9df851e949fddd455ef1e4b3548e0a75c01d77132f00287172a2eecc65a1b2bbd6d9af583198bde0bd3fa28874e3b83b072'
+DSIP_API_TOKEN = b'fb7c5af3d0109119ff0a082a2804cc6c777487abe6fce671c088b50169b2875a1ed8259fc77d6dd8f0cbc8a66ebc98e8faf9d54d22b3c7775082e27b5d91afd36eb20c26931a558213ca490fac9c3f94'
 DSIP_API_PROTO = 'https'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = 'admin'
+DSIP_IPC_PASS = b'a67ac9473b4cd976c387d92fda531ef587cdfe94046607902a42dc36a399d576fb005c84cfcfe1a015f848e68758d27ce8d2722232c1a75b9d69c0e5838da656331329db69154bcb441010f1af4ff2c4'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -32,9 +32,9 @@ DSIP_LOG_FACILITY = 18
 # dSIPRouter SSL settings
 # ssl key / cert are absolute paths
 # email for re-certification must match certs
-DSIP_SSL_KEY = ''
-DSIP_SSL_CERT = ''
-DSIP_SSL_EMAIL = ''
+DSIP_SSL_KEY = '/etc/dsiprouter/certs/dsiprouter.key'
+DSIP_SSL_CERT = '/etc/dsiprouter/certs/dsiprouter.crt'
+DSIP_SSL_EMAIL = 'admin@157.230.5.127'
 DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
@@ -61,7 +61,7 @@ KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
-KAM_DB_PASS = 'kamailiorw'
+KAM_DB_PASS = b'2f00a6451e5c092ed13cf3aa89dd2bffa34c03b81852ac19e635be8e23a5acf57fb99edbc806ce66189b92e844172060f578c041fdfe31161e897a63202b10b952e703841d3e729529fd7ae6a70723dc'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
@@ -115,7 +115,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = ''
+CLOUD_PLATFORM = 'DO'
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
