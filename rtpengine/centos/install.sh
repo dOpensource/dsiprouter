@@ -15,6 +15,7 @@ function install {
     # 3: headers from rpmfind.net (os branch)
     # 4: headers from linuxsoft.cern.ch (updates branch)
     # 5: headers from linuxsoft.cern.ch (os branch)
+    
     function installKernelDevHeaders {
         local OS_VER="$(cat /etc/redhat-release | cut -d ' ' -f 4)"
         local OS_ARCH="$(uname -m)"
@@ -32,14 +33,14 @@ function install {
     }
 
     # Install required libraries
-    yum install -y epel-release
-    yum install -y logrotate rsyslog bc
+    dnf install -y epel-release
+    dnf install -y logrotate rsyslog bc
     rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-    rpm -Uh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-5.el7.nux.noarch.rpm
-    yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
-        xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables-devel xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb iptables-ipv6 nc dkms perl perl-IPC-Cmd spandsp-devel
-    yum install -y redhat-rpm-config rpm-build pkgconfig
+    rpm -Uh https://download1.rpmfusion.org/free/el/updates/8/x86_64/r/rpmfusion-free-release-8-0.1.noarch.rpm
+    dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+        xmlrpc-c libpcap hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
+        iptables-devel redhat-lsb nc dkms perl perl-IPC-Cmd spandsp-devel
+    dnf install -y redhat-rpm-config rpm-build pkgconfig
 
     installKernelDevHeaders
 
