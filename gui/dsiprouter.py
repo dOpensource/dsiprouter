@@ -1045,11 +1045,14 @@ def addUpdateInboundMapping():
         ff_groupid = form['ff_groupid'] if 'ff_groupid' in form else ''
         ff_fwddid = form['ff_fwddid'] if 'ff_fwddid' in form else ''
 
+
+
         # we only support a single gwgroup at this time
         gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
         fwdgroupid = None
-
+        
         # TODO: seperate redundant code into functions
+        # TODO  need to add support for updating and deleting a LB Rule
 
         # Adding
         if not ruleid:
@@ -1058,6 +1061,25 @@ def addUpdateInboundMapping():
             # don't allow duplicate entries
             if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
+
+            if "lb_" in gwgroupid:
+                x = gwgroupid.split("_");
+                gwgroupid = x[1]
+                dispatcher_id = x[2]
+
+                # Create a gateway
+                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                db.add(Gateway)
+                db.flush()
+
+                # Define an Inbound Mapping that maps to the newly created gateway
+                gwlist = Gateway.gwid
+                IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
+                db.add(IMap)
+                db.flush()
+
+                db.commit()
+                return displayInboundMapping()
 
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             inserts.append(IMap)
