@@ -1065,11 +1065,15 @@ def addUpdateInboundMapping():
             if "lb_" in gwgroupid:
                 x = gwgroupid.split("_");
                 gwgroupid = x[1]
-                dispatcher_id = x[2]
+                dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
                 Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
                 db.add(Gateway)
+                db.flush()
+                
+                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 0, gwgroup=gwgroupid)
+                db.add(Addr)
                 db.flush()
 
                 # Define an Inbound Mapping that maps to the newly created gateway

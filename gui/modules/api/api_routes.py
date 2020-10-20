@@ -9,7 +9,7 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
-    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates
+    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates,Dispatcher
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
@@ -810,6 +810,10 @@ def getEndpointGroup(gwgroupid):
                 ep['gwid'] = endpoint.gwid
                 ep['hostname'] = endpoint.address
                 ep['description'] = strFieldsToDict(endpoint.description)['name']
+                if "weight" in strFieldsToDict(endpoint.description): 
+                    ep['weight'] = strFieldsToDict(endpoint.description)['weight']
+                else:
+                    ep['weight'] = ""
                 ep['maintmode'] = ""
 
                 gwgroup_data['endpoints'].append(ep)
@@ -1375,6 +1379,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 {
                     hostname:<string>,
                     description:<string>
+                    weight:<string>
                 },
                 ...
             ],
@@ -1544,6 +1549,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         for endpoint in endpoints:
             hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
             name = endpoint['description'] if 'description' in endpoint else ''
+            weight = endpoint['weight'] if 'weight' in endpoint else ''
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1569,6 +1575,12 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             else:
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
 
+
+            # Create Dsipatcher group with the set id being the gateway group id
+            if weight:
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                db.add(dispatcher)
+
             db.add(Gateway)
             db.flush()
             gwlist.append(Gateway.gwid)
@@ -1577,9 +1589,15 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup_data['endpoints'] = gwlist
         gwlist_str = ','.join([str(gw) for gw in gwlist])
 
+        # Update Gateway group with the Dispatcher ID.  It's denoted with the LB field
+        gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
+        if gwgroup is not None:
+            fields = strFieldsToDict(gwgroup.description)
+            fields['lb'] = gwgroupid
+
         # Update the GatewayGroup with the lists of gateways
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-            {'gwlist': gwlist_str}, synchronize_session=False)
+                {'gwlist': gwlist_str,'description': dictToStrFields(fields)}, synchronize_session=False)
 
         # Setup notifications
         if 'notifications' in request_payload:

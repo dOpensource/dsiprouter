@@ -118,6 +118,7 @@
       }
       endpoint.hostname = $(this).find('td').eq(1).text();
       endpoint.description = $(this).find('td').eq(2).text();
+      endpoint.weight = $(this).find('td').eq(3).text();
       //endpoint.maintmode = $(this).find('td').eq(3).text();
 
       if (!(endpoint.hostname.length === 0 && endpoint.description.length === 0)) {
