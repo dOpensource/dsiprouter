@@ -89,13 +89,13 @@ EOF
         kamailio-http_async_client kamailio-dmq_userloc
 
     # workaround for kamailio rpm transaction failures
-    #if (( $? != 0 )); then
-     #   rpm --import $(grep 'gpgkey' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)
-      #  REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
-       # for REPO in $REPOS; do
-        #    dnf install -y $(grep 'baseurl' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
-        #done
-    #fi
+    if (( $? != 0 )); then
+        rpm --import $(grep 'gpgkey' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)
+        REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
+        for REPO in $REPOS; do
+            dnf install -y $(grep 'baseurl' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
+        done
+    fi
 
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
