@@ -12,15 +12,15 @@ DSIP_PROTO = 'https'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = b'd4fe7c3bd71ecfbba2a8e742a8ab803b7a2bf05bf97d3fe7481182cfc95ede433c1396034d11a00212eee7f8694f779ea9cc526d1907f2c388d416b350c72bd90e178c9fcaceed4bf45195806e403e25833fa6d9ef53a4f1cd25025a71364f955aa34cb0ab83606435c818868192ab212e56bd770101d65d181367ee492fcf00'
-DSIP_API_TOKEN = b'f96296d6585d72cfefd9dec1db333332cdb1406a323fdad5e002f84e1f7482f79a0e94b775649ff6ca98b58ca03fa32569b1c817a675292195b415b536fc138335e7eb7e4dcdd211d40254cc26185a6c'
+DSIP_PASSWORD = 'admin'
+DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'https'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = b'f1c412e621819c6d7991c1a724c139ede93d3bcae81ae638c38170212d9361608eac19bbe09e474a4f396c235305c11b96f3fc6ccdf99dbfecedaacc170f327a1256f81294d285226626a609f549a61c'
+DSIP_IPC_PASS = 'admin'
 
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -32,9 +32,9 @@ DSIP_LOG_FACILITY = 18
 # dSIPRouter SSL settings
 # ssl key / cert are absolute paths
 # email for re-certification must match certs
-DSIP_SSL_KEY = '/etc/dsiprouter/certs/dsiprouter.key'
-DSIP_SSL_CERT = '/etc/dsiprouter/certs/dsiprouter.crt'
-DSIP_SSL_EMAIL = 'admin@20.55.22.53'
+DSIP_SSL_KEY = ''
+DSIP_SSL_CERT = ''
+DSIP_SSL_EMAIL = ''
 DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
@@ -61,7 +61,7 @@ KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
-KAM_DB_PASS = b'70bf67729e79d4447332e090eaa929c786222c3dbea1178ced48ee646db7c746c5247f688f709d219e21a4a6d2c3a116958ee2697154c1563c28d2883f1a6044442578aab8597e764d187d16c8a6c614'
+KAM_DB_PASS = 'kamailiorw'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
@@ -102,9 +102,9 @@ FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # updated dynamically! These values will be overwritten
-INTERNAL_IP_ADDR = '10.0.2.4'
-INTERNAL_IP_NET = '10.0.2.*'
-EXTERNAL_IP_ADDR = '20.55.22.53'
+INTERNAL_IP_ADDR = '178.128.233.182'
+INTERNAL_IP_NET = '178.128.233.*'
+EXTERNAL_IP_ADDR = '178.128.233.182'
 EXTERNAL_FQDN = 'sip.dsiprouter.org'
 
 # upload folder for files
@@ -115,7 +115,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = 'AZURE'
+CLOUD_PLATFORM = ''
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
@@ -124,7 +124,7 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter 1-1 <>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
