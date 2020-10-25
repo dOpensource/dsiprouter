@@ -804,14 +804,20 @@ def getEndpointGroup(gwgroupid):
         if endpointList is not None:
             endpointGatewayList = endpointList.gwlist.split(',')
             endpoints = db.query(Gateways).filter(Gateways.gwid.in_(endpointGatewayList))
-
+            dispatcher  = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid)
+            if dispatcher:
+                weightList = {}
+                for item in dispatcher:
+                    weight = item.attrs.split('=')[1]
+                    weightList[item.destination[4:]] = weight
+            
             for endpoint in endpoints:
                 ep = {}
                 ep['gwid'] = endpoint.gwid
                 ep['hostname'] = endpoint.address
                 ep['description'] = strFieldsToDict(endpoint.description)['name']
-                if "weight" in strFieldsToDict(endpoint.description): 
-                    ep['weight'] = strFieldsToDict(endpoint.description)['weight']
+                if dispatcher:
+                    ep['weight'] = weightList[endpoint.address] if endpoint.address in weightList else ''
                 else:
                     ep['weight'] = ""
                 ep['maintmode'] = ""
@@ -929,6 +935,7 @@ def updateEndpointGroups(gwgroupid=None):
                     gwid:<int>,
                     hostname:<string>,
                     description:<string>
+                    weight:<string>
                 },
                 ...
             ],
@@ -1115,6 +1122,7 @@ def updateEndpointGroups(gwgroupid=None):
             if gwid is None:
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
                 name = endpoint['description'] if 'description' in endpoint else ''
+                weight = endpoint['weight'] if 'weight' in endpoint else ''
                 if len(hostname) == 0:
                     raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1133,6 +1141,12 @@ def updateEndpointGroups(gwgroupid=None):
                 else:
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
+                # Create Dsipatcher group with the set id being the gateway group id
+                
+                if weight:
+                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                    db.add(dispatcher)
+                
                 db.add(Gateway)
                 db.flush()
                 gwlist.append(Gateway.gwid)
@@ -1141,7 +1155,8 @@ def updateEndpointGroups(gwgroupid=None):
             else:
                 unprocessed_endpoints_lut[gwid] = {
                     'hostname': endpoint['hostname'],
-                    'name': endpoint['description']
+                    'name': endpoint['description'],
+                    'weight': endpoint['weight']
                 }
 
         # conditionally adding/updating/deleting endpoints (using set theory)
@@ -1158,6 +1173,7 @@ def updateEndpointGroups(gwgroupid=None):
 
             hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
             name = endpoint['name'] if 'name' in endpoint else ''
+            weight = endpoint['weight'] if 'weight' in endpoint else ''
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1175,6 +1191,10 @@ def updateEndpointGroups(gwgroupid=None):
             else:
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
+            # Create Dsipatcher group with the set id being the gateway group id
+            if weight:
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                db.add(dispatcher)
             # we ignore the given gwid and allow DB to assign one instead
             db.add(Gateway)
             db.flush()
@@ -1189,6 +1209,7 @@ def updateEndpointGroups(gwgroupid=None):
             endpoint_fields = current_endpoint['description_dict']
             hostname = endpoint['hostname'] if 'hostname' in endpoint else current_endpoint['address']
             name = endpoint['name'] if 'name' in endpoint else endpoint_fields['name']
+            weight = endpoint['weight'] if 'weight' in endpoint else ''
             endpoint_fields['name'] = name
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
@@ -1226,6 +1247,19 @@ def updateEndpointGroups(gwgroupid=None):
                 {"description": dictToStrFields(endpoint_fields), "address": sip_addr, "strip": strip,
                  "pri_prefix": prefix}, synchronize_session=False)
 
+
+            # update the weight
+            DispatcherEntry = db.query(Dispatcher).filter((Dispatcher.setid ==  gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
+            if weight is None or len(weight) == 0:
+                if DispatcherEntry is not None:
+                    db.delete(DispatcherEntry)
+            elif weight: 
+                if DispatcherEntry is not None:
+                    db.query(Dispatcher).filter((Dispatcher.setid ==  gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
+                else:
+                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                    db.add(dispatcher)
+                
             gwlist.append(gwid)
 
         # conditional endpoints to delete

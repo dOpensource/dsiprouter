@@ -380,7 +380,7 @@
     endpoint_table1.Tabledit({
       columns: {
         identifier: [0, 'gwid'],
-        editable: [[1, 'hostname'], [2, 'description']],
+        editable: [[1, 'hostname'], [2, 'description'], [3, 'weight']],
         saveButton: true,
       },
       ajaxDisabled: true,
