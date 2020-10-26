@@ -2170,6 +2170,8 @@ function upgradeOld {
 
 # TODO: add bash cmd completion for new options provided by gitwrapper.sh
 function configGitDevEnv {
+    ${PYTHON_CMD} -m pip install pipreqs
+
     mkdir -p ${BACKUPS_DIR}/git/info ${BACKUPS_DIR}/git/hooks
     mkdir -p ${DSIP_PROJECT_DIR}/.git/info ${DSIP_PROJECT_DIR}/.git/hooks
 
