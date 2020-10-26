@@ -3,21 +3,21 @@
 ### Contributors
 
 - Dean Forester
-- Mack
-- Mack Hendricks
-- Mat Murdock
-- Nicole
-- Omari S. King
-- RichSosa28
-- Richard
-- Richard Bolaji
-- Tyler Moore
 - demonspork
 - dopensource
 - hailthemelody
 - jornsby
 - littleguga
+- Mack
+- Mack Hendricks
 - matmurdock
+- Mat Murdock
 - mhendricks
 - ncannon01
+- Nicole
+- Omari S. King
+- Richard
+- Richard Bolaji
+- RichSosa28
 - root
+- Tyler Moore
