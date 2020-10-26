@@ -38,8 +38,8 @@ function install {
     rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
     yum install -y https://www.elrepo.org/elrepo-release-${OS_MAJ_VER}.el${OS_MAJ_VER}.elrepo.noarch.rpm
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
-        xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables-devel xmlrpc-c-devel ffmpeg ffmpeg-devel gperf redhat-lsb iptables-ipv6 nc dkms perl perl-IPC-Cmd spandsp-devel
+        xmlrpc-c libpcap hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
+        firewalld iptables-devel redhat-lsb nc dkms perl perl-IPC-Cmd spandsp-devel
     yum install -y redhat-rpm-config rpm-build pkgconfig
 
     installKernelDevHeaders
