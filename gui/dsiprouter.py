@@ -1150,6 +1150,33 @@ def addUpdateInboundMapping():
         # Updating
         else:
             inserts = []
+            
+            if "lb_" in gwgroupid:
+                x = gwgroupid.split("_");
+                gwgroupid = x[1]
+                dispatcher_id = x[2].zfill(4)
+
+                # Create a gateway
+                Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
+                if Gateway:
+                    fields = strFieldsToDict(Gateway.description)
+                    fields['lb'] = dispatcher_id
+                    fields['gwgroup'] = gwgroupid
+                    Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
+                else:
+                    Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                    db.add(Gateway)
+
+                db.flush()
+               
+                Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
+                if Addr is None:
+                    Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 0, gwgroup=gwgroupid)
+                    db.add(Addr)
+                    db.flush()
+
+                # Assign Gateway id to the gateway list
+                gwlist = Gateway.gwid
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -1371,8 +1398,13 @@ def deleteInboundMapping():
         ff_ruleid = form['ff_ruleid']
         ff_groupid = form['ff_groupid']
 
-        im_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
-        im_rule.delete(synchronize_session=False)
+        im_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).first()
+        # Delete the gateway if it's being used for Load Balancing
+        if '#' not in im_rule.gwlist:
+            dispatcher_gateway = db.query(Gateways).filter(Gateways.gwid == im_rule.gwlist)
+            dispatcher_gateway.delete(synchronize_session=False)
+        # Delete the rule now
+        db.delete(im_rule)
 
         if len(hf_ruleid) > 0:
             # no dr_rules created for fwding without a gwgroup selected

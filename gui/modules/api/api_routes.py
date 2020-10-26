@@ -743,6 +743,10 @@ def deleteEndpointGroup(gwgroupid):
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
             domainmapping.delete(synchronize_session=False)
+        
+        dispatcher = db.query(Dispatcher).filter(Dispatcher.setid ==  gwgroupid) 
+        if dispatcher is not None:
+            dispatcher.delete(synchronize_session=False)
 
         db.commit()
         response_payload['status'] = 200
