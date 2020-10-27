@@ -21,7 +21,7 @@ function install {
         local OS_ARCH="$(uname -m)"
         local OS_KERNEL="$(uname -r)"
         
-        yum --disablerepo='*' --enablerepo=elrepo install -y kernel-ml ||
+        yum --disablerepo='*' --enablerepo=elrepo install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
         yum install -y https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
             https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
         yum install -y https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
@@ -29,7 +29,11 @@ function install {
         yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
             https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
         yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm
+            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/Packages/kernel-devel-${OS_KERNEL}.rpm \
+                       http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/images/kernel-devel-${OS_KERNEL}.rpm \
+                       http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/images/kernel-headers-${OS_KERNEL}.rpm
     }
     
     OS_MAJ_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
@@ -38,7 +42,7 @@ function install {
     rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
     yum install -y https://www.elrepo.org/elrepo-release-${OS_MAJ_VER}.el${OS_MAJ_VER}.elrepo.noarch.rpm
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
-        xmlrpc-c libpcap hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
+        xmlrpc-c  xmlrpc-c-devel libpcap hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
         firewalld iptables-devel redhat-lsb nc dkms perl perl-IPC-Cmd spandsp-devel
     yum install -y redhat-rpm-config rpm-build pkgconfig
 
