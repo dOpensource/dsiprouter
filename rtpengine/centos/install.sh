@@ -21,7 +21,7 @@ function install {
         local OS_ARCH="$(uname -m)"
         local OS_KERNEL="$(uname -r)"
         
-        yum --disablerepo='*' --enablerepo=elrepo install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
+        yum --disablerepo='*' --enablerepo=elrepo install -y kernel-ml ||
         yum install -y https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
             https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
         yum install -y https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
