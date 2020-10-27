@@ -36,15 +36,24 @@ function install {
                        http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/images/kernel-headers-${OS_KERNEL}.rpm
     }
     
-    OS_MAJ_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4 | cut -d '.' -f 1)
-    yum install -y epel-release
-    yum install -y logrotate rsyslog bc
-    rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
-    yum install -y https://www.elrepo.org/elrepo-release-${OS_MAJ_VER}.el${OS_MAJ_VER}.elrepo.noarch.rpm
-    yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
-        xmlrpc-c  xmlrpc-c-devel libpcap hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        firewalld iptables-devel redhat-lsb nc dkms perl perl-IPC-Cmd spandsp-devel
-    yum install -y redhat-rpm-config rpm-build pkgconfig
+    yum -y install dnf-plugins-core
+    yum config-manager --set-enabled PowerTools
+    dnf -y install https://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    dnf -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
+    dnf -y install --nogpgcheck https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
+    dnf -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
+    dnf -y install ffmpeg
+    dnf -y install ffmpeg-devel
+    yum -y install iptables-devel kernel-devel kernel-headers xmlrpc-c xmlrpc-c-client
+    yum -y install kernel-devel
+    yum -y install glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c-devel
+    yum -y install libevent-devel glib2-devel json-glib-devel gperf gperftools-libs gperftools gperftools-devel libpcap libpcap-devel git hiredis hiredis-devel iptables-ipv6
+    yum -y install redis perl-IPC-Cmd
+    yum -y install spandsp-devel spandsp
+    yum -y install epel-release
+    yum -y install elfutils-libelf-devel gcc-toolset-9-elfutils-libelf-devel
+    rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+    rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
 
     installKernelDevHeaders
 
