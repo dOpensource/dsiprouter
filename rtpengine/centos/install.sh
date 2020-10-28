@@ -47,12 +47,14 @@ function install {
     yum -y install json-glib-devel
     yum -y install dkms
     yum -y install iptables-ipv6
+    yum -y install hiredis
+    yum -y install hiredis-devel
     yum -y install ffmpeg
     yum -y install ffmpeg-devel
     yum -y install iptables-devel kernel-devel kernel-headers xmlrpc-c xmlrpc-c-client
     yum -y install kernel-devel
     yum -y install glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c-devel
-    yum -y install libevent-devel glib2-devel json-glib-devel gperf gperftools-libs gperftools gperftools-devel libpcap libpcap-devel git hiredis hiredis-devel iptables-ipv6
+    yum -y install libevent-devel glib2-devel json-glib-devel gperf gperftools-libs gperftools gperftools-devel libpcap libpcap-devel git
     yum -y install redis perl-IPC-Cmd
     yum -y install spandsp-devel spandsp
     yum -y install epel-release
