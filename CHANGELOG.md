@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-ebbfae14670821182588928712c05cb081d61103
+9bb6aba192ee95656f1d8cdae7c25b4b120c5c98
+8976863ab2f8aee31a6222a0010e62d9b08a3be2
+e3673ab836946e34bc759df32499a89bad460878
 02e128e74c941b83c3f8c1aea14c1387070c1393
 ebea34b830e20160c547ee399b0a89a42528354d
 97e1f9bdee0f277a10348208ced3c5ecc52fe030
@@ -1679,14 +1681,50 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION ebbfae14670821182588928712c05cb081d61103)
+[//]: # (START_SECTION 9bb6aba192ee95656f1d8cdae7c25b4b120c5c98)
+### Debian 10 Fixes
+
+> Commit: [9bb6aba192ee95656f1d8cdae7c25b4b120c5c98](https://github.com/dOpensource/dsiprouter/commit/9bb6aba192ee95656f1d8cdae7c25b4b120c5c98)  
+> Date: Wed, 28 Oct 2020 10:55:08 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add linux headers to rtpengine deps for deb10
+- change deb10 install to use legacy iptables
+- remove BETA header for deb10 install
+- add deb11 symlink for BETA testers
+- increase size of multidomain mapping columns
+
+
+---
+
+[//]: # (END_SECTION 9bb6aba192ee95656f1d8cdae7c25b4b120c5c98)
+[//]: # (START_SECTION 8976863ab2f8aee31a6222a0010e62d9b08a3be2)
+### Patch Pre-commit Hook
+
+> Commit: [8976863ab2f8aee31a6222a0010e62d9b08a3be2](https://github.com/dOpensource/dsiprouter/commit/8976863ab2f8aee31a6222a0010e62d9b08a3be2)  
+> Date: Mon, 26 Oct 2020 15:43:36 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix pre-commit check for failing pipreqs
+
+
+---
+
+[//]: # (END_SECTION 8976863ab2f8aee31a6222a0010e62d9b08a3be2)
+[//]: # (START_SECTION e3673ab836946e34bc759df32499a89bad460878)
 ### Cleaning up commits
 
-> Commit: [ebbfae14670821182588928712c05cb081d61103](https://github.com/dOpensource/dsiprouter/commit/ebbfae14670821182588928712c05cb081d61103)  
+> Commit: [e3673ab836946e34bc759df32499a89bad460878](https://github.com/dOpensource/dsiprouter/commit/e3673ab836946e34bc759df32499a89bad460878)  
 > Date: Mon, 26 Oct 2020 12:58:06 -0400  
 > Author: Richard Bolaji (richard@goflyball.com)  
 > Committer: Richard Bolaji (richard@goflyball.com)  
-> Signed: richard <richard@goflyball.com>  
+> Signed:   
 
 
 - Changed buster debian install
@@ -1708,7 +1746,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION ebbfae14670821182588928712c05cb081d61103)
+[//]: # (END_SECTION e3673ab836946e34bc759df32499a89bad460878)
 [//]: # (START_SECTION 02e128e74c941b83c3f8c1aea14c1387070c1393)
 ### Added the ability to handle INTERNAL MSTeams Call Transfers
 
@@ -2122,7 +2160,7 @@ END_SECTION COMMITS)
 > Date: Fri, 11 Sep 2020 13:56:02 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves dOpensource/dsiprouter#258
@@ -2138,7 +2176,7 @@ END_SECTION COMMITS)
 > Date: Fri, 11 Sep 2020 13:56:02 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves dOpensource/dsiprouter#258
@@ -2291,7 +2329,7 @@ END_SECTION COMMITS)
 > Date: Wed, 5 Aug 2020 18:41:12 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix empty `requirements.txt` when no deps found
@@ -2307,7 +2345,7 @@ END_SECTION COMMITS)
 > Date: Wed, 5 Aug 2020 17:05:39 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update syntax checker for vcs hooks
@@ -2323,7 +2361,7 @@ END_SECTION COMMITS)
 > Date: Wed, 5 Aug 2020 16:56:04 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add apt preferences for kamailio repo
@@ -2384,7 +2422,7 @@ END_SECTION COMMITS)
 > Date: Mon, 3 Aug 2020 17:49:25 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add apt repo configuration to install process
@@ -2446,7 +2484,7 @@ END_SECTION COMMITS)
 > Date: Thu, 30 Jul 2020 14:19:36 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add current work in progress for msteams bug fixes
@@ -2552,7 +2590,7 @@ END_SECTION COMMITS)
 > Date: Thu, 2 Jul 2020 13:09:39 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix external ua -> api csrf error
@@ -2751,7 +2789,7 @@ END_SECTION COMMITS)
 > Date: Fri, 19 Jun 2020 14:28:14 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix missing parenthesis in kam cfg
@@ -2799,7 +2837,7 @@ END_SECTION COMMITS)
 > Date: Thu, 18 Jun 2020 23:25:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/61
@@ -3500,7 +3538,7 @@ END_SECTION COMMITS)
 > Date: Fri, 22 May 2020 16:56:50 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/52
@@ -3557,7 +3595,7 @@ END_SECTION COMMITS)
 > Date: Tue, 19 May 2020 16:04:58 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/42
@@ -3575,7 +3613,7 @@ END_SECTION COMMITS)
 > Date: Tue, 19 May 2020 13:47:55 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -3590,7 +3628,7 @@ END_SECTION COMMITS)
 > Date: Mon, 18 May 2020 13:45:22 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/48
@@ -3678,7 +3716,7 @@ END_SECTION COMMITS)
 > Date: Fri, 15 May 2020 18:11:15 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add new settings from https://git.flyball.co/dsiprouter/enterprise/commit/52ecf3ad8b0875477bca362c855c22776df30a8b to dsip_settings table
@@ -3695,7 +3733,7 @@ END_SECTION COMMITS)
 > Date: Fri, 15 May 2020 17:40:15 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Add backend functions to support https://git.flyball.co/dsiprouter/enterprise/issues/41
@@ -3712,7 +3750,7 @@ END_SECTION COMMITS)
 > Date: Wed, 13 May 2020 14:29:07 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/33
@@ -3731,7 +3769,7 @@ END_SECTION COMMITS)
 > Date: Wed, 13 May 2020 13:51:14 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/43
@@ -3747,7 +3785,7 @@ END_SECTION COMMITS)
 > Date: Tue, 12 May 2020 17:00:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/27
@@ -3764,7 +3802,7 @@ END_SECTION COMMITS)
 > Date: Tue, 12 May 2020 13:28:34 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/9
@@ -3780,7 +3818,7 @@ END_SECTION COMMITS)
 > Date: Tue, 12 May 2020 13:13:29 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/33
@@ -3797,7 +3835,7 @@ END_SECTION COMMITS)
 > Date: Tue, 12 May 2020 12:58:57 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/20
@@ -3814,7 +3852,7 @@ END_SECTION COMMITS)
 > Date: Tue, 12 May 2020 12:34:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves https://git.flyball.co/dsiprouter/enterprise/issues/21
@@ -3998,7 +4036,7 @@ END_SECTION COMMITS)
 > Date: Fri, 8 May 2020 17:20:34 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - resolves dsiprouter@enterprise#38
@@ -4029,7 +4067,7 @@ END_SECTION COMMITS)
 > Date: Fri, 8 May 2020 16:34:00 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix endpoints not shown in endpoint groups
@@ -4049,7 +4087,7 @@ END_SECTION COMMITS)
 > Date: Thu, 7 May 2020 18:36:59 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - resolves dsiprouter@enterprise#36
@@ -4065,7 +4103,7 @@ END_SECTION COMMITS)
 > Date: Thu, 7 May 2020 17:49:42 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -4125,7 +4163,7 @@ END_SECTION COMMITS)
 > Date: Fri, 1 May 2020 19:53:24 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add dsip uuid generation on install
@@ -4236,7 +4274,7 @@ END_SECTION COMMITS)
 > Date: Thu, 30 Apr 2020 18:58:26 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix bug in `dsiprouter/dsip_lib.sh` that caused bad kamcfg settings
@@ -4287,7 +4325,7 @@ END_SECTION COMMITS)
 > Date: Wed, 29 Apr 2020 19:16:08 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - various GUI fixes
@@ -4409,7 +4447,7 @@ END_SECTION COMMITS)
 > Date: Tue, 28 Apr 2020 20:25:14 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update dispatcher settings in kam config
@@ -4490,7 +4528,7 @@ END_SECTION COMMITS)
 > Date: Mon, 27 Apr 2020 19:08:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix subscriber table reversion
@@ -4508,7 +4546,7 @@ END_SECTION COMMITS)
 > Date: Mon, 27 Apr 2020 16:34:04 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - move ENRICH_CARRIER_CENTURYLINK route outside of custom routes
@@ -5025,7 +5063,7 @@ END_SECTION COMMITS)
 > Date: Thu, 26 Mar 2020 16:25:53 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update carriers.html to propagate reload state
@@ -5042,7 +5080,7 @@ END_SECTION COMMITS)
 > Date: Thu, 26 Mar 2020 15:31:27 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update dr_gateways to track address entry id
@@ -5104,7 +5142,7 @@ END_SECTION COMMITS)
 > Date: Mon, 23 Mar 2020 14:04:50 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update mysql dump and commands to remove definer and MyISAM
@@ -5122,7 +5160,7 @@ END_SECTION COMMITS)
 > Date: Mon, 23 Mar 2020 10:25:46 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #8
@@ -5138,7 +5176,7 @@ END_SECTION COMMITS)
 > Date: Fri, 20 Mar 2020 14:10:00 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -5153,7 +5191,7 @@ END_SECTION COMMITS)
 > Date: Fri, 20 Mar 2020 11:53:44 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update pbx invite timeout on 180,181,183 response
@@ -5177,7 +5215,7 @@ END_SECTION COMMITS)
 > Date: Fri, 13 Mar 2020 13:19:55 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix missing semi-colon
@@ -5194,7 +5232,7 @@ END_SECTION COMMITS)
 > Date: Fri, 13 Mar 2020 11:51:22 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - change sorting to be done on backend for CDR's
@@ -5213,7 +5251,7 @@ END_SECTION COMMITS)
 > Date: Thu, 12 Mar 2020 16:24:26 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - merge in cdr and backup/restore changes
@@ -5234,7 +5272,7 @@ END_SECTION COMMITS)
 > Date: Thu, 12 Mar 2020 10:37:41 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -5249,7 +5287,7 @@ END_SECTION COMMITS)
 > Date: Tue, 25 Feb 2020 15:33:22 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Makefile requires tabs, re-tabbed spaces
@@ -5265,7 +5303,7 @@ END_SECTION COMMITS)
 > Date: Tue, 25 Feb 2020 14:54:46 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - find current kernels headers instead of installing new kernel
@@ -5281,7 +5319,7 @@ END_SECTION COMMITS)
 > Date: Mon, 24 Feb 2020 10:55:29 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - dynamic kam db url updating
@@ -5606,7 +5644,7 @@ END_SECTION COMMITS)
 > Date: Tue, 8 Oct 2019 06:20:48 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix bug where git stash apply would result in conflicts
@@ -5622,7 +5660,7 @@ END_SECTION COMMITS)
 > Date: Tue, 8 Oct 2019 03:26:36 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - updates to post-commit hook made 25% execution time decrease
@@ -5638,7 +5676,7 @@ END_SECTION COMMITS)
 > Date: Sat, 5 Oct 2019 19:07:46 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -5653,7 +5691,7 @@ END_SECTION COMMITS)
 > Date: Fri, 4 Oct 2019 20:37:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - overhaul DB session management architecture to support multithreading
@@ -5683,7 +5721,7 @@ END_SECTION COMMITS)
 > Date: Wed, 2 Oct 2019 16:59:11 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -5698,7 +5736,7 @@ END_SECTION COMMITS)
 > Date: Wed, 2 Oct 2019 16:53:56 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -5713,7 +5751,7 @@ END_SECTION COMMITS)
 > Date: Tue, 1 Oct 2019 17:58:13 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - change default config to use explicit ip definition to avoid confusion
@@ -5729,7 +5767,7 @@ END_SECTION COMMITS)
 > Date: Tue, 1 Oct 2019 16:40:26 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - merge HA branch into v0.60+ent
@@ -5768,7 +5806,7 @@ END_SECTION COMMITS)
 > Date: Tue, 1 Oct 2019 14:06:23 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update trigger to support multi-row inserts
@@ -5784,7 +5822,7 @@ END_SECTION COMMITS)
 > Date: Mon, 30 Sep 2019 20:51:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -5799,7 +5837,7 @@ END_SECTION COMMITS)
 > Date: Thu, 26 Sep 2019 23:37:28 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update dsip_lib.sh kam config funcs to use a better separator
@@ -5823,7 +5861,7 @@ END_SECTION COMMITS)
 > Date: Mon, 23 Sep 2019 19:25:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add feature to allow DID routing without specifying gwgroup
@@ -5845,7 +5883,7 @@ END_SECTION COMMITS)
 > Date: Fri, 20 Sep 2019 16:01:15 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add automatic db/file settings update (on startup) based on mode
@@ -5892,7 +5930,7 @@ END_SECTION COMMITS)
 > Date: Fri, 13 Sep 2019 11:35:41 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix forwarding dr_groupid update
@@ -5929,7 +5967,7 @@ END_SECTION COMMITS)
 > Date: Wed, 11 Sep 2019 20:03:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fixed invalid GCE instance detection
@@ -5955,7 +5993,7 @@ END_SECTION COMMITS)
 > Date: Wed, 11 Sep 2019 20:03:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fixed invalid GCE instance detection
@@ -6086,7 +6124,7 @@ END_SECTION COMMITS)
 > Date: Thu, 29 Aug 2019 01:49:27 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -6161,7 +6199,7 @@ END_SECTION COMMITS)
 > Date: Sun, 25 Aug 2019 18:45:59 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - make notifications a separate callable route
@@ -6189,7 +6227,7 @@ END_SECTION COMMITS)
 > Date: Sat, 24 Aug 2019 21:44:47 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add kamailio route for notifications / http requests
@@ -7040,7 +7078,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 17:21:15 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix couple broken links
@@ -7057,7 +7095,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 16:36:46 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -7087,7 +7125,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 15:30:09 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -7117,7 +7155,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 14:54:12 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -7132,7 +7170,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 13:17:11 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Update api.rst
@@ -7148,7 +7186,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 13:13:52 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Update domains.rst
@@ -7269,7 +7307,7 @@ END_SECTION COMMITS)
 > Date: Wed, 3 Jul 2019 10:55:01 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - change endpoint path to /api/v1/inboundmapping
@@ -7330,7 +7368,7 @@ END_SECTION COMMITS)
 > Date: Tue, 2 Jul 2019 21:50:58 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #181
@@ -7347,7 +7385,7 @@ END_SECTION COMMITS)
 > Date: Tue, 2 Jul 2019 21:02:21 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #77
@@ -7371,7 +7409,7 @@ END_SECTION COMMITS)
 > Date: Mon, 1 Jul 2019 12:32:07 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #183
@@ -7389,7 +7427,7 @@ END_SECTION COMMITS)
 > Date: Sun, 30 Jun 2019 19:53:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add case for new package name default-libmysqlclient-dev
@@ -7405,7 +7443,7 @@ END_SECTION COMMITS)
 > Date: Sun, 30 Jun 2019 19:53:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add case for new package name default-libmysqlclient-dev
@@ -7451,7 +7489,7 @@ END_SECTION COMMITS)
 > Date: Thu, 27 Jun 2019 14:15:09 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -7466,7 +7504,7 @@ END_SECTION COMMITS)
 > Date: Thu, 27 Jun 2019 12:35:12 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #182
@@ -7484,7 +7522,7 @@ END_SECTION COMMITS)
 > Date: Thu, 27 Jun 2019 11:42:59 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update pre-commit hook to allow exluding libraries
@@ -7501,7 +7539,7 @@ END_SECTION COMMITS)
 > Date: Thu, 14 Mar 2019 10:48:56 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update resource wait times for pcs
@@ -7517,7 +7555,7 @@ END_SECTION COMMITS)
 > Date: Wed, 26 Jun 2019 17:37:31 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix sipsak install fail due to memory allocation errors
@@ -7558,7 +7596,7 @@ END_SECTION COMMITS)
 > Date: Tue, 25 Jun 2019 18:00:12 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - ammending commit c8756c929ccce9793a1e1717439a257c97f22203
@@ -7592,7 +7630,7 @@ END_SECTION COMMITS)
 > Date: Mon, 24 Jun 2019 13:02:29 -0400  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Changing the INVITE timer to a more standard timeout of 32 secs
@@ -7624,7 +7662,7 @@ END_SECTION COMMITS)
 > Date: Mon, 24 Jun 2019 12:25:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #185
@@ -7869,7 +7907,7 @@ END_SECTION COMMITS)
 > Date: Tue, 14 May 2019 07:16:21 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix dsiprouter startup issue on centos and amazon linux
@@ -9004,7 +9042,7 @@ END_SECTION COMMITS)
 > Date: Wed, 27 Mar 2019 21:29:11 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix double password reset issue
@@ -9048,7 +9086,7 @@ END_SECTION COMMITS)
 > Date: Tue, 26 Mar 2019 09:59:59 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -9063,7 +9101,7 @@ END_SECTION COMMITS)
 > Date: Tue, 26 Mar 2019 08:12:01 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -9078,7 +9116,7 @@ END_SECTION COMMITS)
 > Date: Mon, 25 Mar 2019 15:41:44 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - rename JSONRPC test to `16.sh`
@@ -9095,7 +9133,7 @@ END_SECTION COMMITS)
 > Date: Mon, 25 Mar 2019 15:01:28 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add tcp port for jsonrpc access
@@ -9112,7 +9150,7 @@ END_SECTION COMMITS)
 > Date: Mon, 25 Mar 2019 14:49:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 
@@ -9127,7 +9165,7 @@ END_SECTION COMMITS)
 > Date: Mon, 25 Mar 2019 10:53:34 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - update AMI funtions to run with systemd
@@ -9228,7 +9266,7 @@ END_SECTION COMMITS)
 > Date: Thu, 21 Mar 2019 12:31:35 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #42
@@ -9274,7 +9312,7 @@ END_SECTION COMMITS)
 > Date: Mon, 18 Mar 2019 18:21:32 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #87
@@ -9308,7 +9346,7 @@ END_SECTION COMMITS)
 > Date: Fri, 15 Mar 2019 16:15:22 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #47
@@ -9326,7 +9364,7 @@ END_SECTION COMMITS)
 > Date: Thu, 14 Mar 2019 21:55:41 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - re-add configureKamailio command to install
@@ -9344,7 +9382,7 @@ END_SECTION COMMITS)
 > Date: Thu, 14 Mar 2019 21:27:03 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #123
@@ -9361,7 +9399,7 @@ END_SECTION COMMITS)
 > Date: Thu, 14 Mar 2019 10:42:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - move rtpengine install to seperate dir
@@ -9384,7 +9422,7 @@ END_SECTION COMMITS)
 > Date: Wed, 13 Mar 2019 10:24:40 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - fix cluster resource waiting stability
@@ -9418,7 +9456,7 @@ END_SECTION COMMITS)
 > Date: Fri, 8 Mar 2019 18:07:06 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - Resolves #122
@@ -9441,7 +9479,7 @@ END_SECTION COMMITS)
 > Date: Fri, 8 Mar 2019 10:14:31 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - mysql galera replication
@@ -9458,7 +9496,7 @@ END_SECTION COMMITS)
 > Date: Wed, 6 Mar 2019 16:05:08 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add redundancy checking for project root dir
@@ -9474,7 +9512,7 @@ END_SECTION COMMITS)
 > Date: Tue, 5 Mar 2019 23:19:55 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - changed internal ip resolution based on default route
@@ -9492,7 +9530,7 @@ END_SECTION COMMITS)
 > Date: Tue, 5 Mar 2019 19:25:15 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - drop dr_custom_rules on fresh kam configure
@@ -9509,7 +9547,7 @@ END_SECTION COMMITS)
 > Date: Tue, 5 Mar 2019 16:02:37 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
-> Signed:   
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add curl timeout on AWS check

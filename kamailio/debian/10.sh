@@ -6,6 +6,11 @@ function install {
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
 
+    # nf_tables is the default fw on debian but it has too many bugs at this time
+    # instead we will use legacy iptables until these issues are ironed out
+    update-alternatives --set iptables /usr/sbin/iptables-legacy
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
     apt-get install -y logrotate rsyslog
