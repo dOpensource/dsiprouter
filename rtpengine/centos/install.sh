@@ -30,20 +30,25 @@ function install {
             https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
         yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
             https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/Packages/kernel-devel-${OS_KERNEL}.rpm \
-                       http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/images/kernel-devel-${OS_KERNEL}.rpm \
-                       http://linuxsoft.cern.ch/cern/centos/8/BaseOS/x86_64/os/images/kernel-headers-${OS_KERNEL}.rpm
+        yum install -y http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/Packages/kernel-devel-${OS_KERNEL}.rpm \
+                       http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/images/kernel-devel-${OS_KERNEL}.rpm \
+                       http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/images/kernel-headers-${OS_KERNEL}.rpm
     }
-    
+
     yum -y install dnf-plugins-core
     yum config-manager --set-enabled PowerTools
-    dnf -y install https://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    dnf -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
-    dnf -y install --nogpgcheck https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
-    dnf -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
-    dnf -y install ffmpeg
-    dnf -y install ffmpeg-devel
+    yum -y install https://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    yum -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
+    yum -y install --nogpgcheck https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
+    yum -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
+    yum --enablerepo=PowerTools install -y libpcap-devel
+    yum -y install libevent-devel
+    yum -y install json-glib-devel
+    yum -y install dkms
+    yum -y install iptables-ipv6
+    yum -y install ffmpeg
+    yum -y install ffmpeg-devel
     yum -y install iptables-devel kernel-devel kernel-headers xmlrpc-c xmlrpc-c-client
     yum -y install kernel-devel
     yum -y install glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c-devel
@@ -54,6 +59,7 @@ function install {
     yum -y install elfutils-libelf-devel gcc-toolset-9-elfutils-libelf-devel
     rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
     rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+
 
     installKernelDevHeaders
 
