@@ -16,8 +16,8 @@ yum -y install elfutils-libelf-devel gcc-toolset-9-elfutils-libelf-devel
 rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
 rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
 cd /usr/local/src
-git clone https://github.com/sipwise/rtpengine.git
-git checkout -b mr7.5.4 origin/mr7.5.4
+rm -rf rtpengine/
+git clone https://github.com/sipwise/rtpengine.git -b mr7.5.4
 cd /usr/local/src/rtpengine/daemon/
 make
 cp rtpengine /usr/sbin/rtpengine
