@@ -358,7 +358,7 @@ def isCertValid(hostname, externalip, port=5061):
     result = {"tls_cert_valid": False, "tls_cert_details": "", "tls_error": ""}
 
     try:
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile="/etc/dsiprouter/certs/dsiprouter.crt")
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile="/etc/dsiprouter/certs/cacert.pem")
         context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
 
         conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname)

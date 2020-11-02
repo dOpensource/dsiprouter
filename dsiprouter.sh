@@ -168,6 +168,13 @@ setScriptSettings() {
     export KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE} 2>/dev/null)}
 
+    # grab credential max lengths from python files for later use
+    # we use perl bcuz python may not be installed when this is run
+    export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'HASHED_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
+        perl -pe 's%.*HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
+    export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
+        perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
+
     #===========================================================#
 }
 
@@ -228,7 +235,7 @@ function cleanupAndExit {
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
-    unset INTERNAL_FQDN DSIP_SSL_EMAIL
+    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN
     unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
@@ -437,12 +444,10 @@ export -f setPythonCmd
 
 # exported because its used throughout called scripts as well
 function reconfigureMysqlSystemdService {
-    echo 'Re-Configuring mysql systemd service for local or remote connection'
-
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
     case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl stop mysql
@@ -474,8 +479,6 @@ function reconfigureMysqlSystemdService {
             printf '%s' 'remote' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
             ;;
     esac
-
-    echo 'Finished re-configuring mysql systemd service'
 }
 export -f reconfigureMysqlSystemdService
 
@@ -571,7 +574,7 @@ function configureSSL {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
-    set -x 
+    #set -x 
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
@@ -753,7 +756,8 @@ function configureKamailio {
         -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'localhost';" \
-        -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';"
+        -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';" \
+        -e "FLUSH PRIVILEGES;"
 
     # Install schema for drouting module
     mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"  $KAM_DB_NAME \
@@ -802,8 +806,8 @@ function configureKamailio {
         < ${DSIP_DEFAULTS_DIR}/dsip_cdrinfo.sql
 
     # Install schema for dsip_settings
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-        < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql
+    envsubst < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql |
+        mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"
 
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
     sed -e "s|FLT_INBOUND_REPLACE|${FLT_INBOUND}|g" ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
@@ -838,7 +842,7 @@ function configureKamailio {
 #    resetIncrementers "uacreg"
 
     # Import Default Carriers
-    if [ -e $(type -P mysqlimport) ]; then
+    if cmdExists 'mysqlimport'; then
         mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
             -e "delete from address where grp=$FLT_CARRIER"
 
@@ -890,13 +894,7 @@ function disableSERVERNAT {
 
 # Try to locate the Kamailio modules directory.  It will use the last modules directory found
 function fixMPATH {
-    for i in $(find /usr -name drouting.so); do
-        mpath=$(dirname $i| grep 'modules$')
-        if [ "$mpath" != '' ]; then
-            mpath=$mpath/
-            break #found a mpath
-        fi
-    done
+    mpath=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h/' -quit 2>/dev/null)
 
     if [ "$mpath" != '' ]; then
         setKamailioConfigGlobal 'mpath' "${mpath}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1271,10 +1269,10 @@ function uninstallDsiprouter {
 }
 
 function installKamailio {
+    local NOW=$(date '+%s')
     local KAMDB_BACKUP_DIR="${BACKUPS_DIR}/kamdb"
-    local KAMDB_BACKUP_FILE="${KAMDB_BACKUP_DIR}/$(date '+%s').sql"
-
-    cd ${DSIP_PROJECT_DIR}
+    local KAMDB_DATABASE_BACKUP_FILE="${KAMDB_BACKUP_DIR}/db-${NOW}.sql"
+    local KAMDB_USER_BACKUP_FILE="${KAMDB_BACKUP_DIR}/user-${NOW}.sql"
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
         printwarn "kamailio is already installed"
@@ -1284,16 +1282,21 @@ function installKamailio {
     fi
 
     # backup and drop kam db if it exists already
+    mkdir -p ${KAMDB_BACKUP_DIR}
     if cmdExists 'mysql'; then
         if checkDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
-            printdbg "Backing up kamailio DB to ${KAMDB_BACKUP_FILE} before fresh install"
-            dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > $KAMDB_BACKUP_FILE
+            printdbg "Backing up kamailio DB to ${KAMDB_DATABASE_BACKUP_FILE} before fresh install"
+            dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > ${KAMDB_DATABASE_BACKUP_FILE}
             mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-                -e "DROP DATABASE kamailio;"
+                -e "DROP DATABASE $KAM_DB_NAME;"
+            printdbg "Backing up kamailio DB Users to ${KAMDB_USER_BACKUP_FILE} before fresh install"
+            dumpDBUser --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" "${KAM_DB_USER}@${KAM_DB_NAME}" > ${KAMDB_USER_BACKUP_FILE}
+            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
+                -e "DROP USER IF EXISTS '$KAM_DB_USER'@'%'; DROP USER IF EXISTS '$KAM_DB_USER'@'localhost';"
         fi
     fi
 
-    ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
+    ${DSIP_PROJECT_DIR}/kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
         if [ ${WITH_SSL} -eq 1 ]; then
             configureSSL
@@ -1708,7 +1711,7 @@ function displayLoginInfo {
 
     printdbg "You can access the Kamailio DB here"
     pprint "Database Host: ${KAM_DB_HOST}:${KAM_DB_PORT}"
-    pprint "Datebase Name: ${KAM_DB_NAME}"
+    pprint "Database Name: ${KAM_DB_NAME}"
     printf '\n'
 }
 
@@ -2235,7 +2238,7 @@ function cleanGitDevEnv {
 #       or we could check for install and decrypt/store creds before replcaing key and re-encrypting
 clusterInstall() { (
     local TMP_PRIV_KEY="${DSIP_PROJECT_DIR}/dsip_privkey"
-    local SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -c aes256-ctr,aes256-gcm@openssh.com,aes256-cbc"
+    local SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
     local SSH_HOSTS=() SSH_CMDS=() SSH_PWDS=() SCP_CMDS=()
     local USER PASS HOST PORT SSH_REMOTE_HOST SSH_OPTS SCP_OPTS
     local SSH_CMD="ssh" SCP_CMD="scp" DEBUG=${DEBUG:-0}
@@ -2263,8 +2266,11 @@ clusterInstall() { (
     chmod 0400 ${TMP_PRIV_KEY}
 
     # guarantee key will be destroyed when subshell exits
-    cleanupHandler() { rm -f ${TMP_PRIV_KEY}; }
-    trap cleanupHandler EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+    cleanupHandler() {
+        rm -f ${TMP_PRIV_KEY}
+        trap - EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+    }
+    trap 'cleanupHandler $?' EXIT SIGHUP SIGINT SIGQUIT SIGTERM
 
     # loop through nodes to:
     #  - validate conn
@@ -2353,18 +2359,22 @@ clusterInstall() { (
             set -x
         fi
 
-        # make sure dirs exist before moving project files
-        mkdir -p ${DSIP_PROJECT_DIR}
-        mv -f /tmp/dsiprouter ${DSIP_PROJECT_DIR}
+        # reset relative local vars for remote filesystem
+        DSIP_PROJECT_DIR="/opt/dsiprouter"
+        TMP_PRIV_KEY="\${DSIP_PROJECT_DIR}/dsip_privkey"
+
+        # setting up project files on node
+        rm -rf \${DSIP_PROJECT_DIR}
+        mv -f /tmp/dsiprouter \${DSIP_PROJECT_DIR}
 
         # setup cluster private key on node
         mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
-        mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
+        mv -f \${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
         chown root:root ${DSIP_PRIV_KEY}
         chmod 0400 ${DSIP_PRIV_KEY}
 
         # run script command
-        ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+        DSIP_ID=$((i+1)) \${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
 EOSSH
         if (( $? != 0 )); then
             printerr "Remote install on ${SSH_HOSTS[$i]} failed"

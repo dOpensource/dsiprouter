@@ -38,6 +38,8 @@ class Credentials():
     SALT_LEN = 64
     SALT_ENCODED_LEN = 128
     CREDS_MAX_LEN = 64
+    HASHED_CREDS_ENCODED_MAX_LEN = 256
+    AESCTR_CREDS_ENCODED_MAX_LEN = 160
 
     @staticmethod
     def hashCreds(creds, salt=None):

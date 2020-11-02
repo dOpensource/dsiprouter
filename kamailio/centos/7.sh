@@ -7,7 +7,7 @@ function install() {
     yum groupinstall -y 'core'
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel
+    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel openssl-devel
     yum install -y logrotate rsyslog
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
@@ -97,6 +97,10 @@ EOF
         done
     fi
 
+    # get info about the kamailio install for later use in script
+    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
+    KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
+
     touch /etc/tmpfiles.d/kamailio.conf
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
@@ -125,9 +129,11 @@ EOF
     # TODO: we should set STORE_PLAINTEXT_PW to 0, this is not default but would need tested
     (cat << EOF
 DBENGINE=MYSQL
-DBHOST=${KAM_DB_HOST}
-DBPORT=${KAM_DB_PORT}
-DBNAME=${KAM_DB_NAME}
+DBHOST="${KAM_DB_HOST}"
+DBPORT="${KAM_DB_PORT}"
+DBNAME="${KAM_DB_NAME}"
+DBROUSER="${KAM_DB_USER}"
+DBROPW="${KAM_DB_PASS}"
 DBRWUSER="${KAM_DB_USER}"
 DBRWPW="${KAM_DB_PASS}"
 DBROOTUSER="${MYSQL_ROOT_USERNAME}"
@@ -163,10 +169,10 @@ EOF
     firewall-cmd --reload
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    if ! grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    if ! grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -186,6 +192,20 @@ EOF
 
     # Setup logrotate
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
+
+    # Setup Kamailio to use the CA cert's that are shipped with the OS
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
+    cp ${DSIP_PROJECT_DIR}/kamailio/cacert_dsiprouter.pem ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
+
+    # Setup dSIPRouter Module
+    rm -rf /tmp/kamailio 2>/dev/null
+    git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
+    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
+    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
+    cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
+    return 1
+
+    return 0
 }
 
 function uninstall {
