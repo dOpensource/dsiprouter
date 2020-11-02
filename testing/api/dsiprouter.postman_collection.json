@@ -1,0 +1,429 @@
+{
+	"info": {
+		"_postman_id": "9c09dea3-0b4b-4a20-a615-fb8fc16811af",
+		"name": "dsiprouter",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "endpointgroups",
+			"item": [
+				{
+					"name": "/api/v1/endpointgroups",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups/<int id>",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups/9",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups",
+								"9"
+							]
+						},
+						"description": "Get a single endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"name\": \"Endpoint1\",\n  \"calllimit\": \"0\",\n  \"auth\": { \"type\":\"ip\",\n\t    \"user\":\"mack10\",\n\t    \"pass\":\"1234\",\n\t    \"domain\":\"sip.dsiprouter.org\"\n  },\n  \"endpoints\": [\n                    {\"hostname\":\"142.131.313.1\",\"description\":\"Endpoint1\",\"maintmode\":0},\n                    {\"hostname\":\"143.131.344.2\",\"description\":\"Endpoint2\",\"maintmode\":1}\n   ],\n  \"strip\": 0,\n  \"prefix\": \"\",\n  \"notifications\": {\n            \"overmaxcalllimit\": \"mack.hendricks@gmail.com\",\n            \"endpointfailure\": \"mack.hendricks@gmail.com\"\n  },\n  \n  \"fusionpbx\": {\n            \"enabled\": 1,\n            \"dbhost\": \"13.13.24.22\",\n            \"dbuser\": \"fusiopbx\",\n            \"dbpass\": \"1234\"\n            }\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups"
+							]
+						},
+						"description": "Create an endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups/<int id>",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"name\": \"Endpoint1\",\n  \"calllimit\": \"0\",\n  \"auth\": { \"type\":\"ip\",\n\t    \"user\":\"mack10\",\n\t    \"pass\":\"1234\",\n\t    \"domain\":\"sip.dsiprouter.org\"\n  },\n  \"endpoints\": [\n                    {\"hostname\":\"142.131.313.1\",\"description\":\"Endpoint1\",\"maintmode\":0},\n                    {\"hostname\":\"143.131.344.2\",\"description\":\"Endpoint2\",\"maintmode\":1}\n   ],\n  \"strip\": 0,\n  \"prefix\": \"\",\n  \"notifications\": {\n            \"overmaxcalllimit\": \"mack.hendricks@gmail.com\",\n            \"endpointfailure\": \"mack.hendricks@gmail.com\"\n  },\n  \n  \"fusionpbx\": {\n            \"enabled\": 1,\n            \"dbhost\": \"13.13.24.22\",\n            \"dbuser\": \"fusiopbx\",\n            \"dbpass\": \"1234\"\n            }\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups/12",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups",
+								"12"
+							]
+						},
+						"description": "Delete endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups/<int id>",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"name\": \"Endpoint1-Update\",\n  \"calllimit\": \"0\",\n  \"auth\": { \"type\":\"ip\",\n\t    \"user\":\"mack10\",\n\t    \"pass\":\"1234\",\n\t    \"domain\":\"sip.dsiprouter.org\"\n  },\n  \"endpoints\": [\n                    {\"hostname\":\"142.131.313.1\",\"description\":\"Endpoint1\",\"maintmode\":0},\n                    {\"hostname\":\"143.131.344.2\",\"description\":\"Endpoint2\",\"maintmode\":1}\n   ],\n  \"strip\": 0,\n  \"prefix\": \"\",\n  \"notifications\": {\n            \"overmaxcalllimit\": \"mack.hendricks@gmail.com\",\n            \"endpointfailure\": \"mack.hendricks@gmail.com\"\n  },\n  \n  \"fusionpbx\": {\n            \"enabled\": 1,\n            \"dbhost\": \"13.13.24.22\",\n            \"dbuser\": \"fusiopbx\",\n            \"dbpass\": \"1234\"\n            }\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups/13",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups",
+								"13"
+							]
+						},
+						"description": "Update an endpointgroup"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "kamailio",
+			"item": [
+				{
+					"name": "/api/v1/kamailio/reload",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/kamailio/reload",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"kamailio",
+								"reload"
+							]
+						},
+						"description": "Trigger a reload of Kamailio.  This is needed after changes are made"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/kamailio/stats/",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/kamailio/stats",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"kamailio",
+								"stats"
+							]
+						},
+						"description": "Obtain call statistics "
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "inboundmapping",
+			"item": [
+				{
+					"name": "/api/v1/inboundmapping",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"inboundmapping"
+							]
+						},
+						"description": "Get a list of inboundmappings"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/inboundmapping",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"did\": \"13132222223\",\n    \"servers\": [\"#9\"],\n    \"name\": \"Taste Pizzabar\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"inboundmapping"
+							]
+						},
+						"description": "Create new inboundmapping"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/inboundmapping?did=<string>",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"servers\": [\"#10\"],\n    \"name\": \"Flyball\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping?did=13132222223",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"inboundmapping"
+							],
+							"query": [
+								{
+									"key": "did",
+									"value": "13132222223"
+								}
+							]
+						},
+						"description": "Create new inboundmapping"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/inboundmapping?did=<string> Copy",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"servers\": [\"#10\"],\n    \"name\": \"Flyball\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping?did=13132222223",
+							"protocol": "https",
+							"host": [
+								"167",
+								"99",
+								"182",
+								"100"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"inboundmapping"
+							],
+							"query": [
+								{
+									"key": "did",
+									"value": "13132222223"
+								}
+							]
+						},
+						"description": "Create new inboundmapping"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "adminadmin",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "8f3dae2c-31cf-41b5-a7ba-e2e15c0220b7",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "b8882818-7b26-43e4-ab1c-cce8eb155db2",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
