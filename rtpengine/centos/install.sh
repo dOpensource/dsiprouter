@@ -46,7 +46,6 @@ function install {
     yum -y install libevent-devel
     yum -y install json-glib-devel
     yum -y install dkms
-    yum -y install iptables-ipv6
     yum -y install hiredis
     yum -y install hiredis-devel
     yum -y install ffmpeg
