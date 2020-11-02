@@ -29,5 +29,6 @@ make
 cp xt_RTPENGINE.ko /lib/modules/$(uname -a)/extra/xt_RTPENGINE.ko
 depmod -a
 modprobe xt_RTPENGINE
+echo 'add 0' > /proc/rtpengine/control
 iptables -I INPUT -p udp -j RTPENGINE --id 0
 ip6tables -I INPUT -p udp -j RTPENGINE --id 0
