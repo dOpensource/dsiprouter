@@ -6,7 +6,8 @@
 (( $DEBUG == 1 )) && set -x
 
 # compile and install rtpengine from RPM's
-function install{
+function install {
+
      function installKernelDevHeaders {
          local OS_VER="$(cat /etc/redhat-release | cut -d ' ' -f 4)"
          local OS_ARCH="$(uname -m)"
@@ -36,6 +37,7 @@ function install{
      dnf -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
      dnf -y install ffmpeg
      dnf -y install ffmpeg-devel
+     yum -y install mysql-devel
      yum -y install iptables-devel kernel-devel kernel-headers xmlrpc-c xmlrpc-c-client
      yum -y install kernel-devel
      yum -y install glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c-devel
@@ -58,6 +60,10 @@ function install{
      cd /usr/local/src/rtpengine/iptables-extension
      make all
      cp libxt_RTPENGINE.so /usr/lib64/xtables/.
+     
+     # ensure config dirs exist
+     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+     chown -R rtpengine:rtpengine /var/run/rtpengine
      
      # Configure RTPEngine to support kernel packet forwarding
      cd /usr/local/src/rtpengine/kernel-module
