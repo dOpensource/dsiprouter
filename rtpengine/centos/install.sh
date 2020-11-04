@@ -1,69 +1,89 @@
-function installKernelDevHeaders {
-        local OS_VER="$(cat /etc/redhat-release | cut -d ' ' -f 4)"
-        local OS_ARCH="$(uname -m)"
-        local OS_KERNEL="$(uname -r)"
+#!/usr/bin/env bash
 
-        yum --disablerepo='*' --enablerepo=elrepo install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
-        yum install -y https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/Packages/kernel-devel-${OS_KERNEL}.rpm \
-                       http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/images/kernel-devel-${OS_KERNEL}.rpm \
-                       http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/images/kernel-headers-${OS_KERNEL}.rpm
-    }
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
-yum -y install dnf-plugins-core
-yum config-manager --set-enabled PowerTools
-dnf -y install https://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-dnf -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
-dnf -y install --nogpgcheck https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
-dnf -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
-dnf -y install ffmpeg
-dnf -y install ffmpeg-devel
-yum -y install iptables-devel kernel-devel kernel-headers xmlrpc-c xmlrpc-c-client
-yum -y install kernel-devel
-yum -y install glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c-devel
-yum -y install libevent-devel glib2-devel json-glib-devel gperf gperftools-libs gperftools gperftools-devel libpcap libpcap-devel git hiredis hiredis-devel redis perl-IPC-Cmd
-yum -y install spandsp-devel spandsp
-yum -y install epel-release
-yum -y install elfutils-libelf-devel gcc-toolset-9-elfutils-libelf-devel
-rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+(( $DEBUG == 1 )) && set -x
 
-installKernelDevHeaders
+# compile and install rtpengine from RPM's
+function install{
+     function installKernelDevHeaders {
+         local OS_VER="$(cat /etc/redhat-release | cut -d ' ' -f 4)"
+         local OS_ARCH="$(uname -m)"
+         local OS_KERNEL="$(uname -r)"
 
-cd /usr/local/src
-rm -rf rtpengine/
-git clone https://github.com/sipwise/rtpengine.git -b mr7.5.4
-cd /usr/local/src/rtpengine/daemon/
-make
-cp rtpengine /usr/sbin/rtpengine
-cd /usr/local/src/rtpengine/iptables-extension
-make all
-cp libxt_RTPENGINE.so /usr/lib64/xtables/.
-cd /usr/local/src/rtpengine/kernel-module
-make
-mkdir /lib/modules/$(uname -r)/extra
-cp xt_RTPENGINE.ko /lib/modules/$(uname -r)/extra/xt_RTPENGINE.ko
-depmod -a
-modprobe xt_RTPENGINE
-echo 'add 0' > /proc/rtpengine/control
-iptables -I INPUT -p udp -j RTPENGINE --id 0
-ip6tables -I INPUT -p udp -j RTPENGINE --id 0
+         yum --disablerepo='*' --enablerepo=elrepo install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
+         yum install -y https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+             https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+         yum install -y https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+             https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+         yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+             https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+         yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+             https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+         yum install -y http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/Packages/kernel-devel-${OS_KERNEL}.rpm \
+                        http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+         yum install -y http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/images/kernel-devel-${OS_KERNEL}.rpm \
+                        http://linuxsoft.cern.ch/cern/centos/${OS_VER}/BaseOS/${OS_ARCH}/os/images/kernel-headers-${OS_KERNEL}.rpm
+     }
+     
+     # Install required libraries
+     yum -y install dnf-plugins-core
+     yum config-manager --set-enabled PowerTools
+     dnf -y install https://download.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+     dnf -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm
+     dnf -y install --nogpgcheck https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
+     dnf -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
+     dnf -y install ffmpeg
+     dnf -y install ffmpeg-devel
+     yum -y install iptables-devel kernel-devel kernel-headers xmlrpc-c xmlrpc-c-client
+     yum -y install kernel-devel
+     yum -y install glib2 glib2-devel gcc zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel xmlrpc-c-devel
+     yum -y install libevent-devel glib2-devel json-glib-devel gperf gperftools-libs gperftools gperftools-devel libpcap libpcap-devel git hiredis hiredis-devel redis perl-IPC-Cmd
+     yum -y install spandsp-devel spandsp
+     yum -y install epel-release
+     yum -y install elfutils-libelf-devel gcc-toolset-9-elfutils-libelf-devel
+     rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+     rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
 
-if [ "$SERVERNAT" == "0" ]; then
-        INTERFACE=$EXTERNAL_IP
-    else
-        INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
-    fi
+     installKernelDevHeaders
+     
+     # Make and Configure RTPEngine
+     cd /usr/local/src
+     rm -rf rtpengine/
+     git clone https://github.com/sipwise/rtpengine.git -b mr7.5.4
+     cd /usr/local/src/rtpengine/daemon/
+     make
+     cp rtpengine /usr/sbin/rtpengine
+     cd /usr/local/src/rtpengine/iptables-extension
+     make all
+     cp libxt_RTPENGINE.so /usr/lib64/xtables/.
+     
+     # Configure RTPEngine to support kernel packet forwarding
+     cd /usr/local/src/rtpengine/kernel-module
+     make
+     mkdir /lib/modules/$(uname -r)/extra
+     cp xt_RTPENGINE.ko /lib/modules/$(uname -r)/extra/xt_RTPENGINE.ko
+     
+     # Remove RTPEngine kernel module if previously inserted
+     if lsmod | grep 'xt_RTPENGINE'; then
+         rmmod xt_RTPENGINE
+     fi
+     # Load new RTPEngine kernel module
+     depmod -a
+     modprobe xt_RTPENGINE
+     
+     echo 'add 0' > /proc/rtpengine/control
+     iptables -I INPUT -p udp -j RTPENGINE --id 0
+     ip6tables -I INPUT -p udp -j RTPENGINE --id 0
 
- # rtpengine config file
+     if [ "$SERVERNAT" == "0" ]; then
+          INTERFACE=$EXTERNAL_IP
+     else
+          INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
+     fi
+
+    # rtpengine config file
     # set table = 0 for kernel packet forwarding
     (cat << EOF
 [rtpengine]
@@ -145,3 +165,26 @@ EOF
     else
         echo "FAILED: RTPEngine could not be installed!"
     fi
+}
+    
+# Remove RTPEngine
+function uninstall {
+    systemctl stop rtpengine
+    rm -f /usr/sbin/rtpengine
+    rm -f /etc/rsyslog.d/rtpengine.conf
+    rm -f /etc/logrotate.d/rtpengine
+    echo "Removed RTPEngine for $DISTRO"
+}
+
+case "$1" in
+    uninstall|remove)
+        uninstall && exit 0
+        ;;
+    install)
+        install && exit 0
+        ;;
+    *)
+        printerr "usage $0 [install | uninstall]" && exit 1
+        ;;
+esac
+
