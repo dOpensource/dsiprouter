@@ -380,6 +380,7 @@ EOF
 }
 else
 echo "Invalid CentOS Version"
+fi
     
 # Remove RTPEngine
 function uninstall {
