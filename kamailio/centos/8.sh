@@ -4,13 +4,14 @@
 
 function install() {
     # Install Dependencies
-    yum groupinstall -y 'core'
-    yum groupinstall -y 'base'
-    yum groupinstall -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog
+    dnf groupinstall -y 'core'
+    dnf groupinstall -y 'base'
+    dnf groupinstall -y 'Development Tools'
+    dnf install -y psmisc curl wget sed gawk vim epel-release perl firewalld libuuid-devel openssl-devel
+    dnf install -y logrotate rsyslog
+    dnf install -y mysql-server
+    systemctl start mysqld.service
 
-    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
@@ -26,7 +27,6 @@ function install() {
     (cat << 'EOF'
 # Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
 .include /lib/systemd/system/mariadb.service
-
 [Install]
 Alias=
 Alias=mysqld.service
@@ -37,7 +37,6 @@ EOF
     (cat << 'EOF'
 # Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
 .include /lib/systemd/system/mariadb.service
-
 [Install]
 Alias=
 Alias=mysql.service
@@ -73,27 +72,28 @@ EOF
 
     # Add the Kamailio repos to yum
     (cat << 'EOF'
-[home_kamailio_v5.1.x-rpms]
-name=RPM Packages for Kamailio v5.1.x (CentOS_7)
+[home_kamailio_v5.3.x-rpms]
+name=RPM Packages for Kamailio v5.3.x (CentOS_8)
 type=rpm-md
-baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_7/
+baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_8/
 gpgcheck=1
-gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_7/repodata/repomd.xml.key
+gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_8/repodata/repomd.xml.key
 enabled=1
 EOF
-    ) > /etc/yum.repos.d/kamailio.repo
+    ) > /etc/dnf.repos.d/kamailio.repo
 
-    yum update -y
-    yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
+    dnf -y install dnf-plugins-core
+    dnf config-manager --add-repo https://rpm.kamailio.org/centos/kamailio.repo
+    dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp \
         kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
         kamailio-http_async_client kamailio-dmq_userloc
 
     # workaround for kamailio rpm transaction failures
     if (( $? != 0 )); then
-        rpm --import $(grep 'gpgkey' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)
+        rpm --import $(grep 'gpgkey' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)
         REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
         for REPO in $REPOS; do
-            yum install -y $(grep 'baseurl' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
+            dnf install -y $(grep 'baseurl' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
         done
     fi
 
@@ -225,9 +225,9 @@ function uninstall {
     rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
 
     # Uninstall Kamailio modules and mysql / Mariadb
-    yum remove -y mysql\*
-    yum remove -y mariadb\*
-    yum remove -y kamailio\*
+    dnf remove -y mysql\*
+    dnf remove -y mariadb\*
+    dnf remove -y kamailio\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:

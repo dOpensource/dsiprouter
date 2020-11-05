@@ -303,6 +303,11 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "centos" ]]; then
         case "$DISTRO_VER" in
+	    8)
+                if [[ -z "$KAM_VERSION" ]]; then
+                    KAM_VERSION=51
+                fi
+                ;;
             7)
                 if [[ -z "$KAM_VERSION" ]]; then
                     KAM_VERSION=51

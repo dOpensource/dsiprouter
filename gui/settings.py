@@ -21,7 +21,6 @@ DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
 DSIP_IPC_PASS = 'admin'
-
 # dsiprouter logging settings
 # syslog level and facility values based on:
 # <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>

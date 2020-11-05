@@ -9,5 +9,5 @@ NAME=dsiprouter.so
 LIBS=-lssl -lcrypto
 
 SERLIBPATH=../../lib
-SER_LIBS+=$(SERLIBPATH)/srutils/srutils
+SER_LIBS+=$(SERLIBPATH)/srdb2/srdb2
 include ../../Makefile.modules
