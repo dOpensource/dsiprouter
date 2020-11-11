@@ -2555,7 +2555,7 @@ function processCMD {
                         ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installDnsmasq installKamailio)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installKamailio)
                         shift
                         ;;
                     -dsip|--dsiprouter)
