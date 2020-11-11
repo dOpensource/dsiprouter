@@ -9,6 +9,7 @@ function install {
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
     apt-get install -y logrotate rsyslog
+    apt-get install -y build-essential
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
