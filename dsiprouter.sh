@@ -1619,6 +1619,7 @@ function start {
         else
             # normal startup, fork as background process
             systemctl start dsiprouter
+	    systemctl start nginx
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
                 printerr "Unable to start dSIPRouter"
@@ -1665,6 +1666,7 @@ function stop {
     # Stop the dSIPRouter if told to and installed
     if (( $STOP_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         # normal startup, fork as background process
+	systemctl stop nginx
         systemctl stop dsiprouter
         # Make sure process is not running
         if systemctl is-active --quiet dsiprouter; then

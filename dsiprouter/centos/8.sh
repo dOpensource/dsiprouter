@@ -28,7 +28,7 @@ function install {
    # Install dependencies for dSIPRouter
     dnf install -y dnf-utils
     dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    dnf install -y firewalld
+    dnf install -y firewalld nginx
     dnf install -y python36 python36-devel 
     dnf install -y logrotate rsyslog perl libev-devel util-linux
 

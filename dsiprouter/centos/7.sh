@@ -28,7 +28,7 @@ function install {
    # Install dependencies for dSIPRouter
     yum install -y yum-utils
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    yum install -y firewalld
+    yum install -y firewalld nginx
     yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
     yum install -y logrotate rsyslog perl libev-devel util-linux
 

@@ -1,0 +1,10 @@
+server {
+    listen 5000 ssl;
+    ssl_certificate     /etc/dsiprouter/certs/dsiprouter.crt;
+    ssl_certificate_key /etc/dsiprouter/certs/dsiprouter.key;
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/opt/dsiprouter/gui/dsiprouter.sock;
+    }
+}
