@@ -12,15 +12,15 @@ DSIP_PROTO = 'https'
 DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = 'admin'
-DSIP_API_TOKEN = 'admin'
+DSIP_PASSWORD = b'6c88b2492c881a045598fbe4b4299596796a6c7421796ae8e3f143251b82edd396d55c1432b17694c18ab551c8c8f51f70e313ea0f49974e67a900f0611d3e7074f3d0de648cb3f771618bde6ca44497ab15a92093ea44b8f1016f89eadfab0aa395c75f19abc5e5dcaa5fa8cf7c8e1899ddaab24d0116f3ea30fd369062d464'
+DSIP_API_TOKEN = b'0d2f96a31d82d47c38e3179234b9b89f53d9c792deccd695f6bb50826512138ecbfbd583bc29adc380801ce964f7cfbdcfa538360bbe495037b191b95bd50603330e448c6dfec99357008f220492be83'
 DSIP_API_PROTO = 'https'
 DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_PASS = 'admin'
+DSIP_IPC_PASS = b'83b089a547732a40c7891603d4aa230aacfe7c24752148e6fe9cf2db3756d5e3120934a8709c6fc0b79918aac9e5a1344684075108dc44b064aeb79a9504f0d5f511dda3ecc9cea28e0528c997845368'
 # dsiprouter logging settings
 # syslog level and facility values based on:
 # <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>
@@ -31,9 +31,9 @@ DSIP_LOG_FACILITY = 18
 # dSIPRouter SSL settings
 # ssl key / cert are absolute paths
 # email for re-certification must match certs
-DSIP_SSL_KEY = ''
-DSIP_SSL_CERT = ''
-DSIP_SSL_EMAIL = ''
+DSIP_SSL_KEY = '/etc/dsiprouter/certs/dsiprouter.key'
+DSIP_SSL_CERT = '/etc/dsiprouter/certs/dsiprouter.crt'
+DSIP_SSL_EMAIL = 'admin@134.122.33.190'
 DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
@@ -60,7 +60,7 @@ KAM_DB_TYPE = 'mysql'
 KAM_DB_PORT = '3306'
 KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
-KAM_DB_PASS = 'kamailiorw'
+KAM_DB_PASS = b'faaf8735f7c39a74a9027545c4f2d6ec163b9d4c77839bf48055c339751094b6328825ebc1468dd0d86910c4da0791c73dab9f7d9d1a7b39e79c1c082b9a7df839fe365b9c86000b7e6cc9d69e293752'
 
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
@@ -114,7 +114,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
-CLOUD_PLATFORM = ''
+CLOUD_PLATFORM = 'DO'
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
