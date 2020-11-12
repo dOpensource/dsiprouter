@@ -193,14 +193,14 @@ function install {
         local OS_KERNEL="$(uname -r)"
 
         yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
-        yum install -y https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${OS_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm
+        yum install -y https://rpmfind.net/linux/centos/7/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://rpmfind.net/linux/centos/7/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y https://rpmfind.net/linux/centos/7/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://rpmfind.net/linux/centos/7/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y https://linuxsoft.cern.ch/cern/centos/7/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://linuxsoft.cern.ch/cern/centos/7/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
+        yum install -y https://linuxsoft.cern.ch/cern/centos/7/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
+            https://linuxsoft.cern.ch/cern/centos/7/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm
     }
 
     # Install required libraries
