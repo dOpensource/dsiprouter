@@ -1139,7 +1139,7 @@ function installDsiprouter {
     resetPassword 2>/dev/null
 
     # Restrict access to settings and private key
-    chown root:root ${DSIP_PRIV_KEY}
+    chown dsiprouter:root ${DSIP_PRIV_KEY}
     chmod 0400 ${DSIP_PRIV_KEY}
     chown root:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
