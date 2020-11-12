@@ -16,6 +16,10 @@ function install {
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
+    # setup /var/run/dsiprouter directory
+    mkdir -p /var/run/dsiprouter
+    chown dsiprouter:www-data /var/run/dsiprouter
+
     # Reset python cmd in case it was just installed
     setPythonCmd
 
@@ -40,8 +44,8 @@ function install {
     # Configure Nginx
     cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter /etc/nginx/sites-available
     ln -s /etc/nginx/sites-available/dsiprouter /etc/nginx/sites-enabled
-   
-
+    systemctl restart nginx  
+ 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
         cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
@@ -79,7 +83,7 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld 
+    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
     apt-get remove -y --allow-unauthenticated libmariadbclient-dev 
     apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
     #apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld

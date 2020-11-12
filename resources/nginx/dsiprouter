@@ -5,6 +5,6 @@ server {
 
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:/opt/dsiprouter/gui/dsiprouter.sock;
+        uwsgi_pass unix:/var/run/dsiprouter/dsiprouter.sock;
     }
 }
