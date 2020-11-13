@@ -46,7 +46,7 @@ Inbound DID Mapping
 
 
 
-To Import a DID from a CVS file:
+To Import a DID from a CSV file:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
