@@ -401,7 +401,7 @@ def handleInboundMapping():
                 if res is not None:
                     data = rowToDict(res)
                     data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                            'name': strFieldsToDict(data['description'])['name'],
+                            'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
                             'servers': data['gwlist'].split(',')}
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
@@ -417,7 +417,7 @@ def handleInboundMapping():
                     if res is not None:
                         data = rowToDict(res)
                         data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                                'name': strFieldsToDict(data['description'])['name'],
+                                'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
                                 'servers': data['gwlist'].split(',')}
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
@@ -431,7 +431,7 @@ def handleInboundMapping():
                         for row in res:
                             data = rowToDict(row)
                             data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                                    'name': strFieldsToDict(data['description'])['name'],
+                                    'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
                                     'servers': data['gwlist'].split(',')}
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
@@ -462,7 +462,7 @@ def handleInboundMapping():
             for i in range(0, len(data['servers'])):
                 try:
                     data['servers'][i] = str(data['servers'][i])
-                    _ = int(data['servers'][i])
+                    #_ = int(data['servers'][i])
                 except:
                     raise http_exceptions.BadRequest('Invalid Server ID')
             for c in data['did']:
@@ -514,7 +514,7 @@ def handleInboundMapping():
                     for i in range(0, len(data['servers'])):
                         try:
                             data['servers'][i] = str(data['servers'][i])
-                            _ = int(data['servers'][i])
+                            #_ = int(data['servers'][i])
                         except:
                             raise http_exceptions.BadRequest('Invalid Server ID')
                 updates['gwlist'] = ','.join(data['servers'])
