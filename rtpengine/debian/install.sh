@@ -26,6 +26,8 @@ function install {
     apt-get install -y module-assistant
     apt-get install -y dkms
     apt-get install -y unzip
+    apt-get install -y libavresample-dev
+    apt-get install -y linux-headers-$(uname -r)
 
     # debian jessie/stretch need a few newer packages
     CODENAME="$(lsb_release -c -s)"

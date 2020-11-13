@@ -19,6 +19,7 @@
 -- Table structure for table `dsip_multidomain_mapping`
 --
 
+-- TODO: db_password should be encrypted
 DROP TABLE IF EXISTS `dsip_multidomain_mapping`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
@@ -26,8 +27,8 @@ CREATE TABLE `dsip_multidomain_mapping` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `pbx_id` int(10) NOT NULL,
   `db_host` varchar(20) NOT NULL,
-  `db_username` varchar(40) NOT NULL,
-  `db_password` varchar(40) NOT NULL,
+  `db_username` varchar(255) NOT NULL,
+  `db_password` varchar(255) NOT NULL,
   `domain_list` varchar(255) NOT NULL DEFAULT '',
   `domain_list_hash` varchar(255) NOT NULL DEFAULT '',
   `attr_list` varchar(255) NOT NULL DEFAULT '',

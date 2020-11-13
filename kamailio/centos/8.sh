@@ -2,62 +2,31 @@
 
 (( $DEBUG == 1 )) && set -x
 
-function install {
-    local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
-    local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
-
+function install() {
     # Install Dependencies
-    apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
-    apt-get install -y logrotate rsyslog
-    apt-get install -y build-essential
+    dnf groupinstall -y 'core'
+    dnf groupinstall -y 'base'
+    dnf groupinstall -y 'Development Tools'
+    dnf install -y psmisc curl wget sed gawk vim epel-release perl firewalld libuuid-devel openssl-devel
+    dnf install -y logrotate rsyslog
+    dnf install -y mysql-server
+    systemctl start mysqld.service
 
-    # create kamailio user and group
-    mkdir -p /var/run/kamailio
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
-    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
-    chown -R kamailio:kamailio /var/run/kamailio
+    ln -s /usr/share/mariadb/ /usr/share/mysql
+    # Make sure no extra configs present on fresh install
+    rm -f ~/.my.cnf
 
-    # add repo sources to apt
-    mkdir -p /etc/apt/sources.list.d
-    (cat << EOF
-# kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} stretch main
-EOF
-    ) > ${KAM_SOURCES_LIST}
+    # allow symlinks in mariadb service
+    sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
 
-    # give higher precedence to packages from kamailio repo
-    mkdir -p /etc/apt/preferences.d
-    (cat << 'EOF'
-Package: *
-Pin: origin deb.kamailio.org
-Pin-Priority: 1000
-EOF
-    ) > ${KAM_PREFS_CONF}
-
-    # Add Key for Kamailio Repo
-    wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
-
-    # Update repo sources cache
-    apt-get update -y
-
-    # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated default-mysql-server ||
-        apt-get install -y --allow-unauthenticated mariadb-server
-    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules kamailio-extra-modules \
-        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules
-
-    # get info about the kamailio install for later use in script
-    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
-    KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
+    # add in the original aliases (from debian repo) to mariadb.service
+    perl -0777 -i -pe 's|(\[Install\]\s+WantedBy.*?\n+)|\1Alias=mysql.service\nAlias=mysqld.service\n\n|gms' /lib/systemd/system/mariadb.service
 
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
     (cat << 'EOF'
 # Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
 .include /lib/systemd/system/mariadb.service
-
 [Install]
 Alias=
 Alias=mysqld.service
@@ -68,7 +37,6 @@ EOF
     (cat << 'EOF'
 # Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
 .include /lib/systemd/system/mariadb.service
-
 [Install]
 Alias=
 Alias=mysql.service
@@ -81,39 +49,73 @@ EOF
     # if db is remote don't run local service
     reconfigureMysqlSystemdService
 
-    # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
-        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
-    systemctl daemon-reload
+    # create mysql user and group
+    mkdir -p /var/run/mariadb
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
+    chown -R mysql:mysql /var/run/mariadb /var/lib/mysql /var/log/mariadb /usr/share/mysql
 
-    # Enable MySQL and Kamailio for system startup
+    # Enable and Start MySql service
     systemctl enable mysql
-    systemctl enable kamailio
-
-    # Make sure no extra configs present on fresh install
-    rm -f ~/.my.cnf
-
-    # Start MySQL
     systemctl start mysql
+
+    # Disable SELinux
+    sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
+
+    # create kamailio user and group
+    mkdir -p /var/run/kamailio
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
+    chown -R kamailio:kamailio /var/run/kamailio
+
+    # Add the Kamailio repos to yum
+    (cat << 'EOF'
+[home_kamailio_v5.3.x-rpms]
+name=RPM Packages for Kamailio v5.3.x (CentOS_8)
+type=rpm-md
+baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_8/
+gpgcheck=1
+gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_8/repodata/repomd.xml.key
+enabled=1
+EOF
+    ) > /etc/dnf.repos.d/kamailio.repo
+
+    dnf -y install dnf-plugins-core
+    dnf config-manager --add-repo https://rpm.kamailio.org/centos/kamailio.repo
+    dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp \
+        kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
+        kamailio-http_async_client kamailio-dmq_userloc
+
+    # workaround for kamailio rpm transaction failures
+    if (( $? != 0 )); then
+        rpm --import $(grep 'gpgkey' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)
+        REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
+        for REPO in $REPOS; do
+            dnf install -y $(grep 'baseurl' /etc/dnf.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
+        done
+    fi
+
+    # get info about the kamailio install for later use in script
+    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
+    KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
+
+    touch /etc/tmpfiles.d/kamailio.conf
+    echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
     # create kamailio defaults config
     (cat << 'EOF'
-RUN_KAMAILIO=yes
-USER=kamailio
-GROUP=kamailio
-SHM_MEMORY=128
-PKG_MEMORY=16
-PIDFILE=/var/run/kamailio/kamailio.pid
-CFGFILE=/etc/kamailio/kamailio.cfg
-#DUMP_CORE=yes
+ RUN_KAMAILIO=yes
+ USER=kamailio
+ GROUP=kamailio
+ SHM_MEMORY=64
+ PKG_MEMORY=8
+ PIDFILE=/var/run/kamailio/kamailio.pid
+ CFGFILE=/etc/kamailio/kamailio.cfg
+ #DUMP_CORE=yes
 EOF
     ) > /etc/default/kamailio
-    # create kamailio tmp files
-    echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
@@ -140,33 +142,24 @@ CHARSET=utf8
 INSTALL_EXTRA_TABLES=yes
 INSTALL_PRESENCE_TABLES=yes
 INSTALL_DBUID_TABLES=yes
-#STORE_PLAINTEXT_PW=0
+# STORE_PLAINTEXT_PW=0
 EOF
     ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-
-    # fix bug in kamilio v5.3.4 installer
-    if [[ "$KAM_VERSION_FULL" == "5.3.4" ]]; then
-        (cat << 'EOF'
-CREATE TABLE `secfilter` (
-`id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
-`action` SMALLINT DEFAULT 0 NOT NULL,
-`type` SMALLINT DEFAULT 0 NOT NULL,
-`data` VARCHAR(64) DEFAULT "" NOT NULL
-);
-CREATE INDEX secfilter_idx ON secfilter (`action`, `type`, `data`);
-INSERT INTO version (table_name, table_version) values ("secfilter","1");
-EOF
-        ) > /usr/share/kamailio/mysql/secfilter-create.sql
-    fi
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
+    # Start firewalld
     systemctl start firewalld
+    systemctl enable firewalld
 
-    # Firewall settings
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
+
+    # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
@@ -174,6 +167,18 @@ EOF
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
+
+    # Make sure MariaDB and Local DNS start before Kamailio
+    if ! grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
+    fi
+    if ! grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
+    fi
+    systemctl daemon-reload
+
+    # Enable Kamailio for system startup
+    systemctl enable kamailio
 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
@@ -204,7 +209,7 @@ EOF
 }
 
 function uninstall {
-    # Stop and disable services
+    # Stop servers
     systemctl stop kamailio
     systemctl stop mysql
     systemctl disable kamailio
@@ -219,10 +224,10 @@ function uninstall {
     # remove mysql unit files we created
     rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
 
-    # Uninstall Kamailio modules and Mariadb
-    apt-get -y remove --purge mysql\*
-    apt-get -y remove --purge mariadb\*
-    apt-get -y remove --purge kamailio\*
+    # Uninstall Kamailio modules and mysql / Mariadb
+    dnf remove -y mysql\*
+    dnf remove -y mariadb\*
+    dnf remove -y kamailio\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:

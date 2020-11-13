@@ -1,38 +1,57 @@
 #!/usr/bin/env bash
 
-# import library functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+#PYTHON_CMD=python3.5
 
 (( $DEBUG == 1 )) && set -x
 
 function install {
-    # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
-    apt-get install -y --allow-unauthenticated libmariadbclient-dev 
-    apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
+
+    # Get the default version of python enabled
+    VER=`python -V 2>&1`
+    VER=`echo $VER | cut -d " " -f 2`
+    # Uninstall 3.6 and install a specific version of 3.6 if already installed
+    if [[ "$VER" =~ 3.6 ]]; then
+       dnf remove -y rs-epel-release
+       dnf remove -y python36 python36-devel 
+       dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
+       dnf install -y python36u python36u-libs python36u-devel python36u-pip
+    elif [[ "$VER" =~ 3 ]]; then
+       dnf remove -y rs-epel-release
+       dnf remove -y python3* python3*-libs python3*-devel python3*-pip
+       dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
+       dnf install -y python36u python36u-libs python36u-devel python36u-pip
+    elif [[ "$VER" =~ 2.7 ]]; then
+        dnf install -y https://centos8.iuscommunity.org/ius-release.rpm
+        dnf install -y python36u python36u-libs python36u-devel python36u-pip
+    fi
+
+   # Install dependencies for dSIPRouter
+    dnf install -y dnf-utils
+    dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
+    dnf install -y firewalld nginx
+    dnf install -y python36 python36-devel 
+    dnf install -y logrotate rsyslog perl libev-devel util-linux
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
-    # setup /var/run/dsiprouter directory
-    mkdir -p /var/run/dsiprouter
-    chown dsiprouter:www-data /var/run/dsiprouter
-
-    # allow dSIP access to the Kamailo configuration file
-    chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
-
     # Reset python cmd in case it was just installed
     setPythonCmd
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl start firewalld
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
 
     # Setup Firewall for DSIP_PORT
-    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-    firewall-cmd --reload
+    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
+
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl restart firewalld
 
     PIP_CMD="pip"
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
@@ -41,14 +60,6 @@ function install {
         exit 1
     fi
 
-   # Setup uwsgi configuration
-   cp -f ${DSIP_PROJECT_DIR}/resources/uwsgi/dsiprouter.ini /etc/dsiprouter/dsiprouter.ini
-   
-    # Configure Nginx
-    cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter /etc/nginx/sites-available
-    ln -s /etc/nginx/sites-available/dsiprouter /etc/nginx/sites-enabled
-    systemctl restart nginx  
- 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
         cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
@@ -63,15 +74,15 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
-    perl -p \
+    perl -p -e "s|^(ExecStart\=).+?([ \t].*)|\1$PYTHON_CMD\2|;" \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
-        -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
-    chmod 644 /etc/systemd/system/dsiprouter.service
+    chmod 0644 /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
-    systemctl enable dsiprouter.service
+    systemctl enable dsiprouter
 }
+
 
 function uninstall {
     # Uninstall dependencies for dSIPRouter
@@ -86,10 +97,14 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
-    apt-get remove -y --allow-unauthenticated libmariadbclient-dev 
-    apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
-    #apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
+    dnf remove -y python36u\*
+    dnf remove -y ius-release
+    dnf groupremove -y "Development Tools"
+
+    # Remove the repos
+    rm -f /etc/yum.repos.d/ius*
+    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
+    yum clean all
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
@@ -107,6 +122,7 @@ function uninstall {
     systemctl daemon-reload
 }
 
+
 case "$1" in
     uninstall|remove)
         uninstall
@@ -118,3 +134,4 @@ case "$1" in
         echo "usage $0 [install | uninstall]"
         ;;
 esac
+

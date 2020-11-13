@@ -92,6 +92,7 @@ setScriptSettings() {
     export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
     export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
+    DSIP_DOCS_DIR="${DSIP_PROJECT_DIR}/docs/build/html"
     export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
     export SYSTEM_KAMAILIO_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg" # will be symlinked
     export SYSTEM_KAMAILIO_TLS_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/tls.cfg" # will be symlinked
@@ -142,7 +143,6 @@ setScriptSettings() {
     if [[ ! -n "$EXTERNAL_FQDN" ]]; then
     	export EXTERNAL_FQDN="$(hostname)"
     fi
-    export EXTERNAL_FQDN="$EXTERNAL_IP"
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
@@ -287,7 +287,6 @@ function validateOSInfo {
                 export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=990 APT_SID_PRIORITY=500
                 ;;
             10)
-                printwarn "Your Operating System Version is in BETA support and may not function properly. Issues can be tracked at https://github.com/dOpensource/dsiprouter/"
                 KAM_VERSION=${KAM_VERSION:-53}
                 export APT_JESSIE_PRIORITY=50 APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=990 APT_BULLSEYE_PRIORITY=500 APT_SID_PRIORITY=100
                 ;;
@@ -310,6 +309,11 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "centos" ]]; then
         case "$DISTRO_VER" in
+	    8)
+                if [[ -z "$KAM_VERSION" ]]; then
+                    KAM_VERSION=51
+                fi
+                ;;
             7)
                 if [[ -z "$KAM_VERSION" ]]; then
                     KAM_VERSION=51
@@ -502,6 +506,7 @@ function configurePythonSettings {
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_DOCS_DIR' "$DSIP_DOCS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_CERTS_DIR' "$DSIP_CERTS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_TLSCFG_PATH' "$SYSTEM_KAMAILIO_TLS_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
 }
@@ -1141,9 +1146,9 @@ function installDsiprouter {
     resetPassword 2>/dev/null
 
     # Restrict access to settings and private key
-    chown root:root ${DSIP_PRIV_KEY}
+    chown dsiprouter:root ${DSIP_PRIV_KEY}
     chmod 0400 ${DSIP_PRIV_KEY}
-    chown root:root ${DSIP_CONFIG_FILE}
+    chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
 
     # for cloud images the instance-id may change (could be a clone)
@@ -1213,6 +1218,10 @@ EOF
             addInitCmd "${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
         fi
     fi
+
+    # generate documentation for GUI
+    #cd ${DSIP_PROJECT_DIR}/docs &&
+    #make html
 
     # custom dsiprouter MOTD banner for ssh logins
     updateBanner
@@ -1621,6 +1630,7 @@ function start {
         else
             # normal startup, fork as background process
             systemctl start dsiprouter
+	    systemctl start nginx
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
                 printerr "Unable to start dSIPRouter"
@@ -1667,6 +1677,7 @@ function stop {
     # Stop the dSIPRouter if told to and installed
     if (( $STOP_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         # normal startup, fork as background process
+	systemctl stop nginx
         systemctl stop dsiprouter
         # Make sure process is not running
         if systemctl is-active --quiet dsiprouter; then
@@ -2176,6 +2187,8 @@ function upgradeOld {
 
 # TODO: add bash cmd completion for new options provided by gitwrapper.sh
 function configGitDevEnv {
+    ${PYTHON_CMD} -m pip install pipreqs
+
     mkdir -p ${BACKUPS_DIR}/git/info ${BACKUPS_DIR}/git/hooks
     mkdir -p ${DSIP_PROJECT_DIR}/.git/info ${DSIP_PROJECT_DIR}/.git/hooks
 
@@ -2555,7 +2568,7 @@ function processCMD {
                         ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installDnsmasq installKamailio)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installKamailio)
                         shift
                         ;;
                     -dsip|--dsiprouter)

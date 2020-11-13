@@ -2,6 +2,8 @@
 
 ### Contributors
 
+- Dean Forester
+- demonspork
 - dopensource
 - hailthemelody
 - jornsby
@@ -14,5 +16,9 @@
 - ncannon01
 - Nicole
 - Omari S. King
+- richard
+- Richard
+- Richard Bolaji
+- RichSosa28
 - root
 - Tyler Moore

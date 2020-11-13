@@ -21,7 +21,6 @@ DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
 DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
 DSIP_IPC_PASS = 'admin'
-
 # dsiprouter logging settings
 # syslog level and facility values based on:
 # <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>
@@ -39,7 +38,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.63'
+VERSION = '0.64'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -136,6 +135,8 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 
 # where the project was installed
 DSIP_PROJECT_DIR = '/opt/dsiprouter'
+# where the dsip docs are served from
+DSIP_DOCS_DIR = '/opt/dsiprouter/docs/build/html'
 
 # dr_routing prefix matching supported characters
 # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>

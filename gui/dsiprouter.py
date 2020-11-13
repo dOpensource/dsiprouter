@@ -5,7 +5,7 @@ from functools import wraps
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory, Blueprint
 from flask_script import Manager, Server
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import func, exc as sql_exceptions
@@ -31,14 +31,16 @@ import settings
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
+# Setup the Flask session manager with a random secret key
+app.secret_key = os.urandom(32)
 app.register_blueprint(domains)
 app.register_blueprint(api)
+app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
-
 # TODO: unit testing per component
 # TODO: many of these routes could use some updating...
 #       possibly look into this as well when reworking the architecture for API
@@ -2140,8 +2142,6 @@ def initApp(flask_app):
     # Initialize Globals
     globals.initialize()
 
-    # Setup the Flask session manager with a random secret key
-    flask_app.secret_key = os.urandom(32)
 
     # Add jinja2 filters
     flask_app.jinja_env.filters["attrFilter"] = attrFilter
@@ -2165,23 +2165,23 @@ def initApp(flask_app):
     flask_app.json_encoder = CreateEncoder()
 
     # Flask App Manager configs
-    app_manager = Manager(flask_app, with_default_commands=False)
-    app_manager.add_command('runserver', CustomServer())
+    #app_manager = Manager(flask_app, with_default_commands=False)
+    #app_manager.add_command('runserver', CustomServer())
 
     # trap signals we handle
-    signal.signal(signal.SIGHUP, sigHandler)
-    signal.signal(signal.SIGUSR1, sigHandler)
-    signal.signal(signal.SIGUSR2, sigHandler)
+    #signal.signal(signal.SIGHUP, sigHandler)
+    #signal.signal(signal.SIGUSR1, sigHandler)
+    #signal.signal(signal.SIGUSR2, sigHandler)
 
     # start the Shared Memory Management server
-    if os.path.exists(settings.DSIP_IPC_SOCK):
-        os.remove(settings.DSIP_IPC_SOCK)
-    settings_manager.start()
+    #if os.path.exists(settings.DSIP_IPC_SOCK):
+    #    os.remove(settings.DSIP_IPC_SOCK)
+    #settings_manager.start()
 
     # start the Flask App server
-    with open(settings.DSIP_PID_FILE, 'w') as pidfd:
-        pidfd.write(str(os.getpid()))
-    app_manager.run()
+    #with open(settings.DSIP_PID_FILE, 'w') as pidfd:
+    #    pidfd.write(str(os.getpid()))
+    #app_manager.run()
 
 def teardown():
     try:
@@ -2207,3 +2207,6 @@ if __name__ == "__main__":
         initApp(app)
     finally:
         teardown()
+
+else:
+        initApp(app)
