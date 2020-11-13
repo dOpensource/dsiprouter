@@ -60,6 +60,14 @@ function install {
         exit 1
     fi
 
+    # Setup uwsgi configuration
+    cp -f ${DSIP_PROJECT_DIR}/resources/uwsgi/dsiprouter.ini /etc/dsiprouter/dsiprouter.ini
+
+    # Configure Nginx
+    cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter /etc/nginx/sites-available
+    ln -s /etc/nginx/sites-available/dsiprouter /etc/nginx/sites-enabled
+    systemctl restart nginx
+
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
         cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
@@ -74,7 +82,7 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
-    perl -p -e "s|^(ExecStart\=).+?([ \t].*)|\1$PYTHON_CMD\2|;" \
+    perl -p \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
@@ -99,6 +107,7 @@ function uninstall {
 
     yum remove -y python36u\*
     yum remove -y ius-release
+    yum remove -y nginx
     yum groupremove -y "Development Tools"
 
     # Remove the repos

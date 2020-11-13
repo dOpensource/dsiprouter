@@ -7,7 +7,7 @@
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx 
+    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
     apt-get install -y --allow-unauthenticated libmariadbclient-dev 
     apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
 
@@ -15,6 +15,13 @@ function install {
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
+
+    # setup /var/run/dsiprouter directory
+    mkdir -p /var/run/dsiprouter
+    chown dsiprouter:www-data /var/run/dsiprouter
+
+    # allow dSIP access to the Kamailo configuration file
+    chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -34,6 +41,14 @@ function install {
         exit 1
     fi
 
+   # Setup uwsgi configuration
+   cp -f ${DSIP_PROJECT_DIR}/resources/uwsgi/dsiprouter.ini /etc/dsiprouter/dsiprouter.ini
+   
+    # Configure Nginx
+    cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter /etc/nginx/sites-available
+    ln -s /etc/nginx/sites-available/dsiprouter /etc/nginx/sites-enabled
+    systemctl restart nginx  
+ 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
         cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
@@ -48,7 +63,7 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
     # Install dSIPRouter as a service
-    perl -p -e "s|^(ExecStart\=).+?([ \t].*)|\1$PYTHON_CMD\2|;" \
+    perl -p \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
@@ -71,7 +86,7 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld 
+    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
     apt-get remove -y --allow-unauthenticated libmariadbclient-dev 
     apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
     #apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
