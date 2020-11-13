@@ -15,7 +15,10 @@ PyMySQL
 pyOpenSSL
 python_crontab
 pytz
+recommonmark
 requests
+rinohtype
+sphinx
+sphinxcontrib-httpdomain
 SQLAlchemy
 Werkzeug
-uwsgi
