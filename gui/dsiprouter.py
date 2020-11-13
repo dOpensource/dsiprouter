@@ -5,7 +5,7 @@ from functools import wraps
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory, Blueprint
 from flask_script import Manager, Server
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import func, exc as sql_exceptions
@@ -35,6 +35,7 @@ app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.secret_key = os.urandom(32)
 app.register_blueprint(domains)
 app.register_blueprint(api)
+app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
 numbers_api = flowroute.Numbers()

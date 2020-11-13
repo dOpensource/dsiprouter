@@ -135,6 +135,8 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 
 # where the project was installed
 DSIP_PROJECT_DIR = '/opt/dsiprouter'
+# where the dsip docs are served from
+DSIP_DOCS_DIR = '/opt/dsiprouter/docs/build/html'
 
 # dr_routing prefix matching supported characters
 # refer to: <https://kamailio.org/docs/modules/5.1.x/modules/drouting.html#idp26708356>

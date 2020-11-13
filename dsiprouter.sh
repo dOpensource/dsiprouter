@@ -92,6 +92,7 @@ setScriptSettings() {
     export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
     export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
+    DSIP_DOCS_DIR="${DSIP_PROJECT_DIR}/docs/build/html"
     export SYSTEM_KAMAILIO_CONFIG_DIR="/etc/kamailio"
     export SYSTEM_KAMAILIO_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg" # will be symlinked
     export SYSTEM_KAMAILIO_TLS_CONFIG_FILE="${SYSTEM_KAMAILIO_CONFIG_DIR}/tls.cfg" # will be symlinked
@@ -500,6 +501,7 @@ function configurePythonSettings {
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_DOCS_DIR' "$DSIP_DOCS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_CERTS_DIR' "$DSIP_CERTS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_TLSCFG_PATH' "$SYSTEM_KAMAILIO_TLS_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
 }
@@ -1211,6 +1213,10 @@ EOF
             addInitCmd "${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
         fi
     fi
+
+    # generate documentation for GUI
+    cd ${DSIP_PROJECT_DIR}/docs &&
+    make html
 
     # custom dsiprouter MOTD banner for ssh logins
     updateBanner
