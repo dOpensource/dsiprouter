@@ -136,7 +136,7 @@ setScriptSettings() {
 
     export EXTERNAL_IP=$(getExternalIP)
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} | sed 's/\.$//')
-    [[ ! -n "$EXTERNAL_FQDN" ]] && export EXTERNAL_FQDN="$EXTERNAL_IP"
+    [[ ! -n "$EXTERNAL_FQDN" ]] && export EXTERNAL_FQDN="$(hostname -f)"
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
@@ -1141,7 +1141,7 @@ function installDsiprouter {
     # Restrict access to settings and private key
     chown dsiprouter:root ${DSIP_PRIV_KEY}
     chmod 0400 ${DSIP_PRIV_KEY}
-    chown root:root ${DSIP_CONFIG_FILE}
+    chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
 
     # for cloud images the instance-id may change (could be a clone)
