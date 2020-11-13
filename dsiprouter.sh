@@ -749,7 +749,7 @@ function generateKamailioConfig {
 
     # kamcfg will contain plaintext passwords / tokens
     # make sure we give it reasonable permissions
-    chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
+    chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
     chmod 0640 ${DSIP_KAMAILIO_CONFIG_FILE}
 }
 
