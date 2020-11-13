@@ -137,7 +137,12 @@ setScriptSettings() {
 
     export EXTERNAL_IP=$(getExternalIP)
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} | sed 's/\.$//')
-    [[ ! -n "$EXTERNAL_FQDN" ]] && export EXTERNAL_FQDN="$(hostname -f)"
+    if [ $? -eq 1 ]; then
+    	export EXTERNAL_FQDN="$(hostname)"
+    fi
+    if [[ ! -n "$EXTERNAL_FQDN" ]]; then
+    	export EXTERNAL_FQDN="$(hostname)"
+    fi
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
