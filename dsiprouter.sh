@@ -1215,8 +1215,8 @@ EOF
     fi
 
     # generate documentation for GUI
-    cd ${DSIP_PROJECT_DIR}/docs &&
-    make html
+    #cd ${DSIP_PROJECT_DIR}/docs &&
+    #make html
 
     # custom dsiprouter MOTD banner for ssh logins
     updateBanner
