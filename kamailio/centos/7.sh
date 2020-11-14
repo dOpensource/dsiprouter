@@ -148,6 +148,14 @@ EOF
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
+    
+    # Setup firewall rules
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
+    firewall-offline-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
+    firewall-offline-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
+    firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
 
     # Start firewalld
     systemctl start firewalld
@@ -159,14 +167,7 @@ EOF
         systemctl restart firewalld
     fi
 
-    # Setup firewall rules
-    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
-    firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
-    firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
-    firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
-    firewall-cmd --reload
+
 
     # Make sure MariaDB and Local DNS start before Kamailio
     if ! grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
