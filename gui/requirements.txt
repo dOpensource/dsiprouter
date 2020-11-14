@@ -22,3 +22,4 @@ sphinx
 sphinxcontrib-httpdomain
 SQLAlchemy
 Werkzeug
+uwsgi
