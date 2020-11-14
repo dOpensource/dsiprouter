@@ -150,11 +150,11 @@ EOF
     kamdbctl create
     
     # Setup firewall rules
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
-    firewall-offline-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
-    firewall-offline-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp 
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp 
+    firewall-offline-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp 
+    firewall-offline-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp 
     firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
 
     # Start firewalld
