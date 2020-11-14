@@ -4,7 +4,7 @@ After=network.target mysql.service syslog.service
 
 [Service]
 User=dsiprouter
-Group=www-data
+Group=dsiprouter
 Type=simple
 Environment='DSIP_PROJECT_DIR=/opt/dsiprouter'
 Environment='DSIP_RUN_DIR=/var/run/dsiprouter'
