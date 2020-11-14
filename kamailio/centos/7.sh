@@ -86,7 +86,7 @@ EOF
     yum update -y
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
         kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
-        kamailio-http_async_client kamailio-dmq_userloc kamailio-sipdump
+        kamailio-http_async_client kamailio-dmq_userloc kamailio-sipdump kamailio-websocket
 
     # workaround for kamailio rpm transaction failures
     if (( $? != 0 )); then
