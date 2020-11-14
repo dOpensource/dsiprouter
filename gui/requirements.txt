@@ -19,6 +19,7 @@ recommonmark
 requests
 rinohtype
 sphinx
+sphinx_rtd_theme
 sphinxcontrib-httpdomain
 SQLAlchemy
 Werkzeug
