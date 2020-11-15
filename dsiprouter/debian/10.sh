@@ -16,9 +16,6 @@ function install {
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
-    # setup /var/run/dsiprouter directory
-    mkdir -p /var/run/dsiprouter
-    chown dsiprouter:dsiprouter /var/run/dsiprouter
     # get the user that nginx is running under. 
     nginx_username=$(ps -o uname= -p `pidof -s nginx`)
     # make sure the nginx user has access to dsiprouter directories
