@@ -19,7 +19,11 @@ function install {
     # setup /var/run/dsiprouter directory
     mkdir -p /var/run/dsiprouter
     chown dsiprouter:dsiprouter /var/run/dsiprouter
-    usermod -a -G dsiprouter nginx
+    # get the user that nginx is running under. 
+    nginx_username=$(ps -o uname= -p `pidof -s nginx`)
+    # make sure the nginx user has access to dsiprouter directories
+    usermod -a -G dsiprouter $nginx_username
+    # make dsiprouter user has access to kamailio files
     usermod -a -G kamailio dsiprouter
 
     # setup /var/run/dsiprouter directory
