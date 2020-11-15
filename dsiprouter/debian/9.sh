@@ -18,10 +18,14 @@ function install {
 
     # setup /var/run/dsiprouter directory
     mkdir -p /var/run/dsiprouter
-    chown dsiprouter:www-data /var/run/dsiprouter
+    chown dsiprouter:dsiprouter /var/run/dsiprouter
+    usermod -a -G dsiprouter nginx
+    usermod -a -G kamailio dsiprouter
 
-    # allow dSIP access to the Kamailo configuration file
-    chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
+    # setup /var/run/dsiprouter directory
+    mkdir -p /var/run/dsiprouter
+    chown dsiprouter:dsiprouter /var/run/dsiprouter
+
 
     # Reset python cmd in case it was just installed
     setPythonCmd
