@@ -36,6 +36,15 @@ function install {
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
+    usermod -a -G dsiprouter nginx
+    usermod -a -G kamailio dsiprouter
+
+    # setup /var/run/dsiprouter directory
+    mkdir -p /var/run/dsiprouter
+    chown dsiprouter:dsiprouter /var/run/dsiprouter
+
+    # allow dSIP access to the Kamailo configuration file
+    #chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
 
     # Reset python cmd in case it was just installed
     setPythonCmd
@@ -64,8 +73,9 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/uwsgi/dsiprouter.ini /etc/dsiprouter/dsiprouter.ini
 
     # Configure Nginx
-    cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter /etc/nginx/sites-available
-    ln -s /etc/nginx/sites-available/dsiprouter /etc/nginx/sites-enabled
+    cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf /etc/nginx/conf.d
+    # Configure SE Linux to allow Nginx to bind to port 5000
+    semanage port -m -t http_port_t -p tcp 5000
     systemctl restart nginx
 
     # Configure rsyslog defaults
