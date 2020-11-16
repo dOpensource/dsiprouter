@@ -16,12 +16,16 @@ function install {
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
+    # get the user that nginx is running under. 
+    nginx_username=$(ps -o uname= -p `pidof -s nginx`)
+    # make sure the nginx user has access to dsiprouter directories
+    usermod -a -G dsiprouter $nginx_username
+    # make dsiprouter user has access to kamailio files
+    usermod -a -G kamailio dsiprouter
+
     # setup /var/run/dsiprouter directory
     mkdir -p /var/run/dsiprouter
-    chown dsiprouter:www-data /var/run/dsiprouter
-
-    # allow dSIP access to the Kamailo configuration file
-    chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
+    chown dsiprouter:dsiprouter /var/run/dsiprouter
 
     # Reset python cmd in case it was just installed
     setPythonCmd
