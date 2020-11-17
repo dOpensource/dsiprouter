@@ -18,6 +18,9 @@ function install {
 
     # get the user that nginx is running under.
     nginx_username=$(ps -o uname= -p `pidof -s nginx`) 
+    # remove the default site, which is sitting on port 80
+    rm /etc/nginx/sites-enabled/default
+   
     # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter $nginx_username
     # make dsiprouter user has access to kamailio files
