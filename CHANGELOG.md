@@ -5,7 +5,10 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-11626d32e8bff0485a74bd66a28f6a273ac641d2
+4341b057a1d72f7675e9e7958126989ce8148f72
+d39844eda0194d17dc47d205c5bc80ac1b4bb296
+a6c9c5a3fd93382c758002354e5e362516e70be7
+b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a
 348d856841f14014714bc55206cdbbfb4c849445
 e17b362a94175aaab6ffc9e711e95fa80df08acc
 b04ed0097dd4ba5867062c16ec2d654e72ac6d6e
@@ -1761,10 +1764,58 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 11626d32e8bff0485a74bd66a28f6a273ac641d2)
+[//]: # (START_SECTION 4341b057a1d72f7675e9e7958126989ce8148f72)
+### Add Missing Dependencies
+
+> Commit: [4341b057a1d72f7675e9e7958126989ce8148f72](https://github.com/dOpensource/dsiprouter/commit/4341b057a1d72f7675e9e7958126989ce8148f72)  
+> Date: Wed, 18 Nov 2020 17:29:02 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add `sphinx-rtd-theme` and `uwsgi` dependency
+
+
+---
+
+[//]: # (END_SECTION 4341b057a1d72f7675e9e7958126989ce8148f72)
+[//]: # (START_SECTION d39844eda0194d17dc47d205c5bc80ac1b4bb296)
+### Fix RPM Search For CentOS Kernel Headers
+
+> Commit: [d39844eda0194d17dc47d205c5bc80ac1b4bb296](https://github.com/dOpensource/dsiprouter/commit/d39844eda0194d17dc47d205c5bc80ac1b4bb296)  
+> Date: Wed, 18 Nov 2020 16:49:11 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add searching centos archives to `rpmSearch()`
+- add dnf support to `setVerbosityLevel()`
+
+
+---
+
+[//]: # (END_SECTION d39844eda0194d17dc47d205c5bc80ac1b4bb296)
+[//]: # (START_SECTION a6c9c5a3fd93382c758002354e5e362516e70be7)
+### Missing uwsgi and sphinx_rtd_theme python packages
+
+> Commit: [a6c9c5a3fd93382c758002354e5e362516e70be7](https://github.com/dOpensource/dsiprouter/commit/a6c9c5a3fd93382c758002354e5e362516e70be7)  
+> Date: Wed, 18 Nov 2020 09:58:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a6c9c5a3fd93382c758002354e5e362516e70be7)
+[//]: # (START_SECTION b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a)
 ### dsiprouter installation fixes
 
-> Commit: [11626d32e8bff0485a74bd66a28f6a273ac641d2](https://github.com/dOpensource/dsiprouter/commit/11626d32e8bff0485a74bd66a28f6a273ac641d2)  
+> Commit: [b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a](https://github.com/dOpensource/dsiprouter/commit/b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a)  
 > Date: Tue, 17 Nov 2020 19:40:41 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1791,7 +1842,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 11626d32e8bff0485a74bd66a28f6a273ac641d2)
+[//]: # (END_SECTION b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a)
 [//]: # (START_SECTION 348d856841f14014714bc55206cdbbfb4c849445)
 ### Fixes issue #291 and removes the default Nginx server
 
