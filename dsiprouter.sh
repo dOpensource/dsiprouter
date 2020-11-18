@@ -371,6 +371,8 @@ function initialChecks {
 
     # make sure dirs exist (ones that may not yet exist)
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
+    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 
     if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
         # comment out cdrom in sources as it can halt install
