@@ -2489,20 +2489,28 @@ function setVerbosityLevel {
     if [[ "$*" != *"-debug"* ]]; then
         # quiet pkg managers when not debugging
         if cmdExists 'apt-get'; then
-            apt-get() {
+            function apt-get() {
                 command apt-get -qq "$@"
             }
             export -f apt-get
-        elif cmdExists 'yum'; then
-            yum() {
+        fi
+        if cmdExists 'yum'; then
+            function yum() {
                 command yum -q -e 0 "$@"
             }
             export -f yum
         fi
+        if cmdExists 'dnf'; then
+            function dnf() {
+                command dnf -q -e 0 "$@"
+            }
+            export -f dnf
+        fi
         # quiet make when not debugging
-        make() {
+        function make() {
             command make -s "$@"
         }
+        export -f make
     fi
 }
 

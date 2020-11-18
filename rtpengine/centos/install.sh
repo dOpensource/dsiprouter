@@ -15,7 +15,7 @@ OS_VER=$(cat /etc/redhat-release | cut -d ' ' -f 4)
 OS_ARCH=$(uname -m)
 OS_KERNEL=$(uname -r)
 
-# search for and print RPM on rpmfind.net
+# search for RPM using external APIs mirrors and archives
 # not guaranteed to find an RPM, outputs empty string if search fails
 # arguments:
 # $1 == rpm to search for
@@ -47,25 +47,35 @@ function rpmSearch() {
         esac
     done
 
-    # grab the results of the search on rpmfind.net
+    # if grep filter not set it defaults to rpm search
+    if [[ -z "$GREP_FILTER" ]]; then
+        GREP_FILTER="${RPM_SEARCH}"
+    fi
+
+    # grab the results of the search using an API on rpmfind.net
     SEARCH_RESULTS=$(
         curl -sL "https://www.rpmfind.net/linux/rpm2html/search.php?query=${RPM_SEARCH}&system=${DISTRO}&arch=${OS_ARCH}" 2>/dev/null |
             perl -e "\$rpmfind_base_url='https://rpmfind.net'; \$rpm_search='${RPM_SEARCH}'; @matches=(); " -0777 -e \
                 '$html = do { local $/; <STDIN> };
                 @matches = ($html =~ m%(?<=\<a href=["'"'"'])([-a-zA-Z0-9\@\:\%\._\+~#=/]*kernel-devel[-a-zA-Z0-9\@\:\%\._\+\~\#\=]*\.rpm)(?=["'"'"']\>)%g);
                 foreach my $match (@matches) { print "${rpmfind_base_url}${match}\n"; }' 2>/dev/null |
-            grep "${GREP_FILTER}"
+            grep -m 1 "${GREP_FILTER}"
     )
 
-    # check if the results are archived and update results if so
+    # if empty try searching the official archives on vault.centos.org
+    if [[ -z "$SEARCH_RESULTS" ]]; then
+        SEARCH_RESULTS=$(
+            curl --keepalive-time 5 --compressed -sL https://vault.centos.org/filelist.gz 2>/dev/null |
+                gunzip -c |
+                tac |
+                grep -oP ".*${OS_ARCH}.*${RPM_SEARCH}.*\.rpm" |
+                grep -m 1 "${GREP_FILTER}" |
+                perl -pe 's%^\./(.*\.rpm)$%https://vault.centos.org/\1%'
+        )
+    fi
+
     if [[ -n "$SEARCH_RESULTS" ]]; then
-        for RPM in $(echo "$SEARCH_RESULTS"); do
-            if [[ "$(curl -ksLI -o /dev/null -w '%{http_code}' "${RPM}")" != "200" ]]; then
-                perl -pe 's%https://rpmfind.net/linux/centos(.*)%https://vault.centos.org\1%' <<<"${RPM}"
-            else
-                echo "${RPM}"
-            fi
-        done
+        echo "$SEARCH_RESULTS"
     fi
 }
 
@@ -98,7 +108,7 @@ function install {
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel mariadb-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
         iptables iptables-devel xmlrpc-c-devel gperf redhat-lsb nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog bc \
-        redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperf gperftools-libs gperftools gperftools-devel
+        redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperf gperftools-libs gperftools gperftools-devel gzip
 
     installKernelDevHeaders
 
