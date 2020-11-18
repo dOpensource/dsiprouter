@@ -100,8 +100,7 @@ setScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
-    #export RTPENGINE_VER="mr8.4.1.3"
-    export RTPENGINE_VER="mr6.1.1.1"
+    export RTPENGINE_VER="mr9.0.1.4"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
@@ -309,15 +308,11 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "centos" ]]; then
         case "$DISTRO_VER" in
-	    8)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+	        8)
+                KAM_VERSION=${KAM_VERSION:-53}
                 ;;
             7)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+                KAM_VERSION=${KAM_VERSION:-53}
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -327,9 +322,7 @@ function validateOSInfo {
     elif [[ "$DISTRO" == "amazon" ]]; then
         case "$DISTRO_VER" in
             2)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+                KAM_VERSION=${KAM_VERSION:-51}
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -339,9 +332,7 @@ function validateOSInfo {
     elif [[ "$DISTRO" == "ubuntu" ]]; then
         case "$DISTRO_VER" in
             16.04)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+                KAM_VERSION=${KAM_VERSION:-51}
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -926,11 +917,11 @@ installScriptRequirements() {
 
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
-        DEBIAN_FRONTEND=noninteractive apt-get update -qq -y >/dev/null &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl wget gawk perl sed git dnsutils >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get update -y &&
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils
     elif cmdExists 'yum'; then
-        yum update -y -q -e 0 >/dev/null &&
-        yum install -y -q -e 0 curl wget gawk perl sed git bind-utils >/dev/null
+        yum update -y &&
+        yum install -y curl wget gawk perl sed git bind-utils
     fi
 
     if (( $? != 0 )); then
@@ -1700,7 +1691,7 @@ function displayLoginInfo {
     local KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     local KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
 
-    printf '\n'
+    echo -ne '\n'
     printdbg "Your systems credentials are below (keep in a safe place)"
     pprint "dSIPRouter GUI Username: ${DSIP_USERNAME}"
     pprint "dSIPRouter GUI Password: ${DSIP_PASSWORD}"
@@ -1708,30 +1699,30 @@ function displayLoginInfo {
     pprint "dSIPRouter IPC Password: ${DSIP_IPC_PASS}"
     pprint "Kamailio DB Username: ${KAM_DB_USER}"
     pprint "Kamailio DB Password: ${KAM_DB_PASS}"
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the dSIPRouter WEB GUI here"
     pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
         pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
     fi
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the dSIPRouter REST API here"
     pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
         pprint "Internal IP: ${DSIP_API_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
     fi
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the dSIPRouter IPC API here"
     pprint "UNIX Domain Socket: ${DSIP_IPC_SOCK}"
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the Kamailio DB here"
     pprint "Database Host: ${KAM_DB_HOST}:${KAM_DB_PORT}"
     pprint "Database Name: ${KAM_DB_NAME}"
-    printf '\n'
+    echo -ne '\n'
 }
 
 # resets credentials for our services to a new random value by default

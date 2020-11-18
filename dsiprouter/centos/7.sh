@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-#PYTHON_CMD=python3.5
-
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install {
 
@@ -11,16 +15,16 @@ function install {
     VER=`echo $VER | cut -d " " -f 2`
     # Uninstall 3.6 and install a specific version of 3.6 if already installed
     if [[ "$VER" =~ 3.6 ]]; then
-       yum remove -y rs-epel-release
-       yum remove -y python36  python36-libs python36-devel python36-pip
-       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-       yum install -y python36u python36u-libs python36u-devel python36u-pip
+        yum remove -y rs-epel-release
+        yum remove -y python36  python36-libs python36-devel python36-pip
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 3 ]]; then
-       yum remove -y rs-epel-release
-       yum remove -y python3* python3*-libs python3*-devel python3*-pip
-       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-       yum install -y python36u python36u-libs python36u-devel python36u-pip
-    elif [[ "$VER" =~ 2.7 ]]; then
+        yum remove -y rs-epel-release
+        yum remove -y python3* python3*-libs python3*-devel python3*-pip
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
+    else
         yum install -y https://centos7.iuscommunity.org/ius-release.rpm
         yum install -y python36u python36u-libs python36u-devel python36u-pip
     fi
@@ -30,7 +34,7 @@ function install {
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     yum install -y firewalld nginx
     yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
-    yum install -y logrotate rsyslog perl libev-devel util-linux
+    yum install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -65,7 +69,7 @@ function install {
     PIP_CMD="pip"
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
     if [ $? -eq 1 ]; then
-        echo "dSIPRouter install failed: Couldn't install required libraries"
+        printerr "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
 
@@ -108,10 +112,10 @@ function uninstall {
 
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
     if [ $? -eq 1 ]; then
-        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
+        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
         exit 1
     else
-        echo "DSIPRouter uninstall was successful"
+        printdbg "DSIPRouter uninstall was successful"
         exit 0
     fi
 
@@ -150,6 +154,6 @@ case "$1" in
         install
         ;;
     *)
-        echo "usage $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         ;;
 esac

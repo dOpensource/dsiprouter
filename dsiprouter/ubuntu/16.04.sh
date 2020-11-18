@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install {
     # Install dependencies for dSIPRouter
     apt-get install -y build-essential curl python3 python3-pip python-dev libmysqlclient-dev libmariadb-client-lgpl-dev libpq-dev \
-        firewalld logrotate rsyslog perl libev-dev uuid-runtime
+        firewalld logrotate rsyslog perl libev-dev uuid-runtime libpq-dev
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -26,7 +32,7 @@ function install {
     PIP_CMD="pip"
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
     if [ $? -eq 1 ]; then
-        echo "dSIPRouter install failed: Couldn't install required libraries"
+        printerr "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
 
@@ -60,10 +66,10 @@ function uninstall {
 
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
     if [ $? -eq 1 ]; then
-        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
+        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
         exit 1
     else
-        echo "DSIPRouter uninstall was successful"
+        printdbg "DSIPRouter uninstall was successful"
         exit 0
     fi
 
@@ -93,6 +99,6 @@ case "$1" in
         install
         ;;
     *)
-        echo "usage $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         ;;
 esac

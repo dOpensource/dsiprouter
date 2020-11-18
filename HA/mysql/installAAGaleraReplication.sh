@@ -452,7 +452,7 @@ EOF
 
                 # on CentOS mariadb fresh install doesn't have socket connection
                 # we need this to allow unix socket as fallback (parsed last in configs)
-                if ! grep -q '\[mysqld\]' /etc/my.cnf; then
+                if ! grep -q '\[mysqld\]' /etc/my.cnf 2>/dev/null; then
                     (cat <<'EOF'
 [mysqld]
 user                = mysql
@@ -527,7 +527,7 @@ EOF
 
             # on CentOS mariadb fresh install doesn't have socket connection
             # we need this to allow unix socket as fallback (parsed last in configs)
-            if ! grep -q '\[mysqld\]' /etc/my.cnf; then
+            if ! grep -q '\[mysqld\]' /etc/my.cnf 2>/dev/null; then
                 (cat <<'EOF'
 [mysqld]
 user                = mysql
