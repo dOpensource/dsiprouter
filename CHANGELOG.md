@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-4341b057a1d72f7675e9e7958126989ce8148f72
+59f1980c969e292a6f5d6a679d89e6fea2b5d1d5
+442594103964d1441361071ae1f367dce714bda9
 d39844eda0194d17dc47d205c5bc80ac1b4bb296
 a6c9c5a3fd93382c758002354e5e362516e70be7
 b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a
@@ -1764,10 +1765,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 4341b057a1d72f7675e9e7958126989ce8148f72)
+[//]: # (START_SECTION 59f1980c969e292a6f5d6a679d89e6fea2b5d1d5)
+### Kamailio Module Load Ordering
+
+> Commit: [59f1980c969e292a6f5d6a679d89e6fea2b5d1d5](https://github.com/dOpensource/dsiprouter/commit/59f1980c969e292a6f5d6a679d89e6fea2b5d1d5)  
+> Date: Thu, 19 Nov 2020 11:21:50 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix load order for tls module
+- make sipdump conditionally load
+
+
+---
+
+[//]: # (END_SECTION 59f1980c969e292a6f5d6a679d89e6fea2b5d1d5)
+[//]: # (START_SECTION 442594103964d1441361071ae1f367dce714bda9)
 ### Add Missing Dependencies
 
-> Commit: [4341b057a1d72f7675e9e7958126989ce8148f72](https://github.com/dOpensource/dsiprouter/commit/4341b057a1d72f7675e9e7958126989ce8148f72)  
+> Commit: [442594103964d1441361071ae1f367dce714bda9](https://github.com/dOpensource/dsiprouter/commit/442594103964d1441361071ae1f367dce714bda9)  
 > Date: Wed, 18 Nov 2020 17:29:02 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1779,7 +1797,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 4341b057a1d72f7675e9e7958126989ce8148f72)
+[//]: # (END_SECTION 442594103964d1441361071ae1f367dce714bda9)
 [//]: # (START_SECTION d39844eda0194d17dc47d205c5bc80ac1b4bb296)
 ### Fix RPM Search For CentOS Kernel Headers
 
