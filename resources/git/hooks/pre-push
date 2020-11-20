@@ -34,6 +34,13 @@ REMOTE_FILE="${PROJECT_ROOT}/.push_remote"
 if [[ -e "$REMOTE_FILE" ]]; then
     REMOTE_NAME="$(cat ${REMOTE_FILE})"
 
+    # if default remote used we have to lookup the remote name
+    if [[ "${PUSH_REMOTE}" == "." ]]; then
+        PUSH_REMOTE=$(git config --get checkout.defaultremote)
+    fi
+    # if default is not set (likely going to fail) then use origin
+    PUSH_REMOTE=${PUSH_REMOTE:-origin}
+
     # if user is pushing to a different remote without rewriting url's fail
     if [[ "${PUSH_REMOTE}" != "${REMOTE_NAME}" ]]; then
         echo >&2 "Can not push to a different remote without rewriting commit msg url's"
