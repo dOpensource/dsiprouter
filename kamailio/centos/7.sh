@@ -14,7 +14,7 @@ function install() {
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
     yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog
+    yum install -y logrotate rsyslog certbot
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql

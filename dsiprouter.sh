@@ -123,13 +123,14 @@ setScriptSettings() {
     #export PYTHON_CMD=/usr/bin/python3.4
 
     # Network configuration values
+    export DSIP_UNIX_SOCK='/var/run/dsiprouter/dsiprouter.sock'
+    export DSIP_PORT=5000
     export RTP_PORT_MIN=10000
     export RTP_PORT_MAX=20000
     export KAM_SIP_PORT=5060
     export KAM_SIPS_PORT=5061
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
-    export DSIP_PORT=5000
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
@@ -490,11 +491,13 @@ function configurePythonSettings {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_UNIX_SOCK' "$DSIP_UNIX_SOCK" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PORT' "$DSIP_PORT" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_PRIV_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_API_PROTO' "$DSIP_API_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
@@ -1101,6 +1104,7 @@ function installDsiprouter {
 	    printdbg "Configuring dSIPRouter settings"
 	fi
 
+    # if python was just installed its not exported in this proc yet
  	setPythonCmd
     if [ $? -ne 0 ]; then
         printerr "dSIPRouter install failed"
@@ -1113,7 +1117,7 @@ function installDsiprouter {
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
-    ln -s ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
+    ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
     # configure dsiprouter modules
     installModules
     # set some defaults in settings.py
@@ -1563,8 +1567,8 @@ uninstallDnsmasq() {
     cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # if systemd dns resolver installed re-enable it
-    systemctl start systemd-resolved 2>/dev/null
     systemctl enable systemd-resolved 2>/dev/null
+    systemctl start systemd-resolved 2>/dev/null
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
@@ -1931,7 +1935,7 @@ function updateBanner {
     # move old banner files
     cp -f /etc/motd ${DSIP_SYSTEM_CONFIG_DIR}/motd.bak
     cat /dev/null > /etc/motd
-    chmod -x /etc/update-motd.d/*
+    chmod -x /etc/update-motd.d/* 2>/dev/null
 
     # add our custom banner
     (cat << EOF
@@ -1970,7 +1974,7 @@ EOF
 
     chmod +x /etc/update-motd.d/00-dsiprouter
 
-    # for debian < v9 we have to update it the dynamic motd location
+    # for debian < v9 we have to update the dynamic motd location
     if [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
         sed -i -r 's|^(session.*pam_motd\.so.*motd=/run/motd).*|\1|' /etc/pam.d/sshd
     # for centos7 and debian we have to update it 'manually'
@@ -1984,7 +1988,7 @@ EOF
 function revertBanner {
     mv -f ${DSIP_SYSTEM_CONFIG_DIR}/motd.bak /etc/motd
     rm -f /etc/update-motd.d/00-dsiprouter
-    chmod +x /etc/update-motd.d/*
+    chmod +x /etc/update-motd.d/* 2>/dev/null
 
     # remove cron entry for centos7 and debian < v9
     if [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then

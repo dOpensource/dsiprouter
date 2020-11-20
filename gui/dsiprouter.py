@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal
+import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal, bjoern
 from functools import wraps
 from copy import copy
 from collections import OrderedDict
@@ -8,10 +8,12 @@ from importlib import reload
 from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory, Blueprint
 from flask_script import Manager, Server
 from flask_wtf.csrf import CSRFProtect
+from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
+from werkzeug.middleware.proxy_fix import ProxyFix
 from sysloginit import initSyslogLogger
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
@@ -22,7 +24,7 @@ from database import db_engine, SessionLoader, DummySession, Gateways, Address, 
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
-from util.security import Credentials, AES_CTR
+from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
 import globals
@@ -31,8 +33,6 @@ import settings
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
-# Setup the Flask session manager with a random secret key
-app.secret_key = os.urandom(32)
 app.register_blueprint(domains)
 app.register_blueprint(api)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
@@ -1972,27 +1972,28 @@ def injectReloadRequired():
 def injectSettings():
     return dict(settings=settings)
 
-class CustomServer(Server):
-    """ Customize the Flask server with our settings """
-
-    def __init__(self):
-        super().__init__(
-            host=settings.DSIP_HOST,
-            port=settings.DSIP_PORT
-        )
-
-        if len(settings.DSIP_SSL_CERT) > 0 and len(settings.DSIP_SSL_KEY) > 0:
-            self.ssl_crt = settings.DSIP_SSL_CERT
-            self.ssl_key = settings.DSIP_SSL_KEY
-
-        if settings.DEBUG == True:
-            self.use_debugger = True
-            self.use_reloader = True
-        else:
-            self.use_debugger = None
-            self.use_reloader = None
-            self.threaded = True
-            self.processes = 1
+# Deprecated, using bjoern for WSGI server
+# class CustomServer(Server):
+#     """ Customize the Flask server with our settings """
+#
+#     def __init__(self):
+#         super().__init__(
+#             host=settings.DSIP_HOST,
+#             port=settings.DSIP_PORT
+#         )
+#
+#         if len(settings.DSIP_SSL_CERT) > 0 and len(settings.DSIP_SSL_KEY) > 0:
+#            self.ssl_crt = settings.DSIP_SSL_CERT
+#            self.ssl_key = settings.DSIP_SSL_KEY
+#
+#         if settings.DEBUG == True:
+#             self.use_debugger = True
+#             self.use_reloader = True
+#         else:
+#             self.use_debugger = None
+#             self.use_reloader = None
+#             self.threaded = True
+#             self.processes = 1
 
 def syncSettings(new_fields={}, update_net=False):
     """
@@ -2031,11 +2032,11 @@ def syncSettings(new_fields={}, update_net=False):
             # format fields for DB
             fields = OrderedDict(
                 [('DSIP_ID', settings.DSIP_ID), ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID), ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
-                 ('DSIP_PROTO', settings.DSIP_PROTO), ('DSIP_HOST', settings.DSIP_HOST), ('DSIP_PORT', settings.DSIP_PORT),
+                 ('DSIP_PROTO', settings.DSIP_PROTO), ('DSIP_PORT', settings.DSIP_PORT),
                  ('DSIP_USERNAME', settings.DSIP_USERNAME), ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
-                 ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO), ('DSIP_API_HOST', settings.DSIP_API_HOST),
+                 ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
                  ('DSIP_API_PORT', settings.DSIP_API_PORT), ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY), ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
-                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
+                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
                  ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY), ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
                  ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL), ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
                  ('VERSION', settings.VERSION),
@@ -2142,6 +2143,12 @@ def initApp(flask_app):
     # Initialize Globals
     globals.initialize()
 
+    # Setup the Flask session manager with a random secret key
+    flask_app.secret_key = os.urandom(32)
+
+    # Setup Flask timed url serializer
+    flask_app.config['EMAIL_SALT'] = urandomChars()
+    flask_app.config['TIMED_SERIALIZER'] = URLSafeTimedSerializer(flask_app.config["SECRET_KEY"])
 
     # Add jinja2 filters
     flask_app.jinja_env.filters["attrFilter"] = attrFilter
@@ -2164,24 +2171,41 @@ def initApp(flask_app):
     # Set flask JSON encoder
     flask_app.json_encoder = CreateEncoder()
 
-    # Flask App Manager configs
-    #app_manager = Manager(flask_app, with_default_commands=False)
-    #app_manager.add_command('runserver', CustomServer())
+    # Set session / cookie options
+    flask_app.config.update(
+        SESSION_PROTECTION='strong',
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+        REMEMBER_COOKIE_SECURE=True,
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_DURATION=datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT),
+        PERMANENT_SESSION_LIFETIME=datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT),
+    )
+
+    # Setup ProxyFix middleware
+    flask_app = ProxyFix(flask_app, 1, 1, 1, 1, 1)
 
     # trap signals we handle
-    #signal.signal(signal.SIGHUP, sigHandler)
-    #signal.signal(signal.SIGUSR1, sigHandler)
-    #signal.signal(signal.SIGUSR2, sigHandler)
+    signal.signal(signal.SIGHUP, sigHandler)
+    signal.signal(signal.SIGUSR1, sigHandler)
+    signal.signal(signal.SIGUSR2, sigHandler)
+
+    # change umask to 660 before creating sockets
+    # this allows members of the dsiprouter group access
+    os.umask(~0o660 & 0o777)
 
     # start the Shared Memory Management server
-    #if os.path.exists(settings.DSIP_IPC_SOCK):
-    #    os.remove(settings.DSIP_IPC_SOCK)
-    #settings_manager.start()
+    if os.path.exists(settings.DSIP_IPC_SOCK):
+        os.remove(settings.DSIP_IPC_SOCK)
+    settings_manager.start()
 
     # start the Flask App server
-    #with open(settings.DSIP_PID_FILE, 'w') as pidfd:
-    #    pidfd.write(str(os.getpid()))
-    #app_manager.run()
+    if os.path.exists(settings.DSIP_UNIX_SOCK):
+        os.remove(settings.DSIP_UNIX_SOCK)
+    with open(settings.DSIP_PID_FILE, 'w') as pidfd:
+        pidfd.write(str(os.getpid()))
+    bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
 
 def teardown():
     try:
@@ -2207,6 +2231,3 @@ if __name__ == "__main__":
         initApp(app)
     finally:
         teardown()
-
-else:
-        initApp(app)

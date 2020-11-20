@@ -9,17 +9,16 @@ DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
 DSIP_CLUSTER_SYNC = False
 DSIP_PROTO = 'https'
-DSIP_HOST = '0.0.0.0'
 DSIP_PORT = 5000
 DSIP_USERNAME = 'admin'
 DSIP_PASSWORD = 'admin'
 DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'https'
-DSIP_API_HOST = '127.0.0.1'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
 DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
-DSIP_IPC_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
+DSIP_UNIX_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
+DSIP_IPC_SOCK = '/var/run/dsiprouter/ipc.sock'
 DSIP_IPC_PASS = 'admin'
 # dsiprouter logging settings
 # syslog level and facility values based on:

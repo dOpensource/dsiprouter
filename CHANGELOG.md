@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-59f1980c969e292a6f5d6a679d89e6fea2b5d1d5
+f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a
+e29447636011bce47e75b8943840e87ef4db9ee3
 442594103964d1441361071ae1f367dce714bda9
 d39844eda0194d17dc47d205c5bc80ac1b4bb296
 a6c9c5a3fd93382c758002354e5e362516e70be7
@@ -1765,10 +1766,34 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 59f1980c969e292a6f5d6a679d89e6fea2b5d1d5)
+[//]: # (START_SECTION f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a)
+### dSIPRouter GUI Server Upgrade
+
+> Commit: [f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a](https://github.com/dOpensource/dsiprouter/commit/f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a)  
+> Date: Fri, 20 Nov 2020 13:20:15 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix certbot not installed on RHEL-based OS
+- fix /var/run/dsiprouter/dsiprouter.pid not created on startup
+- fix hot reloading broken
+- fix http not redirected to https
+- fix install bug when `.git/` is not present
+- switch WSGI app server to bjoern
+- switch dsiprouter to using UNIX domain sockets
+- add various nginx performance improvements
+- add security improvements to flask app
+
+
+---
+
+[//]: # (END_SECTION f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a)
+[//]: # (START_SECTION e29447636011bce47e75b8943840e87ef4db9ee3)
 ### Kamailio Module Load Ordering
 
-> Commit: [59f1980c969e292a6f5d6a679d89e6fea2b5d1d5](https://github.com/dOpensource/dsiprouter/commit/59f1980c969e292a6f5d6a679d89e6fea2b5d1d5)  
+> Commit: [e29447636011bce47e75b8943840e87ef4db9ee3](https://github.com/dOpensource/dsiprouter/commit/e29447636011bce47e75b8943840e87ef4db9ee3)  
 > Date: Thu, 19 Nov 2020 11:21:50 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1781,7 +1806,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 59f1980c969e292a6f5d6a679d89e6fea2b5d1d5)
+[//]: # (END_SECTION e29447636011bce47e75b8943840e87ef4db9ee3)
 [//]: # (START_SECTION 442594103964d1441361071ae1f367dce714bda9)
 ### Add Missing Dependencies
 
