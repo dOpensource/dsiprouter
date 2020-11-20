@@ -60,6 +60,7 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf /etc/nginx/conf.d
     # Configure SE Linux to allow Nginx to bind to port 5000
     semanage port -m -t http_port_t -p tcp 5000
+    systemctl enable nginx
     systemctl restart nginx
 
     # Configure rsyslog defaults
