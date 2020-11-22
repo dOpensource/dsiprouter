@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install {
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
@@ -82,10 +88,10 @@ EOF
     reconfigureMysqlSystemdService
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    if ! grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -249,6 +255,6 @@ case "$1" in
         install
         ;;
     *)
-        echo "usage $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         ;;
 esac

@@ -17,10 +17,9 @@ python_crontab
 pytz
 recommonmark
 requests
-rinohtype
 sphinx
-sphinx_rtd_theme
 sphinxcontrib-httpdomain
+sphinx-rtd-theme
 SQLAlchemy
-Werkzeug
 uwsgi
+Werkzeug

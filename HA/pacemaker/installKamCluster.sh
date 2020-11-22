@@ -298,7 +298,7 @@ for NODE in ${ARGS[@]}; do
         { printerr "could not change hacluster user password"; exit 1; }
 
     # hostnames are required even if not DNS resolvable (on each node)
-    if ! grep -q -E \$(join '|' \${HOST_LIST[@]}) /etc/hosts; then
+    if ! grep -q -E \$(join '|' \${HOST_LIST[@]}) /etc/hosts 2>/dev/null; then
         i=0
         while (( \$i < \${#HOST_LIST[@]} )); do
             printf '%s\n' "\${HOST_LIST[\$i]}    \${NODE_NAMES[\$i]}" >> /etc/hosts
