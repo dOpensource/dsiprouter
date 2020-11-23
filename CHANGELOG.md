@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-d889eee30be016adbe2fde8bee6f3560037725ef
+76936a1117b312afe68415e93bfed85672140c55
+ba3af5641e1244e52b148dd008e544d4631c86f5
 24b32c7b053e73a0a3646854c998a2fc6c653ee4
 a39fe323baf2b64f2b79c021b2767e05b2f98f7a
 383bc1773a09bd9d2356e788fcf7bebadee489d8
@@ -1770,10 +1771,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION d889eee30be016adbe2fde8bee6f3560037725ef)
+[//]: # (START_SECTION 76936a1117b312afe68415e93bfed85672140c55)
+### Patch Old Host Variables
+
+> Commit: [76936a1117b312afe68415e93bfed85672140c55](https://github.com/dOpensource/dsiprouter/commit/76936a1117b312afe68415e93bfed85672140c55)  
+> Date: Mon, 23 Nov 2020 16:25:46 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 76936a1117b312afe68415e93bfed85672140c55)
+[//]: # (START_SECTION ba3af5641e1244e52b148dd008e544d4631c86f5)
 ### dSIPRouter Install Fixes Patch
 
-> Commit: [d889eee30be016adbe2fde8bee6f3560037725ef](https://github.com/dOpensource/dsiprouter/commit/d889eee30be016adbe2fde8bee6f3560037725ef)  
+> Commit: [ba3af5641e1244e52b148dd008e544d4631c86f5](https://github.com/dOpensource/dsiprouter/commit/ba3af5641e1244e52b148dd008e544d4631c86f5)  
 > Date: Mon, 23 Nov 2020 13:38:16 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1787,7 +1803,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION d889eee30be016adbe2fde8bee6f3560037725ef)
+[//]: # (END_SECTION ba3af5641e1244e52b148dd008e544d4631c86f5)
 [//]: # (START_SECTION 24b32c7b053e73a0a3646854c998a2fc6c653ee4)
 ### VULTR Cloud Install Fixes
 

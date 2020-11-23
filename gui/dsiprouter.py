@@ -1972,7 +1972,7 @@ def injectReloadRequired():
 def injectSettings():
     return dict(settings=settings)
 
-# Deprecated, using bjoern for WSGI server
+# TODO: deprecated, using bjoern for WSGI server
 # class CustomServer(Server):
 #     """ Customize the Flask server with our settings """
 #

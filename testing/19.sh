@@ -12,7 +12,7 @@ temp_token='temp'
 
 # dynamic settings
 proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
-host=$(getConfigAttrib 'DSIP_HOST' $project_dir/gui/settings.py)
+host='127.0.0.1'
 port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
 username=$(getConfigAttrib 'DSIP_USERNAME' $project_dir/gui/settings.py)
 dsip_id=$(getConfigAttrib 'DSIP_ID' $project_dir/gui/settings.py)
