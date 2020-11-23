@@ -1,3 +1,4 @@
+bjoern
 certbot
 cron_descriptor
 cryptography
@@ -6,6 +7,7 @@ docker
 Flask
 Flask_Script
 Flask_WTF
+itsdangerous
 mysqlclient
 pem
 psycopg2
@@ -21,5 +23,4 @@ sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme
 SQLAlchemy
-uwsgi
 Werkzeug

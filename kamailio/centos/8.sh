@@ -14,7 +14,7 @@ function install() {
     dnf groupinstall -y 'base'
     dnf groupinstall -y 'Development Tools'
     dnf install -y psmisc curl wget sed gawk vim epel-release perl firewalld libuuid-devel openssl-devel
-    dnf install -y logrotate rsyslog
+    dnf install -y logrotate rsyslog certbot
 
     dnf install -y mariadb mariadb-devel mariadb-server
     ln -sf /usr/share/mariadb/ /usr/share/mysql

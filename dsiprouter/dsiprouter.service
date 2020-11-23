@@ -1,6 +1,6 @@
 [Unit]
 Description=dSIPRouter Service
-After=network.target mysql.service syslog.service
+After=network.target mysql.service syslog.service nginx.service
 
 [Service]
 User=dsiprouter
@@ -16,8 +16,7 @@ PIDFile=/var/run/dsiprouter/dsiprouter.pid
 # ExecStart* requires an absolute path for the program
 ExecStartPre=-/bin/mkdir -p ${DSIP_RUN_DIR}
 ExecStartPre=-/bin/chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-WorkingDirectory=/opt/dsiprouter/gui
-ExecStart=/usr/local/bin/uwsgi --ini ${DSIP_SYSTEM_CONFIG_DIR}/dsiprouter.ini
+ExecStart=/usr/bin/python3 ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
 Restart=on-failure
 
 [Install]

@@ -19,7 +19,8 @@ export ANSI_CYAN="${ESC_SEQ}1;36m"
 
 # Constants for imported functions
 export DSIP_INIT_FILE="/etc/systemd/system/dsip-init.service"
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
