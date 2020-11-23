@@ -280,7 +280,7 @@ export -f isInstanceAMI
 # returns: 0 == success, otherwise failure
 # notes: try to access the DO metadata URL to determine if this is an Digital Ocean instance
 function isInstanceDO() {
-    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/ &>/dev/null
+    curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/id &>/dev/null
     return $?
 }
 export -f isInstanceDO
@@ -288,7 +288,7 @@ export -f isInstanceDO
 # returns: 0 == success, otherwise failure
 # notes: try to access the GCE metadata URL to determine if this is an Google instance
 function isInstanceGCE() {
-    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/ &>/dev/null
+    curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/id &>/dev/null
     return $?
 }
 export -f isInstanceGCE
@@ -301,28 +301,40 @@ function isInstanceAZURE() {
 }
 export -f isInstanceAZURE
 
+# returns: 0 == success, otherwise failure
+# notes: try to access the DO metadata URL to determine if this is an VULTR instance
+function isInstanceVULTR() {
+    curl -s -f --connect-timeout 2 http://169.254.169.254/v1/instanceid &>/dev/null
+    return $?
+}
+export -f isInstanceDO
+
 # output: instance ID || blank string
 # notes: we try checking for exported instance variable avoid querying again
 function getInstanceID() {
     if (( ${AWS_ENABLED:-0} == 1)); then
-        curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+        curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
         ec2-metadata -i 2>/dev/null
     elif (( ${DO_ENABLED:-0} == 1 )); then
-        curl http://169.254.169.254/metadata/v1/id 2>/dev/null
+        curl -s -f http://169.254.169.254/metadata/v1/id 2>/dev/null
     elif (( ${GCE_ENABLED:-0} == 1 )); then
-        curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
+        curl -s -f -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
     elif (( ${AZURE_ENABLED:-0} == 1 )); then
-        curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+        curl -s -f -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+    elif (( ${VULTR_ENABLED:-0} == 1 )); then
+        curl -s -f http://169.254.169.254/v1/instanceid 2>/dev/null
     else
         if isInstanceAMI; then
-            curl http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
+            curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
             ec2-metadata -i 2>/dev/null
         elif isInstanceDO; then
-            curl http://169.254.169.254/metadata/v1/id 2>/dev/null
+            curl -s -f http://169.254.169.254/metadata/v1/id 2>/dev/null
         elif isInstanceGCE; then
-            curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
+            curl -s -f -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/id 2>/dev/null
         elif isInstanceAZURE; then
-            curl -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+            curl -s -f -H "Metadata: true" "http://169.254.169.254/metadata/instance/compute/vmId?api-version=2018-10-01" 2>/dev/null
+        elif isInstanceVULTR; then
+            curl -s -f http://169.254.169.254/v1/instanceid 2>/dev/null
         fi
     fi
 }
@@ -473,9 +485,9 @@ export -f removeDependsOnInit
 # note: timeout is set to 3 sec
 function checkConn() {
     if cmdExists 'nc'; then
-        nc -w 3 "$1" "$2" < /dev/null 2>&1 > /dev/null; return $?
+        nc -w 3 "$1" "$2" < /dev/null &>/dev/null; return $?
     else
-        timeout 3 bash -c "< /dev/tcp/$1/$2" 2> /dev/null; return $?
+        timeout 3 bash -c "< /dev/tcp/$1/$2" &>/dev/null; return $?
     fi
 }
 export -f checkConn

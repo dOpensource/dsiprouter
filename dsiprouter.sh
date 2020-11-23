@@ -135,17 +135,14 @@ setScriptSettings() {
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
 
-    export EXTERNAL_IP=$(getExternalIP)
-    export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} | sed 's/\.$//')
-    if [ $? -eq 1 ]; then
-    	export EXTERNAL_FQDN="$(hostname)"
-    fi
-    if [[ ! -n "$EXTERNAL_FQDN" ]]; then
-    	export EXTERNAL_FQDN="$(hostname)"
-    fi
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
+    export EXTERNAL_IP=$(getExternalIP)
+    export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
+    if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
+    	export EXTERNAL_FQDN="$INTERNAL_FQDN"
+    fi
 
     if (( ${WITH_SSL} == 1 )); then
         export DSIP_PROTO='https'
@@ -191,30 +188,31 @@ function setCloudPlatform {
     export DO_ENABLED=0
     export GCE_ENABLED=0
     export AZURE_ENABLED=0
+    export VULTR_ENABLED=0
+
     # -- amazon web service check --
     if isInstanceAMI; then
         export AWS_ENABLED=1
         CLOUD_PLATFORM='AWS'
+    # -- digital ocean check --
+    elif isInstanceDO; then
+        export DO_ENABLED=1
+        CLOUD_PLATFORM='DO'
+    # -- google compute engine check --
+    elif isInstanceGCE; then
+        export GCE_ENABLED=1
+        CLOUD_PLATFORM='GCE'
+    # -- microsoft azure check --
+    elif isInstanceAZURE; then
+        export AZURE_ENABLED=1
+        CLOUD_PLATFORM='AZURE'
+    # -- vultr cloud check --
+    elif isInstanceVULTR; then
+        export VULTR_ENABLED=1
+        CLOUD_PLATFORM='VULTR'
+    # -- bare metal or unsupported cloud platform --
     else
-        # -- digital ocean check --
-        if isInstanceDO; then
-            export DO_ENABLED=1
-            CLOUD_PLATFORM='DO'
-        else
-            # -- google compute engine check --
-            if isInstanceGCE; then
-                export GCE_ENABLED=1
-                CLOUD_PLATFORM='GCE'
-            else
-                # -- microsoft azure check --
-                if isInstanceAZURE; then
-                    export AZURE_ENABLED=1
-                    CLOUD_PLATFORM='AZURE'
-                else
-                    CLOUD_PLATFORM=''
-                fi
-            fi
-        fi
+        CLOUD_PLATFORM=''
     fi
 }
 
@@ -241,7 +239,7 @@ function cleanupAndExit {
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
-    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN
+    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN VULTR_ENABLED CLOUD_PLATFORM
     unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
@@ -1193,6 +1191,7 @@ $(declare -f isInstanceAMI)
 $(declare -f isInstanceDO)
 $(declare -f isInstanceGCE)
 $(declare -f isInstanceAZURE)
+$(declare -f isInstanceVULTR)
 $(declare -f getInstanceID)
 $(declare -f removeInitCmd)
 
@@ -1743,7 +1742,7 @@ function resetPassword {
 
     if (( $RESET_DSIP_CREDS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
-            if (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 )); then
+            if [[ -n "$CLOUD_PLATFORM" ]]; then
                 DSIP_PASSWORD=$(getInstanceID)
             fi
         else
