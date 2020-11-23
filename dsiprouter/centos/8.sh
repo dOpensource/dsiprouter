@@ -12,7 +12,7 @@ function install {
    # Install dependencies for dSIPRouter
     dnf install -y dnf-utils
     dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    dnf install -y firewalld nginx
+    dnf install -y firewalld nginx policycoreutils-python-utils
     dnf install -y python36 python3-libs python36-devel python3-pip python3-mysql
     dnf install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 
@@ -34,7 +34,7 @@ function install {
 
     # give dsiprouter permissions in SELINUX
     semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
-        semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
+    semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
 
     # reset python cmd in case it was just installed
     setPythonCmd
@@ -58,6 +58,7 @@ function install {
         exit 1
     fi
 
+
     # Configure nginx
     # determine available TLS protocols (try using highest available)
     OPENSSL_VER=$(openssl version 2>/dev/null | awk '{print $2}' | perl -pe 's%([0-9])\.([0-9]).([0-9]).*%\1\2\3%')
@@ -79,6 +80,7 @@ function install {
         -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
         ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
     ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
+
     systemctl enable nginx
     systemctl restart nginx
 

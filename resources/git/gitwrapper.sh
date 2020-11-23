@@ -3,7 +3,7 @@
 
 # extends git command functionality
 __gitwrapper() {
-    local ARGS=() COMMIT_FLAG=0 REMOTE_NAME="origin"
+    local ARGS=() COMMIT_FLAG=0 REMOTE_NAME=""
 
     while (( $# > 0 )); do
         case "$1" in
@@ -26,6 +26,13 @@ __gitwrapper() {
                 ;;
         esac
     done
+
+    # if default remote used we have to lookup the remote name
+    if [[ "${REMOTE_NAME}" == "." ]]; then
+        REMOTE_NAME=$(git config --get checkout.defaultremote)
+    fi
+    # if using default and not set then use origin
+    REMOTE_NAME=${REMOTE_NAME:-origin}
 
     export REMOTE_NAME
     command git "${ARGS[@]}"
