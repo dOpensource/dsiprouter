@@ -112,7 +112,7 @@ UPLOAD_FOLDER = '/tmp'
 # The cloud platform the dSIPRouter is installed on
 # The installer will update this
 # '' = other or native install
-# AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean
+# AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean, VULTR = Vultr Cloud
 CLOUD_PLATFORM = ''
 
 # email server config

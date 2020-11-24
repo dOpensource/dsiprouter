@@ -121,7 +121,7 @@ def reloadKamailio():
             debugEndpoint()
 
         # format some settings for kam config
-        dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
+        dsip_api_url = settings.DSIP_API_PROTO + '://' + '127.0.0.1' + ':' + str(settings.DSIP_API_PORT)
         if isinstance(settings.DSIP_API_TOKEN, bytes):
             dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
         else:
@@ -221,10 +221,6 @@ def getEndpointLease():
         auth_username = name
         auth_password = urandomChars(DEF_PASSWORD_LEN)
         auth_domain = settings.DOMAIN
-        if settings.DSIP_API_HOST:
-            api_hostname = settings.DSIP_API_HOST
-        else:
-            api_hostname = getExternalIP()
 
         # Set some defaults
         host_addr = ''
@@ -249,7 +245,6 @@ def getEndpointLease():
         lease_data['leaseid'] = Lease.id
         lease_data['username'] = auth_username
         lease_data['password'] = auth_password
-        lease_data['hostname'] = api_hostname
         lease_data['domain'] = auth_domain
         lease_data['ttl'] = ttl
 

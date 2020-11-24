@@ -5,8 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-
-f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a
+76936a1117b312afe68415e93bfed85672140c55
+ba3af5641e1244e52b148dd008e544d4631c86f5
+24b32c7b053e73a0a3646854c998a2fc6c653ee4
+a39fe323baf2b64f2b79c021b2767e05b2f98f7a
+383bc1773a09bd9d2356e788fcf7bebadee489d8
+0487fdf7ecc14fb4eea84f2ca8dd77d62191df0d
 e29447636011bce47e75b8943840e87ef4db9ee3
 442594103964d1441361071ae1f367dce714bda9
 d39844eda0194d17dc47d205c5bc80ac1b4bb296
@@ -1767,11 +1771,80 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
+[//]: # (START_SECTION 76936a1117b312afe68415e93bfed85672140c55)
+### Patch Old Host Variables
 
-[//]: # (START_SECTION f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a)
+> Commit: [76936a1117b312afe68415e93bfed85672140c55](https://github.com/dOpensource/dsiprouter/commit/76936a1117b312afe68415e93bfed85672140c55)  
+> Date: Mon, 23 Nov 2020 16:25:46 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 76936a1117b312afe68415e93bfed85672140c55)
+[//]: # (START_SECTION ba3af5641e1244e52b148dd008e544d4631c86f5)
+### dSIPRouter Install Fixes Patch
+
+> Commit: [ba3af5641e1244e52b148dd008e544d4631c86f5](https://github.com/dOpensource/dsiprouter/commit/ba3af5641e1244e52b148dd008e544d4631c86f5)  
+> Date: Mon, 23 Nov 2020 13:38:16 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- patch systemd bug from [#295](https://github.com/dOpensource/dsiprouter/pull/295)
+- cleanup kamailio config
+- reset kamailio config defaults
+
+
+---
+
+[//]: # (END_SECTION ba3af5641e1244e52b148dd008e544d4631c86f5)
+[//]: # (START_SECTION 24b32c7b053e73a0a3646854c998a2fc6c653ee4)
+### VULTR Cloud Install Fixes
+
+> Commit: [24b32c7b053e73a0a3646854c998a2fc6c653ee4](https://github.com/dOpensource/dsiprouter/commit/24b32c7b053e73a0a3646854c998a2fc6c653ee4)  
+> Date: Mon, 23 Nov 2020 12:25:42 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add vultr to cloud deployment checks
+- update cloud deployment checks
+- update `checkConn()` lib function
+- update same in `common` tests lib
+- fix external fqdn resolution for non-dns deployments
+- update `resetpassword()` cloud deployment check
+
+
+---
+
+[//]: # (END_SECTION 24b32c7b053e73a0a3646854c998a2fc6c653ee4)
+[//]: # (START_SECTION a39fe323baf2b64f2b79c021b2767e05b2f98f7a)
+### Update Pre-Push Git Hook
+
+> Commit: [a39fe323baf2b64f2b79c021b2767e05b2f98f7a](https://github.com/dOpensource/dsiprouter/commit/a39fe323baf2b64f2b79c021b2767e05b2f98f7a)  
+> Date: Fri, 20 Nov 2020 17:09:25 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- lookup `REMOTE_NAME` when using default remote
+
+
+---
+
+[//]: # (END_SECTION a39fe323baf2b64f2b79c021b2767e05b2f98f7a)
+[//]: # (START_SECTION 383bc1773a09bd9d2356e788fcf7bebadee489d8)
 ### dSIPRouter GUI Server Upgrade
 
-> Commit: [f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a](https://github.com/dOpensource/dsiprouter/commit/f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a)  
+> Commit: [383bc1773a09bd9d2356e788fcf7bebadee489d8](https://github.com/dOpensource/dsiprouter/commit/383bc1773a09bd9d2356e788fcf7bebadee489d8)  
 > Date: Fri, 20 Nov 2020 13:20:15 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1791,18 +1864,30 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION f1db2fb77fbfec98bb6b9a6cb2636eab57014d4a)
-[//]: # (START_SECTION e29447636011bce47e75b8943840e87ef4db9ee3)
+[//]: # (END_SECTION 383bc1773a09bd9d2356e788fcf7bebadee489d8)
+[//]: # (START_SECTION 0487fdf7ecc14fb4eea84f2ca8dd77d62191df0d)
+### Nginx update: - Enabled Nginx after installation on CentOS 7 and CentOS 8
 
+> Commit: [0487fdf7ecc14fb4eea84f2ca8dd77d62191df0d](https://github.com/dOpensource/dsiprouter/commit/0487fdf7ecc14fb4eea84f2ca8dd77d62191df0d)  
+> Date: Fri, 20 Nov 2020 16:37:41 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0487fdf7ecc14fb4eea84f2ca8dd77d62191df0d)
+[//]: # (START_SECTION e29447636011bce47e75b8943840e87ef4db9ee3)
 ### Kamailio Module Load Ordering
 
 > Commit: [e29447636011bce47e75b8943840e87ef4db9ee3](https://github.com/dOpensource/dsiprouter/commit/e29447636011bce47e75b8943840e87ef4db9ee3)  
 > Date: Thu, 19 Nov 2020 11:21:50 -0500  
-
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 > Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
-
 
 
 - fix load order for tls module
@@ -1811,299 +1896,21 @@ END_SECTION COMMITS)
 
 ---
 
-
-[//]: # (END_SECTION e29447636011bce47e75b8943840e87ef4db9ee3
+[//]: # (END_SECTION e29447636011bce47e75b8943840e87ef4db9ee3)
 [//]: # (START_SECTION 442594103964d1441361071ae1f367dce714bda9)
 ### Add Missing Dependencies
 
 > Commit: [442594103964d1441361071ae1f367dce714bda9](https://github.com/dOpensource/dsiprouter/commit/442594103964d1441361071ae1f367dce714bda9)  
 > Date: Wed, 18 Nov 2020 17:29:02 -0500  
-
-[//]: # (END_SECTION 4a0a9eda2c99048382ce5f4e4c055b54f053cb83)
-[//]: # (START_SECTION 348d856841f14014714bc55206cdbbfb4c849445)
-### Fixes issue #291 and removes the default Nginx server
-
-> Commit: [348d856841f14014714bc55206cdbbfb4c849445](https://github.com/dOpensource/dsiprouter/commit/348d856841f14014714bc55206cdbbfb4c849445)  
-> Date: Tue, 17 Nov 2020 00:56:39 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 348d856841f14014714bc55206cdbbfb4c849445)
-[//]: # (START_SECTION e17b362a94175aaab6ffc9e711e95fa80df08acc)
-### Fixed Debian 9 dSIPRouter install
-
-> Commit: [e17b362a94175aaab6ffc9e711e95fa80df08acc](https://github.com/dOpensource/dsiprouter/commit/e17b362a94175aaab6ffc9e711e95fa80df08acc)  
-> Date: Sun, 15 Nov 2020 04:17:36 +0000  
-> Author: root (root@testing-vm.5sbaumxjh52uxarymuyxislztd.ex.internal.cloudapp.net)  
-> Committer: root (root@testing-vm.5sbaumxjh52uxarymuyxislztd.ex.internal.cloudapp.net)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION e17b362a94175aaab6ffc9e711e95fa80df08acc)
-[//]: # (START_SECTION b04ed0097dd4ba5867062c16ec2d654e72ac6d6e)
-### Dynamically obtain the username that nginx is running under
-
-> Commit: [b04ed0097dd4ba5867062c16ec2d654e72ac6d6e](https://github.com/dOpensource/dsiprouter/commit/b04ed0097dd4ba5867062c16ec2d654e72ac6d6e)  
-> Date: Sun, 15 Nov 2020 01:17:27 +0000  
-> Author: root (root@testing-vm.4fyalwlohqaujmzfo3kwxhyerh.ex.internal.cloudapp.net)  
-> Committer: root (root@testing-vm.4fyalwlohqaujmzfo3kwxhyerh.ex.internal.cloudapp.net)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION b04ed0097dd4ba5867062c16ec2d654e72ac6d6e)
-[//]: # (START_SECTION 315cbdcde908c5e94fc7f283c2b9d0c76e63f4a6)
-### Update 9.sh
-
-> Commit: [315cbdcde908c5e94fc7f283c2b9d0c76e63f4a6](https://github.com/dOpensource/dsiprouter/commit/315cbdcde908c5e94fc7f283c2b9d0c76e63f4a6)  
-> Date: Sat, 14 Nov 2020 19:38:47 -0500  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: GitHub (noreply@github.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 315cbdcde908c5e94fc7f283c2b9d0c76e63f4a6)
-[//]: # (START_SECTION 7f50034e56da5e6562eb3e03c813263a5c13fbb7)
-### Update 10.sh
-
-> Commit: [7f50034e56da5e6562eb3e03c813263a5c13fbb7](https://github.com/dOpensource/dsiprouter/commit/7f50034e56da5e6562eb3e03c813263a5c13fbb7)  
-> Date: Sat, 14 Nov 2020 19:37:48 -0500  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: GitHub (noreply@github.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 7f50034e56da5e6562eb3e03c813263a5c13fbb7)
-[//]: # (START_SECTION 52f64d507d7c5d867f3d8fbeb97aa52ad664ec36)
-### Updates
-
-> Commit: [52f64d507d7c5d867f3d8fbeb97aa52ad664ec36](https://github.com/dOpensource/dsiprouter/commit/52f64d507d7c5d867f3d8fbeb97aa52ad664ec36)  
-> Date: Sat, 14 Nov 2020 22:22:21 +0000  
-> Author: root (root@nightly-centos7.dsiprouter.org)  
-> Committer: root (root@nightly-centos7.dsiprouter.org)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 52f64d507d7c5d867f3d8fbeb97aa52ad664ec36)
-[//]: # (START_SECTION 302a6275995e2398f18aa59ad871554456d4b68c)
-### Changed the order in which firewall rules are applied first and then firewalld is started
-
-> Commit: [302a6275995e2398f18aa59ad871554456d4b68c](https://github.com/dOpensource/dsiprouter/commit/302a6275995e2398f18aa59ad871554456d4b68c)  
-> Date: Sat, 14 Nov 2020 21:29:37 +0000  
-> Author: root (root@nightly-centos7.dsiprouter.org)  
-> Committer: root (root@nightly-centos7.dsiprouter.org)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 302a6275995e2398f18aa59ad871554456d4b68c)
-[//]: # (START_SECTION 979e7f28b2c2efbf113f898b689d6603bfd274e0)
-### dSIP Documentation - Re-enabled documentation to be generated
-
-> Commit: [979e7f28b2c2efbf113f898b689d6603bfd274e0](https://github.com/dOpensource/dsiprouter/commit/979e7f28b2c2efbf113f898b689d6603bfd274e0)  
-> Date: Sat, 14 Nov 2020 19:33:28 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 979e7f28b2c2efbf113f898b689d6603bfd274e0)
-[//]: # (START_SECTION 7507cd91dffe48de1b52cd1060610332753dc890)
-### Updates to support Kamailio on CentOS
-
-> Commit: [7507cd91dffe48de1b52cd1060610332753dc890](https://github.com/dOpensource/dsiprouter/commit/7507cd91dffe48de1b52cd1060610332753dc890)  
-> Date: Sat, 14 Nov 2020 19:31:35 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 7507cd91dffe48de1b52cd1060610332753dc890)
-[//]: # (START_SECTION bad92e9378ef8164cd37f1c190f92e08ec4c5836)
-### CentOS Updated - Added kamailio-sipdump package to the installer
-
-> Commit: [bad92e9378ef8164cd37f1c190f92e08ec4c5836](https://github.com/dOpensource/dsiprouter/commit/bad92e9378ef8164cd37f1c190f92e08ec4c5836)  
-> Date: Sat, 14 Nov 2020 19:24:39 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION bad92e9378ef8164cd37f1c190f92e08ec4c5836)
-[//]: # (START_SECTION e8480a8c7036b9965c4a7424fc438aa35e4d423b)
-### Updates to support Nginx on CentOS 7
-
-> Commit: [e8480a8c7036b9965c4a7424fc438aa35e4d423b](https://github.com/dOpensource/dsiprouter/commit/e8480a8c7036b9965c4a7424fc438aa35e4d423b)  
-> Date: Sat, 14 Nov 2020 19:00:33 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION e8480a8c7036b9965c4a7424fc438aa35e4d423b)
-[//]: # (START_SECTION a2e9980ec557656d248823fc4366c7fa0f8edb24)
-### Added missing library for Sphinx
-
-> Commit: [a2e9980ec557656d248823fc4366c7fa0f8edb24](https://github.com/dOpensource/dsiprouter/commit/a2e9980ec557656d248823fc4366c7fa0f8edb24)  
-> Date: Sat, 14 Nov 2020 02:30:38 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION a2e9980ec557656d248823fc4366c7fa0f8edb24)
-[//]: # (START_SECTION 7b65855389c4be45c90bfb866eddc9451a8e1d9b)
-### Update requirements to add back in the uwsgi server
-
-> Commit: [7b65855389c4be45c90bfb866eddc9451a8e1d9b](https://github.com/dOpensource/dsiprouter/commit/7b65855389c4be45c90bfb866eddc9451a8e1d9b)  
-> Date: Sat, 14 Nov 2020 01:17:49 +0000  
-> Author: root (root@nightly.dsiprouter.org)  
-> Committer: root (root@nightly.dsiprouter.org)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 7b65855389c4be45c90bfb866eddc9451a8e1d9b)
-[//]: # (START_SECTION 16d2a8ea03bd62fbce4078450c714bab9625175d)
-### Update kamailio_dsiprouter.cfg
-
-> Commit: [16d2a8ea03bd62fbce4078450c714bab9625175d](https://github.com/dOpensource/dsiprouter/commit/16d2a8ea03bd62fbce4078450c714bab9625175d)  
-> Date: Fri, 13 Nov 2020 18:08:30 -0500  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: GitHub (noreply@github.com)  
-> Signed:   
-
-
-- Adding support for servernat
-
-
----
-
-[//]: # (END_SECTION 16d2a8ea03bd62fbce4078450c714bab9625175d)
-[//]: # (START_SECTION 3fd6ffb00ebd98f4e93fe0e8db7a8c4121a6c670)
-### Update dsiprouter.sh
-
-> Commit: [3fd6ffb00ebd98f4e93fe0e8db7a8c4121a6c670](https://github.com/dOpensource/dsiprouter/commit/3fd6ffb00ebd98f4e93fe0e8db7a8c4121a6c670)  
-> Date: Fri, 13 Nov 2020 16:32:12 -0500  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: GitHub (noreply@github.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 3fd6ffb00ebd98f4e93fe0e8db7a8c4121a6c670)
-[//]: # (START_SECTION 46667fae98f6c8b5ac627d4e0ab717413c9abb08)
-### Update kamailio_dsiprouter.cfg
-
-> Commit: [46667fae98f6c8b5ac627d4e0ab717413c9abb08](https://github.com/dOpensource/dsiprouter/commit/46667fae98f6c8b5ac627d4e0ab717413c9abb08)  
-> Date: Fri, 13 Nov 2020 16:08:42 -0500  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: GitHub (noreply@github.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 46667fae98f6c8b5ac627d4e0ab717413c9abb08)
-[//]: # (START_SECTION 31515bd149e609f6f676bb357d461d6e83a01608)
-### Update kamailio_dsiprouter.cfg
-
-> Commit: [31515bd149e609f6f676bb357d461d6e83a01608](https://github.com/dOpensource/dsiprouter/commit/31515bd149e609f6f676bb357d461d6e83a01608)  
-> Date: Fri, 13 Nov 2020 15:51:28 -0500  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: GitHub (noreply@github.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 31515bd149e609f6f676bb357d461d6e83a01608)
-[//]: # (START_SECTION 373b3b573a04bc6dfa83cab99bd9d881e799f741)
-### Removed Sphinx due to causing build to fail
-
-> Commit: [373b3b573a04bc6dfa83cab99bd9d881e799f741](https://github.com/dOpensource/dsiprouter/commit/373b3b573a04bc6dfa83cab99bd9d881e799f741)  
-> Date: Fri, 13 Nov 2020 20:45:24 +0000  
-> Author: root (root@nightly.dsiprouter.org)  
-> Committer: root (root@nightly.dsiprouter.org)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 373b3b573a04bc6dfa83cab99bd9d881e799f741)
-[//]: # (START_SECTION a4dff281c4621b70e411a6013293396a1b673c70)
-### Add placeholders for Docs Dirs
-
-> Commit: [a4dff281c4621b70e411a6013293396a1b673c70](https://github.com/dOpensource/dsiprouter/commit/a4dff281c4621b70e411a6013293396a1b673c70)  
-> Date: Fri, 13 Nov 2020 13:28:29 -0500  
-
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
 - add `sphinx-rtd-theme` and `uwsgi` dependency
 
 
 ---
-
 
 [//]: # (END_SECTION 442594103964d1441361071ae1f367dce714bda9)
 [//]: # (START_SECTION d39844eda0194d17dc47d205c5bc80ac1b4bb296)
@@ -2130,7 +1937,6 @@ END_SECTION COMMITS)
 > Date: Wed, 18 Nov 2020 09:58:56 +0000  
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Mack Hendricks (mack@dopensource.com)  
-
 > Signed:   
 
 
@@ -2138,18 +1944,15 @@ END_SECTION COMMITS)
 
 ---
 
-
 [//]: # (END_SECTION a6c9c5a3fd93382c758002354e5e362516e70be7)
 [//]: # (START_SECTION b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a)
 ### dsiprouter installation fixes
 
 > Commit: [b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a](https://github.com/dOpensource/dsiprouter/commit/b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a)  
 > Date: Tue, 17 Nov 2020 19:40:41 -0500  
-
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 > Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
-
 
 
 - fix psycopg2 dependency issue on centos
@@ -2170,9 +1973,7 @@ END_SECTION COMMITS)
 - various fixes for centos8 service install scripts
 
 
-
 ---
-
 
 [//]: # (END_SECTION b883b914b2ca6c0e6d9908c4611e9c4251c2eb0a)
 [//]: # (START_SECTION 348d856841f14014714bc55206cdbbfb4c849445)
@@ -2180,22 +1981,6 @@ END_SECTION COMMITS)
 
 > Commit: [348d856841f14014714bc55206cdbbfb4c849445](https://github.com/dOpensource/dsiprouter/commit/348d856841f14014714bc55206cdbbfb4c849445)  
 > Date: Tue, 17 Nov 2020 00:56:39 +0000  
-
-[//]: # (END_SECTION 07639d4e4af2b8232ad4835ca890f2c7e1ad7414)
-[//]: # (START_SECTION 9c97ea3d520064dde2bd147946e9181b3145dcc2)
-### Fixed permissions
-
-> Commit: [9c97ea3d520064dde2bd147946e9181b3145dcc2](https://github.com/dOpensource/dsiprouter/commit/9c97ea3d520064dde2bd147946e9181b3145dcc2)  
-> Date: Fri, 13 Nov 2020 14:50:00 +0000  
-> Author: root (root@nightly.dsiprouter.org)  
-> Committer: root (root@nightly.dsiprouter.org)  
-> Signed:   
-
-
-
-
----
-
 > Author: Mack Hendricks (mack@dopensource.com)  
 > Committer: Mack Hendricks (mack@dopensource.com)  
 > Signed:   
@@ -2204,7 +1989,6 @@ END_SECTION COMMITS)
 
 
 ---
-
 
 [//]: # (END_SECTION 348d856841f14014714bc55206cdbbfb4c849445)
 [//]: # (START_SECTION e17b362a94175aaab6ffc9e711e95fa80df08acc)
@@ -2542,7 +2326,6 @@ END_SECTION COMMITS)
 
 
 ---
-
 
 [//]: # (END_SECTION dd45f9e65664bc3f4bf324e6bfbd5053f4d72e99)
 [//]: # (START_SECTION 5b6ff83b93434abffcc48d57b1b716d5194cb2a2)
