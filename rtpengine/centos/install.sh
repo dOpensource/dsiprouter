@@ -120,7 +120,7 @@ function install {
     # alias and link rsyslog to syslog service as in debian
     # allowing rsyslog to be accessible via syslog namespace
     # the settings are already there just commented out by default
-    sed -i -r 's|^[;#](.*)|\1|g' /usr/lib/systemd/system/rsyslog.service
+    sed -i -r 's|^[;](.*)|\1|g' /usr/lib/systemd/system/rsyslog.service
     ln -sf /usr/lib/systemd/system/rsyslog.service /etc/systemd/system/syslog.service
     systemctl daemon-reload
 
