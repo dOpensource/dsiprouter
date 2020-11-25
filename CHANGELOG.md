@@ -5,7 +5,10 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-76936a1117b312afe68415e93bfed85672140c55
+47365a0348a5bd1f38b8bf5d5dcfdfac0696603b
+5793453bc1f2476b4361c762611da08325fded96
+62ba43bb6af91568e53e5ddcfe29f4740ae41788
+9ef7eabc2075f31510565bf75226e46d30511cf6
 ba3af5641e1244e52b148dd008e544d4631c86f5
 24b32c7b053e73a0a3646854c998a2fc6c653ee4
 a39fe323baf2b64f2b79c021b2767e05b2f98f7a
@@ -1771,10 +1774,62 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 76936a1117b312afe68415e93bfed85672140c55)
+[//]: # (START_SECTION 47365a0348a5bd1f38b8bf5d5dcfdfac0696603b)
+### Fix Outbound Route Update Edge Case
+
+> Commit: [47365a0348a5bd1f38b8bf5d5dcfdfac0696603b](https://github.com/dOpensource/dsiprouter/commit/47365a0348a5bd1f38b8bf5d5dcfdfac0696603b)  
+> Date: Tue, 24 Nov 2020 19:20:08 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix bug updating outbound routes when LCR routing entry exists
+- fix centos check for rtpengine recording RPM on rtpengine install
+- add centos fixes to amazon linux rtpengine install
+
+
+---
+
+[//]: # (END_SECTION 47365a0348a5bd1f38b8bf5d5dcfdfac0696603b)
+[//]: # (START_SECTION 5793453bc1f2476b4361c762611da08325fded96)
+### Fix Fail2ban
+
+> Commit: [5793453bc1f2476b4361c762611da08325fded96](https://github.com/dOpensource/dsiprouter/commit/5793453bc1f2476b4361c762611da08325fded96)  
+> Date: Tue, 24 Nov 2020 11:44:18 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- -Used correct quotes
+
+
+---
+
+[//]: # (END_SECTION 5793453bc1f2476b4361c762611da08325fded96)
+[//]: # (START_SECTION 62ba43bb6af91568e53e5ddcfe29f4740ae41788)
+### fix broken rsyslog.service - only remove ; comment tags
+
+> Commit: [62ba43bb6af91568e53e5ddcfe29f4740ae41788](https://github.com/dOpensource/dsiprouter/commit/62ba43bb6af91568e53e5ddcfe29f4740ae41788)  
+> Date: Tue, 24 Nov 2020 01:40:37 -0700  
+> Author: reqlez (6512602+reqlez@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Disable removing "#" comments tags and only remove ";" comment tags instead, otherwise, installing RTPENGINE under CentOS breaks rsyslog.service
+
+- By the way, dsiprouter logging is still broken even after this fix, I suspect there is another issue, possible with sysloginit.py  but have not been able to figure out yet.
+
+
+---
+
+[//]: # (END_SECTION 62ba43bb6af91568e53e5ddcfe29f4740ae41788)
+[//]: # (START_SECTION 9ef7eabc2075f31510565bf75226e46d30511cf6)
 ### Patch Old Host Variables
 
-> Commit: [76936a1117b312afe68415e93bfed85672140c55](https://github.com/dOpensource/dsiprouter/commit/76936a1117b312afe68415e93bfed85672140c55)  
+> Commit: [9ef7eabc2075f31510565bf75226e46d30511cf6](https://github.com/dOpensource/dsiprouter/commit/9ef7eabc2075f31510565bf75226e46d30511cf6)  
 > Date: Mon, 23 Nov 2020 16:25:46 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1785,7 +1840,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 76936a1117b312afe68415e93bfed85672140c55)
+[//]: # (END_SECTION 9ef7eabc2075f31510565bf75226e46d30511cf6)
 [//]: # (START_SECTION ba3af5641e1244e52b148dd008e544d4631c86f5)
 ### dSIPRouter Install Fixes Patch
 

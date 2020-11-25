@@ -75,29 +75,36 @@ function install {
     git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
     cd ./rtpengine
 
-    VERSION_NUM=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
+    RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
     if (( $(echo "$RTPENGINE_VER" | perl -0777 -pe 's|mr(\d+\.\d+)\.(\d+)\.(\d+)|\1\2\3 >= 6.511|gm' | bc -l) )); then
-        PREFIX="rtpengine-${VERSION_NUM}/"
+        PREFIX="rtpengine-${RTPENGINE_RPM_VER}/"
     else
-        PREFIX="ngcp-rtpengine-${VERSION_NUM}/"
+        PREFIX="ngcp-rtpengine-${RTPENGINE_RPM_VER}/"
     fi
 
-    mkdir -p ~/rpmbuild/SOURCES
-
-    git archive --output ~/rpmbuild/SOURCES/ngcp-rtpengine-${VERSION_NUM}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
-    rpmbuild -ba  ./el/rtpengine.spec
-    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-${VERSION_NUM}*.rpm
-    rpm -q ngcp-rtpengine >/dev/null 2>&1; ret=$?
-    rpm -i ~/rpmbuild/RPMS/noarch/ngcp-rtpengine-dkms-${VERSION_NUM}*.rpm
-    rpm -q ngcp-rtpengine-dkms >/dev/null 2>&1; ((ret+=$?))
-    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-kernel-${VERSION_NUM}*.rpm
-    rpm -q ngcp-rtpengine-kernel >/dev/null 2>&1; ((ret+=$?))
-    if [ -f ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-recording-${VERSION_NUM}*.rpm ]; then
-        rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-recording-${VERSION_NUM}*.rpm
-        rpm -q ngcp-rtpengine-recording >/dev/null 2>&1; ((ret+=$?))
+    RPM_BUILD_ROOT="${HOME}/rpmbuild"
+    rm -rf ${RPM_BUILD_ROOT}
+    mkdir -p ${RPM_BUILD_ROOT}/SOURCES
+    git archive --output ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
+    # fix for rpm build path issue
+    perl -i -pe 's|(%define archname) rtpengine-mr|\1 rtpengine-|' ./el/rtpengine.spec
+    # build the RPM's
+    rpmbuild -ba ./el/rtpengine.spec
+    # install the required RPM's
+    rpm -i ${RPM_BUILD_ROOT}/RPMS/$(uname -r)/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm
+    rpm -q ngcp-rtpengine &>/dev/null; ret=$?
+    rpm -i ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm
+    rpm -q ngcp-rtpengine-dkms &>/dev/null; ((ret+=$?))
+    rpm -i ${RPM_BUILD_ROOT}/RPMS/$(uname -r)/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
+    rpm -q ngcp-rtpengine-kernel &>/dev/null; ((ret+=$?))
+    # install extra RPM's if they exist (version dependent)
+    RTPENGINE_RECORDING_RPM=$(find ${RPM_BUILD_ROOT}/RPMS/$(uname -r) -name "ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm" -print -quit)
+    if [[ -f "$RTPENGINE_RECORDING_RPM" ]]; then
+        rpm -i ${RTPENGINE_RECORDING_RPM}
+        rpm -q ngcp-rtpengine-recording &>/dev/null; ((ret+=$?))
     fi
 
-    if [ $ret -ne 0 ]; then
+    if (( $ret != 0 )); then
         printerr "Problem installing RTPEngine RPM's"
         exit 1
     fi
@@ -105,7 +112,6 @@ function install {
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
-
 
     # Configure RTPEngine to support kernel packet forwarding
     cd ${SRC_DIR}/rtpengine/kernel-module &&
