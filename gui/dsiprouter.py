@@ -1700,8 +1700,9 @@ def addUpateOutboundRoutes():
                 db.add(OLCRMap)
 
         # Updating
-        else:  # Handle the simple case of a To prefix being updated
-            if (from_prefix is None) and (prefix is not None):
+        else:
+            # no from_prefix we can update outbound route and remove any LCR entries
+            if from_prefix is None and prefix is not None:
                 oldgroupid = groupid
                 if (groupid is None) or (groupid == "None"):
                     groupid = settings.FLT_OUTBOUND
@@ -1710,14 +1711,14 @@ def addUpateOutboundRoutes():
                 db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
                     'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
                     'routeid': routeid, 'gwlist': gwlist, 'description': description
-                })
+                }, synchronize_session=False)
 
                 # Delete from LCR table using the old group id
                 d1 = db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == oldgroupid)
                 d1.delete(synchronize_session=False)
-                db.commit()
 
-            if from_prefix:
+            # from_prefix given, we update outbound route and create/update LCR entry
+            elif from_prefix is not None:
 
                 # Setup pattern
                 pattern = from_prefix + "-" + prefix
@@ -1725,13 +1726,16 @@ def addUpateOutboundRoutes():
                 # Check if pattern already exists
                 exists = db.query(dSIPLCR).filter(dSIPLCR.pattern == pattern).scalar()
                 if exists:
-                    return displayOutboundRoutes()
+                    db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+                        'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
+                        'routeid': routeid, 'gwlist': gwlist, 'description': description
+                    }, synchronize_session=False)
 
-                elif (prefix is not None) and (groupid == settings.FLT_OUTBOUND):  # Adding a From prefix to an existing To
+                # Adding a From prefix to an existing To
+                elif prefix is not None and groupid == settings.FLT_OUTBOUND:
                     # Create a new groupid
                     mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
                                                     (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
-                    db.commit()
 
                     # Start LCR routes with a groupid set in settings (default is 10000)
                     if mlcr is None:
@@ -1750,19 +1754,27 @@ def addUpateOutboundRoutes():
                     db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
                         'groupid': groupid, 'prefix': prefix, 'timerec': timerec, 'priority': priority,
                         'routeid': routeid, 'gwlist': gwlist, 'description': description
-                    })
+                    }, synchronize_session=False)
 
                 # Update existing pattern
                 elif (int(groupid) >= settings.FLT_LCR_MIN) and (int(groupid) < settings.FLT_FWD_MIN):
                     db.query(dSIPLCR).filter(dSIPLCR.dr_groupid == groupid).update({
                         'pattern': pattern, 'from_prefix': from_prefix})
 
+                    # Update the dr_rules table
+                    db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
+                        'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
+                        'routeid': routeid, 'gwlist': gwlist, 'description': description
+                    }, synchronize_session=False)
+
+            # no to/from_prefix remove any LCR entries and update outbound route
+            # TODO: not sure how to correlate stale LCR entries without old from-prefix (ideally we match by id)
+            else:
                 # Update the dr_rules table
                 db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
                     'prefix': prefix, 'groupid': groupid, 'timerec': timerec, 'priority': priority,
                     'routeid': routeid, 'gwlist': gwlist, 'description': description
-                })
-                db.commit()
+                }, synchronize_session=False)
 
         db.commit()
         globals.reload_required = True

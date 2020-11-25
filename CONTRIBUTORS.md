@@ -16,6 +16,7 @@
 - ncannon01
 - Nicole
 - Omari S. King
+- reqlez
 - richard
 - Richard
 - Richard Bolaji

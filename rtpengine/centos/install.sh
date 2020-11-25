@@ -149,16 +149,20 @@ function install {
     git archive --output ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
     # fix for rpm build path issue
     perl -i -pe 's|(%define archname) rtpengine-mr|\1 rtpengine-|' ./el/rtpengine.spec
+    # build the RPM's
     rpmbuild -ba ./el/rtpengine.spec
+    # install the required RPM's
     rpm -i ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm
-    rpm -q ngcp-rtpengine >/dev/null 2>&1; ret=$?
+    rpm -q ngcp-rtpengine &>/dev/null; ret=$?
     rpm -i ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm
-    rpm -q ngcp-rtpengine-dkms >/dev/null 2>&1; ((ret+=$?))
+    rpm -q ngcp-rtpengine-dkms &>/dev/null; ((ret+=$?))
     rpm -i ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
-    rpm -q ngcp-rtpengine-kernel >/dev/null 2>&1; ((ret+=$?))
-    if [ -f ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm ]; then
-        rpm -i ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm
-        rpm -q ngcp-rtpengine-recording >/dev/null 2>&1; ((ret+=$?))
+    rpm -q ngcp-rtpengine-kernel &>/dev/null; ((ret+=$?))
+    # install extra RPM's if they exist (version dependent)
+    RTPENGINE_RECORDING_RPM=$(find ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH} -name "ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm" -print -quit)
+    if [[ -f "$RTPENGINE_RECORDING_RPM" ]]; then
+        rpm -i ${RTPENGINE_RECORDING_RPM}
+        rpm -q ngcp-rtpengine-recording &>/dev/null; ((ret+=$?))
     fi
 
     if (( $ret != 0 )); then
@@ -170,12 +174,11 @@ function install {
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
-
     # Configure RTPEngine to support kernel packet forwarding
     cd ${SRC_DIR}/rtpengine/kernel-module &&
     make &&
-    cp -f xt_RTPENGINE.ko /lib/modules/$(uname -r)/updates/ &&
-    if [ $? -ne 0 ]; then
+    cp -f xt_RTPENGINE.ko /lib/modules/${OS_KERNEL}/updates/ &&
+    if (( $? != 0 )); then
         printerr "Problem installing RTPEngine kernel-module"
         exit 1
     fi
