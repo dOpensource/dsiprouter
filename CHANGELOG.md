@@ -5,7 +5,10 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-47365a0348a5bd1f38b8bf5d5dcfdfac0696603b
+7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3
+702a0ac1811870197e64aa3dbaa04b9d9afea29f
+349e8b733e16eebb7ed693ff5bc0588a3b12cce4
+04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8
 5793453bc1f2476b4361c762611da08325fded96
 62ba43bb6af91568e53e5ddcfe29f4740ae41788
 9ef7eabc2075f31510565bf75226e46d30511cf6
@@ -1774,10 +1777,59 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 47365a0348a5bd1f38b8bf5d5dcfdfac0696603b)
+[//]: # (START_SECTION 7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)
+### Improve Endpoint Group Address Entry Mapping
+
+> Commit: [7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3](https://github.com/dOpensource/dsiprouter/commit/7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)  
+> Date: Wed, 25 Nov 2020 16:59:23 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix address not deleted when endpoint group deleted
+- fix address not updated when changing from ip->user/pw auth and vice versa
+- fix bash auto completion for centos
+- fix dsiprouter auto completion not in effect until re-login
+
+
+---
+
+[//]: # (END_SECTION 7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)
+[//]: # (START_SECTION 702a0ac1811870197e64aa3dbaa04b9d9afea29f)
+### Added ThinkTel as carrier
+
+> Commit: [702a0ac1811870197e64aa3dbaa04b9d9afea29f](https://github.com/dOpensource/dsiprouter/commit/702a0ac1811870197e64aa3dbaa04b9d9afea29f)  
+> Date: Wed, 25 Nov 2020 17:37:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 702a0ac1811870197e64aa3dbaa04b9d9afea29f)
+[//]: # (START_SECTION 349e8b733e16eebb7ed693ff5bc0588a3b12cce4)
+### Update CONTRIBUTORS.md
+
+> Commit: [349e8b733e16eebb7ed693ff5bc0588a3b12cce4](https://github.com/dOpensource/dsiprouter/commit/349e8b733e16eebb7ed693ff5bc0588a3b12cce4)  
+> Date: Wed, 25 Nov 2020 08:35:39 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 349e8b733e16eebb7ed693ff5bc0588a3b12cce4)
+[//]: # (START_SECTION 04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8)
 ### Fix Outbound Route Update Edge Case
 
-> Commit: [47365a0348a5bd1f38b8bf5d5dcfdfac0696603b](https://github.com/dOpensource/dsiprouter/commit/47365a0348a5bd1f38b8bf5d5dcfdfac0696603b)  
+> Commit: [04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8](https://github.com/dOpensource/dsiprouter/commit/04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8)  
 > Date: Tue, 24 Nov 2020 19:20:08 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1791,7 +1843,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 47365a0348a5bd1f38b8bf5d5dcfdfac0696603b)
+[//]: # (END_SECTION 04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8)
 [//]: # (START_SECTION 5793453bc1f2476b4361c762611da08325fded96)
 ### Fix Fail2ban
 
