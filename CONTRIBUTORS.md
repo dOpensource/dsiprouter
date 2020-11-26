@@ -17,7 +17,6 @@
 - Nicole
 - Omari S. King
 - reqlez
-- Boris Polujin
 - richard
 - Richard
 - Richard Bolaji

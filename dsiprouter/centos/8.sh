@@ -107,6 +107,9 @@ function install {
     chmod 644 /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
+
+    # add hook to bash_completion in the standard debian location
+    echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
 }
 
 

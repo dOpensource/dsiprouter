@@ -722,6 +722,12 @@ def deleteEndpointGroup(gwgroupid):
         typeFilter = "%gwgroup:{}%".format(gwgroupid)
         endpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
         if endpoints is not None:
+            address_ids = []
+            for endpoint in endpoints:
+                description_dict = strFieldsToDict(endpoint.description)
+                if 'addr_id' in description_dict:
+                    address_ids.append(description_dict['addr_id'])
+            db.query(Address).filter(Address.id.in_(address_ids)).delete(synchronize_session=False)
             endpoints.delete(synchronize_session=False)
 
         notifications = db.query(dSIPNotification).filter(dSIPNotification.gwgroupid == gwgroupid)
@@ -1068,15 +1074,18 @@ def updateEndpointGroups(gwgroupid=None):
                 if authuser == currentSubscriberInfo.username and authpass == currentSubscriberInfo.password \
                         and authdomain == currentSubscriberInfo.domain:
                     pass  # The subscriber info is the same - no need to update
-                else:  # Check if the new username and domain is unique
+                # Check if the new username and domain is unique
+                else:
                     if db.query(Subscribers).filter(Subscribers.username == authuser,
                                                     Subscribers.domain == authdomain).scalar():
                         raise http_exceptions.BadRequest("Subscriber username already taken")
-                    else:  # Update the Subscriber Info
+                    # Update the Subscriber Info
+                    else:
                         currentSubscriberInfo.username = authuser
                         currentSubscriberInfo.password = authpass
                         currentSubscriberInfo.domain = authdomain
-            else:  # Create a new Suscriber entry
+            # Create a new Suscriber entry
+            else:
                 Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid_str)
                 db.add(Subscriber)
 
@@ -1113,7 +1122,9 @@ def updateEndpointGroups(gwgroupid=None):
                 if sip_addr is None:
                     raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
 
+                # add gateway info for each endpoint
                 if authtype == "ip":
+                    # for ip auth we must create address records for the endpoint
                     host_addr = safeStripPort(sip_addr)
 
                     Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
@@ -1122,6 +1133,7 @@ def updateEndpointGroups(gwgroupid=None):
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
                                        addr_id=Addr.id)
                 else:
+                    # we know this a new endpoint so we don't have to check for any address records here
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
                 db.add(Gateway)
@@ -1157,6 +1169,7 @@ def updateEndpointGroups(gwgroupid=None):
                 raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
 
             if authtype == "ip":
+                # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
 
                 Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
@@ -1164,6 +1177,7 @@ def updateEndpointGroups(gwgroupid=None):
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id)
             else:
+                # we know this a new endpoint so we don't have to check for any address records here
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
             # we ignore the given gwid and allow DB to assign one instead
@@ -1189,6 +1203,7 @@ def updateEndpointGroups(gwgroupid=None):
                 raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
 
             if authtype == "ip":
+                # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
 
                 # if address exists update, otherwise create it
@@ -1211,6 +1226,14 @@ def updateEndpointGroups(gwgroupid=None):
                     db.add(Addr)
                     db.flush()
                     endpoint_fields['addr_id'] = str(Addr.id)
+            else:
+                # if not using ip auth make sure we delete any old address records for the endpoint
+                if 'addr_id' in endpoint_fields and len(endpoint_fields['addr_id']) > 0:
+                    Addr = db.query(Address).filter(Address.id == endpoint_fields['addr_id'])
+                    if Addr is not None:
+                        Addr.delete(synchronize_session=False)
+                    # remove addr_id field from endpoint description
+                    endpoint_fields.pop("addr_id", None)
 
             # update the endpoint
             db.query(Gateways).filter(Gateways.gwid == gwid).update(
@@ -1221,9 +1244,17 @@ def updateEndpointGroups(gwgroupid=None):
 
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
-        db.query(Gateways).filter(Gateways.gwid.in_(del_gwids)).delete(synchronize_session=False)
-        db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(
-            Gateways.gwid.notin_(gwlist)).delete(synchronize_session=False)
+        del_gateways = db.query(Gateways).filter(Gateways.gwid.in_(del_gwids))
+        del_gateways_cleanup = db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(Gateways.gwid.notin_(gwlist))
+        # make sure we delete any associated address entries
+        del_addr_ids = []
+        for gateway in del_gateways.union(del_gateways_cleanup):
+            description_dict = strFieldsToDict(gateway.description)
+            if 'addr_id' in description_dict:
+                del_addr_ids.append(description_dict['addr_id'])
+        db.query(Address).filter(Address.id.in_(del_addr_ids)).delete(synchronize_session=False)
+        del_gateways.delete(synchronize_session=False)
+        del_gateways_cleanup.delete(synchronize_session=False)
 
         # set return gwlist and update the endpoint group's gwlist
         gwgroup_data['endpoints'] = gwlist

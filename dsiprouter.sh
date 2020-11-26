@@ -1112,6 +1112,7 @@ function installDsiprouter {
     ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
     # add command line completion to dsiprouter.sh
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+    . /etc/bash_completion
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
     ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
