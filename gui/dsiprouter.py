@@ -761,7 +761,7 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('endpointgroups.html',dsiprouter_ip=settings.EXTERNAL_IP_ADDR)
+        return render_template('endpointgroups.html',dsiprouter_ip=settings.EXTERNAL_IP_ADDR,DEFAULT_auth_domain=settings.DOMAIN)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
