@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install() {
     # Install Dependencies
@@ -8,7 +14,7 @@ function install() {
     yum groupinstall -y 'base'
     yum groupinstall -y 'Development Tools'
     yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog
+    yum install -y logrotate rsyslog certbot
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
@@ -71,31 +77,15 @@ EOF
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
-    # Add the Kamailio repos to yum
-    (cat << 'EOF'
-[home_kamailio_v5.1.x-rpms]
-name=RPM Packages for Kamailio v5.1.x (CentOS_7)
-type=rpm-md
-baseurl=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_7/
-gpgcheck=1
-gpgkey=http://download.opensuse.org/repositories/home:/kamailio:/v5.3.x-rpms/CentOS_7/repodata/repomd.xml.key
-enabled=1
-EOF
-    ) > /etc/yum.repos.d/kamailio.repo
-
-    yum update -y
-    yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-postgres kamailio-debuginfo kamailio-xmpp \
-        kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
-        kamailio-http_async_client kamailio-dmq_userloc kamailio-sipdump kamailio-websocket
-
-    # workaround for kamailio rpm transaction failures
-    if (( $? != 0 )); then
-        rpm --import $(grep 'gpgkey' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)
-        REPOS='kamailio kamailio-ldap kamailio-mysql kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress'
-        for REPO in $REPOS; do
-            yum install -y $(grep 'baseurl' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2)$(uname -m)/$(repoquery -i ${REPO} | head -4 | tail -n 3 | tr -d '[:blank:]' | cut -d ':' -f 2 | perl -pe 'chomp if eof' | tr '\n' '-').$(uname -m).rpm
-        done
-    fi
+    KAM_REPO="kamailio-$(perl -pe 's%([0-9])(?=[0-9])%\1\.%g' <<<${KAM_VERSION})"
+    yum install -y yum-utils
+    yum-config-manager --add-repo https://rpm.kamailio.org/centos/kamailio.repo
+    rpm --import $(grep 'gpgkey' /etc/yum.repos.d/kamailio.repo | cut -d '=' -f 2 | sort -u)
+    # TODO: get the kamailio guys to fix their rpm signing
+    yum install -y --disablerepo=kamailio --enablerepo=${KAM_REPO} --nogpgcheck kamailio kamailio-ldap kamailio-mysql \
+        kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls \
+        kamailio-presence kamailio-outbound kamailio-gzcompress kamailio-http_async_client kamailio-dmq_userloc \
+        kamailio-sipdump kamailio-websocket
 
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
@@ -167,13 +157,20 @@ EOF
         systemctl restart firewalld
     fi
 
-
+    # Setup firewall rules
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
+    firewall-cmd --reload
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    if ! grep -q v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if ! grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    if ! grep -q v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -255,6 +252,6 @@ case "$1" in
         install
         ;;
     *)
-        echo "usage $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         ;;
 esac

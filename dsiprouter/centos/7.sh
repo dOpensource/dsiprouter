@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-#PYTHON_CMD=python3.5
-
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install {
 
@@ -11,16 +15,16 @@ function install {
     VER=`echo $VER | cut -d " " -f 2`
     # Uninstall 3.6 and install a specific version of 3.6 if already installed
     if [[ "$VER" =~ 3.6 ]]; then
-       yum remove -y rs-epel-release
-       yum remove -y python36  python36-libs python36-devel python36-pip
-       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-       yum install -y python36u python36u-libs python36u-devel python36u-pip
+        yum remove -y rs-epel-release
+        yum remove -y python36  python36-libs python36-devel python36-pip
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
     elif [[ "$VER" =~ 3 ]]; then
-       yum remove -y rs-epel-release
-       yum remove -y python3* python3*-libs python3*-devel python3*-pip
-       yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-       yum install -y python36u python36u-libs python36u-devel python36u-pip
-    elif [[ "$VER" =~ 2.7 ]]; then
+        yum remove -y rs-epel-release
+        yum remove -y python3* python3*-libs python3*-devel python3*-pip
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
+    else
         yum install -y https://centos7.iuscommunity.org/ius-release.rpm
         yum install -y python36u python36u-libs python36u-devel python36u-pip
     fi
@@ -30,23 +34,29 @@ function install {
     yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
     yum install -y firewalld nginx
     yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
-    yum install -y logrotate rsyslog perl libev-devel util-linux
+    yum install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 
-    # create dsiprouter user and group
+    # create dsiprouter and nginx user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
+    useradd --system --user-group --shell /bin/false --comment "nginx HTTP Service Provider" nginx
+
+    # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter nginx
+    # make dsiprouter user has access to kamailio files
     usermod -a -G kamailio dsiprouter
 
-    # setup /var/run/dsiprouter directory
-    mkdir -p /var/run/dsiprouter
+    # setup runtime directorys for dsiprouter and nginx
+    mkdir -p /var/run/dsiprouter /var/run/nginx
     chown dsiprouter:dsiprouter /var/run/dsiprouter
+    chown nginx:nginx /var/run/nginx
 
-    # allow dSIP access to the Kamailo configuration file
-    #chown dsiprouter:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
+    # give dsiprouter permissions in SELINUX
+    semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
+        semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
 
-    # Reset python cmd in case it was just installed
+    # reset python cmd in case it was just installed
     setPythonCmd
 
     # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
@@ -62,20 +72,36 @@ function install {
     systemctl enable firewalld
     systemctl restart firewalld
 
-    PIP_CMD="pip"
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} install
+    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 ${PYTHON_CMD} -m pip install
     if [ $? -eq 1 ]; then
-        echo "dSIPRouter install failed: Couldn't install required libraries"
+        printerr "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
 
-    # Setup uwsgi configuration
-    cp -f ${DSIP_PROJECT_DIR}/resources/uwsgi/dsiprouter.ini /etc/dsiprouter/dsiprouter.ini
 
-    # Configure Nginx
-    cp -f ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf /etc/nginx/conf.d
-    # Configure SE Linux to allow Nginx to bind to port 5000
-    semanage port -m -t http_port_t -p tcp 5000
+    # Configure nginx
+    # determine available TLS protocols (try using highest available)
+    OPENSSL_VER=$(openssl version 2>/dev/null | awk '{print $2}' | perl -pe 's%([0-9])\.([0-9]).([0-9]).*%\1\2\3%')
+    if (( ${OPENSSL_VER} < 101 )); then
+        TLS_PROTOCOLS="TLSv1"
+    elif (( ${OPENSSL_VER} < 111 )); then
+        TLS_PROTOCOLS="TLSv1.1 TLSv1.2"
+    else
+        TLS_PROTOCOLS="TLSv1.2 TLSv1.3"
+    fi
+    mkdir -p /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/nginx.conf.d/
+    # remove the defaults
+    rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* /etc/nginx/nginx.conf.d/*
+    # setup our own nginx configs
+    perl -e "\$tls_protocols='${TLS_PROTOCOLS}';" \
+        -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
+        ${DSIP_PROJECT_DIR}/resources/nginx/nginx.conf >/etc/nginx/nginx.conf
+    perl -e "\$dsip_port='${DSIP_PORT}'; \$dsip_unix_sock='${DSIP_UNIX_SOCK}'; \$dsip_ssl_cert='${DSIP_SSL_CERT}'; \$dsip_ssl_key='${DSIP_SSL_KEY}';" \
+        -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
+        ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
+    ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
+
+    systemctl enable nginx
     systemctl restart nginx
 
     # Configure rsyslog defaults
@@ -95,10 +121,15 @@ function install {
     perl -p \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
+        -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
+        -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
-    chmod 0644 /etc/systemd/system/dsiprouter.service
+    chmod 644 /etc/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
+
+    # add hook to bash_completion in the standard debian location
+    echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
 }
 
 
@@ -108,10 +139,10 @@ function uninstall {
 
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
     if [ $? -eq 1 ]; then
-        echo "dSIPRouter uninstall failed or the libraries are already uninstalled"
+        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
         exit 1
     else
-        echo "DSIPRouter uninstall was successful"
+        printdbg "DSIPRouter uninstall was successful"
         exit 0
     fi
 
@@ -150,6 +181,6 @@ case "$1" in
         install
         ;;
     *)
-        echo "usage $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         ;;
 esac

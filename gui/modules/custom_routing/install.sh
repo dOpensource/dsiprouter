@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
-#set -x
-ENABLED=1 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
 
-# Import dsip_lib utility / shared functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+# Debug this script if in debug mode
+(( $DEBUG == 1 )) && set -x
+
+# ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
+ENABLED=1
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function installSQL {
     local TABLES=(dr_custom_rules locale_lookup)

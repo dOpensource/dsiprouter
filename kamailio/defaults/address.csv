@@ -66,3 +66,6 @@ null;FLT_MSTEAMS;sip2.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:300
 null;FLT_MSTEAMS;sip3.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:300
 null;FLT_MSTEAMS;sip.pstnhub.dod.teams.microsoft.us;32;0;name:msteams-sbc,gwgroup:300
 null;FLT_MSTEAMS;sip.pstnhub.gov.teams.microsoft.us;32;0;name:msteams-sbc,gwgroup:300
+null;FLT_CARRIER;206.80.250.100;32;0;name:ThinkTel,gwgroup:41
+null;FLT_CARRIER;208.68.17.52;32;0;name:ThinkTel,gwgroup:41
+null;FLT_CARRIER;209.197.130.80;32;0;name:ThinkTel,gwgroup:41

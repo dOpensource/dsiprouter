@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install() {
     # Install Dependencies
@@ -9,7 +15,7 @@ function install() {
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     yum install -y psmisc curl wget sed gawk vim perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog
+    yum install -y logrotate rsyslog certbot
 
     yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
     ln -s /usr/share/mariadb/ /usr/share/mysql
@@ -170,10 +176,10 @@ EOF
     firewall-cmd --reload
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    if ! grep -q v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if ! grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    if ! grep -q v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -255,6 +261,6 @@ case "$1" in
         install
         ;;
     *)
-        echo "usage $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         ;;
 esac

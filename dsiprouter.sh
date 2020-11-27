@@ -100,8 +100,7 @@ setScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
-    #export RTPENGINE_VER="mr8.4.1.3"
-    export RTPENGINE_VER="mr6.1.1.1"
+    export RTPENGINE_VER="mr9.0.1.4"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
@@ -124,28 +123,26 @@ setScriptSettings() {
     #export PYTHON_CMD=/usr/bin/python3.4
 
     # Network configuration values
+    export DSIP_UNIX_SOCK='/var/run/dsiprouter/dsiprouter.sock'
+    export DSIP_PORT=5000
     export RTP_PORT_MIN=10000
     export RTP_PORT_MAX=20000
     export KAM_SIP_PORT=5060
     export KAM_SIPS_PORT=5061
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
-    export DSIP_PORT=5000
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
 
-    export EXTERNAL_IP=$(getExternalIP)
-    export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} | sed 's/\.$//')
-    if [ $? -eq 1 ]; then
-    	export EXTERNAL_FQDN="$(hostname)"
-    fi
-    if [[ ! -n "$EXTERNAL_FQDN" ]]; then
-    	export EXTERNAL_FQDN="$(hostname)"
-    fi
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
+    export EXTERNAL_IP=$(getExternalIP)
+    export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
+    if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
+    	export EXTERNAL_FQDN="$INTERNAL_FQDN"
+    fi
 
     if (( ${WITH_SSL} == 1 )); then
         export DSIP_PROTO='https'
@@ -191,30 +188,31 @@ function setCloudPlatform {
     export DO_ENABLED=0
     export GCE_ENABLED=0
     export AZURE_ENABLED=0
+    export VULTR_ENABLED=0
+
     # -- amazon web service check --
     if isInstanceAMI; then
         export AWS_ENABLED=1
         CLOUD_PLATFORM='AWS'
+    # -- digital ocean check --
+    elif isInstanceDO; then
+        export DO_ENABLED=1
+        CLOUD_PLATFORM='DO'
+    # -- google compute engine check --
+    elif isInstanceGCE; then
+        export GCE_ENABLED=1
+        CLOUD_PLATFORM='GCE'
+    # -- microsoft azure check --
+    elif isInstanceAZURE; then
+        export AZURE_ENABLED=1
+        CLOUD_PLATFORM='AZURE'
+    # -- vultr cloud check --
+    elif isInstanceVULTR; then
+        export VULTR_ENABLED=1
+        CLOUD_PLATFORM='VULTR'
+    # -- bare metal or unsupported cloud platform --
     else
-        # -- digital ocean check --
-        if isInstanceDO; then
-            export DO_ENABLED=1
-            CLOUD_PLATFORM='DO'
-        else
-            # -- google compute engine check --
-            if isInstanceGCE; then
-                export GCE_ENABLED=1
-                CLOUD_PLATFORM='GCE'
-            else
-                # -- microsoft azure check --
-                if isInstanceAZURE; then
-                    export AZURE_ENABLED=1
-                    CLOUD_PLATFORM='AZURE'
-                else
-                    CLOUD_PLATFORM=''
-                fi
-            fi
-        fi
+        CLOUD_PLATFORM=''
     fi
 }
 
@@ -241,7 +239,7 @@ function cleanupAndExit {
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
-    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN
+    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN VULTR_ENABLED CLOUD_PLATFORM
     unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
@@ -309,15 +307,11 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "centos" ]]; then
         case "$DISTRO_VER" in
-	    8)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+	        8)
+                KAM_VERSION=${KAM_VERSION:-53}
                 ;;
             7)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+                KAM_VERSION=${KAM_VERSION:-53}
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -327,9 +321,7 @@ function validateOSInfo {
     elif [[ "$DISTRO" == "amazon" ]]; then
         case "$DISTRO_VER" in
             2)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+                KAM_VERSION=${KAM_VERSION:-51}
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -339,9 +331,7 @@ function validateOSInfo {
     elif [[ "$DISTRO" == "ubuntu" ]]; then
         case "$DISTRO_VER" in
             16.04)
-                if [[ -z "$KAM_VERSION" ]]; then
-                    KAM_VERSION=51
-                fi
+                KAM_VERSION=${KAM_VERSION:-51}
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -499,11 +489,13 @@ function configurePythonSettings {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_UNIX_SOCK' "$DSIP_UNIX_SOCK" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_PORT' "$DSIP_PORT" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_PRIV_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_API_PROTO' "$DSIP_API_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
@@ -587,8 +579,7 @@ function configureSSL {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
-    #set -x 
-    local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://$(getConfigAttrib 'DSIP_API_HOST' ${DSIP_CONFIG_FILE}):$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
+    local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://127.0.0.1:$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
     local ROLE=${ROLE:-$(getConfigAttrib 'ROLE' ${DSIP_CONFIG_FILE})}
@@ -926,11 +917,11 @@ installScriptRequirements() {
 
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
-        DEBIAN_FRONTEND=noninteractive apt-get update -qq -y >/dev/null &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -qq -y curl wget gawk perl sed git dnsutils >/dev/null
+        DEBIAN_FRONTEND=noninteractive apt-get update -y &&
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils
     elif cmdExists 'yum'; then
-        yum update -y -q -e 0 >/dev/null &&
-        yum install -y -q -e 0 curl wget gawk perl sed git bind-utils >/dev/null
+        yum update -y &&
+        yum install -y curl wget gawk perl sed git bind-utils
     fi
 
     if (( $? != 0 )); then
@@ -1110,6 +1101,7 @@ function installDsiprouter {
 	    printdbg "Configuring dSIPRouter settings"
 	fi
 
+    # if python was just installed its not exported in this proc yet
  	setPythonCmd
     if [ $? -ne 0 ]; then
         printerr "dSIPRouter install failed"
@@ -1120,9 +1112,10 @@ function installDsiprouter {
     ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
     # add command line completion to dsiprouter.sh
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+    . /etc/bash_completion
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
-    ln -s ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
+    ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
     # configure dsiprouter modules
     installModules
     # set some defaults in settings.py
@@ -1198,6 +1191,7 @@ $(declare -f isInstanceAMI)
 $(declare -f isInstanceDO)
 $(declare -f isInstanceGCE)
 $(declare -f isInstanceAZURE)
+$(declare -f isInstanceVULTR)
 $(declare -f getInstanceID)
 $(declare -f removeInitCmd)
 
@@ -1231,7 +1225,10 @@ EOF
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
 
-    # Restart dSIPRouter with new configurations
+    # Restart dSIPRouter and Kamailio with new configurations
+    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
+    	systemctl restart kamailio
+    fi
     systemctl restart dsiprouter
     if systemctl is-active --quiet dsiprouter; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -1572,8 +1569,8 @@ uninstallDnsmasq() {
     cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # if systemd dns resolver installed re-enable it
-    systemctl start systemd-resolved 2>/dev/null
     systemctl enable systemd-resolved 2>/dev/null
+    systemctl start systemd-resolved 2>/dev/null
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
@@ -1700,7 +1697,7 @@ function displayLoginInfo {
     local KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     local KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
 
-    printf '\n'
+    echo -ne '\n'
     printdbg "Your systems credentials are below (keep in a safe place)"
     pprint "dSIPRouter GUI Username: ${DSIP_USERNAME}"
     pprint "dSIPRouter GUI Password: ${DSIP_PASSWORD}"
@@ -1708,30 +1705,30 @@ function displayLoginInfo {
     pprint "dSIPRouter IPC Password: ${DSIP_IPC_PASS}"
     pprint "Kamailio DB Username: ${KAM_DB_USER}"
     pprint "Kamailio DB Password: ${KAM_DB_PASS}"
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the dSIPRouter WEB GUI here"
     pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
         pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
     fi
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the dSIPRouter REST API here"
     pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
         pprint "Internal IP: ${DSIP_API_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
     fi
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the dSIPRouter IPC API here"
     pprint "UNIX Domain Socket: ${DSIP_IPC_SOCK}"
-    printf '\n'
+    echo -ne '\n'
 
     printdbg "You can access the Kamailio DB here"
     pprint "Database Host: ${KAM_DB_HOST}:${KAM_DB_PORT}"
     pprint "Database Name: ${KAM_DB_NAME}"
-    printf '\n'
+    echo -ne '\n'
 }
 
 # resets credentials for our services to a new random value by default
@@ -1748,7 +1745,7 @@ function resetPassword {
 
     if (( $RESET_DSIP_CREDS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
-            if (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 )); then
+            if [[ -n "$CLOUD_PLATFORM" ]]; then
                 DSIP_PASSWORD=$(getInstanceID)
             fi
         else
@@ -1940,7 +1937,7 @@ function updateBanner {
     # move old banner files
     cp -f /etc/motd ${DSIP_SYSTEM_CONFIG_DIR}/motd.bak
     cat /dev/null > /etc/motd
-    chmod -x /etc/update-motd.d/*
+    chmod -x /etc/update-motd.d/* 2>/dev/null
 
     # add our custom banner
     (cat << EOF
@@ -1979,7 +1976,7 @@ EOF
 
     chmod +x /etc/update-motd.d/00-dsiprouter
 
-    # for debian < v9 we have to update it the dynamic motd location
+    # for debian < v9 we have to update the dynamic motd location
     if [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
         sed -i -r 's|^(session.*pam_motd\.so.*motd=/run/motd).*|\1|' /etc/pam.d/sshd
     # for centos7 and debian we have to update it 'manually'
@@ -1993,7 +1990,7 @@ EOF
 function revertBanner {
     mv -f ${DSIP_SYSTEM_CONFIG_DIR}/motd.bak /etc/motd
     rm -f /etc/update-motd.d/00-dsiprouter
-    chmod +x /etc/update-motd.d/*
+    chmod +x /etc/update-motd.d/* 2>/dev/null
 
     # remove cron entry for centos7 and debian < v9
     if [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
@@ -2015,6 +2012,7 @@ function revertBanner {
 # - syslog
 # - mysql
 # - dnsmasq
+# - nginx
 function createInitService {
     # imported from dsip_lib.sh
     local DSIP_INIT_FILE="$DSIP_INIT_FILE"
@@ -2030,8 +2028,8 @@ function createInitService {
     (cat << 'EOF'
 [Unit]
 Description=dSIPRouter Init Service
-Wants=network-online.target syslog.service mysql.service dnsmasq.service
-After=network.target network-online.target syslog.service mysql.service dnsmasq.service
+Wants=network-online.target syslog.service mysql.service dnsmasq.service nginx.service
+After=network.target network-online.target syslog.service mysql.service dnsmasq.service nginx.service
 Before=
 
 [Service]
@@ -2498,20 +2496,28 @@ function setVerbosityLevel {
     if [[ "$*" != *"-debug"* ]]; then
         # quiet pkg managers when not debugging
         if cmdExists 'apt-get'; then
-            apt-get() {
+            function apt-get() {
                 command apt-get -qq "$@"
             }
             export -f apt-get
-        elif cmdExists 'yum'; then
-            yum() {
+        fi
+        if cmdExists 'yum'; then
+            function yum() {
                 command yum -q -e 0 "$@"
             }
             export -f yum
         fi
+        if cmdExists 'dnf'; then
+            function dnf() {
+                command dnf -q -e 0 "$@"
+            }
+            export -f dnf
+        fi
         # quiet make when not debugging
-        make() {
+        function make() {
             command make -s "$@"
         }
+        export -f make
     fi
 }
 

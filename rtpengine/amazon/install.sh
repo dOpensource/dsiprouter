@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-# Import dsip_lib utility / shared functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
-
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 # compile and install rtpengine from RPM's
 function install {
@@ -49,7 +52,7 @@ function install {
     installKernelDevHeaders
 
     if [ $? -ne 0 ]; then
-        echo "Problem with installing the required libraries for RTPEngine"
+        printerr "Problem with installing the required libraries for RTPEngine"
         exit 1
     fi
 
@@ -72,30 +75,37 @@ function install {
     git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
     cd ./rtpengine
 
-    VERSION_NUM=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
+    RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
     if (( $(echo "$RTPENGINE_VER" | perl -0777 -pe 's|mr(\d+\.\d+)\.(\d+)\.(\d+)|\1\2\3 >= 6.511|gm' | bc -l) )); then
-        PREFIX="rtpengine-${VERSION_NUM}/"
+        PREFIX="rtpengine-${RTPENGINE_RPM_VER}/"
     else
-        PREFIX="ngcp-rtpengine-${VERSION_NUM}/"
+        PREFIX="ngcp-rtpengine-${RTPENGINE_RPM_VER}/"
     fi
 
-    mkdir -p ~/rpmbuild/SOURCES
-
-    git archive --output ~/rpmbuild/SOURCES/ngcp-rtpengine-${VERSION_NUM}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
-    rpmbuild -ba  ./el/rtpengine.spec
-    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-${VERSION_NUM}*.rpm
-    rpm -q ngcp-rtpengine >/dev/null 2>&1; ret=$?
-    rpm -i ~/rpmbuild/RPMS/noarch/ngcp-rtpengine-dkms-${VERSION_NUM}*.rpm
-    rpm -q ngcp-rtpengine-dkms >/dev/null 2>&1; ((ret+=$?))
-    rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-kernel-${VERSION_NUM}*.rpm
-    rpm -q ngcp-rtpengine-kernel >/dev/null 2>&1; ((ret+=$?))
-    if [ -f ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-recording-${VERSION_NUM}*.rpm ]; then
-        rpm -i ~/rpmbuild/RPMS/$(uname -m)/ngcp-rtpengine-recording-${VERSION_NUM}*.rpm
-        rpm -q ngcp-rtpengine-recording >/dev/null 2>&1; ((ret+=$?))
+    RPM_BUILD_ROOT="${HOME}/rpmbuild"
+    rm -rf ${RPM_BUILD_ROOT}
+    mkdir -p ${RPM_BUILD_ROOT}/SOURCES
+    git archive --output ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
+    # fix for rpm build path issue
+    perl -i -pe 's|(%define archname) rtpengine-mr|\1 rtpengine-|' ./el/rtpengine.spec
+    # build the RPM's
+    rpmbuild -ba ./el/rtpengine.spec
+    # install the required RPM's
+    rpm -i ${RPM_BUILD_ROOT}/RPMS/$(uname -r)/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm
+    rpm -q ngcp-rtpengine &>/dev/null; ret=$?
+    rpm -i ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm
+    rpm -q ngcp-rtpengine-dkms &>/dev/null; ((ret+=$?))
+    rpm -i ${RPM_BUILD_ROOT}/RPMS/$(uname -r)/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
+    rpm -q ngcp-rtpengine-kernel &>/dev/null; ((ret+=$?))
+    # install extra RPM's if they exist (version dependent)
+    RTPENGINE_RECORDING_RPM=$(find ${RPM_BUILD_ROOT}/RPMS/$(uname -r) -name "ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm" -print -quit)
+    if [[ -f "$RTPENGINE_RECORDING_RPM" ]]; then
+        rpm -i ${RTPENGINE_RECORDING_RPM}
+        rpm -q ngcp-rtpengine-recording &>/dev/null; ((ret+=$?))
     fi
 
-    if [ $ret -ne 0 ]; then
-        echo "Problem installing RTPEngine RPM's"
+    if (( $ret != 0 )); then
+        printerr "Problem installing RTPEngine RPM's"
         exit 1
     fi
 
@@ -103,13 +113,12 @@ function install {
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
-
     # Configure RTPEngine to support kernel packet forwarding
     cd ${SRC_DIR}/rtpengine/kernel-module &&
     make &&
     cp -f xt_RTPENGINE.ko /lib/modules/$(uname -r)/updates/ &&
     if [ $? -ne 0 ]; then
-        echo "Problem installing RTPEngine kernel-module"
+        printerr "Problem installing RTPEngine kernel-module"
         exit 1
     fi
 
@@ -121,6 +130,10 @@ function install {
     depmod -a &&
     modprobe xt_RTPENGINE
 
+    # set the forwarding table for the kernel module
+    echo 'add 0' > /proc/rtpengine/control
+    iptables -I INPUT -p udp -j RTPENGINE --id 0
+    ip6tables -I INPUT -p udp -j RTPENGINE --id 0
 
     if [ "$SERVERNAT" == "0" ]; then
         INTERFACE=$EXTERNAL_IP
@@ -132,7 +145,7 @@ function install {
     # set table = 0 for kernel packet forwarding
     (cat << EOF
 [rtpengine]
-table = -1
+table = 0
 interface = ${INTERFACE}
 listen-ng = 127.0.0.1:7722
 port-min = ${RTP_PORT_MIN}
@@ -206,9 +219,9 @@ EOF
     # File to signify that the install happened
     if [ $? -eq 0 ]; then
         touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
-        echo "RTPEngine has been installed!"
+        printdbg "RTPEngine has been installed!"
     else
-        echo "FAILED: RTPEngine could not be installed!"
+        printerr "FAILED: RTPEngine could not be installed!"
     fi
 }
 
@@ -218,7 +231,7 @@ function uninstall {
     rm -f /usr/sbin/rtpengine
     rm -f /etc/rsyslog.d/rtpengine.conf
     rm -f /etc/logrotate.d/rtpengine
-    echo "Removed RTPEngine for $DISTRO"
+    printdbg "Removed RTPEngine for $DISTRO"
 }
 
 case "$1" in

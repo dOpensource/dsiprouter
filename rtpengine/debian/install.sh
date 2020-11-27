@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-# Import dsip_lib utility / shared functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
-
+# Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
+
+# Import dsip_lib utility / shared functions if not already
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 function install {
     # Install required libraries
@@ -28,6 +31,8 @@ function install {
     apt-get install -y unzip
     apt-get install -y libavresample-dev
     apt-get install -y linux-headers-$(uname -r)
+    apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
+        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev
 
     # debian jessie/stretch need a few newer packages
     CODENAME="$(lsb_release -c -s)"
@@ -85,6 +90,11 @@ function install {
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
+    # set the forwarding table for the kernel module
+    echo 'add 0' > /proc/rtpengine/control
+    iptables -I INPUT -p udp -j RTPENGINE --id 0
+    ip6tables -I INPUT -p udp -j RTPENGINE --id 0
+
     if [ "$SERVERNAT" == "0" ]; then
         INTERFACE=$EXTERNAL_IP
     else
@@ -95,7 +105,7 @@ function install {
     # set table = 0 for kernel packet forwarding
     (cat << EOF
 [rtpengine]
-table = -1
+table = 0
 interface = ${INTERFACE}
 listen-ng = 127.0.0.1:7722
 port-min = ${RTP_PORT_MIN}
@@ -160,10 +170,10 @@ EOF
 
     # File to signify that the install happened
     if [ $? -eq 0 ]; then
-       touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
-       echo "RTPEngine has been installed!"
+        touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
+        printdbg "RTPEngine has been installed!"
     else
-        echo "FAILED: RTPEngine could not be installed!"
+        printerr "FAILED: RTPEngine could not be installed!"
     fi
 }
 
@@ -173,7 +183,7 @@ function uninstall {
     rm -f /usr/sbin/rtpengine
     rm -f /etc/rsyslog.d/rtpengine.conf
     rm -f /etc/logrotate.d/rtpengine
-    echo "Removed RTPEngine for $DISTRO"
+    printdbg "Removed RTPEngine for $DISTRO"
 }
 
 case "$1" in
