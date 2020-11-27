@@ -1225,7 +1225,10 @@ EOF
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
 
-    # Restart dSIPRouter with new configurations
+    # Restart dSIPRouter and Kamailio with new configurations
+    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
+    	systemctl restart kamailio
+    fi
     systemctl restart dsiprouter
     if systemctl is-active --quiet dsiprouter; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
