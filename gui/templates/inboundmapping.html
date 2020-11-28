@@ -52,11 +52,15 @@
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
         <td class="gwgroupid hidden">{{ row.gwgroupid }}</td>
-        {% if row.gwlist.split(',')|length > 1 %}
-          <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}<sup> +1</sup></td>
-        {% else %}
-          <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}</td>
-        {% endif %}
+	{% if '#' not in row.gwlists  %}
+          <td class='gwgroupname'>Load Balancing Group</td>
+	{% else %}
+	 	{% if row.gwlist.split(',')|length > 1 %}
+          		<td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}<sup> +1</sup></td>
+        	{% else %}
+          		<td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}</td>
+        	{% endif %}
+	{% endif %}
         <td class="rulename">{{ row.rule_description|attrFilter('name') }}</td>
         <td class="gwlist hidden">{{ row.gwlist }}</td>
         <td>
@@ -135,6 +139,9 @@
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
+	    {% if epgroup['description']|attrFilter('lb') %}
+	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
+	    {% endif %}
           {% endfor %}
         </select>
       </div>
@@ -284,6 +291,9 @@
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
+	    {% if epgroup['description']|attrFilter('lb') %}
+	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
+	    {% endif %}
           {% endfor %}
         </select>
       </div>

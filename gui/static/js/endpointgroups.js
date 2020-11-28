@@ -118,6 +118,7 @@
       }
       endpoint.hostname = $(this).find('td').eq(1).text();
       endpoint.description = $(this).find('td').eq(2).text();
+      endpoint.weight = $(this).find('td').eq(3).text();
       //endpoint.maintmode = $(this).find('td').eq(3).text();
 
       if (!(endpoint.hostname.length === 0 && endpoint.description.length === 0)) {
@@ -299,7 +300,8 @@
       for (var i = 0; i < gwgroup_data.endpoints.length; i++) {
         var row = '<tr class="endpoint"><td name="gwid">' + gwgroup_data.endpoints[i].gwid.toString() + '</td>';
         row += '<td name="hostname">' + gwgroup_data.endpoints[i].hostname + '</td>';
-        row += '<td name="description">' + gwgroup_data.endpoints[i].description + '</td></tr>';
+        row += '<td name="description">' + gwgroup_data.endpoints[i].description + '</td>';
+        row += '<td name="weight">' + gwgroup_data.endpoints[i].weight + '</td></tr>';
         table.append($(row));
       }
 
@@ -378,7 +380,7 @@
     endpoint_table1.Tabledit({
       columns: {
         identifier: [0, 'gwid'],
-        editable: [[1, 'hostname'], [2, 'description']],
+        editable: [[1, 'hostname'], [2, 'description'], [3, 'weight']],
         saveButton: true,
       },
       ajaxDisabled: true,
@@ -390,7 +392,7 @@
     endpoint_table2.Tabledit({
       columns: {
         identifier: [0, 'gwid'],
-        editable: [[1, 'hostname'], [2, 'description']],
+        editable: [[1, 'hostname'], [2, 'description'], [3, 'weight']],
         saveButton: true,
       },
       ajaxDisabled: true,
@@ -420,7 +422,7 @@
       var table = $('#endpoint-table2');
       //var body = $('#endpoint-tablebody2');
       //var nextId = body.find('tr').length + 1;
-      table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
+      table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td><td name="weight"></td></tr>'));
       table.data('Tabledit').reload();
       $("#endpoint-table2" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
     });
@@ -429,7 +431,8 @@
       var table = $('#endpoint-table');
       //var body = $('#endpoint-tablebody');
       //var nextId = body.find('tr').length + 1;
-      table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
+      //table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
+      table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td><td name="weight"></td></tr>'));
       table.data('Tabledit').reload();
       $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
     });
