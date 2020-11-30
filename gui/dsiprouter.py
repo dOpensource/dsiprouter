@@ -1074,7 +1074,7 @@ def addUpdateInboundMapping():
                 db.add(Gateway)
                 db.flush()
                 
-                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 0, gwgroup=gwgroupid)
+                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
 
