@@ -4,7 +4,7 @@ from collections import OrderedDict
 from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
-from sqlalchemy import exc as sql_exceptions, and_
+from sqlalchemy import exc as sql_exceptions, and_,or_
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
@@ -745,7 +745,7 @@ def deleteEndpointGroup(gwgroupid):
         if domainmapping is not None:
             domainmapping.delete(synchronize_session=False)
         
-        dispatcher = db.query(Dispatcher).filter(Dispatcher.setid ==  gwgroupid) 
+        dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid ==  gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000)) 
         if dispatcher is not None:
             dispatcher.delete(synchronize_session=False)
 
@@ -1578,8 +1578,8 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         if 'fusionpbx' in request_payload:
             fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
                 if 'enabled' in request_payload['fusionpbx'] else None
-            fusionpbxdbonly = request_payload['fusionpbx']['dbonly'] \
-                if 'dbonly' in request_payload['fusionpbx'] else None
+            fusionpbxclustersupport = request_payload['fusionpbx']['clustersupport'] \
+                if 'clustersupport' in request_payload['fusionpbx'] else None
             fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
                 if 'dbhost' in request_payload['fusionpbx'] else None
             fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
@@ -1597,7 +1597,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 db.add(domainmapping)
 
                 # Add the FusionPBX server as an Endpoint if it's not just the DB server
-                if fusionpbxdbonly is None or fusionpbxdbonly == False:
+                if fusionpbxclustersupport is None or fusionpbxclustersupport == False:
                     endpoint = {}
                     endpoint['hostname'] = fusionpbxdbhost
                     endpoint['description'] = "FusionPBX Server"
@@ -1614,6 +1614,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
             name = endpoint['description'] if 'description' in endpoint else ''
             weight = endpoint['weight'] if 'weight' in endpoint else ''
+            # TODO: More complicated logic is needed to ensure the weight is set properly for each endpoint
+            if not weight:
+                weight = str(100 / len(endpoints))
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1640,10 +1643,17 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
 
 
-            # Create Dsipatcher group with the set id being the gateway group id
-            if weight:
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+            # Create dispatcher group with the set id being the gateway group id
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+            db.add(dispatcher)
+
+            # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
+            if fusionpbxenabled:
+                sip_addr_external  = safeUriToHost(hostname, default_port=5080)
+                # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
+                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
                 db.add(dispatcher)
+                 
 
             db.add(Gateway)
             db.flush()
@@ -1657,7 +1667,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
             fields = strFieldsToDict(gwgroup.description)
-            fields['lb'] = gwgroupid
+            fields['lb'] = gwgroupid + 1000
 
         # Update the GatewayGroup with the lists of gateways
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
