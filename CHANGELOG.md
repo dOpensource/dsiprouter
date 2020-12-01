@@ -5,7 +5,13 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3
+333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f
+a409f4049744053e5958ea885b5d68524f15c6c4
+d182417156ac4af142138abe951aefd6dea35259
+9e45548eef592b97967607829e844913b6ced577
+86f9fc51b25f749858999ded032aebda17e7aa14
+24a5c2115889e874b9c95a9ca1ffc59c80932d13
+3333a6ec58d3c2530f33cf8132c18862c29d74ce
 702a0ac1811870197e64aa3dbaa04b9d9afea29f
 349e8b733e16eebb7ed693ff5bc0588a3b12cce4
 04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8
@@ -74,10 +80,15 @@ e7e33f0ca3224bab3d75b40cdce93d3da36ccac6
 ed99fde349f38f1f1f5250ff4d9a02faecab9c3b
 b3f1701f70ea9a610e81a4bc08fa5e1ff3ac9a93
 220ec7f1827267091059abd467b88137e717ad94
+81a951367ee99d623c35d9ecad79e57cc24869c0
+52a4b5eb30342d16b5272d769b033ad90cd4d196
 8976863ab2f8aee31a6222a0010e62d9b08a3be2
 2ebaca3cb6894916c37e7746e7f9b4c95473cbe0
 e3673ab836946e34bc759df32499a89bad460878
+5387bc1373db5438e5a06c0c81b80ab717398163
 aa88b8fc61ed0bac537901196b0a7b7fedc79ad4
+1693e7fa706fe6c8bb414712ace18f90b86c3585
+662ef335d84401bb58c2cefcd88b41533e359a1d
 2c71440a60bee65291c6a88981857eb86279d958
 3525c446bb0056b05fe6745085ead8ba106403af
 02e128e74c941b83c3f8c1aea14c1387070c1393
@@ -110,6 +121,8 @@ ebea34b830e20160c547ee399b0a89a42528354d
 5292d8fdc00d79026d1ce6e3a08245308f8d60d5
 d26de7235ab9db2370396b262cdb604814aafde9
 a2296b5a2bde683ee4d11558e583777fb3e24f23
+514a3ed75f3c8497c6dc15550d1f25ccf79c1734
+1a9f29175a7be590bf6e9af55961cfc1450b3f62
 8f9a792030bebbd18185c86bacafb1e134b34841
 02fc3dc6e85b78e87f8262532ce8dde6c10cdcba
 035535dd27f4661db5b130576828a4dae9246175
@@ -1777,10 +1790,104 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)
+[//]: # (START_SECTION 333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f)
+### Allow TCP UAC SIP Connections By Default
+
+> Commit: [333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f](https://github.com/dOpensource/dsiprouter/commit/333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f)  
+> Date: Tue, 1 Dec 2020 17:08:50 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#255](https://github.com/dOpensource/dsiprouter/issues/255)
+- add listen directives on tcp socket to kamailio config
+
+
+---
+
+[//]: # (END_SECTION 333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f)
+[//]: # (START_SECTION a409f4049744053e5958ea885b5d68524f15c6c4)
+### Update NAT Handling
+
+> Commit: [a409f4049744053e5958ea885b5d68524f15c6c4](https://github.com/dOpensource/dsiprouter/commit/a409f4049744053e5958ea885b5d68524f15c6c4)  
+> Date: Tue, 1 Dec 2020 17:04:19 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#311](https://github.com/dOpensource/dsiprouter/issues/311)
+- add client-side NAT translation for UAC Contact
+
+
+---
+
+[//]: # (END_SECTION a409f4049744053e5958ea885b5d68524f15c6c4)
+[//]: # (START_SECTION d182417156ac4af142138abe951aefd6dea35259)
+### FusionPBX Cluster Support Enhancements - Define a 30 second expiration to the pass_thru htable that keeps track of 401 and 407 auth request made by a media server and sends the request back to the same backend media server - Changed the address group that Kamailio uses to perform an internal route for DR_ROUTING to DISPATCHER use cases
+
+> Commit: [d182417156ac4af142138abe951aefd6dea35259](https://github.com/dOpensource/dsiprouter/commit/d182417156ac4af142138abe951aefd6dea35259)  
+> Date: Mon, 30 Nov 2020 05:03:28 +0000  
+> Author: root (root@nightly-deb9.dsiprouter.org)  
+> Committer: root (root@nightly-deb9.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d182417156ac4af142138abe951aefd6dea35259)
+[//]: # (START_SECTION 9e45548eef592b97967607829e844913b6ced577)
+### Added support for routing to multiple FusionPBX systems
+
+> Commit: [9e45548eef592b97967607829e844913b6ced577](https://github.com/dOpensource/dsiprouter/commit/9e45548eef592b97967607829e844913b6ced577)  
+> Date: Mon, 23 Nov 2020 10:14:56 +0000  
+> Author: root (root@testing-dsiprouter0.b3paytcmeseudeqwsc2313xkvc.ex.internal.cloudapp.net)  
+> Committer: root (root@nightly-deb9.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9e45548eef592b97967607829e844913b6ced577)
+[//]: # (START_SECTION 86f9fc51b25f749858999ded032aebda17e7aa14)
+### Added a restart of Kamailio after installing dSIPRouter to ensure it has the latest database connection info
+
+> Commit: [86f9fc51b25f749858999ded032aebda17e7aa14](https://github.com/dOpensource/dsiprouter/commit/86f9fc51b25f749858999ded032aebda17e7aa14)  
+> Date: Fri, 27 Nov 2020 13:22:34 +0000  
+> Author: root (root@nightly-deb9.dsiprouter.org)  
+> Committer: root (root@nightly-deb9.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 86f9fc51b25f749858999ded032aebda17e7aa14)
+[//]: # (START_SECTION 24a5c2115889e874b9c95a9ca1ffc59c80932d13)
+### Added the default auth domain to the username/password auth screen
+
+> Commit: [24a5c2115889e874b9c95a9ca1ffc59c80932d13](https://github.com/dOpensource/dsiprouter/commit/24a5c2115889e874b9c95a9ca1ffc59c80932d13)  
+> Date: Thu, 26 Nov 2020 14:22:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 24a5c2115889e874b9c95a9ca1ffc59c80932d13)
+[//]: # (START_SECTION 3333a6ec58d3c2530f33cf8132c18862c29d74ce)
 ### Improve Endpoint Group Address Entry Mapping
 
-> Commit: [7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3](https://github.com/dOpensource/dsiprouter/commit/7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)  
+> Commit: [3333a6ec58d3c2530f33cf8132c18862c29d74ce](https://github.com/dOpensource/dsiprouter/commit/3333a6ec58d3c2530f33cf8132c18862c29d74ce)  
 > Date: Wed, 25 Nov 2020 16:59:23 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1795,7 +1902,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)
+[//]: # (END_SECTION 3333a6ec58d3c2530f33cf8132c18862c29d74ce)
 [//]: # (START_SECTION 702a0ac1811870197e64aa3dbaa04b9d9afea29f)
 ### Added ThinkTel as carrier
 
@@ -2876,6 +2983,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 220ec7f1827267091059abd467b88137e717ad94)
+[//]: # (START_SECTION 81a951367ee99d623c35d9ecad79e57cc24869c0)
+### Added support for dispatcher to Kamailio
+
+> Commit: [81a951367ee99d623c35d9ecad79e57cc24869c0](https://github.com/dOpensource/dsiprouter/commit/81a951367ee99d623c35d9ecad79e57cc24869c0)  
+> Date: Mon, 26 Oct 2020 21:45:13 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 81a951367ee99d623c35d9ecad79e57cc24869c0)
+[//]: # (START_SECTION 52a4b5eb30342d16b5272d769b033ad90cd4d196)
+### Added logic to update/delete inbound routes and endpont groups with load balancing configured
+
+> Commit: [52a4b5eb30342d16b5272d769b033ad90cd4d196](https://github.com/dOpensource/dsiprouter/commit/52a4b5eb30342d16b5272d769b033ad90cd4d196)  
+> Date: Mon, 26 Oct 2020 21:25:16 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 52a4b5eb30342d16b5272d769b033ad90cd4d196)
 [//]: # (START_SECTION 8976863ab2f8aee31a6222a0010e62d9b08a3be2)
 ### Patch Pre-commit Hook
 
@@ -2937,6 +3074,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION e3673ab836946e34bc759df32499a89bad460878)
+[//]: # (START_SECTION 5387bc1373db5438e5a06c0c81b80ab717398163)
+### Added logic for updating weights in endpoint groups
+
+> Commit: [5387bc1373db5438e5a06c0c81b80ab717398163](https://github.com/dOpensource/dsiprouter/commit/5387bc1373db5438e5a06c0c81b80ab717398163)  
+> Date: Sun, 25 Oct 2020 13:12:41 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5387bc1373db5438e5a06c0c81b80ab717398163)
 [//]: # (START_SECTION aa88b8fc61ed0bac537901196b0a7b7fedc79ad4)
 ### Update 8.sh
 
@@ -2952,6 +3104,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION aa88b8fc61ed0bac537901196b0a7b7fedc79ad4)
+[//]: # (START_SECTION 1693e7fa706fe6c8bb414712ace18f90b86c3585)
+### Inbound DID LB - Added logic to add the hostname to the address table - Added logic to build the dispatcher set; '
+
+> Commit: [1693e7fa706fe6c8bb414712ace18f90b86c3585](https://github.com/dOpensource/dsiprouter/commit/1693e7fa706fe6c8bb414712ace18f90b86c3585)  
+> Date: Tue, 20 Oct 2020 05:56:27 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1693e7fa706fe6c8bb414712ace18f90b86c3585)
+[//]: # (START_SECTION 662ef335d84401bb58c2cefcd88b41533e359a1d)
+### Added support for Inbound Load Balancing from Carrier to Endpoint Groups
+
+> Commit: [662ef335d84401bb58c2cefcd88b41533e359a1d](https://github.com/dOpensource/dsiprouter/commit/662ef335d84401bb58c2cefcd88b41533e359a1d)  
+> Date: Sun, 18 Oct 2020 23:30:51 +0000  
+> Author: root (root@v0621lb0.localdomain)  
+> Committer: root (root@v0621lb0.localdomain)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 662ef335d84401bb58c2cefcd88b41533e359a1d)
 [//]: # (START_SECTION 2c71440a60bee65291c6a88981857eb86279d958)
 ### Update install.sh
 
@@ -3432,6 +3614,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a2296b5a2bde683ee4d11558e583777fb3e24f23)
+[//]: # (START_SECTION 514a3ed75f3c8497c6dc15550d1f25ccf79c1734)
+### Fixed Compile Issue
+
+> Commit: [514a3ed75f3c8497c6dc15550d1f25ccf79c1734](https://github.com/dOpensource/dsiprouter/commit/514a3ed75f3c8497c6dc15550d1f25ccf79c1734)  
+> Date: Sat, 12 Sep 2020 12:51:58 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 514a3ed75f3c8497c6dc15550d1f25ccf79c1734)
+[//]: # (START_SECTION 1a9f29175a7be590bf6e9af55961cfc1450b3f62)
+### Recomplied dSIPRouter Module for Kamailio 5.36
+
+> Commit: [1a9f29175a7be590bf6e9af55961cfc1450b3f62](https://github.com/dOpensource/dsiprouter/commit/1a9f29175a7be590bf6e9af55961cfc1450b3f62)  
+> Date: Sat, 12 Sep 2020 12:26:25 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1a9f29175a7be590bf6e9af55961cfc1450b3f62)
 [//]: # (START_SECTION 8f9a792030bebbd18185c86bacafb1e134b34841)
 ### Update 10.sh
 
