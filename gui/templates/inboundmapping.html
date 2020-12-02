@@ -142,6 +142,9 @@
 	    {% if epgroup['description']|attrFilter('lb') %}
 	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
 	    {% endif %}
+	    {% if epgroup['description']|attrFilter('lb_ext') %}
+	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb_ext') }}">{{ epgroup['description']|attrFilter('name') }} LB (External)</option>
+	    {% endif %}
           {% endfor %}
         </select>
       </div>
@@ -293,6 +296,9 @@
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
 	    {% if epgroup['description']|attrFilter('lb') %}
 	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
+	    {% endif %}
+	    {% if epgroup['description']|attrFilter('lb_ext') %}
+	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb_ext') }}">{{ epgroup['description']|attrFilter('name') }} LB (External)</option>
 	    {% endif %}
           {% endfor %}
         </select>

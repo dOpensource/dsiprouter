@@ -1667,7 +1667,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
             fields = strFieldsToDict(gwgroup.description)
-            fields['lb'] = gwgroupid + 1000
+            fields['lb'] = gwgroupid 
+            if fusionpbxenabled:
+                fields['lb_ext'] = gwgroupid + 1000 
 
         # Update the GatewayGroup with the lists of gateways
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
