@@ -155,7 +155,7 @@
         }
 
         btn.addClass("btn-success");
-        btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
+        btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
         btn.attr("disabled", true);
 
         if (action === "POST") {

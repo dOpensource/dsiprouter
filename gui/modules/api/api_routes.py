@@ -1,5 +1,6 @@
-import os, time, json, random, subprocess, requests, csv, base64
+import os, time, json, random, subprocess, requests, csv, base64, codecs
 import urllib.parse as parse
+from contextlib import closing
 from collections import OrderedDict
 from functools import wraps
 from datetime import datetime
@@ -9,7 +10,7 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
-    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates,Dispatcher
+    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
@@ -166,7 +167,6 @@ def reloadKamailio():
                  'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
 
         for cmdset in reload_cmds:
-            print("Cmd: {}".format(cmdset))
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
             if r.status_code >= 400:
                 try:
@@ -744,8 +744,8 @@ def deleteEndpointGroup(gwgroupid):
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
             domainmapping.delete(synchronize_session=False)
-        
-        dispatcher = db.query(Dispatcher).filter(Dispatcher.setid ==  gwgroupid) 
+
+        dispatcher = db.query(Dispatcher).filter(Dispatcher.setid ==  gwgroupid)
         if dispatcher is not None:
             dispatcher.delete(synchronize_session=False)
 
@@ -815,7 +815,7 @@ def getEndpointGroup(gwgroupid):
                 for item in dispatcher:
                     weight = item.attrs.split('=')[1]
                     weightList[item.destination[4:]] = weight
-            
+
             for endpoint in endpoints:
                 ep = {}
                 ep['gwid'] = endpoint.gwid
@@ -1153,11 +1153,11 @@ def updateEndpointGroups(gwgroupid=None):
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
                 # Create Dsipatcher group with the set id being the gateway group id
-                
+
                 if weight:
                     dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
                     db.add(dispatcher)
-                
+
                 db.add(Gateway)
                 db.flush()
                 gwlist.append(Gateway.gwid)
@@ -1275,13 +1275,13 @@ def updateEndpointGroups(gwgroupid=None):
             if weight is None or len(weight) == 0:
                 if DispatcherEntry is not None:
                     db.delete(DispatcherEntry)
-            elif weight: 
+            elif weight:
                 if DispatcherEntry is not None:
                     db.query(Dispatcher).filter((Dispatcher.setid ==  gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
                 else:
                     dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
                     db.add(dispatcher)
-                
+
             gwlist.append(gwid)
 
         # conditional endpoints to delete
@@ -1714,6 +1714,629 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         return showApiError(ex)
     finally:
         db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['GET'])
+@api.route("/api/v1/numberenrichment/<int:rule_id>", methods=['GET'])
+@api_security
+def getNumberEnrichment(rule_id=None):
+    """
+    Get one or multiple number enrichment rules
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>,
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+    """
+    db = DummySession()
+
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # get a single enrichment rule
+        if rule_id is not None:
+            rule = db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id == rule_id).first()
+            if rule is not None:
+                response_payload['data'].append({
+                    'rule_id': rule.id,
+                    'dnid': rule.dnid,
+                    'country_code': rule.country_code,
+                    'routing_number': rule.routing_number,
+                    'rule_name': strFieldsToDict(rule.description)['name']
+                })
+            else:
+                raise http_exceptions.NotFound("Enrichment Rule Does Not Exist")
+        # get all enrichment rules
+        else:
+            rules = db.query(dSIPDNIDEnrichment).all()
+
+            for rule in rules:
+                response_payload['data'].append({
+                    'rule_id': rule.id,
+                    'dnid': rule.dnid,
+                    'country_code': rule.country_code,
+                    'routing_number': rule.routing_number,
+                    'rule_name': strFieldsToDict(rule.description)['name']
+                })
+
+        response_payload['msg'] = 'Enrichment Rule(s) found'
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['POST'])
+@api_security
+def addNumberEnrichment(request_payload=None):
+    """
+    Add a one or multiple enrichment rules
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>
+                },
+                ...
+            ]
+        }
+    """
+
+    db = DummySession()
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {
+        "dnid": str, "country_code": str, "routing_number": str, "rule_name": str
+    }
+
+    # ensure requred args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'dnid'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if 'data' not in request_payload or len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' is required and must be non-zero length")
+        for data in request_payload['data']:
+            if not isinstance(data, dict):
+                raise http_exceptions.BadRequest("Request argument 'data' not valid")
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        # don't allow duplicate dnid's
+        new_dnid_list = [x['dnid'] for x in request_payload['data']]
+        if db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.dnid.in_(new_dnid_list)).scalar():
+            raise http_exceptions.BadRequest("Duplicate DNID's are not allowed")
+
+        for rule_data in request_payload['data']:
+            rule = dSIPDNIDEnrichment(**rule_data)
+            db.add(rule)
+            db.flush()
+            response_payload['data'].append({'rule_id': rule.id})
+
+        db.commit()
+
+        response_payload['msg'] = 'Enrichment Rule(s) created'
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['PUT'])
+@api.route("/api/v1/numberenrichment/<int:rule_id>", methods=['PUT'])
+@api_security
+def updateNumberEnrichment(rule_id=None, request_payload=None):
+    """
+    Update one or multiple enrichment rules\n
+    The rule_id can be provided in url path or payload
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    rule_id: <int>
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>
+                },
+                ...
+            ]
+        }
+    """
+
+    db = DummySession()
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {
+        "rule_id": int, "dnid": str, "country_code": str, "routing_number": str, "rule_name": str
+    }
+
+    # ensure requred args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'dnid'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if 'data' not in request_payload or len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' is required and must be non-zero length")
+        else:
+            if rule_id is not None and isinstance(request_payload['data'][0], dict):
+                request_payload['data'][0]['rule_id'] = int(rule_id)
+        for data in request_payload['data']:
+            if not isinstance(data, dict):
+                raise http_exceptions.BadRequest("Request argument 'data' not valid")
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        # don't allow duplicate dnid's
+        upd_ruleids = [x['rule_id'] for x in request_payload['data'] if 'rule_id' in x]
+        old_dnids = set(x.dnid for x in db.query(dSIPDNIDEnrichment).all() if x.id not in upd_ruleids)
+        add_dnids = set(x['dnid'] for x in request_payload['data'] if not 'rule_id' in x)
+        upd_dnids = set(x['dnid'] for x in request_payload['data'] if 'rule_id' in x)
+        if len(list(add_dnids)+list(upd_dnids)+list(old_dnids)) > len(set.union(add_dnids, upd_dnids, old_dnids)):
+            raise http_exceptions.BadRequest("Duplicate DNID's are not allowed")
+
+        for rule_data in request_payload['data']:
+            # adding new rules
+            if not 'rule_id' in rule_data:
+                rule = dSIPDNIDEnrichment(**rule_data)
+                db.add(rule)
+                db.flush()
+                response_payload['data'].append({'rule_id': rule.id})
+            # updating existing rules
+            else:
+                rule_id = rule_data.pop('rule_id')
+                description = {'name': rule_data.pop('rule_name')}
+                rule_data['description'] = dictToStrFields(description)
+
+                if not db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id == rule_id).update(
+                        rule_data, synchronize_session=False):
+                    raise http_exceptions.BadRequest("Enrichment Rule with id '{}' does not exist".format(str(rule_id)))
+                response_payload['data'].append({'rule_id': rule_id})
+
+        db.commit()
+
+        response_payload['msg'] = 'Enrichment Rule(s) updated'
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['DELETE'])
+@api.route("/api/v1/numberenrichment/<int:rule_id>", methods=['DELETE'])
+@api_security
+def deleteNumberEnrichment(rule_id, request_payload=None):
+    """
+    Delete one or multiple enrichment rules\n
+    The rule_id can be provided in url path or payload
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    rule_id: <int>
+                },
+                ...
+            ]
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: []
+        }
+    """
+
+    db = DummySession()
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"rule_id": int}
+
+    # ensure requred args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'rule_id'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if rule_id is not None:
+            request_payload['data'] = [{'rule_id': int(rule_id)}]
+        elif 'data' not in request_payload or len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' is required and must be non-zero length")
+        for data in request_payload['data']:
+            if not isinstance(data, dict):
+                raise http_exceptions.BadRequest("Request argument 'data' not valid")
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        rule_ids = [x['rule_id'] for x in request_payload['data']]
+        rules = db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id.in_(rule_ids))
+        if rules is not None:
+            rules.delete(synchronize_session=False)
+        else:
+            raise http_exceptions.NotFound("The enrichment rule(s) do not exist")
+
+        db.commit()
+
+        response_payload['msg'] = "Enrichment Rule(s) deleted"
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+@api.route("/api/v1/numberenrichment/fetch", methods=['POST'])
+@api_security
+def fetchNumberEnrichment(request_payload=None):
+    """
+    Fetch a CSV to import from an external server\n
+    Updates and adds rules by default\n
+    If replace_rules is True then current rules are replaced
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    url: <str>
+                },
+                ...
+            ],
+            replace_rules: <bool>
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>,
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+    """
+
+    # for validation of request args
+    VALID_REQUEST_ARGS = {"data": list, "replace_rules": bool}
+
+    # for validation of data args
+    VALID_REQUEST_DATA_ARGS = {"url": str}
+
+    # ensure required args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'url'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' must be non-zero length")
+        for k, v in request_payload.items():
+            if k not in VALID_REQUEST_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_ARGS[k]:
+                try:
+                    request_payload[k] = VALID_REQUEST_ARGS[k](v)
+                    continue
+                except:
+                    raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+        for data in request_payload['data']:
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        # prep for gathering data from csv
+        new_rules = []
+        resource_urls = [x['url'] for x in request_payload['data']]
+
+        # TODO: we should not blindly download the file, we need to some security checks here
+        # TODO: we should be doing downloads in separate threads
+        for url in resource_urls:
+            with closing(requests.get(url, stream=True)) as resp:
+                # iterator for csv stream lines
+                iter_lines = codecs.iterdecode(resp.iter_lines(), 'utf-8')
+
+                # lines for sniffer to detect csv type
+                line_1 = next(iter_lines, None)
+                if line_1 is None:
+                    raise http_exceptions.BadRequest("File at fetch URL is invalid")
+                line_2 = next(iter_lines, None)
+
+                # detect csv dialect and if header is present
+                sniffer_lines = line_1 + '\n' + line_2 if line_2 is not None else line_1
+                dialect = csv.Sniffer().sniff(sniffer_lines, delimiters=',;|')
+                has_header = csv.Sniffer().has_header(sniffer_lines)
+
+                # add valid values from sniffer lines to rules
+                start_lines = []
+                if not has_header:
+                    start_lines.append(line_1)
+                if line_2 is not None:
+                    start_lines.append(line_2)
+                for row in csv.reader((line for line in start_lines), dialect):
+                    new_rules.append({
+                        "dnid": row[0],
+                        "country_code": row[1],
+                        "routing_number": row[2],
+                        "rule_name": row[3]
+                    })
+
+                # read rest of csv stream and add to rules
+                for row in csv.reader(iter_lines, dialect):
+                    new_rules.append({
+                        "dnid": row[0],
+                        "country_code": row[1],
+                        "routing_number": row[2],
+                        "rule_name": row[3]
+                    })
+
+        # if replacing rules delete all then add
+        # if updating rules merge based on dnid (must be unique still)
+        replace_rules = request_payload['replace_rules'] if 'replace_rules' in request_payload else False
+        if replace_rules:
+            db.query(dSIPDNIDEnrichment).delete(synchronize_session=False)
+            db.flush()
+
+            ret = addNumberEnrichment(request_payload={'data': new_rules})
+            if ret[1] != StatusCodes.HTTP_OK:
+                resp = ret[0].get_json(force=True)
+                response_payload['error'] = resp['error']
+                response_payload['msg'] = resp['msg']
+                return jsonify(response_payload), ret[1]
+            response_payload['msg'] = "Enrichment Rule(s) replaced"
+        else:
+            current_rules_lut = {
+                x.dnid: {'rule_id': x.id}
+                for x in db.query(dSIPDNIDEnrichment).all()
+            }
+            current_dnids = set(current_rules_lut.keys())
+            new_rules_lut = {
+                x['dnid']: {'dnid': x['dnid'], 'country_code': x['country_code'],
+                            'routing_number': x['routing_number'], 'rule_name': x['rule_name']}
+                for x in new_rules
+            }
+            new_dnids = set(new_rules_lut.keys())
+
+            add_dnids = new_dnids - current_dnids
+            upd_dnids = current_dnids & new_dnids
+
+            updated_rules = []
+            for dnid in add_dnids:
+                updated_rules.append(new_rules_lut[dnid])
+            for dnid in upd_dnids:
+                updated_rules.append({'rule_id': current_rules_lut[dnid]['rule_id'], **new_rules_lut[dnid]})
+
+            ret = updateNumberEnrichment(request_payload={'data': updated_rules})
+            if ret[1] != StatusCodes.HTTP_OK:
+                resp = ret[0].get_json(force=True)
+                response_payload['error'] = resp['error']
+                response_payload['msg'] = resp['msg']
+                return jsonify(response_payload), ret[1]
+            response_payload['msg'] = "Enrichment Rule(s) updated"
+
+        # let requestor know what rules are now available
+        rules = db.query(dSIPDNIDEnrichment).all()
+        for rule in rules:
+            response_payload['data'].append({
+                'rule_id': rule.id,
+                'dnid': rule.dnid,
+                'country_code': rule.country_code,
+                'routing_number': rule.routing_number,
+                'rule_name': strFieldsToDict(rule.description)['name']
+            })
+
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex, response_payload)
 
 
 # TODO: standardize response payload (use data param)
@@ -2339,7 +2962,7 @@ def uploadCertificates(domain=None):
             replace_default_cert =  data['replace_default_cert'][0]
         else:
             replace_default_cert = None
-        
+
         ip = settings.EXTERNAL_IP_ADDR
         port = 5061
         server_name_mode = KAM_TLS_SNI_ALL

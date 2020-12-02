@@ -31,6 +31,10 @@ import globals
 import settings
 
 
+# TODO: unit testing per component
+# TODO: many of these routes could use some updating...
+#       possibly look into this as well when reworking the architecture for API
+
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
@@ -41,9 +45,6 @@ csrf.exempt(api)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
-# TODO: unit testing per component
-# TODO: many of these routes could use some updating...
-#       possibly look into this as well when reworking the architecture for API
 
 @app.before_first_request
 def before_first_request():
@@ -761,7 +762,32 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('endpointgroups.html',dsiprouter_ip=settings.EXTERNAL_IP_ADDR,DEFAULT_auth_domain=settings.DOMAIN)
+        return render_template('endpointgroups.html', dsiprouter_ip=settings.EXTERNAL_IP_ADDR,
+                               DEFAULT_auth_domain=settings.DOMAIN)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+@app.route('/numberenrichment')
+def displayNumberEnrichment():
+    """
+    Display Endpoint Groups / Endpoints in the view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        return render_template('dnid_enrichment.html')
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -1047,12 +1073,10 @@ def addUpdateInboundMapping():
         ff_groupid = form['ff_groupid'] if 'ff_groupid' in form else ''
         ff_fwddid = form['ff_fwddid'] if 'ff_fwddid' in form else ''
 
-
-
         # we only support a single gwgroup at this time
         gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
         fwdgroupid = None
-        
+
         # TODO: seperate redundant code into functions
         # TODO  need to add support for updating and deleting a LB Rule
 
@@ -1070,10 +1094,10 @@ def addUpdateInboundMapping():
                 dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
-                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Gateway)
                 db.flush()
-                
+
                 Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
@@ -1152,7 +1176,7 @@ def addUpdateInboundMapping():
         # Updating
         else:
             inserts = []
-            
+
             if "lb_" in gwgroupid:
                 x = gwgroupid.split("_");
                 gwgroupid = x[1]
@@ -1166,11 +1190,11 @@ def addUpdateInboundMapping():
                     fields['gwgroup'] = gwgroupid
                     Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
                 else:
-                    Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                    Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
                     db.add(Gateway)
 
                 db.flush()
-               
+
                 Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
                 if Addr is None:
                     Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 0, gwgroup=gwgroupid)

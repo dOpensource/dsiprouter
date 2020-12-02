@@ -14,13 +14,14 @@ _dsiprouter() {
     declare -a cmds=(
         install
         uninstall
+        upgrade
         clusterinstall
         start
         stop
         restart
         configurekam
         renewsslcert
-	configuresslcert
+	    configuresslcert
         installmodules
         enableservernat
         disableservernat
@@ -42,13 +43,14 @@ _dsiprouter() {
     declare -A llopts=(
         [install]='--external-ip= --database= --dsip-clusterid= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev='
         [uninstall]=''
+        [upgrade]='--release='
         [clusterinstall]=''
         [start]=''
         [stop]=''
         [restart]=''
         [configurekam]=''
         [renewsslcert]=''
-        [configuresslcert]='--force'
+        [configuresslcert]=''
         [installmodules]=''
         [enableservernat]=''
         [disableservernat]=''
@@ -70,12 +72,14 @@ _dsiprouter() {
     declare -A lopts=(
         [install]='--all --kamailio --dsiprouter --rtpengine'
         [uninstall]='--all --kamailio --dsiprouter --rtpengine'
+        [upgrade]=''
         [clusterinstall]='--'
         [start]='--all --kamailio --dsiprouter --rtpengine'
         [stop]='--all --kamailio --dsiprouter --rtpengine'
         [restart]='--all --kamailio --dsiprouter --rtpengine'
         [configurekam]=''
         [renewsslcert]=''
+        [configuresslcert]='--force'
         [installmodules]=''
         [enableservernat]=''
         [disableservernat]=''
@@ -97,6 +101,7 @@ _dsiprouter() {
     declare -A sopts=(
         [install]='-debug -servernat -all -kam -dsip -rtp -exip -db -dsipcid -dsipcsync -dsipkey -with_lcr -with_dev'
         [uninstall]='-debug -all -kam -dsip -rtp'
+        [upgrade]='-debug'
         [clusterinstall]='-debug'
         [start]='-debug -all -kam -dsip -rtp'
         [stop]='-debug -all -kam -dsip -rtp'

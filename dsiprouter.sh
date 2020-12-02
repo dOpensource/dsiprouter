@@ -8,9 +8,10 @@
 #
 # Supported OS:
 # - Debian 11 (bullseye) (BETA)
-# - Debian 10 (buster) (BETA)
+# - Debian 10 (buster)
 # - Debian 9 (stretch)
 # - Debian 8 (jessie)
+# - CentOS 8
 # - CentOS 7
 # - Amazon Linux 2
 # - Ubuntu 16.04 (xenial)
@@ -449,7 +450,7 @@ function reconfigureMysqlSystemdService {
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
     case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)"|"$(hostname -f)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl stop mysql
@@ -1629,7 +1630,7 @@ function start {
         else
             # normal startup, fork as background process
             systemctl start dsiprouter
-	    systemctl start nginx
+	        systemctl start nginx
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
                 printerr "Unable to start dSIPRouter"
@@ -1676,7 +1677,7 @@ function stop {
     # Stop the dSIPRouter if told to and installed
     if (( $STOP_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         # normal startup, fork as background process
-	systemctl stop nginx
+	    systemctl stop nginx
         systemctl stop dsiprouter
         # Make sure process is not running
         if systemctl is-active --quiet dsiprouter; then
@@ -2066,14 +2067,14 @@ function removeInitService {
 
 
 function upgrade {
-    
+
     KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
     KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
     KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
     KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
     DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
-    
+
     CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
 
     # Check if already upgraded
@@ -2116,7 +2117,7 @@ function upgrade {
     if [ $ret -eq 0 ]; then
         # Upgrade the version
        setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
-    
+
     	# Restart Kamailio
     	systemctl restart kamailio
     	systemctl restart dsiprouter
@@ -2424,7 +2425,7 @@ function usageOptions {
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "upgrade" "[-debug] <-rel|--release <release number>>"
+        "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
         "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
     printf "%-30s %s\n" \
@@ -2462,9 +2463,9 @@ function usageOptions {
     printf "%-30s %s\n" \
         "updatednsconfig" "[-debug]"
     printf "%-30s %s\n" \
-        "version|-v|--version"
+        "version|-v|--version" ""
     printf "%-30s %s\n" \
-        "help|-h|--help"
+        "help|-h|--help" ""
 
     linebreak
     printf '\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' \
@@ -2492,6 +2493,7 @@ function usageOptions {
 }
 
 # make the output a little cleaner
+# shellcheck disable=SC2120
 function setVerbosityLevel {
     if [[ "$*" != *"-debug"* ]]; then
         # quiet pkg managers when not debugging
@@ -2987,7 +2989,7 @@ function processCMD {
                 esac
             done
             ;;
-	upgrade)
+	    upgrade)
             # reconfigure kamailio configs
             RUN_COMMANDS+=(upgrade)
             shift
@@ -3000,17 +3002,31 @@ function processCMD {
                         set -x
                         shift
                         ;;
-                    -rel|--release)
-			shift
-			if [ -z "$1" ]; then
-				printerr "Please specify a release tag (ie 0.34)"
-                        	usageOptions
-                        	cleanupAndExit 1
-			 else	    
-                       		export UPGRADE_RELEASE=$1
+                    -dsipcid|--dsip-clusterid=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            setConfigAttrib 'DSIP_CLUSTER_ID' "$(echo "$1" | cut -d '=' -f 2)" ${DSIP_CONFIG_FILE}
+                            shift
+                        else
+                            shift
+                            setConfigAttrib 'DSIP_CLUSTER_ID' "$1" ${DSIP_CONFIG_FILE}
+                            shift
+                        fi
+                        ;;
+                    -rel|--release=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            export UPGRADE_RELEASE="$(echo "$1" | cut -d '=' -f 2)"
+			                shift
+                        else
+                            shift
+                            export UPGRADE_RELEASE="$1"
+                            shift
+			            fi
 
-			 fi
-                         shift
+                        if [[ -z "$UPGRADE_RELEASE" ]]; then
+                            printerr "Please specify a release tag (ie v0.64)"
+                            usageOptions
+                            cleanupAndExit 1
+                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -3068,8 +3084,8 @@ function processCMD {
                         ;;
                 esac
             done
-	    ;;
-	configuresslcert)
+	        ;;
+	    configuresslcert)
             # reconfigure ssl configs
             RUN_COMMANDS+=(configureSSL)
             shift

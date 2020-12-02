@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f
+66f3e4d572ce0938d11fbe38099a39842b4ea0dd
+f74db4f6542d0f008fef614440e195ff724a7879
 a409f4049744053e5958ea885b5d68524f15c6c4
 d182417156ac4af142138abe951aefd6dea35259
 9e45548eef592b97967607829e844913b6ced577
@@ -1790,10 +1791,34 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f)
+[//]: # (START_SECTION 66f3e4d572ce0938d11fbe38099a39842b4ea0dd)
+### Merge Number Enrichment Into Current Build
+
+> Commit: [66f3e4d572ce0938d11fbe38099a39842b4ea0dd](https://github.com/dOpensource/dsiprouter/commit/66f3e4d572ce0938d11fbe38099a39842b4ea0dd)  
+> Date: Tue, 1 Dec 2020 19:15:55 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#310](https://github.com/dOpensource/dsiprouter/issues/310)
+- merge in number enrichment feature
+- move teleblock settings to system settings menu
+- fix a few bash completions for dsiprouter commands
+- update upgrade command syntax to match others
+- misc CSS merges from enterprise repo
+- make module install scripts propagate return code
+- cleanup various scripts / configs / source files
+- update version in `settings.py`
+
+
+---
+
+[//]: # (END_SECTION 66f3e4d572ce0938d11fbe38099a39842b4ea0dd)
+[//]: # (START_SECTION f74db4f6542d0f008fef614440e195ff724a7879)
 ### Allow TCP UAC SIP Connections By Default
 
-> Commit: [333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f](https://github.com/dOpensource/dsiprouter/commit/333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f)  
+> Commit: [f74db4f6542d0f008fef614440e195ff724a7879](https://github.com/dOpensource/dsiprouter/commit/f74db4f6542d0f008fef614440e195ff724a7879)  
 > Date: Tue, 1 Dec 2020 17:08:50 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1806,7 +1831,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 333d8e5a0c0f798d0ed16c13a61b7b11a9704f7f)
+[//]: # (END_SECTION f74db4f6542d0f008fef614440e195ff724a7879)
 [//]: # (START_SECTION a409f4049744053e5958ea885b5d68524f15c6c4)
 ### Update NAT Handling
 
