@@ -1,9 +1,3 @@
-bjoern
-certbot
-cron_descriptor
-cryptography
-dnspython
-docker
 Flask
 Flask_Script
 Flask_WTF
