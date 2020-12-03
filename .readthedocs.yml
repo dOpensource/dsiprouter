@@ -21,4 +21,4 @@ formats:
 python:
   version: 3.7
   install:
-    - requirements: gui/requirements.txt
+    - requirements: docs/source/requirements.txt
