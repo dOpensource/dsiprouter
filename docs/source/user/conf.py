@@ -14,8 +14,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../..'))
-sys.path.insert(0, os.path.abspath('../../gui'))
+#sys.path.insert(0, os.path.abspath('../../..'))
+#sys.path.insert(0, os.path.abspath('../../gui'))
 import settings
 sys.setrecursionlimit(1500)
 
@@ -26,9 +26,9 @@ copyright = 'dOpenSource'
 author = 'dOpenSource'
 
 # The short X.Y version
-version = settings.VERSION
+#version = settings.VERSION
 # The full version, including alpha/beta/rc tags
-release = settings.VERSION
+#release = settings.VERSION
 
 
 # -- General configuration ---------------------------------------------------
