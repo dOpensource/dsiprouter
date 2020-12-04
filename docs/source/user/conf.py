@@ -46,9 +46,9 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-    'sphinxcontrib.httpdomain',
-    'sphinxcontrib.autohttp.flask',
-    'sphinxcontrib.autohttp.flaskqref',
+#    'sphinxcontrib.httpdomain',
+#    'sphinxcontrib.autohttp.flask',
+#    'sphinxcontrib.autohttp.flaskqref',
 #    'rinoh.frontend.sphinx',
     'recommonmark'
 ]
