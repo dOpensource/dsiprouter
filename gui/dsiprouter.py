@@ -1070,7 +1070,7 @@ def addUpdateInboundMapping():
                 dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
-                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,'', dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
                 db.add(Gateway)
                 db.flush()
                 
