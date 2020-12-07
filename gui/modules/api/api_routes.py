@@ -3007,10 +3007,10 @@ def uploadCertificates(domain=None):
         key_file = "{}/dsiprouter.key".format(cert_domain_dir)
         cert_file = "{}/dsiprouter.crt".format(cert_domain_dir)
 
-        # Change owner to root:kamailio so that Kamailio can load the configurations
-        change_owner(cert_domain_dir,"root","kamailio")
-        change_owner(key_file,"root","kamailio")
-        change_owner(cert_file,"root","kamailio")
+        # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations
+        change_owner(cert_domain_dir,"dsiprouter","kamailio")
+        change_owner(key_file,"dsiprouter","kamailio")
+        change_owner(cert_file,"dsiprouter","kamailio")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
         cert_base64 = base64.b64encode(bytes(cert,'utf-8'))

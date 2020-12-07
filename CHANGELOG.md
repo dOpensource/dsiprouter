@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-66f3e4d572ce0938d11fbe38099a39842b4ea0dd
+4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5
+9fc1b9c95e1c930caa9a711477e29f8ac94f8534
 f74db4f6542d0f008fef614440e195ff724a7879
 a409f4049744053e5958ea885b5d68524f15c6c4
 d182417156ac4af142138abe951aefd6dea35259
@@ -1791,10 +1792,31 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 66f3e4d572ce0938d11fbe38099a39842b4ea0dd)
+[//]: # (START_SECTION 4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5)
+### v0.641 Bug Fixes
+
+> Commit: [4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5](https://github.com/dOpensource/dsiprouter/commit/4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5)  
+> Date: Mon, 7 Dec 2020 10:47:54 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Fixes [#310](https://github.com/dOpensource/dsiprouter/issues/310)
+- fix DNID enrichment enabled before tables installed
+- enable DMQ by default
+- increase external IP resolution timeout
+- add libwebsockets-dev dependency for next release of RTPENGINE
+- fix permissions issues with certificate upload
+
+
+---
+
+[//]: # (END_SECTION 4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5)
+[//]: # (START_SECTION 9fc1b9c95e1c930caa9a711477e29f8ac94f8534)
 ### Merge Number Enrichment Into Current Build
 
-> Commit: [66f3e4d572ce0938d11fbe38099a39842b4ea0dd](https://github.com/dOpensource/dsiprouter/commit/66f3e4d572ce0938d11fbe38099a39842b4ea0dd)  
+> Commit: [9fc1b9c95e1c930caa9a711477e29f8ac94f8534](https://github.com/dOpensource/dsiprouter/commit/9fc1b9c95e1c930caa9a711477e29f8ac94f8534)  
 > Date: Tue, 1 Dec 2020 19:15:55 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1814,7 +1836,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 66f3e4d572ce0938d11fbe38099a39842b4ea0dd)
+[//]: # (END_SECTION 9fc1b9c95e1c930caa9a711477e29f8ac94f8534)
 [//]: # (START_SECTION f74db4f6542d0f008fef614440e195ff724a7879)
 ### Allow TCP UAC SIP Connections By Default
 

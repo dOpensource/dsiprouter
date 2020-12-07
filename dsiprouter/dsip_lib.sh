@@ -400,7 +400,7 @@ export -f ipv6Test
 #
 function getExternalIP() {
     local IPV6_ENABLED=${IPV6_ENABLED:-0}
-    local EXTERNAL_IP=""
+    local EXTERNAL_IP="" TIMEOUT=5
     local URLS=() CURL_CMD="curl"
 
     if (( ${IPV6_ENABLED} == 1 )); then
@@ -426,7 +426,7 @@ function getExternalIP() {
     fi
 
     for URL in ${URLS[@]}; do
-        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout 2 $URL 2>/dev/null)
+        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
         ${IP_TEST} "$EXTERNAL_IP" && break
     done
 

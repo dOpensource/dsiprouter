@@ -364,6 +364,8 @@ function initialChecks {
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
     # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
 
     if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
         # comment out cdrom in sources as it can halt install
@@ -529,8 +531,8 @@ function renewSSLCert {
         	rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
        		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-       		chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
-        	chmod g=+r ${DSIP_CERTS_DIR}/dsiprouter*
+       		chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+        	chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
 		    kamcmd tls.reload
      	fi
     else
@@ -542,8 +544,8 @@ function configureSSL {
     # Check if certificates already exists.  If so, use them and exit
     if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
-        chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
-        chmod g=+r ${DSIP_CERTS_DIR}/dsiprouter*
+        chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+        chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
         return
     fi
 
@@ -558,8 +560,8 @@ function configureSSL {
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-        chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod g=+r ${DSIP_CERTS_DIR}/*
+        chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
+        chmod 640 ${DSIP_CERTS_DIR}/*
         # Add Nightly Cronjob to renew certs
         cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
     else
@@ -568,8 +570,8 @@ function configureSSL {
         # Worst case, generate a Self-Signed Certificate
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
-        chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod g=+r ${DSIP_CERTS_DIR}/*
+        chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
+        chmod 640 ${DSIP_CERTS_DIR}/*
     fi
     firewall-cmd --zone=public --remove-port=80/tcp --permanent
     firewall-cmd --reload
@@ -2538,7 +2540,7 @@ function preprocessCMD {
     else
         initialChecks
         setPythonCmd
-        setVerbosityLevel
+        setVerbosityLevel "$@"
     fi
 }
 

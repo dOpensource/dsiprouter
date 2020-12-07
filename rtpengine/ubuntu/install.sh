@@ -29,6 +29,11 @@ function install {
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
+    apt-get install -y unzip
+    apt-get install -y libavresample-dev
+    apt-get install -y linux-headers-$(uname -r)
+    apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
+        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
 
     # try upgrading debhelper with backports if lower ver than 10
     CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
