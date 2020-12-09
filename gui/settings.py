@@ -32,6 +32,7 @@ DSIP_LOG_FACILITY = 18
 # email for re-certification must match certs
 DSIP_SSL_KEY = ''
 DSIP_SSL_CERT = ''
+DSIP_SSL_CA = '/etc/dsiprouter/certs/cacert.pem'
 DSIP_SSL_EMAIL = ''
 DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 

@@ -76,7 +76,6 @@ setScriptSettings() {
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
     FLT_FWD_MIN=20000
-    WITH_SSL=1
     WITH_LCR=1
     export DEBUG=0
     export SERVERNAT=0
@@ -145,19 +144,12 @@ setScriptSettings() {
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
 
-    if (( ${WITH_SSL} == 1 )); then
-        export DSIP_PROTO='https'
-        export DSIP_API_PROTO='https'
-        export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter.key"
-        export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter.crt"
-        export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
-    else
-        export DSIP_PROTO='http'
-        export DSIP_API_PROTO='http'
-        export DSIP_SSL_KEY=""
-        export DSIP_SSL_CERT=""
-        export DSIP_SSL_EMAIL=""
-    fi
+    export DSIP_PROTO='https'
+    export DSIP_API_PROTO='https'
+    export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter-key.pem"
+    export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter-cert.pem"
+    export DSIP_SSL_CA="${DSIP_CERTS_DIR}/cacert.pem"
+    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
 
     # grab root db settings from env or set to defaults
     export MYSQL_ROOT_USERNAME=${MYSQL_ROOT_USERNAME:-$MYSQL_ROOT_DEF_USERNAME}
@@ -240,7 +232,7 @@ function cleanupAndExit {
     unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
     unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
     unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
-    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN VULTR_ENABLED CLOUD_PLATFORM
+    unset DSIP_SSL_CA INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN VULTR_ENABLED CLOUD_PLATFORM
     unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
@@ -498,13 +490,14 @@ function configurePythonSettings {
     setConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_PRIV_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_SSL_CA' "$DSIP_SSL_CA" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_CERTS_DIR' "$DSIP_CERTS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_API_PROTO' "$DSIP_API_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_DOCS_DIR' "$DSIP_DOCS_DIR" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DSIP_CERTS_DIR' "$DSIP_CERTS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_TLSCFG_PATH' "$SYSTEM_KAMAILIO_TLS_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
 }
 
@@ -1315,9 +1308,7 @@ function installKamailio {
 
     ${DSIP_PROJECT_DIR}/kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
-        if [ ${WITH_SSL} -eq 1 ]; then
-            configureSSL
-        fi
+        configureSSL
         configureKamailio
         updateKamailioConfig
     else
@@ -1618,8 +1609,9 @@ function start {
     # Start the dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         if [ $DEBUG -eq 1 ]; then
+            systemctl start nginx
             # keep it in the foreground, only used for debugging issues
-            ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py runserver
+            sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             # Make sure process is still running
             PID=$!
             if ! ps -p ${PID} &>/dev/null; then
@@ -1631,8 +1623,8 @@ function start {
             fi
         else
             # normal startup, fork as background process
+            systemctl start nginx
             systemctl start dsiprouter
-	        systemctl start nginx
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
                 printerr "Unable to start dSIPRouter"
@@ -3101,8 +3093,8 @@ function processCMD {
                         shift
                         ;;
                     -f|--force)
-                        rm -f $DSIP_CERTS_DIR/dsiprouter.crt
-                        rm -f $DSIP_CERTS_DIR/dsiprouter.key
+                        rm -f $DSIP_CERTS_DIR/dsiprouter-cert.pem
+                        rm -f $DSIP_CERTS_DIR/dsiprouter-key.pem
                         shift
                         ;;
                     *)  # fail on unknown option
