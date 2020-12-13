@@ -1,7 +1,6 @@
 import os, time, json, random, subprocess, requests, csv, base64
 import urllib.parse as parse
 from collections import OrderedDict
-from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
 from sqlalchemy import exc as sql_exceptions, and_,or_
@@ -13,7 +12,7 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars
+from util.security import AES_CTR, urandomChars api_security
 from util.file_handling import isValidFile, change_owner
 from util.kamtls import *
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
@@ -34,54 +33,6 @@ api = Blueprint('api', __name__)
 # TODO: this is almost impossible to work on...
 #       we need to abstract out common code between gui and api and standardize routes!
 
-class APIToken:
-    token = None
-
-    def __init__(self, request):
-        if 'Authorization' in request.headers:
-            auth_header = request.headers.get('Authorization', None)
-            if auth_header is not None:
-                header_values = auth_header.split(' ')
-                if len(header_values) == 2:
-                    self.token = header_values[1]
-
-    def isValid(self):
-        try:
-            if self.token:
-                # Get Environment Variables if in debug mode
-                # This is the only case we allow plain text token comparison
-                if settings.DEBUG:
-                    settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
-
-                # need to decrypt token
-                if isinstance(settings.DSIP_API_TOKEN, bytes):
-                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-                else:
-                    tokencheck = settings.DSIP_API_TOKEN
-
-                return tokencheck == self.token
-
-            return False
-        except:
-            return False
-
-
-def api_security(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        apiToken = APIToken(request)
-
-        if not session.get('logged_in') and not apiToken.isValid():
-            accept_header = request.headers.get('Accept', '')
-
-            if 'text/html' in accept_header:
-                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
-            else:
-                payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
@@ -744,8 +695,8 @@ def deleteEndpointGroup(gwgroupid):
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
             domainmapping.delete(synchronize_session=False)
-        
-        dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid ==  gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000)) 
+
+        dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid ==  gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000))
         if dispatcher is not None:
             dispatcher.delete(synchronize_session=False)
 
@@ -815,7 +766,7 @@ def getEndpointGroup(gwgroupid):
                 for item in dispatcher:
                     weight = item.attrs.split('=')[1]
                     weightList[item.destination[4:]] = weight
-            
+
             for endpoint in endpoints:
                 ep = {}
                 ep['gwid'] = endpoint.gwid
@@ -1066,8 +1017,8 @@ def updateEndpointGroups(gwgroupid=None):
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
-        
-        
+
+
         if 'fusionpbx' in request_payload:
             fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
                 if 'enabled' in request_payload['fusionpbx'] else None
@@ -1173,8 +1124,8 @@ def updateEndpointGroups(gwgroupid=None):
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                     dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
                     db.add(dispatcher)
-                
-                
+
+
                 db.add(Gateway)
                 db.flush()
                 gwlist.append(Gateway.gwid)
@@ -1231,7 +1182,7 @@ def updateEndpointGroups(gwgroupid=None):
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                 dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
                 db.add(dispatcher)
-            
+
             # we ignore the given gwid and allow DB to assign one instead
             db.add(Gateway)
             db.flush()
@@ -1299,7 +1250,7 @@ def updateEndpointGroups(gwgroupid=None):
             if weight is None or len(weight) == 0:
                 if DispatcherEntry is not None:
                     db.delete(DispatcherEntry)
-            elif weight: 
+            elif weight:
                 if DispatcherEntry is not None:
                     db.query(Dispatcher).filter((Dispatcher.setid ==  gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
                 else:
@@ -1314,7 +1265,7 @@ def updateEndpointGroups(gwgroupid=None):
                 if weight is None or len(weight) == 0:
                     if DispatcherEntry is not None:
                         db.delete(DispatcherEntry)
-                elif weight: 
+                elif weight:
                     if DispatcherEntry is not None:
                         db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
                     else:
@@ -1322,7 +1273,7 @@ def updateEndpointGroups(gwgroupid=None):
                         #dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
                         #db.add(dispatcher)
                         pass
-                
+
             gwlist.append(gwid)
 
         # conditional endpoints to delete
@@ -1685,7 +1636,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                 dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
                 db.add(dispatcher)
-                 
+
 
             db.add(Gateway)
             db.flush()
@@ -1699,9 +1650,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
             fields = strFieldsToDict(gwgroup.description)
-            fields['lb'] = gwgroupid 
+            fields['lb'] = gwgroupid
             if fusionpbxenabled:
-                fields['lb_ext'] = gwgroupid + 1000 
+                fields['lb_ext'] = gwgroupid + 1000
 
         # Update the GatewayGroup with the lists of gateways
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
@@ -2383,7 +2334,7 @@ def uploadCertificates(domain=None):
             replace_default_cert =  data['replace_default_cert'][0]
         else:
             replace_default_cert = None
-        
+
         ip = settings.EXTERNAL_IP_ADDR
         port = 5061
         server_name_mode = KAM_TLS_SNI_ALL

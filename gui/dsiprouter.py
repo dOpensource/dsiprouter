@@ -24,6 +24,7 @@ from database import db_engine, SessionLoader, DummySession, Gateways, Address, 
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
+from modules.api.mediaserver.routes import mediaserver
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -35,6 +36,7 @@ import settings
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
+app.register_blueprint(mediaserver)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
@@ -1052,7 +1054,7 @@ def addUpdateInboundMapping():
         # we only support a single gwgroup at this time
         gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
         fwdgroupid = None
-        
+
         # TODO: seperate redundant code into functions
         # TODO  need to add support for updating and deleting a LB Rule
 
@@ -1070,10 +1072,10 @@ def addUpdateInboundMapping():
                 dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
-                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Gateway)
                 db.flush()
-                
+
                 Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
@@ -1152,7 +1154,7 @@ def addUpdateInboundMapping():
         # Updating
         else:
             inserts = []
-            
+
             if "lb_" in gwgroupid:
                 x = gwgroupid.split("_");
                 gwgroupid = x[1]
@@ -1166,11 +1168,11 @@ def addUpdateInboundMapping():
                     fields['gwgroup'] = gwgroupid
                     Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
                 else:
-                    Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid) 
+                    Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
                     db.add(Gateway)
 
                 db.flush()
-               
+
                 Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
                 if Addr is None:
                     Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 0, gwgroup=gwgroupid)

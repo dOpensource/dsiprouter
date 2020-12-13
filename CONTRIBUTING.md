@@ -118,7 +118,37 @@ This means that a new module should become automatically available from the UI w
 
 ### API Structure
 
-Todo: Assigned to Tyler
+We are in the process of refactoring most of the application so that all of the GUI components leverages the API.  Currently, the core API reside in gui/modules/api.  
+
+#### Adding an API
+
+The following steps will guide you thru the process of adding a new API to
+dSIPRouter.  We handle all of the security on your behalf.
+
+1. Add a subdirectory in gui/modules/api/new_api
+2. Copy sample_api.py to gui/modules/api/new_api/routes.py
+3. Add the following line to the imports section of gui/dsiprouter.py
+
+```
+from modules.api.new_api.routes import new_api
+```
+
+4. Add the following line to gui/dsiprouter to register the new API
+
+```
+app.register_blueprint(new_api)
+```
+
+5. Restart dSIPRouter
+
+6. Test the new API
+
+```
+export DSIP_TOKEN=<api token>
+export DSIP_HOST=<ip or hostname of dSIPRouter>
+curl --insecure -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOST:5000/api/v1/new_api/new_entity
+```
+
 
 ### Useability
 
