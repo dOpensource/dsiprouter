@@ -1622,10 +1622,19 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             # Convert fusionpbxenabled variable to int
             if isinstance(fusionpbxenabled, str):
                 fusionpbxenabled = int(fusionpbxenabled)
+            
+            # Convert fusionclustersupport variable to int
+            if isinstance(fusionpbxclustersupport, str):
+                fusionpbxclustersupport = int(fusionpbxclustersupport)
 
             if fusionpbxenabled == 1:
+                if fusionpbxclustersupport == 1:
+                    domainType = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX_CLUSTER.value
+                else:
+                    domainType = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value
+
                 domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
-                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+                                                       type=domainType)
                 db.add(domainmapping)
 
                 # Add the FusionPBX server as an Endpoint if it's not just the DB server

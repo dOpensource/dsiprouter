@@ -26,7 +26,7 @@ def get_sources(db):
         db = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
         c = db.cursor()
         c.execute(
-            """select pbx_id,address as pbx_host,db_host,db_username,db_password,domain_list,domain_list_hash,attr_list from dsip_multidomain_mapping join dr_gw_lists on dsip_multidomain_mapping.pbx_id=dr_gw_lists.id join dr_gateways on dr_gateways.gwid = dr_gw_lists.gwlist where enabled=1""")
+            """select pbx_id,address as pbx_host,db_host,db_username,db_password,domain_list,domain_list_hash,attr_list,dsip_multidomain_mapping.type from dsip_multidomain_mapping join dr_gw_lists on dsip_multidomain_mapping.pbx_id=dr_gw_lists.id join dr_gateways on dr_gateways.gwid = dr_gw_lists.gwlist where enabled=1""")
         results = c.fetchall()
         db.close()
         for row in results:
@@ -77,6 +77,7 @@ def sync_db(source, dest):
     fpbx_password = source[4]
     pbx_domain_list = source[5]
     pbx_attr_list = source[6]
+    pbx_type = source[8]
     fpbx_database = 'fusionpbx'
 
     # Kamailio Database Parameters
@@ -128,10 +129,16 @@ def sync_db(source, dest):
                     (row[0], pbx_host))
                 c.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_type',2,%s,NOW())""",
-                    (row[0], dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value))
+                    (row[0], pbx_type))
                 c.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'created_by',2,%s,NOW())""",
                     (row[0], pbx_id))
+                c.execute(
+                    """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'dispatcher_set_id',2,%s,NOW())""",
+                    (row[0], pbx_id))
+                c.execute(
+                    """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'dispatcher_reg_alg',2,%s,NOW())""",
+                    (row[0], 4))
                 c.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'domain_auth',2,%s,NOW())""",
                     (row[0], 'passthru'))
@@ -280,6 +287,7 @@ def sync_needed(source, dest):
     pbx_domain_list = source[5]
     pbx_domain_list_hash = source[6]
     pbx_attr_list = source[7]
+    pbx_type = source[8]
     fpbx_database = 'fusionpbx'
 
     # Kamailio Database Parameters
