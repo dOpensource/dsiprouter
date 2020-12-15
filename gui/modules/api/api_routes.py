@@ -12,7 +12,7 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars api_security
+from util.security import AES_CTR, urandomChars, api_security
 from util.file_handling import isValidFile, change_owner
 from util.kamtls import *
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
