@@ -52,7 +52,7 @@
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
         <td class="gwgroupid hidden">{{ row.gwgroupid }}</td>
-	{% if '#' not in row.gwlists  %}
+	{% if "#" not in row.gwlist  %}
           <td class='gwgroupname'>Load Balancing Group</td>
 	{% else %}
 	 	{% if row.gwlist.split(',')|length > 1 %}
