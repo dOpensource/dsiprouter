@@ -1,15 +1,17 @@
+import os
 from flask import Blueprint, render_template, abort, jsonify
 from util.security import api_security
 from database import SessionLoader, DummySession, dSIPMultiDomainMapping
 from shared import showApiError,debugEndpoint,StatusCodes
 from enum import Enum
-
+import importlib.util
 import settings, globals
 
 
-class FLAGS(Enum):
-    FUSIONPBX_PLUGIN = 0
-    FREEPBX_PLUGIN = 1
+
+class FLAGS():
+    FUSIONPBX_PLUGIN = "fusion"
+    FREEPBX_PLUGIN = "freepbx"
 
 
 mediaserver = Blueprint('mediaserver','__name__')
@@ -84,8 +86,26 @@ def getDomains(config_id=None):
                 else:
                     raise Exception("PBX plugin for config #{} can not be found".format(config_id))
 
-                #Todo:
+
                 # Import plugin
+
+                # Returns the Base directory of this file
+                base_dir = os.path.dirname(__file__)
+
+                # Use the Base Dir to specify the location of the plugin required for this domain
+                spec = importlib.util.spec_from_file_location(plugin, "{}/plugin/{}/interface.py".format(base_dir,plugin))
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                # Create instance of Media Server Class
+                mediaserver = module.mediaserver(hostname=domainMapping.db_host,username=domainMapping.db_username, \
+                                                password=domainMapping.db_password, \
+                                                dbname="fusionpbx" \
+                                                )
+                # Get a Connection to the Media Server
+                conn = mediaserver.getConnection()
+
+                # Todo
                 # Use plugin to get list of domains by calling plugin.<pbxtype>.getDomains()
 
             else:
