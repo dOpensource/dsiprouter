@@ -531,7 +531,7 @@ function renewSSLCert {
         	rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
        		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-       		chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+       		chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
         	chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
 		    kamcmd tls.reload
      	fi
@@ -544,7 +544,7 @@ function configureSSL {
     # Check if certificates already exists.  If so, use them and exit
     if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
-        chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+        chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
         chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
         return
     fi
@@ -560,7 +560,7 @@ function configureSSL {
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-        chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
+        chown root:kamailio ${DSIP_CERTS_DIR}/*
         chmod 640 ${DSIP_CERTS_DIR}/*
         # Add Nightly Cronjob to renew certs
         cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
@@ -570,7 +570,7 @@ function configureSSL {
         # Worst case, generate a Self-Signed Certificate
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
-        chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
+        chown root:kamailio ${DSIP_CERTS_DIR}/*
         chmod 640 ${DSIP_CERTS_DIR}/*
     fi
     firewall-cmd --zone=public --remove-port=80/tcp --permanent
@@ -1148,6 +1148,9 @@ function installDsiprouter {
     chmod 0400 ${DSIP_PRIV_KEY}
     chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
+
+    # Set the permissions of the cert directory now that dSIPRouter has been installed
+    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
 
     # for cloud images the instance-id may change (could be a clone)
     # add to startup process a password reset to ensure its set correctly
