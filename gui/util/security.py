@@ -1,4 +1,4 @@
-import os, hashlib, binascii, string
+import os, hashlib, binascii, string, ssl, OpenSSL
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
@@ -173,3 +173,179 @@ class AES_CTR():
         aes = AES.new(key, AES.MODE_CTR, counter=ctr)
 
         return aes.decrypt(byte_string[AES_CTR.BLOCK_SIZE:])
+
+class EasyCrypto():
+    """
+    Wrapper class for some simlpified crypto use cases
+    """
+
+    @staticmethod
+    def getOpenSSLVer():
+        """
+        Get major, minor, patch release numbers as one int
+
+        :return: openssl release version
+        :rtype: int
+        """
+        return int(''.join([str(x) for x in ssl.OPENSSL_VERSION_INFO[0:3]]))
+
+    @staticmethod
+    def getSupportedSSLProtocols():
+        """
+        Get the support SSL/TLS protocols we serve
+
+        :return: all support protocols
+        :rtype: list
+        """
+
+        ssl_ver = EasyCrypto.getOpenSSLVer()
+        if ssl_ver < 101:
+            return [OpenSSL.SSL.TLSv1_METHOD]
+        elif ssl_ver < 111:
+            return [OpenSSL.SSL.TLSv1_1_METHOD, OpenSSL.SSL.TLSv1_2_METHOD]
+        else:
+            # TODO: pyOpenSSL does not expose TLSv1.3 support yet
+            # ref: https://github.com/pyca/pyopenssl/issues/860
+            return [OpenSSL.SSL.TLSv1_2_METHOD]
+
+    @staticmethod
+    def convertPKCS7CertToPEM(pkcs7_cert):
+        """
+        Modified version of: https://github.com/pyca/pyopenssl/pull/367/files#r67300900 \n
+        Returns all certificates for the PKCS7 structure, if present
+
+        :param pkcs7_cert: the PKCS cert object
+        :type pkcs7_cert: OpenSSL.crypto.PKCS7
+        :return: The certificates in PEM format
+        :rtype: bytes
+        """
+
+        if not isinstance(pkcs7_cert, OpenSSL.crypto.PKCS7):
+            raise ValueError('Invalid PKCS7 formatted certificate')
+
+        certs = OpenSSL.crypto._ffi.NULL
+
+        if pkcs7_cert.type_is_signed():
+            certs = pkcs7_cert._pkcs7.d.sign.cert
+        elif pkcs7_cert.type_is_signedAndEnveloped():
+            certs = pkcs7_cert._pkcs7.d.signed_and_enveloped.cert
+
+        pycerts = []
+        for i in range(OpenSSL.crypto._lib.sk_X509_num(certs)):
+            pycert = OpenSSL.crypto.X509.__new__(OpenSSL.crypto.X509)
+            pycert._x509 = OpenSSL.crypto._lib.X509_dup(OpenSSL.crypto._lib.sk_X509_value(certs, i))
+            pycerts.append(pycert)
+
+        if len(pycerts) == 0:
+            raise ValueError('Invalid PKCS7 formatted certificate')
+
+        return b'\n'.join([OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, x) for x in pycerts])
+
+    @staticmethod
+    def convertKeyCertPairToPEM(files):
+        """
+        Convert private key / cert pair of random format to PEM formats
+
+        :param files: key and cert file paths
+        :type files: list
+        :return: (private key object and bytes) (x509 cert object and bytes)
+        :rtype: ((OpenSSL.crypto.PKey, bytes), (OpenSSL.crypto.X509, bytes))
+        """
+
+        if len(files) != 2:
+            raise ValueError("Only one key/cert pair can be uploaded at a time")
+
+        priv_key, x509_cert, priv_key_bytes, x509_cert_bytes = None, None, None, None
+        for file in files:
+            if isinstance(file, str):
+                with open(file, 'rb') as fp:
+                    file_buff = fp.read()
+            elif hasattr(file, 'read'):
+                file_buff = file.read()
+            else:
+                raise ValueError('Improper arguments for key and cert')
+
+            # TODO: more sophisticated PEM / ASN.1 file detection prior to conversion
+            # try loading each type of file and if we don't find a key and cert raise exception
+            if priv_key is None or priv_key_bytes is None:
+                try:
+                    priv_key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, file_buff)
+                    priv_key_bytes = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, priv_key)
+                    continue
+                except:
+                    pass
+                try:
+                    priv_key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_ASN1, file_buff)
+                    priv_key_bytes = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, priv_key)
+                    continue
+                except:
+                    pass
+                try:
+                    pkcs12_obj = OpenSSL.crypto.load_pkcs12(file_buff)
+                    priv_key_bytes = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, pkcs12_obj.get_privatekey())
+                    priv_key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, priv_key_bytes)
+                    continue
+                except:
+                    pass
+            if x509_cert is None or x509_cert_bytes is None:
+                try:
+                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, file_buff)
+                    x509_cert_bytes = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert)
+                    continue
+                except:
+                    pass
+                try:
+                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, file_buff)
+                    x509_cert_bytes = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert)
+                    continue
+                except:
+                    pass
+                try:
+                    pkcs12_obj = OpenSSL.crypto.load_pkcs12(file_buff)
+                    x509_cert_bytes = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, pkcs12_obj.get_certificate())
+                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert_bytes)
+                    continue
+                except:
+                    pass
+                try:
+                    pkcs7_cert = OpenSSL.crypto.load_pkcs7_data(OpenSSL.crypto.FILETYPE_PEM, file_buff)
+                    x509_cert_bytes = EasyCrypto.convertPKCS7CertToPEM(pkcs7_cert)
+                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert_bytes)
+                    continue
+                except:
+                    pass
+                try:
+                    pkcs7_cert = OpenSSL.crypto.load_pkcs7_data(OpenSSL.crypto.FILETYPE_ASN1, file_buff)
+                    x509_cert_bytes = EasyCrypto.convertPKCS7CertToPEM(pkcs7_cert)
+                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert_bytes)
+                    continue
+                except:
+                    pass
+
+        if priv_key is None or x509_cert is None or priv_key_bytes is None or x509_cert_bytes is None:
+            raise ValueError("A valid certificate and key file must be provided")
+        return ((priv_key, priv_key_bytes), (x509_cert, x509_cert_bytes))
+
+    @staticmethod
+    def validateKeyCertPair(priv_key, x509_cert):
+        """
+        Check if the key/cert pair is valid
+
+        :param priv_key: private key to check
+        :type priv_key: OpenSSL.crypto.PKey
+        :param x509_cert: x509 cert to check
+        :type x509_cert: OpenSSL.crypto.X509
+        :return: None, raise exception on failure
+        :rtype: None
+        """
+
+        if x509_cert.has_expired():
+            raise ValueError("Uploaded certificate is expired, renew certificate and try again")
+        try:
+            ctx = OpenSSL.SSL.Context(EasyCrypto.getSupportedSSLProtocols()[0])
+            ctx.use_privatekey(priv_key)
+            ctx.use_certificate(x509_cert)
+            ctx.check_privatekey()
+        except:
+            raise ValueError('Private key does not match x509 cert supplied')
+        return None

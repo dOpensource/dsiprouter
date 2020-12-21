@@ -1,9 +1,5 @@
-import psycopg2, hashlib
-import MySQLdb
-import os
-import subprocess
-import docker
-from database import Domain, DomainAttrs, dSIPMultiDomainMapping
+import os, psycopg2, hashlib, MySQLdb, subprocess, docker
+from database import dSIPMultiDomainMapping
 from util.security import AES_CTR
 from shared import safeUriToHost
 
@@ -39,40 +35,59 @@ def get_sources(db):
 
 
 # Will remove all of the fusionpbx domain data so that it can be rebuilt
-def drop_fusionpbx_domains(source, db):
+def drop_fusionpbx_domains(source, dest):
     # PBX Domain Mapping Parameters
     pbx_domain_list = source[5]
     pbx_attr_list = source[6]
 
     # Kamailio Database Parameters
-    kam_hostname = db['hostname']
-    kam_username = db['username']
-    kam_password = db['password']
-    kam_database = db['database']
+    kam_hostname = dest['hostname']
+    kam_username = dest['username']
+    kam_password = dest['password']
+    kam_database = dest['database']
 
     pbx_domain_list = list(map(int, filter(None, pbx_domain_list.split(","))))
     pbx_attr_list = list(map(int, filter(None, pbx_attr_list.split(","))))
 
+    kam_conn = None
+    kam_curs = None
+
     try:
-        db = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
-        c = db.cursor()
+        kam_conn = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
+        kam_curs = kam_conn.cursor()
 
         if len(pbx_domain_list) > 0:
-            c.execute("""DELETE FROM domain WHERE id IN({})""".format(pbx_domain_list))
+            kam_curs.execute("""DELETE FROM domain WHERE id IN({})""".format(pbx_domain_list))
 
         if len(pbx_attr_list) > 0:
-            c.execute("""DELETE FROM domain_attrs WHERE id IN({})""".format(pbx_attr_list))
+            kam_curs.execute("""DELETE FROM domain_attrs WHERE id IN({})""".format(pbx_attr_list))
 
-        db.commit()
-    except Exception as e:
-        print(e)
-
+        kam_conn.commit()
+    except Exception as ex:
+        error = str(ex)
+        try:
+            kam_conn.rollback()
+            kam_curs.execute("update dsip_multidomain_mapping set syncstatus=4, lastsync=NOW(),syncerror='{}'".format(error))
+            kam_conn.commit()
+        except:
+            pass
+        raise ex
+    finally:
+        if kam_curs is not None:
+            kam_curs.close()
+        if kam_conn is not None:
+            kam_conn.close()
 
 def sync_db(source, dest):
     # FusionPBX Database Parameters
     pbx_id = source[0]
     pbx_host = source[1]
-    fpbx_hostname = source[2]
+    if ':' in source[2]:
+        fpbx_hostname = source[2].split(':')[0]
+        fpbx_port = source[2].split(':')[1]
+    else:
+        fpbx_hostname = source[2]
+        fpbx_port = 5432
     fpbx_username = source[3]
     fpbx_password = source[4]
     pbx_domain_list = source[5]
@@ -88,64 +103,64 @@ def sync_db(source, dest):
     domain_id_list = []
     attr_id_list = []
 
-    # Get a connection to Kamailio Server DB
-    db = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
-    c = db.cursor()
-    # Delete existing domain for the pbx
-    pbx_domain_list_str = ''.join(str(e) for e in pbx_domain_list)
-    print(pbx_domain_list_str)
-    if len(pbx_domain_list_str) > 0:
-        query = "delete from domain where id in ({})".format(pbx_domain_list_str)
-        c.execute(query)
-        pbx_domain_list = ''
+    fpbx_conn = None
+    fpbx_curs = None
+    kam_conn = None
+    kam_curs = None
 
-    # Trying connecting to PostgresSQL database using a Trust releationship first
     try:
-        conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
-        if conn is not None:
+        # Get a connection to Kamailio Server DB
+        kam_conn = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
+        kam_curs = kam_conn.cursor()
+        # Delete existing domain for the pbx
+        pbx_domain_list_str = ''.join(str(e) for e in pbx_domain_list)
+        if len(pbx_domain_list_str) > 0:
+            query = "delete from domain where id in ({})".format(pbx_domain_list_str)
+            kam_curs.execute(query)
+            pbx_domain_list = ''
+
+        # Trying connecting to PostgresSQL database using a Trust releationship first
+        fpbx_conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, port=fpbx_port, password=fpbx_password)
+        if fpbx_conn is not None:
             print("Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
-        cur = conn.cursor()
-        cur.execute("""select domain_name from v_domains where domain_enabled='true'""")
-        rows = cur.fetchall()
+        fpbx_curs = fpbx_conn.cursor()
+        fpbx_curs.execute("""select domain_name from v_domains where domain_enabled='true'""")
+        rows = fpbx_curs.fetchall()
         if rows is not None:
-            c = db.cursor()
             counter = 0
             domain_name_str = ""
 
             for row in rows:
-                c.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""",
+                kam_curs.execute("""insert ignore into domain (id,domain,did,last_modified) values (null,%s,%s,NOW())""",
                           (row[0], row[0]))
-                print("row count {}".format(c.rowcount))
-                if c.rowcount > 0:
-                    c.execute(
+
+                if kam_curs.rowcount > 0:
+                    kam_curs.execute(
                         """SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN('domain') ORDER BY FIND_IN_SET(TABLE_NAME, 'domain')""")
-                    rows = c.fetchall()
-                    domain_id_list.append(str(rows[0][0] - 1))
+                    rows_left = kam_curs.fetchall()
+                    domain_id_list.append(str(rows_left[0][0] - 1))
                 # Delete all domain_attrs for the domain first
-                c.execute("""delete from domain_attrs where did=%s""", [row[0]])
-                c.execute(
+                kam_curs.execute("""delete from domain_attrs where did=%s""", [row[0]])
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_ip',2,%s,NOW())""",
                     (row[0], pbx_host))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_type',2,%s,NOW())""",
                     (row[0], dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'created_by',2,%s,NOW())""",
                     (row[0], pbx_id))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'domain_auth',2,%s,NOW())""",
                     (row[0], 'passthru'))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_list',2,%s,NOW())""",
                     (row[0], pbx_id))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'description',2,%s,NOW())""",
                     (row[0], 'notes:'))
                 counter = counter + 1
                 domain_name_str += row[0]
-
-            for i in domain_id_list:
-                print(i)
 
             # Convert to a string seperated by commas
             domain_id_list = ','.join(domain_id_list)
@@ -161,19 +176,29 @@ def sync_db(source, dest):
             domain_name_str_hash = hashlib.md5(domain_name_str.encode('utf-8')).hexdigest()
             print("[sync_db] Hashed String of domains: {}".format(domain_name_str_hash))
 
-            c.execute(
+            kam_curs.execute(
                 """update dsip_multidomain_mapping set domain_list=%s, domain_list_hash=%s,syncstatus=1, lastsync=NOW(),syncerror='' where pbx_id=%s""",
                 (pbx_domain_list, domain_name_str_hash, pbx_id))
-            db.commit()
-    except Exception as e:
-        c = db.cursor()
-        c.execute("""update dsip_multidomain_mapping set syncstatus=0, lastsync=NOW(), syncerror=%s where pbx_id=%s""",
-                  (str(e), pbx_id))
-        db.commit()
-        # Remove lock file
-        os.remove("./.sync-lock")
+            kam_conn.commit()
 
-        print(str(e))
+    except Exception as ex:
+        error = str(ex)
+        try:
+            kam_conn.rollback()
+            kam_curs.execute("update dsip_multidomain_mapping set syncstatus=4, lastsync=NOW(),syncerror='{}'".format(error))
+            kam_conn.commit()
+        except:
+            pass
+        raise ex
+    finally:
+        if fpbx_conn is not None:
+            fpbx_conn.close()
+        if fpbx_curs is not None:
+            fpbx_curs.close()
+        if kam_curs is not None:
+            kam_curs.close()
+        if kam_conn is not None:
+            kam_conn.close()
 
 
 def reloadkam(kamcmd_path):
@@ -195,7 +220,6 @@ def update_nginx(sources):
         print("Got handle to docker")
 
     try:
-
         # If there isn't any FusionPBX sources then just shutdown the container
         if len(sources) < 1:
             containers = client.containers.list()
@@ -273,8 +297,14 @@ def update_nginx(sources):
 def sync_needed(source, dest):
     # FusionPBX Database Parameters
     pbx_id = source[0]
+
     pbx_host = source[1]
-    fpbx_hostname = source[2]
+    if ':' in source[2]:
+        fpbx_hostname = source[2].split(':')[0]
+        fpbx_port = source[2].split(':')[1]
+    else:
+        fpbx_hostname = source[2]
+        fpbx_port = 5432
     fpbx_username = source[3]
     fpbx_password = source[4]
     pbx_domain_list = source[5]
@@ -300,7 +330,6 @@ def sync_needed(source, dest):
 
     # Trying connecting to the databases
     try:
-
         # Get a connection to Kamailio Server DB
         kam_conn = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
         kam_curs = kam_conn.cursor()
@@ -308,7 +337,7 @@ def sync_needed(source, dest):
             print("[sync_needed] Connection to Kamailio DB:{} database was successful".format(kam_hostname))
 
         # Get a connection to the FusionPBX Server
-        fpbx_conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, password=fpbx_password)
+        fpbx_conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, port=fpbx_port, password=fpbx_password)
         if fpbx_conn is not None:
             print("[sync_needed] Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
         fpbx_curs = fpbx_conn.cursor()
@@ -358,7 +387,6 @@ def sync_needed(source, dest):
         if kam_conn is not None:
             kam_conn.close()
 
-
 def run_sync(settings):
     try:
         # Set the system where sync'd data will be stored.
@@ -390,6 +418,7 @@ def run_sync(settings):
         # Loop thru each FusionPBX system and start the sync
         for key in sources:
             if sync_needed(sources[key], dest):
+                #drop_fusionpbx_domains(sources[key], dest)
                 sync_db(sources[key], dest)
             else:
                 print("[run_sync] No sync needed for source: {}".format(sources[key][1]))

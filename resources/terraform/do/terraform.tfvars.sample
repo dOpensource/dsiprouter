@@ -1,0 +1,5 @@
+pvt_key="/Users/mack/.ssh/dopensource-training"
+dsiprouter_prefix="dev"
+number_of_environments=1
+pub_key_name="dopensource_training"
+

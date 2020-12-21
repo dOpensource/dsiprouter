@@ -1,4 +1,4 @@
-import os, time, json, random, subprocess, requests, csv, base64, codecs
+import os, time, json, random, subprocess, requests, csv, base64, codecs, re, OpenSSL
 import urllib.parse as parse
 from contextlib import closing
 from collections import OrderedDict
@@ -14,12 +14,11 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars
+from util.security import AES_CTR, urandomChars, EasyCrypto
 from util.file_handling import isValidFile, change_owner
-from util.kamtls import *
+from util import kamtls, letsencrypt
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
     cronIntervalToDescription
-from util.letsencrypt import *
 import settings, globals
 
 api = Blueprint('api', __name__)
@@ -129,7 +128,7 @@ def reloadKamailio():
             dsip_api_token = settings.DSIP_API_TOKEN
 
         # Pulled tls.reload out of the reload process due to issues
-        #{'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
+        # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
 
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
@@ -396,7 +395,8 @@ def handleInboundMapping():
                 if res is not None:
                     data = rowToDict(res)
                     data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                            'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
+                            'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
+                                data['description']) else '',
                             'servers': data['gwlist'].split(',')}
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
@@ -412,7 +412,8 @@ def handleInboundMapping():
                     if res is not None:
                         data = rowToDict(res)
                         data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                                'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
+                                'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
+                                    data['description']) else '',
                                 'servers': data['gwlist'].split(',')}
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
@@ -426,7 +427,8 @@ def handleInboundMapping():
                         for row in res:
                             data = rowToDict(row)
                             data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                                    'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
+                                    'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
+                                        data['description']) else '',
                                     'servers': data['gwlist'].split(',')}
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
@@ -457,13 +459,14 @@ def handleInboundMapping():
             for i in range(0, len(data['servers'])):
                 try:
                     data['servers'][i] = str(data['servers'][i])
-                    #_ = int(data['servers'][i])
+                    # _ = int(data['servers'][i])
                 except:
                     raise http_exceptions.BadRequest('Invalid Server ID')
             for c in data['did']:
                 if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                     raise http_exceptions.BadRequest(
-                        'DID improperly formatted. Allowed characters: {}'.format(','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
+                        'DID improperly formatted. Allowed characters: {}'.format(
+                            ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
 
             gwlist = ','.join(data['servers'])
             prefix = data['did']
@@ -509,7 +512,7 @@ def handleInboundMapping():
                     for i in range(0, len(data['servers'])):
                         try:
                             data['servers'][i] = str(data['servers'][i])
-                            #_ = int(data['servers'][i])
+                            # _ = int(data['servers'][i])
                         except:
                             raise http_exceptions.BadRequest('Invalid Server ID')
                 updates['gwlist'] = ','.join(data['servers'])
@@ -517,7 +520,8 @@ def handleInboundMapping():
                 for c in data['did']:
                     if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                         raise http_exceptions.BadRequest(
-                            'DID improperly formatted. Allowed characters: {}'.format(','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
+                            'DID improperly formatted. Allowed characters: {}'.format(
+                                ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
                 updates['prefix'] = data['did']
             if 'name' in data:
                 updates['description'] = 'name:{}'.format(data['name'])
@@ -745,7 +749,7 @@ def deleteEndpointGroup(gwgroupid):
         if domainmapping is not None:
             domainmapping.delete(synchronize_session=False)
 
-        dispatcher = db.query(Dispatcher).filter(Dispatcher.setid ==  gwgroupid)
+        dispatcher = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid)
         if dispatcher is not None:
             dispatcher.delete(synchronize_session=False)
 
@@ -809,7 +813,7 @@ def getEndpointGroup(gwgroupid):
         if endpointList is not None:
             endpointGatewayList = endpointList.gwlist.split(',')
             endpoints = db.query(Gateways).filter(Gateways.gwid.in_(endpointGatewayList))
-            dispatcher  = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid)
+            dispatcher = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid)
             if dispatcher:
                 weightList = {}
                 for item in dispatcher:
@@ -1155,7 +1159,8 @@ def updateEndpointGroups(gwgroupid=None):
                 # Create Dsipatcher group with the set id being the gateway group id
 
                 if weight:
-                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                                            description=name)
                     db.add(dispatcher)
 
                 db.add(Gateway)
@@ -1206,7 +1211,8 @@ def updateEndpointGroups(gwgroupid=None):
 
             # Create Dsipatcher group with the set id being the gateway group id
             if weight:
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                                        description=name)
                 db.add(dispatcher)
             # we ignore the given gwid and allow DB to assign one instead
             db.add(Gateway)
@@ -1269,17 +1275,20 @@ def updateEndpointGroups(gwgroupid=None):
                 {"description": dictToStrFields(endpoint_fields), "address": sip_addr, "strip": strip,
                  "pri_prefix": prefix}, synchronize_session=False)
 
-
             # update the weight
-            DispatcherEntry = db.query(Dispatcher).filter((Dispatcher.setid ==  gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
+            DispatcherEntry = db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
             if weight is None or len(weight) == 0:
                 if DispatcherEntry is not None:
                     db.delete(DispatcherEntry)
             elif weight:
                 if DispatcherEntry is not None:
-                    db.query(Dispatcher).filter((Dispatcher.setid ==  gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
+                    db.query(Dispatcher).filter(
+                        (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update(
+                        {"attrs": "weight={}".format(weight)}, synchronize_session=False)
                 else:
-                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                                            description=name)
                     db.add(dispatcher)
 
             gwlist.append(gwid)
@@ -1287,7 +1296,8 @@ def updateEndpointGroups(gwgroupid=None):
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
         del_gateways = db.query(Gateways).filter(Gateways.gwid.in_(del_gwids))
-        del_gateways_cleanup = db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(Gateways.gwid.notin_(gwlist))
+        del_gateways_cleanup = db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(
+            Gateways.gwid.notin_(gwlist))
         # make sure we delete any associated address entries
         del_addr_ids = []
         for gateway in del_gateways.union(del_gateways_cleanup):
@@ -1639,10 +1649,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             else:
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
 
-
             # Create Dsipatcher group with the set id being the gateway group id
             if weight:
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                                        description=name)
                 db.add(dispatcher)
 
             db.add(Gateway)
@@ -1661,7 +1671,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         # Update the GatewayGroup with the lists of gateways
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-                {'gwlist': gwlist_str,'description': dictToStrFields(fields)}, synchronize_session=False)
+            {'gwlist': gwlist_str, 'description': dictToStrFields(fields)}, synchronize_session=False)
 
         # Setup notifications
         if 'notifications' in request_payload:
@@ -2000,7 +2010,7 @@ def updateNumberEnrichment(rule_id=None, request_payload=None):
         old_dnids = set(x.dnid for x in db.query(dSIPDNIDEnrichment).all() if x.id not in upd_ruleids)
         add_dnids = set(x['dnid'] for x in request_payload['data'] if not 'rule_id' in x)
         upd_dnids = set(x['dnid'] for x in request_payload['data'] if 'rule_id' in x)
-        if len(list(add_dnids)+list(upd_dnids)+list(old_dnids)) > len(set.union(add_dnids, upd_dnids, old_dnids)):
+        if len(list(add_dnids) + list(upd_dnids) + list(old_dnids)) > len(set.union(add_dnids, upd_dnids, old_dnids)):
             raise http_exceptions.BadRequest("Duplicate DNID's are not allowed")
 
         for rule_data in request_payload['data']:
@@ -2135,6 +2145,7 @@ def deleteNumberEnrichment(rule_id, request_payload=None):
         return showApiError(ex)
     finally:
         db.close()
+
 
 @api.route("/api/v1/numberenrichment/fetch", methods=['POST'])
 @api_security
@@ -2756,7 +2767,7 @@ def getCertificates(domain=None):
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
         # else:
-        #domain_configs = getCustomTLSConfigs()
+        # domain_configs = getCustomTLSConfigs()
         if domain == None:
             certificates = db.query(dSIPCertificates).all()
         else:
@@ -2783,7 +2794,7 @@ def getCertificates(domain=None):
         db.close()
 
 
-@api.route("/api/v1/certificates", methods=['POST','PUT'])
+@api.route("/api/v1/certificates", methods=['POST', 'PUT'])
 @api_security
 def createCertificate():
     """
@@ -2833,11 +2844,12 @@ def createCertificate():
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload['server_name_mode'] \
-            if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
-        key =  request_payload['key'] if 'key' in request_payload else None
-        replace_default_cert =  request_payload['replace_default_cert'] if 'replace_default_cert' in request_payload else None
+            if 'server_name_mode' in request_payload else kamtls.KAM_TLS_SNI_ALL
+        key = request_payload['key'] if 'key' in request_payload else None
+        replace_default_cert = request_payload[
+            'replace_default_cert'] if 'replace_default_cert' in request_payload else None
         cert = request_payload['cert'] if 'cert' in request_payload else None
-        email = request_payload['email'] if 'email'in request_payload else "admin@" + settings.DOMAIN
+        email = request_payload['email'] if 'email' in request_payload else "admin@" + settings.DOMAIN
 
         # Request Certificate via Let's Encrypt
         if key is None and cert is None:
@@ -2845,31 +2857,30 @@ def createCertificate():
             try:
                 if settings.DEBUG:
                     # Use the LetsEncrypt Staging Server
-
-                    key,cert=generateCertificate(domain,email,debug=True,default=replace_default_cert)
+                    key, cert = letsencrypt.generateCertificate(domain, email, debug=True, default=replace_default_cert)
 
                 else:
                     # Use the LetsEncrypt Prod Server
-                    key,cert=generateCertificate(domain,email,default=replace_default_cert)
+                    key, cert = letsencrypt.generateCertificate(domain, email, default=replace_default_cert)
 
             except Exception as ex:
                 globals.reload_required = False
-                raise http_exceptions.BadRequest("Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
-
+                raise http_exceptions.BadRequest(
+                    "Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
         cert_base64 = base64.b64encode(cert.encode('ascii'))
         key_base64 = base64.b64encode(key.encode('ascii'))
 
-
-        #Check if the domain exists.  If so, update versus writing new
+        # Check if the domain exists.  If so, update versus writing new
         certificate = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
         if certificate is not None:
-            #Update
-            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update({'email':email,'type':type,'cert':cert_base64,'key':key_base64})
+            # Update
+            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update(
+                {'email': email, 'type': type, 'cert': cert_base64, 'key': key_base64})
             db.commit()
             # Update the Kamailio TLS Configuration
-            if not updateCustomTLSConfig(domain, ip, port, server_name_mode):
+            if not kamtls.updateCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 
         else:
@@ -2878,9 +2889,8 @@ def createCertificate():
             db.add(certificate)
             db.commit()
             # Write the Kamailio TLS Configuration
-            if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+            if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
-
 
         response_payload['msg'] = "Certificate creation succeeded"
         response_payload['data'].append({"id": certificate.id})
@@ -2894,6 +2904,7 @@ def createCertificate():
         return showApiError(ex)
     finally:
         db.close()
+
 
 @api.route("/api/v1/certificates/<string:domain>", methods=['DELETE'])
 @api_security
@@ -2911,16 +2922,16 @@ def deleteCertificates(domain=None):
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
         # else:
-        #domain_configs = getCustomTLSConfigs()
+        # domain_configs = getCustomTLSConfigs()
 
         Certificates = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain)
         Certificates.delete(synchronize_session=False)
 
         # Remove the certificate from the file system
-        deleteCertificate(domain)
+        letsencrypt.deleteCertificate(domain)
 
         # Remove from Kamailio TLS
-        deleteCustomTLSConfig(domain)
+        kamtls.deleteCustomTLSConfig(domain)
 
         db.commit()
 
@@ -2936,6 +2947,7 @@ def deleteCertificates(domain=None):
     finally:
         db.close()
 
+
 @api.route("/api/v1/certificates/upload/<string:domain>", methods=['POST'])
 @api_security
 def uploadCertificates(domain=None):
@@ -2945,7 +2957,6 @@ def uploadCertificates(domain=None):
 
     try:
         if (settings.DEBUG):
-
             debugEndpoint()
 
         db = SessionLoader()
@@ -2959,62 +2970,51 @@ def uploadCertificates(domain=None):
             domain = "default"
 
         if 'replace_default_cert' in data.keys():
-            replace_default_cert =  data['replace_default_cert'][0]
+            replace_default_cert = data['replace_default_cert'][0]
         else:
             replace_default_cert = None
 
         ip = settings.EXTERNAL_IP_ADDR
         port = 5061
-        server_name_mode = KAM_TLS_SNI_ALL
-        email = None
-        cert = None
-        key = None
+        server_name_mode = kamtls.KAM_TLS_SNI_ALL
 
-        cert_dir = settings.DSIP_CERTS_DIR
         if replace_default_cert == "true":
             # Replacing the default cert
-            cert_domain_dir = "{}".format(cert_dir)
+            cert_domain_dir = settings.DSIP_CERTS_DIR
         else:
             # Adding a another domain cert
-            cert_domain_dir = "{}/{}".format(cert_dir,domain)
+            cert_domain_dir = os.path.join(settings.DSIP_CERTS_DIR, domain)
 
         # Create a directory for the domain
         if not os.path.exists(cert_domain_dir):
             os.makedirs(cert_domain_dir)
 
-        f = request.files.getlist("certandkey")
+        files = request.files.getlist("certandkey")
+        try:
+            (priv_key, priv_key_bytes), (x509_cert, x509_cert_bytes) = EasyCrypto.convertKeyCertPairToPEM(files)
+        except Exception as ex:
+            raise http_exceptions.BadRequest(str(ex))
+        try:
+            EasyCrypto.validateKeyCertPair(priv_key, x509_cert)
+        except Exception as ex:
+            raise http_exceptions.BadRequest(str(ex))
 
+        key_file = os.path.join(cert_domain_dir, 'dsiprouter-key.pem')
+        cert_file = os.path.join(cert_domain_dir, 'dsiprouter-cert.pem')
 
-        for file in f:
-          if not allowed_file(file.filename, ALLOWED_EXTENSIONS={'crt','key','cert','pem'}):
-              raise http_exceptions.BadRequest("Only files ending in .cert, .crt, .key, .pem are allowed")
-          filename = secure_filename(file.filename)
-          if re.search('crt|cert',filename):
-              filename = "dsiprouter.crt"
-              file.save(os.path.join(cert_domain_dir, filename))
-              file.seek(0,0)
-              cert = ''.join(map(str,file.readlines()))
-          elif re.search('key|pem',filename):
-              filename = "dsiprouter.key"
-              file.save(os.path.join(cert_domain_dir, filename))
-              file.seek(0,0)
-              key= ''.join(map(str,file.readlines()))
-
-
-        if key is None or cert is None:
-            raise http_exceptions.BadRequest("A certificate and key file must be provided")
-
-        key_file = "{}/dsiprouter.key".format(cert_domain_dir)
-        cert_file = "{}/dsiprouter.crt".format(cert_domain_dir)
+        with open(key_file, 'w') as newfile:
+            newfile.write(priv_key_bytes)
+        with open(cert_file, 'w') as newfile:
+            newfile.write(x509_cert_bytes)
 
         # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations
-        change_owner(cert_domain_dir,"dsiprouter","kamailio")
-        change_owner(key_file,"dsiprouter","kamailio")
-        change_owner(cert_file,"dsiprouter","kamailio")
+        change_owner(cert_domain_dir, "dsiprouter", "kamailio")
+        change_owner(key_file, "dsiprouter", "kamailio")
+        change_owner(cert_file, "dsiprouter", "kamailio")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
-        cert_base64 = base64.b64encode(bytes(cert,'utf-8'))
-        key_base64 = base64.b64encode(bytes(key,'utf-8'))
+        key_base64 = base64.b64encode(priv_key_bytes)
+        cert_base64 = base64.b64encode(x509_cert_bytes)
 
         # Store Certificate in dSIPCertificate Table
         certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
@@ -3022,7 +3022,7 @@ def uploadCertificates(domain=None):
 
         if not replace_default_cert:
             # Write the Kamailio TLS Configuration if it's not the default
-            if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+            if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 
         db.commit()
