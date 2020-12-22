@@ -5,7 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5
+9eb6943461b1ba2e0966caa0069648ffd3c8032b
+646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4
+191cbc48d3813ccbf1d12681fe1084fab3c36696
+c92729b89c5365414978f70453704d099e491eb9
+b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d
+33535467399804add0ea69b5e7faf71c695014be
 9fc1b9c95e1c930caa9a711477e29f8ac94f8534
 f74db4f6542d0f008fef614440e195ff724a7879
 a409f4049744053e5958ea885b5d68524f15c6c4
@@ -1792,10 +1797,103 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5)
+[//]: # (START_SECTION 9eb6943461b1ba2e0966caa0069648ffd3c8032b)
+### Fix Typo In Location Route
+
+> Commit: [9eb6943461b1ba2e0966caa0069648ffd3c8032b](https://github.com/dOpensource/dsiprouter/commit/9eb6943461b1ba2e0966caa0069648ffd3c8032b)  
+> Date: Tue, 22 Dec 2020 14:33:50 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- change location routing to use from domain
+
+
+---
+
+[//]: # (END_SECTION 9eb6943461b1ba2e0966caa0069648ffd3c8032b)
+[//]: # (START_SECTION 646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4)
+### Fix Record Routing For SERVERNAT
+
+> Commit: [646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4](https://github.com/dOpensource/dsiprouter/commit/646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4)  
+> Date: Tue, 22 Dec 2020 10:46:00 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix NAT translation in record routes
+- remove extraneous file `script.sh`
+
+
+---
+
+[//]: # (END_SECTION 646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4)
+[//]: # (START_SECTION 191cbc48d3813ccbf1d12681fe1084fab3c36696)
+### Fixed issue with certificate permissions
+
+> Commit: [191cbc48d3813ccbf1d12681fe1084fab3c36696](https://github.com/dOpensource/dsiprouter/commit/191cbc48d3813ccbf1d12681fe1084fab3c36696)  
+> Date: Mon, 21 Dec 2020 18:27:08 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 191cbc48d3813ccbf1d12681fe1084fab3c36696)
+[//]: # (START_SECTION c92729b89c5365414978f70453704d099e491eb9)
+### Key / Certificate Handling Updates
+
+> Commit: [c92729b89c5365414978f70453704d099e491eb9](https://github.com/dOpensource/dsiprouter/commit/c92729b89c5365414978f70453704d099e491eb9)  
+> Date: Wed, 9 Dec 2020 18:50:08 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #314
+- fix fusionpbx sync not deleting old domains
+- fix host:port parsing on fusionpbx sync
+- add certificate detection on upload
+- add cert / key handling utility functions
+- add cert / key validation on upload
+- change default key / cert naming convention
+- add `DSIP_SSL_CA` parameter to modifiable settings
+- fix subscriber delete DB error on contact expiration
+- update default key lengths to be more secure
+- update cert generation to use correct permissions
+- fixup namespace clobbering in `api_routes.py`
+- remove option to disable SSL on install
+- fix nginx not starting on debug startup
+- fix some misc path names
+
+
+---
+
+[//]: # (END_SECTION c92729b89c5365414978f70453704d099e491eb9)
+[//]: # (START_SECTION b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d)
+### Restructured Terraform Configuration
+
+> Commit: [b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d](https://github.com/dOpensource/dsiprouter/commit/b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d)  
+> Date: Tue, 8 Dec 2020 09:49:27 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d)
+[//]: # (START_SECTION 33535467399804add0ea69b5e7faf71c695014be)
 ### v0.641 Bug Fixes
 
-> Commit: [4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5](https://github.com/dOpensource/dsiprouter/commit/4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5)  
+> Commit: [33535467399804add0ea69b5e7faf71c695014be](https://github.com/dOpensource/dsiprouter/commit/33535467399804add0ea69b5e7faf71c695014be)  
 > Date: Mon, 7 Dec 2020 10:47:54 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1812,7 +1910,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 4f954d6cc95b11b6ec9a2300bcea2fb3901c62e5)
+[//]: # (END_SECTION 33535467399804add0ea69b5e7faf71c695014be)
 [//]: # (START_SECTION 9fc1b9c95e1c930caa9a711477e29f8ac94f8534)
 ### Merge Number Enrichment Into Current Build
 
