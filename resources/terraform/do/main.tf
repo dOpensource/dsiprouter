@@ -16,7 +16,7 @@ data "digitalocean_ssh_key" "ssh_key" {
 
 
 resource "digitalocean_droplet" "dsiprouter" {
-        name = "${var.dsiprouter_prefix}_dsip_${var.branch}${count.index}"
+        name = "${var.dsiprouter_prefix}-dsip-${var.branch}${count.index}"
         count = var.number_of_environments
         region = "nyc1"
         size="1gb"
