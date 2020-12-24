@@ -48,10 +48,12 @@ class domain():
     name = ""
     enabled = ""
     description = ""
+    cos = "" # Class of Service
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
             sort_keys=True, indent=4)
+
 
 class domains():
 
@@ -64,14 +66,25 @@ class domains():
         self.db = self.mediaserver.getConnection()
 
     def create(self,data):
+        #Todo: Check if the domain exists before creating it
         # call it in any place of your program
         # before working with UUID objects in PostgreSQL
         psycopg2.extras.register_uuid()
         domain_uuid = uuid.uuid4()
         cur = self.db.cursor()
+
+        # Check for Duplicate domains
+        cur.execute("""select domain_name from v_domains where domain_name = %s""",(data['name'],))
+        rows = cur.fetchall()
+        if len(rows) > 0:
+            raise Exception ("The domain already exists")
+            return
+
+        # Create the new domain
         cur.execute("""insert into v_domains (domain_uuid,domain_name,domain_enabled,domain_description) \
                     values (%s,%s,%s,%s)""",(domain_uuid,data['name'],data['enabled'],data['description']))
         self.db.commit()
+        return domain_uuid
         cur.close()
 
     def getDomain(self,domain_name=None):
@@ -102,23 +115,62 @@ class domains():
     def getExtensions():
         pass
 
+
 class extension():
+
+    domain_id=""
+    account_code=""
+    number=""
+    password=""
+    outbound_caller_number=""
+    outbound_caller_name=""
+    vm_enabled=True
+    vm_password=""
+    vm_notify_email=""
+    enabled=False
+    call_timeout=30
+
+    def __init__(self):
+        pass
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+            sort_keys=True, indent=4)
+
+class extensions():
 
     mediaserver=''
     domain=''
+    domain_name=''
+    domain_uuid=''
+    db=''
 
-    def __init__(self, mediaserver, domain):
+    def __init__(self, mediaserver, domain_id=None,extension=None):
         self.mediaserver = mediaserver
-        self.domain = domain
+        self.db = self.mediaserver.getConnection()
 
-    def createExtension():
+        if domain_id == None:
+            self.domain_name = domain_name
+        else:
+            self.domain_uuid = domain_id
+
+    def create(self,data):
+        psycopg2.extras.register_uuid()
+        extension_uuid = uuid.uuid4()
+        cur = self.db.cursor()
+        cur.execute("""insert into v_extensions (extension_uuid,domain_uuid,extension,password,user_context,call_timeout,enabled) \
+                    values (%s,%s,%s,%s,%s,%s,%s)""", \
+                    (extension_uuid, self.domain_uuid, data.number, \
+                    data.password, self.domain_name, data.call_timeout, data.enabled))
+        self.db.commit()
+        cur.close()
+
+
+    def get():
         pass
 
-    def getExtension():
+    def update():
         pass
 
-    def updateExtension():
-        pass
-
-    def deleteExtension():
+    def delete():
         pass

@@ -203,7 +203,72 @@ def postDomains():
                 mediaserver = plugin.mediaserver(config_info)
                 if mediaserver:
                     domains = plugin.domains(mediaserver)
-                    domains.create(data)
+                    domain_id = domains.create(data)
+                    response_payload['data'] = {"domain_id": domain_id}
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+
+@mediaserver.route('/api/v1/mediaserver/extension',methods=['POST'])
+@api_security
+def postExtensions():
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"domain_id": str, "account_code": str, "extension": str, "password": str, \
+                              "outbound_caller_number": str, "outbound_caller_name": str, "vm_enabled": bool, \
+                              "vm_password": int, "vm_notify_email": str, "enabled": bool, "call_timeout": int, \
+                              "config_id": int}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'domain_id','extension','password', 'enabled','config_id'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+
+        # get request data
+        data = getRequestData()
+        print(data)
+
+        # sanity checks
+        for k, v in data.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request data argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                raise http_exceptions.BadRequest("Request data argument '{}' not valid".format(k))
+
+        for k in REQUIRED_ARGS:
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
+
+
+        # Create instance of Media Server Class
+        config_id = data['config_id']
+
+        if config_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    extensions = plugin.extensions(mediaserver,data['domain_id'])
+                    ext = plugin.extension()
+                    ext.domain_id=data['domain_id']
+                    ext.number=data['extension']
+                    ext.password=data['password']
+                    ext.enabled=data['enabled']
+                    ext.config_id=data['config_id']
+                    extensions.create(ext)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
