@@ -87,8 +87,9 @@ mediaserver = Blueprint('mediaserver','__name__')
 
 @mediaserver.route('/api/v1/mediaserver/domain/',methods=['GET'])
 @mediaserver.route('/api/v1/mediaserver/domain/<string:config_id>',methods=['GET'])
+@mediaserver.route('/api/v1/mediaserver/domain/<string:config_id>/<string:domain_id>',methods=['GET'])
 @api_security
-def getDomains(config_id=None):
+def getDomains(config_id=None,domain_id=None):
     """
     List all of the domains on a PBX\n
     If the PBX only contains a single domain then it will return the hostname or ip address of the system.
@@ -145,7 +146,7 @@ def getDomains(config_id=None):
                     if mediaserver:
                         domains = plugin.domains(mediaserver)
                         # Use plugin to get list of domains by calling plugin.<pbxtype>.getDomain()
-                        domain_list = domains.getDomain()
+                        domain_list = domains.read(domain_id)
                         response_payload['msg'] = '{} domains were found'.format(len(domain_list))
                         response_payload['data'].append(domain_list)
             else:
@@ -210,6 +211,115 @@ def postDomains():
 
     except Exception as ex:
         return showApiError(ex)
+
+
+@mediaserver.route('/api/v1/mediaserver/domain',methods=['PUT'])
+@api_security
+def putDomains():
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"name": str, "enabled": bool, "description": str, "config_id": int, "domain_id": str}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'domain_id','config_id'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+
+        # get request data
+        data = getRequestData()
+
+        # sanity checks
+        for k, v in data.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request data argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                raise http_exceptions.BadRequest("Request data argument '{}' not valid".format(k))
+
+        for k in REQUIRED_ARGS:
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
+
+        config_id = data['config_id']
+        domain_id = data['domain_id']
+
+        # Create instance of Media Server Class
+        if config_id != None and domain_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    domains = plugin.domains(mediaserver)
+                    domain_id = domains.update(data)
+                    response_payload['msg'] = "Success"
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@mediaserver.route('/api/v1/mediaserver/domain',methods=['DELETE'])
+@api_security
+def deleteDomains():
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"domain_id": str, "config_id": int}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'domain_id','config_id'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+
+        # get request data
+        data = getRequestData()
+
+        # sanity checks
+        for k, v in data.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request data argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                raise http_exceptions.BadRequest("Request data argument '{}' not valid".format(k))
+
+        for k in REQUIRED_ARGS:
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
+
+        config_id = data['config_id']
+        domain_id = data['domain_id']
+
+        # Create instance of Media Server Class
+        if config_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    domains = plugin.domains(mediaserver)
+                    if domains.delete(domain_id):
+                        response_payload['msg'] = "Success"
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
 
 
 

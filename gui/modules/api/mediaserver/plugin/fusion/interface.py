@@ -87,9 +87,16 @@ class domains():
         return domain_uuid
         cur.close()
 
-    def getDomain(self,domain_name=None):
+    def read(self,domain_id=None):
         cur = self.db.cursor()
-        cur.execute("""select domain_uuid,domain_name,domain_enabled,domain_description from v_domains where domain_enabled='true'""")
+        query = "select domain_uuid,domain_name,domain_enabled,domain_description from v_domains"
+        values = []
+
+        if domain_id:
+            query = query + " where domain_uuid = %s"
+            values.append(domain_id)
+
+        cur.execute(query,(values))
         rows = cur.fetchall()
         if rows is not None:
             for row in rows:
@@ -106,11 +113,40 @@ class domains():
 
 
 
-    def update():
-        pass
+    def update(self,data):
+        cur = self.db.cursor()
+        # Convert UUID string to UUID type
+        domain_uuid=data['domain_id']
+        # Get the current data for the domain from the database
+        current_data = self.read(domain_uuid)
+        # Update the current data with the new data
+        if len(current_data) >= 1:
+            current_data[0]['name'] = data['name']
+            current_data[0]['enabled'] = data['enabled']
+            current_data[0]['description'] = data['description']
+                
+            cur.execute("""update v_domains set domain_name= %s,domain_enabled = %s,domain_description = %s where domain_uuid= %s""", \
+                    (current_data[0]['name'],current_data[0]['enabled'],current_data[0]['description'],domain_uuid))
+            rows = cur.rowcount
+            self.db.commit()
 
-    def delete():
-        pass
+        cur.close()
+        return True
+
+
+    def delete(self,domain_id):
+        #Todo: Check if the domain exists before creating it
+        # call it in any place of your program
+        # before working with UUID objects in PostgreSQL
+        psycopg2.extras.register_uuid()
+        domain_uuid = uuid.uuid4()
+        cur = self.db.cursor()
+
+        # Check for Duplicate domains
+        cur.execute("""delete from v_domains where domain_uuid = %s""",(domain_id,))
+        self.db.commit()
+        cur.close()
+        return True
 
     def getExtensions():
         pass
