@@ -124,7 +124,7 @@ class domains():
             current_data[0]['name'] = data['name']
             current_data[0]['enabled'] = data['enabled']
             current_data[0]['description'] = data['description']
-                
+
             cur.execute("""update v_domains set domain_name= %s,domain_enabled = %s,domain_description = %s where domain_uuid= %s""", \
                     (current_data[0]['name'],current_data[0]['enabled'],current_data[0]['description'],domain_uuid))
             rows = cur.rowcount
@@ -154,6 +154,7 @@ class domains():
 
 class extension():
 
+    extension_id=""
     domain_id=""
     account_code=""
     number=""
@@ -175,35 +176,64 @@ class extension():
 
 class extensions():
 
-    mediaserver=''
-    domain=''
+    mediaserver=None
+    domain=None
     domain_name=''
     domain_uuid=''
     db=''
+    extension_list = []
 
-    def __init__(self, mediaserver, domain_id=None,extension=None):
+    def __init__(self, mediaserver, domain ,extension=None):
         self.mediaserver = mediaserver
         self.db = self.mediaserver.getConnection()
-
-        if domain_id == None:
-            self.domain_name = domain_name
-        else:
-            self.domain_uuid = domain_id
+        self.domain = domain
+        self.domain_uuid = self.domain['domain_id']
+        self.domain_name = self.domain['name']
 
     def create(self,data):
         psycopg2.extras.register_uuid()
         extension_uuid = uuid.uuid4()
         cur = self.db.cursor()
-        cur.execute("""insert into v_extensions (extension_uuid,domain_uuid,extension,password,user_context,call_timeout,enabled) \
-                    values (%s,%s,%s,%s,%s,%s,%s)""", \
+        cur.execute("""insert into v_extensions (extension_uuid,domain_uuid,extension,password, \
+                    user_context,call_timeout,enabled,outbound_caller_id_number, \
+                    outbound_caller_id_name,accountcode) \
+                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", \
                     (extension_uuid, self.domain_uuid, data.number, \
-                    data.password, self.domain_name, data.call_timeout, data.enabled))
+                    data.password, self.domain['name'], data.call_timeout, data.enabled, \
+                    data.outbound_caller_number,data.outbound_caller_name,data.account_code))
+
         self.db.commit()
         cur.close()
 
 
-    def get():
-        pass
+    def read(self, extension_id=None):
+        cur = self.db.cursor()
+        query = "select extension_uuid,domain_uuid,extension,password,user_context,call_timeout, \
+        enabled,outbound_caller_id_number,outbound_caller_id_name, accountcode from v_extensions where domain_uuid = %s"
+        values = [self.domain_uuid]
+
+        if extension_id:
+            query = query + " and extension_uuid = %s"
+            values.append(extension_id)
+
+        cur.execute(query,(values))
+        rows = cur.fetchall()
+        if rows is not None:
+            for row in rows:
+                d = {}
+                d['extensions_id'] = row[0]
+                d['domain_uuid']= row[1]
+                d['number'] = row[2]
+                #d['password'] = row[3]
+                d['user_context'] = row[4]
+                d['call_timeout'] = row[5]
+                d['enabled'] = row[6]
+                d['outbound_caller_number'] = row[7]
+                d['outbound_caller_name'] = row[8]
+                d['account_code'] = row[9]
+                self.extension_list.append(d)
+
+        return self.extension_list
 
     def update():
         pass

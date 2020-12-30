@@ -363,22 +363,99 @@ def postExtensions():
 
         # Create instance of Media Server Class
         config_id = data['config_id']
+        domain_id = data['domain_id']
 
-        if config_id != None:
+        if config_id != None and domain_id != None:
             config_info = config(config_id)
             plugin = config_info.getPlugin()
             # Create instance of Media Server Class
             if plugin:
                 mediaserver = plugin.mediaserver(config_info)
                 if mediaserver:
-                    extensions = plugin.extensions(mediaserver,data['domain_id'])
+                    domains = plugin.domains(mediaserver)
+                    domain = domains.read(domain_id)
+                    print(domain_id)
+                    print(domain[0]['domain_id'])
+                    extensions = plugin.extensions(mediaserver,domain[0])
                     ext = plugin.extension()
                     ext.domain_id=data['domain_id']
                     ext.number=data['extension']
                     ext.password=data['password']
                     ext.enabled=data['enabled']
                     ext.config_id=data['config_id']
+                    ext.account_code=data['account_code']
                     extensions.create(ext)
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+
+@mediaserver.route('/api/v1/mediaserver/extension/<string:config_id>/<string:domain_id>',methods=['GET'])
+@mediaserver.route('/api/v1/mediaserver/extension/<string:config_id>/<string:domain_id>/<string:extension_id>',methods=['GET'])
+@api_security
+def getExtensions(config_id=None,domain_id=None,extension_id=None):
+    """
+    List all of the domains on a PBX\n
+    If the PBX only contains a single domain then it will return the hostname or ip address of the system.
+    If the PBX is multi-tenant then a list of all domains will be returned
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+
+    {}
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+    {
+         "data": [
+        [
+            {
+                "call_timeout": null,
+                "domain_uuid": "51f66016-c2d5-4bd8-8117-29c8fc8ffa17",
+                "enabled": "true",
+                "extensions_id": "ae3cb4b8-f467-4a13-9bb8-9296226c1887",
+                "number": "504",
+                "user_context": "restaurant.detroitpbx.com"
+            }
+        ]
+    }
+    """
+
+    # Determine which plug-in to use
+    # Currently we only support FusionPBX
+    # Check if Configuration ID exists
+
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+            if config_id != None and domain_id != None:
+                config_info = config(config_id)
+                plugin = config_info.getPlugin()
+                # Create instance of Media Server Class
+                if plugin:
+                    mediaserver = plugin.mediaserver(config_info)
+                    if mediaserver:
+                        domains = plugin.domains(mediaserver)
+                        domain = domains.read(domain_id)
+                        extensions = plugin.extensions(mediaserver,domain[0])
+                        extension_list = extensions.read(extension_id)
+                        response_payload['msg'] = '{} extensions were found'.format(len(extension_list))
+                        response_payload['data'].append(extension_list)
+            else:
+                raise Exception("The configuration id and the domain_id must be provided")
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
