@@ -2681,20 +2681,52 @@ def getOptionMessageStatus(domain):
     :rtype:         bool
     """
 
-    response = subprocess.check_output(['kamcmd', 'dispatcher.list'])
+    domain_active = False
+    cmdset = {"method": "dispatcher.list", "jsonrpc": "2.0", "id": 1}
+
+    r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
+    if r.status_code >= 400:
+        try:
+            msg = r.json()['error']['message']
+        except:
+            msg = r.reason
+        ex = http_exceptions.HTTPException(msg)
+        ex.code = r.status_code
+        raise ex
+    else:
+        response = r.json()
+        records = response['result']['RECORDS']
+
 
     if not response:
         return False
 
-    response_formatted = response.decode('utf8').replace("'", '"')
-    found_domain = response_formatted.find(domain)
 
-    if not found_domain:
+    try:
+        # Loop thru each record in the dispatcher list
+        for record in range(0,len(records)):
+            sets = records[record]
+            # Loop thru each set
+            for set in sets:
+                #print("{},{}".format(sets[set]['ID'],domain))
+                # Loop thru each target
+                targets = sets[set]['TARGETS']
+                # Loop thru each destination within a target
+                for dest in range(0,len(targets)):
+                    # Grab the destination body and flags
+                    # The Body contains the domain name of the destionation
+                    dest_body = format(targets[dest]['DEST']['ATTRS']['BODY'])
+                    # The Flags specify is the destionation is sending and recieving option messages
+                    dest_flags = format(targets[dest]['DEST']['FLAGS'])
+                    if domain in dest_body:
+                        if dest_flags == "AP":
+                            domain_active = True
+                            continue
+    except Exception as ex:
+        raise ex
+
+    if not domain_active:
         return False
-    else:
-        found_inactive = response_formatted.find("FLAGS: IP", found_domain)
-        if found_inactive > 0:
-            return False
 
     return True
 
