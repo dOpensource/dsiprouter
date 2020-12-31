@@ -294,7 +294,7 @@ def addUpdateCarrierGroups():
         r_username = form['r_username'] if 'r_username' in form else ''
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
-        auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
+        auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
 
         # format data
@@ -763,7 +763,7 @@ def displayEndpointGroups():
             debugEndpoint()
 
         return render_template('endpointgroups.html', dsiprouter_ip=settings.EXTERNAL_IP_ADDR,
-                               DEFAULT_auth_domain=settings.DOMAIN)
+                               DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -854,7 +854,7 @@ def addUpdateEndpointGroups():
         # fusionpbx_db_password = form['fusionpbx_db_password']
         # auth_username = form['auth_username']
         # auth_password = form['auth_password']
-        # auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DOMAIN
+        # auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DEFAULT_AUTH_DOMAIN
         # calllimit = form['calllimit'] if len(form['calllimit']) > 0 else ""
         #
         # multi_tenant_domain_enabled = False
@@ -2144,7 +2144,7 @@ def syncSettings(new_fields={}, update_net=False):
                  ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG), ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX),
                  ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
                  ('FLT_OUTBOUND', settings.FLT_OUTBOUND), ('FLT_INBOUND', settings.FLT_INBOUND), ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
-                 ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DOMAIN', settings.DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
+                 ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
                  ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
                  ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP), ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
                  ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),

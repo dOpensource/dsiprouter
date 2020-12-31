@@ -17,18 +17,18 @@ function installSQL {
     printwarn "Adding/Replacing the tables needed for Domain Mapping within dSIPRouter..."
 
     # Check to see if table exists
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         -e "select count(*) from ${TABLES[0]} limit 1" > /dev/null 2>&1
 
     if [ $? -eq 0 ]; then
         printwarn "The dSIPRouter tables ${TABLES[@]} already exists. Merging table data"
         (cat ${DSIP_PROJECT_DIR}/gui/modules/domain/domain_mapping.sql;
             mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-                --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} ${TABLES[@]};
-        ) | mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
+                --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} ${TABLES[@]};
+        ) | mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
     else
         echo -e "Installing schema for Domain Mapping"
-        mysql -sN --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        mysql -sN --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
             < ${DSIP_PROJECT_DIR}/gui/modules/domain/domain_mapping.sql
     fi
 }

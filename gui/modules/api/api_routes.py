@@ -219,7 +219,7 @@ def getEndpointLease():
         name = "lease" + str(rand_num)
         auth_username = name
         auth_password = urandomChars(DEF_PASSWORD_LEN)
-        auth_domain = settings.DOMAIN
+        auth_domain = settings.DEFAULT_AUTH_DOMAIN
 
         # Set some defaults
         host_addr = ''
@@ -1079,7 +1079,7 @@ def updateEndpointGroups(gwgroupid=None):
                 if 'pass' in request_payload['auth'] and len(request_payload['auth']['pass']) > 0 else None
             authdomain = request_payload['auth']['domain'] \
                 if 'domain' in request_payload['auth'] and len(
-                request_payload['auth']['domain']) > 0 else settings.DOMAIN
+                request_payload['auth']['domain']) > 0 else settings.DEFAULT_AUTH_DOMAIN
             authdomain = safeUriToHost(authdomain)
 
             if authuser is None or authpass is None:
@@ -1568,7 +1568,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                    and len(request_payload['auth']['pass']) > 0 else None
             authdomain = request_payload['auth']['domain'] \
                 if 'domain' in request_payload['auth'] \
-                   and len(request_payload['auth']['domain']) > 0 else settings.DOMAIN
+                   and len(request_payload['auth']['domain']) > 0 else settings.DEFAULT_AUTH_DOMAIN
             authdomain = safeUriToHost(authdomain)
 
             if authuser is None or authpass is None:
@@ -2881,7 +2881,7 @@ def createCertificate():
         replace_default_cert = request_payload[
             'replace_default_cert'] if 'replace_default_cert' in request_payload else None
         cert = request_payload['cert'] if 'cert' in request_payload else None
-        email = request_payload['email'] if 'email' in request_payload else "admin@" + settings.DOMAIN
+        email = request_payload['email'] if 'email' in request_payload else "admin@" + settings.DEFAULT_AUTH_DOMAIN
 
         # Request Certificate via Let's Encrypt
         if key is None and cert is None:

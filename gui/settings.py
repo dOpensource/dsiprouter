@@ -86,7 +86,7 @@ FLT_LCR_MIN = 10000
 FLT_FWD_MIN = 20000
 
 # The domain used to create user accounts for PBX and Endpoint registrations
-DOMAIN = 'sip.dsiprouter.org'
+DEFAULT_AUTH_DOMAIN = 'sip.dsiprouter.org'
 
 # Teleblock Settings
 TELEBLOCK_GW_ENABLED = 0
@@ -145,6 +145,11 @@ DID_PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+
 # micosoft teams settings
 MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
 MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
+
+# root DB credentials
+ROOT_DB_USER = 'root'
+ROOT_DB_PASS = ''
+ROOT_DB_NAME = 'mysql'
 
 # Where to sync settings from
 # file  - load from setting.py file
