@@ -68,7 +68,7 @@ class Credentials():
         return binascii.hexlify(hash)+binascii.hexlify(salt)
 
     @staticmethod
-    def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b''):
+    def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b'', rootdb_creds=b''):
         """
         Set secure credentials, either by hashing or encrypting\n
         Values must be within size limit and empty values are ignored\n
@@ -83,10 +83,14 @@ class Credentials():
         :type mail_creds:       bytes|str
         :param ipc_creds:       dsiprouter ipc connection password as byte string
         :type ipc_creds:        bytes|str
+        :param rootdb_creds:    root db user's password as byte string
+        :type rootdb_creds:     bytes|str
         :return:                None
         :rtype:                 None
         """
         fields = {}
+        local_fields = {}
+
 
         if len(dsip_creds) > 0:
             if len(dsip_creds) > Credentials.CREDS_MAX_LEN:
@@ -113,6 +117,11 @@ class Credentials():
                 raise ValueError('mail credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
             fields['DSIP_IPC_PASS'] = AES_CTR.encrypt(ipc_creds)
 
+        # some fields are not synced with DB
+        if len(rootdb_creds) > 0:
+            local_fields['ROOT_DB_PASS'] = AES_CTR.encrypt(rootdb_creds)
+
+        # update settings based on where they are loaded from
         if settings.LOAD_SETTINGS_FROM == 'file':
             updateConfig(settings, fields)
         elif settings.LOAD_SETTINGS_FROM == 'db':
@@ -129,6 +138,9 @@ class Credentials():
                 raise
             finally:
                 db.remove()
+
+        # update local only settings everytime
+        updateConfig(settings, local_fields)
 
 class AES_CTR():
     """

@@ -27,7 +27,6 @@ _dsiprouter() {
         disableservernat
         resetpassword
         setcredentials
-        setkamdbconfig
         generatekamconfig
         updatekamconfig
         updatertpconfig
@@ -41,7 +40,7 @@ _dsiprouter() {
     )
     # available long options (with value) for each cmd
     declare -A llopts=(
-        [install]='--external-ip= --database= --dsip-clusterid= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev='
+        [install]='--external-ip= --database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev='
         [uninstall]=''
         [upgrade]='--release='
         [clusterinstall]=''
@@ -55,8 +54,7 @@ _dsiprouter() {
         [enableservernat]=''
         [disableservernat]=''
         [resetpassword]=''
-        [setcredentials]='--dsip-user= --dsip-creds= --api-creds= --kam-user= --kam-creds= --mail-user= --mail-creds= --ipc-creds='
-        [setkamdbconfig]=''
+        [setcredentials]='--dsip-creds= --api-creds= --kam-creds= --mail-creds= --ipc-creds= --db-admin-creds='
         [generatekamconfig]=''
         [updatekamconfig]=''
         [updatertpconfig]=''
@@ -85,7 +83,6 @@ _dsiprouter() {
         [disableservernat]=''
         [resetpassword]='--all --dsip-creds --api-creds --kam-creds --ipc-creds --force-instance-id'
         [setcredentials]=''
-        [setkamdbconfig]=''
         [generatekamconfig]=''
         [updatekamconfig]=''
         [updatertpconfig]=''
@@ -99,7 +96,7 @@ _dsiprouter() {
     )
     # available short options (without value) for each cmd
     declare -A sopts=(
-        [install]='-debug -servernat -all -kam -dsip -rtp -exip -db -dsipcid -dsipcsync -dsipkey -with_lcr -with_dev'
+        [install]='-debug -servernat -all -kam -dsip -rtp -exip -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev'
         [uninstall]='-debug -all -kam -dsip -rtp'
         [upgrade]='-debug'
         [clusterinstall]='-debug'
@@ -113,8 +110,7 @@ _dsiprouter() {
         [enableservernat]='-debug'
         [disableservernat]='-debug'
         [resetpassword]='-debug -all -dc -ac -kc -ic -fid'
-        [setcredentials]='-debug -du -dc -ac -ku -kc -mu -mc -ic'
-        [setkamdbconfig]='-debug'
+        [setcredentials]='-debug --dc -ac -kc -mc -ic -dac'
         [generatekamconfig]='-debug'
         [updatekamconfig]='-debug'
         [updatertpconfig]='-debug -servernat'
