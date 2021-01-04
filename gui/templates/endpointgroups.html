@@ -423,7 +423,7 @@ systemctl restart fail2ban</code></pre>
 
         <div id="fusionpbx2" class="tab-pane fade in" name="fusion-toggle">
           <div class="form-group">
-            <div class="checkbox">
+            <div class="checkbox-inline">
               <label class="label-toggle">
                 <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
                        data-on="<span class='icon-fusionpbx'></span> Enabled"
@@ -431,9 +431,14 @@ systemctl restart fail2ban</code></pre>
                        data-width="125px">
                 FusionPBX Domain Support
               </label>
-            </div>
+	    </div>
+            <div class="checkbox-inline">
+		    <label class="checkbox-inline">
+			    <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0">Cluster Support
+		    </label>
+	    </div>
+           </div>
             <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
-          </div>
           <div class="alert alert-warning pre-scrollable">
             <strong>
               You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.

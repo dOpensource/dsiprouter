@@ -105,6 +105,7 @@
     fusionpbx.dbhost = modal_body.find(".fusionpbx_db_server").val();
     fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
     fusionpbx.dbpass = modal_body.find(".fusionpbx_db_password").val();
+    fusionpbx.clustersupport = modal_body.find(".fusionpbx_clustersupport").val();
 
     requestPayload.fusionpbx = fusionpbx;
 
@@ -286,6 +287,7 @@
     modal_body.find(".fusionpbx_db_server").val(gwgroup_data.fusionpbx.dbhost);
     modal_body.find(".fusionpbx_db_username").val(gwgroup_data.fusionpbx.dbuser);
     modal_body.find(".fusionpbx_db_password").val(gwgroup_data.fusionpbx.dbpass);
+    modal_body.find(".fusionpbx_clustersupport").val(gwgroup_data.fusionpbx.clustersupport);
 
     /* reset the save button*/
     var updatebtn = $('#edit .modal-footer').find("#updateButton");
@@ -435,6 +437,18 @@
       table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td><td name="weight"></td></tr>'));
       table.data('Tabledit').reload();
       $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
+    });
+
+    $('.modal-body .fusionpbx_clustersupport').change(function() {
+      var modal = $(this).closest('div.modal');
+      var modal_body = modal.find('.modal-body');
+	
+      if ($(this).is(":checked") || $(this).prop("checked")) {
+        	modal_body.find('.fusionpbx_clustersupport').val(1);
+      }
+      else {
+        	modal_body.find('.fusionpbx_clustersupport').val(0);
+	}
     });
 
     /* listener for fusionPBX toggle */
