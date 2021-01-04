@@ -4,7 +4,7 @@
 (( $DEBUG == 1 )) && set -x
 
 # ENABLED=1 --> install, ENABLED=0 --> do nothing, ENABLED=-1 uninstall
-ENABLED=1
+ENABLED=0
 
 # Import dsip_lib utility / shared functions if not already
 if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
