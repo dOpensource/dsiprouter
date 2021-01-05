@@ -1015,7 +1015,7 @@ function installMysql {
 
 # Remove mysql and its configs
 function uninstallMysql {
-    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
+    if [[! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
         printwarn "MySQL is not installed - skipping removal"
         return
     fi
@@ -1958,20 +1958,20 @@ sendSyncSettingsSignal();
 EOF
 
     # export variables for later usage in this script
-    export DSIP_USERNAME=${SET_DSIP_GUI_USER:-DSIP_USERNAME}
-    export DSIP_PASSWORD=${SET_DSIP_GUI_PASS:-DSIP_PASSWORD}
-    export DSIP_API_TOKEN=${SET_DSIP_API_TOKEN:-DSIP_API_TOKEN}
-    export MAIL_PASSWORD=${SET_DSIP_MAIL_USER:-MAIL_PASSWORD}
-    export MAIL_PASSWORD=${SET_DSIP_MAIL_PASS:-MAIL_PASSWORD}
-    export DSIP_IPC_PASS=${SET_DSIP_IPC_TOKEN:-DSIP_IPC_PASS}
-    export KAM_DB_USER=${SET_KAM_DB_USER:-KAM_DB_USER}
-    export KAM_DB_PASS=${SET_KAM_DB_PASS:-KAM_DB_PASS}
-    export KAM_DB_HOST=${SET_KAM_DB_HOST:-KAM_DB_HOST}
-    export KAM_DB_PORT=${SET_KAM_DB_PORT:-KAM_DB_PORT}
-    export KAM_DB_NAME=${SET_KAM_DB_NAME:-KAM_DB_NAME}
-    export ROOT_DB_USER=${SET_ROOT_DB_USER:-ROOT_DB_USER}
-    export ROOT_DB_PASS=${SET_ROOT_DB_PASS:-ROOT_DB_PASS}
-    export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-ROOT_DB_NAME}
+    export DSIP_USERNAME=${SET_DSIP_GUI_USER:-$DSIP_USERNAME}
+    export DSIP_PASSWORD=${SET_DSIP_GUI_PASS:-$DSIP_PASSWORD}
+    export DSIP_API_TOKEN=${SET_DSIP_API_TOKEN:-$DSIP_API_TOKEN}
+    export MAIL_PASSWORD=${SET_DSIP_MAIL_USER:-$MAIL_PASSWORD}
+    export MAIL_PASSWORD=${SET_DSIP_MAIL_PASS:-$MAIL_PASSWORD}
+    export DSIP_IPC_PASS=${SET_DSIP_IPC_TOKEN:-$DSIP_IPC_PASS}
+    export KAM_DB_USER=${SET_KAM_DB_USER:-$KAM_DB_USER}
+    export KAM_DB_PASS=${SET_KAM_DB_PASS:-$KAM_DB_PASS}
+    export KAM_DB_HOST=${SET_KAM_DB_HOST:-$KAM_DB_HOST}
+    export KAM_DB_PORT=${SET_KAM_DB_PORT:-$KAM_DB_PORT}
+    export KAM_DB_NAME=${SET_KAM_DB_NAME:-$KAM_DB_NAME}
+    export ROOT_DB_USER=${SET_ROOT_DB_USER:-$ROOT_DB_USER}
+    export ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
+    export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
 
     # propragate settings based on reload type required
     if (( ${RELOAD_TYPE} == 0 )); then
