@@ -327,6 +327,22 @@ function validateOSInfo {
     export KAM_VERSION
 }
 
+#Install manpage
+function manpage {
+	FILE=/usr/local/man/man1
+	cd "${DSIP_PROJECT_DIR}/resources/man"
+	if [ -f "$FILE" ]; then
+	    cp dsiprouter.1 /usr/local/man/man1
+	    gzip /usr/local/man/man1/dsiprouter.1
+	    mandb
+	else
+	    mkdir /usr/local/man/man1
+	    cp dsiprouter.1 /usr/local/man/man1
+	    gzip /usr/local/man/man1/dsiprouter.1
+	    mandb
+	fi
+}
+
 # run prior to any cmd being processed
 function initialChecks {
     validateRootPriv
@@ -338,6 +354,8 @@ function initialChecks {
     installScriptRequirements
 
     setScriptSettings
+    
+    manpage
 
     # make sure dirs exist (ones that may not yet exist)
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
