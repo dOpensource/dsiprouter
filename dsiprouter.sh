@@ -328,7 +328,7 @@ function validateOSInfo {
 }
 
 #Install manpage
-function manpage {
+function installManPage {
 	FILE=/usr/local/man/man1
 	cd "${DSIP_PROJECT_DIR}/resources/man"
 	if [ -f "$FILE" ]; then
@@ -355,7 +355,7 @@ function initialChecks {
 
     setScriptSettings
     
-    manpage
+    installManPage
 
     # make sure dirs exist (ones that may not yet exist)
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
