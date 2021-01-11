@@ -2878,7 +2878,7 @@ function processCMD {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallManPage uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -2892,7 +2892,7 @@ function processCMD {
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
-                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak)
+                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio uninstallManPage uninstallMysql uninstallDnsmasq uninstallSipsak)
             fi
 
             # clean dev environment if configured
