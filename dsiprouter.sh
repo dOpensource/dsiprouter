@@ -343,6 +343,12 @@ function installManPage {
 	fi
 }
 
+#Uninstall manpage
+function uninstallManPage {
+	rm -f /usr/local/man/man1/dsiprouter.1
+    	printdbg "ManPage was uninstalled"
+}
+
 # run prior to any cmd being processed
 function initialChecks {
     validateRootPriv
