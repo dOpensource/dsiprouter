@@ -345,7 +345,7 @@ function installManPage {
 
 #Uninstall manpage
 function uninstallManPage {
-	rm -f /usr/local/man/man1/dsiprouter.1
+	rm -rf /usr/local/man/man1/dsiprouter.1
     	printdbg "ManPage was uninstalled"
 }
 
