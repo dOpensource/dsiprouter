@@ -360,8 +360,6 @@ function initialChecks {
     installScriptRequirements
 
     setScriptSettings
-    
-    installManPage
 
     # make sure dirs exist (ones that may not yet exist)
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
@@ -2684,7 +2682,7 @@ function processCMD {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter installRTPEngine)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installManPage installMysql installKamailio installDsiprouter installRTPEngine)
                         shift
                         ;;
                     -exip|--external-ip=*)
