@@ -379,11 +379,17 @@ def postExtensions():
                     extensions = plugin.extensions(mediaserver,domain[0])
                     ext = plugin.extension()
                     ext.domain_id=data['domain_id']
-                    ext.number=data['extension']
+                    ext.extension=data['extension']
                     ext.password=data['password']
                     ext.enabled=data['enabled']
                     ext.config_id=data['config_id']
+                    ext.outbound_caller_number=data['outbound_caller_number']
+                    ext.outbound_caller_name=data['outbound_caller_name']
+                    ext.vm_enabled=data['vm_enabled']
+                    ext.vm_password=data['vm_password']
+                    ext.vm_notify_email=data['vm_notify_email']
                     ext.account_code=data['account_code']
+                    ext.call_timeout=data['call_timeout']
                     extensions.create(ext)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
@@ -391,6 +397,67 @@ def postExtensions():
     except Exception as ex:
         return showApiError(ex)
 
+
+@mediaserver.route('/api/v1/mediaserver/extension',methods=['PUT'])
+@api_security
+def putExtensions():
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"domain_id": str, "account_code": str, "extension": str, "password": str, \
+                              "outbound_caller_number": str, "outbound_caller_name": str, "vm_enabled": bool, \
+                              "vm_password": int, "vm_notify_email": str, "enabled": bool, "call_timeout": int, \
+                              "config_id": int}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'domain_id','extension','password', 'enabled','config_id'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+
+        # get request data
+        data = getRequestData()
+        print(data)
+
+        # sanity checks
+        for k, v in data.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request data argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                raise http_exceptions.BadRequest("Request data argument '{}' not valid".format(k))
+
+        for k in REQUIRED_ARGS:
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
+
+
+        # Create instance of Media Server Class
+        config_id = data['config_id']
+        domain_id = data['domain_id']
+
+        if config_id != None and domain_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    domains = plugin.domains(mediaserver)
+                    domain = domains.read(domain_id)
+                    print(domain_id)
+                    print(domain[0]['domain_id'])
+                    extensions = plugin.extensions(mediaserver,domain[0])
+                    extensions.update(data)
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
 
 
 @mediaserver.route('/api/v1/mediaserver/extension/<string:config_id>/<string:domain_id>',methods=['GET'])
@@ -456,6 +523,64 @@ def getExtensions(config_id=None,domain_id=None,extension_id=None):
                         response_payload['data'].append(extension_list)
             else:
                 raise Exception("The configuration id and the domain_id must be provided")
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@mediaserver.route('/api/v1/mediaserver/extension',methods=['DELETE'])
+@api_security
+def deleteExtensions():
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"domain_id": str, "config_id": int, "extension": str}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = VALID_REQUEST_DATA_ARGS
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+
+        # get request data
+        data = getRequestData()
+
+        # sanity checks
+        for k, v in data.items():
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request data argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                raise http_exceptions.BadRequest("Request data argument '{}' not valid".format(k))
+
+        for k in REQUIRED_ARGS:
+            if k not in VALID_REQUEST_DATA_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
+
+        config_id = data['config_id']
+        domain_id = data['domain_id']
+        extension = data['extension']
+
+        # Create instance of Media Server Class
+        if config_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    domains = plugin.domains(mediaserver)
+                    domain = domains.read(domain_id)
+                    if domain:
+                        extensions = plugin.extensions(mediaserver,domain[0])
+                        if extensions.delete(extension):
+                            response_payload['msg'] = "Success"
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 

@@ -157,7 +157,7 @@ class extension():
     extension_id=""
     domain_id=""
     account_code=""
-    number=""
+    extension=""
     password=""
     outbound_caller_number=""
     outbound_caller_name=""
@@ -198,7 +198,7 @@ class extensions():
                     user_context,call_timeout,enabled,outbound_caller_id_number, \
                     outbound_caller_id_name,accountcode) \
                     values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", \
-                    (extension_uuid, self.domain_uuid, data.number, \
+                    (extension_uuid, self.domain_uuid, data.extension, \
                     data.password, self.domain['name'], data.call_timeout, data.enabled, \
                     data.outbound_caller_number,data.outbound_caller_name,data.account_code))
 
@@ -223,7 +223,7 @@ class extensions():
                 d = {}
                 d['extensions_id'] = row[0]
                 d['domain_uuid']= row[1]
-                d['number'] = row[2]
+                d['extension'] = row[2]
                 #d['password'] = row[3]
                 d['user_context'] = row[4]
                 d['call_timeout'] = row[5]
@@ -235,8 +235,67 @@ class extensions():
 
         return self.extension_list
 
-    def update():
-        pass
+    def update(self,data):
+        psycopg2.extras.register_uuid()
+        cur = self.db.cursor()
+        query="update v_extensions set "
+        values=[]
+        db_data = {}
 
-    def delete():
-        pass
+        #Map canaical format to database format
+        db_data['domain_uuid'] = data['domain_id']
+        db_data['extension'] = data['extension']
+        db_data['password'] = data['password']
+        db_data['enabled'] = data['enabled']
+        db_data['accountcode'] = data['account_code']
+        db_data['outbound_caller_id_number'] = data['outbound_caller_number']
+        db_data['outbound_caller_id_name'] = data['outbound_caller_name']
+        db_data['call_timeout'] = data['call_timeout']
+
+        for element in db_data:
+            # Don't process Voice Mail Attributes
+            if "vm_" in element:
+                continue
+            query = query + "{} = %s,".format(element)
+            values.append(db_data[element])
+
+        # Remove the last comma
+        if query[len(query)-1] == ',':
+            query = query[:-1]
+
+        query = query + " where extension_uuid = '{}'".format(self.getExtensionID(db_data['extension']))
+
+        print(query)
+        print(values)
+        cur.execute(query,(values))
+
+
+        self.db.commit()
+        cur.close()
+
+    def getExtensionID(self,extension):
+        cur = self.db.cursor()
+        query = "select extension_uuid from v_extensions where domain_uuid = %s and extension = %s"
+        values = [self.domain_uuid,extension]
+
+        cur.execute(query,(values))
+        rows = cur.fetchall()
+        if rows is not None:
+            for row in rows:
+                return row[0]
+
+        cur.close()
+
+    def delete(self,extension):
+        #Todo: Check if the domain exists before creating it
+        # call it in any place of your program
+        # before working with UUID objects in PostgreSQL
+        psycopg2.extras.register_uuid()
+        domain_uuid = uuid.uuid4()
+        cur = self.db.cursor()
+
+
+        cur.execute("""delete from v_extensions where domain_uuid = %s and extension = %s""",(self.domain_uuid,extension))
+        self.db.commit()
+        cur.close()
+        return True
