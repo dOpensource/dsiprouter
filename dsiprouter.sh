@@ -2645,7 +2645,7 @@ function processCMD {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI=""
@@ -2682,7 +2682,7 @@ function processCMD {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installManPage installMysql installKamailio installDsiprouter installRTPEngine)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter installRTPEngine)
                         shift
                         ;;
                     -exip|--external-ip=*)
@@ -2846,7 +2846,7 @@ function processCMD {
             RUN_COMMANDS+=(${DEFERRED_COMMANDS[@]})
             ;;
         uninstall)
-            RUN_COMMANDS+=(setCloudPlatform)
+            RUN_COMMANDS+=(setCloudPlatform uninstallManPage)
             shift
 
             while (( $# > 0 )); do
@@ -2876,7 +2876,7 @@ function processCMD {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallManPage uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
