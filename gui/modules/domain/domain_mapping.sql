@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS `dsip_multidomain_mapping`;
 CREATE TABLE `dsip_multidomain_mapping` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `pbx_id` int(10) NOT NULL,
-  `db_host` varchar(20) NOT NULL,
+  `db_host` varchar(255) NOT NULL,
   `db_username` varchar(255) NOT NULL,
   `db_password` varchar(255) NOT NULL,
   `domain_list` varchar(255) NOT NULL DEFAULT '',
