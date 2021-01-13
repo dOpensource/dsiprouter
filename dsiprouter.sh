@@ -327,6 +327,27 @@ function validateOSInfo {
     export KAM_VERSION
 }
 
+#Install manpage
+function installManPage {
+    MAN_DIR=/usr/share/man/man1
+
+    mkdir -p ${MAN_DIR}
+    cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_DIR}/
+    gzip ${MAN_DIR}/dsiprouter.1
+    mandb
+    
+    printdbg "ManPage installed"
+}
+
+#Uninstall manpage
+function uninstallManPage {
+    rm -f ${MAN_DIR}/dsiprouter.1
+    rm -f ${MAN_DIR}/dsiprouter.1.gz
+    mandb
+
+    printdbg "ManPage installed"
+}
+
 # run prior to any cmd being processed
 function initialChecks {
     validateRootPriv
@@ -2623,7 +2644,7 @@ function processCMD {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI=""
@@ -2824,7 +2845,7 @@ function processCMD {
             RUN_COMMANDS+=(${DEFERRED_COMMANDS[@]})
             ;;
         uninstall)
-            RUN_COMMANDS+=(setCloudPlatform)
+            RUN_COMMANDS+=(setCloudPlatform uninstallManPage)
             shift
 
             while (( $# > 0 )); do
