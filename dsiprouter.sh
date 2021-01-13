@@ -329,23 +329,23 @@ function validateOSInfo {
 
 #Install manpage
 function installManPage {
-	FILE=/usr/local/man/man1
+	FILE=/usr/share/man/man1
 	cd "${DSIP_PROJECT_DIR}/resources/man"
 	if [ -f "$FILE" ]; then
-	    cp dsiprouter.1 /usr/local/man/man1
-	    gzip /usr/local/man/man1/dsiprouter.1
+	    cp dsiprouter.1 /usr/share/man/man1
+	    gzip /usr/share/man/man1/dsiprouter.1
 	    mandb
 	else
-	    mkdir /usr/local/man/man1
-	    cp dsiprouter.1 /usr/local/man/man1
-	    gzip /usr/local/man/man1/dsiprouter.1
+	    mkdir /usr/share/man/man1
+	    cp dsiprouter.1 /usr/share/man/man1
+	    gzip /usr/share/man/man1/dsiprouter.1
 	    mandb
 	fi
 }
 
 #Uninstall manpage
 function uninstallManPage {
-	rm -rf /usr/local/man/man1/dsiprouter.1.gz
+	rm -rf /usr/share/man/man1/dsiprouter.1.gz
     	printdbg "ManPage was uninstalled"
 }
 
