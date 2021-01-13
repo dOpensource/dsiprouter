@@ -329,24 +329,23 @@ function validateOSInfo {
 
 #Install manpage
 function installManPage {
-	FILE=/usr/share/man/man1
-	cd "${DSIP_PROJECT_DIR}/resources/man"
-	if [ -f "$FILE" ]; then
-	    cp dsiprouter.1 /usr/share/man/man1
-	    gzip /usr/share/man/man1/dsiprouter.1
-	    mandb
-	else
-	    mkdir /usr/share/man/man1
-	    cp dsiprouter.1 /usr/share/man/man1
-	    gzip /usr/share/man/man1/dsiprouter.1
-	    mandb
-	fi
+    MAN_DIR=/usr/share/man/man1
+
+    mkdir -p ${MAN_DIR}
+    cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_DIR}/
+    gzip ${MAN_DIR}/dsiprouter.1
+    mandb
+    
+    printdbg "ManPage installed"
 }
 
 #Uninstall manpage
 function uninstallManPage {
-	rm -rf /usr/share/man/man1/dsiprouter.1.gz
-    	printdbg "ManPage was uninstalled"
+    rm -f ${MAN_DIR}/dsiprouter.1
+    rm -f ${MAN_DIR}/dsiprouter.1.gz
+    mandb
+
+    printdbg "ManPage installed"
 }
 
 # run prior to any cmd being processed
@@ -2890,7 +2889,7 @@ function processCMD {
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
-                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio uninstallManPage uninstallMysql uninstallDnsmasq uninstallSipsak)
+                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak)
             fi
 
             # clean dev environment if configured
