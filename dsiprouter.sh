@@ -30,10 +30,8 @@
 # - rtp/sip/dmq ports are not dynamically set in kam config
 # - cleanup dependency installs/checks, many of these could be condensed
 # - need to create dsiprouter user/group on install and allow non-root execution
-# - should create settings.py in /etc/dsiprouter and link to /opt/dsiprouter/gui/settings.py
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
 # - add bash command completion for dsiprouter script
-# - add to pre-commit script resetting of default passwords (settings.py,kamailio.cfg)
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -89,7 +87,7 @@ setScriptSettings() {
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
-    export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
+    export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
     export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
     DSIP_DOCS_DIR="${DSIP_PROJECT_DIR}/docs/build/html"
@@ -127,6 +125,24 @@ setScriptSettings() {
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
 
+    export DSIP_PROTO='https'
+    export DSIP_API_PROTO='https'
+    export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter-key.pem"
+    export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter-cert.pem"
+    export DSIP_SSL_CA="${DSIP_CERTS_DIR}/cacert.pem"
+    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
+
+    #================= PRE_DYNAMIC_CONFIG_SETUP =================#
+
+    # make sure dirs exist (ones that may not yet exist)
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
+    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    # copy over the template settings.py to be worked on (used throughout this script as well)
+    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
+
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
 
@@ -138,13 +154,6 @@ setScriptSettings() {
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
-
-    export DSIP_PROTO='https'
-    export DSIP_API_PROTO='https'
-    export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter-key.pem"
-    export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter-cert.pem"
-    export DSIP_SSL_CA="${DSIP_CERTS_DIR}/cacert.pem"
-    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
 
     # grab root db settings from env or settings file
     export ROOT_DB_USER=${ROOT_DB_USER:-$(getConfigAttrib 'ROOT_DB_USER' ${DSIP_CONFIG_FILE})}
@@ -333,9 +342,9 @@ function installManPage {
 
     mkdir -p ${MAN_DIR}
     cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_DIR}/
-    gzip ${MAN_DIR}/dsiprouter.1
+    gzip -f ${MAN_DIR}/dsiprouter.1
     mandb
-    
+
     printdbg "ManPage installed"
 }
 
@@ -356,16 +365,9 @@ function initialChecks {
 
     validateOSInfo
 
-    installScriptRequirements
-
     setScriptSettings
 
-    # make sure dirs exist (ones that may not yet exist)
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
-    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
-    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
-    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    installScriptRequirements
 
     if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
         # comment out cdrom in sources as it can halt install
@@ -487,7 +489,7 @@ function reconfigureMysqlSystemdService {
 }
 export -f reconfigureMysqlSystemdService
 
-# set dynamic python config settings
+# generate dynamic python config settings on install
 function configurePythonSettings {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
@@ -740,6 +742,7 @@ function generateKamailioConfig {
         enableSERVERNAT
     fi
 
+    # non-module features to enable
     if (( ${WITH_LCR} == 1 )); then
         enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
@@ -1145,7 +1148,7 @@ function installDsiprouter {
     fi
 
 	printdbg "Attempting to install dSIPRouter..."
-    # configure settings.py prior to install
+    # configure generated source files prior to install
     configurePythonSettings
     ${DSIP_PROJECT_DIR}/dsiprouter/${DISTRO}/${DISTRO_VER}.sh install
 
@@ -1208,7 +1211,7 @@ function installDsiprouter {
     # for cloud images the instance-id may change (could be a clone)
     # add to startup process a password reset to ensure its set correctly
     # this is only for cloud image builds and is removed after first boot
-    if (( $IMAGE_BUILD == 1 )) && (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 )); then
+    if (( $IMAGE_BUILD == 1 )) && (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 || VULTR_ENABLED == 1 )); then
         (cat << EOF
 #!/usr/bin/env bash
 
@@ -1802,27 +1805,30 @@ function resetPassword {
     if (( $RESET_DSIP_GUI_PASS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
             if [[ -n "$CLOUD_PLATFORM" ]]; then
-                DSIP_PASSWORD=$(getInstanceID)
+                export DSIP_PASSWORD=$(getInstanceID)
             fi
         else
-            DSIP_PASSWORD=$(urandomChars 64)
+            export DSIP_PASSWORD=$(urandomChars 64)
         fi
     fi
     if (( $RESET_DSIP_API_TOKEN == 1 )); then
-        DSIP_API_TOKEN=$(urandomChars 64)
+        export DSIP_API_TOKEN=$(urandomChars 64)
     fi
     if (( $RESET_KAM_DB_PASS == 1 )); then
-        KAM_DB_PASS=$(urandomChars 64)
+        export KAM_DB_PASS=$(urandomChars 64)
     fi
     if (( $RESET_DSIP_IPC_TOKEN == 1 )); then
-        DSIP_IPC_PASS=$(urandomChars 64)
+        export DSIP_IPC_PASS=$(urandomChars 64)
     fi
 
     ${PYTHON_CMD} << EOF
 import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
 from util.security import Credentials; from util.ipc import sendSyncSettingsSignal;
 Credentials.setCreds(dsip_creds='${DSIP_PASSWORD}', api_creds='${DSIP_API_TOKEN}', kam_creds='${KAM_DB_PASS}', ipc_creds='${DSIP_IPC_PASS}');
-sendSyncSettingsSignal();
+try:
+    sendSyncSettingsSignal();
+except:
+    pass
 EOF
 
     if (( $RESET_KAM_DB_PASS == 1 )); then
@@ -1982,7 +1988,7 @@ EOF
     export DSIP_USERNAME=${SET_DSIP_GUI_USER:-$DSIP_USERNAME}
     export DSIP_PASSWORD=${SET_DSIP_GUI_PASS:-$DSIP_PASSWORD}
     export DSIP_API_TOKEN=${SET_DSIP_API_TOKEN:-$DSIP_API_TOKEN}
-    export MAIL_PASSWORD=${SET_DSIP_MAIL_USER:-$MAIL_PASSWORD}
+    export MAIL_USERNAME=${SET_DSIP_MAIL_USER:-$MAIL_USERNAME}
     export MAIL_PASSWORD=${SET_DSIP_MAIL_PASS:-$MAIL_PASSWORD}
     export DSIP_IPC_PASS=${SET_DSIP_IPC_TOKEN:-$DSIP_IPC_PASS}
     export KAM_DB_USER=${SET_KAM_DB_USER:-$KAM_DB_USER}

@@ -8,17 +8,18 @@ sort-files = $(shell echo -e $1 | tr ' ' '\n' | sort -V)
 TESTS_FILES ?= $(wildcard *.sh)
 TESTS_EXCLUDE ?=
 TESTS ?= $(call sort-files,$(filter-out $(patsubst %,%.sh,$(TESTS_EXCLUDE)), $(TESTS_FILES)))
-DEBUG ?= $(shell grep -oP '^DEBUG\s?\=\s?\K(.*)' ../gui/settings.py)
+DSIP_CONFIG_FILE ?= $(shell grep -oP '^DSIP_CONFIG_FILE[ \t]*=[ \t]*"\K(.*)(?=")' include/common 2>/dev/null)
+DEBUG ?= $(shell grep -oP '^DEBUG\s?\=\s?\K(.*)' $(DSIP_CONFIG_FILE) 2>/dev/null)
 
 _setdebug:
 		@if [ "$(DEBUG)" = "False" ]; then \
-				sed -i -r 's|^DEBUG\s?\=\s?.*|DEBUG = True|g' ../gui/settings.py ; \
+				sed -i -r 's|^DEBUG\s?\=\s?.*|DEBUG = True|g' $(DSIP_CONFIG_FILE) ; \
 				systemctl restart dsiprouter ; \
 		fi ;
 
 _resetdebug:
 		@if [ "$(DEBUG)" = "False" ]; then \
-				sed -i -r 's|^DEBUG\s?\=\s?.*|DEBUG = False|g' ../gui/settings.py ; \
+				sed -i -r 's|^DEBUG\s?\=\s?.*|DEBUG = False|g' $(DSIP_CONFIG_FILE) ; \
 				systemctl restart dsiprouter ; \
 		fi ;
 

@@ -27,23 +27,16 @@ You may need different flags depending on where you deploy (servernat, etc..)
     For the rest of this walkthrough assume your starting location is in project root (default `/etc/dsiprouter`).
 
 3. Make your changes..
-Then prior to commit make sure you reset any defaults in `settings.py` (this won't be needed in the future).
-If you **didn't** make any changes to `settings.py` then store a copy and revert it before committing.
+Then prior to commit make sure you reset any defaults in `settings.py` or `kamailio_dsiprouter.cfg`.
+You should **not** be commiting the generated versions from `/etc/dsiprouter`, this will include changes to the defaults.
+Instead you should check which changes you need to keep by runnning diff:
 
     ```bash
-    cp -f gui/settings.py /var/backups/dsiprouter/settings.py
-    git checkout HEAD -- gui/settings.py
+    diff /etc/dsiprouter/gui/settings.py /opt/dsiprouter/gui/settings.py
     ```
 
-    If you **did** make any changes to `settings.py` then you will have manually reset the defaults before committing.
-    We recommend storing a backup of the current `settings.py`, resetting it, then merging your changes manually, something like this:
-
-    ```bash
-    cp -f gui/settings.py /var/backups/dsiprouter/settings.py
-    git checkout HEAD -- gui/settings.py
-    diff gui/settings.py /var/backups/dsiprouter/settings.py
-    vim gui/settings.py
-    ```
+    You should be able to pick out which changes were generated on install and which changes you need to keep.
+    You can then merge the changes you need into the project source files.
 
 4. Then commit, and push the changes to your feature branch.
 
@@ -70,17 +63,11 @@ If you **didn't** make any changes to `settings.py` then store a copy and revert
 5. Create a Pull Request on Github (or Merge Request if on gitlab).
 See the [Github Docs](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request) for more information.
 
-6. Reset your dsiprouter settings
-
-    ```bash
-    cp -f /var/backups/dsiprouter/settings.py gui/settings.py
-    ```
-
 ## Core Architecture Principles
 
 - Installation should be less then 10 minutes
 - Someone with basic SIP knowledge should be able to configure it and place a test call within 10 minutes
-- The API structure should follow the Web URI
+- The API structure should follow the Web UI
 
 ### File Structure
 

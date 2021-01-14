@@ -11,20 +11,20 @@ temp_pass='temp'
 temp_token='temp'
 
 # dynamic settings
-proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
+proto=$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
 host='127.0.0.1'
-port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
-username=$(getConfigAttrib 'DSIP_USERNAME' $project_dir/gui/settings.py)
-dsip_id=$(getConfigAttrib 'DSIP_ID' $project_dir/gui/settings.py)
-pid_file=$(getConfigAttrib 'DSIP_PID_FILE' $project_dir/gui/settings.py)
-load_from=$(getConfigAttrib 'LOAD_SETTINGS_FROM' $project_dir/gui/settings.py)
-kam_db_host=$(getConfigAttrib 'KAM_DB_HOST' $project_dir/gui/settings.py)
-kam_db_port=$(getConfigAttrib 'KAM_DB_PORT' $project_dir/gui/settings.py)
-kam_db_name=$(getConfigAttrib 'KAM_DB_NAME' $project_dir/gui/settings.py)
-kam_db_user=$(getConfigAttrib 'KAM_DB_USER' $project_dir/gui/settings.py)
-kam_db_pass=$(decryptConfigAttrib 'KAM_DB_PASS' $project_dir/gui/settings.py)
+port=$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
+username=$(getConfigAttrib 'DSIP_USERNAME' ${DSIP_CONFIG_FILE})
+dsip_id=$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})
+pid_file=$(getConfigAttrib 'DSIP_PID_FILE' ${DSIP_CONFIG_FILE})
+load_from=$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})
+kam_db_host=$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
+kam_db_port=$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})
+kam_db_name=$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})
+kam_db_user=$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})
+kam_db_pass=$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})
 old_api_token=$(kamcmd cfg.get server api_token)
-inbound_flag=$(getConfigAttrib 'FLT_INBOUND' $project_dir/gui/settings.py)
+inbound_flag=$(getConfigAttrib 'FLT_INBOUND' ${DSIP_CONFIG_FILE})
 
 # if dsip is bound to all available addresses use localhost
 [ "$host" = "0.0.0.0" ] && host="localhost"
@@ -52,11 +52,11 @@ for key in ${!headers[@]}; do flat_headers+=( "$key: ${headers[$key]}" ); done
 
 setLoginOverride() {
     # make copy of settings
-    cp -f $project_dir/gui/settings.py $project_dir/gui/settings.py.bak
+    cp -f ${DSIP_CONFIG_FILE} ${DSIP_CONFIG_FILE}.bak
     # update setting
     if [[ "$load_from" == "file" ]]; then
-        setConfigAttrib 'DSIP_PASSWORD' "${temp_pass}" $project_dir/gui/settings.py -q
-        setConfigAttrib 'DSIP_API_TOKEN' "${temp_pass}" $project_dir/gui/settings.py -q
+        setConfigAttrib 'DSIP_PASSWORD' "${temp_pass}" ${DSIP_CONFIG_FILE} -q
+        setConfigAttrib 'DSIP_API_TOKEN' "${temp_pass}" ${DSIP_CONFIG_FILE} -q
     elif [[ "$load_from" == "db" ]]; then
         mysql --user="${kam_db_user}" --password="${kam_db_pass}" --host="${kam_db_host}" --port="${kam_db_port}" --database="${kam_db_name}" \
             -e "update dsip_settings set DSIP_PASSWORD='${temp_pass}', DSIP_API_TOKEN='${temp_token}' where dsip_id=${dsip_id}"
@@ -68,7 +68,7 @@ setLoginOverride() {
 
 unsetLoginOverride() {
     # revert changes
-    mv -f $project_dir/gui/settings.py.bak $project_dir/gui/settings.py
+    mv -f ${DSIP_CONFIG_FILE}.bak ${DSIP_CONFIG_FILE}
     # sync settings
     kill -SIGUSR1 $(cat $pid_file) 2>/dev/null
     sleep 1
