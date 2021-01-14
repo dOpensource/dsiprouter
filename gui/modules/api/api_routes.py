@@ -1586,8 +1586,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
             if authtype == "ip":
                 host_addr = safeStripPort(sip_addr)
+                host_name = hostToIP(host_addr)
 
-                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                Addr = Address(name, host_name, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
