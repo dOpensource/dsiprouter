@@ -1126,8 +1126,9 @@ def updateEndpointGroups(gwgroupid=None):
                 if authtype == "ip":
                     # for ip auth we must create address records for the endpoint
                     host_addr = safeStripPort(sip_addr)
+                    host_name = hostToIP(host_addr)
 
-                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Addr = Address(name, host_name, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                     db.add(Addr)
                     db.flush()
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
@@ -1171,8 +1172,9 @@ def updateEndpointGroups(gwgroupid=None):
             if authtype == "ip":
                 # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
+                host_name = hostToIP(host_addr)
 
-                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                Addr = Address(name, host_name, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id)
@@ -1205,6 +1207,7 @@ def updateEndpointGroups(gwgroupid=None):
             if authtype == "ip":
                 # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
+                host_name = hostToIP(host_addr)
 
                 # if address exists update, otherwise create it
                 address_exists = False
@@ -1214,14 +1217,14 @@ def updateEndpointGroups(gwgroupid=None):
                     if Addr is not None:
                         address_exists = True
 
-                        Addr.ip_addr = host_addr
+                        Addr.ip_addr = host_name
                         addr_fields = strFieldsToDict(Addr.tag)
                         addr_fields['name'] = name
                         addr_fields['gwgroup'] = gwgroupid_str
                         Addr.tag = dictToStrFields(addr_fields)
 
                 if not address_exists:
-                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Addr = Address(name, host_name, 32, settings.FLT_PBX, gwgroup=gwgroupid)
 
                     db.add(Addr)
                     db.flush()
