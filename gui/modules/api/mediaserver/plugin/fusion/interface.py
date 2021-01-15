@@ -5,6 +5,99 @@ import json
 import uuid
 
 
+# Defining a dialplan object, which allows you to define how the
+# dialplan within a domain behaves
+class cos_dialplan():
+
+    name = None
+    dialplan_xml = []
+
+    def add(self,data):
+        dialplan_entry = {}
+        dialplan_entry['name'] = data['name']
+        dialplan_entry['number'] = data['number']
+        dialplan_entry['continue'] = data['continue']
+        dialplan_entry['order'] = data['order']
+        dialplan_entry['description'] = data['description']
+        dialplan_entry['enabled'] = data['enabled']
+        dialplan_entry['hostname'] = data['hostname']
+        dialplan_entry['logic'] = data['logic']
+        self.dialplan_xml.append(dialplan_entry)
+
+
+
+class cos():
+
+    domain_uuid=""
+    db = ""
+    dialplan_list = []
+    domain = None
+
+    def __init__(self, domain):
+        if domain.db:
+            self.db = domain.db
+        self.domain_uuid = domain.domain_id
+        self.domain = domain
+
+
+        # Load up some default CoS definitions
+
+        # The default class of service will use the global dialplan within FUSIONPBX
+        # In other words no changes to the Domain dialplan manager
+        cos_default = cos_dialplan()
+        cos_default.name="default"
+        cos_default.dialplan_xml = None
+        self.dialplan_list.append(cos_default)
+
+        # This class of service will disable inbound caller id
+        cos_standard = cos_dialplan()
+        cos_standard.name="standard"
+        entry = {}
+        entry['name'] = "block_caller_id"
+        entry['number'] = ""
+        entry['continue'] = "true"
+        entry['order'] = 700
+        entry['enabled'] = "true"
+        entry['description'] = "Block inbound caller id"
+        entry['hostname'] = ""
+        entry['logic'] = "<extension name=\"local_extension\" continue=\"true\" uuid=\"fbba5244-7453-4390-8976-2c307140529g\"> \
+            <condition field=\"${user_exists}\" expression=\"true\"> \
+               <action application=\"export\" data=\"sip_cid_type=none\"/> \
+               <action application=\"export\" data=\"origination_caller_id_name=Blocked\"/> \
+               <action application=\"export\" data=\"origination_caller_id_number=0000000000\"/> \
+            </condition> \
+            </extension>"
+        cos_standard.add(entry)
+        self.dialplan_list.append(cos_standard)
+
+
+    def create(self, name):
+        psycopg2.extras.register_uuid()
+        dialplan_uuid = uuid.uuid4()
+        app_uuid = uuid.uuid4()
+        cur = self.db.cursor()
+
+        for cos_dp in self.dialplan_list:
+            if cos_dp.name == name:
+                if cos_dp.dialplan_xml == None:
+                    continue
+                for xml in cos_dp.dialplan_xml:
+                    query = "insert into v_dialplans (domain_uuid,dialplan_uuid,app_uuid,dialplan_context, \
+                            dialplan_name,dialplan_number,dialplan_continue,dialplan_order,dialplan_enabled, \
+                            dialplan_description, hostname, dialplan_xml) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+
+
+
+                    values = [self.domain_uuid,dialplan_uuid,app_uuid,self.domain.name, \
+                            xml['name'], xml['number'], xml['continue'], \
+                            xml['order'], xml['enabled'],xml['description'], \
+                            xml['hostname'],xml['logic']]
+
+                    cur.execute(query,values)
+
+                self.db.commit()
+
+        cur.close()
 
 
 class mediaserver():
@@ -49,6 +142,7 @@ class domain():
     enabled = ""
     description = ""
     cos = "" # Class of Service
+    db = None
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
@@ -84,8 +178,16 @@ class domains():
         cur.execute("""insert into v_domains (domain_uuid,domain_name,domain_enabled,domain_description) \
                     values (%s,%s,%s,%s)""",(domain_uuid,data['name'],data['enabled'],data['description']))
         self.db.commit()
-        return domain_uuid
+        d = domain()
+        d.domain_id = domain_uuid
+        d.name = data['name']
+        d.enabled = data['enabled']
+        d.description = data['description']
+        d.db = self.db
+        d.cos = data['cos']
         cur.close()
+        return d
+
 
     def read(self,domain_id=None):
         cur = self.db.cursor()
@@ -152,6 +254,10 @@ class domains():
         pass
 
 
+
+
+
+
 class extension():
 
     extension_id=""
@@ -193,6 +299,7 @@ class extensions():
     def create(self,data):
         psycopg2.extras.register_uuid()
         extension_uuid = uuid.uuid4()
+        voicemail_uuid = uuid.uuid4()
         cur = self.db.cursor()
         cur.execute("""insert into v_extensions (extension_uuid,domain_uuid,extension,password, \
                     user_context,call_timeout,enabled,outbound_caller_id_number, \
@@ -201,6 +308,19 @@ class extensions():
                     (extension_uuid, self.domain_uuid, data.extension, \
                     data.password, self.domain['name'], data.call_timeout, data.enabled, \
                     data.outbound_caller_number,data.outbound_caller_name,data.account_code))
+
+        # Create voicemail box
+        query = "insert into v_voicemails (domain_uuid,voicemail_uuid,voicemail_id, \
+                voicemail_password,greeting_id,voicemail_alternate_greet_id, \
+                voicemail_mail_to,voicemail_sms_to,voicemail_transcription_enabled,voicemail_attach_file, \
+                voicemail_file,voicemail_local_after_email,voicemail_enabled,voicemail_description, \
+                voicemail_name_base64,voicemail_tutorial) \
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) "
+
+        values = [self.domain_uuid,voicemail_uuid, \
+                 data.extension,data.vm_password,None,None,data.vm_notify_email,None,None,None,'attach',"true", data.vm_enabled,None,None,None]
+
+        cur.execute(query,values)
 
         self.db.commit()
         cur.close()

@@ -165,7 +165,7 @@ def getDomains(config_id=None,domain_id=None):
 def postDomains():
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {"name": str, "enabled": bool, "description": str, "config_id": int}
+    VALID_REQUEST_DATA_ARGS = {"name": str, "enabled": bool, "description": str, "config_id": int, "cos": str}
 
     # ensure requred args are provided
     REQUIRED_ARGS = {'name','config_id'}
@@ -194,6 +194,7 @@ def postDomains():
                 raise http_exceptions.BadRequest("Request argument '{}' is required".format(k))
 
         config_id = data['config_id']
+        cos = data['cos'] if 'cos' in data else None
 
         # Create instance of Media Server Class
         if config_id != None:
@@ -204,8 +205,13 @@ def postDomains():
                 mediaserver = plugin.mediaserver(config_info)
                 if mediaserver:
                     domains = plugin.domains(mediaserver)
-                    domain_id = domains.create(data)
-                    response_payload['data'] = {"domain_id": domain_id}
+                    domain = domains.create(data)
+                    #Generate Close of Service
+                    if cos:
+                        cos_object = plugin.cos(domain)
+                        cos_object.create(cos)
+
+                    response_payload['data'] = {"domain_id": domain.domain_id}
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
