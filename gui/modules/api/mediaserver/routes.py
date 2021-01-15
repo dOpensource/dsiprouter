@@ -318,6 +318,7 @@ def deleteDomains():
                 mediaserver = plugin.mediaserver(config_info)
                 if mediaserver:
                     domains = plugin.domains(mediaserver)
+                    # Delete the domain
                     if domains.delete(domain_id):
                         response_payload['msg'] = "Success"
 

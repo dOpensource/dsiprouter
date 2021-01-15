@@ -99,6 +99,16 @@ class cos():
 
         cur.close()
 
+        def delete(self):
+            psycopg2.extras.register_uuid()
+            cur = self.db.cursor()
+
+            cur.execute("""delete from v_dialplans where domain_uuid = %s""",(self.domain_uuid))
+
+            self.db.commit()
+            cur.close()
+            return True
+
 
 class mediaserver():
 
@@ -203,10 +213,12 @@ class domains():
         if rows is not None:
             for row in rows:
                 d = {}
+                d['domain_uuid'] = row[0]
                 d['domain_id'] = row[0]
                 d['name']= row[1]
                 d['enabled'] = row[2]
                 d['description'] = row[3]
+                
 
                 self.domain_list.append(d)
 
@@ -244,8 +256,13 @@ class domains():
         domain_uuid = uuid.uuid4()
         cur = self.db.cursor()
 
-        # Check for Duplicate domains
+        # Delete from domains
         cur.execute("""delete from v_domains where domain_uuid = %s""",(domain_id,))
+
+        # Delete the inbound dialplan for the domain
+        cur.execute("""delete from v_dialplans where domain_uuid = %s""",(domain_id,))
+
+
         self.db.commit()
         cur.close()
         return True
@@ -416,6 +433,7 @@ class extensions():
 
 
         cur.execute("""delete from v_extensions where domain_uuid = %s and extension = %s""",(self.domain_uuid,extension))
+        cur.execute("""delete from v_voicemails where domain_uuid = %s and voicemail_id = %s""",(self.domain_uuid,extension))
         self.db.commit()
         cur.close()
         return True
