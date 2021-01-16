@@ -1797,10 +1797,10 @@ function resetPassword {
     printdbg 'Resetting credentials'
 
     local RESET_DSIP_GUI_PASS=${RESET_DSIP_GUI_PASS:-1}
-    local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-0}
-    local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-0}
-    local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-0}
-    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-0}
+    local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-1}
+    local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-1}
+    local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-1}
+    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-1}
 
     if (( $RESET_DSIP_GUI_PASS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
@@ -1831,10 +1831,9 @@ except:
     pass
 EOF
 
-    if (( $RESET_KAM_DB_PASS == 1 )); then
-        mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
-            -e "update mysql.user set authentication_string=PASSWORD('${KAM_DB_PASS}') where USER='${KAM_DB_USER}';" \
-            -e "flush privileges;"
+    if (( $RESET_KAM_DB_PASS == 1 )); then 
+	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
+            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"    
     fi
 
     # can be hot reloaded while running
