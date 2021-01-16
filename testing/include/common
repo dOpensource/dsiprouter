@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
+DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
+DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
 
 # Ansi Colors
 ESC_SEQ="\033["

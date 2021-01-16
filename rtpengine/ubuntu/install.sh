@@ -88,6 +88,14 @@ function install {
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
+    # Remove RTPEngine kernel module if previously inserted
+    if lsmod | grep 'xt_RTPENGINE'; then
+        rmmod xt_RTPENGINE
+    fi
+    # Load new RTPEngine kernel module
+    depmod -a &&
+    modprobe xt_RTPENGINE
+
     # set the forwarding table for the kernel module
     echo 'add 0' > /proc/rtpengine/control
     iptables -I INPUT -p udp -j RTPENGINE --id 0

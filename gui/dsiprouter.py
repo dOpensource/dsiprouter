@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
+# all of our standard and project file imports
 import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal, bjoern
 from functools import wraps
 from copy import copy

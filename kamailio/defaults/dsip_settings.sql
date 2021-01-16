@@ -1,5 +1,4 @@
--- DB representation of settings.py with following exceptions:
--- LOAD_SETTINGS_FROM: not included in db
+-- DB representation of settings.py with non-db bascked settings left out
 DROP TABLE IF EXISTS dsip_settings;
 /*!40101 SET @saved_cs_client = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
