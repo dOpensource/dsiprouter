@@ -725,7 +725,7 @@ BEGIN
   IF CHAR_LENGTH(NEW.gwlist) > 0 THEN
     SET num_gws := (CHAR_LENGTH(NEW.gwlist) - CHAR_LENGTH(REPLACE(NEW.gwlist, ',', '')) + 1);
 
-    
+
     WHILE gw_index <= num_gws DO
     INSERT IGNORE INTO dsip_gw2gwgroup
     VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(new.gwlist, ',', gw_index), ',', -1), cast(new.id AS char(64)), DEFAULT,
@@ -758,14 +758,14 @@ BEGIN
   DECLARE num_gws int DEFAULT 0;
   DECLARE gw_index int DEFAULT 1;
 
-  
+
   IF NOT (NEW.gwlist <=> OLD.gwlist) THEN
     DELETE FROM dsip_gw2gwgroup WHERE gwgroupid = cast(old.id AS char(64));
 
     IF CHAR_LENGTH(NEW.gwlist) > 0 THEN
       SET num_gws := (CHAR_LENGTH(NEW.gwlist) - CHAR_LENGTH(REPLACE(NEW.gwlist, ',', '')) + 1);
 
-      
+
       WHILE gw_index <= num_gws DO
       INSERT IGNORE INTO dsip_gw2gwgroup
       VALUES (SUBSTRING_INDEX(SUBSTRING_INDEX(new.gwlist, ',', gw_index), ',', -1), cast(new.id AS char(64)), DEFAULT,
@@ -774,7 +774,7 @@ BEGIN
       END WHILE;
     END IF;
 
-    
+
   ELSEIF NOT (NEW.id <=> OLD.id) THEN
     UPDATE dsip_gw2gwgroup SET gwgroupid = cast(new.id AS char(64)) WHERE gwgroupid = cast(old.id AS char(64));
   END IF;
@@ -1170,7 +1170,7 @@ CREATE TABLE `dsip_settings` (
   `FLT_INBOUND` int(11) NOT NULL DEFAULT '9000',
   `FLT_LCR_MIN` int(11) NOT NULL DEFAULT '10000',
   `FLT_FWD_MIN` int(11) NOT NULL DEFAULT '20000',
-  `DOMAIN` varchar(255) NOT NULL DEFAULT 'sip.dsiprouter.org',
+  `DEFAULT_AUTH_DOMAIN` varchar(255) NOT NULL DEFAULT 'sip.dsiprouter.org',
   `TELEBLOCK_GW_ENABLED` int(11) NOT NULL DEFAULT '0',
   `TELEBLOCK_GW_IP` varchar(255) NOT NULL DEFAULT '62.34.24.22',
   `TELEBLOCK_GW_PORT` varchar(255) NOT NULL DEFAULT '5066',

@@ -156,7 +156,7 @@
   float: left;
   display: block;
   left: 0;
-  height: 900px;
+  height: 2000px;
 }
 
 .wrap .content {
@@ -172,6 +172,8 @@
 .wrap .content .top-bar {
   height: 45px;
   background: #ddd;
+  border: 1px solid transparent;
+  overflow: hidden;
 }
 
 .wrap .content .content-inner {
@@ -180,7 +182,7 @@
   background: #fff;
   display: block;
   position: absolute;
-  height: 900px;
+  height: 2000px;
   width: 100%;
 }
 
@@ -589,6 +591,10 @@ a.navlink {
   cursor: pointer;
   line-height: inherit;
   top: inherit;
+}
+
+.submit-form-btn.submit-form-btn {
+  width: 100%;
 }
 
 /* force dataTables to use full table width */

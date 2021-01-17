@@ -1,0 +1,249 @@
+.\" Process this file with
+.\" groff -man -Tascii dsiprouter.1
+.\"
+.TH DSIPROUTER 1 "JANUARY 2021" Linux "User Manuals"
+.SH NAME
+dsiprouter \- executes useful commands for dSIPRouter to help make the process more simple. 
+.SH SYNOPSIS
+.B dsiprouter {COMMAND} [OPTIONS]
+.SH DESCRIPTION
+.B dSIPRouter allows you to quickly turn Kamailio into an easy to use SIP Service Provider platform.
+.SH COMMAND
+.IP install
+Installs dSIPRouter and related components as specified.
+.IP uninstall
+Uninstall dSIPRouter.
+.IP start
+Starts dSIPRouter.
+.IP stop
+Stops dSIPRouter from running.
+.IP restart
+Restarts dSIPRouter after a stop.
+.IP configurekam
+Reconfigures the Kamailio configuration file based on dSIPRouter Settings.
+.IP renewsslcert
+Renew configured letsencrypt SSL certificate.
+.IP installmodules
+Install / uninstall dSIProuter modules.
+.IP enableservernat
+Enable Server NAT.
+.IP disableservernat
+Disable Server NAT.
+.IP resetpassword
+Generate new random dSIPRouter admin account password.
+.IP setcredentials
+Set various credentials manually.
+.IP setkamdbconfig
+Set Kamailio’s database connection URI.
+.IP generatekamconfig
+Generate fresh Kamailio config for dSIPRouter from the template.
+.IP updatekamconfig
+Update Kamailio config with dynamic values.
+.IP updatertpconfig
+Update RTPEngine config with dynamic values.
+.IP updatednsconfig
+Update DNSmasq config with dynamic values.
+.IP version
+Show dSIPRouter version.
+.IP help
+List all of the options.
+.SH OPTIONS
+.IP "install options"
+-debug
+Debug mode to display install step by step.
+
+-servernat
+Used to install only servernat.
+
+-all|--all
+Used to install everything. 
+
+-kam|--kamailio
+Used to install only kamailio.
+
+-dsip|--dsiprouter
+Used to install only dsiprouter.
+
+-rtp|--rtpengine
+Used to install only rtpengine.
+
+-exip <ip>|--external-ip=<ip>
+Used to install external ip.
+
+-db <db conn uri>|--database=<db conn uri>
+Used to install the database connection uri.
+
+-dsipcid <num>|--dsip-clusterid=<num>
+Used to install the dsiprouter cluster id.
+
+-dsipcsync <num>|--dsip-clustersync=<num>
+Used to install the dsiprouter cluster sync
+
+-dsipkey <32 chars>|--dsip-privkey=<32 chars>
+Used to install the dsiprouter private key.
+
+-with_lcr|--with_lcr=<num>
+Used to install least-cost routing.
+
+-with_dev|--with_dev=<num>
+Used to install dev.
+.IP "uninstall options"
+-debug
+Debug mode to display uninstall step by step.
+
+-all|--all
+Used to uninstall everything. 
+
+-kam|--kamailio
+Used to uninstall only kamailio.
+
+-dsip|--dsiprouter
+Used to uninstall only dsiprouter.
+
+-rtp|--rtpengine
+Used to uninstall only rtpengine.
+.IP "upgrade options" 
+-debug
+Debug mode to display upgrade step by step.
+
+-rel|--release <release number>
+Used to upgrade release number.
+.IP "clusterinstall options" 
+-debug
+Debug mode to display install step by step.
+
+<[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2>...--[<install options>]
+Used to set credentials and install option for clustre install.
+.IP "stop options"
+-debug
+Debug mode to display stopping step by step.
+
+-all|--all
+Used to stop everything. 
+
+-kam|--kamailio
+Used to stop only kamailio.
+
+-dsip|--dsiprouter
+Used to stop only dsiprouter.
+
+-rtp|--rtpengine
+Used to stop only rtpengine.
+.IP "restart options"
+-debug
+Debug mode to display restarting step by step.
+
+-all|--all
+Used to restart everything. 
+
+-kam|--kamailio
+Used to restart only kamailio.
+
+-dsip|--dsiprouter
+Used to restart only dsiprouter.
+
+-rtp|--rtpengine
+Used to restart only rtpengine.
+.IP "configurekam options"
+-debug
+Debug mode to display configuring kamailio step by step.
+
+-servernat
+Used to configure servernat for kamailio.
+.IP "renewsslcert options"
+-debug
+Debug mode to display renewing ssl certificate step by step.
+.IP "configuresslcert options"
+-debug
+Debug mode to display configuring ssl certificate step by step.
+
+-f|--force
+Used to force the ssl certificate to configure.
+.IP "installmodules options"
+-debug
+Debug mode to display installing modules step by step.
+.IP "enableservernat options"
+-debug
+Debug mode to display enabling servernat step by step.
+.IP "disableservernat options"
+-debug
+Debug mode to display disabling servernat step by step.
+.IP "resetpassword options"
+-debug
+Debug mode to display resetting password step by step.
+
+-all|--all
+Used to reset all passwords.
+
+-dc|--dsip-creds
+Used to reset dsiprouter gui password.
+
+-ac|--api-creds
+Used to reset api password.
+
+-kc|--kam-creds
+Used to reset kamailio password.
+
+-ic|--ipc-creds
+Used to reset ipc password.
+
+-fid|--force-instance-id
+Used to force a reset on the instance id.
+.IP "setcredentials options"
+-debug
+Debug mode to display setting credentials step by step.
+
+-du <user>|--dsip-user=<user>
+Used to set dSIPRouter user name manually.
+
+-dc <pass>|--dsip-creds=<pass>
+Used to set dSIPRouter password manually.
+
+-ac <token>|--api-creds=<token>
+Used to set the api token manually.
+
+-ku <user>|--kam-user=<user>
+Used to set kamailio user name manually.
+
+-kc <pass>|--kam-creds=<pass>
+Used to set kamalio password manually.
+
+-mu <user>|--mail-user=<user>
+Used to set mail user name manually.
+
+-mc <pass>|--mail-creds=<pass>
+Used to set mail password manually.
+
+-ic <pass>|--ipc-creds=<pass>
+Used to set the ipc password manually.
+.IP "setkamdbconfig options"
+-debug
+Debug mode to display setting kamaliio's database configurations step by step.
+
+<[user[:pass]@]dbhost[:port][/dbname]>
+Used to set the credentials and database host name and port number for the kamailio database.
+.IP "generatekamconfig options"
+-debug
+Debug mode to display generating kamaliio's configurations step by step.
+.IP "updatekamconfig options"
+-debug
+Debug mode to display updating kamaliio's configurations step by step.
+.IP "updatertpconfig options"
+-debug
+Debug mode to display updating rtpengine's configurations step by step.
+
+-servernat
+Used to update the rtpengine to support server nat.
+.IP "updatednsconfig options"
+-debug
+Debug mode to display updating DNSmasq's configurations step by step.   
+.IP "version options"
+-v|--version
+Used to display the dSIPRouter version. 
+.IP "help options"
+-h|--help
+Used to list all of the options.
+.SH BUGS
+Report to Github Issues: https://github.com/dOpensource/dsiprouter.git
+.SH AUTHOR
+dOpenSource/dSIPRouter 

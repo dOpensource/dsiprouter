@@ -5,7 +5,67 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3
+9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe
+8871255c04351ed846eda1ecbdada488c32b6d38
+4d2d5345c335af336b00653a4b8f727bac942837
+4ffe5caab5d0835e7783d7c552b03c4b55d15524
+1b213a4b393285804fb16547590ff56e8f573544
+f34291c8c07d1a11226e6d0d6261b32954cb4779
+b2facf0143258ffabd83998501dc324ea0d70b2e
+056aa54a151d5dd84b0dbba14764dd9689db4bb4
+ef947db13678ba04d0871075388ce2ddbd29d3e8
+b94d77600ff45d7546888426cab34a326f0c4d45
+e36f27762b584aace9c899de266e8a9e9cfcd4a6
+c5a6ef31fab26d2bd21351959a0527bde9540736
+257da44dfc069b910558e7fdc365ca204e44f9a0
+1957202b3c57103ff6a2ecf9dba1b7caa59741ec
+24d2dd3c20990f6c38362e96cd31b7905ed72c60
+e7c81b1ddb71e72ae3f9fbe77c3447020240e308
+59d25e84e0d747cb7e8fd10cd60df6689fe0b3bc
+f80ef93a71dff7ae697bff7264a3cebf74c28163
+f4a00e67519f6fbd9399db44a880634489676e5e
+537136db933b369ff0dadd0a35b0f8483fd1f5dc
+7ddc87fff9a6e124d2ccb1ec772352c4932446f9
+48df26485429a3c1e785dfa82a1d64a4f3adda73
+0dc523c62986c94ec14f59cf522b4d539420f5f5
+646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4
+191cbc48d3813ccbf1d12681fe1084fab3c36696
+a77d93c7735658c3a04a7b6650607bb126ee2b53
+b72dc72adcf40fb62553db673ff70eef39220c96
+17f2e8702863666dd08403219099347711724310
+8f0d229dd89916ebe800228e94518a6ff2beda3f
+c92729b89c5365414978f70453704d099e491eb9
+eff1a89624a28f73f080b92d3569a746933518b0
+b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d
+32581310a59093e773751cd4753a3e156e89e7e8
+33535467399804add0ea69b5e7faf71c695014be
+21798511e6d33e40efea39d6ab68c640693e81cb
+886a9550c56d9317dd85494e1719a3229348fb3d
+d877f331b9bc248b9880c2edb099104cea420fac
+d585223c6a69512f4cb56d522d460296599a69e6
+2a2131710df199e88189091ab16f307bb1089988
+7da872d4edc18917deeedc4dde12f9bbe57a500d
+025e5ec18575f08d2306a2c9ca99cc87981e9ee9
+e809c5c57ffdf627915db95e5f94e895f90291bb
+3db150d5c0f6dd107902b3656026e18711f7b959
+2371850c27408aea29c0e98b792db5b548a32eb9
+03493c243c12f606f1a5716841c2e7eb4185f32c
+916e120ec3bbf7ea7089e93b8386b0facf00c4a0
+76c7c679a947122e08cc5985623bbefbeb0681c7
+085931328e9be893c65b674c9e491924afa88ca4
+14d26b51fa983c686b95a60afdfb145ea61c1bef
+cff105fd47bada8ce5bafe07a5e6f85ac2b8579e
+85874fade92d329fb0f6d7f824e06035f83eee97
+681a80c258d2011826c12d52874924843f17728e
+9fc1b9c95e1c930caa9a711477e29f8ac94f8534
+78bb2e6ffb5d7e3d4d78ef3128bddb5f1f83104f
+f74db4f6542d0f008fef614440e195ff724a7879
+a409f4049744053e5958ea885b5d68524f15c6c4
+d182417156ac4af142138abe951aefd6dea35259
+9e45548eef592b97967607829e844913b6ced577
+86f9fc51b25f749858999ded032aebda17e7aa14
+24a5c2115889e874b9c95a9ca1ffc59c80932d13
+3333a6ec58d3c2530f33cf8132c18862c29d74ce
 702a0ac1811870197e64aa3dbaa04b9d9afea29f
 349e8b733e16eebb7ed693ff5bc0588a3b12cce4
 04f2417b5cdc29bc08e217f8bf6f2a0cf07fa3a8
@@ -74,10 +134,15 @@ e7e33f0ca3224bab3d75b40cdce93d3da36ccac6
 ed99fde349f38f1f1f5250ff4d9a02faecab9c3b
 b3f1701f70ea9a610e81a4bc08fa5e1ff3ac9a93
 220ec7f1827267091059abd467b88137e717ad94
+81a951367ee99d623c35d9ecad79e57cc24869c0
+52a4b5eb30342d16b5272d769b033ad90cd4d196
 8976863ab2f8aee31a6222a0010e62d9b08a3be2
 2ebaca3cb6894916c37e7746e7f9b4c95473cbe0
 e3673ab836946e34bc759df32499a89bad460878
+5387bc1373db5438e5a06c0c81b80ab717398163
 aa88b8fc61ed0bac537901196b0a7b7fedc79ad4
+1693e7fa706fe6c8bb414712ace18f90b86c3585
+662ef335d84401bb58c2cefcd88b41533e359a1d
 2c71440a60bee65291c6a88981857eb86279d958
 3525c446bb0056b05fe6745085ead8ba106403af
 02e128e74c941b83c3f8c1aea14c1387070c1393
@@ -110,6 +175,8 @@ ebea34b830e20160c547ee399b0a89a42528354d
 5292d8fdc00d79026d1ce6e3a08245308f8d60d5
 d26de7235ab9db2370396b262cdb604814aafde9
 a2296b5a2bde683ee4d11558e583777fb3e24f23
+514a3ed75f3c8497c6dc15550d1f25ccf79c1734
+1a9f29175a7be590bf6e9af55961cfc1450b3f62
 8f9a792030bebbd18185c86bacafb1e134b34841
 02fc3dc6e85b78e87f8262532ce8dde6c10cdcba
 035535dd27f4661db5b130576828a4dae9246175
@@ -1777,10 +1844,975 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)
+[//]: # (START_SECTION 9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe)
+### V0.641 Bug Fixes
+
+> Commit: [9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe](https://github.com/dOpensource/dsiprouter/commit/9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe)  
+> Date: Thu, 14 Jan 2021 17:47:38 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix various typos
+- fix defaults in kamcfg and settings.py
+- update settings.py to be generated on install
+- update documentation to use new settings.py path
+- update contributing guide to address settings change
+- update tests to use new settings location
+- force gzip to overwrite man pages if already created
+- add missing Vultr check for image build
+- fix reset passwords not being re-exported
+- fix error message on sync signal when dsiprouter not running
+- update rtpengine version (compilation issues on debian w/ current)
+- add rtpengine kernel module check to debian-based scripts
+
+
+---
+
+[//]: # (END_SECTION 9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe)
+[//]: # (START_SECTION 8871255c04351ed846eda1ecbdada488c32b6d38)
+### update to match some of our conventions
+
+> Commit: [8871255c04351ed846eda1ecbdada488c32b6d38](https://github.com/dOpensource/dsiprouter/commit/8871255c04351ed846eda1ecbdada488c32b6d38)  
+> Date: Wed, 13 Jan 2021 17:49:00 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- just some prep for merge
+
+
+---
+
+[//]: # (END_SECTION 8871255c04351ed846eda1ecbdada488c32b6d38)
+[//]: # (START_SECTION 4d2d5345c335af336b00653a4b8f727bac942837)
+### Update dsiprouter.sh
+
+> Commit: [4d2d5345c335af336b00653a4b8f727bac942837](https://github.com/dOpensource/dsiprouter/commit/4d2d5345c335af336b00653a4b8f727bac942837)  
+> Date: Wed, 13 Jan 2021 16:59:30 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4d2d5345c335af336b00653a4b8f727bac942837)
+[//]: # (START_SECTION 4ffe5caab5d0835e7783d7c552b03c4b55d15524)
+### Update dsiprouter.sh
+
+> Commit: [4ffe5caab5d0835e7783d7c552b03c4b55d15524](https://github.com/dOpensource/dsiprouter/commit/4ffe5caab5d0835e7783d7c552b03c4b55d15524)  
+> Date: Wed, 13 Jan 2021 16:56:52 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4ffe5caab5d0835e7783d7c552b03c4b55d15524)
+[//]: # (START_SECTION 1b213a4b393285804fb16547590ff56e8f573544)
+### Update dsiprouter.sh
+
+> Commit: [1b213a4b393285804fb16547590ff56e8f573544](https://github.com/dOpensource/dsiprouter/commit/1b213a4b393285804fb16547590ff56e8f573544)  
+> Date: Mon, 11 Jan 2021 20:33:11 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1b213a4b393285804fb16547590ff56e8f573544)
+[//]: # (START_SECTION f34291c8c07d1a11226e6d0d6261b32954cb4779)
+### Fixed db host name character issue
+
+> Commit: [f34291c8c07d1a11226e6d0d6261b32954cb4779](https://github.com/dOpensource/dsiprouter/commit/f34291c8c07d1a11226e6d0d6261b32954cb4779)  
+> Date: Mon, 11 Jan 2021 12:49:51 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f34291c8c07d1a11226e6d0d6261b32954cb4779)
+[//]: # (START_SECTION b2facf0143258ffabd83998501dc324ea0d70b2e)
+### Update dsiprouter.sh
+
+> Commit: [b2facf0143258ffabd83998501dc324ea0d70b2e](https://github.com/dOpensource/dsiprouter/commit/b2facf0143258ffabd83998501dc324ea0d70b2e)  
+> Date: Mon, 11 Jan 2021 11:30:17 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b2facf0143258ffabd83998501dc324ea0d70b2e)
+[//]: # (START_SECTION 056aa54a151d5dd84b0dbba14764dd9689db4bb4)
+### Update dsiprouter.sh
+
+> Commit: [056aa54a151d5dd84b0dbba14764dd9689db4bb4](https://github.com/dOpensource/dsiprouter/commit/056aa54a151d5dd84b0dbba14764dd9689db4bb4)  
+> Date: Mon, 11 Jan 2021 11:27:23 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 056aa54a151d5dd84b0dbba14764dd9689db4bb4)
+[//]: # (START_SECTION ef947db13678ba04d0871075388ce2ddbd29d3e8)
+### Update dsiprouter.sh
+
+> Commit: [ef947db13678ba04d0871075388ce2ddbd29d3e8](https://github.com/dOpensource/dsiprouter/commit/ef947db13678ba04d0871075388ce2ddbd29d3e8)  
+> Date: Mon, 11 Jan 2021 11:05:04 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ef947db13678ba04d0871075388ce2ddbd29d3e8)
+[//]: # (START_SECTION b94d77600ff45d7546888426cab34a326f0c4d45)
+### Update dsiprouter.sh
+
+> Commit: [b94d77600ff45d7546888426cab34a326f0c4d45](https://github.com/dOpensource/dsiprouter/commit/b94d77600ff45d7546888426cab34a326f0c4d45)  
+> Date: Mon, 11 Jan 2021 11:01:34 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b94d77600ff45d7546888426cab34a326f0c4d45)
+[//]: # (START_SECTION e36f27762b584aace9c899de266e8a9e9cfcd4a6)
+### Update dsiprouter.sh
+
+> Commit: [e36f27762b584aace9c899de266e8a9e9cfcd4a6](https://github.com/dOpensource/dsiprouter/commit/e36f27762b584aace9c899de266e8a9e9cfcd4a6)  
+> Date: Mon, 11 Jan 2021 10:54:19 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e36f27762b584aace9c899de266e8a9e9cfcd4a6)
+[//]: # (START_SECTION c5a6ef31fab26d2bd21351959a0527bde9540736)
+### Update dsiprouter.1
+
+> Commit: [c5a6ef31fab26d2bd21351959a0527bde9540736](https://github.com/dOpensource/dsiprouter/commit/c5a6ef31fab26d2bd21351959a0527bde9540736)  
+> Date: Sat, 9 Jan 2021 12:38:13 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c5a6ef31fab26d2bd21351959a0527bde9540736)
+[//]: # (START_SECTION 257da44dfc069b910558e7fdc365ca204e44f9a0)
+### Update dsiprouter.sh
+
+> Commit: [257da44dfc069b910558e7fdc365ca204e44f9a0](https://github.com/dOpensource/dsiprouter/commit/257da44dfc069b910558e7fdc365ca204e44f9a0)  
+> Date: Sat, 9 Jan 2021 12:29:27 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 257da44dfc069b910558e7fdc365ca204e44f9a0)
+[//]: # (START_SECTION 1957202b3c57103ff6a2ecf9dba1b7caa59741ec)
+### Create dsiprouter.1
+
+> Commit: [1957202b3c57103ff6a2ecf9dba1b7caa59741ec](https://github.com/dOpensource/dsiprouter/commit/1957202b3c57103ff6a2ecf9dba1b7caa59741ec)  
+> Date: Sat, 9 Jan 2021 12:25:23 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1957202b3c57103ff6a2ecf9dba1b7caa59741ec)
+[//]: # (START_SECTION 24d2dd3c20990f6c38362e96cd31b7905ed72c60)
+### Set the setting.py file back to the defaults
+
+> Commit: [24d2dd3c20990f6c38362e96cd31b7905ed72c60](https://github.com/dOpensource/dsiprouter/commit/24d2dd3c20990f6c38362e96cd31b7905ed72c60)  
+> Date: Tue, 5 Jan 2021 03:26:02 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 24d2dd3c20990f6c38362e96cd31b7905ed72c60)
+[//]: # (START_SECTION e7c81b1ddb71e72ae3f9fbe77c3447020240e308)
+### Fixed an issue that prevented the credentials from being set when installing dSIP
+
+> Commit: [e7c81b1ddb71e72ae3f9fbe77c3447020240e308](https://github.com/dOpensource/dsiprouter/commit/e7c81b1ddb71e72ae3f9fbe77c3447020240e308)  
+> Date: Tue, 5 Jan 2021 03:24:10 +0000  
+> Author: root (root@sbc4.customers.dsiprouter.net)  
+> Committer: root (root@sbc4.customers.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e7c81b1ddb71e72ae3f9fbe77c3447020240e308)
+[//]: # (START_SECTION 59d25e84e0d747cb7e8fd10cd60df6689fe0b3bc)
+### Disabld Fraud Detection module
+
+> Commit: [59d25e84e0d747cb7e8fd10cd60df6689fe0b3bc](https://github.com/dOpensource/dsiprouter/commit/59d25e84e0d747cb7e8fd10cd60df6689fe0b3bc)  
+> Date: Mon, 4 Jan 2021 22:14:44 +0000  
+> Author: root (root@sbc4.customers.dsiprouter.net)  
+> Committer: root (root@sbc4.customers.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 59d25e84e0d747cb7e8fd10cd60df6689fe0b3bc)
+[//]: # (START_SECTION f80ef93a71dff7ae697bff7264a3cebf74c28163)
+### Fixes For Remote DB Configuration
+
+> Commit: [f80ef93a71dff7ae697bff7264a3cebf74c28163](https://github.com/dOpensource/dsiprouter/commit/f80ef93a71dff7ae697bff7264a3cebf74c28163)  
+> Date: Wed, 30 Dec 2020 23:58:05 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- # WIP for #326
+- # WIP for #307
+- add dsip version to kam Server header
+- remove `setkamdbconfig` command
+- update `setcredentials` command w/ root DB support
+- update `install` command w/ root DB support
+- change `DOMAIN` in `settings.py` to `DEFAULT_AUTH_DOMAIN`
+- fix root db access for dsip module installation
+- fix root db access on other CLI commands after install
+- move mysql install to before kamailio install
+- various command parsing improvements
+- renaming and better formatting for script variables
+- add rootdb credntial support to `security.setCreds()`
+- add some DB interfacing functions to `dsip_lib.sh`
+
+
+---
+
+[//]: # (END_SECTION f80ef93a71dff7ae697bff7264a3cebf74c28163)
+[//]: # (START_SECTION f4a00e67519f6fbd9399db44a880634489676e5e)
+### Fixed
+
+> Commit: [f4a00e67519f6fbd9399db44a880634489676e5e](https://github.com/dOpensource/dsiprouter/commit/f4a00e67519f6fbd9399db44a880634489676e5e)  
+> Date: Wed, 30 Dec 2020 21:36:30 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f4a00e67519f6fbd9399db44a880634489676e5e)
+[//]: # (START_SECTION 537136db933b369ff0dadd0a35b0f8483fd1f5dc)
+### Fixed Issue #292 - Changed the logic to check the status of MSTeams Option Messages using kamcmd to using the local Kamailio API endpoint
+
+> Commit: [537136db933b369ff0dadd0a35b0f8483fd1f5dc](https://github.com/dOpensource/dsiprouter/commit/537136db933b369ff0dadd0a35b0f8483fd1f5dc)  
+> Date: Wed, 30 Dec 2020 21:20:54 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 537136db933b369ff0dadd0a35b0f8483fd1f5dc)
+[//]: # (START_SECTION 7ddc87fff9a6e124d2ccb1ec772352c4932446f9)
+### Update Location Routing
+
+> Commit: [7ddc87fff9a6e124d2ccb1ec772352c4932446f9](https://github.com/dOpensource/dsiprouter/commit/7ddc87fff9a6e124d2ccb1ec772352c4932446f9)  
+> Date: Wed, 23 Dec 2020 11:18:34 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add check for request domain for non-compliant UA's
+
+
+---
+
+[//]: # (END_SECTION 7ddc87fff9a6e124d2ccb1ec772352c4932446f9)
+[//]: # (START_SECTION 48df26485429a3c1e785dfa82a1d64a4f3adda73)
+### Fixed DO Name Error In Terraform
+
+> Commit: [48df26485429a3c1e785dfa82a1d64a4f3adda73](https://github.com/dOpensource/dsiprouter/commit/48df26485429a3c1e785dfa82a1d64a4f3adda73)  
+> Date: Wed, 23 Dec 2020 10:25:20 -0500  
+> Author: Richard Bolaji (56362787+RichSosa28@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 48df26485429a3c1e785dfa82a1d64a4f3adda73)
+[//]: # (START_SECTION 0dc523c62986c94ec14f59cf522b4d539420f5f5)
+### Fix Typo In Location Route
+
+> Commit: [0dc523c62986c94ec14f59cf522b4d539420f5f5](https://github.com/dOpensource/dsiprouter/commit/0dc523c62986c94ec14f59cf522b4d539420f5f5)  
+> Date: Tue, 22 Dec 2020 14:33:50 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- change location routing to use from domain
+
+
+---
+
+[//]: # (END_SECTION 0dc523c62986c94ec14f59cf522b4d539420f5f5)
+[//]: # (START_SECTION 646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4)
+### Fix Record Routing For SERVERNAT
+
+> Commit: [646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4](https://github.com/dOpensource/dsiprouter/commit/646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4)  
+> Date: Tue, 22 Dec 2020 10:46:00 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix NAT translation in record routes
+- remove extraneous file `script.sh`
+
+
+---
+
+[//]: # (END_SECTION 646167fb8dc29f3b080ddcf112b5e75dfbdbb9f4)
+[//]: # (START_SECTION 191cbc48d3813ccbf1d12681fe1084fab3c36696)
+### Fixed issue with certificate permissions
+
+> Commit: [191cbc48d3813ccbf1d12681fe1084fab3c36696](https://github.com/dOpensource/dsiprouter/commit/191cbc48d3813ccbf1d12681fe1084fab3c36696)  
+> Date: Mon, 21 Dec 2020 18:27:08 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 191cbc48d3813ccbf1d12681fe1084fab3c36696)
+[//]: # (START_SECTION a77d93c7735658c3a04a7b6650607bb126ee2b53)
+### Fixed an issue that prevented the Endpoint Group name from being presented in the Inbound Mapping page
+
+> Commit: [a77d93c7735658c3a04a7b6650607bb126ee2b53](https://github.com/dOpensource/dsiprouter/commit/a77d93c7735658c3a04a7b6650607bb126ee2b53)  
+> Date: Wed, 16 Dec 2020 17:34:22 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a77d93c7735658c3a04a7b6650607bb126ee2b53)
+[//]: # (START_SECTION b72dc72adcf40fb62553db673ff70eef39220c96)
+### Fixed logic for handling inbound calling thats routing to a DISPATCHER set
+
+> Commit: [b72dc72adcf40fb62553db673ff70eef39220c96](https://github.com/dOpensource/dsiprouter/commit/b72dc72adcf40fb62553db673ff70eef39220c96)  
+> Date: Wed, 16 Dec 2020 11:25:34 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b72dc72adcf40fb62553db673ff70eef39220c96)
+[//]: # (START_SECTION 17f2e8702863666dd08403219099347711724310)
+### FusionPBX Sync Support - Added cluster support to FusionPBX sync
+
+> Commit: [17f2e8702863666dd08403219099347711724310](https://github.com/dOpensource/dsiprouter/commit/17f2e8702863666dd08403219099347711724310)  
+> Date: Tue, 15 Dec 2020 18:09:12 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 17f2e8702863666dd08403219099347711724310)
+[//]: # (START_SECTION 8f0d229dd89916ebe800228e94518a6ff2beda3f)
+### Fixes issue #53 amd #297
+
+> Commit: [8f0d229dd89916ebe800228e94518a6ff2beda3f](https://github.com/dOpensource/dsiprouter/commit/8f0d229dd89916ebe800228e94518a6ff2beda3f)  
+> Date: Tue, 15 Dec 2020 12:08:26 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8f0d229dd89916ebe800228e94518a6ff2beda3f)
+[//]: # (START_SECTION c92729b89c5365414978f70453704d099e491eb9)
+### Key / Certificate Handling Updates
+
+> Commit: [c92729b89c5365414978f70453704d099e491eb9](https://github.com/dOpensource/dsiprouter/commit/c92729b89c5365414978f70453704d099e491eb9)  
+> Date: Wed, 9 Dec 2020 18:50:08 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #314
+- fix fusionpbx sync not deleting old domains
+- fix host:port parsing on fusionpbx sync
+- add certificate detection on upload
+- add cert / key handling utility functions
+- add cert / key validation on upload
+- change default key / cert naming convention
+- add `DSIP_SSL_CA` parameter to modifiable settings
+- fix subscriber delete DB error on contact expiration
+- update default key lengths to be more secure
+- update cert generation to use correct permissions
+- fixup namespace clobbering in `api_routes.py`
+- remove option to disable SSL on install
+- fix nginx not starting on debug startup
+- fix some misc path names
+
+
+---
+
+[//]: # (END_SECTION c92729b89c5365414978f70453704d099e491eb9)
+[//]: # (START_SECTION eff1a89624a28f73f080b92d3569a746933518b0)
+### Fixed - Updated and deleting from Endpoint Groups that contain Weights
+
+> Commit: [eff1a89624a28f73f080b92d3569a746933518b0](https://github.com/dOpensource/dsiprouter/commit/eff1a89624a28f73f080b92d3569a746933518b0)  
+> Date: Wed, 9 Dec 2020 22:56:48 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION eff1a89624a28f73f080b92d3569a746933518b0)
+[//]: # (START_SECTION b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d)
+### Restructured Terraform Configuration
+
+> Commit: [b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d](https://github.com/dOpensource/dsiprouter/commit/b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d)  
+> Date: Tue, 8 Dec 2020 09:49:27 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b52e1ef20efd0bae3bb2749d28ce01bc59f8c84d)
+[//]: # (START_SECTION 32581310a59093e773751cd4753a3e156e89e7e8)
+### Fixed Inbound Mapping to allow FusionPBX Load Balancing
+
+> Commit: [32581310a59093e773751cd4753a3e156e89e7e8](https://github.com/dOpensource/dsiprouter/commit/32581310a59093e773751cd4753a3e156e89e7e8)  
+> Date: Mon, 7 Dec 2020 19:38:19 +0000  
+> Author: root (root@mack-dsip-deb10.dsiprouter.org)  
+> Committer: root (root@mack-dsip-deb10.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 32581310a59093e773751cd4753a3e156e89e7e8)
+[//]: # (START_SECTION 33535467399804add0ea69b5e7faf71c695014be)
+### v0.641 Bug Fixes
+
+> Commit: [33535467399804add0ea69b5e7faf71c695014be](https://github.com/dOpensource/dsiprouter/commit/33535467399804add0ea69b5e7faf71c695014be)  
+> Date: Mon, 7 Dec 2020 10:47:54 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Fixes [#310](https://github.com/dOpensource/dsiprouter/issues/310)
+- fix DNID enrichment enabled before tables installed
+- enable DMQ by default
+- increase external IP resolution timeout
+- add libwebsockets-dev dependency for next release of RTPENGINE
+- fix permissions issues with certificate upload
+
+
+---
+
+[//]: # (END_SECTION 33535467399804add0ea69b5e7faf71c695014be)
+[//]: # (START_SECTION 21798511e6d33e40efea39d6ab68c640693e81cb)
+### Updated the Endpoint Group and Inbound Mapping sections with more specific detail on how to use the new features
+
+> Commit: [21798511e6d33e40efea39d6ab68c640693e81cb](https://github.com/dOpensource/dsiprouter/commit/21798511e6d33e40efea39d6ab68c640693e81cb)  
+> Date: Sat, 5 Dec 2020 09:04:26 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 21798511e6d33e40efea39d6ab68c640693e81cb)
+[//]: # (START_SECTION 886a9550c56d9317dd85494e1719a3229348fb3d)
+### Updated doc's
+
+> Commit: [886a9550c56d9317dd85494e1719a3229348fb3d](https://github.com/dOpensource/dsiprouter/commit/886a9550c56d9317dd85494e1719a3229348fb3d)  
+> Date: Fri, 4 Dec 2020 12:31:22 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 886a9550c56d9317dd85494e1719a3229348fb3d)
+[//]: # (START_SECTION d877f331b9bc248b9880c2edb099104cea420fac)
+### Update conf.py
+
+> Commit: [d877f331b9bc248b9880c2edb099104cea420fac](https://github.com/dOpensource/dsiprouter/commit/d877f331b9bc248b9880c2edb099104cea420fac)  
+> Date: Fri, 4 Dec 2020 08:31:30 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d877f331b9bc248b9880c2edb099104cea420fac)
+[//]: # (START_SECTION d585223c6a69512f4cb56d522d460296599a69e6)
+### Update conf.py
+
+> Commit: [d585223c6a69512f4cb56d522d460296599a69e6](https://github.com/dOpensource/dsiprouter/commit/d585223c6a69512f4cb56d522d460296599a69e6)  
+> Date: Fri, 4 Dec 2020 08:28:36 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d585223c6a69512f4cb56d522d460296599a69e6)
+[//]: # (START_SECTION 2a2131710df199e88189091ab16f307bb1089988)
+### Update conf.py
+
+> Commit: [2a2131710df199e88189091ab16f307bb1089988](https://github.com/dOpensource/dsiprouter/commit/2a2131710df199e88189091ab16f307bb1089988)  
+> Date: Fri, 4 Dec 2020 07:21:15 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2a2131710df199e88189091ab16f307bb1089988)
+[//]: # (START_SECTION 7da872d4edc18917deeedc4dde12f9bbe57a500d)
+### Update .readthedocs.yml
+
+> Commit: [7da872d4edc18917deeedc4dde12f9bbe57a500d](https://github.com/dOpensource/dsiprouter/commit/7da872d4edc18917deeedc4dde12f9bbe57a500d)  
+> Date: Fri, 4 Dec 2020 07:07:46 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7da872d4edc18917deeedc4dde12f9bbe57a500d)
+[//]: # (START_SECTION 025e5ec18575f08d2306a2c9ca99cc87981e9ee9)
+### Create conf.py
+
+> Commit: [025e5ec18575f08d2306a2c9ca99cc87981e9ee9](https://github.com/dOpensource/dsiprouter/commit/025e5ec18575f08d2306a2c9ca99cc87981e9ee9)  
+> Date: Thu, 3 Dec 2020 19:05:46 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 025e5ec18575f08d2306a2c9ca99cc87981e9ee9)
+[//]: # (START_SECTION e809c5c57ffdf627915db95e5f94e895f90291bb)
+### Update .readthedocs.yml
+
+> Commit: [e809c5c57ffdf627915db95e5f94e895f90291bb](https://github.com/dOpensource/dsiprouter/commit/e809c5c57ffdf627915db95e5f94e895f90291bb)  
+> Date: Thu, 3 Dec 2020 19:04:58 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e809c5c57ffdf627915db95e5f94e895f90291bb)
+[//]: # (START_SECTION 3db150d5c0f6dd107902b3656026e18711f7b959)
+### Update .readthedocs.yml
+
+> Commit: [3db150d5c0f6dd107902b3656026e18711f7b959](https://github.com/dOpensource/dsiprouter/commit/3db150d5c0f6dd107902b3656026e18711f7b959)  
+> Date: Thu, 3 Dec 2020 19:00:54 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3db150d5c0f6dd107902b3656026e18711f7b959)
+[//]: # (START_SECTION 2371850c27408aea29c0e98b792db5b548a32eb9)
+### Update .readthedocs.yml
+
+> Commit: [2371850c27408aea29c0e98b792db5b548a32eb9](https://github.com/dOpensource/dsiprouter/commit/2371850c27408aea29c0e98b792db5b548a32eb9)  
+> Date: Thu, 3 Dec 2020 18:40:44 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2371850c27408aea29c0e98b792db5b548a32eb9)
+[//]: # (START_SECTION 03493c243c12f606f1a5716841c2e7eb4185f32c)
+### Delete requirements.txt
+
+> Commit: [03493c243c12f606f1a5716841c2e7eb4185f32c](https://github.com/dOpensource/dsiprouter/commit/03493c243c12f606f1a5716841c2e7eb4185f32c)  
+> Date: Thu, 3 Dec 2020 18:38:59 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 03493c243c12f606f1a5716841c2e7eb4185f32c)
+[//]: # (START_SECTION 916e120ec3bbf7ea7089e93b8386b0facf00c4a0)
+### Update requirements.txt
+
+> Commit: [916e120ec3bbf7ea7089e93b8386b0facf00c4a0](https://github.com/dOpensource/dsiprouter/commit/916e120ec3bbf7ea7089e93b8386b0facf00c4a0)  
+> Date: Thu, 3 Dec 2020 18:32:22 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 916e120ec3bbf7ea7089e93b8386b0facf00c4a0)
+[//]: # (START_SECTION 76c7c679a947122e08cc5985623bbefbeb0681c7)
+### Update .readthedocs.yml
+
+> Commit: [76c7c679a947122e08cc5985623bbefbeb0681c7](https://github.com/dOpensource/dsiprouter/commit/76c7c679a947122e08cc5985623bbefbeb0681c7)  
+> Date: Thu, 3 Dec 2020 18:28:37 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 76c7c679a947122e08cc5985623bbefbeb0681c7)
+[//]: # (START_SECTION 085931328e9be893c65b674c9e491924afa88ca4)
+### Update requirements.txt
+
+> Commit: [085931328e9be893c65b674c9e491924afa88ca4](https://github.com/dOpensource/dsiprouter/commit/085931328e9be893c65b674c9e491924afa88ca4)  
+> Date: Thu, 3 Dec 2020 18:24:52 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 085931328e9be893c65b674c9e491924afa88ca4)
+[//]: # (START_SECTION 14d26b51fa983c686b95a60afdfb145ea61c1bef)
+### Update .readthedocs.yml
+
+> Commit: [14d26b51fa983c686b95a60afdfb145ea61c1bef](https://github.com/dOpensource/dsiprouter/commit/14d26b51fa983c686b95a60afdfb145ea61c1bef)  
+> Date: Thu, 3 Dec 2020 12:13:55 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 14d26b51fa983c686b95a60afdfb145ea61c1bef)
+[//]: # (START_SECTION cff105fd47bada8ce5bafe07a5e6f85ac2b8579e)
+### Create requirements.txt
+
+> Commit: [cff105fd47bada8ce5bafe07a5e6f85ac2b8579e](https://github.com/dOpensource/dsiprouter/commit/cff105fd47bada8ce5bafe07a5e6f85ac2b8579e)  
+> Date: Thu, 3 Dec 2020 12:08:58 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cff105fd47bada8ce5bafe07a5e6f85ac2b8579e)
+[//]: # (START_SECTION 85874fade92d329fb0f6d7f824e06035f83eee97)
+### Create .readthedocs.yml
+
+> Commit: [85874fade92d329fb0f6d7f824e06035f83eee97](https://github.com/dOpensource/dsiprouter/commit/85874fade92d329fb0f6d7f824e06035f83eee97)  
+> Date: Thu, 3 Dec 2020 12:07:35 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 85874fade92d329fb0f6d7f824e06035f83eee97)
+[//]: # (START_SECTION 681a80c258d2011826c12d52874924843f17728e)
+### Updates to FusionPBX Cluster Support: - Added support to inbound routes to map a DID to the Internal or External interface of a FusionPBX system
+
+> Commit: [681a80c258d2011826c12d52874924843f17728e](https://github.com/dOpensource/dsiprouter/commit/681a80c258d2011826c12d52874924843f17728e)  
+> Date: Wed, 2 Dec 2020 12:15:23 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 681a80c258d2011826c12d52874924843f17728e)
+[//]: # (START_SECTION 9fc1b9c95e1c930caa9a711477e29f8ac94f8534)
+### Merge Number Enrichment Into Current Build
+
+> Commit: [9fc1b9c95e1c930caa9a711477e29f8ac94f8534](https://github.com/dOpensource/dsiprouter/commit/9fc1b9c95e1c930caa9a711477e29f8ac94f8534)  
+> Date: Tue, 1 Dec 2020 19:15:55 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#310](https://github.com/dOpensource/dsiprouter/issues/310)
+- merge in number enrichment feature
+- move teleblock settings to system settings menu
+- fix a few bash completions for dsiprouter commands
+- update upgrade command syntax to match others
+- misc CSS merges from enterprise repo
+- make module install scripts propagate return code
+- cleanup various scripts / configs / source files
+- update version in `settings.py`
+
+
+---
+
+[//]: # (END_SECTION 9fc1b9c95e1c930caa9a711477e29f8ac94f8534)
+[//]: # (START_SECTION 78bb2e6ffb5d7e3d4d78ef3128bddb5f1f83104f)
+### Updates to FusionPBX Cluster Support: - Added the ability to define an Endpoint Group as a FusionPBX Cluster versus a standalone FusionPBX Server - 2 dispatcher set's are created for each endpoint group, one for internal calls and another external calls on port 5080
+
+> Commit: [78bb2e6ffb5d7e3d4d78ef3128bddb5f1f83104f](https://github.com/dOpensource/dsiprouter/commit/78bb2e6ffb5d7e3d4d78ef3128bddb5f1f83104f)  
+> Date: Tue, 1 Dec 2020 23:14:51 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 78bb2e6ffb5d7e3d4d78ef3128bddb5f1f83104f)
+[//]: # (START_SECTION f74db4f6542d0f008fef614440e195ff724a7879)
+### Allow TCP UAC SIP Connections By Default
+
+> Commit: [f74db4f6542d0f008fef614440e195ff724a7879](https://github.com/dOpensource/dsiprouter/commit/f74db4f6542d0f008fef614440e195ff724a7879)  
+> Date: Tue, 1 Dec 2020 17:08:50 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#255](https://github.com/dOpensource/dsiprouter/issues/255)
+- add listen directives on tcp socket to kamailio config
+
+
+---
+
+[//]: # (END_SECTION f74db4f6542d0f008fef614440e195ff724a7879)
+[//]: # (START_SECTION a409f4049744053e5958ea885b5d68524f15c6c4)
+### Update NAT Handling
+
+> Commit: [a409f4049744053e5958ea885b5d68524f15c6c4](https://github.com/dOpensource/dsiprouter/commit/a409f4049744053e5958ea885b5d68524f15c6c4)  
+> Date: Tue, 1 Dec 2020 17:04:19 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#311](https://github.com/dOpensource/dsiprouter/issues/311)
+- add client-side NAT translation for UAC Contact
+
+
+---
+
+[//]: # (END_SECTION a409f4049744053e5958ea885b5d68524f15c6c4)
+[//]: # (START_SECTION d182417156ac4af142138abe951aefd6dea35259)
+### FusionPBX Cluster Support Enhancements - Define a 30 second expiration to the pass_thru htable that keeps track of 401 and 407 auth request made by a media server and sends the request back to the same backend media server - Changed the address group that Kamailio uses to perform an internal route for DR_ROUTING to DISPATCHER use cases
+
+> Commit: [d182417156ac4af142138abe951aefd6dea35259](https://github.com/dOpensource/dsiprouter/commit/d182417156ac4af142138abe951aefd6dea35259)  
+> Date: Mon, 30 Nov 2020 05:03:28 +0000  
+> Author: root (root@nightly-deb9.dsiprouter.org)  
+> Committer: root (root@nightly-deb9.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d182417156ac4af142138abe951aefd6dea35259)
+[//]: # (START_SECTION 9e45548eef592b97967607829e844913b6ced577)
+### Added support for routing to multiple FusionPBX systems
+
+> Commit: [9e45548eef592b97967607829e844913b6ced577](https://github.com/dOpensource/dsiprouter/commit/9e45548eef592b97967607829e844913b6ced577)  
+> Date: Mon, 23 Nov 2020 10:14:56 +0000  
+> Author: root (root@testing-dsiprouter0.b3paytcmeseudeqwsc2313xkvc.ex.internal.cloudapp.net)  
+> Committer: root (root@nightly-deb9.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9e45548eef592b97967607829e844913b6ced577)
+[//]: # (START_SECTION 86f9fc51b25f749858999ded032aebda17e7aa14)
+### Added a restart of Kamailio after installing dSIPRouter to ensure it has the latest database connection info
+
+> Commit: [86f9fc51b25f749858999ded032aebda17e7aa14](https://github.com/dOpensource/dsiprouter/commit/86f9fc51b25f749858999ded032aebda17e7aa14)  
+> Date: Fri, 27 Nov 2020 13:22:34 +0000  
+> Author: root (root@nightly-deb9.dsiprouter.org)  
+> Committer: root (root@nightly-deb9.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 86f9fc51b25f749858999ded032aebda17e7aa14)
+[//]: # (START_SECTION 24a5c2115889e874b9c95a9ca1ffc59c80932d13)
+### Added the default auth domain to the username/password auth screen
+
+> Commit: [24a5c2115889e874b9c95a9ca1ffc59c80932d13](https://github.com/dOpensource/dsiprouter/commit/24a5c2115889e874b9c95a9ca1ffc59c80932d13)  
+> Date: Thu, 26 Nov 2020 14:22:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 24a5c2115889e874b9c95a9ca1ffc59c80932d13)
+[//]: # (START_SECTION 3333a6ec58d3c2530f33cf8132c18862c29d74ce)
 ### Improve Endpoint Group Address Entry Mapping
 
-> Commit: [7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3](https://github.com/dOpensource/dsiprouter/commit/7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)  
+> Commit: [3333a6ec58d3c2530f33cf8132c18862c29d74ce](https://github.com/dOpensource/dsiprouter/commit/3333a6ec58d3c2530f33cf8132c18862c29d74ce)  
 > Date: Wed, 25 Nov 2020 16:59:23 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1795,7 +2827,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 7287fbaab2610ad8d9e3b6a5492b03a387c3e9a3)
+[//]: # (END_SECTION 3333a6ec58d3c2530f33cf8132c18862c29d74ce)
 [//]: # (START_SECTION 702a0ac1811870197e64aa3dbaa04b9d9afea29f)
 ### Added ThinkTel as carrier
 
@@ -2876,6 +3908,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 220ec7f1827267091059abd467b88137e717ad94)
+[//]: # (START_SECTION 81a951367ee99d623c35d9ecad79e57cc24869c0)
+### Added support for dispatcher to Kamailio
+
+> Commit: [81a951367ee99d623c35d9ecad79e57cc24869c0](https://github.com/dOpensource/dsiprouter/commit/81a951367ee99d623c35d9ecad79e57cc24869c0)  
+> Date: Mon, 26 Oct 2020 21:45:13 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 81a951367ee99d623c35d9ecad79e57cc24869c0)
+[//]: # (START_SECTION 52a4b5eb30342d16b5272d769b033ad90cd4d196)
+### Added logic to update/delete inbound routes and endpont groups with load balancing configured
+
+> Commit: [52a4b5eb30342d16b5272d769b033ad90cd4d196](https://github.com/dOpensource/dsiprouter/commit/52a4b5eb30342d16b5272d769b033ad90cd4d196)  
+> Date: Mon, 26 Oct 2020 21:25:16 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 52a4b5eb30342d16b5272d769b033ad90cd4d196)
 [//]: # (START_SECTION 8976863ab2f8aee31a6222a0010e62d9b08a3be2)
 ### Patch Pre-commit Hook
 
@@ -2937,6 +3999,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION e3673ab836946e34bc759df32499a89bad460878)
+[//]: # (START_SECTION 5387bc1373db5438e5a06c0c81b80ab717398163)
+### Added logic for updating weights in endpoint groups
+
+> Commit: [5387bc1373db5438e5a06c0c81b80ab717398163](https://github.com/dOpensource/dsiprouter/commit/5387bc1373db5438e5a06c0c81b80ab717398163)  
+> Date: Sun, 25 Oct 2020 13:12:41 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5387bc1373db5438e5a06c0c81b80ab717398163)
 [//]: # (START_SECTION aa88b8fc61ed0bac537901196b0a7b7fedc79ad4)
 ### Update 8.sh
 
@@ -2952,6 +4029,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION aa88b8fc61ed0bac537901196b0a7b7fedc79ad4)
+[//]: # (START_SECTION 1693e7fa706fe6c8bb414712ace18f90b86c3585)
+### Inbound DID LB - Added logic to add the hostname to the address table - Added logic to build the dispatcher set; '
+
+> Commit: [1693e7fa706fe6c8bb414712ace18f90b86c3585](https://github.com/dOpensource/dsiprouter/commit/1693e7fa706fe6c8bb414712ace18f90b86c3585)  
+> Date: Tue, 20 Oct 2020 05:56:27 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1693e7fa706fe6c8bb414712ace18f90b86c3585)
+[//]: # (START_SECTION 662ef335d84401bb58c2cefcd88b41533e359a1d)
+### Added support for Inbound Load Balancing from Carrier to Endpoint Groups
+
+> Commit: [662ef335d84401bb58c2cefcd88b41533e359a1d](https://github.com/dOpensource/dsiprouter/commit/662ef335d84401bb58c2cefcd88b41533e359a1d)  
+> Date: Sun, 18 Oct 2020 23:30:51 +0000  
+> Author: root (root@v0621lb0.localdomain)  
+> Committer: root (root@v0621lb0.localdomain)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 662ef335d84401bb58c2cefcd88b41533e359a1d)
 [//]: # (START_SECTION 2c71440a60bee65291c6a88981857eb86279d958)
 ### Update install.sh
 
@@ -3432,6 +4539,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a2296b5a2bde683ee4d11558e583777fb3e24f23)
+[//]: # (START_SECTION 514a3ed75f3c8497c6dc15550d1f25ccf79c1734)
+### Fixed Compile Issue
+
+> Commit: [514a3ed75f3c8497c6dc15550d1f25ccf79c1734](https://github.com/dOpensource/dsiprouter/commit/514a3ed75f3c8497c6dc15550d1f25ccf79c1734)  
+> Date: Sat, 12 Sep 2020 12:51:58 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 514a3ed75f3c8497c6dc15550d1f25ccf79c1734)
+[//]: # (START_SECTION 1a9f29175a7be590bf6e9af55961cfc1450b3f62)
+### Recomplied dSIPRouter Module for Kamailio 5.36
+
+> Commit: [1a9f29175a7be590bf6e9af55961cfc1450b3f62](https://github.com/dOpensource/dsiprouter/commit/1a9f29175a7be590bf6e9af55961cfc1450b3f62)  
+> Date: Sat, 12 Sep 2020 12:26:25 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1a9f29175a7be590bf6e9af55961cfc1450b3f62)
 [//]: # (START_SECTION 8f9a792030bebbd18185c86bacafb1e134b34841)
 ### Update 10.sh
 

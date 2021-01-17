@@ -108,7 +108,7 @@ function install {
     yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel mariadb-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
         iptables iptables-devel xmlrpc-c-devel gperf redhat-lsb nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog bc \
-        redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperf gperftools-libs gperftools gperftools-devel gzip
+        redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperf gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel
 
     installKernelDevHeaders
 
@@ -285,7 +285,7 @@ EOF
         printerr "FAILED: RTPEngine could not be installed!"
     fi
 }
-    
+
 # Remove RTPEngine
 function uninstall {
     systemctl stop rtpengine

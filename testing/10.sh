@@ -9,8 +9,8 @@ project_dir=/opt/dsiprouter
 cookie_file=/tmp/cookie
 
 # dynamic settings
-proto=$(getConfigAttrib 'DSIP_PROTO' $project_dir/gui/settings.py)
-port=$(getConfigAttrib 'DSIP_PORT' $project_dir/gui/settings.py)
+proto=$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
+port=$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
 export DSIP_PASSWORD="temp"
 
 # In Accordance With AWS Marketplace Policy:
