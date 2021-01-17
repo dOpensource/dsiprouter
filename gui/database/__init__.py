@@ -158,6 +158,8 @@ class dSIPMultiDomainMapping(object):
         TYPE_UNKNOWN = 0
         TYPE_FUSIONPBX = 1
         TYPE_FUSIONPBX_CLUSTER = 2
+        TYPE_FREEPBX = 3 
+
 
     def __init__(self, pbx_id, db_host, db_username, db_password, domain_list=None, attr_list=None, type=0, enabled=1):
         self.pbx_id = pbx_id

@@ -1673,7 +1673,9 @@ function start {
     # Start the dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         if [ $DEBUG -eq 1 ]; then
+
             systemctl start nginx
+
             # keep it in the foreground, only used for debugging issues
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             # Make sure process is still running
@@ -1687,7 +1689,9 @@ function start {
             fi
         else
             # normal startup, fork as background process
+
             systemctl start nginx
+
             systemctl start dsiprouter
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then

@@ -2,7 +2,6 @@ import os, time, json, random, subprocess, requests, csv, base64, codecs, re, Op
 import urllib.parse as parse
 from contextlib import closing
 from collections import OrderedDict
-from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
 from sqlalchemy import exc as sql_exceptions, and_,or_
@@ -14,7 +13,7 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars, EasyCrypto
+from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
 from util.file_handling import isValidFile, change_owner
 from util import kamtls, letsencrypt
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
@@ -34,54 +33,6 @@ api = Blueprint('api', __name__)
 # TODO: this is almost impossible to work on...
 #       we need to abstract out common code between gui and api and standardize routes!
 
-class APIToken:
-    token = None
-
-    def __init__(self, request):
-        if 'Authorization' in request.headers:
-            auth_header = request.headers.get('Authorization', None)
-            if auth_header is not None:
-                header_values = auth_header.split(' ')
-                if len(header_values) == 2:
-                    self.token = header_values[1]
-
-    def isValid(self):
-        try:
-            if self.token:
-                # Get Environment Variables if in debug mode
-                # This is the only case we allow plain text token comparison
-                if settings.DEBUG:
-                    settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
-
-                # need to decrypt token
-                if isinstance(settings.DSIP_API_TOKEN, bytes):
-                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-                else:
-                    tokencheck = settings.DSIP_API_TOKEN
-
-                return tokencheck == self.token
-
-            return False
-        except:
-            return False
-
-
-def api_security(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        apiToken = APIToken(request)
-
-        if not session.get('logged_in') and not apiToken.isValid():
-            accept_header = request.headers.get('Accept', '')
-
-            if 'text/html' in accept_header:
-                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
-            else:
-                payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
