@@ -149,16 +149,16 @@ def sync_db(source, dest):
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'pbx_type',2,%s,NOW())""",
 
                     (row[0], pbx_type))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'created_by',2,%s,NOW())""",
                     (row[0], pbx_id))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'dispatcher_set_id',2,%s,NOW())""",
                     (row[0], pbx_id))
-                c.execute(
+                kam_curs.execute(
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'dispatcher_reg_alg',2,%s,NOW())""",
                     (row[0], 4))
-                c.execute(
+                kam_curs.execute(
 
                     """insert ignore into domain_attrs (id,did,name,type,value,last_modified) values (null,%s,'domain_auth',2,%s,NOW())""",
                     (row[0], 'passthru'))
