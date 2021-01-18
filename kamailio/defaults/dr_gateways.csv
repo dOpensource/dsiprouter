@@ -35,9 +35,13 @@ null;FLT_CARRIER;64.136.173.65;0;;;name:VoIP Innovations Inbound IP's Carrier,gw
 null;FLT_CARRIER;64.136.174.65;0;;;name:VoIP Innovations Inbound IP's Carrier,gwgroup:5,addr_id:52
 null;FLT_CARRIER;64.136.174.21;0;;;name:VoIP Innovations Inbound IP's Carrier,gwgroup:5,addr_id:53
 null;FLT_CARRIER;209.166.154.71;0;;;name:VoIP Innovations Inbound IP's Carrier,gwgroup:5,addr_id:54
-null;FLT_CARRIER;72.15.219.140;0;;;name:Thinq Carrier,gwgroup:6,addr_id:55
-null;FLT_CARRIER;216.147.191.157;0;;;name:Voxtelesys Carrier,gwgroup:7,addr_id:56
-null;FLT_CARRIER;64.34.181.47;0;;;name:Les.net Carrier,gwgroup:8,addr_id:57
+null;FLT_CARRIER;64.136.174.30;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_id:55
+null;FLT_CARRIER;64.136.173.22;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_id:56
+null;FLT_CARRIER;209.166.128.200;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_id:57
+null;FLT_CARRIER;192.240.151.100;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_1d:58
+null;FLT_CARRIER;72.15.219.140;0;;;name:Thinq Carrier,gwgroup:6,addr_id:59
+null;FLT_CARRIER;216.147.191.157;0;;;name:Voxtelesys Carrier,gwgroup:7,addr_id:60
+null;FLT_CARRIER;64.34.181.47;0;;;name:Les.net Carrier,gwgroup:8,addr_id:61
 null;FLT_CARRIER;54.172.60.0;0;;;name:Twilio NA-Virginia Carrier,gwgroup:1,addr_id:1
 null;FLT_CARRIER;54.172.60.1;0;;;name:Twilio NA-Virginia  Carrier,gwgroup:1,addr_id:2
 null;FLT_CARRIER;54.172.60.2;0;;;name:Twilio NA-Virginia Carrier,gwgroup:1,addr_id:3
@@ -49,9 +53,5 @@ null;FLT_CARRIER;54.244.51.3;0;;;name:Twilio NA-Oregon Carrier,gwgroup:1,addr_id
 null;FLT_CARRIER;206.80.250.100;0;;;name:ThinkTel,gwgroup:9,addr_id:69
 null;FLT_CARRIER;208.68.17.52;0;;;name:ThinkTel,gwgroup:9,addr_id:70
 null;FLT_CARRIER;209.197.130.80;0;;;name:ThinkTel,gwgroup:9,addr_id:71
-null;FLT_CARRIER;64.136.174.30;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_id:72
-null;FLT_CARRIER;64.136.173.22;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_id:73
-null;FLT_CARRIER;209.166.128.200;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_id:74
-null;FLT_CARRIER;192.240.151.100;0;;;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10,addr_1d:75
 
 
