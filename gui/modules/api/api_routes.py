@@ -1,3 +1,7 @@
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
 import os, time, json, random, subprocess, requests, csv, base64, codecs, re, OpenSSL
 import urllib.parse as parse
 from contextlib import closing
@@ -81,6 +85,7 @@ def reloadKamailio():
         # Pulled tls.reload out of the reload process due to issues
         # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
 
+
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
@@ -95,8 +100,7 @@ def reloadKamailio():
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
             {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'role', settings.ROLE]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_server', dsip_api_url]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_token', dsip_api_token]}
@@ -107,7 +111,7 @@ def reloadKamailio():
                 {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)]})
             reload_cmds.append(
-                {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
+                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)]})
             reload_cmds.append(
                 {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,

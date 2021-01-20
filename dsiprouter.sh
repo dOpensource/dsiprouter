@@ -140,8 +140,6 @@ setScriptSettings() {
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     # dsiprouter needs to have control over the certs (note that nginx should never have write access)
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
-    # copy over the template settings.py to be worked on (used throughout this script as well)
-    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
@@ -2652,6 +2650,9 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
+    
+	    # copy over the template settings.py to be worked on (used throughout this script as well)
+    	    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
