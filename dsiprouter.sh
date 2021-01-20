@@ -1209,6 +1209,9 @@ function installDsiprouter {
     chmod 0400 ${DSIP_PRIV_KEY}
     chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
+    
+    # Set permissions on the backup directory and subdirectories
+    chown -R dsiprouter:root ${BACKUP_DIR}
 
     # Set the permissions of the cert directory now that dSIPRouter has been installed
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
@@ -1365,7 +1368,6 @@ function installKamailio {
 
     # backup and drop kam db if it exists already
     mkdir -p ${KAMDB_BACKUP_DIR}
-    chown dsiprouter:dsiprouter ${KAMDB_BACKUP_DIR}
 
     if cmdExists 'mysql'; then
         if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
