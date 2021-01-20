@@ -1365,6 +1365,8 @@ function installKamailio {
 
     # backup and drop kam db if it exists already
     mkdir -p ${KAMDB_BACKUP_DIR}
+    chown dsiprouter:dsiprouter ${KAMDB_BACKUP_DIR}
+
     if cmdExists 'mysql'; then
         if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
             printdbg "Backing up kamailio DB to ${KAMDB_DATABASE_BACKUP_FILE} before fresh install"
