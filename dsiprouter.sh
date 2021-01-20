@@ -142,7 +142,7 @@ setScriptSettings() {
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
    
     # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists 
-    if [[! -f "${DSIP_CONFIG_FILE}" ]]; then
+    if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
 	    # copy over the template settings.py to be worked on (used throughout this script as well)
     	    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
 
