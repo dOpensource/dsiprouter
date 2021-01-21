@@ -702,6 +702,15 @@ def deleteEndpointGroup(gwgroupid):
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
+            # Delete all domains 
+            query = "delete from domain where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            db.execute(query)
+
+            # Delete all domains_attrs 
+            query = "delete from domain_attrs  where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            db.execute(query)
+
+            # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
 
         dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid ==  gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000))
