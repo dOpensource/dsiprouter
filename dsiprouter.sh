@@ -130,7 +130,6 @@ setScriptSettings() {
     export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter-key.pem"
     export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter-cert.pem"
     export DSIP_SSL_CA="${DSIP_CERTS_DIR}/cacert.pem"
-    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
 
     #================= PRE_DYNAMIC_CONFIG_SETUP =================#
 
@@ -180,6 +179,9 @@ setScriptSettings() {
     export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
         perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
 
+
+    # Set the EMAIL used to obtain Let'sEncrypt Certificates 
+    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
     #===========================================================#
 }
 
@@ -558,11 +560,19 @@ function configureSSL {
         return
     fi
 
+    # Stop nginx if started so that LetsEncrypt can leverage port 80
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+	    docker stop dsiprouter-nginx 2> /dev/null
+    else
+    	firewall-cmd --zone=public --add-port=80/tcp --permanent
+    	firewall-cmd --reload
+
+    fi
+
+
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
     # Open port 80 for hostname validation
-    firewall-cmd --zone=public --add-port=80/tcp --permanent
-    firewall-cmd --reload
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
     certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
     if (( $? == 0 )); then
@@ -582,8 +592,15 @@ function configureSSL {
         chown root:kamailio ${DSIP_CERTS_DIR}/*
         chmod 640 ${DSIP_CERTS_DIR}/*
     fi
-    firewall-cmd --zone=public --remove-port=80/tcp --permanent
-    firewall-cmd --reload
+    
+    # Start nginx if dSIP was installed
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+	    docker stop dsiprouter-nginx 2> /dev/null
+    else
+   	firewall-cmd --zone=public --remove-port=80/tcp --permanent
+    	firewall-cmd --reload
+    fi
+    
     #fi
 }
 

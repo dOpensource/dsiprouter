@@ -1497,6 +1497,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     """
 
     db = DummySession()
+    fusionpbxenabled=0
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
