@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe
+24386c519a76ebf96166be72688212fd3334c2d0
+eac246c60ddf8f940dc40da34fa8b458ede41004
 8871255c04351ed846eda1ecbdada488c32b6d38
 4d2d5345c335af336b00653a4b8f727bac942837
 4ffe5caab5d0835e7783d7c552b03c4b55d15524
@@ -1844,10 +1845,30 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe)
+[//]: # (START_SECTION 24386c519a76ebf96166be72688212fd3334c2d0)
+### Misc Bug Fixes
+
+> Commit: [24386c519a76ebf96166be72688212fd3334c2d0](https://github.com/dOpensource/dsiprouter/commit/24386c519a76ebf96166be72688212fd3334c2d0)  
+> Date: Wed, 27 Jan 2021 13:14:00 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix various typos
+- fix kamailio config generation order
+- update services to run chown commands as root
+- move generated kam config to separate dir
+- fix dispatcher routing faiure due to typos
+
+
+---
+
+[//]: # (END_SECTION 24386c519a76ebf96166be72688212fd3334c2d0)
+[//]: # (START_SECTION eac246c60ddf8f940dc40da34fa8b458ede41004)
 ### V0.641 Bug Fixes
 
-> Commit: [9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe](https://github.com/dOpensource/dsiprouter/commit/9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe)  
+> Commit: [eac246c60ddf8f940dc40da34fa8b458ede41004](https://github.com/dOpensource/dsiprouter/commit/eac246c60ddf8f940dc40da34fa8b458ede41004)  
 > Date: Thu, 14 Jan 2021 17:47:38 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1870,7 +1891,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 9ddcda842b5d3078b2d8ef1ee50bcdec4b7b38fe)
+[//]: # (END_SECTION eac246c60ddf8f940dc40da34fa8b458ede41004)
 [//]: # (START_SECTION 8871255c04351ed846eda1ecbdada488c32b6d38)
 ### update to match some of our conventions
 

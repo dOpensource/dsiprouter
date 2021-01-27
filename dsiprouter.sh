@@ -84,7 +84,7 @@ setScriptSettings() {
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
-    export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
+    export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/dsiprouter.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
@@ -135,11 +135,13 @@ setScriptSettings() {
     #================= PRE_DYNAMIC_CONFIG_SETUP =================#
 
     # make sure dirs exist (ones that may not yet exist)
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui,/kamailio} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
     # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     # dsiprouter needs to have control over the certs (note that nginx should never have write access)
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    # dsiprouter needs to have control over the kamailio dir (dynamic changes may be made)
+    chown dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio
     # copy over the template settings.py to be worked on (used throughout this script as well)
     cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
 
@@ -493,7 +495,7 @@ export -f reconfigureMysqlSystemdService
 function configurePythonSettings {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_RTPENGINE_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_UNIX_SOCK' "$DSIP_UNIX_SOCK" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PORT' "$DSIP_PORT" ${DSIP_CONFIG_FILE} -q
@@ -1168,7 +1170,9 @@ function installDsiprouter {
 
     # add dsiprouter.sh to the path
     ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
-    # add command line completion to dsiprouter.sh
+    # enable bash command line completion if not already
+    perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+    # add command line completion for dsiprouter CLI
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
     . /etc/bash_completion
     # make sure current python version is in the path
@@ -1382,16 +1386,6 @@ function installKamailio {
         printerr "kamailio install failed"
         cleanupAndExit 1
     fi
-
-    # create file denoting current location of db
-    case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}")
-            printf '%s' 'local' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
-            ;;
-        *)
-            printf '%s' 'remote' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
-            ;;
-    esac
 
     # update kam configs on reboot
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
@@ -2198,9 +2192,9 @@ function upgrade {
     #git checkout $UPGRADE_RELEASE
     #git stash apply
 
-    updateKamailioConfig
-    ret=$?
     generateKamailioConfig
+    ret=$?
+    updateKamailioConfig
     ret=$((ret + $?))
 
     if [ $ret -eq 0 ]; then
@@ -2502,7 +2496,7 @@ function usageOptions {
     linebreak
     printf '\n%s\n%s\n' \
         "$(pprint -n USAGE:)" \
-        "$0 <command> [options]"
+        "dsiprouter <command> [options]"
 
     linebreak
     printf "\n%-s%24s%s\n" \
@@ -2517,7 +2511,7 @@ function usageOptions {
     printf "%-30s %s\n" \
         "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
-        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
+        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
