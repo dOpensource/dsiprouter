@@ -1,8 +1,11 @@
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
 import os, time, json, random, subprocess, requests, csv, base64, codecs, re, OpenSSL
 import urllib.parse as parse
 from contextlib import closing
 from collections import OrderedDict
-from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
 from sqlalchemy import exc as sql_exceptions, and_,or_
@@ -14,7 +17,7 @@ from database import SessionLoader, DummySession, Address, dSIPNotification, Dom
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars, EasyCrypto
+from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
 from util.file_handling import isValidFile, change_owner
 from util import kamtls, letsencrypt
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
@@ -34,54 +37,6 @@ api = Blueprint('api', __name__)
 # TODO: this is almost impossible to work on...
 #       we need to abstract out common code between gui and api and standardize routes!
 
-class APIToken:
-    token = None
-
-    def __init__(self, request):
-        if 'Authorization' in request.headers:
-            auth_header = request.headers.get('Authorization', None)
-            if auth_header is not None:
-                header_values = auth_header.split(' ')
-                if len(header_values) == 2:
-                    self.token = header_values[1]
-
-    def isValid(self):
-        try:
-            if self.token:
-                # Get Environment Variables if in debug mode
-                # This is the only case we allow plain text token comparison
-                if settings.DEBUG:
-                    settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
-
-                # need to decrypt token
-                if isinstance(settings.DSIP_API_TOKEN, bytes):
-                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-                else:
-                    tokencheck = settings.DSIP_API_TOKEN
-
-                return tokencheck == self.token
-
-            return False
-        except:
-            return False
-
-
-def api_security(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        apiToken = APIToken(request)
-
-        if not session.get('logged_in') and not apiToken.isValid():
-            accept_header = request.headers.get('Accept', '')
-
-            if 'text/html' in accept_header:
-                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
-            else:
-                payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
@@ -130,6 +85,7 @@ def reloadKamailio():
         # Pulled tls.reload out of the reload process due to issues
         # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
 
+
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
@@ -144,8 +100,7 @@ def reloadKamailio():
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
             {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'role', settings.ROLE]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_server', dsip_api_url]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_token', dsip_api_token]}
@@ -156,7 +111,7 @@ def reloadKamailio():
                 {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)]})
             reload_cmds.append(
-                {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
+                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)]})
             reload_cmds.append(
                 {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
@@ -747,6 +702,15 @@ def deleteEndpointGroup(gwgroupid):
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
         if domainmapping is not None:
+            # Delete all domains 
+            query = "delete from domain where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            db.execute(query)
+
+            # Delete all domains_attrs 
+            query = "delete from domain_attrs  where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            db.execute(query)
+
+            # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
 
         dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid ==  gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000))
@@ -1158,8 +1122,9 @@ def updateEndpointGroups(gwgroupid=None):
                 if authtype == "ip":
                     # for ip auth we must create address records for the endpoint
                     host_addr = safeStripPort(sip_addr)
+                    host_ip = hostToIP(host_addr)
 
-                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                     db.add(Addr)
                     db.flush()
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
@@ -1218,8 +1183,9 @@ def updateEndpointGroups(gwgroupid=None):
             if authtype == "ip":
                 # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
+                host_ip = hostToIP(host_addr)
 
-                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id)
@@ -1265,6 +1231,7 @@ def updateEndpointGroups(gwgroupid=None):
             if authtype == "ip":
                 # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
+                host_ip = hostToIP(host_addr)
 
                 # if address exists update, otherwise create it
                 address_exists = False
@@ -1274,14 +1241,14 @@ def updateEndpointGroups(gwgroupid=None):
                     if Addr is not None:
                         address_exists = True
 
-                        Addr.ip_addr = host_addr
+                        Addr.ip_addr = host_ip
                         addr_fields = strFieldsToDict(Addr.tag)
                         addr_fields['name'] = name
                         addr_fields['gwgroup'] = gwgroupid_str
                         Addr.tag = dictToStrFields(addr_fields)
 
                 if not address_exists:
-                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
 
                     db.add(Addr)
                     db.flush()
@@ -1530,6 +1497,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     """
 
     db = DummySession()
+    fusionpbxenabled=0
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
@@ -1684,8 +1652,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
             if authtype == "ip":
                 host_addr = safeStripPort(sip_addr)
+                host_ip = hostToIP(host_addr)
 
-                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,

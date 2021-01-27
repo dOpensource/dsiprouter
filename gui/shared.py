@@ -1,3 +1,7 @@
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
 import sys, os, re, json, socket, requests, logging, traceback, inspect, string, random, ssl
 from calendar import monthrange
 from importlib import reload

@@ -10,6 +10,9 @@ The workflow consists of:
 - Create domain private key and CSR
 - Issue certificate
 """
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import os, shutil, OpenSSL
 import josepy as jose

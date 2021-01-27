@@ -46,6 +46,10 @@ null;FLT_CARRIER;64.136.173.65;32;0;name:VoIP Innovations Inbound IP's Carrier,g
 null;FLT_CARRIER;64.136.174.65;32;0;name:VoIP Innovations Inbound IP's Carrier,gwgroup:5
 null;FLT_CARRIER;64.136.174.21;32;0;name:VoIP Innovations Inbound IP's Carrier,gwgroup:5
 null;FLT_CARRIER;209.166.154.71;32;0;name:VoIP Innovations Inbound IP's Carrier,gwgroup:5
+null;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
+null;FLT_CARRIER;64.136.173.22;32;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
+null;FLT_CARRIER;209.166.128.200;32;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
+null;FLT_CARRIER;192.240.151.100;32;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
 null;FLT_CARRIER;72.15.219.140;32;0;name:Thinq Carrier,gwgroup:6
 null;FLT_CARRIER;216.147.191.157;32;0;name:Voxtelesys Carrier,gwgroup:7
 null;FLT_CARRIER;64.34.181.47;32;0;name:Les.net Carrier,gwgroup:8
@@ -69,7 +73,3 @@ null;FLT_MSTEAMS;sip.pstnhub.gov.teams.microsoft.us;32;0;name:msteams-sbc,gwgrou
 null;FLT_CARRIER;206.80.250.100;32;0;name:ThinkTel,gwgroup:41
 null;FLT_CARRIER;208.68.17.52;32;0;name:ThinkTel,gwgroup:41
 null;FLT_CARRIER;209.197.130.80;32;0;name:ThinkTel,gwgroup:41
-null;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
-null;FLT_CARRIER;64.136.173.22;32;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
-null;FLT_CARRIER;209.166.128.200;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10
-null;FLT_CARRIER;192.240.151.100;0;name:VoIP Innovations Outbound Conversational IP's Carrier,gwgroup:10

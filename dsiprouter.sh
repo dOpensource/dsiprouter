@@ -130,7 +130,6 @@ setScriptSettings() {
     export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter-key.pem"
     export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter-cert.pem"
     export DSIP_SSL_CA="${DSIP_CERTS_DIR}/cacert.pem"
-    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
 
     #================= PRE_DYNAMIC_CONFIG_SETUP =================#
 
@@ -142,21 +141,26 @@ setScriptSettings() {
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
     # dsiprouter needs to have control over the kamailio dir (dynamic changes may be made)
     chown dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio
-    # copy over the template settings.py to be worked on (used throughout this script as well)
-    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
-
+   
+    # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
+    if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
+	      # copy over the template settings.py to be worked on (used throughout this script as well)
+        cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
+    fi
+  
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
-
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
+    if [[ -z "$INTERNAL_FQDN" ]]; then
+    	export INTERNAL_FQDN="$(hostname)"
+    fi
     export EXTERNAL_IP=$(getExternalIP)
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
-
     # grab root db settings from env or settings file
     export ROOT_DB_USER=${ROOT_DB_USER:-$(getConfigAttrib 'ROOT_DB_USER' ${DSIP_CONFIG_FILE})}
     export ROOT_DB_PASS=${ROOT_DB_PASS:-$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})}
@@ -177,6 +181,9 @@ setScriptSettings() {
     export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
         perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
 
+
+    # Set the EMAIL used to obtain Let'sEncrypt Certificates 
+    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
     #===========================================================#
 }
 
@@ -555,11 +562,19 @@ function configureSSL {
         return
     fi
 
+    # Stop nginx if started so that LetsEncrypt can leverage port 80
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+	    docker stop dsiprouter-nginx 2> /dev/null
+    else
+    	firewall-cmd --zone=public --add-port=80/tcp --permanent
+    	firewall-cmd --reload
+
+    fi
+
+
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
     # Open port 80 for hostname validation
-    firewall-cmd --zone=public --add-port=80/tcp --permanent
-    firewall-cmd --reload
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
     certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
     if (( $? == 0 )); then
@@ -579,8 +594,15 @@ function configureSSL {
         chown root:kamailio ${DSIP_CERTS_DIR}/*
         chmod 640 ${DSIP_CERTS_DIR}/*
     fi
-    firewall-cmd --zone=public --remove-port=80/tcp --permanent
-    firewall-cmd --reload
+    
+    # Start nginx if dSIP was installed
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+	    docker stop dsiprouter-nginx 2> /dev/null
+    else
+   	firewall-cmd --zone=public --remove-port=80/tcp --permanent
+    	firewall-cmd --reload
+    fi
+    
     #fi
 }
 
@@ -1208,6 +1230,9 @@ function installDsiprouter {
     chmod 0400 ${DSIP_PRIV_KEY}
     chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
+    
+    # Set permissions on the backup directory and subdirectories
+    chown -R dsiprouter:root ${BACKUP_DIR}
 
     # Set the permissions of the cert directory now that dSIPRouter has been installed
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
@@ -1364,6 +1389,7 @@ function installKamailio {
 
     # backup and drop kam db if it exists already
     mkdir -p ${KAMDB_BACKUP_DIR}
+
     if cmdExists 'mysql'; then
         if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
             printdbg "Backing up kamailio DB to ${KAMDB_DATABASE_BACKUP_FILE} before fresh install"
@@ -1667,7 +1693,9 @@ function start {
     # Start the dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         if [ $DEBUG -eq 1 ]; then
+
             systemctl start nginx
+
             # keep it in the foreground, only used for debugging issues
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             # Make sure process is still running
@@ -1681,7 +1709,9 @@ function start {
             fi
         else
             # normal startup, fork as background process
+
             systemctl start nginx
+
             systemctl start dsiprouter
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
@@ -1791,10 +1821,10 @@ function resetPassword {
     printdbg 'Resetting credentials'
 
     local RESET_DSIP_GUI_PASS=${RESET_DSIP_GUI_PASS:-1}
-    local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-0}
-    local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-0}
-    local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-0}
-    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-0}
+    local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-1}
+    local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-1}
+    local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-1}
+    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-1}
 
     if (( $RESET_DSIP_GUI_PASS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
@@ -1825,10 +1855,9 @@ except:
     pass
 EOF
 
-    if (( $RESET_KAM_DB_PASS == 1 )); then
-        mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
-            -e "update mysql.user set authentication_string=PASSWORD('${KAM_DB_PASS}') where USER='${KAM_DB_USER}';" \
-            -e "flush privileges;"
+    if (( $RESET_KAM_DB_PASS == 1 )); then 
+	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
+            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"    
     fi
 
     # can be hot reloaded while running
@@ -2643,6 +2672,7 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
+    
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
