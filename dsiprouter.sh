@@ -811,13 +811,29 @@ function configureKamailio {
             < $sqlscript
     fi
 
+    # Update schema for address table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/address.sql
+
+    # Update schema for dispatcher table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/dispatcher.sql
+
     # Update schema for dr_gateways table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e 'ALTER TABLE dr_gateways MODIFY pri_prefix varchar(64) NOT NULL DEFAULT "", MODIFY attrs varchar(255) NOT NULL DEFAULT "";'
+        < ${DSIP_DEFAULTS_DIR}/dr_gateways.sql
+
+    # Update schema for dr_gw_lists table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/dr_gw_lists.sql
+
+    # Update schema for dr_rules table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/dr_rules.sql
 
     # Update schema for subscribers table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e 'ALTER TABLE subscriber ADD email_address varchar(128) NOT NULL DEFAULT "", ADD rpid varchar(128) NOT NULL DEFAULT "";'
+        < ${DSIP_DEFAULTS_DIR}/subscriber.sql
 
     # Install schema for custom LCR logic
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
@@ -850,10 +866,6 @@ function configureKamailio {
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
     sed -e "s|FLT_INBOUND_REPLACE|${FLT_INBOUND}|g" ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
         mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
-
-    # Install schema for custom dr_gateways logic
-    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        < ${DSIP_DEFAULTS_DIR}/dr_gateways.sql
 
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating

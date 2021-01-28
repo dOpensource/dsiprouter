@@ -1,3 +1,9 @@
+-- update dr_gateways schema to fit our storage requirements
+ALTER TABLE dr_gateways
+  MODIFY COLUMN pri_prefix varchar(64) NOT NULL DEFAULT '',
+  MODIFY COLUMN attrs varchar(255) NOT NULL DEFAULT '',
+  MODIFY COLUMN description varchar(255) NOT NULL DEFAULT '';
+
 -- update dr_gateways attrs column when entry created
 DROP TRIGGER IF EXISTS insert_dr_gateways;
 DELIMITER //
