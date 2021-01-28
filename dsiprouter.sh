@@ -139,15 +139,23 @@ setScriptSettings() {
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     # dsiprouter needs to have control over the certs (note that nginx should never have write access)
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+<<<<<<< Updated upstream
     # dsiprouter needs to have control over the kamailio dir (dynamic changes may be made)
     chown dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio
    
     # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
+||||||| constructed merge base
+   
+    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists 
+=======
+
+    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists
+>>>>>>> Stashed changes
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
 	      # copy over the template settings.py to be worked on (used throughout this script as well)
         cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
     fi
-  
+
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
@@ -182,7 +190,7 @@ setScriptSettings() {
         perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
 
 
-    # Set the EMAIL used to obtain Let'sEncrypt Certificates 
+    # Set the EMAIL used to obtain Let'sEncrypt Certificates
     export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
     #===========================================================#
 }
@@ -594,7 +602,7 @@ function configureSSL {
         chown root:kamailio ${DSIP_CERTS_DIR}/*
         chmod 640 ${DSIP_CERTS_DIR}/*
     fi
-    
+
     # Start nginx if dSIP was installed
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
 	    docker stop dsiprouter-nginx 2> /dev/null
@@ -602,7 +610,7 @@ function configureSSL {
    	firewall-cmd --zone=public --remove-port=80/tcp --permanent
     	firewall-cmd --reload
     fi
-    
+
     #fi
 }
 
@@ -1075,7 +1083,7 @@ function installMysql {
 
 # Remove mysql and its configs
 function uninstallMysql {
-    if [[! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
+    if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
         printwarn "MySQL is not installed - skipping removal"
         return
     fi
@@ -1242,7 +1250,7 @@ function installDsiprouter {
     chmod 0400 ${DSIP_PRIV_KEY}
     chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
-    
+
     # Set permissions on the backup directory and subdirectories
     chown -R dsiprouter:root ${BACKUP_DIR}
 
@@ -1867,9 +1875,9 @@ except:
     pass
 EOF
 
-    if (( $RESET_KAM_DB_PASS == 1 )); then 
+    if (( $RESET_KAM_DB_PASS == 1 )); then
 	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
-            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"    
+            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"
     fi
 
     # can be hot reloaded while running
@@ -2684,7 +2692,7 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
-    
+
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift

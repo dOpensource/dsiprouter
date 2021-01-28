@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-8912ead45936346591d091ac0d0bbe43760737c1
+44afd0a617319af7db29b2a53f4d368a41768cd3
+f5f674c8ea038719078d14822cf82517f5eb5abf
 877f0e90738c0885496ee99605e802d6b1dd3a5c
 7105186a5f9a22d9a990f683ce7774ce2c585674
 c3f5eb7aaa55c037dc5b466cdd1aab3a6fd6b98f
@@ -1876,10 +1877,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 8912ead45936346591d091ac0d0bbe43760737c1)
+[//]: # (START_SECTION 44afd0a617319af7db29b2a53f4d368a41768cd3)
+### Fix Typo In dsiprouter.sh
+
+> Commit: [44afd0a617319af7db29b2a53f4d368a41768cd3](https://github.com/dOpensource/dsiprouter/commit/44afd0a617319af7db29b2a53f4d368a41768cd3)  
+> Date: Thu, 28 Jan 2021 16:52:58 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 44afd0a617319af7db29b2a53f4d368a41768cd3)
+[//]: # (START_SECTION f5f674c8ea038719078d14822cf82517f5eb5abf)
 ### Data Truncation Fixes
 
-> Commit: [8912ead45936346591d091ac0d0bbe43760737c1](https://github.com/dOpensource/dsiprouter/commit/8912ead45936346591d091ac0d0bbe43760737c1)  
+> Commit: [f5f674c8ea038719078d14822cf82517f5eb5abf](https://github.com/dOpensource/dsiprouter/commit/f5f674c8ea038719078d14822cf82517f5eb5abf)  
 > Date: Thu, 28 Jan 2021 15:12:56 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1892,7 +1908,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 8912ead45936346591d091ac0d0bbe43760737c1)
+[//]: # (END_SECTION f5f674c8ea038719078d14822cf82517f5eb5abf)
 [//]: # (START_SECTION 877f0e90738c0885496ee99605e802d6b1dd3a5c)
 ### Misc Bug Fixes
 
