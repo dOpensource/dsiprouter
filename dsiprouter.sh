@@ -139,18 +139,10 @@ setScriptSettings() {
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     # dsiprouter needs to have control over the certs (note that nginx should never have write access)
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
-<<<<<<< Updated upstream
     # dsiprouter needs to have control over the kamailio dir (dynamic changes may be made)
     chown dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio
-   
-    # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
-||||||| constructed merge base
-   
-    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists 
-=======
 
-    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists
->>>>>>> Stashed changes
+    # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
 	      # copy over the template settings.py to be worked on (used throughout this script as well)
         cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}

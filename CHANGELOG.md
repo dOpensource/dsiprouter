@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-44afd0a617319af7db29b2a53f4d368a41768cd3
+e1aba89656e38a790a1abce58ef68b97a2cb4fa1
+434758b56f12d0fafdeff9c34589f063c353cd37
 f5f674c8ea038719078d14822cf82517f5eb5abf
 877f0e90738c0885496ee99605e802d6b1dd3a5c
 7105186a5f9a22d9a990f683ce7774ce2c585674
@@ -1877,10 +1878,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 44afd0a617319af7db29b2a53f4d368a41768cd3)
+[//]: # (START_SECTION e1aba89656e38a790a1abce58ef68b97a2cb4fa1)
+### Fix Merge Conflicts
+
+> Commit: [e1aba89656e38a790a1abce58ef68b97a2cb4fa1](https://github.com/dOpensource/dsiprouter/commit/e1aba89656e38a790a1abce58ef68b97a2cb4fa1)  
+> Date: Fri, 29 Jan 2021 12:13:26 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- remove unwanted merge conflict markers
+- update pre-commit merge conflict check
+- add some user warnings to pre-commit hook
+
+
+---
+
+[//]: # (END_SECTION e1aba89656e38a790a1abce58ef68b97a2cb4fa1)
+[//]: # (START_SECTION 434758b56f12d0fafdeff9c34589f063c353cd37)
 ### Fix Typo In dsiprouter.sh
 
-> Commit: [44afd0a617319af7db29b2a53f4d368a41768cd3](https://github.com/dOpensource/dsiprouter/commit/44afd0a617319af7db29b2a53f4d368a41768cd3)  
+> Commit: [434758b56f12d0fafdeff9c34589f063c353cd37](https://github.com/dOpensource/dsiprouter/commit/434758b56f12d0fafdeff9c34589f063c353cd37)  
 > Date: Thu, 28 Jan 2021 16:52:58 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1891,7 +1910,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 44afd0a617319af7db29b2a53f4d368a41768cd3)
+[//]: # (END_SECTION 434758b56f12d0fafdeff9c34589f063c353cd37)
 [//]: # (START_SECTION f5f674c8ea038719078d14822cf82517f5eb5abf)
 ### Data Truncation Fixes
 
