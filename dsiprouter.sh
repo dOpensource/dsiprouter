@@ -2037,6 +2037,7 @@ EOF
         updateKamailioConfig
         printdbg 'Credentials have been updated'
     elif (( ${RELOAD_TYPE} == 2 )); then
+        updateKamailioConfig
         printwarn 'Restarting services with new configurations'
         systemctl restart mysql
         systemctl restart kamailio
@@ -3455,7 +3456,6 @@ function processCMD {
                             printerr "Credentials must be given for option $OPT"
                             cleanupAndExit 1
                         fi
-
                         SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
                         SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
                         SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
