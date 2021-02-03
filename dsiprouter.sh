@@ -1916,14 +1916,14 @@ function setCredentials {
     # we determine if user already changed DB creds (and just want dsiprouter to store them accordingly)
     if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $ROOT_DB_NAME ; then
         :
-    elif checkDB --user="${SET_ROOT_DB_USER:-ROOT_DB_USER}" --pass="${SET_ROOT_DB_PASS:-ROOT_DB_PASS}" \
-    --host="${SET_KAM_DB_HOST:-KAM_DB_HOST}" --port="${SET_KAM_DB_PORT:-KAM_DB_PORT}" \
-    ${SET_ROOT_DB_NAME:-ROOT_DB_NAME} ; then
-        KAM_DB_HOST=${SET_KAM_DB_HOST:-KAM_DB_HOST}
-        KAM_DB_PORT=${SET_KAM_DB_PORT:-KAM_DB_PORT}
-        ROOT_DB_USER=${SET_ROOT_DB_USER:-ROOT_DB_USER}
-        ROOT_DB_PASS=${SET_ROOT_DB_PASS:-ROOT_DB_PASS}
-        ROOT_DB_NAME=${SET_ROOT_DB_NAME:-ROOT_DB_NAME}
+    elif checkDB --user="${SET_ROOT_DB_USER:-$ROOT_DB_USER}" --pass="${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}" \
+    --host="${SET_KAM_DB_HOST:-$KAM_DB_HOST}" --port="${SET_KAM_DB_PORT:-$KAM_DB_PORT}" \
+    ${SET_ROOT_DB_NAME:-$ROOT_DB_NAME} ; then
+        KAM_DB_HOST=${SET_KAM_DB_HOST:-$KAM_DB_HOST}
+        KAM_DB_PORT=${SET_KAM_DB_PORT:-$KAM_DB_PORT}
+        ROOT_DB_USER=${SET_ROOT_DB_USER:-$ROOT_DB_USER}
+        ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
+        ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
     else
         printerr 'Connection to DB failed'
         cleanupAndExit 1
@@ -1949,12 +1949,12 @@ function setCredentials {
     fi
     if [[ -n "${SET_KAM_DB_PASS}" ]]; then
         RELOAD_TYPE=2
-        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_KAM_DB_PASS}') where User='${SET_KAM_DB_USER:-KAM_DB_USER}';")
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_KAM_DB_PASS}') where User='${SET_KAM_DB_USER:-$KAM_DB_USER}';")
     fi
     if [[ -n "${SET_KAM_DB_HOST}" ]]; then
         RELOAD_TYPE=2
-        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
-        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
+        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-$KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
+        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
         setConfigAttrib 'KAM_DB_HOST' "$SET_KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
         reconfigureMysqlSystemdService
     fi
@@ -1972,7 +1972,7 @@ function setCredentials {
         setConfigAttrib 'ROOT_DB_USER' "$SET_ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q
     fi
     if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
-        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_ROOT_DB_PASS}') where User='${SET_ROOT_DB_USER:-ROOT_DB_USER}';")
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_ROOT_DB_PASS}') where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}';")
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_ROOT_DB_NAME}" ]]; then
