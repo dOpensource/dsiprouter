@@ -156,6 +156,9 @@ setScriptSettings() {
     	export INTERNAL_FQDN="$(hostname)"
     fi
     export EXTERNAL_IP=$(getExternalIP)
+    if [[ -z "$EXTERNAL_IP" ]]; then
+	export EXTERNAL_IP=$INTERNAL_IP	
+    fi
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
