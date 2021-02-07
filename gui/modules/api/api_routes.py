@@ -1332,9 +1332,15 @@ def updateEndpointGroups(gwgroupid=None):
 
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
-        del_gateways = db.query(Gateways).filter(Gateways.gwid.in_(del_gwids))
-        del_gateways_cleanup = db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(
-            Gateways.gwid.notin_(gwlist))
+        del_gateways = db.query(Gateways).filter(and_( \
+		Gateways.gwid.in_(del_gwids), \
+		Gateways.address != "localhost" \ 
+		))
+        del_gateways_cleanup = db.query(Gateways).filter(and_( \
+		Gateways.description.like(gwgroup_filter), \
+		Gateways.gwid.notin_(gwlist), \
+		Gateways.address != "localhost" \ 
+		))
         # make sure we delete any associated address entries
         del_addr_ids = []
         for gateway in del_gateways.union(del_gateways_cleanup):
