@@ -730,13 +730,23 @@ def deleteEndpointGroup(gwgroupid):
             #    raise Exception('Crontab entry could not be deleted')
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
-        if domainmapping is not None:
+        if domainmapping.count() > 0:
+	# Get list of all domains managed by the endpoint group
+            query = "select distinct did from domain_attrs where name = 'created_by' and value='{}'".format(gwgroupid);
+            domain_attrs = db.execute(query)
+            did_list=[]
+            did_list_string=""
+            for did in domain_attrs:
+                did_list_string = did_list_string + "," + "'" + did[0] + "'"
+            if did_list_string[0][0] == ",":
+                did_list_string = did_list_string[1:]
+
             # Delete all domains
             query = "delete from domain where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
             db.execute(query)
 
             # Delete all domains_attrs
-            query = "delete from domain_attrs  where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            query = "delete from domain_attrs where did in ({})".format(did_list_string);
             db.execute(query)
 
             # Delete domain mapping, which will stop the fusionpbx sync
@@ -1168,7 +1178,7 @@ def updateEndpointGroups(gwgroupid=None):
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
-                if fusionpbxenabled:
+                if int(fusionpbxenabled) > 0:
                     sip_addr_external  = safeUriToHost(hostname, default_port=5080)
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                     dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
@@ -1227,7 +1237,7 @@ def updateEndpointGroups(gwgroupid=None):
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
-            if fusionpbxenabled:
+            if int(fusionpbxenabled) > 0:
                 sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                 dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
@@ -1312,7 +1322,7 @@ def updateEndpointGroups(gwgroupid=None):
                                             description=name)
                     db.add(dispatcher)
 
-            if fusionpbxenabled:
+            if int(fusionpbxenabled) > 0:
                 # update the weight for the external load balancer dispatcher set
                 sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 DispatcherEntry = db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).first()
@@ -1348,6 +1358,15 @@ def updateEndpointGroups(gwgroupid=None):
             if 'addr_id' in description_dict:
                 del_addr_ids.append(description_dict['addr_id'])
         db.query(Address).filter(Address.id.in_(del_addr_ids)).delete(synchronize_session=False)
+
+	# delete the dispatcher entries that correspond to the endpoints/gateways that was Deleted
+        del_addrs = []
+        for gateway in del_gateways.union(del_gateways_cleanup):
+            del_addrs.append("sip:{}".format(gateway.address))
+        db.query(Dispatcher).filter(and_(Dispatcher.setid == gwgroupid, Dispatcher.destination.in_(del_addrs))).delete(synchronize_session=False)
+
+
+
         del_gateways.delete(synchronize_session=False)
         del_gateways_cleanup.delete(synchronize_session=False)
 
