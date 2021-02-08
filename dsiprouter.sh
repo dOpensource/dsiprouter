@@ -139,6 +139,8 @@ setScriptSettings() {
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     # dsiprouter needs to have control over the certs (note that nginx should never have write access)
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    # dsiprouter needs to have permissions to the backup directory
+    chown -R dsiprouter:root ${BACKUPS_DIR}
    
     # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists 
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
