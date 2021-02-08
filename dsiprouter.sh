@@ -1099,9 +1099,12 @@ function installRTPEngine {
     printdbg "Attempting to install RTPEngine..."
     ./rtpengine/${DISTRO}/install.sh install
     ret=$?
-    if [ $ret -eq 0 ]; then
+    if (( $ret == 0 )); then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        systemctl restart kamailio
         printdbg "configuring RTPEngine service"
     elif [ $ret -eq 2 ]; then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         printwarn "RTPEngine install waiting on reboot"
         cleanupAndExit 0
     else
@@ -1140,7 +1143,12 @@ function uninstallRTPEngine {
     printdbg "Attempting to uninstall RTPEngine..."
     ./rtpengine/$DISTRO/install.sh uninstall
 
-    if [ $? -ne 0 ]; then
+    if (( $? == 0 )); then
+        disableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+            systemctl restart kamailio
+        fi
+
         printerr "RTPEngine uninstall failed"
         cleanupAndExit 1
     fi
