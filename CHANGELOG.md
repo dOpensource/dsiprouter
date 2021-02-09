@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-6e3093146c8efbe6195e4c4693679d839517f023
+34075e1cd69d6efc33033e5bc1bf6926ab0ed588
+208f758cafd30aa6e850d3d3d5b324126d30a426
 657e67a1a94b61e050c7ae77cd3fbbee71676622
 64b26f181c81a2146508530ef67ffdfc9ef0f06e
 1a43d1f226b3a882c7909c403871c1547ffff680
@@ -1881,10 +1882,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 6e3093146c8efbe6195e4c4693679d839517f023)
+[//]: # (START_SECTION 34075e1cd69d6efc33033e5bc1bf6926ab0ed588)
+### Fix DB Driver Connection Charset
+
+> Commit: [34075e1cd69d6efc33033e5bc1bf6926ab0ed588](https://github.com/dOpensource/dsiprouter/commit/34075e1cd69d6efc33033e5bc1bf6926ab0ed588)  
+> Date: Tue, 9 Feb 2021 17:44:08 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #315
+- set charset to utf8mb4 on driver connect
+
+
+---
+
+[//]: # (END_SECTION 34075e1cd69d6efc33033e5bc1bf6926ab0ed588)
+[//]: # (START_SECTION 208f758cafd30aa6e850d3d3d5b324126d30a426)
 ### Fix setCredential() Typos
 
-> Commit: [6e3093146c8efbe6195e4c4693679d839517f023](https://github.com/dOpensource/dsiprouter/commit/6e3093146c8efbe6195e4c4693679d839517f023)  
+> Commit: [208f758cafd30aa6e850d3d3d5b324126d30a426](https://github.com/dOpensource/dsiprouter/commit/208f758cafd30aa6e850d3d3d5b324126d30a426)  
 > Date: Wed, 3 Feb 2021 15:26:24 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1896,7 +1914,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 6e3093146c8efbe6195e4c4693679d839517f023)
+[//]: # (END_SECTION 208f758cafd30aa6e850d3d3d5b324126d30a426)
 [//]: # (START_SECTION 657e67a1a94b61e050c7ae77cd3fbbee71676622)
 ### Move kamailio tls.cfg To Same Location As kamailio.cfg
 
