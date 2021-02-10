@@ -1321,7 +1321,7 @@ EOF
 
     # generate documentation for GUI
     cd ${DSIP_PROJECT_DIR}/docs &&
-    make html &&
+    make html > /dev/null 2>&1
     cd -
 
     # add dependency on dsip-init service in startup boot order
