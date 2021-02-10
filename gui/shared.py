@@ -1,3 +1,7 @@
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
 import sys, os, re, json, socket, requests, logging, traceback, inspect, string, random, ssl
 from calendar import monthrange
 from importlib import reload
@@ -283,7 +287,7 @@ def safeUriToHost(uri, default_port=None):
             res = '{}:{};{}'.format(res,port,params)
         else:
             res = '{}:{}'.format(res, port)
-            
+
     return res
 
 def safeStripPort(address):
@@ -358,8 +362,8 @@ def isCertValid(hostname, externalip, port=5061):
     result = {"tls_cert_valid": False, "tls_cert_details": "", "tls_error": ""}
 
     try:
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile="/etc/dsiprouter/certs/cacert.pem")
-        context.load_cert_chain(certfile="/etc/dsiprouter/certs/dsiprouter.crt", keyfile="/etc/dsiprouter/certs/dsiprouter.key")
+        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=settings.DSIP_SSL_CA)
+        context.load_cert_chain(certfile=settings.DSIP_SSL_CERT, keyfile=settings.DSIP_SSL_KEY)
 
         conn = context.wrap_socket(socket.socket(socket.AF_INET), server_hostname=hostname)
         conn.connect((externalip, port))
@@ -372,7 +376,7 @@ def isCertValid(hostname, externalip, port=5061):
     except Exception as ex:
         result['tls_error'] = str(ex)
         # Return valid even if the cert can't be validated.  We just want to validate
-        # the ability to connect using the cert.  
+        # the ability to connect using the cert.
         return result
 
 # TODO: kam jsonrpc url should be set in settings.py / install script

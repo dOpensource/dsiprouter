@@ -46,40 +46,11 @@ EOF
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
     # Update repo sources cache
-    apt-get update
+    apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated --force-yes firewalld kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules \
+    apt-get install -y --allow-unauthenticated --force-yes firewalld kamailio kamailio-mysql-modules kamailio-extra-modules \
         kamailio-presence-modules
-
-    # alias mariadb.service to mysql.service and mysqld.service as in debian repo
-    # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-
-[Install]
-Alias=
-Alias=mysqld.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysql.service
-    chmod 0644 /lib/systemd/system/mysql.service
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-
-[Install]
-Alias=
-Alias=mysql.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysqld.service
-    chmod 0644 /lib/systemd/system/mysqld.service
-    systemctl daemon-reload
-
-    # if db is remote don't run local service
-    reconfigureMysqlSystemdService
 
     # Make sure MariaDB and Local DNS start before Kamailio
     if grep -q v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
@@ -90,15 +61,8 @@ EOF
     fi
     systemctl daemon-reload
 
-    # Enable MySQL and Kamailio for system startup
-    systemctl enable mysql
+    # Enable Kamailio for system startup
     systemctl enable kamailio
-
-    # Make sure no extra configs present on fresh install
-    rm -f ~/.my.cnf
-
-    # Start MySQL
-    systemctl start mysql
 
     # create kamailio defaults config
     (cat << 'EOF'
@@ -118,10 +82,10 @@ EOF
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc.$(date +%Y%m%d_%H%M%S)
-    if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
+    if [[ -z "${ROOT_DB_PASS-unset}" ]]; then
         local ROOTPW_SETTING="DBROOTPWSKIP=yes"
     else
-        local ROOTPW_SETTING="DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\""
+        local ROOTPW_SETTING="DBROOTPW=\"${ROOT_DB_PASS}\""
     fi
 
     # TODO: we should set STORE_PLAINTEXT_PW to 0, this is not default but would need tested
@@ -132,7 +96,7 @@ DBPORT=${KAM_DB_PORT}
 DBNAME=${KAM_DB_NAME}
 DBRWUSER="${KAM_DB_USER}"
 DBRWPW="${KAM_DB_PASS}"
-DBROOTUSER="${MYSQL_ROOT_USERNAME}"
+DBROOTUSER="${ROOT_DB_USER}"
 ${ROOTPW_SETTING}
 CHARSET=utf8
 INSTALL_EXTRA_TABLES=yes
@@ -152,6 +116,8 @@ EOF
     # Firewall settings
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
+    firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
@@ -173,24 +139,13 @@ EOF
 function uninstall {
     # Stop servers
     systemctl stop kamailio
-    systemctl stop mysql
     systemctl disable kamailio
-    systemctl disable mysql
 
     # Backup kamailio configuration directory
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
-    # Backup mysql / mariadb
-    mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
-
-    # remove mysql unit files we created
-    rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
-
-    # Uninstall Kamailio modules and Mariadb
-    apt-get -y remove --purge mysql\*
-    apt-get -y remove --purge mariadb\*
+    # Uninstall Kamailio modules
     apt-get -y remove --purge kamailio\*
-    rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:
     firewall-cmd --zone=public --remove-port=5060/udp --permanent

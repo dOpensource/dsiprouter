@@ -10,49 +10,34 @@ The workflow consists of:
 - Create domain private key and CSR
 - Issue certificate
 """
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
 
-
-import OpenSSL
-import os
-import shutil
-import pem
-import signal
-import ssl
-import threading
+import os, shutil, OpenSSL
+import josepy as jose
 from util.file_handling import change_owner
-
 from contextlib import contextmanager
-from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
-
-from acme import challenges
-from acme import client
-from acme import crypto_util
-from acme import errors
-from acme import messages
-from acme import standalone
-import josepy as jose
+from acme import challenges, client, crypto_util, messages, standalone
+import settings
 
 # This is the ACME Directory URL for `step-ca`
-DIRECTORY_URL_STAGING= 'https://acme-staging-v02.api.letsencrypt.org/directory'
+DIRECTORY_URL_STAGING = 'https://acme-staging-v02.api.letsencrypt.org/directory'
 DIRECTORY_URL_PROD = 'https://acme-v02.api.letsencrypt.org/directory'
 
 # User Agent
-USER_AGENT="dsiprouter"
+USER_AGENT = "dsiprouter"
 
 # Account key size
-ACC_KEY_BITS = 2048
+ACC_KEY_BITS = 4096
 
 # Certificate private key size
-CERT_PKEY_BITS = 2048
-
-# Directory to store certificates
-CERT_DIR = "/etc/dsiprouter/certs"
+CERT_PKEY_BITS = 4096
 
 # Port to listen on for `http-01` challenge
 ACME_PORT = 80
-
 
 
 def new_csr(domain_name, pkey_pem=None):
@@ -80,12 +65,14 @@ def challenge_server(http_01_resources):
 
     # Setting up a server that binds at PORT and any address.
     address = ('', ACME_PORT)
+    servers = None
     try:
         servers = standalone.HTTP01DualNetworkedServers(address, http_01_resources)
         servers.serve_forever()
         yield servers
     finally:
-        servers.shutdown_and_server_close()
+        if servers is not None:
+            servers.shutdown_and_server_close()
 
 
 def perform_http01(client_acme, challb, orderr):
@@ -107,10 +94,8 @@ def perform_http01(client_acme, challb, orderr):
     return finalized_orderr.fullchain_pem
 
 
-
-
-def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PROD,cert_dir=None,debug=None,default=None):
-
+def generateCertificate(domain, notification_email, directory_url=DIRECTORY_URL_PROD, cert_dir=None, debug=None,
+                        default=None):
     # Create account key
     acc_key = jose.JWKRSA(
         key=rsa.generate_private_key(public_exponent=65537,
@@ -120,7 +105,7 @@ def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PR
     # Create client configured to use our ACME server and trust our root cert
     net = client.ClientNetwork(acc_key, user_agent=USER_AGENT)
     if debug == True:
-        directory_url=DIRECTORY_URL_STAGING
+        directory_url = DIRECTORY_URL_STAGING
     directory = messages.Directory.from_json(net.get(directory_url).json())
     client_acme = client.ClientV2(directory, net=net)
 
@@ -143,18 +128,18 @@ def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PR
 
     # Store the certificates
     if cert_dir is None:
-        cert_dir = CERT_DIR
-    
+        cert_dir = settings.DSIP_CERTS_DIR
+
     if default == True:
-        cert_domain_dir = CERT_DIR
+        cert_domain_dir = settings.DSIP_CERTS_DIR
     else:
-        cert_domain_dir = "{}/{}".format(cert_dir,domain)
-    
+        cert_domain_dir = "{}/{}".format(cert_dir, domain)
+
     if not os.path.exists(cert_domain_dir):
         os.makedirs(cert_domain_dir)
 
-    key_file = "{}/dsiprouter.key".format(cert_domain_dir)
-    cert_file = "{}/dsiprouter.crt".format(cert_domain_dir)
+    key_file = os.path.join(cert_domain_dir, 'dsiprouter-key.pem')
+    cert_file = os.path.join(cert_domain_dir, 'dsiprouter-cert.pem')
 
     with os.fdopen(os.open(key_file, os.O_WRONLY | os.O_CREAT, 0o640), 'w') as keyfile:
         keyfile.write(pkey_pem.decode('utf-8'))
@@ -162,21 +147,20 @@ def generateCertificate(domain,notification_email,directory_url=DIRECTORY_URL_PR
         certfile.write(fullchain_pem)
 
     # Change owner to root:kamailio so that Kamailio can load the configurations
-    change_owner(cert_domain_dir,"root","kamailio")
-    change_owner(key_file,"root","kamailio")
-    change_owner(cert_file,"root","kamailio")
+    change_owner(cert_domain_dir, "dsiprouter", "kamailio")
+    change_owner(key_file, "dsiprouter", "kamailio")
+    change_owner(cert_file, "dsiprouter", "kamailio")
+
+    return pkey_pem.decode('utf-8'), fullchain_pem
 
 
-    return pkey_pem.decode('utf-8'),fullchain_pem
-
-
-def deleteCertificate(domain,directory_url=DIRECTORY_URL_PROD,cert_dir=None):
+def deleteCertificate(domain, directory_url=DIRECTORY_URL_PROD, cert_dir=None):
     # Location of certificates
     if cert_dir is None:
-        cert_dir = CERT_DIR
+        cert_dir = settings.DSIP_CERTS_DIR
 
     # Location of the certificates
-    cert_domain_dir = "{}/{}".format(cert_dir,domain)
+    cert_domain_dir = "{}/{}".format(cert_dir, domain)
 
     # Remove directory that contains the cert and key for the domain
     try:
@@ -188,10 +172,9 @@ def deleteCertificate(domain,directory_url=DIRECTORY_URL_PROD,cert_dir=None):
 
 
 if __name__ == "__main__":
-
     directory_url = DIRECTORY_URL_STAGING
     domain = "mack.dsiprouter.net"
     email = "mack@dopensource.com"
 
-    key,cert = generateCertificate(domain,email,directory_url)
-    print("Key:\n{}\nCert:\n{}\n".format(key,cert))
+    key, cert = generateCertificate(domain, email, directory_url)
+    print("Key:\n{}\nCert:\n{}\n".format(key, cert))

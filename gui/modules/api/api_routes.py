@@ -1,24 +1,27 @@
-import os, time, json, random, subprocess, requests, csv, base64
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
+import os, time, json, random, subprocess, requests, csv, base64, codecs, re, OpenSSL
 import urllib.parse as parse
+from contextlib import closing
 from collections import OrderedDict
-from functools import wraps
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
-from sqlalchemy import exc as sql_exceptions, and_
+from sqlalchemy import exc as sql_exceptions, and_,or_
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
-    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates
+    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
 from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
     debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars
+from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
 from util.file_handling import isValidFile, change_owner
-from util.kamtls import *
+from util import kamtls, letsencrypt
 from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
     cronIntervalToDescription
-from util.letsencrypt import *
 import settings, globals
 
 api = Blueprint('api', __name__)
@@ -34,54 +37,6 @@ api = Blueprint('api', __name__)
 # TODO: this is almost impossible to work on...
 #       we need to abstract out common code between gui and api and standardize routes!
 
-class APIToken:
-    token = None
-
-    def __init__(self, request):
-        if 'Authorization' in request.headers:
-            auth_header = request.headers.get('Authorization', None)
-            if auth_header is not None:
-                header_values = auth_header.split(' ')
-                if len(header_values) == 2:
-                    self.token = header_values[1]
-
-    def isValid(self):
-        try:
-            if self.token:
-                # Get Environment Variables if in debug mode
-                # This is the only case we allow plain text token comparison
-                if settings.DEBUG:
-                    settings.DSIP_API_TOKEN = os.getenv('DSIP_API_TOKEN', settings.DSIP_API_TOKEN)
-
-                # need to decrypt token
-                if isinstance(settings.DSIP_API_TOKEN, bytes):
-                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-                else:
-                    tokencheck = settings.DSIP_API_TOKEN
-
-                return tokencheck == self.token
-
-            return False
-        except:
-            return False
-
-
-def api_security(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        apiToken = APIToken(request)
-
-        if not session.get('logged_in') and not apiToken.isValid():
-            accept_header = request.headers.get('Accept', '')
-
-            if 'text/html' in accept_header:
-                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
-            else:
-                payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
@@ -109,6 +64,35 @@ def getKamailioStats():
     except Exception as ex:
         return showApiError(ex)
 
+@api.route("/api/v1/kamailio/health", methods=['GET'])
+def getSystemHealth():
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'data': []}
+    health_data = {}
+    http_status = None
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
+        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+        if r:
+            #health_data.['version'] = "5.3.4."
+            http_status = r.status_code
+            if http_status >= 400:
+                response_payload['msg'] = 'Server is down'
+            else:
+                response_payload['msg'] = 'Server is up'
+
+        return jsonify(response_payload), http_status
+
+    except Exception as ex:
+        http_status = "400"
+        response_payload['msg'] = 'Server is down'
+        return jsonify(response_payload), http_status
+
+
 
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
 @api_security
@@ -128,7 +112,8 @@ def reloadKamailio():
             dsip_api_token = settings.DSIP_API_TOKEN
 
         # Pulled tls.reload out of the reload process due to issues
-        #{'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
+        # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
+
 
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
@@ -144,8 +129,7 @@ def reloadKamailio():
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
             {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'role', settings.ROLE]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_server', dsip_api_url]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_token', dsip_api_token]}
@@ -156,7 +140,7 @@ def reloadKamailio():
                 {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)]})
             reload_cmds.append(
-                {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
+                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)]})
             reload_cmds.append(
                 {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
@@ -166,7 +150,6 @@ def reloadKamailio():
                  'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
 
         for cmdset in reload_cmds:
-            print("Cmd: {}".format(cmdset))
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
             if r.status_code >= 400:
                 try:
@@ -220,7 +203,7 @@ def getEndpointLease():
         name = "lease" + str(rand_num)
         auth_username = name
         auth_password = urandomChars(DEF_PASSWORD_LEN)
-        auth_domain = settings.DOMAIN
+        auth_domain = settings.DEFAULT_AUTH_DOMAIN
 
         # Set some defaults
         host_addr = ''
@@ -396,7 +379,8 @@ def handleInboundMapping():
                 if res is not None:
                     data = rowToDict(res)
                     data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                            'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
+                            'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
+                                data['description']) else '',
                             'servers': data['gwlist'].split(',')}
                     payload['data'].append(data)
                     payload['msg'] = 'Rule Found'
@@ -412,7 +396,8 @@ def handleInboundMapping():
                     if res is not None:
                         data = rowToDict(res)
                         data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                                'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
+                                'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
+                                    data['description']) else '',
                                 'servers': data['gwlist'].split(',')}
                         payload['data'].append(data)
                         payload['msg'] = 'DID Found'
@@ -426,7 +411,8 @@ def handleInboundMapping():
                         for row in res:
                             data = rowToDict(row)
                             data = {'ruleid': data['ruleid'], 'did': data['prefix'],
-                                    'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(data['description']) else '',
+                                    'name': strFieldsToDict(data['description'])['name'] if 'name' in strFieldsToDict(
+                                        data['description']) else '',
                                     'servers': data['gwlist'].split(',')}
                             payload['data'].append(data)
                         payload['msg'] = 'Rules Found'
@@ -457,13 +443,14 @@ def handleInboundMapping():
             for i in range(0, len(data['servers'])):
                 try:
                     data['servers'][i] = str(data['servers'][i])
-                    #_ = int(data['servers'][i])
+                    # _ = int(data['servers'][i])
                 except:
                     raise http_exceptions.BadRequest('Invalid Server ID')
             for c in data['did']:
                 if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                     raise http_exceptions.BadRequest(
-                        'DID improperly formatted. Allowed characters: {}'.format(','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
+                        'DID improperly formatted. Allowed characters: {}'.format(
+                            ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
 
             gwlist = ','.join(data['servers'])
             prefix = data['did']
@@ -509,7 +496,7 @@ def handleInboundMapping():
                     for i in range(0, len(data['servers'])):
                         try:
                             data['servers'][i] = str(data['servers'][i])
-                            #_ = int(data['servers'][i])
+                            # _ = int(data['servers'][i])
                         except:
                             raise http_exceptions.BadRequest('Invalid Server ID')
                 updates['gwlist'] = ','.join(data['servers'])
@@ -517,7 +504,8 @@ def handleInboundMapping():
                 for c in data['did']:
                     if c not in settings.DID_PREFIX_ALLOWED_CHARS:
                         raise http_exceptions.BadRequest(
-                            'DID improperly formatted. Allowed characters: {}'.format(','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
+                            'DID improperly formatted. Allowed characters: {}'.format(
+                                ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
                 updates['prefix'] = data['did']
             if 'name' in data:
                 updates['description'] = 'name:{}'.format(data['name'])
@@ -742,8 +730,32 @@ def deleteEndpointGroup(gwgroupid):
             #    raise Exception('Crontab entry could not be deleted')
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
-        if domainmapping is not None:
+        if domainmapping.count() > 0:
+	# Get list of all domains managed by the endpoint group
+            query = "select distinct did from domain_attrs where name = 'created_by' and value='{}'".format(gwgroupid);
+            domain_attrs = db.execute(query)
+            did_list=[]
+            did_list_string=""
+            for did in domain_attrs:
+                did_list_string = did_list_string + "," + "'" + did[0] + "'"
+            if did_list_string[0][0] == ",":
+                did_list_string = did_list_string[1:]
+
+            # Delete all domains
+            query = "delete from domain where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            db.execute(query)
+
+            # Delete all domains_attrs
+            query = "delete from domain_attrs where did in ({})".format(did_list_string);
+            db.execute(query)
+
+            # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
+
+        dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid ==  gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000))
+
+        if dispatcher is not None:
+            dispatcher.delete(synchronize_session=False)
 
         db.commit()
         response_payload['status'] = 200
@@ -805,12 +817,22 @@ def getEndpointGroup(gwgroupid):
         if endpointList is not None:
             endpointGatewayList = endpointList.gwlist.split(',')
             endpoints = db.query(Gateways).filter(Gateways.gwid.in_(endpointGatewayList))
+            dispatcher = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid)
+            if dispatcher:
+                weightList = {}
+                for item in dispatcher:
+                    weight = item.attrs.split('=')[1]
+                    weightList[item.destination[4:]] = weight
 
             for endpoint in endpoints:
                 ep = {}
                 ep['gwid'] = endpoint.gwid
                 ep['hostname'] = endpoint.address
                 ep['description'] = strFieldsToDict(endpoint.description)['name']
+                if dispatcher:
+                    ep['weight'] = weightList[endpoint.address] if endpoint.address in weightList else ''
+                else:
+                    ep['weight'] = ""
                 ep['maintmode'] = ""
 
                 gwgroup_data['endpoints'].append(ep)
@@ -926,6 +948,7 @@ def updateEndpointGroups(gwgroupid=None):
                     gwid:<int>,
                     hostname:<string>,
                     description:<string>
+                    weight:<string>
                 },
                 ...
             ],
@@ -1052,6 +1075,17 @@ def updateEndpointGroups(gwgroupid=None):
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
 
+
+        if 'fusionpbx' in request_payload:
+            fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
+                if 'enabled' in request_payload['fusionpbx'] else None
+            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
+                if 'dbhost' in request_payload['fusionpbx'] else None
+            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
+                if 'dbuser' in request_payload['fusionpbx'] else None
+            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] \
+                if 'dbpass' in request_payload['fusionpbx'] else None
+
         # Update the AuthType userpwd settings
         if authtype == "userpwd":
             authuser = request_payload['auth']['user'] \
@@ -1060,7 +1094,7 @@ def updateEndpointGroups(gwgroupid=None):
                 if 'pass' in request_payload['auth'] and len(request_payload['auth']['pass']) > 0 else None
             authdomain = request_payload['auth']['domain'] \
                 if 'domain' in request_payload['auth'] and len(
-                request_payload['auth']['domain']) > 0 else settings.DOMAIN
+                request_payload['auth']['domain']) > 0 else settings.DEFAULT_AUTH_DOMAIN
             authdomain = safeUriToHost(authdomain)
 
             if authuser is None or authpass is None:
@@ -1115,6 +1149,7 @@ def updateEndpointGroups(gwgroupid=None):
             if gwid is None:
                 hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
                 name = endpoint['description'] if 'description' in endpoint else ''
+                weight = endpoint['weight'] if 'weight' in endpoint else '0'
                 if len(hostname) == 0:
                     raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1126,8 +1161,9 @@ def updateEndpointGroups(gwgroupid=None):
                 if authtype == "ip":
                     # for ip auth we must create address records for the endpoint
                     host_addr = safeStripPort(sip_addr)
+                    host_ip = hostToIP(host_addr)
 
-                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                     db.add(Addr)
                     db.flush()
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
@@ -1135,6 +1171,19 @@ def updateEndpointGroups(gwgroupid=None):
                 else:
                     # we know this a new endpoint so we don't have to check for any address records here
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
+
+
+                # Create dispatcher group with the set id being the gateway group id
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                db.add(dispatcher)
+
+                # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
+                if int(fusionpbxenabled) > 0:
+                    sip_addr_external  = safeUriToHost(hostname, default_port=5080)
+                    # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
+                    dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                    db.add(dispatcher)
+
 
                 db.add(Gateway)
                 db.flush()
@@ -1144,7 +1193,8 @@ def updateEndpointGroups(gwgroupid=None):
             else:
                 unprocessed_endpoints_lut[gwid] = {
                     'hostname': endpoint['hostname'],
-                    'name': endpoint['description']
+                    'name': endpoint['description'],
+                    'weight': endpoint['weight']
                 }
 
         # conditionally adding/updating/deleting endpoints (using set theory)
@@ -1161,6 +1211,7 @@ def updateEndpointGroups(gwgroupid=None):
 
             hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
             name = endpoint['name'] if 'name' in endpoint else ''
+            weight = endpoint['weight'] if 'weight' in endpoint else '0'
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1171,14 +1222,27 @@ def updateEndpointGroups(gwgroupid=None):
             if authtype == "ip":
                 # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
+                host_ip = hostToIP(host_addr)
 
-                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id)
             else:
                 # we know this a new endpoint so we don't have to check for any address records here
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
+
+            # Create dispatcher group with the set id being the gateway group id
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+            db.add(dispatcher)
+
+            # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
+            if int(fusionpbxenabled) > 0:
+                sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
+                # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
+                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+
+                db.add(dispatcher)
 
             # we ignore the given gwid and allow DB to assign one instead
             db.add(Gateway)
@@ -1194,6 +1258,7 @@ def updateEndpointGroups(gwgroupid=None):
             endpoint_fields = current_endpoint['description_dict']
             hostname = endpoint['hostname'] if 'hostname' in endpoint else current_endpoint['address']
             name = endpoint['name'] if 'name' in endpoint else endpoint_fields['name']
+            weight = endpoint['weight'] if 'weight' in endpoint else '0'
             endpoint_fields['name'] = name
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
@@ -1205,6 +1270,7 @@ def updateEndpointGroups(gwgroupid=None):
             if authtype == "ip":
                 # for ip auth we must create address records for the endpoint
                 host_addr = safeStripPort(sip_addr)
+                host_ip = hostToIP(host_addr)
 
                 # if address exists update, otherwise create it
                 address_exists = False
@@ -1214,14 +1280,14 @@ def updateEndpointGroups(gwgroupid=None):
                     if Addr is not None:
                         address_exists = True
 
-                        Addr.ip_addr = host_addr
+                        Addr.ip_addr = host_ip
                         addr_fields = strFieldsToDict(Addr.tag)
                         addr_fields['name'] = name
                         addr_fields['gwgroup'] = gwgroupid_str
                         Addr.tag = dictToStrFields(addr_fields)
 
                 if not address_exists:
-                    Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
 
                     db.add(Addr)
                     db.flush()
@@ -1240,12 +1306,51 @@ def updateEndpointGroups(gwgroupid=None):
                 {"description": dictToStrFields(endpoint_fields), "address": sip_addr, "strip": strip,
                  "pri_prefix": prefix}, synchronize_session=False)
 
+            # update the weight
+            DispatcherEntry = db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
+            if weight is None or len(weight) == 0:
+                if DispatcherEntry is not None:
+                    db.delete(DispatcherEntry)
+            elif weight:
+                if DispatcherEntry is not None:
+                    db.query(Dispatcher).filter(
+                        (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update(
+                        {"attrs": "weight={}".format(weight)}, synchronize_session=False)
+                else:
+                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                                            description=name)
+                    db.add(dispatcher)
+
+            if int(fusionpbxenabled) > 0:
+                # update the weight for the external load balancer dispatcher set
+                sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
+                DispatcherEntry = db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).first()
+                if weight is None or len(weight) == 0:
+                    if DispatcherEntry is not None:
+                        db.delete(DispatcherEntry)
+                elif weight:
+                    if DispatcherEntry is not None:
+                        db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
+                    else:
+                        #sip_addr_external  = safeUriToHost(hostname, default_port=5080)
+                        #dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                        #db.add(dispatcher)
+                        pass
+
             gwlist.append(gwid)
 
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
-        del_gateways = db.query(Gateways).filter(Gateways.gwid.in_(del_gwids))
-        del_gateways_cleanup = db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(Gateways.gwid.notin_(gwlist))
+        del_gateways = db.query(Gateways).filter(and_( \
+		Gateways.gwid.in_(del_gwids), \
+		Gateways.address != "localhost" \
+		))
+        del_gateways_cleanup = db.query(Gateways).filter(and_( \
+		Gateways.description.like(gwgroup_filter), \
+		Gateways.gwid.notin_(gwlist), \
+		Gateways.address != "localhost" \
+		))
         # make sure we delete any associated address entries
         del_addr_ids = []
         for gateway in del_gateways.union(del_gateways_cleanup):
@@ -1253,6 +1358,15 @@ def updateEndpointGroups(gwgroupid=None):
             if 'addr_id' in description_dict:
                 del_addr_ids.append(description_dict['addr_id'])
         db.query(Address).filter(Address.id.in_(del_addr_ids)).delete(synchronize_session=False)
+
+	# delete the dispatcher entries that correspond to the endpoints/gateways that was Deleted
+        del_addrs = []
+        for gateway in del_gateways.union(del_gateways_cleanup):
+            del_addrs.append("sip:{}".format(gateway.address))
+        db.query(Dispatcher).filter(and_(Dispatcher.setid == gwgroupid, Dispatcher.destination.in_(del_addrs))).delete(synchronize_session=False)
+
+
+
         del_gateways.delete(synchronize_session=False)
         del_gateways_cleanup.delete(synchronize_session=False)
 
@@ -1329,15 +1443,6 @@ def updateEndpointGroups(gwgroupid=None):
                         raise Exception('Crontab entry could not be deleted')
 
         # Update FusionPBX
-        if 'fusionpbx' in request_payload:
-            fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
-                if 'enabled' in request_payload['fusionpbx'] else None
-            fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
-                if 'dbhost' in request_payload['fusionpbx'] else None
-            fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
-                if 'dbuser' in request_payload['fusionpbx'] else None
-            fusionpbxdbpass = request_payload['fusionpbx']['dbpass'] \
-                if 'dbpass' in request_payload['fusionpbx'] else None
 
             # Convert fusionpbxenabled variable to int
             if isinstance(fusionpbxenabled, str):
@@ -1401,6 +1506,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 {
                     hostname:<string>,
                     description:<string>
+                    weight:<string>
                 },
                 ...
             ],
@@ -1445,6 +1551,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     """
 
     db = DummySession()
+    fusionpbxenabled=0
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
@@ -1515,7 +1622,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                    and len(request_payload['auth']['pass']) > 0 else None
             authdomain = request_payload['auth']['domain'] \
                 if 'domain' in request_payload['auth'] \
-                   and len(request_payload['auth']['domain']) > 0 else settings.DOMAIN
+                   and len(request_payload['auth']['domain']) > 0 else settings.DEFAULT_AUTH_DOMAIN
             authdomain = safeUriToHost(authdomain)
 
             if authuser is None or authpass is None:
@@ -1535,8 +1642,8 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         if 'fusionpbx' in request_payload:
             fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
                 if 'enabled' in request_payload['fusionpbx'] else None
-            fusionpbxdbonly = request_payload['fusionpbx']['dbonly'] \
-                if 'dbonly' in request_payload['fusionpbx'] else None
+            fusionpbxclustersupport = request_payload['fusionpbx']['clustersupport'] \
+                if 'clustersupport' in request_payload['fusionpbx'] else None
             fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
                 if 'dbhost' in request_payload['fusionpbx'] else None
             fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
@@ -1548,13 +1655,22 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             if isinstance(fusionpbxenabled, str):
                 fusionpbxenabled = int(fusionpbxenabled)
 
+            # Convert fusionclustersupport variable to int
+            if isinstance(fusionpbxclustersupport, str):
+                fusionpbxclustersupport = int(fusionpbxclustersupport)
+
             if fusionpbxenabled == 1:
+                if fusionpbxclustersupport == 1:
+                    domainType = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX_CLUSTER.value
+                else:
+                    domainType = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value
+
                 domainmapping = dSIPMultiDomainMapping(gwgroupid, fusionpbxdbhost, fusionpbxdbuser, fusionpbxdbpass,
-                                                       type=dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX.value)
+                                                       type=domainType)
                 db.add(domainmapping)
 
                 # Add the FusionPBX server as an Endpoint if it's not just the DB server
-                if fusionpbxdbonly is None or fusionpbxdbonly == False:
+                if fusionpbxclustersupport is None or fusionpbxclustersupport == False:
                     endpoint = {}
                     endpoint['hostname'] = fusionpbxdbhost
                     endpoint['description'] = "FusionPBX Server"
@@ -1570,6 +1686,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         for endpoint in endpoints:
             hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
             name = endpoint['description'] if 'description' in endpoint else ''
+            weight = endpoint['weight'] if 'weight' in endpoint else ''
+            # TODO: More complicated logic is needed to ensure the weight is set properly for each endpoint
+            if not weight:
+                weight = str(100 / len(endpoints))
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1586,14 +1706,29 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
             if authtype == "ip":
                 host_addr = safeStripPort(sip_addr)
+                host_ip = hostToIP(host_addr)
 
-                Addr = Address(name, host_addr, 32, settings.FLT_PBX, gwgroup=gwgroupid)
+                Addr = Address(name, host_ip, 32, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
                                    attrs=attrs)
             else:
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
+
+
+            # Create dispatcher group with the set id being the gateway group id
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+            db.add(dispatcher)
+
+            # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
+            if fusionpbxenabled:
+                sip_addr_external  = safeUriToHost(hostname, default_port=5080)
+                # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
+                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+
+                db.add(dispatcher)
+
 
             db.add(Gateway)
             db.flush()
@@ -1603,9 +1738,17 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup_data['endpoints'] = gwlist
         gwlist_str = ','.join([str(gw) for gw in gwlist])
 
+        # Update Gateway group with the Dispatcher ID.  It's denoted with the LB field
+        gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
+        if gwgroup is not None:
+            fields = strFieldsToDict(gwgroup.description)
+            fields['lb'] = gwgroupid
+            if fusionpbxenabled:
+                fields['lb_ext'] = gwgroupid + 1000
+
         # Update the GatewayGroup with the lists of gateways
         db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).update(
-            {'gwlist': gwlist_str}, synchronize_session=False)
+            {'gwlist': gwlist_str, 'description': dictToStrFields(fields)}, synchronize_session=False)
 
         # Setup notifications
         if 'notifications' in request_payload:
@@ -1658,6 +1801,630 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         return showApiError(ex)
     finally:
         db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['GET'])
+@api.route("/api/v1/numberenrichment/<int:rule_id>", methods=['GET'])
+@api_security
+def getNumberEnrichment(rule_id=None):
+    """
+    Get one or multiple number enrichment rules
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>,
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+    """
+    db = DummySession()
+
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # get a single enrichment rule
+        if rule_id is not None:
+            rule = db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id == rule_id).first()
+            if rule is not None:
+                response_payload['data'].append({
+                    'rule_id': rule.id,
+                    'dnid': rule.dnid,
+                    'country_code': rule.country_code,
+                    'routing_number': rule.routing_number,
+                    'rule_name': strFieldsToDict(rule.description)['name']
+                })
+            else:
+                raise http_exceptions.NotFound("Enrichment Rule Does Not Exist")
+        # get all enrichment rules
+        else:
+            rules = db.query(dSIPDNIDEnrichment).all()
+
+            for rule in rules:
+                response_payload['data'].append({
+                    'rule_id': rule.id,
+                    'dnid': rule.dnid,
+                    'country_code': rule.country_code,
+                    'routing_number': rule.routing_number,
+                    'rule_name': strFieldsToDict(rule.description)['name']
+                })
+
+        response_payload['msg'] = 'Enrichment Rule(s) found'
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['POST'])
+@api_security
+def addNumberEnrichment(request_payload=None):
+    """
+    Add a one or multiple enrichment rules
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>
+                },
+                ...
+            ]
+        }
+    """
+
+    db = DummySession()
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {
+        "dnid": str, "country_code": str, "routing_number": str, "rule_name": str
+    }
+
+    # ensure requred args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'dnid'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if 'data' not in request_payload or len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' is required and must be non-zero length")
+        for data in request_payload['data']:
+            if not isinstance(data, dict):
+                raise http_exceptions.BadRequest("Request argument 'data' not valid")
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        # don't allow duplicate dnid's
+        new_dnid_list = [x['dnid'] for x in request_payload['data']]
+        if db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.dnid.in_(new_dnid_list)).scalar():
+            raise http_exceptions.BadRequest("Duplicate DNID's are not allowed")
+
+        for rule_data in request_payload['data']:
+            rule = dSIPDNIDEnrichment(**rule_data)
+            db.add(rule)
+            db.flush()
+            response_payload['data'].append({'rule_id': rule.id})
+
+        db.commit()
+
+        response_payload['msg'] = 'Enrichment Rule(s) created'
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['PUT'])
+@api.route("/api/v1/numberenrichment/<int:rule_id>", methods=['PUT'])
+@api_security
+def updateNumberEnrichment(rule_id=None, request_payload=None):
+    """
+    Update one or multiple enrichment rules\n
+    The rule_id can be provided in url path or payload
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    rule_id: <int>
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>
+                },
+                ...
+            ]
+        }
+    """
+
+    db = DummySession()
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {
+        "rule_id": int, "dnid": str, "country_code": str, "routing_number": str, "rule_name": str
+    }
+
+    # ensure requred args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'dnid'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if 'data' not in request_payload or len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' is required and must be non-zero length")
+        else:
+            if rule_id is not None and isinstance(request_payload['data'][0], dict):
+                request_payload['data'][0]['rule_id'] = int(rule_id)
+        for data in request_payload['data']:
+            if not isinstance(data, dict):
+                raise http_exceptions.BadRequest("Request argument 'data' not valid")
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        # don't allow duplicate dnid's
+        upd_ruleids = [x['rule_id'] for x in request_payload['data'] if 'rule_id' in x]
+        old_dnids = set(x.dnid for x in db.query(dSIPDNIDEnrichment).all() if x.id not in upd_ruleids)
+        add_dnids = set(x['dnid'] for x in request_payload['data'] if not 'rule_id' in x)
+        upd_dnids = set(x['dnid'] for x in request_payload['data'] if 'rule_id' in x)
+        if len(list(add_dnids) + list(upd_dnids) + list(old_dnids)) > len(set.union(add_dnids, upd_dnids, old_dnids)):
+            raise http_exceptions.BadRequest("Duplicate DNID's are not allowed")
+
+        for rule_data in request_payload['data']:
+            # adding new rules
+            if not 'rule_id' in rule_data:
+                rule = dSIPDNIDEnrichment(**rule_data)
+                db.add(rule)
+                db.flush()
+                response_payload['data'].append({'rule_id': rule.id})
+            # updating existing rules
+            else:
+                rule_id = rule_data.pop('rule_id')
+                description = {'name': rule_data.pop('rule_name')}
+                rule_data['description'] = dictToStrFields(description)
+
+                if not db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id == rule_id).update(
+                        rule_data, synchronize_session=False):
+                    raise http_exceptions.BadRequest("Enrichment Rule with id '{}' does not exist".format(str(rule_id)))
+                response_payload['data'].append({'rule_id': rule_id})
+
+        db.commit()
+
+        response_payload['msg'] = 'Enrichment Rule(s) updated'
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment", methods=['DELETE'])
+@api.route("/api/v1/numberenrichment/<int:rule_id>", methods=['DELETE'])
+@api_security
+def deleteNumberEnrichment(rule_id, request_payload=None):
+    """
+    Delete one or multiple enrichment rules\n
+    The rule_id can be provided in url path or payload
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    rule_id: <int>
+                },
+                ...
+            ]
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: []
+        }
+    """
+
+    db = DummySession()
+
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"rule_id": int}
+
+    # ensure requred args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'rule_id'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if rule_id is not None:
+            request_payload['data'] = [{'rule_id': int(rule_id)}]
+        elif 'data' not in request_payload or len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' is required and must be non-zero length")
+        for data in request_payload['data']:
+            if not isinstance(data, dict):
+                raise http_exceptions.BadRequest("Request argument 'data' not valid")
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        rule_ids = [x['rule_id'] for x in request_payload['data']]
+        rules = db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id.in_(rule_ids))
+        if rules is not None:
+            rules.delete(synchronize_session=False)
+        else:
+            raise http_exceptions.NotFound("The enrichment rule(s) do not exist")
+
+        db.commit()
+
+        response_payload['msg'] = "Enrichment Rule(s) deleted"
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        db.rollback()
+        db.flush()
+        return showApiError(ex)
+    finally:
+        db.close()
+
+
+@api.route("/api/v1/numberenrichment/fetch", methods=['POST'])
+@api_security
+def fetchNumberEnrichment(request_payload=None):
+    """
+    Fetch a CSV to import from an external server\n
+    Updates and adds rules by default\n
+    If replace_rules is True then current rules are replaced
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+        {
+            data: [
+                {
+                    url: <str>
+                },
+                ...
+            ],
+            replace_rules: <bool>
+        }
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <str>,
+            msg: <str>,
+            kamreload: <bool>,
+            data: [
+                {
+                    rule_id: <int>,
+                    dnid: <str>,
+                    country_code: <str>,
+                    routing_number: <str>,
+                    rule_name: <str>
+                },
+                ...
+            ]
+        }
+    """
+
+    # for validation of request args
+    VALID_REQUEST_ARGS = {"data": list, "replace_rules": bool}
+
+    # for validation of data args
+    VALID_REQUEST_DATA_ARGS = {"url": str}
+
+    # ensure required args are provided
+    REQUIRED_REQUEST_DATA_ARGS = {'url'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # allow calling function with payload data
+        if request_payload is None:
+            request_payload = getRequestData()
+
+        # sanity checks
+        if len(request_payload['data']) == 0:
+            raise http_exceptions.BadRequest("Request argument 'data' must be non-zero length")
+        for k, v in request_payload.items():
+            if k not in VALID_REQUEST_ARGS.keys():
+                raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+            if not type(v) == VALID_REQUEST_ARGS[k]:
+                try:
+                    request_payload[k] = VALID_REQUEST_ARGS[k](v)
+                    continue
+                except:
+                    raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+        for data in request_payload['data']:
+            for k, v in data.items():
+                if k not in VALID_REQUEST_DATA_ARGS.keys():
+                    raise http_exceptions.BadRequest("Request argument '{}' not recognized".format(k))
+                if not type(v) == VALID_REQUEST_DATA_ARGS[k]:
+                    try:
+                        request_payload[k] = VALID_REQUEST_DATA_ARGS[k](v)
+                        continue
+                    except:
+                        raise http_exceptions.BadRequest("Request argument '{}' not valid".format(k))
+            for k in REQUIRED_REQUEST_DATA_ARGS:
+                if k not in data:
+                    raise http_exceptions.BadRequest("Required argument '{}' missing in data entry".format(k))
+
+        # prep for gathering data from csv
+        new_rules = []
+        resource_urls = [x['url'] for x in request_payload['data']]
+
+        # TODO: we should not blindly download the file, we need to some security checks here
+        # TODO: we should be doing downloads in separate threads
+        for url in resource_urls:
+            with closing(requests.get(url, stream=True)) as resp:
+                # iterator for csv stream lines
+                iter_lines = codecs.iterdecode(resp.iter_lines(), 'utf-8')
+
+                # lines for sniffer to detect csv type
+                line_1 = next(iter_lines, None)
+                if line_1 is None:
+                    raise http_exceptions.BadRequest("File at fetch URL is invalid")
+                line_2 = next(iter_lines, None)
+
+                # detect csv dialect and if header is present
+                sniffer_lines = line_1 + '\n' + line_2 if line_2 is not None else line_1
+                dialect = csv.Sniffer().sniff(sniffer_lines, delimiters=',;|')
+                has_header = csv.Sniffer().has_header(sniffer_lines)
+
+                # add valid values from sniffer lines to rules
+                start_lines = []
+                if not has_header:
+                    start_lines.append(line_1)
+                if line_2 is not None:
+                    start_lines.append(line_2)
+                for row in csv.reader((line for line in start_lines), dialect):
+                    new_rules.append({
+                        "dnid": row[0],
+                        "country_code": row[1],
+                        "routing_number": row[2],
+                        "rule_name": row[3]
+                    })
+
+                # read rest of csv stream and add to rules
+                for row in csv.reader(iter_lines, dialect):
+                    new_rules.append({
+                        "dnid": row[0],
+                        "country_code": row[1],
+                        "routing_number": row[2],
+                        "rule_name": row[3]
+                    })
+
+        # if replacing rules delete all then add
+        # if updating rules merge based on dnid (must be unique still)
+        replace_rules = request_payload['replace_rules'] if 'replace_rules' in request_payload else False
+        if replace_rules:
+            db.query(dSIPDNIDEnrichment).delete(synchronize_session=False)
+            db.flush()
+
+            ret = addNumberEnrichment(request_payload={'data': new_rules})
+            if ret[1] != StatusCodes.HTTP_OK:
+                resp = ret[0].get_json(force=True)
+                response_payload['error'] = resp['error']
+                response_payload['msg'] = resp['msg']
+                return jsonify(response_payload), ret[1]
+            response_payload['msg'] = "Enrichment Rule(s) replaced"
+        else:
+            current_rules_lut = {
+                x.dnid: {'rule_id': x.id}
+                for x in db.query(dSIPDNIDEnrichment).all()
+            }
+            current_dnids = set(current_rules_lut.keys())
+            new_rules_lut = {
+                x['dnid']: {'dnid': x['dnid'], 'country_code': x['country_code'],
+                            'routing_number': x['routing_number'], 'rule_name': x['rule_name']}
+                for x in new_rules
+            }
+            new_dnids = set(new_rules_lut.keys())
+
+            add_dnids = new_dnids - current_dnids
+            upd_dnids = current_dnids & new_dnids
+
+            updated_rules = []
+            for dnid in add_dnids:
+                updated_rules.append(new_rules_lut[dnid])
+            for dnid in upd_dnids:
+                updated_rules.append({'rule_id': current_rules_lut[dnid]['rule_id'], **new_rules_lut[dnid]})
+
+            ret = updateNumberEnrichment(request_payload={'data': updated_rules})
+            if ret[1] != StatusCodes.HTTP_OK:
+                resp = ret[0].get_json(force=True)
+                response_payload['error'] = resp['error']
+                response_payload['msg'] = resp['msg']
+                return jsonify(response_payload), ret[1]
+            response_payload['msg'] = "Enrichment Rule(s) updated"
+
+        # let requestor know what rules are now available
+        rules = db.query(dSIPDNIDEnrichment).all()
+        for rule in rules:
+            response_payload['data'].append({
+                'rule_id': rule.id,
+                'dnid': rule.dnid,
+                'country_code': rule.country_code,
+                'routing_number': rule.routing_number,
+                'rule_name': strFieldsToDict(rule.description)['name']
+            })
+
+        globals.reload_required = True
+        response_payload['kamreload'] = True
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex, response_payload)
 
 
 # TODO: standardize response payload (use data param)
@@ -1991,20 +2758,52 @@ def getOptionMessageStatus(domain):
     :rtype:         bool
     """
 
-    response = subprocess.check_output(['kamcmd', 'dispatcher.list'])
+    domain_active = False
+    cmdset = {"method": "dispatcher.list", "jsonrpc": "2.0", "id": 1}
+
+    r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
+    if r.status_code >= 400:
+        try:
+            msg = r.json()['error']['message']
+        except:
+            msg = r.reason
+        ex = http_exceptions.HTTPException(msg)
+        ex.code = r.status_code
+        raise ex
+    else:
+        response = r.json()
+        records = response['result']['RECORDS']
+
 
     if not response:
         return False
 
-    response_formatted = response.decode('utf8').replace("'", '"')
-    found_domain = response_formatted.find(domain)
 
-    if not found_domain:
+    try:
+        # Loop thru each record in the dispatcher list
+        for record in range(0,len(records)):
+            sets = records[record]
+            # Loop thru each set
+            for set in sets:
+                #print("{},{}".format(sets[set]['ID'],domain))
+                # Loop thru each target
+                targets = sets[set]['TARGETS']
+                # Loop thru each destination within a target
+                for dest in range(0,len(targets)):
+                    # Grab the destination body and flags
+                    # The Body contains the domain name of the destionation
+                    dest_body = format(targets[dest]['DEST']['ATTRS']['BODY'])
+                    # The Flags specify is the destionation is sending and recieving option messages
+                    dest_flags = format(targets[dest]['DEST']['FLAGS'])
+                    if domain in dest_body:
+                        if dest_flags == "AP":
+                            domain_active = True
+                            continue
+    except Exception as ex:
+        raise ex
+
+    if not domain_active:
         return False
-    else:
-        found_inactive = response_formatted.find("FLAGS: IP", found_domain)
-        if found_inactive > 0:
-            return False
 
     return True
 
@@ -2077,7 +2876,7 @@ def getCertificates(domain=None):
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
         # else:
-        #domain_configs = getCustomTLSConfigs()
+        # domain_configs = getCustomTLSConfigs()
         if domain == None:
             certificates = db.query(dSIPCertificates).all()
         else:
@@ -2104,7 +2903,7 @@ def getCertificates(domain=None):
         db.close()
 
 
-@api.route("/api/v1/certificates", methods=['POST','PUT'])
+@api.route("/api/v1/certificates", methods=['POST', 'PUT'])
 @api_security
 def createCertificate():
     """
@@ -2154,11 +2953,12 @@ def createCertificate():
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload['server_name_mode'] \
-            if 'server_name_mode' in request_payload else KAM_TLS_SNI_ALL
-        key =  request_payload['key'] if 'key' in request_payload else None
-        replace_default_cert =  request_payload['replace_default_cert'] if 'replace_default_cert' in request_payload else None
+            if 'server_name_mode' in request_payload else kamtls.KAM_TLS_SNI_ALL
+        key = request_payload['key'] if 'key' in request_payload else None
+        replace_default_cert = request_payload[
+            'replace_default_cert'] if 'replace_default_cert' in request_payload else None
         cert = request_payload['cert'] if 'cert' in request_payload else None
-        email = request_payload['email'] if 'email'in request_payload else "admin@" + settings.DOMAIN
+        email = request_payload['email'] if 'email' in request_payload else "admin@" + settings.DEFAULT_AUTH_DOMAIN
 
         # Request Certificate via Let's Encrypt
         if key is None and cert is None:
@@ -2166,31 +2966,30 @@ def createCertificate():
             try:
                 if settings.DEBUG:
                     # Use the LetsEncrypt Staging Server
-
-                    key,cert=generateCertificate(domain,email,debug=True,default=replace_default_cert)
+                    key, cert = letsencrypt.generateCertificate(domain, email, debug=True, default=replace_default_cert)
 
                 else:
                     # Use the LetsEncrypt Prod Server
-                    key,cert=generateCertificate(domain,email,default=replace_default_cert)
+                    key, cert = letsencrypt.generateCertificate(domain, email, default=replace_default_cert)
 
             except Exception as ex:
                 globals.reload_required = False
-                raise http_exceptions.BadRequest("Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
-
+                raise http_exceptions.BadRequest(
+                    "Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
         cert_base64 = base64.b64encode(cert.encode('ascii'))
         key_base64 = base64.b64encode(key.encode('ascii'))
 
-
-        #Check if the domain exists.  If so, update versus writing new
+        # Check if the domain exists.  If so, update versus writing new
         certificate = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).first()
         if certificate is not None:
-            #Update
-            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update({'email':email,'type':type,'cert':cert_base64,'key':key_base64})
+            # Update
+            db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain).update(
+                {'email': email, 'type': type, 'cert': cert_base64, 'key': key_base64})
             db.commit()
             # Update the Kamailio TLS Configuration
-            if not updateCustomTLSConfig(domain, ip, port, server_name_mode):
+            if not kamtls.updateCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 
         else:
@@ -2199,9 +2998,8 @@ def createCertificate():
             db.add(certificate)
             db.commit()
             # Write the Kamailio TLS Configuration
-            if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+            if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
-
 
         response_payload['msg'] = "Certificate creation succeeded"
         response_payload['data'].append({"id": certificate.id})
@@ -2215,6 +3013,7 @@ def createCertificate():
         return showApiError(ex)
     finally:
         db.close()
+
 
 @api.route("/api/v1/certificates/<string:domain>", methods=['DELETE'])
 @api_security
@@ -2232,16 +3031,16 @@ def deleteCertificates(domain=None):
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
         # else:
-        #domain_configs = getCustomTLSConfigs()
+        # domain_configs = getCustomTLSConfigs()
 
         Certificates = db.query(dSIPCertificates).filter(dSIPCertificates.domain == domain)
         Certificates.delete(synchronize_session=False)
 
         # Remove the certificate from the file system
-        deleteCertificate(domain)
+        letsencrypt.deleteCertificate(domain)
 
         # Remove from Kamailio TLS
-        deleteCustomTLSConfig(domain)
+        kamtls.deleteCustomTLSConfig(domain)
 
         db.commit()
 
@@ -2257,6 +3056,7 @@ def deleteCertificates(domain=None):
     finally:
         db.close()
 
+
 @api.route("/api/v1/certificates/upload/<string:domain>", methods=['POST'])
 @api_security
 def uploadCertificates(domain=None):
@@ -2266,7 +3066,6 @@ def uploadCertificates(domain=None):
 
     try:
         if (settings.DEBUG):
-
             debugEndpoint()
 
         db = SessionLoader()
@@ -2280,62 +3079,51 @@ def uploadCertificates(domain=None):
             domain = "default"
 
         if 'replace_default_cert' in data.keys():
-            replace_default_cert =  data['replace_default_cert'][0]
+            replace_default_cert = data['replace_default_cert'][0]
         else:
             replace_default_cert = None
-        
+
         ip = settings.EXTERNAL_IP_ADDR
         port = 5061
-        server_name_mode = KAM_TLS_SNI_ALL
-        email = None
-        cert = None
-        key = None
+        server_name_mode = kamtls.KAM_TLS_SNI_ALL
 
-        cert_dir = settings.DSIP_CERTS_DIR
         if replace_default_cert == "true":
             # Replacing the default cert
-            cert_domain_dir = "{}".format(cert_dir)
+            cert_domain_dir = settings.DSIP_CERTS_DIR
         else:
             # Adding a another domain cert
-            cert_domain_dir = "{}/{}".format(cert_dir,domain)
+            cert_domain_dir = os.path.join(settings.DSIP_CERTS_DIR, domain)
 
         # Create a directory for the domain
         if not os.path.exists(cert_domain_dir):
             os.makedirs(cert_domain_dir)
 
-        f = request.files.getlist("certandkey")
+        files = request.files.getlist("certandkey")
+        try:
+            (priv_key, priv_key_bytes), (x509_cert, x509_cert_bytes) = EasyCrypto.convertKeyCertPairToPEM(files)
+        except Exception as ex:
+            raise http_exceptions.BadRequest(str(ex))
+        try:
+            EasyCrypto.validateKeyCertPair(priv_key, x509_cert)
+        except Exception as ex:
+            raise http_exceptions.BadRequest(str(ex))
 
+        key_file = os.path.join(cert_domain_dir, 'dsiprouter-key.pem')
+        cert_file = os.path.join(cert_domain_dir, 'dsiprouter-cert.pem')
 
-        for file in f:
-          if not allowed_file(file.filename, ALLOWED_EXTENSIONS={'crt','key','cert','pem'}):
-              raise http_exceptions.BadRequest("Only files ending in .cert, .crt, .key, .pem are allowed")
-          filename = secure_filename(file.filename)
-          if re.search('crt|cert',filename):
-              filename = "dsiprouter.crt"
-              file.save(os.path.join(cert_domain_dir, filename))
-              file.seek(0,0)
-              cert = ''.join(map(str,file.readlines()))
-          elif re.search('key|pem',filename):
-              filename = "dsiprouter.key"
-              file.save(os.path.join(cert_domain_dir, filename))
-              file.seek(0,0)
-              key= ''.join(map(str,file.readlines()))
+        with open(key_file, 'w') as newfile:
+            newfile.write(priv_key_bytes)
+        with open(cert_file, 'w') as newfile:
+            newfile.write(x509_cert_bytes)
 
-
-        if key is None or cert is None:
-            raise http_exceptions.BadRequest("A certificate and key file must be provided")
-
-        key_file = "{}/dsiprouter.key".format(cert_domain_dir)
-        cert_file = "{}/dsiprouter.crt".format(cert_domain_dir)
-
-        # Change owner to root:kamailio so that Kamailio can load the configurations
-        change_owner(cert_domain_dir,"root","kamailio")
-        change_owner(key_file,"root","kamailio")
-        change_owner(cert_file,"root","kamailio")
+        # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations
+        change_owner(cert_domain_dir, "dsiprouter", "kamailio")
+        change_owner(key_file, "dsiprouter", "kamailio")
+        change_owner(cert_file, "dsiprouter", "kamailio")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
-        cert_base64 = base64.b64encode(bytes(cert,'utf-8'))
-        key_base64 = base64.b64encode(bytes(key,'utf-8'))
+        key_base64 = base64.b64encode(priv_key_bytes)
+        cert_base64 = base64.b64encode(x509_cert_bytes)
 
         # Store Certificate in dSIPCertificate Table
         certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)
@@ -2343,7 +3131,7 @@ def uploadCertificates(domain=None):
 
         if not replace_default_cert:
             # Write the Kamailio TLS Configuration if it's not the default
-            if not addCustomTLSConfig(domain, ip, port, server_name_mode):
+            if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 
         db.commit()

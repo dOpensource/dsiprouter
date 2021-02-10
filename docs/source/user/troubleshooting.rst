@@ -8,7 +8,7 @@ All of our services are using syslog. For more information on `syslog <https://w
 Default log facilities:
 
 ============  ==========
-Log Facility  Service 
+Log Facility  Service
 ============  ==========
 local0        kamailio
 local1        rtpengine
@@ -23,7 +23,7 @@ Edit /etc/rsyslog.d/kamailio.conf and ensure the line beginning with local0 is n
 
 .. code-block:: bash
 
-  vi /etc/rsyslog.d/kamailio.conf 
+  vi /etc/rsyslog.d/kamailio.conf
 
 
 Then restart syslog:
@@ -59,7 +59,7 @@ The default location is found here: /var/log/kamailio.log
 Edit /etc/kamailio/kamailio.conf and change the variable ‘debug’ to the syslog logging verbosity of your choice.
 
 .. code-block:: bash
- 
+
  vi /etc/kamailio/kamailio.conf
 
 
@@ -112,7 +112,7 @@ The default location is found here: /var/log/rtpengine.log
 Edit /etc/rtpengine/rtpengine.conf and change the variable ‘debug’ to the syslog logging verbosity of your choice.
 
 .. code-block:: bash
- 
+
  vi /etc/rtpengine/rtpengine.conf
 
 
@@ -130,7 +130,7 @@ Edit /etc/rsyslog.d/dsiprouter.conf and ensure the line beginning with local2 is
 
 .. code-block:: bash
 
-  vi /etc/rsyslog.d/dsiprouter.conf 
+  vi /etc/rsyslog.d/dsiprouter.conf
 
 
 Then restart syslog:
@@ -145,7 +145,7 @@ Then restart syslog:
 Edit /etc/rsyslog.d/dsiprouter.conf and ensure the line beginning with local2 is commented out:
 
 .. code-block:: bash
- 
+
   vi /etc/rsyslog.d/dsiprouter.conf
 
 
@@ -155,18 +155,18 @@ Then restart syslog:
 
  systemctl restart rsyslog
 
- 
+
 3. Location of the log files
 
 The default location is found here: /var/log/dsiprouter.log
 
 
 4. How to configure it
-Edit /opt/dsiprouter/gui/settings.py and change the variable ‘DSIP_LOG_LEVEL’ to the syslog logging verbosity of your choice.
-   
+Edit /etc/dsiprouter/gui/settings.py and change the variable ‘DSIP_LOG_LEVEL’ to the syslog logging verbosity of your choice.
+
 .. code-block:: bash
- 
-  vi /opt/dsiprouter/gui/settings.py
+
+  vi /etc/dsiprouter/gui/settings.py
 
 
 **5. For more infornation see the documentation below:**

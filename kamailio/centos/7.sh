@@ -16,57 +16,7 @@ function install() {
     yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel openssl-devel
     yum install -y logrotate rsyslog certbot
 
-    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
-    ln -s /usr/share/mariadb/ /usr/share/mysql
-    # Make sure no extra configs present on fresh install
-    rm -f ~/.my.cnf
-
-    # allow symlinks in mariadb service
-    sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
-
-    # add in the original aliases (from debian repo) to mariadb.service
-    perl -0777 -i -pe 's|(\[Install\]\s+WantedBy.*?\n+)|\1Alias=mysql.service\nAlias=mysqld.service\n\n|gms' /lib/systemd/system/mariadb.service
-
-    # alias mariadb.service to mysql.service and mysqld.service as in debian repo
-    # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-
-[Install]
-Alias=
-Alias=mysqld.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysql.service
-    chmod 0644 /lib/systemd/system/mysql.service
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-
-[Install]
-Alias=
-Alias=mysql.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysqld.service
-    chmod 0644 /lib/systemd/system/mysqld.service
-    systemctl daemon-reload
-
-    # if db is remote don't run local service
-    reconfigureMysqlSystemdService
-
-    # create mysql user and group
-    mkdir -p /var/run/mariadb
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
-    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
-    chown -R mysql:mysql /var/run/mariadb /var/lib/mysql /var/log/mariadb /usr/share/mysql
-
-    # Enable and Start MySql service
-    systemctl enable mysql
-    systemctl start mysql
-
+    # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
     sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
 
@@ -110,10 +60,10 @@ EOF
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc.$(date +%Y%m%d_%H%M%S)
-    if [[ -z "${MYSQL_ROOT_PASSWORD-unset}" ]]; then
+    if [[ -z "${ROOT_DB_PASS-unset}" ]]; then
         local ROOTPW_SETTING="DBROOTPWSKIP=yes"
     else
-        local ROOTPW_SETTING="DBROOTPW=\"${MYSQL_ROOT_PASSWORD}\""
+        local ROOTPW_SETTING="DBROOTPW=\"${ROOT_DB_PASS}\""
     fi
 
     # TODO: we should set STORE_PLAINTEXT_PW to 0, this is not default but would need tested
@@ -126,7 +76,7 @@ DBROUSER="${KAM_DB_USER}"
 DBROPW="${KAM_DB_PASS}"
 DBRWUSER="${KAM_DB_USER}"
 DBRWPW="${KAM_DB_PASS}"
-DBROOTUSER="${MYSQL_ROOT_USERNAME}"
+DBROOTUSER="${ROOT_DB_USER}"
 ${ROOTPW_SETTING}
 CHARSET=utf8
 INSTALL_EXTRA_TABLES=yes
@@ -138,13 +88,13 @@ EOF
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
-    
+
     # Setup firewall rules
     firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp 
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp 
-    firewall-offline-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp 
-    firewall-offline-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp 
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp
+    firewall-offline-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp
+    firewall-offline-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp
+    firewall-offline-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp
     firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
 
     # Start firewalld
@@ -209,24 +159,13 @@ EOF
 function uninstall {
     # Stop servers
     systemctl stop kamailio
-    systemctl stop mysql
     systemctl disable kamailio
-    systemctl disable mysql
 
     # Backup kamailio configuration directory
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
-    # Backup mysql / mariadb
-    mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
-
-    # remove mysql unit files we created
-    rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
-
-    # Uninstall Kamailio modules and mysql / Mariadb
-    yum remove -y mysql\*
-    yum remove -y mariadb\*
+    # Uninstall Kamailio modules
     yum remove -y kamailio\*
-    rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # Remove firewall rules that was created by us:
     firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/udp --permanent

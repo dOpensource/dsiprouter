@@ -1,3 +1,7 @@
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
 import os
 from enum import Enum
 from datetime import datetime, timedelta
@@ -157,6 +161,9 @@ class dSIPMultiDomainMapping(object):
         DOMAIN_ENABLED = 1
         TYPE_UNKNOWN = 0
         TYPE_FUSIONPBX = 1
+        TYPE_FUSIONPBX_CLUSTER = 2
+        TYPE_FREEPBX = 3 
+
 
     def __init__(self, pbx_id, db_host, db_username, db_password, domain_list=None, attr_list=None, type=0, enabled=1):
         self.pbx_id = pbx_id
@@ -326,6 +333,21 @@ class dSIPCertificates(object):
         self.email = email
         self.cert = cert
         self.key = key
+
+    pass
+
+class dSIPDNIDEnrichment(object):
+    """
+    Schema for dsip_dnid_enrich_lnp table\n
+    """
+
+    def __init__(self, dnid, country_code='', routing_number='', rule_name=''):
+        description = {'name': rule_name}
+
+        self.dnid = dnid
+        self.country_code = country_code
+        self.routing_number = routing_number
+        self.description = dictToStrFields(description)
 
     pass
 
@@ -537,6 +559,7 @@ def createSessionMaker():
     dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
     dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
     dsip_certificates = Table('dsip_certificates', metadata, autoload=True)
+    dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -569,6 +592,7 @@ def createSessionMaker():
     mapper(dSIPFailFwd, dsip_failfwd)
     mapper(dSIPCDRInfo, dsip_cdrinfo)
     mapper(dSIPCertificates, dsip_certificates)
+    mapper(dSIPDNIDEnrichment, dsip_dnid_enrichment)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],

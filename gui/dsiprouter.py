@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
+# all of our standard and project file imports
 import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal, bjoern
 from functools import wraps
 from copy import copy
@@ -24,6 +29,7 @@ from database import db_engine, SessionLoader, DummySession, Gateways, Address, 
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
+from modules.api.mediaserver.routes import mediaserver
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -31,19 +37,22 @@ import globals
 import settings
 
 
+# TODO: unit testing per component
+# TODO: many of these routes could use some updating...
+#       possibly look into this as well when reworking the architecture for API
+
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
+app.register_blueprint(mediaserver)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
+csrf.exempt(mediaserver)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
-# TODO: unit testing per component
-# TODO: many of these routes could use some updating...
-#       possibly look into this as well when reworking the architecture for API
 
 @app.before_first_request
 def before_first_request():
@@ -293,7 +302,7 @@ def addUpdateCarrierGroups():
         r_username = form['r_username'] if 'r_username' in form else ''
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
-        auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DOMAIN
+        auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
 
         # format data
@@ -761,7 +770,32 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        return render_template('endpointgroups.html',dsiprouter_ip=settings.EXTERNAL_IP_ADDR,DEFAULT_auth_domain=settings.DOMAIN)
+        return render_template('endpointgroups.html', dsiprouter_ip=settings.EXTERNAL_IP_ADDR,
+                               DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+@app.route('/numberenrichment')
+def displayNumberEnrichment():
+    """
+    Display Endpoint Groups / Endpoints in the view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        return render_template('dnid_enrichment.html')
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -828,7 +862,7 @@ def addUpdateEndpointGroups():
         # fusionpbx_db_password = form['fusionpbx_db_password']
         # auth_username = form['auth_username']
         # auth_password = form['auth_password']
-        # auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DOMAIN
+        # auth_domain = form['auth_domain'] if len(form['auth_domain']) > 0 else settings.DEFAULT_AUTH_DOMAIN
         # calllimit = form['calllimit'] if len(form['calllimit']) > 0 else ""
         #
         # multi_tenant_domain_enabled = False
@@ -1052,6 +1086,7 @@ def addUpdateInboundMapping():
         fwdgroupid = None
 
         # TODO: seperate redundant code into functions
+        # TODO  need to add support for updating and deleting a LB Rule
 
         # Adding
         if not ruleid:
@@ -1060,6 +1095,31 @@ def addUpdateInboundMapping():
             # don't allow duplicate entries
             if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(InboundMapping.groupid == settings.FLT_INBOUND).scalar():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
+
+            if "lb_" in gwgroupid:
+                x = gwgroupid.split("_");
+                gwgroupid = x[1]
+                dispatcher_id = x[2].zfill(4)
+
+                # Create a gateway
+
+                Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+
+                db.add(Gateway)
+                db.flush()
+
+                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32,1, gwgroup=gwgroupid)
+                db.add(Addr)
+                db.flush()
+
+                # Define an Inbound Mapping that maps to the newly created gateway
+                gwlist = Gateway.gwid
+                IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
+                db.add(IMap)
+                db.flush()
+
+                db.commit()
+                return displayInboundMapping()
 
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             inserts.append(IMap)
@@ -1126,6 +1186,35 @@ def addUpdateInboundMapping():
         # Updating
         else:
             inserts = []
+
+            if "lb_" in gwgroupid:
+                x = gwgroupid.split("_");
+                gwgroupid = x[1]
+                dispatcher_id = x[2].zfill(4)
+
+                # Create a gateway
+                Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
+                if Gateway:
+                    fields = strFieldsToDict(Gateway.description)
+                    fields['lb'] = dispatcher_id
+                    fields['gwgroup'] = gwgroupid
+                    Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
+                else:
+
+                    Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+
+                    db.add(Gateway)
+
+                db.flush()
+
+                Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
+                if Addr is None:
+                    Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
+                    db.add(Addr)
+                    db.flush()
+
+                # Assign Gateway id to the gateway list
+                gwlist = Gateway.gwid
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -1347,8 +1436,13 @@ def deleteInboundMapping():
         ff_ruleid = form['ff_ruleid']
         ff_groupid = form['ff_groupid']
 
-        im_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid)
-        im_rule.delete(synchronize_session=False)
+        im_rule = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).first()
+        # Delete the gateway if it's being used for Load Balancing
+        if '#' not in im_rule.gwlist:
+            dispatcher_gateway = db.query(Gateways).filter(Gateways.gwid == im_rule.gwlist)
+            dispatcher_gateway.delete(synchronize_session=False)
+        # Delete the rule now
+        db.delete(im_rule)
 
         if len(hf_ruleid) > 0:
             # no dr_rules created for fwding without a gwgroup selected
@@ -2050,7 +2144,8 @@ def syncSettings(new_fields={}, update_net=False):
                  ('DSIP_API_PORT', settings.DSIP_API_PORT), ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY), ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
                  ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
                  ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY), ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
-                 ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL), ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
+                 ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_CA', settings.DSIP_SSL_CA),
+                 ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL), ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
                  ('VERSION', settings.VERSION),
                  ('DEBUG', settings.DEBUG), ('ROLE', settings.ROLE), ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
                  ('KAM_DB_HOST', settings.KAM_DB_HOST), ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER), ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
@@ -2061,7 +2156,7 @@ def syncSettings(new_fields={}, update_net=False):
                  ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG), ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX),
                  ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
                  ('FLT_OUTBOUND', settings.FLT_OUTBOUND), ('FLT_INBOUND', settings.FLT_INBOUND), ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
-                 ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DOMAIN', settings.DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
+                 ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
                  ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
                  ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP), ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
                  ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),

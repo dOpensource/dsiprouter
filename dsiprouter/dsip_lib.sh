@@ -131,6 +131,7 @@ function setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
+    # shellcheck disable=SC1087
     sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 export -f setConfigAttrib
@@ -161,7 +162,7 @@ function decryptConfigAttrib() {
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
         printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
     else
-        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import sys; sys.path.insert(0, '/etc/dsiprouter/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
     fi
 }
 export -f decryptConfigAttrib
@@ -400,7 +401,7 @@ export -f ipv6Test
 #
 function getExternalIP() {
     local IPV6_ENABLED=${IPV6_ENABLED:-0}
-    local EXTERNAL_IP=""
+    local EXTERNAL_IP="" TIMEOUT=5
     local URLS=() CURL_CMD="curl"
 
     if (( ${IPV6_ENABLED} == 1 )); then
@@ -425,8 +426,8 @@ function getExternalIP() {
         IP_TEST="ipv4Test"
     fi
 
-    for URL in ${URLS[@]}; do
-        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout 2 $URL 2>/dev/null)
+    for URL in "${URLS[@]}"; do
+        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
         ${IP_TEST} "$EXTERNAL_IP" && break
     done
 
@@ -663,6 +664,128 @@ function dumpDBUser() {
     return $?
 }
 export -f dumpDBUser
+
+# usage: sqlAsTransaction [options] <database>
+# options:  --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+#           --db=<mysql database name>
+# returns:  0 if DB exists, 1 otherwise
+function sqlAsTransaction() {
+    local MYSQL_DBNAME=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+    local SQL_STATEMENTS=()
+
+    while (( $# > 0 )); do
+        case "$1" in
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --db*)
+                MYSQL_DBNAME=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # all positional args are part of SQL query
+                SQL_STATEMENTS+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    # if query was piped to stdin use that instead of positional args
+    if [[ ! -t 0 ]]; then
+        SQL_STATEMENTS=( $(</dev/stdin) )
+    fi
+
+    local STATUS=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" ${MYSQL_DBNAME} 2>/dev/null << EOF
+DROP PROCEDURE IF EXISTS tryStatements;
+DELIMITER //
+CREATE PROCEDURE tryStatements(OUT ret BOOL)
+BEGIN
+    DECLARE error_occurred BOOL DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET error_occurred = 1;
+    START TRANSACTION;
+
+    ${SQL_STATEMENTS[@]}
+
+    IF error_occurred THEN
+        ROLLBACK;
+    ELSE
+        COMMIT;
+    END IF;
+
+    set ret = error_occurred;
+END //
+DELIMITER ;
+
+CALL tryStatements(@ret);
+DROP PROCEDURE tryStatements;
+
+select @ret;
+EOF
+    )
+
+    return $STATUS
+}
+export -f sqlAsTransaction
+
+# usage: parseDBConnURI <field> <connection uri>
+# field:    -user
+#           -pass
+#           -host
+#           -port
+#           -name
+# output: the selected field of the connection uri
+# returns: 0 on success, non zero otherwise
+function parseDBConnURI() {
+    # parse based on
+    case "$1" in
+        -user)
+            shift
+            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\1%' <<<"$1"
+            ;;
+        -pass)
+            shift
+            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\2%' <<<"$1"
+            ;;
+        -host)
+            shift
+            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\3%' <<<"$1"
+            ;;
+        -port)
+            shift
+            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\4%' <<<"$1"
+            ;;
+        -name)
+            shift
+            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\5%' <<<"$1"
+            ;;
+        *)  # not valid field
+            return 1
+            ;;
+    esac
+
+    # valid field selected
+    return 0
+}
+export -f parseDBConnURI
 
 # $1 == number of characters to get
 # output: string of random printable characters

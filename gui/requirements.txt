@@ -1,7 +1,7 @@
 bjoern
+cryptography>=3.3,<3.4
 certbot
 cron_descriptor
-cryptography
 dnspython
 docker
 Flask

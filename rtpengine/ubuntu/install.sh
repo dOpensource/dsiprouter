@@ -29,6 +29,11 @@ function install {
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
+    apt-get install -y unzip
+    apt-get install -y libavresample-dev
+    apt-get install -y linux-headers-$(uname -r)
+    apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
+        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
 
     # try upgrading debhelper with backports if lower ver than 10
     CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
@@ -82,6 +87,14 @@ function install {
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
+
+    # Remove RTPEngine kernel module if previously inserted
+    if lsmod | grep 'xt_RTPENGINE'; then
+        rmmod xt_RTPENGINE
+    fi
+    # Load new RTPEngine kernel module
+    depmod -a &&
+    modprobe xt_RTPENGINE
 
     # set the forwarding table for the kernel module
     echo 'add 0' > /proc/rtpengine/control

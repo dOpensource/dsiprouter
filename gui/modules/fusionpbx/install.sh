@@ -129,9 +129,9 @@ function uninstall {
 
 function main {
     if [[ ${ENABLED} -eq 1 ]]; then
-        install
+        install && exit 0 || exit 1
     elif [[ ${ENABLED} -eq -1 ]]; then
-        uninstall
+        uninstall && exit 0 || exit 1
     else
         exit 0
     fi

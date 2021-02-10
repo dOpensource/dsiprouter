@@ -27,23 +27,16 @@ You may need different flags depending on where you deploy (servernat, etc..)
     For the rest of this walkthrough assume your starting location is in project root (default `/etc/dsiprouter`).
 
 3. Make your changes..
-Then prior to commit make sure you reset any defaults in `settings.py` (this won't be needed in the future).
-If you **didn't** make any changes to `settings.py` then store a copy and revert it before committing.
+Then prior to commit make sure you reset any defaults in `settings.py` or `kamailio_dsiprouter.cfg`.
+You should **not** be commiting the generated versions from `/etc/dsiprouter`, this will include changes to the defaults.
+Instead you should check which changes you need to keep by runnning diff:
 
     ```bash
-    cp -f gui/settings.py /var/backups/dsiprouter/settings.py
-    git checkout HEAD -- gui/settings.py
+    diff /etc/dsiprouter/gui/settings.py /opt/dsiprouter/gui/settings.py
     ```
 
-    If you **did** make any changes to `settings.py` then you will have manually reset the defaults before committing.
-    We recommend storing a backup of the current `settings.py`, resetting it, then merging your changes manually, something like this:
-
-    ```bash
-    cp -f gui/settings.py /var/backups/dsiprouter/settings.py
-    git checkout HEAD -- gui/settings.py
-    diff gui/settings.py /var/backups/dsiprouter/settings.py
-    vim gui/settings.py
-    ```
+    You should be able to pick out which changes were generated on install and which changes you need to keep.
+    You can then merge the changes you need into the project source files.
 
 4. Then commit, and push the changes to your feature branch.
 
@@ -70,17 +63,11 @@ If you **didn't** make any changes to `settings.py` then store a copy and revert
 5. Create a Pull Request on Github (or Merge Request if on gitlab).
 See the [Github Docs](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request) for more information.
 
-6. Reset your dsiprouter settings
-
-    ```bash
-    cp -f /var/backups/dsiprouter/settings.py gui/settings.py
-    ```
-
 ## Core Architecture Principles
 
 - Installation should be less then 10 minutes
 - Someone with basic SIP knowledge should be able to configure it and place a test call within 10 minutes
-- The API structure should follow the Web URI
+- The API structure should follow the Web UI
 
 ### File Structure
 
@@ -118,7 +105,37 @@ This means that a new module should become automatically available from the UI w
 
 ### API Structure
 
-Todo: Assigned to Tyler
+We are in the process of refactoring most of the application so that all of the GUI components leverages the API.  Currently, the core API reside in gui/modules/api.  
+
+#### Adding an API
+
+The following steps will guide you thru the process of adding a new API to
+dSIPRouter.  We handle all of the security on your behalf.
+
+1. Add a subdirectory in gui/modules/api/new_api
+2. Copy sample_api.py to gui/modules/api/new_api/routes.py
+3. Add the following line to the imports section of gui/dsiprouter.py
+
+```
+from modules.api.new_api.routes import new_api
+```
+
+4. Add the following line to gui/dsiprouter to register the new API
+
+```
+app.register_blueprint(new_api)
+```
+
+5. Restart dSIPRouter
+
+6. Test the new API
+
+```
+export DSIP_TOKEN=<api token>
+export DSIP_HOST=<ip or hostname of dSIPRouter>
+curl --insecure -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOST:5000/api/v1/new_api/new_entity
+```
+
 
 ### Useability
 

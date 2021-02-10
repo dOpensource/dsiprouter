@@ -1,3 +1,7 @@
+# make sure the generated source files are imported instead of the template ones
+import sys
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
 import re, socket
 import settings
 
@@ -37,8 +41,8 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
             'method = TLSv1.2+\n'
             'verify_certificate = yes\n'
             'require_certificate = yes\n'
-            'private_key = {certs_dir}/{domain}/dsiprouter.key\n'
-            'certificate = {certs_dir}/{domain}/dsiprouter.crt\n'
+            'private_key = {certs_dir}/{domain}/dsiprouter-key.pem\n'
+            'certificate = {certs_dir}/{domain}/dsiprouter-cert.pem\n'
             'ca_list = {certs_dir}/cacert.pem\n'
             'server_name = {domain}\n'
             'server_name_mode = {name_mode}\n'
@@ -47,8 +51,8 @@ def createCustomTLSConfig(domain, ip, port, server_name_mode):
             'method = TLSv1.2+\n'
             'verify_certificate = yes\n'
             'require_certificate = yes\n'
-            'private_key = {certs_dir}/{domain}/dsiprouter.key\n'
-            'certificate = {certs_dir}/{domain}/dsiprouter.crt\n'
+            'private_key = {certs_dir}/{domain}/dsiprouter-key.pem\n'
+            'certificate = {certs_dir}/{domain}/dsiprouter-cert.pem\n'
             'ca_list = {certs_dir}/cacert.pem\n'
             'server_name = {domain}\n'
             'server_name_mode = {name_mode}\n'

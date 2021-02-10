@@ -32,7 +32,7 @@ function install {
     apt-get install -y libavresample-dev
     apt-get install -y linux-headers-$(uname -r)
     apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
-        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev
+        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
 
     # debian jessie/stretch need a few newer packages
     CODENAME="$(lsb_release -c -s)"
@@ -75,10 +75,10 @@ function install {
     if [[ -e "$(pwd)/debian/flavors/no_ngcp" ]]; then
         ./debian/flavors/no_ngcp
     fi &&
-    dpkg-buildpackage &&
+    dpkg-buildpackage -us -uc -sa &&
     cd .. &&
     dpkg -i ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
-        ngcp-rtpengine-kernel-dkms_*.deb 
+        ngcp-rtpengine-kernel-dkms_*.deb
     #./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
 
     if [ $? -ne 0 ]; then
@@ -89,6 +89,14 @@ function install {
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
+
+    # Remove RTPEngine kernel module if previously inserted
+    if lsmod | grep 'xt_RTPENGINE'; then
+        rmmod xt_RTPENGINE
+    fi
+    # Load new RTPEngine kernel module
+    depmod -a &&
+    modprobe xt_RTPENGINE
 
     # set the forwarding table for the kernel module
     echo 'add 0' > /proc/rtpengine/control

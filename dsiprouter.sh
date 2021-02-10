@@ -8,9 +8,10 @@
 #
 # Supported OS:
 # - Debian 11 (bullseye) (BETA)
-# - Debian 10 (buster) (BETA)
+# - Debian 10 (buster)
 # - Debian 9 (stretch)
 # - Debian 8 (jessie)
+# - CentOS 8
 # - CentOS 7
 # - Amazon Linux 2
 # - Ubuntu 16.04 (xenial)
@@ -29,10 +30,8 @@
 # - rtp/sip/dmq ports are not dynamically set in kam config
 # - cleanup dependency installs/checks, many of these could be condensed
 # - need to create dsiprouter user/group on install and allow non-root execution
-# - should create settings.py in /etc/dsiprouter and link to /opt/dsiprouter/gui/settings.py
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
 # - add bash command completion for dsiprouter script
-# - add to pre-commit script resetting of default passwords (settings.py,kamailio.cfg)
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -75,7 +74,6 @@ setScriptSettings() {
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
     FLT_FWD_MIN=20000
-    WITH_SSL=1
     WITH_LCR=1
     export DEBUG=0
     export SERVERNAT=0
@@ -89,7 +87,7 @@ setScriptSettings() {
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
-    export DSIP_CONFIG_FILE="${DSIP_PROJECT_DIR}/gui/settings.py"
+    export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
     export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
     DSIP_DOCS_DIR="${DSIP_PROJECT_DIR}/docs/build/html"
@@ -107,11 +105,6 @@ setScriptSettings() {
     APT_OFFICIAL_SOURCES="/etc/apt/sources.list.d/official-releases.list"
     APT_OFFICIAL_PREFS="/etc/apt/preferences.d/official-releases.pref"
     YUM_OFFICIAL_REPOS="/etc/yum.repos.d/official-releases.repo"
-
-    # Default MYSQL db root user values
-    MYSQL_ROOT_DEF_USERNAME="root"
-    MYSQL_ROOT_DEF_PASSWORD=""
-    MYSQL_ROOT_DEF_DATABASE="mysql"
 
     # Force the installation of a Kamailio version by uncommenting
     #KAM_VERSION=44 # Version 4.4.x
@@ -132,36 +125,50 @@ setScriptSettings() {
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
 
+    export DSIP_PROTO='https'
+    export DSIP_API_PROTO='https'
+    export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter-key.pem"
+    export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter-cert.pem"
+    export DSIP_SSL_CA="${DSIP_CERTS_DIR}/cacert.pem"
+
+    #================= PRE_DYNAMIC_CONFIG_SETUP =================#
+
+    # make sure dirs exist (ones that may not yet exist)
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
+    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    # dsiprouter needs to have permissions to the backup directory
+    chown -R dsiprouter:root ${BACKUPS_DIR}
+
+    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists
+    if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
+	    # copy over the template settings.py to be worked on (used throughout this script as well)
+    	    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
+
+    fi
+
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
-
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
+    if [[ -z "$INTERNAL_FQDN" ]]; then
+    	export INTERNAL_FQDN="$(hostname)"
+    fi
     export EXTERNAL_IP=$(getExternalIP)
+    if [[ -z "$EXTERNAL_IP" ]]; then
+	export EXTERNAL_IP=$INTERNAL_IP
+    fi
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
-
-    if (( ${WITH_SSL} == 1 )); then
-        export DSIP_PROTO='https'
-        export DSIP_API_PROTO='https'
-        export DSIP_SSL_KEY="${DSIP_CERTS_DIR}/dsiprouter.key"
-        export DSIP_SSL_CERT="${DSIP_CERTS_DIR}/dsiprouter.crt"
-        export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
-    else
-        export DSIP_PROTO='http'
-        export DSIP_API_PROTO='http'
-        export DSIP_SSL_KEY=""
-        export DSIP_SSL_CERT=""
-        export DSIP_SSL_EMAIL=""
-    fi
-
-    # grab root db settings from env or set to defaults
-    export MYSQL_ROOT_USERNAME=${MYSQL_ROOT_USERNAME:-$MYSQL_ROOT_DEF_USERNAME}
-    export MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-$MYSQL_ROOT_DEF_PASSWORD}
-    export MYSQL_ROOT_DATABASE=${MYSQL_ROOT_DATABASE:-$MYSQL_ROOT_DEF_DATABASE}
+    # grab root db settings from env or settings file
+    export ROOT_DB_USER=${ROOT_DB_USER:-$(getConfigAttrib 'ROOT_DB_USER' ${DSIP_CONFIG_FILE})}
+    export ROOT_DB_PASS=${ROOT_DB_PASS:-$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})}
+    export ROOT_DB_NAME=${ROOT_DB_NAME:-$(getConfigAttrib 'ROOT_DB_NAME' ${DSIP_CONFIG_FILE})}
 
     # grab kam db settings from env or settings file
     export KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
@@ -178,6 +185,9 @@ setScriptSettings() {
     export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
         perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
 
+
+    # Set the EMAIL used to obtain Let'sEncrypt Certificates
+    export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
     #===========================================================#
 }
 
@@ -231,16 +241,8 @@ IHRvIG91ciBzcG9uc29yOiBkT3BlblNvdXJjZSAoaHR0cHM6Ly9kb3BlbnNvdXJjZS5jb20pCg==" \
 | { echo -e "\e[1;49;36m"; cat; echo -e "\e[39;49;00m"; }
 }
 
-# Cleanup exported variables on exit
+# Cleanup temp files / settings and exit
 function cleanupAndExit {
-    unset DSIP_PROJECT_DIR DSIP_INSTALL_DIR DSIP_KAMAILIO_CONFIG_DIR DSIP_KAMAILIO_CONFIG DSIP_DEFAULTS_DIR SYSTEM_KAMAILIO_CONFIG_DIR DSIP_CONFIG_FILE
-    unset REQ_PYTHON_MAJOR_VER DISTRO DISTRO_VER PYTHON_CMD PATH_UPDATE_FILE SYSTEM_RTPENGINE_CONFIG_DIR SYSTEM_RTPENGINE_CONFIG_FILE SERVERNAT RTPENGINE_VER
-    unset SRC_DIR DSIP_SYSTEM_CONFIG_DIR BACKUPS_DIR DSIP_RUN_DIR KAM_VERSION DEBUG IPV6_ENABLED KAM_SIP_PORT KAM_SIPS_PORT KAM_DMQ_PORT KAM_WSS_PORT
-    unset MYSQL_ROOT_PASSWORD MYSQL_ROOT_USERNAME MYSQL_ROOT_DATABASE KAM_DB_HOST KAM_DB_TYPE KAM_DB_PORT KAM_DB_NAME KAM_DB_USER KAM_DB_PASS
-    unset RTP_PORT_MIN RTP_PORT_MAX DSIP_PORT EXTERNAL_IP EXTERNAL_FQDN INTERNAL_IP INTERNAL_NET PERL_MM_USE_DEFAULT AWS_ENABLED DO_ENABLED
-    unset GCE_ENABLED AZURE_ENABLED TEAMS_ENABLED SET_DSIP_PRIV_KEY SSHPASS DSIP_CERTS_DIR DSIP_SSL_KEY DSIP_SSL_CERT DSIP_PROTO DSIP_API_PROTO
-    unset INTERNAL_FQDN DSIP_SSL_EMAIL HASHED_CREDS_ENCODED_MAX_LEN AESCTR_CREDS_ENCODED_MAX_LEN VULTR_ENABLED CLOUD_PLATFORM
-    unset -f setPythonCmd reconfigureMysqlSystemdService apt-get yum make
     rm -f /etc/apt/apt.conf.d/local 2>/dev/null
     set +x
     exit $1
@@ -347,6 +349,27 @@ function validateOSInfo {
     export KAM_VERSION
 }
 
+#Install manpage
+function installManPage {
+    MAN_DIR=/usr/share/man/man1
+
+    mkdir -p ${MAN_DIR}
+    cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_DIR}/
+    gzip -f ${MAN_DIR}/dsiprouter.1
+    mandb
+
+    printdbg "ManPage installed"
+}
+
+#Uninstall manpage
+function uninstallManPage {
+    rm -f ${MAN_DIR}/dsiprouter.1
+    rm -f ${MAN_DIR}/dsiprouter.1.gz
+    mandb
+
+    printdbg "ManPage installed"
+}
+
 # run prior to any cmd being processed
 function initialChecks {
     validateRootPriv
@@ -355,14 +378,9 @@ function initialChecks {
 
     validateOSInfo
 
-    installScriptRequirements
-
     setScriptSettings
 
-    # make sure dirs exist (ones that may not yet exist)
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
-    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
-    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    installScriptRequirements
 
     if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
         # comment out cdrom in sources as it can halt install
@@ -449,7 +467,7 @@ function reconfigureMysqlSystemdService {
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
     case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)"|"$(hostname -f)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl stop mysql
@@ -484,7 +502,7 @@ function reconfigureMysqlSystemdService {
 }
 export -f reconfigureMysqlSystemdService
 
-# set dynamic python config settings
+# generate dynamic python config settings on install
 function configurePythonSettings {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
@@ -495,13 +513,14 @@ function configurePythonSettings {
     setConfigAttrib 'DSIP_PRIV_KEY' "$DSIP_PRIV_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_KEY' "$DSIP_SSL_KEY" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_CERT' "$DSIP_SSL_CERT" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_SSL_CA' "$DSIP_SSL_CA" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_SSL_EMAIL' "$DSIP_SSL_EMAIL" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'DSIP_CERTS_DIR' "$DSIP_CERTS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_API_PROTO' "$DSIP_API_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_DOCS_DIR' "$DSIP_DOCS_DIR" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'DSIP_CERTS_DIR' "$DSIP_CERTS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_TLSCFG_PATH' "$SYSTEM_KAMAILIO_TLS_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
 }
 
@@ -517,8 +536,9 @@ function updatePythonRuntimeSettings {
 
 function renewSSLCert {
     # Don't renew if a default cert was uploaded
-    default_cert_uploaded=$(mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME -e "select count(*) from dsip_certificates where domain='default'" 2> /dev/null)
-    if (( $default_cert_uploaded == 1 )); then
+    DEFAULT_CERT_UPLOADED=$(mysql -sN --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        -e "select count(*) from dsip_certificates where domain='default'" 2> /dev/null)
+    if (( ${DEFAULT_CERT_UPLOADED} == 1 )); then
 	    return
     fi
     certbot certificates
@@ -529,7 +549,7 @@ function renewSSLCert {
         	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
        		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
        		chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
-        	chmod g=+r ${DSIP_CERTS_DIR}/dsiprouter*
+        	chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
 		    kamcmd tls.reload
      	fi
     else
@@ -542,15 +562,23 @@ function configureSSL {
     if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
         chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
-        chmod g=+r ${DSIP_CERTS_DIR}/dsiprouter*
+        chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
         return
     fi
+
+    # Stop nginx if started so that LetsEncrypt can leverage port 80
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+	    docker stop dsiprouter-nginx 2> /dev/null
+    else
+    	firewall-cmd --zone=public --add-port=80/tcp --permanent
+    	firewall-cmd --reload
+
+    fi
+
 
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
     # Open port 80 for hostname validation
-    firewall-cmd --zone=public --add-port=80/tcp --permanent
-    firewall-cmd --reload
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
     certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
     if (( $? == 0 )); then
@@ -558,7 +586,7 @@ function configureSSL {
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
         chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod g=+r ${DSIP_CERTS_DIR}/*
+        chmod 640 ${DSIP_CERTS_DIR}/*
         # Add Nightly Cronjob to renew certs
         cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
     else
@@ -568,10 +596,17 @@ function configureSSL {
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
         chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod g=+r ${DSIP_CERTS_DIR}/*
+        chmod 640 ${DSIP_CERTS_DIR}/*
     fi
-    firewall-cmd --zone=public --remove-port=80/tcp --permanent
-    firewall-cmd --reload
+
+    # Start nginx if dSIP was installed
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+	    docker stop dsiprouter-nginx 2> /dev/null
+    else
+   	firewall-cmd --zone=public --remove-port=80/tcp --permanent
+    	firewall-cmd --reload
+    fi
+
     #fi
 }
 
@@ -579,6 +614,7 @@ function configureSSL {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
+    local DSIP_VERSION=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://127.0.0.1:$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
@@ -595,6 +631,7 @@ function updateKamailioConfig {
     else
         disableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    setKamailioConfigSubstdef 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -720,6 +757,9 @@ function generateKamailioConfig {
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
+    # Set the External IP Address for the WebRTC Port
+    sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -733,6 +773,7 @@ function generateKamailioConfig {
         enableSERVERNAT
     fi
 
+    # non-module features to enable
     if (( ${WITH_LCR} == 1 )); then
         enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
@@ -755,70 +796,73 @@ function generateKamailioConfig {
 
 function configureKamailio {
     # make sure kamailio user and privileges exist
-    mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-        -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
-        -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
-    mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
+    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
+        -e "CREATE USER '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
+        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+   if (( $? != 0 )); then
+   	printwarn "The Kamailio user already exists in the database - not creating again"
+   fi
+    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'localhost';" \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';" \
         -e "FLUSH PRIVILEGES;"
 
     # Install schema for drouting module
-    mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"  $KAM_DB_NAME \
+    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"  $KAM_DB_NAME \
         -e "delete from version where table_name in ('dr_gateways','dr_groups','dr_gw_lists','dr_custom_rules','dr_rules')"
-    mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         -e "drop table if exists dr_gateways,dr_groups,dr_gw_lists,dr_custom_rules,dr_rules"
     if [ -e  /usr/share/kamailio/mysql/drouting-create.sql ]; then
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
             < /usr/share/kamailio/mysql/drouting-create.sql
     else
         sqlscript=$(find / -name '*drouting-create.sql' | grep 'mysql' | head -1)
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
             < $sqlscript
     fi
 
     # Update schema for dr_gateways table
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         -e 'ALTER TABLE dr_gateways MODIFY pri_prefix varchar(64) NOT NULL DEFAULT "", MODIFY attrs varchar(255) NOT NULL DEFAULT "";'
 
     # Update schema for subscribers table
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         -e 'ALTER TABLE subscriber ADD email_address varchar(128) NOT NULL DEFAULT "", ADD rpid varchar(128) NOT NULL DEFAULT "";'
 
     # Install schema for custom LCR logic
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_lcr.sql
 
     # Install schema for custom MaintMode logic
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_maintmode.sql
 
     # Install schema for Call Limit
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_calllimit.sql
 
     # Install schema for Notifications
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_notification.sql
 
     # Install schema for gw2gwgroup
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
 
     # Install schema for dsip_cdrinfo
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
         < ${DSIP_DEFAULTS_DIR}/dsip_cdrinfo.sql
 
     # Install schema for dsip_settings
     envsubst < ${DSIP_DEFAULTS_DIR}/dsip_settings.sql |
-        mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"
+        mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"
 
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
     sed -e "s|FLT_INBOUND_REPLACE|${FLT_INBOUND}|g" ${DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
-        mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
+        mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
 
     # Install schema for custom dr_gateways logic
-    mysql -s -N --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dr_gateways.sql
 
     # TODO: we need to test and re-implement this.
@@ -830,13 +874,13 @@ function configureKamailio {
 #
 #        # reset auto increment for related tables to max btwn the related tables
 #        INCREMENT=$(
-#            mysql --skip-column-names --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \ -e "\
+#            mysql --skip-column-names --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \ -e "\
 #                SELECT MAX(AUTO_INCREMENT) FROM INFORMATION_SCHEMA.TABLES \
 #                WHERE TABLE_SCHEMA = '$KAM_DB_NAME' \
 #                AND TABLE_NAME IN($SQL_TABLES);"
 #        )
 #        for t in "$@"; do
-#            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" $KAM_DB_NAME \
+#            mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
 #                -e "ALTER TABLE $t AUTO_INCREMENT=$INCREMENT"
 #        done
 #    }
@@ -847,7 +891,7 @@ function configureKamailio {
 
     # Import Default Carriers
     if cmdExists 'mysqlimport'; then
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
             -e "delete from address where grp=$FLT_CARRIER"
 
         # use a tmp dir so we don't have to change repo
@@ -867,13 +911,13 @@ function configureKamailio {
             ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
 
         # import default carriers
-        mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
-        mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
-        mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
-        mysqlimport --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_rules.csv
 
         rm -rf /tmp/defaults
@@ -999,6 +1043,54 @@ removeDsipSystemConfig() {
     fi
 }
 
+# Install and configure mysql server
+function installMysql {
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
+        printwarn "MySQL is already installed"
+        return
+    fi
+
+    printdbg "Attempting to install / congifure MySQL..."
+    ${DSIP_PROJECT_DIR}/mysql/${DISTRO}/${DISTRO_VER}.sh install
+
+    if (( $? != 0 )); then
+        printerr "MySQL install failed"
+        cleanupAndExit 1
+    fi
+
+    # Restart MySQL with the new configurations
+    systemctl restart mysql
+    if systemctl is-active --quiet mysql; then
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled
+        printdbg "------------------------------------"
+        pprint "MySQL Installation is complete!"
+        printdbg "------------------------------------"
+    else
+        printerr "MySQL install failed"
+        cleanupAndExit 1
+    fi
+}
+
+# Remove mysql and its configs
+function uninstallMysql {
+    if [[! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
+        printwarn "MySQL is not installed - skipping removal"
+        return
+    fi
+
+    printdbg "Attempting to uninstall MySQL..."
+    ${DSIP_PROJECT_DIR}/mysql/$DISTRO/${DISTRO_VER}.sh uninstall
+
+    if (( $? != 0 )); then
+        printerr "MySQL uninstall failed"
+        cleanupAndExit 1
+    fi
+
+    # Remove the hidden installed file, which denotes if it's installed or not
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled
+    printdbg "MySQL was uninstalled"
+}
+
 # Install the RTPEngine from sipwise
 function installRTPEngine {
     local RTP_UPDATE_OPTS=""
@@ -1013,9 +1105,12 @@ function installRTPEngine {
     printdbg "Attempting to install RTPEngine..."
     ./rtpengine/${DISTRO}/install.sh install
     ret=$?
-    if [ $ret -eq 0 ]; then
+    if (( $ret == 0 )); then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        systemctl restart kamailio
         printdbg "configuring RTPEngine service"
     elif [ $ret -eq 2 ]; then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         printwarn "RTPEngine install waiting on reboot"
         cleanupAndExit 0
     else
@@ -1054,7 +1149,12 @@ function uninstallRTPEngine {
     printdbg "Attempting to uninstall RTPEngine..."
     ./rtpengine/$DISTRO/install.sh uninstall
 
-    if [ $? -ne 0 ]; then
+    if (( $? == 0 )); then
+        disableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+            systemctl restart kamailio
+        fi
+
         printerr "RTPEngine uninstall failed"
         cleanupAndExit 1
     fi
@@ -1084,15 +1184,15 @@ function disableRTP {
 # this is standard practice, but we would have to consider file permissions
 # it would be easier to manage if we moved dsiprouter configs to /etc/dsiprouter
 function installDsiprouter {
-    cd ${DSIP_PROJECT_DIR}
-
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
         printwarn "dSIPRouter is already installed"
         return
     fi
 
 	printdbg "Attempting to install dSIPRouter..."
-    ./dsiprouter/${DISTRO}/${DISTRO_VER}.sh install
+    # configure generated source files prior to install
+    configurePythonSettings
+    ${DSIP_PROJECT_DIR}/dsiprouter/${DISTRO}/${DISTRO_VER}.sh install
 
 	if [ $? -ne 0 ]; then
 	    printerr "dSIPRouter install failed"
@@ -1116,10 +1216,6 @@ function installDsiprouter {
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
     ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
-    # configure dsiprouter modules
-    installModules
-    # set some defaults in settings.py
-    configurePythonSettings
 
     # Set dsip private key (used for encryption across services) by following precedence:
     # 1:    set via cmdline arg
@@ -1137,8 +1233,13 @@ function installDsiprouter {
     uuidgen > ${DSIP_UUID_FILE}
 
     # Generate unique credentials for our services
-    RESET_DSIP_CREDS=1 RESET_API_CREDS=1 RESET_KAM_CREDS=1 RESET_IPC_CREDS=1
-    resetPassword 2>/dev/null
+    RESET_DSIP_GUI_PASS=1 RESET_DSIP_API_TOKEN=1 RESET_KAM_DB_PASS=1 RESET_DSIP_IPC_TOKEN=1
+    resetPassword
+    # Set credentials if any given on CLI
+    setCredentials
+
+    # configure dsiprouter modules
+    installModules
 
     # Restrict access to settings and private key
     chown dsiprouter:root ${DSIP_PRIV_KEY}
@@ -1146,10 +1247,16 @@ function installDsiprouter {
     chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
 
+    # Set permissions on the backup directory and subdirectories
+    chown -R dsiprouter:root ${BACKUPS_DIR}
+
+    # Set the permissions of the cert directory now that dSIPRouter has been installed
+    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
+
     # for cloud images the instance-id may change (could be a clone)
     # add to startup process a password reset to ensure its set correctly
     # this is only for cloud image builds and is removed after first boot
-    if (( $IMAGE_BUILD == 1 )) && (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 )); then
+    if (( $IMAGE_BUILD == 1 )) && (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 || VULTR_ENABLED == 1 )); then
         (cat << EOF
 #!/usr/bin/env bash
 
@@ -1217,10 +1324,8 @@ EOF
 
     # generate documentation for GUI
     cd ${DSIP_PROJECT_DIR}/docs &&
-    make html
-
-    # custom dsiprouter MOTD banner for ssh logins
-    updateBanner
+    make html > /dev/null 2>&1
+    cd -
 
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
@@ -1231,6 +1336,10 @@ EOF
     fi
     systemctl restart dsiprouter
     if systemctl is-active --quiet dsiprouter; then
+        # custom dsiprouter MOTD banner for ssh logins
+        # must be run after dsiprouter srevice updates IP's in settings.py
+        updateBanner
+
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
         printdbg "-------------------------------------"
         pprint "dSIPRouter Installation is complete! "
@@ -1297,24 +1406,23 @@ function installKamailio {
 
     # backup and drop kam db if it exists already
     mkdir -p ${KAMDB_BACKUP_DIR}
+
     if cmdExists 'mysql'; then
-        if checkDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
+        if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
             printdbg "Backing up kamailio DB to ${KAMDB_DATABASE_BACKUP_FILE} before fresh install"
-            dumpDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > ${KAMDB_DATABASE_BACKUP_FILE}
-            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
+            dumpDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME > ${KAMDB_DATABASE_BACKUP_FILE}
+            mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
                 -e "DROP DATABASE $KAM_DB_NAME;"
             printdbg "Backing up kamailio DB Users to ${KAMDB_USER_BACKUP_FILE} before fresh install"
-            dumpDBUser --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" "${KAM_DB_USER}@${KAM_DB_NAME}" > ${KAMDB_USER_BACKUP_FILE}
-            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
+            dumpDBUser --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" "${KAM_DB_USER}@${KAM_DB_NAME}" > ${KAMDB_USER_BACKUP_FILE}
+            mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
                 -e "DROP USER IF EXISTS '$KAM_DB_USER'@'%'; DROP USER IF EXISTS '$KAM_DB_USER'@'localhost';"
         fi
     fi
 
     ${DSIP_PROJECT_DIR}/kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
-        if [ ${WITH_SSL} -eq 1 ]; then
-            configureSSL
-        fi
+        configureSSL
         configureKamailio
         updateKamailioConfig
     else
@@ -1379,15 +1487,13 @@ function uninstallKamailio {
 
 
 function installModules {
-    cd ${DSIP_PROJECT_DIR}
-
     # Remove any previous dsiprouter cronjobs
     cronRemove 'dsiprouter_cron.py'
 
     # Install / Uninstall dSIPModules
-    for dir in ./gui/modules/*; do
+    for dir in ${DSIP_PROJECT_DIR}/gui/modules/*; do
         if [[ -e ${dir}/install.sh ]]; then
-            ./${dir}/install.sh $MYSQL_ROOT_USERNAME $MYSQL_ROOT_PASSWORD $MYSQL_ROOT_DATABASE $PYTHON_CMD
+            ${dir}/install.sh
         fi
     done
 }
@@ -1529,7 +1635,6 @@ EOF
     systemctl restart dnsmasq
     if systemctl is-active --quiet dnsmasq; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
-        pprint "DNSmasq was installed"
     else
         printerr "DNSmasq install failed"
         cleanupAndExit 1
@@ -1615,8 +1720,11 @@ function start {
     # Start the dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         if [ $DEBUG -eq 1 ]; then
+
+            systemctl start nginx
+
             # keep it in the foreground, only used for debugging issues
-            ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py runserver
+            sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             # Make sure process is still running
             PID=$!
             if ! ps -p ${PID} &>/dev/null; then
@@ -1628,8 +1736,10 @@ function start {
             fi
         else
             # normal startup, fork as background process
+
+            systemctl start nginx
+
             systemctl start dsiprouter
-	    systemctl start nginx
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
                 printerr "Unable to start dSIPRouter"
@@ -1676,7 +1786,7 @@ function stop {
     # Stop the dSIPRouter if told to and installed
     if (( $STOP_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         # normal startup, fork as background process
-	systemctl stop nginx
+	    systemctl stop nginx
         systemctl stop dsiprouter
         # Make sure process is not running
         if systemctl is-active --quiet dsiprouter; then
@@ -1737,50 +1847,52 @@ function displayLoginInfo {
 function resetPassword {
     printdbg 'Resetting credentials'
 
-    local RESET_DSIP_CREDS=${RESET_DSIP_CREDS:-1}
-    local RESET_API_CREDS=${RESET_API_CREDS:-0}
-    local RESET_KAM_CREDS=${RESET_KAM_CREDS:-0}
-    local RESET_IPC_CREDS=${RESET_IPC_CREDS:-0}
+    local RESET_DSIP_GUI_PASS=${RESET_DSIP_GUI_PASS:-1}
+    local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-1}
+    local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-1}
+    local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-1}
     local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-0}
 
-    if (( $RESET_DSIP_CREDS == 1 )); then
+    if (( $RESET_DSIP_GUI_PASS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
             if [[ -n "$CLOUD_PLATFORM" ]]; then
-                DSIP_PASSWORD=$(getInstanceID)
+                export DSIP_PASSWORD=$(getInstanceID)
             fi
         else
-            DSIP_PASSWORD=$(urandomChars 64)
+            export DSIP_PASSWORD=$(urandomChars 64)
         fi
     fi
-    if (( $RESET_API_CREDS == 1 )); then
-        DSIP_API_TOKEN=$(urandomChars 64)
+    if (( $RESET_DSIP_API_TOKEN == 1 )); then
+        export DSIP_API_TOKEN=$(urandomChars 64)
     fi
-    if (( $RESET_KAM_CREDS == 1 )); then
-        KAM_DB_PASS=$(urandomChars 64)
+    if (( $RESET_KAM_DB_PASS == 1 )); then
+        export KAM_DB_PASS=$(urandomChars 64)
     fi
-    if (( $RESET_IPC_CREDS == 1 )); then
-        DSIP_IPC_PASS=$(urandomChars 64)
+    if (( $RESET_DSIP_IPC_TOKEN == 1 )); then
+        export DSIP_IPC_PASS=$(urandomChars 64)
     fi
 
     ${PYTHON_CMD} << EOF
 import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
 from util.security import Credentials; from util.ipc import sendSyncSettingsSignal;
 Credentials.setCreds(dsip_creds='${DSIP_PASSWORD}', api_creds='${DSIP_API_TOKEN}', kam_creds='${KAM_DB_PASS}', ipc_creds='${DSIP_IPC_PASS}');
-sendSyncSettingsSignal();
+try:
+    sendSyncSettingsSignal();
+except:
+    pass
 EOF
 
-    if (( $RESET_KAM_CREDS == 1 )); then
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-            -e "update mysql.user set Password=PASSWORD('${KAM_DB_PASS}') where USER='${KAM_DB_USER}';" \
-            -e "flush privileges;"
+    if (( $RESET_KAM_DB_PASS == 1 )); then
+	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
+            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"
     fi
 
     # can be hot reloaded while running
-    if (( $RESET_API_CREDS == 1 )); then
+    if (( $RESET_DSIP_API_TOKEN == 1 )); then
         updateKamailioConfig
         printdbg 'Credentials have been updated'
     # can NOT be hot reloaded while running
-    elif (( $RESET_KAM_CREDS == 1 )); then
+    elif (( $RESET_KAM_DB_PASS == 1 )); then
         printwarn 'Restarting services with new configurations'
         systemctl restart kamailio
         systemctl restart dsiprouter
@@ -1792,137 +1904,166 @@ EOF
 }
 
 # updates credentials in dsip / kam config files / kam db
-# also sets credentials to variables for latter commands
+# also exports credentials to variables for latter commands
 function setCredentials {
     printdbg 'Setting credentials'
 
-    local SET_DSIP_CREDS="${SET_DSIP_CREDS}"
-    local SET_API_CREDS="${SET_API_CREDS}"
-    local SET_KAM_CREDS="${SET_KAM_CREDS}"
-    local SET_MAIL_CREDS="${SET_MAIL_CREDS}"
-    local SET_IPC_CREDS="${SET_IPC_CREDS}"
-    local SET_DSIP_USER="${SET_DSIP_USER}"
-    local SET_KAM_USER="${SET_KAM_USER}"
-    local SET_MAIL_USER="${SET_MAIL_USER}"
+    # variables that can be set prior to running
+    local SET_DSIP_GUI_USER="${SET_DSIP_GUI_USER}"
+    local SET_DSIP_GUI_PASS="${SET_DSIP_GUI_PASS}"
+    local SET_DSIP_API_TOKEN="${SET_DSIP_API_TOKEN}"
+    local SET_DSIP_MAIL_USER="${SET_DSIP_MAIL_USER}"
+    local SET_DSIP_MAIL_PASS="${SET_DSIP_MAIL_PASS}"
+    local SET_DSIP_IPC_TOKEN="${SET_DSIP_IPC_TOKEN}"
+    local SET_KAM_DB_USER="${SET_KAM_DB_USER}"
+    local SET_KAM_DB_PASS="${SET_KAM_DB_PASS}"
+    local SET_KAM_DB_HOST="${SET_KAM_DB_HOST}"
+    local SET_KAM_DB_PORT="${SET_KAM_DB_PORT}"
+    local SET_KAM_DB_NAME="${SET_KAM_DB_NAME}"
+    local SET_ROOT_DB_USER="${SET_ROOT_DB_USER}"
+    local SET_ROOT_DB_PASS="${SET_ROOT_DB_PASS}"
+    local SET_ROOT_DB_NAME="${SET_ROOT_DB_NAME}"
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
+    # the SQL statements to run for these updates
+    local SQL_STATEMENTS=()
+    local DEFERRED_SQL_STATEMENTS=()
+    # how settings will be propagated to live systems
+    # 0 == no reload required, 1 == hot reload required, 2 == hard reload required
+    local RELOAD_TYPE=0
 
-    if [[ -n "${SET_DSIP_CREDS}" ]]; then
-        DSIP_PASSWORD="$SET_DSIP_CREDS"
-    fi
-    if [[ -n "${SET_API_CREDS}" ]]; then
-        DSIP_API_TOKEN="$SET_API_CREDS"
-    fi
-    if [[ -n "${SET_MAIL_CREDS}" ]]; then
-        MAIL_PASSWORD="$SET_MAIL_CREDS"
-    fi
-    if [[ -n "${SET_KAM_CREDS}" ]]; then
-        KAM_DB_PASS="$SET_KAM_CREDS"
-    fi
-    if [[ -n "${SET_IPC_CREDS}" ]]; then
-        DSIP_IPC_PASS="$SET_IPC_CREDS"
-    fi
-
-    if [[ -n "${SET_DSIP_USER}" ]]; then
-        if [[ "${LOAD_SETTINGS_FROM}" == "db" ]]; then
-            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-                -e "update dsip_settings set DSIP_USERNAME='${SET_DSIP_USER}' where DSIP_ID=${DSIP_ID};"
-        else
-            setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_USER" ${DSIP_CONFIG_FILE} -q
-        fi
-        DSIP_USERNAME="$SET_DSIP_USER"
-    fi
-
-    if [[ -n "${SET_KAM_USER}" ]]; then
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-            -e "update mysql.user set User='${SET_KAM_USER}' where User='${KAM_DB_USER}';" \
-            -e "flush privileges;"
-        if [[ "${LOAD_SETTINGS_FROM}" == "db" ]]; then
-            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-                -e "update dsip_settings set KAM_DB_USER='${SET_KAM_USER}' where DSIP_ID=${DSIP_ID};"
-        else
-            setConfigAttrib 'KAM_DB_USER' "$SET_KAM_USER" ${DSIP_CONFIG_FILE} -q
-        fi
-        KAM_DB_USER="$SET_KAM_USER"
-    fi
-
-    if [[ -n "${SET_MAIL_USER}" ]]; then
-        if [[ "${LOAD_SETTINGS_FROM}" == "db" ]]; then
-            mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-                -e "update dsip_settings set MAIL_USERNAME='${SET_MAIL_USER}' where DSIP_ID=${DSIP_ID};"
-        else
-            setConfigAttrib 'MAIL_USERNAME' "$SET_MAIL_USER" ${DSIP_CONFIG_FILE} -q
-        fi
-        MAIL_USERNAME="$SET_MAIL_USER"
-    fi
-
-    ${PYTHON_CMD} << EOF
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
-from util.security import Credentials; from util.ipc import sendSyncSettingsSignal;
-Credentials.setCreds(dsip_creds='${SET_DSIP_CREDS}', api_creds='${SET_API_CREDS}', kam_creds='${SET_KAM_CREDS}', mail_creds='${SET_MAIL_CREDS}', ipc_creds='${SET_IPC_CREDS}');
-sendSyncSettingsSignal();
-EOF
-
-    if [[ -n "${SET_KAM_CREDS}" ]]; then
-        mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $MYSQL_ROOT_DATABASE \
-            -e "update mysql.user set Password=PASSWORD('${SET_KAM_CREDS}') where USER='${KAM_DB_USER}';" \
-            -e "flush privileges;"
-    fi
-
-    # can be hot reloaded while running
-    if [[ -n "${SET_API_CREDS}" ]]; then
-        updateKamailioConfig
-        printdbg 'Credentials have been updated'
-    # can NOT be hot reloaded while running
-    elif [[ -n "${SET_KAM_CREDS}" || -n "${SET_KAM_USER}" ]]; then
-        printwarn 'Restarting services with new configurations'
-        systemctl restart kamailio
-        systemctl restart dsiprouter
-        printdbg 'Credentials have been updated'
-    # all configs already hot reloaded
+    # sanity check, can we connect to the DB as the root user?
+    # we determine if user already changed DB creds (and just want dsiprouter to store them accordingly)
+    if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $ROOT_DB_NAME ; then
+        :
+    elif checkDB --user="${SET_ROOT_DB_USER:-$ROOT_DB_USER}" --pass="${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}" \
+    --host="${SET_KAM_DB_HOST:-$KAM_DB_HOST}" --port="${SET_KAM_DB_PORT:-$KAM_DB_PORT}" \
+    ${SET_ROOT_DB_NAME:-$ROOT_DB_NAME} ; then
+        KAM_DB_HOST=${SET_KAM_DB_HOST:-$KAM_DB_HOST}
+        KAM_DB_PORT=${SET_KAM_DB_PORT:-$KAM_DB_PORT}
+        ROOT_DB_USER=${SET_ROOT_DB_USER:-$ROOT_DB_USER}
+        ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
+        ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
     else
-        printdbg 'Credentials have been updated'
-    fi
-}
-
-# configure kamailio DB settings
-setKamDBConfig() {
-    if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
-        printerr "kamailio is not installed.. install kamailio first"
-        cleanupAndExit 1
-    fi
-
-    printdbg "Configuring Kamailio database settings"
-
-    # these settings will be used by setCredentials as well
-    LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
-    DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
-    SET_KAM_CREDS="${KAM_DB_PASS}"
-    SET_KAM_USER="${KAM_DB_USER}"
-
-    # sanity check, can we connect to db?
-    if ! checkDB --user="$MYSQL_ROOT_USERNAME" --pass="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME; then
         printerr 'Connection to DB failed'
         cleanupAndExit 1
     fi
 
-    # kam db host and port must be changed in file and db first!
-    mysql --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e "update dsip_settings set KAM_DB_HOST='${KAM_DB_HOST}' where DSIP_ID=${DSIP_ID};" \
-        -e "update dsip_settings set KAM_DB_PORT='${KAM_DB_PORT}' where DSIP_ID=${DSIP_ID};"
-    setConfigAttrib 'KAM_DB_HOST' "$KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'KAM_DB_PORT' "$KAM_DB_PORT" ${DSIP_CONFIG_FILE} -q
+    # update non-encrypte settings locally and gather statements for updating DB
+    if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
+        SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
+        setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_GUI_USER" ${DSIP_CONFIG_FILE} -q
+    fi
+    if [[ -n "${SET_DSIP_API_TOKEN}" ]]; then
+        RELOAD_TYPE=1
+    fi
+    if [[ -n "${SET_DSIP_MAIL_USER}" ]]; then
+        SQL_STATEMENTS+=("update kamailio.dsip_settings set MAIL_USERNAME='${SET_DSIP_MAIL_USER}' where DSIP_ID=${DSIP_ID};")
+        setConfigAttrib 'MAIL_USERNAME' "$SET_DSIP_MAIL_USER" ${DSIP_CONFIG_FILE} -q
+    fi
+    if [[ -n "${SET_KAM_DB_USER}" ]]; then
+        RELOAD_TYPE=2
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set User='${SET_KAM_DB_USER}' where User='${KAM_DB_USER}';")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings set KAM_DB_USER='${SET_KAM_DB_USER}' where DSIP_ID=${DSIP_ID};")
+        setConfigAttrib 'KAM_DB_USER' "$SET_KAM_DB_USER" ${DSIP_CONFIG_FILE} -q
+    fi
+    if [[ -n "${SET_KAM_DB_PASS}" ]]; then
+        RELOAD_TYPE=2
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_KAM_DB_PASS}') where User='${SET_KAM_DB_USER:-$KAM_DB_USER}';")
+    fi
+    if [[ -n "${SET_KAM_DB_HOST}" ]]; then
+        RELOAD_TYPE=2
+        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-$KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
+        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
+        setConfigAttrib 'KAM_DB_HOST' "$SET_KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
+        reconfigureMysqlSystemdService
+    fi
+    if [[ -n "${SET_KAM_DB_PORT}" ]]; then
+        RELOAD_TYPE=2
+        setConfigAttrib 'KAM_DB_PORT' "$SET_KAM_DB_PORT" ${DSIP_CONFIG_FILE} -q
+    fi
+    # TODO: allow changing live database name
+    if [[ -n "${SET_KAM_DB_NAME}" ]]; then
+        RELOAD_TYPE=2
+        setConfigAttrib 'KAM_DB_NAME' "$SET_KAM_DB_NAME" ${DSIP_CONFIG_FILE} -q
+    fi
+    if [[ -n "${SET_ROOT_DB_USER}" ]]; then
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set User='${SET_ROOT_DB_USER}' where User='${ROOT_DB_USER}';")
+        setConfigAttrib 'ROOT_DB_USER' "$SET_ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q
+    fi
+    if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_ROOT_DB_PASS}') where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}';")
+    fi
+    # TODO: allow changing live database name
+    if [[ -n "${SET_ROOT_DB_NAME}" ]]; then
+        setConfigAttrib 'ROOT_DB_NAME' "$SET_ROOT_DB_NAME" ${DSIP_CONFIG_FILE} -q
+    fi
+    DEFERRED_SQL_STATEMENTS+=("flush privileges;")
 
-    # now set kam db creds
-    setCredentials
+    # update non-encrypted settings on DB
+    if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
+        sqlAsTransaction --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${SQL_STATEMENTS[@]}"
+        if (( $? != 0 )); then
+            printerr 'Failed setting credentials on DB'
+            cleanupAndExit 1
+        fi
+    fi
 
-    # if db is remote don't run local service
-    reconfigureMysqlSystemdService
+    # update DB live settings (privileges etc..)
+    sqlAsTransaction --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${DEFERRED_SQL_STATEMENTS[@]}"
+    if (( $? != 0 )); then
+        printerr 'Failed setting credentials on DB'
+        cleanupAndExit 1
+    fi
 
-    printwarn 'Restarting services with new configurations'
-    systemctl restart mysql
-    systemctl restart kamailio
-    systemctl restart dsiprouter
+    # update encrypted settings
+    ${PYTHON_CMD} << EOF
+import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+from util.security import Credentials;
+Credentials.setCreds(dsip_creds='${SET_DSIP_GUI_PASS}', api_creds='${SET_DSIP_API_TOKEN}', kam_creds='${SET_KAM_DB_PASS}', mail_creds='${SET_DSIP_MAIL_PASS}', ipc_creds='${SET_DSIP_IPC_TOKEN}');
+EOF
+    if (( $? != 0 )); then
+        printerr 'Failed setting encrypted credentials'
+        cleanupAndExit 1
+    fi
+
+    # synchronize settings (between local, DB, and cluster)
+    ${PYTHON_CMD} << EOF 2>/dev/null
+import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+from util.ipc import sendSyncSettingsSignal;
+sendSyncSettingsSignal();
+EOF
+
+    # export variables for later usage in this script
+    export DSIP_USERNAME=${SET_DSIP_GUI_USER:-$DSIP_USERNAME}
+    export DSIP_PASSWORD=${SET_DSIP_GUI_PASS:-$DSIP_PASSWORD}
+    export DSIP_API_TOKEN=${SET_DSIP_API_TOKEN:-$DSIP_API_TOKEN}
+    export MAIL_USERNAME=${SET_DSIP_MAIL_USER:-$MAIL_USERNAME}
+    export MAIL_PASSWORD=${SET_DSIP_MAIL_PASS:-$MAIL_PASSWORD}
+    export DSIP_IPC_PASS=${SET_DSIP_IPC_TOKEN:-$DSIP_IPC_PASS}
+    export KAM_DB_USER=${SET_KAM_DB_USER:-$KAM_DB_USER}
+    export KAM_DB_PASS=${SET_KAM_DB_PASS:-$KAM_DB_PASS}
+    export KAM_DB_HOST=${SET_KAM_DB_HOST:-$KAM_DB_HOST}
+    export KAM_DB_PORT=${SET_KAM_DB_PORT:-$KAM_DB_PORT}
+    export KAM_DB_NAME=${SET_KAM_DB_NAME:-$KAM_DB_NAME}
+    export ROOT_DB_USER=${SET_ROOT_DB_USER:-$ROOT_DB_USER}
+    export ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
+    export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
+
+    # propragate settings based on reload type required
+    if (( ${RELOAD_TYPE} == 0 )); then
+        printdbg 'Credentials have been updated'
+    elif (( ${RELOAD_TYPE} == 1 )); then
+        updateKamailioConfig
+        printdbg 'Credentials have been updated'
+    elif (( ${RELOAD_TYPE} == 2 )); then
+        updateKamailioConfig
+        printwarn 'Restarting services with new configurations'
+        systemctl restart mysql
+        systemctl restart kamailio
+        systemctl restart dsiprouter
+        printdbg 'Credentials have been updated'
+    fi
 }
 
 # update MOTD banner for ssh login
@@ -1982,7 +2123,7 @@ EOF
     # for centos7 and debian we have to update it 'manually'
     elif [[ "$DISTRO" == "centos" ]]; then
         /etc/update-motd.d/00-dsiprouter > /etc/motd
-        cronAppend "0 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
+        cronAppend "0/5 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
     fi
 }
 
@@ -2066,14 +2207,14 @@ function removeInitService {
 
 
 function upgrade {
-    
+
     KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
     KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
     KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
     KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
     DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
-    
+
     CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
 
     # Check if already upgraded
@@ -2116,7 +2257,7 @@ function upgrade {
     if [ $ret -eq 0 ]; then
         # Upgrade the version
        setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
-    
+
     	# Restart Kamailio
     	systemctl restart kamailio
     	systemctl restart dsiprouter
@@ -2138,9 +2279,9 @@ function upgradeOld {
 #    mysqldump -B kamailio --routines --triggers --hex-blob | sed -e 's|DEFINER=`[a-z0-9A-Z]*`@`[a-z0-9A-Z]*`||g' | perl -0777 -pe 's|(CREATE TABLE `?(?:'"${VIEWS}"')`?.*?)ENGINE=\w+|\1|sgm' > kamdump.sql
 
     mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
-        --user="$MYSQL_ROOT_DEF_USERNAME" --password="$MYSQL_ROOT_DEF_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" > ${CURR_BACKUP_DIR}/mysql_full.sql
+        --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" > ${CURR_BACKUP_DIR}/mysql_full.sql
     mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
-        --user="$MYSQL_ROOT_DEF_USERNAME" --password="$MYSQL_ROOT_DEF_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} \
+        --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} \
         | perl -0777 -pi -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs' \
         > ${CURR_BACKUP_DIR}/kamdb_merge.sql
 
@@ -2170,7 +2311,7 @@ function upgradeOld {
     ./dsiprouter.sh uninstall
     ./dsiprouter.sh install
 
-    mysql --user="$MYSQL_ROOT_DEF_USERNAME" --password="$MYSQL_ROOT_DEF_PASSWORD" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} < ${CURR_BACKUP_DIR}/kamdb_merge.sql
+    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} < ${CURR_BACKUP_DIR}/kamdb_merge.sql
 
     # TODO: fix any conflicts that would arise from our new modules / tables in KAMDB
 
@@ -2295,7 +2436,7 @@ clusterInstall() { (
     #  - validate conn
     #  - validate unattended ssh
     #  - collect ssh/scp cmds and pwds
-    for NODE in ${SSH_SYNC_NODES[@]}; do
+    for NODE in "${SSH_SYNC_NODES[@]}"; do
         # parse node info
         USER=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
         PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
@@ -2356,7 +2497,7 @@ clusterInstall() { (
     # loop through nodes to:
     # - setup and secure private key
     # - run script install command
-    for i in ${!SSH_SYNC_NODES[@]}; do
+    for i in "${!SSH_SYNC_NODES[@]}"; do
         printdbg "Starting remote install on ${SSH_HOSTS[$i]}"
 
         # password used by ssh/scp
@@ -2417,14 +2558,15 @@ function usageOptions {
     linebreak
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
-    printf "%-30s %s\n%-30s %s\n%-30s %s\n" \
+    printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
         "install" "[-debug|-servernat|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-exip <ip>|--external-ip=<ip>|" \
-        " " "-db <db conn uri>|--database=<db conn uri>|-dsipcid <num>|--dsip-clusterid=<num>|-dsipcsync <num>|--dsip-clustersync=<num>|" \
+        " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
+        " " "-dbadmin <[user][:pass][/dbname]>|--database-admin=<[user][:pass][/dbname]>|-dsipcsync <num>|--dsip-clustersync=<num>|" \
         " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>]"
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "upgrade" "[-debug] <-rel|--release <release number>>"
+        "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
         "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
     printf "%-30s %s\n" \
@@ -2447,12 +2589,11 @@ function usageOptions {
         "disableservernat" "[-debug]"
     printf "%-30s %s\n" \
         "resetpassword" "[-debug|-all|--all|-dc|--dsip-creds|-ac|--api-creds|-kc|--kam-creds|-ic|--ipc-creds|-fid|--force-instance-id]"
-    printf "%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "setcredentials" "[-debug|-du <user>|--dsip-user=<user>|-dc <pass>|--dsip-creds=<pass>|-ac <token>|--api-creds=<token>|" \
-        " " "-ku <user>|--kam-user=<user>|-kc <pass>|--kam-creds=<pass>|-mu <user>|--mail-user=<user>|-mc <pass>|--mail-creds=<pass>" \
-        " " "-ic <pass>|--ipc-creds=<pass>]"
-    printf "%-30s %s\n" \
-        "setkamdbconfig" "[-debug] <[user[:pass]@]dbhost[:port][/dbname]>"
+    printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
+        "setcredentials" "[-debug|-dc <[user][:pass]>|--dsip-creds=<[user][:pass]>|-ac <token>|--api-creds=<token>|" \
+        " " "-kc <[user[:pass]@]dbhost[:port][/dbname]>|--kam-creds=<[user[:pass]@]dbhost[:port][/dbname]>|" \
+        " " "-mc <[user][:pass]>|--mail-creds=<[user][:pass]>|-ic <token>|--ipc-creds=<token>]|" \
+        " " "-dac <[user][:pass][/dbname]>|--db-admin-creds=<[user][:pass][/dbname]>"
     printf "%-30s %s\n" \
         "generatekamconfig" "[-debug]"
     printf "%-30s %s\n" \
@@ -2462,9 +2603,9 @@ function usageOptions {
     printf "%-30s %s\n" \
         "updatednsconfig" "[-debug]"
     printf "%-30s %s\n" \
-        "version|-v|--version"
+        "version|-v|--version" ""
     printf "%-30s %s\n" \
-        "help|-h|--help"
+        "help|-h|--help" ""
 
     linebreak
     printf '\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n' \
@@ -2492,6 +2633,7 @@ function usageOptions {
 }
 
 # make the output a little cleaner
+# shellcheck disable=SC2120
 function setVerbosityLevel {
     if [[ "$*" != *"-debug"* ]]; then
         # quiet pkg managers when not debugging
@@ -2536,7 +2678,7 @@ function preprocessCMD {
     else
         initialChecks
         setPythonCmd
-        setVerbosityLevel
+        setVerbosityLevel "$@"
     fi
 }
 
@@ -2558,9 +2700,13 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
+
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
+
+            local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI=""
+            local SET_KAM_DB_USER="" SET_KAM_DB_PASS="" SET_KAM_DB_HOST="" SET_KAM_DB_PORT="" SET_KAM_DB_NAME=""
 
             while (( $# > 0 )); do
                 OPT="$1"
@@ -2576,13 +2722,13 @@ function processCMD {
                         ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installKamailio)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio)
                         shift
                         ;;
                     -dsip|--dsiprouter)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installDsiprouter)
+                        RUN_COMMANDS+=(installSipsak installMysql installDsiprouter)
                         shift
                         ;;
                     -rtp|--rtpengine)
@@ -2593,7 +2739,7 @@ function processCMD {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installKamailio installDsiprouter installRTPEngine)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter installRTPEngine)
                         shift
                         ;;
                     -exip|--external-ip=*)
@@ -2608,21 +2754,39 @@ function processCMD {
                         ;;
                     -db|--database=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
-                            local CONN_URI=$(printf '%s' "$1" | cut -d '=' -f 2)
-                            export KAM_DB_USER=$(printf '%s' "$CONN_URI" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
-                            export KAM_DB_PASS=$(printf '%s' "$CONN_URI" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
-                            export KAM_DB_HOST=$(printf '%s' "$CONN_URI" | cut -d '@' -f 2- | cut -d ':' -f -1)
-                            export KAM_DB_PORT=$(printf '%s' "$CONN_URI" | cut -d '@' -f 2- | cut -s -d ':' -f 2- | cut -d '/' -f -1)
-                            export KAM_DB_NAME=$(printf '%s' "$CONN_URI" | cut -d '@' -f 2- | cut -s -d ':' -f 2- | cut -d '/' -f 2-)
+                            DB_CONN_URI=$(printf '%s' "$1" | cut -d '=' -f 2)
                             shift
                         else
                             shift
-                            export KAM_DB_USER=$(printf '%s' "$1" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
-                            export KAM_DB_PASS=$(printf '%s' "$1" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
-                            export KAM_DB_HOST=$(printf '%s' "$1" | cut -d '@' -f 2- | cut -d ':' -f -1)
-                            export KAM_DB_PORT=$(printf '%s' "$1" | cut -d '@' -f 2- | cut -s -d ':' -f 2- | cut -d '/' -f -1)
-                            export KAM_DB_NAME=$(printf '%s' "$1" | cut -d '@' -f 2- | cut -s -d ':' -f 2- | cut -d '/' -f 2-)
+                            DB_CONN_URI="$1"
                             shift
+                        fi
+
+                        SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
+                        SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
+                        SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
+                        SET_KAM_DB_PORT=$(parseDBConnURI -port "$DB_CONN_URI")
+                        SET_KAM_DB_NAME=$(parseDBConnURI -name "$DB_CONN_URI")
+
+                        # sanity check (required params)
+                        if [[ -n "${SET_KAM_DB_HOST}" ]]; then
+                            export KAM_DB_HOST="${SET_KAM_DB_HOST}"
+                        else
+                            printerr 'Database Host is required and was not found in connection uri'
+                            cleanupAndExit 1
+                        fi
+                        # set optional params (only if provided)
+                        if [[ -n "${SET_KAM_DB_USER}" ]]; then
+                            export KAM_DB_USER="${SET_KAM_DB_USER}"
+                        fi
+                        if [[ -n "${SET_KAM_DB_PASS}" ]]; then
+                            export KAM_DB_PASS="${SET_KAM_DB_PASS}"
+                        fi
+                        if [[ -n "${SET_KAM_DB_PORT}" ]]; then
+                            export KAM_DB_PORT="${SET_KAM_DB_PORT}"
+                        fi
+                        if [[ -n "${SET_KAM_DB_NAME}" ]]; then
+                            export KAM_DB_NAME="${SET_KAM_DB_NAME}"
                         fi
                         ;;
                     -dsipcid|--dsip-clusterid=*)
@@ -2633,6 +2797,35 @@ function processCMD {
                             shift
                             setConfigAttrib 'DSIP_CLUSTER_ID' "$1" ${DSIP_CONFIG_FILE}
                             shift
+                        fi
+                        ;;
+                    -dbadmin|--database-admin=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            DB_CONN_URI=$(printf '%s' "$1" | cut -d '=' -f 2)
+                            shift
+                        else
+                            shift
+                            DB_CONN_URI="$1"
+                            shift
+                        fi
+
+                        NEW_ROOT_DB_USER=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\1%' <<<"$DB_CONN_URI")
+                        NEW_ROOT_DB_PASS=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\2%' <<<"$DB_CONN_URI")
+                        NEW_ROOT_DB_NAME=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\3%' <<<"$DB_CONN_URI")
+
+                        # sanity check (required params)
+                        if [[ -n "${NEW_ROOT_DB_USER}" ]]; then
+                            export ROOT_DB_USER="${NEW_ROOT_DB_USER}"
+                        else
+                            printerr 'Root Database User is required and was not found in connection uri'
+                            cleanupAndExit 1
+                        fi
+                        # set optional params (only if provided)
+                        if [[ -n "${NEW_ROOT_DB_PASS}" ]]; then
+                            export ROOT_DB_PASS="${NEW_ROOT_DB_PASS}"
+                        fi
+                        if [[ -n "${NEW_ROOT_DB_NAME}" ]]; then
+                            export ROOT_DB_NAME="${NEW_ROOT_DB_NAME}"
                         fi
                         ;;
                     -dsipcsync|--dsip-clustersync=*)
@@ -2697,22 +2890,20 @@ function processCMD {
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
-                RUN_COMMANDS+=(installKamailio installDsiprouter)
+                RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter)
+            fi
+
+            # add displaying logo and login info to deferred commands
+            DEFERRED_COMMANDS+=(displayLogo)
+            if (( ${DISPLAY_LOGIN_INFO} == 1 )); then
+                DEFERRED_COMMANDS+=(displayLoginInfo)
             fi
 
             # add commands deferred until all install funcs are done
             RUN_COMMANDS+=(${DEFERRED_COMMANDS[@]})
-
-            # display logo after install / uninstall commands
-            RUN_COMMANDS+=(displayLogo)
-
-            # display login info at the very end for user
-            if (( ${DISPLAY_LOGIN_INFO} == 1 )); then
-                RUN_COMMANDS+=(displayLoginInfo)
-            fi
             ;;
         uninstall)
-            RUN_COMMANDS+=(setCloudPlatform)
+            RUN_COMMANDS+=(setCloudPlatform uninstallManPage)
             shift
 
             while (( $# > 0 )); do
@@ -2742,7 +2933,7 @@ function processCMD {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -2754,14 +2945,14 @@ function processCMD {
                 esac
             done
 
+            # only use defaults if no discrete services specified
+            if (( ${DEFAULT_SERVICES} == 1 )); then
+                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak)
+            fi
+
             # clean dev environment if configured
             if [[ -e /usr/local/bin/_merge-changelog ]]; then
                 RUN_COMMANDS+=(cleanGitDevEnv)
-            fi
-
-            # only use defaults if no discrete services specified
-            if (( ${DEFAULT_SERVICES} == 1 )); then
-                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio)
             fi
 
             # display logo after install / uninstall commands
@@ -2987,7 +3178,7 @@ function processCMD {
                 esac
             done
             ;;
-	upgrade)
+	    upgrade)
             # reconfigure kamailio configs
             RUN_COMMANDS+=(upgrade)
             shift
@@ -3000,17 +3191,31 @@ function processCMD {
                         set -x
                         shift
                         ;;
-                    -rel|--release)
-			shift
-			if [ -z "$1" ]; then
-				printerr "Please specify a release tag (ie 0.34)"
-                        	usageOptions
-                        	cleanupAndExit 1
-			 else	    
-                       		export UPGRADE_RELEASE=$1
+                    -dsipcid|--dsip-clusterid=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            setConfigAttrib 'DSIP_CLUSTER_ID' "$(echo "$1" | cut -d '=' -f 2)" ${DSIP_CONFIG_FILE}
+                            shift
+                        else
+                            shift
+                            setConfigAttrib 'DSIP_CLUSTER_ID' "$1" ${DSIP_CONFIG_FILE}
+                            shift
+                        fi
+                        ;;
+                    -rel|--release=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            export UPGRADE_RELEASE="$(echo "$1" | cut -d '=' -f 2)"
+			                shift
+                        else
+                            shift
+                            export UPGRADE_RELEASE="$1"
+                            shift
+			            fi
 
-			 fi
-                         shift
+                        if [[ -z "$UPGRADE_RELEASE" ]]; then
+                            printerr "Please specify a release tag (ie v0.64)"
+                            usageOptions
+                            cleanupAndExit 1
+                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -3068,8 +3273,8 @@ function processCMD {
                         ;;
                 esac
             done
-	    ;;
-	configuresslcert)
+	        ;;
+	    configuresslcert)
             # reconfigure ssl configs
             RUN_COMMANDS+=(configureSSL)
             shift
@@ -3083,8 +3288,8 @@ function processCMD {
                         shift
                         ;;
                     -f|--force)
-                        rm -f $DSIP_CERTS_DIR/dsiprouter.crt
-                        rm -f $DSIP_CERTS_DIR/dsiprouter.key
+                        rm -f $DSIP_CERTS_DIR/dsiprouter-cert.pem
+                        rm -f $DSIP_CERTS_DIR/dsiprouter-key.pem
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -3176,35 +3381,35 @@ function processCMD {
 
             # default to only resetting dsip gui password
             if (( $# == 0 )); then
-                RESET_DSIP_CREDS=1
+                RESET_DSIP_GUI_PASS=1
             else
-                RESET_DSIP_CREDS=0
+                RESET_DSIP_GUI_PASS=0
             fi
 
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
                     -all|--all)
-                        RESET_DSIP_CREDS=1
-                        RESET_API_CREDS=1
-                        RESET_KAM_CREDS=1
-                        RESET_IPC_CREDS=1
+                        RESET_DSIP_GUI_PASS=1
+                        RESET_DSIP_API_TOKEN=1
+                        RESET_KAM_DB_PASS=1
+                        RESET_DSIP_IPC_TOKEN=1
                         shift
                         ;;
                     -dc|--dsip-creds)
-                        RESET_DSIP_CREDS=1
+                        RESET_DSIP_GUI_PASS=1
                         shift
                         ;;
                     -ac|--api-creds)
-                        RESET_API_CREDS=1
+                        RESET_DSIP_API_TOKEN=1
                         shift
                         ;;
                     -kc|--kam-creds)
-                        RESET_KAM_CREDS=1
+                        RESET_KAM_DB_PASS=1
                         shift
                         ;;
                     -ic|--ipc-creds)
-                        RESET_IPC_CREDS=1
+                        RESET_DSIP_IPC_TOKEN=1
                         shift
                         ;;
                     -fid|--force-instance-id)
@@ -3233,120 +3438,92 @@ function processCMD {
                         set -x
                         shift
                         ;;
-                    -du|--dsip-user=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_DSIP_USER=$(echo "$1" | cut -d '=' -f 2)
-                            shift
-                        else
-                            shift
-                            SET_DSIP_USER="$1"
-                            shift
-                        fi
-                        ;;
                     -dc|--dsip-creds=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_DSIP_CREDS=$(echo "$1" | cut -d '=' -f 2)
+                            CREDS_URI=$(echo "$1" | cut -d '=' -f 2)
                             shift
                         else
                             shift
-                            SET_DSIP_CREDS="$1"
+                            CREDS_URI="$1"
                             shift
                         fi
+
+                        SET_DSIP_GUI_USER=$(perl -pe 's%([^:/\t\r\n\v\f]+)?(?::([^/\t\r\n\v\f]*))?%\1%' <<<"$CREDS_URI")
+                        SET_DSIP_GUI_PASS=$(perl -pe 's%([^:/\t\r\n\v\f]+)?(?::([^/\t\r\n\v\f]*))?%\2%' <<<"$CREDS_URI")
                         ;;
                     -ac|--api-creds=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_API_CREDS=$(echo "$1" | cut -d '=' -f 2)
+                            SET_DSIP_API_TOKEN=$(echo "$1" | cut -d '=' -f 2)
                             shift
                         else
                             shift
-                            SET_API_CREDS="$1"
-                            shift
-                        fi
-                        ;;
-                    -ku|--kam-user=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_KAM_USER=$(echo "$1" | cut -d '=' -f 2)
-                            shift
-                        else
-                            shift
-                            SET_KAM_USER="$1"
+                            SET_DSIP_API_TOKEN="$1"
                             shift
                         fi
                         ;;
                     -kc|--kam-creds=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_KAM_CREDS=$(echo "$1" | cut -d '=' -f 2)
+                            DB_CONN_URI=$(echo "$1" | cut -d '=' -f 2)
                             shift
                         else
                             shift
-                            SET_KAM_CREDS="$1"
+                            DB_CONN_URI="$1"
                             shift
                         fi
-                        ;;
-                    -mu|--mail-user=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_MAIL_USER=$(echo "$1" | cut -d '=' -f 2)
-                            shift
-                        else
-                            shift
-                            SET_MAIL_USER="$1"
-                            shift
+
+                        # sanity check
+                        if [[ -z "${DB_CONN_URI}" ]]; then
+                            printerr "Credentials must be given for option $OPT"
+                            cleanupAndExit 1
                         fi
+                        SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
+                        SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
+                        SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
+                        SET_KAM_DB_PORT=$(parseDBConnURI -port "$DB_CONN_URI")
+                        SET_KAM_DB_NAME=$(parseDBConnURI -name "$DB_CONN_URI")
                         ;;
                     -mc|--mail-creds=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_MAIL_CREDS=$(echo "$1" | cut -d '=' -f 2)
+                            CREDS_URI=$(echo "$1" | cut -d '=' -f 2)
                             shift
                         else
                             shift
-                            SET_MAIL_CREDS="$1"
+                            CREDS_URI="$1"
                             shift
                         fi
+
+                        SET_DSIP_MAIL_USER=$(perl -pe 's%([^:/\t\r\n\v\f]+)?(?::([^/\t\r\n\v\f]*))?%\1%' <<<"$CREDS_URI")
+                        SET_DSIP_MAIL_PASS=$(perl -pe 's%([^:/\t\r\n\v\f]+)?(?::([^/\t\r\n\v\f]*))?%\2%' <<<"$CREDS_URI")
                         ;;
                     -ic|--ipc-creds=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
-                            SET_IPC_CREDS=$(echo "$1" | cut -d '=' -f 2)
+                            SET_DSIP_IPC_TOKEN=$(echo "$1" | cut -d '=' -f 2)
                             shift
                         else
                             shift
-                            SET_IPC_CREDS="$1"
+                            SET_DSIP_IPC_TOKEN="$1"
                             shift
                         fi
                         ;;
-                    *)  # fail on unknown option
-                        printerr "Invalid option [$OPT] for command [$ARG]"
-                        usageOptions
-                        cleanupAndExit 1
-                        shift
-                        ;;
-                esac
-            done
-            ;;
-        setkamdbconfig)
-            # set kamailio database settings
-            RUN_COMMANDS+=(setKamDBConfig)
-            shift
+                    -dac|--database-admin-creds=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            DB_CONN_URI=$(printf '%s' "$1" | cut -d '=' -f 2)
+                            shift
+                        else
+                            shift
+                            DB_CONN_URI="$1"
+                            shift
+                        fi
 
-            local NEW_KAM_DB_USER="" NEW_KAM_DB_PASS="" NEW_KAM_DB_HOST="" NEW_KAM_DB_PORT=""
+                        # sanity check
+                        if [[ -z "${DB_CONN_URI}" ]]; then
+                            printerr "Credentials must be given for option $OPT"
+                            cleanupAndExit 1
+                        fi
 
-            while (( $# > 0 )); do
-                # last arg is connection uri
-                if (( $# == 1 )); then
-                    NEW_KAM_DB_USER=$(printf '%s' "$1" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
-                    NEW_KAM_DB_PASS=$(printf '%s' "$1" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
-                    NEW_KAM_DB_HOST=$(printf '%s' "$1" | cut -d '@' -f 2- | cut -d ':' -f -1)
-                    NEW_KAM_DB_PORT=$(printf '%s' "$1" | cut -d '@' -f 2- | cut -s -d ':' -f 2- | cut -d '/' -f -1)
-                    NEW_KAM_DB_NAME=$(printf '%s' "$1" | cut -d '@' -f 2- | cut -s -d ':' -f 2- | cut -d '/' -f 2-)
-                    shift
-                    break
-                fi
-
-                OPT="$1"
-                case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
+                        SET_ROOT_DB_USER=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\1%' <<<"$DB_CONN_URI")
+                        SET_ROOT_DB_PASS=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\2%' <<<"$DB_CONN_URI")
+                        SET_ROOT_DB_NAME=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\3%' <<<"$DB_CONN_URI")
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -3356,27 +3533,6 @@ function processCMD {
                         ;;
                 esac
             done
-
-            # sanity check
-            if [[ -n "${NEW_KAM_DB_HOST}" ]]; then
-                export KAM_DB_HOST="${NEW_KAM_DB_HOST}"
-            else
-                printerr 'Database Host is required and was not found in connection uri'
-                cleanupAndExit 1
-            fi
-            # export rest of params
-            if [[ -n "${NEW_KAM_DB_USER}" ]]; then
-                export KAM_DB_USER="${NEW_KAM_DB_USER}"
-            fi
-            if [[ -n "${NEW_KAM_DB_PASS}" ]]; then
-                export KAM_DB_PASS="${NEW_KAM_DB_PASS}"
-            fi
-            if [[ -n "${NEW_KAM_DB_PORT}" ]]; then
-                export KAM_DB_PORT="${NEW_KAM_DB_PORT}"
-            fi
-            if [[ -n "${NEW_KAM_DB_NAME}" ]]; then
-                export KAM_DB_NAME="${NEW_KAM_DB_NAME}"
-            fi
             ;;
         generatekamconfig)
             # generate kamailio configs from templates
@@ -3485,6 +3641,10 @@ function processCMD {
             ;;
     esac
 
+    # remove dupliaate commands, while preserving order
+    # shellcheck disable=SC2207
+    RUN_COMMANDS=( $(printf '%s\n' "${RUN_COMMANDS[@]}" | awk '!x[$0]++') )
+
     # Options are processed... run commands. Processing Notes below.
     # default priority of install (with rtpengine):
     # 1. kamailio
@@ -3496,7 +3656,7 @@ function processCMD {
     # default order of install (without dsiprouter):
     # 1. kamailio
     # 2. rtpengine
-    for RUN_COMMAND in ${RUN_COMMANDS[@]}; do
+    for RUN_COMMAND in "${RUN_COMMANDS[@]}"; do
         $RUN_COMMAND
     done
     cleanupAndExit 0
