@@ -10,7 +10,10 @@ import uuid
 class cos_dialplan():
 
     name = None
-    dialplan_xml = []
+    dialplan_xml = None
+
+    def __init__(self):
+        self.dialplan_xml = []
 
     def add(self,data):
         dialplan_entry = {}
@@ -33,7 +36,7 @@ class cos():
     dialplan_list = []
     domain = None
 
-    def __init__(self, domain):
+    def __init__(self, domain,data=None):
         if domain.db:
             self.db = domain.db
         self.domain_uuid = domain.domain_id
@@ -70,18 +73,41 @@ class cos():
         cos_standard.add(entry)
         self.dialplan_list.append(cos_standard)
 
+        if data is not None and 'settings' in data:
+            domain_settings = data['settings']
+            cos_settings = cos_dialplan()
+            cos_settings.name="domain_settings"
+            entry = {}
+            entry['name'] = "domain_settings"
+            entry['number'] = ""
+            entry['continue'] = "true"
+            entry['order'] = 20
+            entry['enabled'] = "true"
+            entry['description'] = "Domain Settings"
+            entry['hostname'] = ""
+            entry['logic'] = "<extension name=\"domain_settings\" continue=\"true\" uuid=\"af2cd91f-1db2-4742-b8c2-ef519ba6e8b5\"> \
+    	             <condition field=\"\" expression=\"\">  \
+    		               <action application=\"set\" data=\"default_language={}\"/> \
+    		               <action application=\"set\" data=\"default_dialect={}\"/> \
+    		               <action application=\"set\" data=\"default_voice={}\"/> \
+    	             </condition> \
+                     </extension>".format(domain_settings['default_language'],domain_settings['default_dialect'],domain_settings['default_voice'])
+            cos_settings.add(entry)
+            self.dialplan_list.append(cos_settings)
+
 
     def create(self, name):
         psycopg2.extras.register_uuid()
-        dialplan_uuid = uuid.uuid4()
         app_uuid = uuid.uuid4()
         cur = self.db.cursor()
 
         for cos_dp in self.dialplan_list:
+            print("{},{}".format(cos_dp.name,name))
             if cos_dp.name == name:
                 if cos_dp.dialplan_xml == None:
                     continue
                 for xml in cos_dp.dialplan_xml:
+                    dialplan_uuid = uuid.uuid4()
                     query = "insert into v_dialplans (domain_uuid,dialplan_uuid,app_uuid,dialplan_context, \
                             dialplan_name,dialplan_number,dialplan_continue,dialplan_order,dialplan_enabled, \
                             dialplan_description, hostname, dialplan_xml) values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
@@ -218,7 +244,7 @@ class domains():
                 d['name']= row[1]
                 d['enabled'] = row[2]
                 d['description'] = row[3]
-                
+
 
                 self.domain_list.append(d)
 
