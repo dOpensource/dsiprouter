@@ -162,7 +162,7 @@ function decryptConfigAttrib() {
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
         printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
     else
-        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import sys; sys.path.insert(0, '/etc/dsiprouter/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
     fi
 }
 export -f decryptConfigAttrib
