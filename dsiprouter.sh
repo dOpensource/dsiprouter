@@ -794,8 +794,11 @@ function generateKamailioConfig {
 function configureKamailio {
     # make sure kamailio user and privileges exist
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
-        -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
-        -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+        -e "CREATE USER '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
+        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+   if (( $? != 0 )); then
+   	printwarn "The Kamailio user already exists in the database - not creating again"
+   fi
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'localhost';" \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';" \
@@ -1242,7 +1245,7 @@ function installDsiprouter {
     chmod 0600 ${DSIP_CONFIG_FILE}
     
     # Set permissions on the backup directory and subdirectories
-    chown -R dsiprouter:root ${BACKUP_DIR}
+    chown -R dsiprouter:root ${BACKUPS_DIR}
 
     # Set the permissions of the cert directory now that dSIPRouter has been installed
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
@@ -1317,9 +1320,9 @@ EOF
     fi
 
     # generate documentation for GUI
-    cd ${DSIP_PROJECT_DIR}/docs &&
-    make html &&
-    cd -
+    #cd ${DSIP_PROJECT_DIR}/docs &&
+    #make html &&
+    #cd -
 
     # custom dsiprouter MOTD banner for ssh logins
     updateBanner
