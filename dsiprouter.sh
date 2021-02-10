@@ -177,7 +177,7 @@ setScriptSettings() {
     export KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
     export KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE} 2>/dev/null)}
-
+    
     # grab credential max lengths from python files for later use
     # we use perl bcuz python may not be installed when this is run
     export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'HASHED_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
@@ -1847,7 +1847,7 @@ function resetPassword {
     local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-1}
     local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-1}
     local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-1}
-    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-1}
+    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-0}
 
     if (( $RESET_DSIP_GUI_PASS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
