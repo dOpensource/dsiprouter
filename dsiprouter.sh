@@ -752,6 +752,9 @@ function generateKamailioConfig {
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
+    # Set the External IP Address for the WebRTC Port
+    sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
