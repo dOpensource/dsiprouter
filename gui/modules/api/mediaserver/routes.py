@@ -165,7 +165,7 @@ def getDomains(config_id=None,domain_id=None):
 def postDomains():
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {"name": str, "enabled": bool, "description": str, "config_id": int, "cos": str}
+    VALID_REQUEST_DATA_ARGS = {"name": str, "enabled": bool, "description": str, "config_id": int, "cos": str, "settings": dict}
 
     # ensure requred args are provided
     REQUIRED_ARGS = {'name','config_id'}
@@ -195,6 +195,7 @@ def postDomains():
 
         config_id = data['config_id']
         cos = data['cos'] if 'cos' in data else None
+        domain_settings = data['settings'] if 'settings' in data else None
 
         # Create instance of Media Server Class
         if config_id != None:
@@ -208,8 +209,10 @@ def postDomains():
                     domain = domains.create(data)
                     #Generate Close of Service
                     if cos:
-                        cos_object = plugin.cos(domain)
+                        cos_object = plugin.cos(domain,data)
                         cos_object.create(cos)
+                    if domain_settings:
+                        cos_object.create("domain_settings")
 
                     response_payload['data'] = {"domain_id": domain.domain_id}
 
