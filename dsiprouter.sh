@@ -1946,7 +1946,6 @@ function setCredentials {
         ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
 
 	if [[ -n "${CREATE_KAM_DB_USER}" ]]; then
-		set -x
 		CREATE_KAM_DB_SQL+=("create user '${SET_KAM_DB_USER}'@'%' IDENTIFIED by '${SET_KAM_DB_PASS}';")
 		CREATE_KAM_DB_SQL+=("grant all privileges ON ${KAM_DB_NAME}.* TO '${SET_KAM_DB_USER}'@'%' with grant option;")
 		CREATE_KAM_DB_SQL+=("flush privileges;")
@@ -1958,6 +1957,7 @@ function setCredentials {
 				exit
 			fi
 		done
+		printwarn "The database user: ${SET_KAM_DB_USER} was created"
 		
 	fi
     else
@@ -2607,7 +2607,7 @@ function usageOptions {
         "resetpassword" "[-debug|-all|--all|-dc|--dsip-creds|-ac|--api-creds|-kc|--kam-creds|-ic|--ipc-creds|-fid|--force-instance-id]"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
         "setcredentials" "[-debug|-dc <[user][:pass]>|--dsip-creds=<[user][:pass]>|-ac <token>|--api-creds=<token>|" \
-        " " "-kc <[user[:pass]@]dbhost[:port][/dbname]>|--kam-creds=<[user[:pass]@]dbhost[:port][/dbname]>|" \
+        " " "-kc <[user[:pass]@]dbhost[:port][/dbname]>|--kam-creds=<[user[:pass]@]dbhost[:port][/dbname]> [-createdbuser]|" \
         " " "-mc <[user][:pass]>|--mail-creds=<[user][:pass]>|-ic <token>|--ipc-creds=<token>]|" \
         " " "-dac <[user][:pass][/dbname]>|--db-admin-creds=<[user][:pass][/dbname]>"
     printf "%-30s %s\n" \
