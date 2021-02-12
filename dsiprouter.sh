@@ -1944,6 +1944,22 @@ function setCredentials {
         ROOT_DB_USER=${SET_ROOT_DB_USER:-$ROOT_DB_USER}
         ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
         ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
+
+	if [[ -n "${CREATE_KAM_DB_USER}" ]]; then
+		set -x
+		CREATE_KAM_DB_SQL+=("create user '${SET_KAM_DB_USER}'@'%' IDENTIFIED by '${SET_KAM_DB_PASS}';")
+		CREATE_KAM_DB_SQL+=("grant all privileges ON ${KAM_DB_NAME}.* TO '${SET_KAM_DB_USER}'@'%' with grant option;")
+		CREATE_KAM_DB_SQL+=("flush privileges;")
+		for i in "${CREATE_KAM_DB_SQL[@]}"
+		do
+			mysql -u${ROOT_DB_USER} -p${ROOT_DB_PASS} -h${KAM_DB_HOST} -e "$i"
+			if (( $? == 1 )); then
+				printerr 'The database user could not be created'
+				exit
+			fi
+		done
+		
+	fi
     else
         printerr 'Connection to DB failed'
         cleanupAndExit 1
@@ -3470,7 +3486,13 @@ function processCMD {
                             DB_CONN_URI="$1"
                             shift
                         fi
+		
+			if (( "$1" == "-createdbuser" )); then
+				
+				CREATE_KAM_DB_USER=1
+				shift
 
+			fi
                         # sanity check
                         if [[ -z "${DB_CONN_URI}" ]]; then
                             printerr "Credentials must be given for option $OPT"
