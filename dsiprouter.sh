@@ -2139,7 +2139,7 @@ EOF
     # for centos7 and debian we have to update it 'manually'
     elif [[ "$DISTRO" == "centos" ]]; then
         /etc/update-motd.d/00-dsiprouter > /etc/motd
-        cronAppend "0/5 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
+        cronAppend "*/5 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
     fi
 }
 
