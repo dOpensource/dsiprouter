@@ -32,6 +32,8 @@
 # - need to create dsiprouter user/group on install and allow non-root execution
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
 # - add bash command completion for dsiprouter script
+# - update Thinktel carrier defaults when media ip whitelist feature is added
+#   ref Thinktel docs: https://support.thinktel.ca/kb/article/251-How_SIP_Trunking_works
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
