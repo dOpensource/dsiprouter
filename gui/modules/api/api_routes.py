@@ -173,7 +173,7 @@ def reloadKamailio():
 #       it should be renamed and changed to use POST method
 # TODO: the last lease id/username generated must be tracked (just query DB)
 #       and used to determine next lease id, otherwise conflicts may occur
-@api.route("/api/v1/endpoint/lease", methods=['GET'])
+@api.route("/api/v1/lease/endpoint", methods=['GET'])
 @api_security
 def getEndpointLease():
     db = DummySession()
@@ -198,6 +198,11 @@ def getEndpointLease():
         if ttl is None:
             raise http_exceptions.BadRequest("time to live (ttl) parameter is missing")
 
+        # Convert TTL to Seconds
+        r = re.compile('\d*m|M')
+        if r.match(ttl):
+            ttl = 60 * int(ttl[0:(len(ttl)-1)])
+
         # Generate some values
         rand_num = random.randint(1, 200)
         name = "lease" + str(rand_num)
@@ -207,7 +212,7 @@ def getEndpointLease():
 
         # Set some defaults
         host_addr = ''
-        strip = ''
+        strip = 0
         prefix = ''
 
         # Add the Gateways table
@@ -245,7 +250,7 @@ def getEndpointLease():
         db.close()
 
 
-@api.route("/api/v1/endpoint/lease/<int:leaseid>/revoke", methods=['DELETE'])
+@api.route("/api/v1/lease/endpoint/<int:leaseid>/revoke", methods=['DELETE'])
 @api_security
 def revokeEndpointLease(leaseid):
     db = DummySession()
