@@ -137,18 +137,14 @@ setScriptSettings() {
 
     # make sure dirs exist (ones that may not yet exist)
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
-    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
-    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
-    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
-   
-    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists 
+
+    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
 	    # copy over the template settings.py to be worked on (used throughout this script as well)
     	    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
 
     fi
-  
+
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
@@ -183,7 +179,7 @@ setScriptSettings() {
         perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
 
 
-    # Set the EMAIL used to obtain Let'sEncrypt Certificates 
+    # Set the EMAIL used to obtain Let'sEncrypt Certificates
     export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
     #===========================================================#
 }
@@ -545,7 +541,8 @@ function renewSSLCert {
         	rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
        		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-       		chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+            # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+            chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
         	chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
 		    kamcmd tls.reload
      	fi
@@ -558,7 +555,8 @@ function configureSSL {
     # Check if certificates already exists.  If so, use them and exit
     if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
-        chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
+        # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+        chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
         chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
         return
     fi
@@ -582,8 +580,6 @@ function configureSSL {
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-        chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod 640 ${DSIP_CERTS_DIR}/*
         # Add Nightly Cronjob to renew certs
         cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
     else
@@ -592,10 +588,11 @@ function configureSSL {
         # Worst case, generate a Self-Signed Certificate
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
-        chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod 640 ${DSIP_CERTS_DIR}/*
     fi
-    
+    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+    chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    chmod 640 ${DSIP_CERTS_DIR}/*
+
     # Start nginx if dSIP was installed
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
 	    docker stop dsiprouter-nginx 2> /dev/null
@@ -603,7 +600,7 @@ function configureSSL {
    	firewall-cmd --zone=public --remove-port=80/tcp --permanent
     	firewall-cmd --reload
     fi
-    
+
     #fi
 }
 
@@ -1064,7 +1061,7 @@ function installMysql {
 
 # Remove mysql and its configs
 function uninstallMysql {
-    if [[! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
+    if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
         printwarn "MySQL is not installed - skipping removal"
         return
     fi
@@ -1184,6 +1181,8 @@ function installDsiprouter {
 	    printdbg "Configuring dSIPRouter settings"
 	fi
 
+    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     # if python was just installed its not exported in this proc yet
  	setPythonCmd
     if [ $? -ne 0 ]; then
@@ -1229,7 +1228,7 @@ function installDsiprouter {
     chmod 0400 ${DSIP_PRIV_KEY}
     chown dsiprouter:root ${DSIP_CONFIG_FILE}
     chmod 0600 ${DSIP_CONFIG_FILE}
-    
+
     # Set permissions on the backup directory and subdirectories
     chown -R dsiprouter:root ${BACKUP_DIR}
 
@@ -1864,9 +1863,9 @@ except:
     pass
 EOF
 
-    if (( $RESET_KAM_DB_PASS == 1 )); then 
+    if (( $RESET_KAM_DB_PASS == 1 )); then
 	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
-            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"    
+            -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"
     fi
 
     # can be hot reloaded while running
@@ -2681,7 +2680,7 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
-    
+
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
