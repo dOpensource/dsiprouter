@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-5b4e5f60eb2246c5430a7fa135dd8b47f3febe73
+98371c231dc8ca53c2f58ad1c79a4a036d7a4176
+a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb
 89fb62248dcf8795a210f719b9215d6887dc3294
 3a61a9af7c8dd9e576815d47cb8f59f142d258c9
 7105186a5f9a22d9a990f683ce7774ce2c585674
@@ -1877,10 +1878,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 5b4e5f60eb2246c5430a7fa135dd8b47f3febe73)
+[//]: # (START_SECTION 98371c231dc8ca53c2f58ad1c79a4a036d7a4176)
+### fix permissions issue
+
+> Commit: [98371c231dc8ca53c2f58ad1c79a4a036d7a4176](https://github.com/dOpensource/dsiprouter/commit/98371c231dc8ca53c2f58ad1c79a4a036d7a4176)  
+> Date: Tue, 23 Feb 2021 15:32:05 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 98371c231dc8ca53c2f58ad1c79a4a036d7a4176)
+[//]: # (START_SECTION a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb)
 ### fix typos and permissions in dsiprouter.sh
 
-> Commit: [5b4e5f60eb2246c5430a7fa135dd8b47f3febe73](https://github.com/dOpensource/dsiprouter/commit/5b4e5f60eb2246c5430a7fa135dd8b47f3febe73)  
+> Commit: [a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb](https://github.com/dOpensource/dsiprouter/commit/a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb)  
 > Date: Tue, 23 Feb 2021 14:26:04 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1891,7 +1907,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 5b4e5f60eb2246c5430a7fa135dd8b47f3febe73)
+[//]: # (END_SECTION a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb)
 [//]: # (START_SECTION 89fb62248dcf8795a210f719b9215d6887dc3294)
 ### fix typos in kam cfg
 

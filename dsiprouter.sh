@@ -541,9 +541,7 @@ function renewSSLCert {
         	rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
        		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-            # dsiprouter needs to have control over the certs (note that nginx should never have write access)
-            chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
-        	chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
+            setCertPerms
 		    kamcmd tls.reload
      	fi
     else
@@ -555,9 +553,7 @@ function configureSSL {
     # Check if certificates already exists.  If so, use them and exit
     if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
-        # dsiprouter needs to have control over the certs (note that nginx should never have write access)
-        chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
-        chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
+        setCertPerms
         return
     fi
 
@@ -569,7 +565,6 @@ function configureSSL {
     	firewall-cmd --reload
 
     fi
-
 
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
@@ -589,19 +584,30 @@ function configureSSL {
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
     fi
-    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
-    chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
-    chmod 640 ${DSIP_CERTS_DIR}/*
+    setCertPerms
 
     # Start nginx if dSIP was installed
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
 	    docker stop dsiprouter-nginx 2> /dev/null
     else
-   	firewall-cmd --zone=public --remove-port=80/tcp --permanent
+   	    firewall-cmd --zone=public --remove-port=80/tcp --permanent
     	firewall-cmd --reload
     fi
 
     #fi
+}
+
+# set TLS certificate permissions based on users available
+function setCertPerms() {
+    if id -u dsiprouter &>/dev/null; then
+        # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+        chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
+        chmod 640 ${DSIP_CERTS_DIR}/*
+    else
+        # dsiprouter user does not yet exist so make sure kamailio user has access
+        chown -R root:kamailio ${DSIP_CERTS_DIR}
+        chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
+    fi
 }
 
 # updates and settings in kam config that may change
@@ -1181,8 +1187,10 @@ function installDsiprouter {
 	    printdbg "Configuring dSIPRouter settings"
 	fi
 
-    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
+    # make sure permissions are set correctly
     chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    setCertPerms
+
     # if python was just installed its not exported in this proc yet
  	setPythonCmd
     if [ $? -ne 0 ]; then
