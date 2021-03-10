@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-6e4e4eba34223216aab135e5b03968654095ea88
+1c0e49e1472bffba117f619797cb7cec7ef264ac
+ee0103b76f5d1f357eea2080e19202c1e2c24f19
 8afb6f4389aad9acc9499bce1bf226c56686f082
 a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb
 89fb62248dcf8795a210f719b9215d6887dc3294
@@ -1879,10 +1880,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 6e4e4eba34223216aab135e5b03968654095ea88)
+[//]: # (START_SECTION 1c0e49e1472bffba117f619797cb7cec7ef264ac)
+### Merge In Fixes From Testing
+
+> Commit: [1c0e49e1472bffba117f619797cb7cec7ef264ac](https://github.com/dOpensource/dsiprouter/commit/1c0e49e1472bffba117f619797cb7cec7ef264ac)  
+> Date: Wed, 10 Mar 2021 16:52:20 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add Thinktel specific fixes to kam config
+- more stablility updates to kam config
+
+
+---
+
+[//]: # (END_SECTION 1c0e49e1472bffba117f619797cb7cec7ef264ac)
+[//]: # (START_SECTION ee0103b76f5d1f357eea2080e19202c1e2c24f19)
 ### fix permissions in service files
 
-> Commit: [6e4e4eba34223216aab135e5b03968654095ea88](https://github.com/dOpensource/dsiprouter/commit/6e4e4eba34223216aab135e5b03968654095ea88)  
+> Commit: [ee0103b76f5d1f357eea2080e19202c1e2c24f19](https://github.com/dOpensource/dsiprouter/commit/ee0103b76f5d1f357eea2080e19202c1e2c24f19)  
 > Date: Thu, 25 Feb 2021 13:51:31 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1893,7 +1911,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 6e4e4eba34223216aab135e5b03968654095ea88)
+[//]: # (END_SECTION ee0103b76f5d1f357eea2080e19202c1e2c24f19)
 [//]: # (START_SECTION 8afb6f4389aad9acc9499bce1bf226c56686f082)
 ### fix permissions issue
 
