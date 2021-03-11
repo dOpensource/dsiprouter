@@ -1314,18 +1314,18 @@ def updateEndpointGroups(gwgroupid=None):
             # update the weight
             DispatcherEntry = db.query(Dispatcher).filter(
                 (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
-            if weight is None or len(weight) == 0:
-                if DispatcherEntry is not None:
-                    db.delete(DispatcherEntry)
-            elif weight:
-                if DispatcherEntry is not None:
-                    db.query(Dispatcher).filter(
-                        (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update(
-                        {"attrs": "weight={}".format(weight)}, synchronize_session=False)
-                else:
-                    dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
-                                            description=name)
-                    db.add(dispatcher)
+            #if weight is None or len(weight) == 0:
+            #    if DispatcherEntry is not None:
+            #        db.delete(DispatcherEntry)
+            #elif weight:
+            if DispatcherEntry is not None:
+                db.query(Dispatcher).filter(
+                    (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update(
+                    {"attrs": "weight={}".format(weight)}, synchronize_session=False)
+            else:
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                                        description=name)
+                db.add(dispatcher)
 
             if int(fusionpbxenabled) > 0:
                 # update the weight for the external load balancer dispatcher set
