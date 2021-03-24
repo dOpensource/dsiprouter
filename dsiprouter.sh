@@ -32,8 +32,6 @@
 # - need to create dsiprouter user/group on install and allow non-root execution
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
 # - add bash command completion for dsiprouter script
-# - update Thinktel carrier defaults when media ip whitelist feature is added
-#   ref Thinktel docs: https://support.thinktel.ca/kb/article/251-How_SIP_Trunking_works
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -86,8 +84,8 @@ setScriptSettings() {
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
-    export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_dsiprouter.cfg"
-    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio_tls.cfg"
+    export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/dsiprouter.cfg"
+    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio_tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
@@ -136,13 +134,18 @@ setScriptSettings() {
     #================= PRE_DYNAMIC_CONFIG_SETUP =================#
 
     # make sure dirs exist (ones that may not yet exist)
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/certs,/gui,/kamailio} ${SRC_DIR} ${BACKUPS_DIR} ${DSIP_RUN_DIR} ${DSIP_CERTS_DIR}
+    # make sure the permissions on the $DSIP_RUN_DIR is correct, which is needed after a reboot
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+    chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
+    # dsiprouter needs to have control over the kamailio dir (dynamic changes may be made)
+    chown dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio
 
-    # copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exists
+    # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
 	    # copy over the template settings.py to be worked on (used throughout this script as well)
-    	    cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
-
+        cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
     fi
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
@@ -499,7 +502,7 @@ export -f reconfigureMysqlSystemdService
 function configurePythonSettings {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
-    setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_RTPENGINE_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PROTO' "$DSIP_PROTO" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_UNIX_SOCK' "$DSIP_UNIX_SOCK" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_PORT' "$DSIP_PORT" ${DSIP_CONFIG_FILE} -q
@@ -1200,7 +1203,9 @@ function installDsiprouter {
 
     # add dsiprouter.sh to the path
     ln -s ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/local/bin/dsiprouter
-    # add command line completion to dsiprouter.sh
+    # enable bash command line completion if not already
+    perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+    # add command line completion for dsiprouter CLI
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
     . /etc/bash_completion
     # make sure current python version is in the path
@@ -1216,7 +1221,7 @@ function installDsiprouter {
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
         :
     else
-        ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '/etc/dsiprouter/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
 
     # Generate UUID unique to this dsiprouter instance
@@ -1862,7 +1867,8 @@ function resetPassword {
     fi
 
     ${PYTHON_CMD} << EOF
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.security import Credentials; from util.ipc import sendSyncSettingsSignal;
 Credentials.setCreds(dsip_creds='${DSIP_PASSWORD}', api_creds='${DSIP_API_TOKEN}', kam_creds='${KAM_DB_PASS}', ipc_creds='${DSIP_IPC_PASS}');
 try:
@@ -1925,14 +1931,14 @@ function setCredentials {
     # we determine if user already changed DB creds (and just want dsiprouter to store them accordingly)
     if checkDB --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $ROOT_DB_NAME ; then
         :
-    elif checkDB --user="${SET_ROOT_DB_USER:-ROOT_DB_USER}" --pass="${SET_ROOT_DB_PASS:-ROOT_DB_PASS}" \
-    --host="${SET_KAM_DB_HOST:-KAM_DB_HOST}" --port="${SET_KAM_DB_PORT:-KAM_DB_PORT}" \
-    ${SET_ROOT_DB_NAME:-ROOT_DB_NAME} ; then
-        KAM_DB_HOST=${SET_KAM_DB_HOST:-KAM_DB_HOST}
-        KAM_DB_PORT=${SET_KAM_DB_PORT:-KAM_DB_PORT}
-        ROOT_DB_USER=${SET_ROOT_DB_USER:-ROOT_DB_USER}
-        ROOT_DB_PASS=${SET_ROOT_DB_PASS:-ROOT_DB_PASS}
-        ROOT_DB_NAME=${SET_ROOT_DB_NAME:-ROOT_DB_NAME}
+    elif checkDB --user="${SET_ROOT_DB_USER:-$ROOT_DB_USER}" --pass="${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}" \
+    --host="${SET_KAM_DB_HOST:-$KAM_DB_HOST}" --port="${SET_KAM_DB_PORT:-$KAM_DB_PORT}" \
+    ${SET_ROOT_DB_NAME:-$ROOT_DB_NAME} ; then
+        KAM_DB_HOST=${SET_KAM_DB_HOST:-$KAM_DB_HOST}
+        KAM_DB_PORT=${SET_KAM_DB_PORT:-$KAM_DB_PORT}
+        ROOT_DB_USER=${SET_ROOT_DB_USER:-$ROOT_DB_USER}
+        ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
+        ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
     else
         printerr 'Connection to DB failed'
         cleanupAndExit 1
@@ -1958,12 +1964,12 @@ function setCredentials {
     fi
     if [[ -n "${SET_KAM_DB_PASS}" ]]; then
         RELOAD_TYPE=2
-        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_KAM_DB_PASS}') where User='${SET_KAM_DB_USER:-KAM_DB_USER}';")
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_KAM_DB_PASS}') where User='${SET_KAM_DB_USER:-$KAM_DB_USER}';")
     fi
     if [[ -n "${SET_KAM_DB_HOST}" ]]; then
         RELOAD_TYPE=2
-        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
-        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
+        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-$KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
+        #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
         setConfigAttrib 'KAM_DB_HOST' "$SET_KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
         reconfigureMysqlSystemdService
     fi
@@ -1981,7 +1987,7 @@ function setCredentials {
         setConfigAttrib 'ROOT_DB_USER' "$SET_ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q
     fi
     if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
-        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_ROOT_DB_PASS}') where User='${SET_ROOT_DB_USER:-ROOT_DB_USER}';")
+        DEFERRED_SQL_STATEMENTS+=("update mysql.user set authentication_string=PASSWORD('${SET_ROOT_DB_PASS}') where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}';")
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_ROOT_DB_NAME}" ]]; then
@@ -2007,7 +2013,8 @@ function setCredentials {
 
     # update encrypted settings
     ${PYTHON_CMD} << EOF
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.security import Credentials;
 Credentials.setCreds(dsip_creds='${SET_DSIP_GUI_PASS}', api_creds='${SET_DSIP_API_TOKEN}', kam_creds='${SET_KAM_DB_PASS}', mail_creds='${SET_DSIP_MAIL_PASS}', ipc_creds='${SET_DSIP_IPC_TOKEN}');
 EOF
@@ -2018,7 +2025,8 @@ EOF
 
     # synchronize settings (between local, DB, and cluster)
     ${PYTHON_CMD} << EOF 2>/dev/null
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.ipc import sendSyncSettingsSignal;
 sendSyncSettingsSignal();
 EOF
@@ -2237,9 +2245,9 @@ function upgrade {
     #git checkout $UPGRADE_RELEASE
     #git stash apply
 
-    updateKamailioConfig
-    ret=$?
     generateKamailioConfig
+    ret=$?
+    updateKamailioConfig
     ret=$((ret + $?))
 
     if [ $ret -eq 0 ]; then
@@ -2541,7 +2549,7 @@ function usageOptions {
     linebreak
     printf '\n%s\n%s\n' \
         "$(pprint -n USAGE:)" \
-        "$0 <command> [options]"
+        "dsiprouter <command> [options]"
 
     linebreak
     printf "\n%-s%24s%s\n" \
@@ -2556,7 +2564,7 @@ function usageOptions {
     printf "%-30s %s\n" \
         "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
-        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
+        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \

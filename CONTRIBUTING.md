@@ -27,7 +27,7 @@ You may need different flags depending on where you deploy (servernat, etc..)
     For the rest of this walkthrough assume your starting location is in project root (default `/etc/dsiprouter`).
 
 3. Make your changes..
-Then prior to commit make sure you reset any defaults in `settings.py` or `kamailio_dsiprouter.cfg`.
+Then prior to commit make sure you reset any defaults in `settings.py` or `kamailio.cfg`.
 You should **not** be commiting the generated versions from `/etc/dsiprouter`, this will include changes to the defaults.
 Instead you should check which changes you need to keep by runnning diff:
 
@@ -105,7 +105,7 @@ This means that a new module should become automatically available from the UI w
 
 ### API Structure
 
-We are in the process of refactoring most of the application so that all of the GUI components leverages the API.  Currently, the core API reside in gui/modules/api.  
+We are in the process of refactoring most of the application so that all of the GUI components leverages the API.  Currently, the core API reside in gui/modules/api.
 
 #### Adding an API
 
