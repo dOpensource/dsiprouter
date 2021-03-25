@@ -559,7 +559,7 @@ function renewSSLCert {
 
 function configureSSL {
     # Check if certificates already exists.  If so, use them and exit
-    if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
+    if [[ -f "${DSIP_SSL_CERT}" && -f "${DSIP_SSL_KEY}" ]]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
         setCertPerms
         return
@@ -583,8 +583,10 @@ function configureSSL {
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-        # Add Nightly Cronjob to renew certs
-        cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
+        # Add Nightly Cronjob to renew certs if not already there
+        if ! crontab -l | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert" 2>/dev/null; then
+            cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
+        fi
     else
         printwarn "Failed Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
 

@@ -9,13 +9,14 @@ Type=simple
 Environment='DSIP_PROJECT_DIR=/opt/dsiprouter'
 Environment='DSIP_RUN_DIR=/var/run/dsiprouter'
 Environment='DSIP_SYSTEM_CONFIG_DIR=/etc/dsiprouter'
-Environment='NGINX_RUN_DIR=/var/run/dsiprouter'
+Environment='NGINX_RUN_DIR=/var/run/nginx'
 EnvironmentFile=-/etc/defaults/dsiprouter.conf
 EnvironmentFile=-/etc/defaults/dsiprouter.d/*.conf
 # PIDFile requires an absolute path
 PIDFile=/var/run/dsiprouter/dsiprouter.pid
 # ExecStart* requires an absolute path for the program
 ExecStartPre=!-/bin/mkdir -p ${DSIP_RUN_DIR}
+ExecStartPre=!-/bin/mkdir -p ${NGINX_RUN_DIR}
 ExecStartPre=!-/bin/chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 ExecStartPre=!-/bin/chown -R nginx:nginx ${NGINX_RUN_DIR}
 ExecStartPre=!-/bin/chown -R dsiprouter:dsiprouter ${DSIP_SYSTEM_CONFIG_DIR}/gui
