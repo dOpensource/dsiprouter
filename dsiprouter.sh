@@ -141,6 +141,8 @@ setScriptSettings() {
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}
     # dsiprouter needs to have control over the kamailio dir (dynamic changes may be made)
     chown dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio
+    # dsiprouter needs to have permissions to the backup directory
+    chown -R dsiprouter:root ${BACKUPS_DIR}
 
     # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
@@ -157,6 +159,9 @@ setScriptSettings() {
     	export INTERNAL_FQDN="$(hostname)"
     fi
     export EXTERNAL_IP=$(getExternalIP)
+    if [[ -z "$EXTERNAL_IP" ]]; then
+	    export EXTERNAL_IP=$INTERNAL_IP
+    fi
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
@@ -760,6 +765,9 @@ function generateKamailioConfig {
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
+    # Set the External IP Address for the WebRTC Port
+    sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -797,8 +805,11 @@ function generateKamailioConfig {
 function configureKamailio {
     # make sure kamailio user and privileges exist
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
-        -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
-        -e "CREATE USER IF NOT EXISTS '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+        -e "CREATE USER '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
+        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+    if (( $? != 0 )); then
+        printwarn "The Kamailio user already exists in the database"
+    fi
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'localhost';" \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'%';" \
@@ -1102,9 +1113,12 @@ function installRTPEngine {
     printdbg "Attempting to install RTPEngine..."
     ./rtpengine/${DISTRO}/install.sh install
     ret=$?
-    if [ $ret -eq 0 ]; then
+    if (( $ret == 0 )); then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        systemctl restart kamailio
         printdbg "configuring RTPEngine service"
     elif [ $ret -eq 2 ]; then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         printwarn "RTPEngine install waiting on reboot"
         cleanupAndExit 0
     else
@@ -1143,7 +1157,12 @@ function uninstallRTPEngine {
     printdbg "Attempting to uninstall RTPEngine..."
     ./rtpengine/$DISTRO/install.sh uninstall
 
-    if [ $? -ne 0 ]; then
+    if (( $? == 0 )); then
+        disableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+            systemctl restart kamailio
+        fi
+
         printerr "RTPEngine uninstall failed"
         cleanupAndExit 1
     fi
@@ -1189,10 +1208,6 @@ function installDsiprouter {
 	else
 	    printdbg "Configuring dSIPRouter settings"
 	fi
-
-    # make sure permissions are set correctly
-    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-    setCertPerms
 
     # if python was just installed its not exported in this proc yet
  	setPythonCmd
@@ -1243,7 +1258,7 @@ function installDsiprouter {
     chmod 0600 ${DSIP_CONFIG_FILE}
 
     # Set permissions on the backup directory and subdirectories
-    chown -R dsiprouter:root ${BACKUP_DIR}
+    chown -R dsiprouter:root ${BACKUPS_DIR}
 
     # Set the permissions of the cert directory now that dSIPRouter has been installed
     chown dsiprouter:kamailio ${DSIP_CERTS_DIR}/*
@@ -1318,12 +1333,10 @@ EOF
     fi
 
     # generate documentation for GUI
+    # TODO: we should fix these errors instead of masking them
     cd ${DSIP_PROJECT_DIR}/docs &&
-    make html &&
+    make html >/dev/null 2>&1
     cd -
-
-    # custom dsiprouter MOTD banner for ssh logins
-    updateBanner
 
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
@@ -1334,6 +1347,10 @@ EOF
     fi
     systemctl restart dsiprouter
     if systemctl is-active --quiet dsiprouter; then
+        # custom dsiprouter MOTD banner for ssh logins
+        # must be run after dsiprouter srevice updates IP's in settings.py
+        updateBanner
+
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
         printdbg "-------------------------------------"
         pprint "dSIPRouter Installation is complete! "
@@ -1845,7 +1862,7 @@ function resetPassword {
     local RESET_DSIP_API_TOKEN=${RESET_DSIP_API_TOKEN:-1}
     local RESET_KAM_DB_PASS=${RESET_KAM_DB_PASS:-1}
     local RESET_DSIP_IPC_TOKEN=${RESET_DSIP_IPC_TOKEN:-1}
-    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-1}
+    local RESET_FORCE_INSTANCE_ID=${RESET_FORCE_INSTANCE_ID:-0}
 
     if (( $RESET_DSIP_GUI_PASS == 1 )); then
         if (( $IMAGE_BUILD == 1 || $RESET_FORCE_INSTANCE_ID == 1 )); then
@@ -2054,6 +2071,7 @@ EOF
         updateKamailioConfig
         printdbg 'Credentials have been updated'
     elif (( ${RELOAD_TYPE} == 2 )); then
+        updateKamailioConfig
         printwarn 'Restarting services with new configurations'
         systemctl restart mysql
         systemctl restart kamailio
@@ -2119,7 +2137,7 @@ EOF
     # for centos7 and debian we have to update it 'manually'
     elif [[ "$DISTRO" == "centos" ]]; then
         /etc/update-motd.d/00-dsiprouter > /etc/motd
-        cronAppend "0 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
+        cronAppend "0/5 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
     fi
 }
 
@@ -2245,9 +2263,9 @@ function upgrade {
     #git checkout $UPGRADE_RELEASE
     #git stash apply
 
-    generateKamailioConfig
-    ret=$?
     updateKamailioConfig
+    ret=$?
+    generateKamailioConfig
     ret=$((ret + $?))
 
     if [ $ret -eq 0 ]; then
@@ -2549,7 +2567,7 @@ function usageOptions {
     linebreak
     printf '\n%s\n%s\n' \
         "$(pprint -n USAGE:)" \
-        "dsiprouter <command> [options]"
+        "$0 <command> [options]"
 
     linebreak
     printf "\n%-s%24s%s\n" \
@@ -2564,7 +2582,7 @@ function usageOptions {
     printf "%-30s %s\n" \
         "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
-        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
+        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [<install options>]"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
@@ -3472,7 +3490,6 @@ function processCMD {
                             printerr "Credentials must be given for option $OPT"
                             cleanupAndExit 1
                         fi
-
                         SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
                         SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
                         SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")

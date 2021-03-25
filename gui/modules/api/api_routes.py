@@ -64,6 +64,35 @@ def getKamailioStats():
     except Exception as ex:
         return showApiError(ex)
 
+@api.route("/api/v1/kamailio/health", methods=['GET'])
+def getSystemHealth():
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'data': []}
+    health_data = {}
+    http_status = None
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
+        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+        if r:
+            #health_data.['version'] = "5.3.4."
+            http_status = r.status_code
+            if http_status >= 400:
+                response_payload['msg'] = 'Server is down'
+            else:
+                response_payload['msg'] = 'Server is up'
+
+        return jsonify(response_payload), http_status
+
+    except Exception as ex:
+        http_status = "400"
+        response_payload['msg'] = 'Server is down'
+        return jsonify(response_payload), http_status
+
+
 
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
 @api_security
@@ -701,13 +730,23 @@ def deleteEndpointGroup(gwgroupid):
             #    raise Exception('Crontab entry could not be deleted')
 
         domainmapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwgroupid)
-        if domainmapping is not None:
-            # Delete all domains 
+        if domainmapping.count() > 0:
+	# Get list of all domains managed by the endpoint group
+            query = "select distinct did from domain_attrs where name = 'created_by' and value='{}'".format(gwgroupid);
+            domain_attrs = db.execute(query)
+            did_list=[]
+            did_list_string=""
+            for did in domain_attrs:
+                did_list_string = did_list_string + "," + "'" + did[0] + "'"
+            if did_list_string[0][0] == ",":
+                did_list_string = did_list_string[1:]
+
+            # Delete all domains
             query = "delete from domain where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
             db.execute(query)
 
-            # Delete all domains_attrs 
-            query = "delete from domain_attrs  where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
+            # Delete all domains_attrs
+            query = "delete from domain_attrs where did in ({})".format(did_list_string);
             db.execute(query)
 
             # Delete domain mapping, which will stop the fusionpbx sync
@@ -1139,7 +1178,7 @@ def updateEndpointGroups(gwgroupid=None):
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
-                if fusionpbxenabled:
+                if int(fusionpbxenabled) > 0:
                     sip_addr_external  = safeUriToHost(hostname, default_port=5080)
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                     dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
@@ -1198,7 +1237,7 @@ def updateEndpointGroups(gwgroupid=None):
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
-            if fusionpbxenabled:
+            if int(fusionpbxenabled) > 0:
                 sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                 dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
@@ -1283,7 +1322,7 @@ def updateEndpointGroups(gwgroupid=None):
                                             description=name)
                     db.add(dispatcher)
 
-            if fusionpbxenabled:
+            if int(fusionpbxenabled) > 0:
                 # update the weight for the external load balancer dispatcher set
                 sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 DispatcherEntry = db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).first()
@@ -1303,9 +1342,15 @@ def updateEndpointGroups(gwgroupid=None):
 
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
-        del_gateways = db.query(Gateways).filter(Gateways.gwid.in_(del_gwids))
-        del_gateways_cleanup = db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).filter(
-            Gateways.gwid.notin_(gwlist))
+        del_gateways = db.query(Gateways).filter(and_( \
+		Gateways.gwid.in_(del_gwids), \
+		Gateways.address != "localhost" \
+		))
+        del_gateways_cleanup = db.query(Gateways).filter(and_( \
+		Gateways.description.like(gwgroup_filter), \
+		Gateways.gwid.notin_(gwlist), \
+		Gateways.address != "localhost" \
+		))
         # make sure we delete any associated address entries
         del_addr_ids = []
         for gateway in del_gateways.union(del_gateways_cleanup):
@@ -1313,6 +1358,15 @@ def updateEndpointGroups(gwgroupid=None):
             if 'addr_id' in description_dict:
                 del_addr_ids.append(description_dict['addr_id'])
         db.query(Address).filter(Address.id.in_(del_addr_ids)).delete(synchronize_session=False)
+
+	# delete the dispatcher entries that correspond to the endpoints/gateways that was Deleted
+        del_addrs = []
+        for gateway in del_gateways.union(del_gateways_cleanup):
+            del_addrs.append("sip:{}".format(gateway.address))
+        db.query(Dispatcher).filter(and_(Dispatcher.setid == gwgroupid, Dispatcher.destination.in_(del_addrs))).delete(synchronize_session=False)
+
+
+
         del_gateways.delete(synchronize_session=False)
         del_gateways_cleanup.delete(synchronize_session=False)
 

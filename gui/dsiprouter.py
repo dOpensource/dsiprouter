@@ -1103,12 +1103,12 @@ def addUpdateInboundMapping():
 
                 # Create a gateway
 
-                Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
 
                 db.add(Gateway)
                 db.flush()
 
-                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
+                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32,1, gwgroup=gwgroupid)
                 db.add(Addr)
                 db.flush()
 
@@ -1201,7 +1201,7 @@ def addUpdateInboundMapping():
                     Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
                 else:
 
-                    Gateway = Gateways("drouting_to_dispatcher", settings.INTERNAL_IP_ADDR,0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
 
                     db.add(Gateway)
 
@@ -1209,7 +1209,7 @@ def addUpdateInboundMapping():
 
                 Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
                 if Addr is None:
-                    Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 0, gwgroup=gwgroupid)
+                    Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
                     db.add(Addr)
                     db.flush()
 

@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-cdd8ae81d5fa29f82b8f93bd940cb386c61632de
+796a900e6a6d224e67d744464710efbac797b7ae
+4475a9c0a8896af58be4e4b945a8406b3263b740
 c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69
 a3864cea3b9d751cddd0d4debf8164975a6b2c1d
 ee0103b76f5d1f357eea2080e19202c1e2c24f19
@@ -1882,10 +1883,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION cdd8ae81d5fa29f82b8f93bd940cb386c61632de)
+[//]: # (START_SECTION 796a900e6a6d224e67d744464710efbac797b7ae)
+### Merge Current Changes From Master
+
+> Commit: [796a900e6a6d224e67d744464710efbac797b7ae](https://github.com/dOpensource/dsiprouter/commit/796a900e6a6d224e67d744464710efbac797b7ae)  
+> Date: Thu, 25 Mar 2021 13:52:29 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 796a900e6a6d224e67d744464710efbac797b7ae)
+[//]: # (START_SECTION 4475a9c0a8896af58be4e4b945a8406b3263b740)
 ### Add Fix For Outbound Routing Failure
 
-> Commit: [cdd8ae81d5fa29f82b8f93bd940cb386c61632de](https://github.com/dOpensource/dsiprouter/commit/cdd8ae81d5fa29f82b8f93bd940cb386c61632de)  
+> Commit: [4475a9c0a8896af58be4e4b945a8406b3263b740](https://github.com/dOpensource/dsiprouter/commit/4475a9c0a8896af58be4e4b945a8406b3263b740)  
 > Date: Wed, 24 Mar 2021 15:08:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1896,7 +1912,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION cdd8ae81d5fa29f82b8f93bd940cb386c61632de)
+[//]: # (END_SECTION 4475a9c0a8896af58be4e4b945a8406b3263b740)
 [//]: # (START_SECTION c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69)
 ### add current updates for PRACK issue
 
