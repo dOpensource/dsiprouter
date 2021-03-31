@@ -2499,8 +2499,25 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                 ORDER BY t1.call_start_time DESC;"""
             ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
 
-        rows = db.execute(query)
-        cdrs = [OrderedDict(row.items()) for row in rows]
+        rows  = db.execute(query)
+        cdrs = []
+        for row in rows:
+            data = {}
+            data['cdr_id'] = row[0]
+            data['call_start_time'] = row[1]
+            data['call_duration'] = str(row[2])
+            data['call_direction'] = row[3]
+            data['src_gwgroupid'] = row[4]
+            data['src_gwgroupname'] = row[5]
+            data['dst_gwgroupid'] = row[6]
+            data['dst_gwgroupname'] = row[7]
+            data['src_username'] = row[8]
+            data['dst_username'] = row[9]
+            data['src_address'] = row[10]
+            data['dst_address'] = row[11]
+            data['call_id'] = row[12]
+
+            cdrs.append(data)
 
         response_payload['status'] = "200"
         response_payload['cdrs'] = cdrs
