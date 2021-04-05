@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-30df01440ccf9555e3e33201f09cc66c45da5ee4
+975622f83ceb5db8ecc0bb8937db516277a98dad
+3087a23ff41b06f9efe449fee5bf647c22e9f442
 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c
 4475a9c0a8896af58be4e4b945a8406b3263b740
 c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69
@@ -1884,10 +1885,29 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 30df01440ccf9555e3e33201f09cc66c45da5ee4)
+[//]: # (START_SECTION 975622f83ceb5db8ecc0bb8937db516277a98dad)
+### Fix Node Reload Issues
+
+> Commit: [975622f83ceb5db8ecc0bb8937db516277a98dad](https://github.com/dOpensource/dsiprouter/commit/975622f83ceb5db8ecc0bb8937db516277a98dad)  
+> Date: Mon, 5 Apr 2021 13:08:10 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- properly update banner when restarted w/ network changes
+- fail on startup if DB settings can't be updated
+- fix cloud-init issue with updating hostname on image creation
+- update kamailio tls config when restarted w/ network changes
+
+
+---
+
+[//]: # (END_SECTION 975622f83ceb5db8ecc0bb8937db516277a98dad)
+[//]: # (START_SECTION 3087a23ff41b06f9efe449fee5bf647c22e9f442)
 ### Permissions Fix
 
-> Commit: [30df01440ccf9555e3e33201f09cc66c45da5ee4](https://github.com/dOpensource/dsiprouter/commit/30df01440ccf9555e3e33201f09cc66c45da5ee4)  
+> Commit: [3087a23ff41b06f9efe449fee5bf647c22e9f442](https://github.com/dOpensource/dsiprouter/commit/3087a23ff41b06f9efe449fee5bf647c22e9f442)  
 > Date: Thu, 25 Mar 2021 14:59:44 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1900,7 +1920,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 30df01440ccf9555e3e33201f09cc66c45da5ee4)
+[//]: # (END_SECTION 3087a23ff41b06f9efe449fee5bf647c22e9f442)
 [//]: # (START_SECTION 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c)
 ### Merge Current Changes From Master
 

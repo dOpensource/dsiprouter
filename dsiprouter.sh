@@ -85,7 +85,7 @@ setScriptSettings() {
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/dsiprouter.cfg"
-    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio_tls.cfg"
+    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
@@ -154,7 +154,7 @@ setScriptSettings() {
     # updated dynamically!
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
-    export INTERNAL_FQDN="$(hostname -f)"
+    export INTERNAL_FQDN="$(hostname -f 2>/dev/null)"
     if [[ -z "$INTERNAL_FQDN" ]]; then
     	export INTERNAL_FQDN="$(hostname)"
     fi
@@ -468,7 +468,7 @@ function reconfigureMysqlSystemdService {
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
     case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)"|"$(hostname -f)")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)"|"$(hostname -f 2>/dev/null)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl stop mysql
@@ -699,6 +699,11 @@ function updateKamailioConfig {
         setKamailioConfigDburl "SQLCONN_KAM" "kam=>${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
         setKamailioConfigDburl "SQLCONN_AST" "asterisk=>${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+
+    # update kamailio TLS config file
+    perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" \
+        -0777 -i -pe 's%(#========== webrtc_domain_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_domain_stop ==========#)%\1${external_ip}:${wss_port}\2%s' \
+        ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 }
 
 # updates and settings in rtpengine config that may change
@@ -720,7 +725,8 @@ function updateDnsConfig {
     local KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     local KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
     local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
-    local DNS_CONFIG=""
+    # temp-fix for cloud-init not updating hostname in /etc/hosts on boot
+    local DNS_CONFIG="127.0.1.1 $(hostname -f 2>/dev/null) $(hostname)\n"
 
     # grab hosts from db
     local INTERNAL_CLUSTER_HOSTS=(
@@ -733,7 +739,7 @@ function updateDnsConfig {
     )
     local NUM_HOSTS=${#INTERNAL_CLUSTER_HOSTS[@]}
 
-    # only update if we got results
+    # only search through cluster hosts if we got results
     if (( ${NUM_HOSTS} > 0 )); then
         # find valid connections on dmq port:
         # try internal ip first and then external ip
@@ -744,21 +750,22 @@ function updateDnsConfig {
                 DNS_CONFIG+="${EXTERNAL_CLUSTER_HOSTS[$i]} local.cluster\n"
             fi
         done
+    # otherwise make sure local node is resolvable when querying cluster
+    else
+        DNS_CONFIG+="${INTERNAL_IP} local.cluster\n"
+    fi
 
-        # update hosts file
-        if [[ -n "${DNS_CONFIG}" ]]; then
-            perl -e "\$cluster_hosts=\"${DNS_CONFIG}\";" \
-                -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${cluster_hosts}\2|gms' /etc/hosts
+    # update hosts file
+    perl -e "\$cluster_hosts=\"${DNS_CONFIG}\";" \
+        -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${cluster_hosts}\2|gms' /etc/hosts
 
-            # tell dnsmasq to reload configs
-            if [ -f /var/run/dnsmasq/dnsmasq.pid ]; then
-                kill -SIGHUP $(cat /var/run/dnsmasq/dnsmasq.pid) 2>/dev/null
-            elif [ -f /var/run/dnsmasq.pid ]; then
-                kill -SIGHUP $(cat /var/run/dnsmasq.pid) 2>/dev/null
-            else
-                kill -SIGHUP $(pidof dnsmasq) 2>/dev/null
-            fi
-        fi
+    # tell dnsmasq to reload configs
+    if [ -f /var/run/dnsmasq/dnsmasq.pid ]; then
+        kill -SIGHUP $(cat /var/run/dnsmasq/dnsmasq.pid) 2>/dev/null
+    elif [ -f /var/run/dnsmasq.pid ]; then
+        kill -SIGHUP $(cat /var/run/dnsmasq.pid) 2>/dev/null
+    else
+        kill -SIGHUP $(pidof dnsmasq) 2>/dev/null
     fi
 }
 
@@ -768,7 +775,9 @@ function generateKamailioConfig {
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
     # Set the External IP Address for the WebRTC Port
-    sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+    perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" \
+        -0777 -i -pe 's%(#========== webrtc_domain_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_domain_stop ==========#)%\1${external_ip}:${wss_port}\2%s' \
+        ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
@@ -1340,6 +1349,9 @@ EOF
     make html >/dev/null 2>&1
     cd -
 
+    # custom dsiprouter MOTD banner for ssh logins
+    updateBanner
+
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
 
@@ -1349,10 +1361,6 @@ EOF
     fi
     systemctl restart dsiprouter
     if systemctl is-active --quiet dsiprouter; then
-        # custom dsiprouter MOTD banner for ssh logins
-        # must be run after dsiprouter srevice updates IP's in settings.py
-        updateBanner
-
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
         printdbg "-------------------------------------"
         pprint "dSIPRouter Installation is complete! "
@@ -1577,6 +1585,11 @@ uninstallSipsak() {
 
 # Install DNSmasq stub resolver for local DNS
 # used by kamailio dmq replication
+# TODO: right now updating /etc/hosts is messy because some cloud configs don't update it properly
+#       i.e.) could-init does not update hostnames properly
+#       we should instead integrate / configure these init systems on install
+# TODO: right now we disabled systemd-resolvd and manually configure /etc/resolv.conf
+#       we should instead integrate with systemd-resolvd and openresolv
 installDnsmasq() {
     local START_DIR="$(pwd)"
 
@@ -1609,7 +1622,7 @@ listen-address=127.0.0.1
 bind-interfaces
 EOF
 
-    # make sure dnsmasq is first nameserver
+    # make sure dnsmasq is first nameserver (utilizing dhclient)
     [ ! -f "/etc/dhcp/dhclient.conf" ] && touch /etc/dhcp/dhclient.conf
     if grep -q 'DSIP_CONFIG_START' /etc/dhcp/dhclient.conf 2>/dev/null; then
         perl -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\nprepend domain-name-servers 127.0.0.1;\n\2|gms' /etc/dhcp/dhclient.conf
@@ -1640,7 +1653,9 @@ EOF
             '#####DSIP_CONFIG_END' >> /etc/hosts
     fi
 
-    # update dns hosts every minute
+    # update DNS hosts prior to dSIPRouter startup
+    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
+    # update DNS hosts every minute
     cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # start on boot
@@ -2096,7 +2111,7 @@ function updateBanner {
     cat /dev/null > /etc/motd
     chmod -x /etc/update-motd.d/* 2>/dev/null
 
-    # add our custom banner
+    # add our custom banner script (dynamically updates MOTD banner)
     (cat << EOF
 #!/usr/bin/env bash
 
@@ -2107,11 +2122,25 @@ ANSI_GREEN="$ANSI_GREEN"
 $(declare -f printdbg)
 $(declare -f getConfigAttrib)
 $(declare -f displayLogo)
+$(declare -f getExternalIP)
+$(declare -f checkConn)
 
 # updated variables on login
+INTERNAL_IP=\$(ip route get 8.8.8.8 | awk 'NR == 1 {print \$7}')
+INTERNAL_NET=\$(awk -F"." '{print \$1"."\$2"."\$3".*"}' <<<\$INTERNAL_IP)
+INTERNAL_FQDN="\$(hostname -f 2>/dev/null)"
+if [[ -z "\$INTERNAL_FQDN" ]]; then
+    INTERNAL_FQDN="\$(hostname)"
+fi
+EXTERNAL_IP=\$(getExternalIP)
+if [[ -z "\$EXTERNAL_IP" ]]; then
+    EXTERNAL_IP=\$INTERNAL_IP
+fi
+EXTERNAL_FQDN=\$(dig @8.8.8.8 +short -x \${EXTERNAL_IP} 2>/dev/null | sed 's/\.\$//')
+if [[ -z "\$EXTERNAL_FQDN" ]] || ! checkConn "\$EXTERNAL_FQDN"; then
+    EXTERNAL_FQDN="\$INTERNAL_FQDN"
+fi
 DSIP_PORT=\$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
-EXTERNAL_IP=\$(getConfigAttrib 'EXTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})
-INTERNAL_IP=\$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})
 DSIP_GUI_PROTOCOL=\$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
 VERSION=\$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
 
@@ -2716,7 +2745,6 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
-
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift

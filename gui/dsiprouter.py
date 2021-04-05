@@ -2202,11 +2202,14 @@ def syncSettings(new_fields={}, update_net=False):
         if len(fields) > 0:
             updateConfig(settings, fields, hot_reload=True)
 
+        return True
+
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
         IO.printerr('Could Not Update dsip_settings Database Table')
         db.rollback()
         db.flush()
+        return False
     finally:
         db.close()
 
@@ -2269,7 +2272,8 @@ def initApp(flask_app):
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
 
     # Dynamically update settings
-    syncSettings(update_net=True)
+    if not syncSettings(update_net=True):
+        exit(1)
 
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
