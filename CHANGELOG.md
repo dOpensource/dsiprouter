@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-975622f83ceb5db8ecc0bb8937db516277a98dad
+a6afe2ea17c9846d2a6f8727007ba130bd493f8d
+bd30caf659cc0a10a75c9834cfc2c2061a55d6c5
 3087a23ff41b06f9efe449fee5bf647c22e9f442
 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c
 4475a9c0a8896af58be4e4b945a8406b3263b740
@@ -1885,10 +1886,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 975622f83ceb5db8ecc0bb8937db516277a98dad)
+[//]: # (START_SECTION a6afe2ea17c9846d2a6f8727007ba130bd493f8d)
+### Bug Fixes
+
+> Commit: [a6afe2ea17c9846d2a6f8727007ba130bd493f8d](https://github.com/dOpensource/dsiprouter/commit/a6afe2ea17c9846d2a6f8727007ba130bd493f8d)  
+> Date: Thu, 8 Apr 2021 13:12:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix default carriers mismatching entries
+- fix various defaults
+
+
+---
+
+[//]: # (END_SECTION a6afe2ea17c9846d2a6f8727007ba130bd493f8d)
+[//]: # (START_SECTION bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)
 ### Fix Node Reload Issues
 
-> Commit: [975622f83ceb5db8ecc0bb8937db516277a98dad](https://github.com/dOpensource/dsiprouter/commit/975622f83ceb5db8ecc0bb8937db516277a98dad)  
+> Commit: [bd30caf659cc0a10a75c9834cfc2c2061a55d6c5](https://github.com/dOpensource/dsiprouter/commit/bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)  
 > Date: Mon, 5 Apr 2021 13:08:10 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1903,7 +1921,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 975622f83ceb5db8ecc0bb8937db516277a98dad)
+[//]: # (END_SECTION bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)
 [//]: # (START_SECTION 3087a23ff41b06f9efe449fee5bf647c22e9f442)
 ### Permissions Fix
 

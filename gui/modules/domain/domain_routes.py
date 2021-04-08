@@ -100,7 +100,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         for endpoint_ip in msteams_ip_endpoints:
             address_query = db.query(Address).filter(Address.ip_addr == endpoint_ip).first()
             if address_query is None:
-                Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS, gwgroup=0)
+                Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS)
                 db.add(Addr)
 
 

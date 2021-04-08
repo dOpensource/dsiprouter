@@ -817,7 +817,7 @@ function configureKamailio {
     # make sure kamailio user and privileges exist
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "CREATE USER '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
-        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';" 2>/dev/null
     if (( $? != 0 )); then
         printwarn "The Kamailio user already exists in the database"
     fi
@@ -915,16 +915,11 @@ function configureKamailio {
 
         # use a tmp dir so we don't have to change repo
         mkdir -p /tmp/defaults
-
-        # copy over default gateway lists
+        # generate defaults subbing in dynamic values
         cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
-
-        # sub in dynamic values
-        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
-            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address_carrier.csv
-        sed "s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
-            /tmp/defaults/address_carrier.csv  > /tmp/defaults/address.csv
-        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
             ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
         sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
             ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
@@ -933,7 +928,7 @@ function configureKamailio {
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
+            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gw_lists.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
@@ -1912,7 +1907,7 @@ except:
 EOF
 
     if (( $RESET_KAM_DB_PASS == 1 )); then
-	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
+	    mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
             -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"
     fi
 
