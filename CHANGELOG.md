@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-a6afe2ea17c9846d2a6f8727007ba130bd493f8d
+a1b0df86597092454c9b6e636dd92a62a0d05c11
+c44ea6369c55d43bdf92131d245f20869e0ab448
 bd30caf659cc0a10a75c9834cfc2c2061a55d6c5
 3087a23ff41b06f9efe449fee5bf647c22e9f442
 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c
@@ -1886,10 +1887,29 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION a6afe2ea17c9846d2a6f8727007ba130bd493f8d)
+[//]: # (START_SECTION a1b0df86597092454c9b6e636dd92a62a0d05c11)
+### Fix Record Route Placement In Configs
+
+> Commit: [a1b0df86597092454c9b6e636dd92a62a0d05c11](https://github.com/dOpensource/dsiprouter/commit/a1b0df86597092454c9b6e636dd92a62a0d05c11)  
+> Date: Mon, 12 Apr 2021 11:30:24 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- move record routing to last pieoce of logic prior to relaying
+- fix msg_apply_changes() errors
+- fix MANAGE_UA_REQUIREMENTS logic placement
+- general cleanup
+
+
+---
+
+[//]: # (END_SECTION a1b0df86597092454c9b6e636dd92a62a0d05c11)
+[//]: # (START_SECTION c44ea6369c55d43bdf92131d245f20869e0ab448)
 ### Bug Fixes
 
-> Commit: [a6afe2ea17c9846d2a6f8727007ba130bd493f8d](https://github.com/dOpensource/dsiprouter/commit/a6afe2ea17c9846d2a6f8727007ba130bd493f8d)  
+> Commit: [c44ea6369c55d43bdf92131d245f20869e0ab448](https://github.com/dOpensource/dsiprouter/commit/c44ea6369c55d43bdf92131d245f20869e0ab448)  
 > Date: Thu, 8 Apr 2021 13:12:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1902,7 +1922,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION a6afe2ea17c9846d2a6f8727007ba130bd493f8d)
+[//]: # (END_SECTION c44ea6369c55d43bdf92131d245f20869e0ab448)
 [//]: # (START_SECTION bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)
 ### Fix Node Reload Issues
 

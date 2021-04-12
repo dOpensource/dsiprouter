@@ -2076,7 +2076,7 @@ EOF
     export ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
     export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
 
-    # propragate settings based on reload type required
+    # propagate settings based on reload type required
     if (( ${RELOAD_TYPE} == 0 )); then
         printdbg 'Credentials have been updated'
     elif (( ${RELOAD_TYPE} == 1 )); then
