@@ -1,7 +1,7 @@
 bjoern
-cryptography>=3.3,<3.4
 certbot
 cron_descriptor
+cryptography>=3.3,<3.4
 dnspython
 docker
 Flask
@@ -9,7 +9,6 @@ Flask_Script
 Flask_WTF
 itsdangerous
 mysqlclient
-pem
 psycopg2
 psycopg2_binary
 pycryptodome

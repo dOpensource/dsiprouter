@@ -11,7 +11,7 @@ DSIP_CLUSTER_SYNC = False
 DSIP_PROTO = 'https'
 DSIP_PORT = '5000'
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = 'admin' 
+DSIP_PASSWORD = 'admin'
 DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'https'
 DSIP_API_PORT = 5000
@@ -123,7 +123,7 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter 1-1 <>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings

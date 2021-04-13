@@ -467,7 +467,7 @@ def getDBURI():
         kampass = settings.KAM_DB_PASS
 
     if settings.KAM_DB_TYPE != "":
-        sql_uri = settings.KAM_DB_TYPE + "{driver}" + "://" + settings.KAM_DB_USER + ":" + kampass + "@" + "{host}" + "/" + settings.KAM_DB_NAME
+        sql_uri = settings.KAM_DB_TYPE + "{driver}" + "://" + settings.KAM_DB_USER + ":" + kampass + "@" + "{host}" + "/" + settings.KAM_DB_NAME + "?charset=utf8mb4"
 
         driver = ""
         if len(settings.KAM_DB_DRIVER) > 0:

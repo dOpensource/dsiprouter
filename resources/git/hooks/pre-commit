@@ -54,13 +54,12 @@ createContributors() {
         "## Thank you to all contributors for your hard work" \
         "### Contributors" > ${OUT_FILE}
 
-    git shortlog -sn HEAD | grep -oP '[\s\d]*\K.*'| awk '{for (i=1; i<=NF; i++) print "- " $0}' | sort -u >> ${OUT_FILE}
+    git shortlog -sn HEAD | grep -oP '[\s\d]*\K.*' | awk '{for (i=1; i<=NF; i++) print "- " $0}' | sort -u >> ${OUT_FILE}
 
     git add ${OUT_FILE}
 }
 
 # creates requirements.txt for python projects
-# TODO: reformat so code is more readable
 createRequirements() {
     local OUT_FILE=""
     local EXCLUDE_ARGS=""
@@ -85,6 +84,7 @@ createRequirements() {
 
         # make sure pipreqs didn't fail
         if (( $? != 0 )); then
+        	echo '[pre-commit] pipreqs failed to create requirements.txt' >&2
             exit 1
         fi
 
@@ -99,13 +99,15 @@ createRequirements() {
 # prevent some common syntax errors from getting committed
 checkSyntaxErrors() {
     if ! _git_check_syntax >/dev/null; then
+        echo '[pre-commit] fix syntax errors above then try again' >&2
         exit 1
     fi
 }
 
 # make sure merge conflicts are all handled
 checkMergeConflicts() {
-    if [[ "$(git diff-index --cached -G '^<<<<<<< HEAD' HEAD)" != "" ]]; then
+    if grep -EHIn '^(<<<<<<<|>>>>>>>) ' $(git diff --cached --name-only) 2>/dev/null; then
+        echo '[pre-commit] fix merge conflicts above then try again' >&2
         exit 1
     fi
 }

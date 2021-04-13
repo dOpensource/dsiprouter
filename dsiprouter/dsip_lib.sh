@@ -554,6 +554,58 @@ function checkDB() {
 }
 export -f checkDB
 
+# usage: checkDBUserExists [options] <user>@<host>
+# options:  --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+# notes: make sure to test for proper DB connection
+# returns: 0 if user exists, 1 on DB connection failure, 2 if user does not exist
+function checkDBUserExists() {
+    local MYSQL_CHECK_USER=""
+    local MYSQL_CHECK_HOST=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+
+    while (( $# > 0 )); do
+        # last arg is user and database
+        if (( $# == 1 )); then
+            MYSQL_CHECK_USER=$(printf '%s' "$1" | cut -d '@' -f 1)
+            MYSQL_CHECK_HOST=$(printf '%s' "$1" | cut -d '@' -f 2)
+            shift
+            break
+        fi
+
+        case "$1" in
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # not valid option skip
+                shift
+                ;;
+        esac
+    done
+
+    return $(mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+        -e "SELECT IF(EXISTS(SELECT 1 FROM mysql.user WHERE User='${MYSQL_CHECK_USER}' AND Host='${MYSQL_CHECK_HOST}'),0,2);" 2>/dev/null)
+}
+export -f dumpDBUser
+
 # usage: dumpDB [options] <database>
 # options:  --user=<mysql user>
 #           --pass=<mysql password>
