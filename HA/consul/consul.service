@@ -9,7 +9,9 @@ ConditionFileNotEmpty=/etc/consul.d/consul.hcl
 User=consul
 Group=consul
 PIDFile=/var/run/consul/consul.pid
-ExecStartPre=[ -f "/var/run/consul/consul.pid" ] && /bin/rm -f /var/run/consul/consul.pid
+ExecStartPre=!-/bin/mkdir -p /var/run/consul
+ExecStartPre=!-/bin/chown -R consul:consul /var/run/consul
+ExecStartPre=!-/bin/rm -f /var/run/consul/consul.pid
 ExecStartPre=/usr/local/bin/consul validate /etc/consul.d
 ExecStart=/usr/local/bin/consul agent -pid-file /var/run/consul/consul.pid -enable-local-script-checks -config-dir=/etc/consul.d
 ExecReload=/usr/local/bin/consul reload

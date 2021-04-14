@@ -71,15 +71,16 @@ RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = True
+SQLALCHEMY_SQL_DEBUG = False
 
 # These constants shouldn't be modified
-# FLT_CARRIER/FLT_PBX:          type in dr_gateway table
+# FLT_CARRIER/FLT_PBX:          type in dr_gateways table
+# FLT_MSTEAMS:                  type in dr_gateways table
 # FLT_OUTBOUND/FLT_INBOUND:     groupid in dr_rules table
 # FLT_LCR_MIN/FLT_FWD_MIN:      range of groupid in dr_rules table
 FLT_CARRIER = 8
 FLT_PBX = 9
-FLT_MSTEAMS = 17
+FLT_MSTEAMS = 22
 FLT_OUTBOUND = 8000
 FLT_INBOUND = 9000
 FLT_LCR_MIN = 10000

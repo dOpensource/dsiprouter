@@ -105,7 +105,7 @@ This means that a new module should become automatically available from the UI w
 
 ### API Structure
 
-We are in the process of refactoring most of the application so that all of the GUI components leverages the API.  Currently, the core API reside in gui/modules/api.  
+We are in the process of refactoring most of the application so that all of the GUI components leverages the API.  Currently, the core API reside in gui/modules/api.
 
 #### Adding an API
 

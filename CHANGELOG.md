@@ -5,12 +5,41 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-23b0096d55705e3810fc9c0f71971e2ec35a07f1
+76ce3054000c143550703246ffec4163d78a5dae
+c44ea6369c55d43bdf92131d245f20869e0ab448
+bd30caf659cc0a10a75c9834cfc2c2061a55d6c5
+cdecaf5d747f681ee6addf2b2d6e58479e36da91
+ec4219de84f9d346f082fc668d5979aba519c047
+3087a23ff41b06f9efe449fee5bf647c22e9f442
+3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c
+4475a9c0a8896af58be4e4b945a8406b3263b740
+c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69
+d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f
+a3864cea3b9d751cddd0d4debf8164975a6b2c1d
+ee0103b76f5d1f357eea2080e19202c1e2c24f19
+8afb6f4389aad9acc9499bce1bf226c56686f082
+a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb
+89fb62248dcf8795a210f719b9215d6887dc3294
+6c7532ccec112d6faf8ce47f1d89151e4a46f316
+1fb969abeb8eefc633be50e11e3905d688526cdf
+64f141ba6ced44e6a0b9f1b1680a8edb5755415f
+813dcdc3199fa5157a3b4a83dd52580c5570e659
+3a61a9af7c8dd9e576815d47cb8f59f142d258c9
+a77ffb5e2988d7ebb01f59464707cebf33a0adb4
+863343903605d610f5b42f72805f993c401cc862
+26f16646507d81a840cce049069872c431905ca9
+3b41901eb9baad1139d245b6220fb502c7c546ca
+e44d74fb9848cb5812512da7e216e73c6bbbdad3
+9203d051d69e9176f2bb659c70c29cceab90b084
+7e4b557bccfd166ac746c73e98e7c76e6c2c9d57
 6757683347f947e730ff668bac4a3d578b8044db
 1bf0cc47ceaa158aa24880be5e7f9b66dd67c956
 063aa3646d4e6a39baeaa5fa26bc329139f05914
 a1f4a720a824ed2e11d64e7fa22bfaa6a2da7eab
 01042e110ecc152ce807322aeb53baba5c06bc2f
+a495613e9c6d52bdf921c9d005d4b7206ed6feb2
+f59ff1f05c8742ceabc0903bf453732976268ca2
+97d27d1c2c41e6e80bbf8d6bb33340e45a38c2d7
 500a9c4cbe3531658e7b6fad0c9298dc38e504ca
 da5a1a010e9c2950043daeca6766b5c1e5f01e9a
 9bd78475c38ea4e4a2e91fbdd3d35e79ec292cf2
@@ -18,13 +47,20 @@ da5a1a010e9c2950043daeca6766b5c1e5f01e9a
 fb295b01df70c24b149e0ba5e4dbe2078acd2c46
 302f209612217053c796a452b904062542326532
 8ac9a1d9a2c1966591ab441bbc75958c09949a0c
+208f758cafd30aa6e850d3d3d5b324126d30a426
 da57ae2e35af3f04ea35987b06bb5becc0801f9f
 55ad40f4723e2ac65f197f32e7f00983ee0a464a
 34b7d1942f56355684c8dc5b0cc3d0100c72184b
 e4539774b3e07c22694fc62b945868db06ce4458
 eff0125c1711790734301fa41e4c4d9fa7bb9d85
 b62c3850ef95ec00a9ee8b3fb27686002999c8fb
+657e67a1a94b61e050c7ae77cd3fbbee71676622
+64b26f181c81a2146508530ef67ffdfc9ef0f06e
+1a43d1f226b3a882c7909c403871c1547ffff680
+434758b56f12d0fafdeff9c34589f063c353cd37
 ab11ffdb7eaf4219bd35fc99e2c62029736991fc
+f5f674c8ea038719078d14822cf82517f5eb5abf
+877f0e90738c0885496ee99605e802d6b1dd3a5c
 7105186a5f9a22d9a990f683ce7774ce2c585674
 c3f5eb7aaa55c037dc5b466cdd1aab3a6fd6b98f
 2a2757d6a09801fd30a29af2e0b05bb8352c1f1b
@@ -103,6 +139,8 @@ e809c5c57ffdf627915db95e5f94e895f90291bb
 916e120ec3bbf7ea7089e93b8386b0facf00c4a0
 76c7c679a947122e08cc5985623bbefbeb0681c7
 085931328e9be893c65b674c9e491924afa88ca4
+c569928e35f25ab269b0aeab25423093f9db96b5
+195bd8e7cc20468054182bb08fac2e80b80a0bea
 14d26b51fa983c686b95a60afdfb145ea61c1bef
 cff105fd47bada8ce5bafe07a5e6f85ac2b8579e
 85874fade92d329fb0f6d7f824e06035f83eee97
@@ -1894,10 +1932,418 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 23b0096d55705e3810fc9c0f71971e2ec35a07f1)
+[//]: # (START_SECTION 76ce3054000c143550703246ffec4163d78a5dae)
+### Fix Record Route Placement In Configs
+
+> Commit: [76ce3054000c143550703246ffec4163d78a5dae](https://github.com/dOpensource/dsiprouter/commit/76ce3054000c143550703246ffec4163d78a5dae)  
+> Date: Mon, 12 Apr 2021 11:30:24 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- move record routing to last pieoce of logic prior to relaying
+- fix msg_apply_changes() errors
+- fix MANAGE_UA_REQUIREMENTS logic placement
+- general cleanup
+
+
+---
+
+[//]: # (END_SECTION 76ce3054000c143550703246ffec4163d78a5dae)
+[//]: # (START_SECTION c44ea6369c55d43bdf92131d245f20869e0ab448)
+### Bug Fixes
+
+> Commit: [c44ea6369c55d43bdf92131d245f20869e0ab448](https://github.com/dOpensource/dsiprouter/commit/c44ea6369c55d43bdf92131d245f20869e0ab448)  
+> Date: Thu, 8 Apr 2021 13:12:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix default carriers mismatching entries
+- fix various defaults
+
+
+---
+
+[//]: # (END_SECTION c44ea6369c55d43bdf92131d245f20869e0ab448)
+[//]: # (START_SECTION bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)
+### Fix Node Reload Issues
+
+> Commit: [bd30caf659cc0a10a75c9834cfc2c2061a55d6c5](https://github.com/dOpensource/dsiprouter/commit/bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)  
+> Date: Mon, 5 Apr 2021 13:08:10 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- properly update banner when restarted w/ network changes
+- fail on startup if DB settings can't be updated
+- fix cloud-init issue with updating hostname on image creation
+- update kamailio tls config when restarted w/ network changes
+
+
+---
+
+[//]: # (END_SECTION bd30caf659cc0a10a75c9834cfc2c2061a55d6c5)
+[//]: # (START_SECTION cdecaf5d747f681ee6addf2b2d6e58479e36da91)
+### Fixed issue with CDR's not working
+
+> Commit: [cdecaf5d747f681ee6addf2b2d6e58479e36da91](https://github.com/dOpensource/dsiprouter/commit/cdecaf5d747f681ee6addf2b2d6e58479e36da91)  
+> Date: Wed, 31 Mar 2021 15:00:44 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cdecaf5d747f681ee6addf2b2d6e58479e36da91)
+[//]: # (START_SECTION ec4219de84f9d346f082fc668d5979aba519c047)
+### Fixed issue that prevented CDR's from being created when loose routing is not being used
+
+> Commit: [ec4219de84f9d346f082fc668d5979aba519c047](https://github.com/dOpensource/dsiprouter/commit/ec4219de84f9d346f082fc668d5979aba519c047)  
+> Date: Tue, 30 Mar 2021 23:59:25 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ec4219de84f9d346f082fc668d5979aba519c047)
+[//]: # (START_SECTION 3087a23ff41b06f9efe449fee5bf647c22e9f442)
+### Permissions Fix
+
+> Commit: [3087a23ff41b06f9efe449fee5bf647c22e9f442](https://github.com/dOpensource/dsiprouter/commit/3087a23ff41b06f9efe449fee5bf647c22e9f442)  
+> Date: Thu, 25 Mar 2021 14:59:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix dsiprouter startup permissions issue
+- fix duplicate cert renewals in crontab
+
+
+---
+
+[//]: # (END_SECTION 3087a23ff41b06f9efe449fee5bf647c22e9f442)
+[//]: # (START_SECTION 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c)
+### Merge Current Changes From Master
+
+> Commit: [3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c](https://github.com/dOpensource/dsiprouter/commit/3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c)  
+> Date: Thu, 25 Mar 2021 13:52:29 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c)
+[//]: # (START_SECTION 4475a9c0a8896af58be4e4b945a8406b3263b740)
+### Add Fix For Outbound Routing Failure
+
+> Commit: [4475a9c0a8896af58be4e4b945a8406b3263b740](https://github.com/dOpensource/dsiprouter/commit/4475a9c0a8896af58be4e4b945a8406b3263b740)  
+> Date: Wed, 24 Mar 2021 15:08:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 4475a9c0a8896af58be4e4b945a8406b3263b740)
+[//]: # (START_SECTION c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69)
+### add current updates for PRACK issue
+
+> Commit: [c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69](https://github.com/dOpensource/dsiprouter/commit/c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69)  
+> Date: Wed, 17 Mar 2021 15:57:57 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION c780cebda3042dbdb0b3ccbbe2bbe265ef6a4d69)
+[//]: # (START_SECTION d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f)
+### Fixed Endpoint Group UI Bug - Removed entries from the dispatcher table when the weight was 0
+
+> Commit: [d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f](https://github.com/dOpensource/dsiprouter/commit/d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f)  
+> Date: Thu, 11 Mar 2021 19:38:16 +0000  
+> Author: root (root@ip-172-31-5-106.ec2.internal)  
+> Committer: root (root@ip-172-31-5-106.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f)
+[//]: # (START_SECTION a3864cea3b9d751cddd0d4debf8164975a6b2c1d)
+### Merge In Fixes From Testing
+
+> Commit: [a3864cea3b9d751cddd0d4debf8164975a6b2c1d](https://github.com/dOpensource/dsiprouter/commit/a3864cea3b9d751cddd0d4debf8164975a6b2c1d)  
+> Date: Wed, 10 Mar 2021 16:52:20 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add Thinktel specific fixes to kam config
+- more stablility updates to kam config
+
+
+---
+
+[//]: # (END_SECTION a3864cea3b9d751cddd0d4debf8164975a6b2c1d)
+[//]: # (START_SECTION ee0103b76f5d1f357eea2080e19202c1e2c24f19)
+### fix permissions in service files
+
+> Commit: [ee0103b76f5d1f357eea2080e19202c1e2c24f19](https://github.com/dOpensource/dsiprouter/commit/ee0103b76f5d1f357eea2080e19202c1e2c24f19)  
+> Date: Thu, 25 Feb 2021 13:51:31 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION ee0103b76f5d1f357eea2080e19202c1e2c24f19)
+[//]: # (START_SECTION 8afb6f4389aad9acc9499bce1bf226c56686f082)
+### fix permissions issue
+
+> Commit: [8afb6f4389aad9acc9499bce1bf226c56686f082](https://github.com/dOpensource/dsiprouter/commit/8afb6f4389aad9acc9499bce1bf226c56686f082)  
+> Date: Tue, 23 Feb 2021 15:32:05 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 8afb6f4389aad9acc9499bce1bf226c56686f082)
+[//]: # (START_SECTION a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb)
+### fix typos and permissions in dsiprouter.sh
+
+> Commit: [a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb](https://github.com/dOpensource/dsiprouter/commit/a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb)  
+> Date: Tue, 23 Feb 2021 14:26:04 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION a34892b86d1dd61ffe1be2fd61cd9dde4bf30dcb)
+[//]: # (START_SECTION 89fb62248dcf8795a210f719b9215d6887dc3294)
+### fix typos in kam cfg
+
+> Commit: [89fb62248dcf8795a210f719b9215d6887dc3294](https://github.com/dOpensource/dsiprouter/commit/89fb62248dcf8795a210f719b9215d6887dc3294)  
+> Date: Tue, 23 Feb 2021 14:17:09 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 89fb62248dcf8795a210f719b9215d6887dc3294)
+[//]: # (START_SECTION 6c7532ccec112d6faf8ce47f1d89151e4a46f316)
+### Turned SETTINGS.DEBUG to False
+
+> Commit: [6c7532ccec112d6faf8ce47f1d89151e4a46f316](https://github.com/dOpensource/dsiprouter/commit/6c7532ccec112d6faf8ce47f1d89151e4a46f316)  
+> Date: Sun, 21 Feb 2021 17:13:01 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6c7532ccec112d6faf8ce47f1d89151e4a46f316)
+[//]: # (START_SECTION 1fb969abeb8eefc633be50e11e3905d688526cdf)
+### Fixed the carrier group endpoints - Some of the endpoints were not tied to the correct carrier group
+
+> Commit: [1fb969abeb8eefc633be50e11e3905d688526cdf](https://github.com/dOpensource/dsiprouter/commit/1fb969abeb8eefc633be50e11e3905d688526cdf)  
+> Date: Sat, 20 Feb 2021 23:31:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1fb969abeb8eefc633be50e11e3905d688526cdf)
+[//]: # (START_SECTION 64f141ba6ced44e6a0b9f1b1680a8edb5755415f)
+### Fixed the carrier group endpoints - Some of the endpoints were not tied to the correct carrier group
+
+> Commit: [64f141ba6ced44e6a0b9f1b1680a8edb5755415f](https://github.com/dOpensource/dsiprouter/commit/64f141ba6ced44e6a0b9f1b1680a8edb5755415f)  
+> Date: Sat, 20 Feb 2021 23:28:35 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 64f141ba6ced44e6a0b9f1b1680a8edb5755415f)
+[//]: # (START_SECTION 813dcdc3199fa5157a3b4a83dd52580c5570e659)
+### Updated the lease API
+
+> Commit: [813dcdc3199fa5157a3b4a83dd52580c5570e659](https://github.com/dOpensource/dsiprouter/commit/813dcdc3199fa5157a3b4a83dd52580c5570e659)  
+> Date: Sat, 20 Feb 2021 19:27:22 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 813dcdc3199fa5157a3b4a83dd52580c5570e659)
+[//]: # (START_SECTION 3a61a9af7c8dd9e576815d47cb8f59f142d258c9)
+### Fix PRACK Issue
+
+> Commit: [3a61a9af7c8dd9e576815d47cb8f59f142d258c9](https://github.com/dOpensource/dsiprouter/commit/3a61a9af7c8dd9e576815d47cb8f59f142d258c9)  
+> Date: Fri, 19 Feb 2021 14:42:55 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #324
+- fix PRACK handling / routing
+- update UAS cseq support dynamically
+- various AVPs moved to dlg_vars
+
+
+---
+
+[//]: # (END_SECTION 3a61a9af7c8dd9e576815d47cb8f59f142d258c9)
+[//]: # (START_SECTION a77ffb5e2988d7ebb01f59464707cebf33a0adb4)
+### Fixed issue with Record Routes so that a single NLB can be used
+
+> Commit: [a77ffb5e2988d7ebb01f59464707cebf33a0adb4](https://github.com/dOpensource/dsiprouter/commit/a77ffb5e2988d7ebb01f59464707cebf33a0adb4)  
+> Date: Tue, 16 Feb 2021 19:38:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a77ffb5e2988d7ebb01f59464707cebf33a0adb4)
+[//]: # (START_SECTION 863343903605d610f5b42f72805f993c401cc862)
+### Fixed the crontab
+
+> Commit: [863343903605d610f5b42f72805f993c401cc862](https://github.com/dOpensource/dsiprouter/commit/863343903605d610f5b42f72805f993c401cc862)  
+> Date: Tue, 16 Feb 2021 19:26:31 +0000  
+> Author: root (root@ip-172-31-8-204.ec2.internal)  
+> Committer: root (root@ip-172-31-8-204.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 863343903605d610f5b42f72805f993c401cc862)
+[//]: # (START_SECTION 26f16646507d81a840cce049069872c431905ca9)
+### Added support for writing multiple record routes for an INBOUND and OUTBOUND load balancer
+
+> Commit: [26f16646507d81a840cce049069872c431905ca9](https://github.com/dOpensource/dsiprouter/commit/26f16646507d81a840cce049069872c431905ca9)  
+> Date: Fri, 12 Feb 2021 17:45:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 26f16646507d81a840cce049069872c431905ca9)
+[//]: # (START_SECTION 3b41901eb9baad1139d245b6220fb502c7c546ca)
+### Added support for creating the Kamailio DB user
+
+> Commit: [3b41901eb9baad1139d245b6220fb502c7c546ca](https://github.com/dOpensource/dsiprouter/commit/3b41901eb9baad1139d245b6220fb502c7c546ca)  
+> Date: Fri, 12 Feb 2021 00:21:07 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3b41901eb9baad1139d245b6220fb502c7c546ca)
+[//]: # (START_SECTION e44d74fb9848cb5812512da7e216e73c6bbbdad3)
+### Added support for creating the Kamailio DB user
+
+> Commit: [e44d74fb9848cb5812512da7e216e73c6bbbdad3](https://github.com/dOpensource/dsiprouter/commit/e44d74fb9848cb5812512da7e216e73c6bbbdad3)  
+> Date: Fri, 12 Feb 2021 00:07:27 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e44d74fb9848cb5812512da7e216e73c6bbbdad3)
+[//]: # (START_SECTION 9203d051d69e9176f2bb659c70c29cceab90b084)
+### Fixes: - Documentation generation - Moved the Message of The Day creation to after dSIP is started the first time
+
+> Commit: [9203d051d69e9176f2bb659c70c29cceab90b084](https://github.com/dOpensource/dsiprouter/commit/9203d051d69e9176f2bb659c70c29cceab90b084)  
+> Date: Wed, 10 Feb 2021 17:31:40 +0000  
+> Author: root (root@ip-172-31-58-119.ec2.internal)  
+> Committer: root (root@ip-172-31-58-119.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9203d051d69e9176f2bb659c70c29cceab90b084)
+[//]: # (START_SECTION 7e4b557bccfd166ac746c73e98e7c76e6c2c9d57)
 ### Fix Ordering Issues
 
-> Commit: [23b0096d55705e3810fc9c0f71971e2ec35a07f1](https://github.com/dOpensource/dsiprouter/commit/23b0096d55705e3810fc9c0f71971e2ec35a07f1)  
+> Commit: [7e4b557bccfd166ac746c73e98e7c76e6c2c9d57](https://github.com/dOpensource/dsiprouter/commit/7e4b557bccfd166ac746c73e98e7c76e6c2c9d57)  
 > Date: Wed, 10 Feb 2021 12:00:19 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1910,7 +2356,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 23b0096d55705e3810fc9c0f71971e2ec35a07f1)
+[//]: # (END_SECTION 7e4b557bccfd166ac746c73e98e7c76e6c2c9d57)
 [//]: # (START_SECTION 6757683347f947e730ff668bac4a3d578b8044db)
 ### Add Cryptography Conflict Resolution In Pre-Commit Hook
 
@@ -1986,6 +2432,53 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 01042e110ecc152ce807322aeb53baba5c06bc2f)
+[//]: # (START_SECTION a495613e9c6d52bdf921c9d005d4b7206ed6feb2)
+### Fixed WebRTC Support - Added a TLS server certificate settings for the WebRTC port, which is 4443 - Update the Kam configuration script to update the settings
+
+> Commit: [a495613e9c6d52bdf921c9d005d4b7206ed6feb2](https://github.com/dOpensource/dsiprouter/commit/a495613e9c6d52bdf921c9d005d4b7206ed6feb2)  
+> Date: Wed, 10 Feb 2021 02:23:23 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a495613e9c6d52bdf921c9d005d4b7206ed6feb2)
+[//]: # (START_SECTION f59ff1f05c8742ceabc0903bf453732976268ca2)
+### Added support for setting the language for the domain
+
+> Commit: [f59ff1f05c8742ceabc0903bf453732976268ca2](https://github.com/dOpensource/dsiprouter/commit/f59ff1f05c8742ceabc0903bf453732976268ca2)  
+> Date: Wed, 10 Feb 2021 01:30:18 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f59ff1f05c8742ceabc0903bf453732976268ca2)
+[//]: # (START_SECTION 97d27d1c2c41e6e80bbf8d6bb33340e45a38c2d7)
+### Fix DB Driver Connection Charset
+
+> Commit: [97d27d1c2c41e6e80bbf8d6bb33340e45a38c2d7](https://github.com/dOpensource/dsiprouter/commit/97d27d1c2c41e6e80bbf8d6bb33340e45a38c2d7)  
+> Date: Tue, 9 Feb 2021 17:44:08 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #315
+- set charset to utf8mb4 on driver connect
+
+
+---
+
+[//]: # (END_SECTION 97d27d1c2c41e6e80bbf8d6bb33340e45a38c2d7)
 [//]: # (START_SECTION 500a9c4cbe3531658e7b6fad0c9298dc38e504ca)
 ### Fix RTPEngine Errors When Not Installed
 
@@ -2093,6 +2586,22 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 8ac9a1d9a2c1966591ab441bbc75958c09949a0c)
+[//]: # (START_SECTION 208f758cafd30aa6e850d3d3d5b324126d30a426)
+### Fix setCredential() Typos
+
+> Commit: [208f758cafd30aa6e850d3d3d5b324126d30a426](https://github.com/dOpensource/dsiprouter/commit/208f758cafd30aa6e850d3d3d5b324126d30a426)  
+> Date: Wed, 3 Feb 2021 15:26:24 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix typos preventing proper variable substitution in setcredentials CLI command
+
+
+---
+
+[//]: # (END_SECTION 208f758cafd30aa6e850d3d3d5b324126d30a426)
 [//]: # (START_SECTION da57ae2e35af3f04ea35987b06bb5becc0801f9f)
 ### Bug fixes for setCredentials
 
@@ -2183,6 +2692,69 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION b62c3850ef95ec00a9ee8b3fb27686002999c8fb)
+[//]: # (START_SECTION 657e67a1a94b61e050c7ae77cd3fbbee71676622)
+### Move kamailio tls.cfg To Same Location As kamailio.cfg
+
+> Commit: [657e67a1a94b61e050c7ae77cd3fbbee71676622](https://github.com/dOpensource/dsiprouter/commit/657e67a1a94b61e050c7ae77cd3fbbee71676622)  
+> Date: Fri, 29 Jan 2021 13:32:16 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 657e67a1a94b61e050c7ae77cd3fbbee71676622)
+[//]: # (START_SECTION 64b26f181c81a2146508530ef67ffdfc9ef0f06e)
+### Fix Defaults In settings.py
+
+> Commit: [64b26f181c81a2146508530ef67ffdfc9ef0f06e](https://github.com/dOpensource/dsiprouter/commit/64b26f181c81a2146508530ef67ffdfc9ef0f06e)  
+> Date: Fri, 29 Jan 2021 12:49:18 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 64b26f181c81a2146508530ef67ffdfc9ef0f06e)
+[//]: # (START_SECTION 1a43d1f226b3a882c7909c403871c1547ffff680)
+### Fix Merge Conflicts
+
+> Commit: [1a43d1f226b3a882c7909c403871c1547ffff680](https://github.com/dOpensource/dsiprouter/commit/1a43d1f226b3a882c7909c403871c1547ffff680)  
+> Date: Fri, 29 Jan 2021 12:13:26 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- remove unwanted merge conflict markers
+- update pre-commit merge conflict check
+- add some user warnings to pre-commit hook
+
+
+---
+
+[//]: # (END_SECTION 1a43d1f226b3a882c7909c403871c1547ffff680)
+[//]: # (START_SECTION 434758b56f12d0fafdeff9c34589f063c353cd37)
+### Fix Typo In dsiprouter.sh
+
+> Commit: [434758b56f12d0fafdeff9c34589f063c353cd37](https://github.com/dOpensource/dsiprouter/commit/434758b56f12d0fafdeff9c34589f063c353cd37)  
+> Date: Thu, 28 Jan 2021 16:52:58 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 434758b56f12d0fafdeff9c34589f063c353cd37)
 [//]: # (START_SECTION ab11ffdb7eaf4219bd35fc99e2c62029736991fc)
 ### Added a health endpoint
 
@@ -2198,6 +2770,43 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION ab11ffdb7eaf4219bd35fc99e2c62029736991fc)
+[//]: # (START_SECTION f5f674c8ea038719078d14822cf82517f5eb5abf)
+### Data Truncation Fixes
+
+> Commit: [f5f674c8ea038719078d14822cf82517f5eb5abf](https://github.com/dOpensource/dsiprouter/commit/f5f674c8ea038719078d14822cf82517f5eb5abf)  
+> Date: Thu, 28 Jan 2021 15:12:56 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update DB schema to fix data truncation
+- remove invalid sql characters from default imports
+
+
+---
+
+[//]: # (END_SECTION f5f674c8ea038719078d14822cf82517f5eb5abf)
+[//]: # (START_SECTION 877f0e90738c0885496ee99605e802d6b1dd3a5c)
+### Misc Bug Fixes
+
+> Commit: [877f0e90738c0885496ee99605e802d6b1dd3a5c](https://github.com/dOpensource/dsiprouter/commit/877f0e90738c0885496ee99605e802d6b1dd3a5c)  
+> Date: Wed, 27 Jan 2021 13:14:00 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix various typos
+- fix kamailio config generation order
+- update services to run chown commands as root
+- move generated kam config to separate dir
+- fix dispatcher routing faiure due to typos
+
+
+---
+
+[//]: # (END_SECTION 877f0e90738c0885496ee99605e802d6b1dd3a5c)
 [//]: # (START_SECTION 7105186a5f9a22d9a990f683ce7774ce2c585674)
 ### Added an additional check to get hostname
 
@@ -3421,6 +4030,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 085931328e9be893c65b674c9e491924afa88ca4)
+[//]: # (START_SECTION c569928e35f25ab269b0aeab25423093f9db96b5)
+### Delete requirements.txt
+
+> Commit: [c569928e35f25ab269b0aeab25423093f9db96b5](https://github.com/dOpensource/dsiprouter/commit/c569928e35f25ab269b0aeab25423093f9db96b5)  
+> Date: Thu, 3 Dec 2020 18:24:16 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c569928e35f25ab269b0aeab25423093f9db96b5)
+[//]: # (START_SECTION 195bd8e7cc20468054182bb08fac2e80b80a0bea)
+### Create requirements.txt
+
+> Commit: [195bd8e7cc20468054182bb08fac2e80b80a0bea](https://github.com/dOpensource/dsiprouter/commit/195bd8e7cc20468054182bb08fac2e80b80a0bea)  
+> Date: Thu, 3 Dec 2020 18:23:23 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 195bd8e7cc20468054182bb08fac2e80b80a0bea)
 [//]: # (START_SECTION 14d26b51fa983c686b95a60afdfb145ea61c1bef)
 ### Update .readthedocs.yml
 

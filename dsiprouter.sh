@@ -85,7 +85,7 @@ setScriptSettings() {
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/dsiprouter.cfg"
-    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio_tls.cfg"
+    export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
     export DSIP_DEFAULTS_DIR="${DSIP_KAMAILIO_CONFIG_DIR}/defaults"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
     export DSIP_RUN_DIR="/var/run/dsiprouter"
@@ -146,7 +146,7 @@ setScriptSettings() {
 
     # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
-	      # copy over the template settings.py to be worked on (used throughout this script as well)
+	    # copy over the template settings.py to be worked on (used throughout this script as well)
         cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
     fi
 
@@ -154,7 +154,7 @@ setScriptSettings() {
     # updated dynamically!
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
-    export INTERNAL_FQDN="$(hostname -f)"
+    export INTERNAL_FQDN="$(hostname -f 2>/dev/null)"
     if [[ -z "$INTERNAL_FQDN" ]]; then
     	export INTERNAL_FQDN="$(hostname)"
     fi
@@ -468,7 +468,7 @@ function reconfigureMysqlSystemdService {
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
     case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)"|"$(hostname -f)")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"$(hostname)"|"$(hostname -f 2>/dev/null)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl stop mysql
@@ -549,8 +549,7 @@ function renewSSLCert {
         	rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         	cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
        		cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-       		chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
-        	chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
+            setCertPerms
 		    kamcmd tls.reload
      	fi
     else
@@ -560,10 +559,9 @@ function renewSSLCert {
 
 function configureSSL {
     # Check if certificates already exists.  If so, use them and exit
-    if [ -f "${DSIP_SSL_CERT}" -a -f "${DSIP_SSL_KEY}" ]; then
+    if [[ -f "${DSIP_SSL_CERT}" && -f "${DSIP_SSL_KEY}" ]]; then
         printwarn "Certificate found in ${DSIP_CERTS_DIR} - using it"
-        chown root:kamailio ${DSIP_CERTS_DIR}/dsiprouter*
-        chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
+        setCertPerms
         return
     fi
 
@@ -576,7 +574,6 @@ function configureSSL {
 
     fi
 
-
     # Try to create cert using LetsEncrypt's first
     #if (( ${TEAMS_ENABLED} == 1 )); then
     # Open port 80 for hostname validation
@@ -586,29 +583,41 @@ function configureSSL {
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
-        chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod 640 ${DSIP_CERTS_DIR}/*
-        # Add Nightly Cronjob to renew certs
-        cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
+        # Add Nightly Cronjob to renew certs if not already there
+        if ! crontab -l | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert" 2>/dev/null; then
+            cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
+        fi
     else
         printwarn "Failed Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
 
         # Worst case, generate a Self-Signed Certificate
         printdbg "Generating dSIPRouter Self-Signed Certificates"
         openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out ${DSIP_SSL_CERT} -keyout ${DSIP_SSL_KEY} -subj "/C=US/ST=MI/L=Detroit/O=dSIPRouter/CN=${EXTERNAL_FQDN}"
-        chown root:kamailio ${DSIP_CERTS_DIR}/*
-        chmod 640 ${DSIP_CERTS_DIR}/*
     fi
+    setCertPerms
 
     # Start nginx if dSIP was installed
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
 	    docker stop dsiprouter-nginx 2> /dev/null
     else
-   	firewall-cmd --zone=public --remove-port=80/tcp --permanent
+   	    firewall-cmd --zone=public --remove-port=80/tcp --permanent
     	firewall-cmd --reload
     fi
 
     #fi
+}
+
+# set TLS certificate permissions based on users available
+function setCertPerms() {
+    if id -u dsiprouter &>/dev/null; then
+        # dsiprouter needs to have control over the certs (note that nginx should never have write access)
+        chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
+        chmod 640 ${DSIP_CERTS_DIR}/*
+    else
+        # dsiprouter user does not yet exist so make sure kamailio user has access
+        chown -R root:kamailio ${DSIP_CERTS_DIR}
+        chmod 640 ${DSIP_CERTS_DIR}/dsiprouter*
+    fi
 }
 
 # updates and settings in kam config that may change
@@ -690,6 +699,11 @@ function updateKamailioConfig {
         setKamailioConfigDburl "SQLCONN_KAM" "kam=>${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
         setKamailioConfigDburl "SQLCONN_AST" "asterisk=>${DBURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+
+    # update kamailio TLS config file
+    perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" \
+        -0777 -i -pe 's%(#========== webrtc_domain_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_domain_stop ==========#)%\1${external_ip}:${wss_port}\2%s' \
+        ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 }
 
 # updates and settings in rtpengine config that may change
@@ -711,7 +725,8 @@ function updateDnsConfig {
     local KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     local KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
     local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
-    local DNS_CONFIG=""
+    # temp-fix for cloud-init not updating hostname in /etc/hosts on boot
+    local DNS_CONFIG="127.0.1.1 $(hostname -f 2>/dev/null) $(hostname)\n"
 
     # grab hosts from db
     local INTERNAL_CLUSTER_HOSTS=(
@@ -724,7 +739,7 @@ function updateDnsConfig {
     )
     local NUM_HOSTS=${#INTERNAL_CLUSTER_HOSTS[@]}
 
-    # only update if we got results
+    # only search through cluster hosts if we got results
     if (( ${NUM_HOSTS} > 0 )); then
         # find valid connections on dmq port:
         # try internal ip first and then external ip
@@ -735,21 +750,22 @@ function updateDnsConfig {
                 DNS_CONFIG+="${EXTERNAL_CLUSTER_HOSTS[$i]} local.cluster\n"
             fi
         done
+    # otherwise make sure local node is resolvable when querying cluster
+    else
+        DNS_CONFIG+="${INTERNAL_IP} local.cluster\n"
+    fi
 
-        # update hosts file
-        if [[ -n "${DNS_CONFIG}" ]]; then
-            perl -e "\$cluster_hosts=\"${DNS_CONFIG}\";" \
-                -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${cluster_hosts}\2|gms' /etc/hosts
+    # update hosts file
+    perl -e "\$cluster_hosts=\"${DNS_CONFIG}\";" \
+        -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${cluster_hosts}\2|gms' /etc/hosts
 
-            # tell dnsmasq to reload configs
-            if [ -f /var/run/dnsmasq/dnsmasq.pid ]; then
-                kill -SIGHUP $(cat /var/run/dnsmasq/dnsmasq.pid) 2>/dev/null
-            elif [ -f /var/run/dnsmasq.pid ]; then
-                kill -SIGHUP $(cat /var/run/dnsmasq.pid) 2>/dev/null
-            else
-                kill -SIGHUP $(pidof dnsmasq) 2>/dev/null
-            fi
-        fi
+    # tell dnsmasq to reload configs
+    if [ -f /var/run/dnsmasq/dnsmasq.pid ]; then
+        kill -SIGHUP $(cat /var/run/dnsmasq/dnsmasq.pid) 2>/dev/null
+    elif [ -f /var/run/dnsmasq.pid ]; then
+        kill -SIGHUP $(cat /var/run/dnsmasq.pid) 2>/dev/null
+    else
+        kill -SIGHUP $(pidof dnsmasq) 2>/dev/null
     fi
 }
 
@@ -759,7 +775,9 @@ function generateKamailioConfig {
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
     # Set the External IP Address for the WebRTC Port
-    sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+    perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" \
+        -0777 -i -pe 's%(#========== webrtc_domain_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_domain_stop ==========#)%\1${external_ip}:${wss_port}\2%s' \
+        ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
@@ -799,9 +817,9 @@ function configureKamailio {
     # make sure kamailio user and privileges exist
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "CREATE USER '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
-        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';" 2>/dev/null
     if (( $? != 0 )); then
-        printwarn "The Kamailio user already exists in the database - not creating again"
+        printwarn "The Kamailio user already exists in the database"
     fi
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$KAM_DB_USER'@'localhost';" \
@@ -909,16 +927,11 @@ function configureKamailio {
 
         # use a tmp dir so we don't have to change repo
         mkdir -p /tmp/defaults
-
-        # copy over default gateway lists
+        # generate defaults subbing in dynamic values
         cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
-
-        # sub in dynamic values
-        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
-            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address_carrier.csv
-        sed "s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
-            /tmp/defaults/address_carrier.csv  > /tmp/defaults/address.csv
-        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
             ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
         sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
             ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
@@ -927,7 +940,7 @@ function configureKamailio {
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
+            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gw_lists.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
@@ -1241,7 +1254,7 @@ function installDsiprouter {
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
         :
     else
-        ${PYTHON_CMD} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '/etc/dsiprouter/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
 
     # Generate UUID unique to this dsiprouter instance
@@ -1338,8 +1351,9 @@ EOF
     fi
 
     # generate documentation for GUI
+    # TODO: we should fix these errors instead of masking them
     cd ${DSIP_PROJECT_DIR}/docs &&
-    make html > /dev/null 2>&1
+    make html >/dev/null 2>&1
     cd -
 
     # add dependency on dsip-init service in startup boot order
@@ -1352,7 +1366,7 @@ EOF
     systemctl restart dsiprouter
     if systemctl is-active --quiet dsiprouter; then
         # custom dsiprouter MOTD banner for ssh logins
-        # must be run after dsiprouter srevice updates IP's in settings.py
+        # only update on successfull install so we don't confuse user
         updateBanner
 
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -1569,6 +1583,11 @@ uninstallSipsak() {
 
 # Install DNSmasq stub resolver for local DNS
 # used by kamailio dmq replication
+# TODO: right now updating /etc/hosts is messy because some cloud configs don't update it properly
+#       i.e.) could-init does not update hostnames properly
+#       we should instead integrate / configure these init systems on install
+# TODO: right now we disabled systemd-resolvd and manually configure /etc/resolv.conf
+#       we should instead integrate with systemd-resolvd and openresolv
 installDnsmasq() {
     local START_DIR="$(pwd)"
 
@@ -1601,7 +1620,7 @@ listen-address=127.0.0.1
 bind-interfaces
 EOF
 
-    # make sure dnsmasq is first nameserver
+    # make sure dnsmasq is first nameserver (utilizing dhclient)
     [ ! -f "/etc/dhcp/dhclient.conf" ] && touch /etc/dhcp/dhclient.conf
     if grep -q 'DSIP_CONFIG_START' /etc/dhcp/dhclient.conf 2>/dev/null; then
         perl -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\nprepend domain-name-servers 127.0.0.1;\n\2|gms' /etc/dhcp/dhclient.conf
@@ -1632,7 +1651,9 @@ EOF
             '#####DSIP_CONFIG_END' >> /etc/hosts
     fi
 
-    # update dns hosts every minute
+    # update DNS hosts prior to dSIPRouter startup
+    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
+    # update DNS hosts every minute
     cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # start on boot
@@ -1878,7 +1899,8 @@ function resetPassword {
     fi
 
     ${PYTHON_CMD} << EOF
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.security import Credentials; from util.ipc import sendSyncSettingsSignal;
 Credentials.setCreds(dsip_creds='${DSIP_PASSWORD}', api_creds='${DSIP_API_TOKEN}', kam_creds='${KAM_DB_PASS}', ipc_creds='${DSIP_IPC_PASS}');
 try:
@@ -1888,7 +1910,7 @@ except:
 EOF
 
     if (( $RESET_KAM_DB_PASS == 1 )); then
-	mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
+	    mysql --user="$ROOT_DB_USER" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
             -e "set password for $KAM_DB_USER@localhost = PASSWORD('${KAM_DB_PASS}');flush privileges"
     fi
 
@@ -2037,7 +2059,8 @@ function setCredentials {
 
     # update encrypted settings
     ${PYTHON_CMD} << EOF
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.security import Credentials;
 Credentials.setCreds(dsip_creds='${SET_DSIP_GUI_PASS}', api_creds='${SET_DSIP_API_TOKEN}', kam_creds='${SET_KAM_DB_PASS}', mail_creds='${SET_DSIP_MAIL_PASS}', ipc_creds='${SET_DSIP_IPC_TOKEN}');
 EOF
@@ -2048,7 +2071,8 @@ EOF
 
     # synchronize settings (between local, DB, and cluster)
     ${PYTHON_CMD} << EOF 2>/dev/null
-import os; os.chdir('${DSIP_PROJECT_DIR}/gui');
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.ipc import sendSyncSettingsSignal;
 sendSyncSettingsSignal();
 EOF
@@ -2069,7 +2093,7 @@ EOF
     export ROOT_DB_PASS=${SET_ROOT_DB_PASS:-$ROOT_DB_PASS}
     export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
 
-    # propragate settings based on reload type required
+    # propagate settings based on reload type required
     if (( ${RELOAD_TYPE} == 0 )); then
         printdbg 'Credentials have been updated'
     elif (( ${RELOAD_TYPE} == 1 )); then
@@ -2099,7 +2123,7 @@ function updateBanner {
     cat /dev/null > /etc/motd
     chmod -x /etc/update-motd.d/* 2>/dev/null
 
-    # add our custom banner
+    # add our custom banner script (dynamically updates MOTD banner)
     (cat << EOF
 #!/usr/bin/env bash
 
@@ -2110,11 +2134,25 @@ ANSI_GREEN="$ANSI_GREEN"
 $(declare -f printdbg)
 $(declare -f getConfigAttrib)
 $(declare -f displayLogo)
+$(declare -f getExternalIP)
+$(declare -f checkConn)
 
 # updated variables on login
+INTERNAL_IP=\$(ip route get 8.8.8.8 | awk 'NR == 1 {print \$7}')
+INTERNAL_NET=\$(awk -F"." '{print \$1"."\$2"."\$3".*"}' <<<\$INTERNAL_IP)
+INTERNAL_FQDN="\$(hostname -f 2>/dev/null)"
+if [[ -z "\$INTERNAL_FQDN" ]]; then
+    INTERNAL_FQDN="\$(hostname)"
+fi
+EXTERNAL_IP=\$(getExternalIP)
+if [[ -z "\$EXTERNAL_IP" ]]; then
+    EXTERNAL_IP=\$INTERNAL_IP
+fi
+EXTERNAL_FQDN=\$(dig @8.8.8.8 +short -x \${EXTERNAL_IP} 2>/dev/null | sed 's/\.\$//')
+if [[ -z "\$EXTERNAL_FQDN" ]] || ! checkConn "\$EXTERNAL_FQDN"; then
+    EXTERNAL_FQDN="\$INTERNAL_FQDN"
+fi
 DSIP_PORT=\$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
-EXTERNAL_IP=\$(getConfigAttrib 'EXTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})
-INTERNAL_IP=\$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})
 DSIP_GUI_PROTOCOL=\$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
 VERSION=\$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
 
@@ -2719,7 +2757,6 @@ function processCMD {
     local ARG="$1"
     case $ARG in
         install)
-
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
             shift
