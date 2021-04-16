@@ -3,7 +3,7 @@
 # Summary: build dsiprouter as an VM/VPS Deployable Image
 #
 
-BUILD_VERSION="v0.62"
+BUILD_VERSION="v0.65"
 BUILD_DIR="/opt/dsiprouter"
 REPO_URL="https://github.com/dOpensource/dsiprouter.git"
 export IMAGE_BUILD=1 # will be passed to dsiprouter.sh

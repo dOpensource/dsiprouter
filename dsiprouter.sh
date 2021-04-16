@@ -2971,6 +2971,7 @@ function processCMD {
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
+                DISPLAY_LOGIN_INFO=1
                 RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter)
             fi
 

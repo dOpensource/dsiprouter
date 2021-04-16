@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-d87f6d77da91ce13004e91fe10d824412be02eeb
+e912302b74115a1ff2ae28962c7842e904a4e014
+84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe
 76ce3054000c143550703246ffec4163d78a5dae
 c44ea6369c55d43bdf92131d245f20869e0ab448
 bd30caf659cc0a10a75c9834cfc2c2061a55d6c5
@@ -1933,10 +1934,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION d87f6d77da91ce13004e91fe10d824412be02eeb)
+[//]: # (START_SECTION e912302b74115a1ff2ae28962c7842e904a4e014)
+### Cleanup v0.65 Base Branch
+
+> Commit: [e912302b74115a1ff2ae28962c7842e904a4e014](https://github.com/dOpensource/dsiprouter/commit/e912302b74115a1ff2ae28962c7842e904a4e014)  
+> Date: Fri, 16 Apr 2021 14:25:08 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- cleanup temp files from merging
+- update version number
+- fix login info not displayed on default install
+
+
+---
+
+[//]: # (END_SECTION e912302b74115a1ff2ae28962c7842e904a4e014)
+[//]: # (START_SECTION 84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe)
 ### v0.65 Extra Fixes
 
-> Commit: [d87f6d77da91ce13004e91fe10d824412be02eeb](https://github.com/dOpensource/dsiprouter/commit/d87f6d77da91ce13004e91fe10d824412be02eeb)  
+> Commit: [84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe](https://github.com/dOpensource/dsiprouter/commit/84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe)  
 > Date: Fri, 16 Apr 2021 01:14:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1957,7 +1976,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION d87f6d77da91ce13004e91fe10d824412be02eeb)
+[//]: # (END_SECTION 84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe)
 [//]: # (START_SECTION 76ce3054000c143550703246ffec4163d78a5dae)
 ### Fix Record Route Placement In Configs
 
