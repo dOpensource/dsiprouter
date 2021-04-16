@@ -14,7 +14,7 @@ function install() {
     dnf groupinstall -y 'base'
     dnf groupinstall -y 'Development Tools'
     dnf install -y psmisc curl wget sed gawk vim epel-release perl firewalld libuuid-devel openssl-devel
-    dnf install -y logrotate rsyslog certbot
+    dnf install -y logrotate rsyslog certbot coreutils
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
@@ -145,7 +145,7 @@ EOF
     rm -rf /tmp/kamailio 2>/dev/null
     git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
     cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
-    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
+    ( cd /tmp/kamailio/src/modules/dsiprouter; make -j $(nproc); exit $?; ) &&
     cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
     return 1
 

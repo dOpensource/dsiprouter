@@ -604,7 +604,7 @@ function checkDBUserExists() {
     return $(mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
         -e "SELECT IF(EXISTS(SELECT 1 FROM mysql.user WHERE User='${MYSQL_CHECK_USER}' AND Host='${MYSQL_CHECK_HOST}'),0,2);" 2>/dev/null)
 }
-export -f dumpDBUser
+export -f checkDBUserExists
 
 # usage: dumpDB [options] <database>
 # options:  --user=<mysql user>

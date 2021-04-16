@@ -19,7 +19,7 @@ function install {
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
-    apt-get install -y logrotate rsyslog
+    apt-get install -y build-essential logrotate rsyslog coreutils
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -29,11 +29,12 @@ function install {
     chown -R kamailio:kamailio /var/run/kamailio
 
     # add repo sources to apt
+    CODENAME="$(lsb_release -sc)"
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
 # kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
+deb http://deb.kamailio.org/kamailio${KAM_VERSION} ${CODENAME} main
+#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} ${CODENAME} main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
@@ -168,7 +169,7 @@ EOF
     rm -rf /tmp/kamailio 2>/dev/null
     git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
     cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
-    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
+    ( cd /tmp/kamailio/src/modules/dsiprouter; make -j $(nproc); exit $?; ) &&
     cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
     return 1
 

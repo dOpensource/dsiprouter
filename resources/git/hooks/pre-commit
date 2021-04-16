@@ -29,7 +29,7 @@ EXCLUDE_DIRS=( )
 # destination file
 REQUIREMENTS_FILE="requirements.txt"
 # pipreqs only catches stdlib libraries
-INCLUDE_LIBS=('cryptography>=3.3,<3.4' 'mysqlclient' 'docker' 'certbot' 'sphinx' 'recommonmark' 'sphinxcontrib-httpdomain' 'sphinx-rtd-theme')
+INCLUDE_LIBS=('cryptography>=3.3,<3.4' 'mysqlclient' 'docker' 'certbot' 'docutils<0.17,>=0.12' 'Sphinx==3.5.4' 'recommonmark' 'sphinxcontrib-httpdomain' 'sphinx-rtd-theme')
 # excludes for conflicting libs
 EXCLUDE_LIBS=('cryptography' 'docker_py' 'pyspark' 'acme.hello' 'josepy')
 

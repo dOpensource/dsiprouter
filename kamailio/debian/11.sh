@@ -19,7 +19,7 @@ function install {
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
-    apt-get install -y logrotate rsyslog
+    apt-get install -y build-essential logrotate rsyslog coreutils
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -168,7 +168,7 @@ EOF
     rm -rf /tmp/kamailio 2>/dev/null
     git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
     cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
-    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
+    ( cd /tmp/kamailio/src/modules/dsiprouter; make -j $(nproc); exit $?; ) &&
     cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
     return 1
 

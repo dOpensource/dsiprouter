@@ -5,6 +5,7 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
+d87f6d77da91ce13004e91fe10d824412be02eeb
 76ce3054000c143550703246ffec4163d78a5dae
 c44ea6369c55d43bdf92131d245f20869e0ab448
 bd30caf659cc0a10a75c9834cfc2c2061a55d6c5
@@ -1932,6 +1933,31 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
+[//]: # (START_SECTION d87f6d77da91ce13004e91fe10d824412be02eeb)
+### v0.65 Extra Fixes
+
+> Commit: [d87f6d77da91ce13004e91fe10d824412be02eeb](https://github.com/dOpensource/dsiprouter/commit/d87f6d77da91ce13004e91fe10d824412be02eeb)  
+> Date: Fri, 16 Apr 2021 01:14:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix docs build / sphinx requirements
+- fix missing manpage dependecies
+- fix kamailio user creation / privilege updates
+- move rsyslog -> syslog aliasing to createInitService()
+- fix misc cluster install bugs
+- fix checkDBUserExists() typo
+- fix rtpengine install issues
+- fix kernel header install issues for debian cloud installs
+- misc debian/ubuntu backporting for kamailio install
+- misc dependency fixing
+
+
+---
+
+[//]: # (END_SECTION d87f6d77da91ce13004e91fe10d824412be02eeb)
 [//]: # (START_SECTION 76ce3054000c143550703246ffec4163d78a5dae)
 ### Fix Record Route Placement In Configs
 

@@ -8,6 +8,57 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
+# Get more detailed OS info
+CODENAME="$(lsb_release -sc)"
+OS_KERNEL=$(uname -r)
+
+# TODO: add support for searching packages.debian.org
+function debSearch() {
+    local DEB_SEARCH="$1" SEARCH_RESULTS=""
+
+    # search debian snapshots for package
+    if [[ $(curl -sLI -w "%{http_code}" "https://snapshot.debian.org/binary/?bin=${DEB_SEARCH}" -o /dev/null) == "200" ]]; then
+        SEARCH_RESULTS=$(curl -sL "https://snapshot.debian.org/binary/?bin=${DEB_SEARCH}" 2>/dev/null | grep -oP '<li><a href="../../\K.*(?=")' | head -1)
+        SEARCH_RESULTS=$(curl -sL "https://snapshot.debian.org/${SEARCH_RESULTS}" 2>/dev/null | grep -oP "<a href=\"\K.*${DEB_SEARCH}.*\.deb(?=\")" | head -1)
+        if [[ -n "$SEARCH_RESULTS" ]]; then
+            echo "https://snapshot.debian.org${SEARCH_RESULTS}"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+function aptInstallKernelHeadersFromURI() {
+    local RET=0
+    local KERN_HDR_URI="$1" KERN_HDR_DEB=$(basename "$1")
+    local KERN_HDR_COMMON_URI="" KERN_HDR_COMMON_DEB=""
+
+    (
+        # download the .deb file
+        cd /tmp/
+        curl -sLO "$KERN_HDR_URI"
+
+        # install dependent common headers
+        KERN_HDR_COMMON_URI=$(debSearch $(dpkg --info "$KERN_HDR_DEB" 2>/dev/null | grep 'Depends:' | cut -d ':' -f 2 | tr ',' '\n' | grep -oP 'linux-headers-.*-common')) &&
+            KERN_HDR_COMMON_DEB=$(basename "$KERN_HDR_COMMON_URI") &&
+            curl -sLO "$KERN_HDR_COMMON_URI" && {
+                apt-get install -y ./${KERN_HDR_COMMON_DEB}
+                RET=$((RET + $?))
+                apt-get install -y -f
+                rm -f "$KERN_HDR_COMMON_DEB"
+            }
+
+        # install the kernel headers
+        apt-get install -y ./${KERN_HDR_DEB}
+        RET=$((RET + $?))
+        rm -f "$KERN_HDR_DEB"
+        exit $RET
+    )
+
+    return $?
+}
+
 function install {
     # Install required libraries
     apt-get install -y logrotate rsyslog
@@ -30,17 +81,33 @@ function install {
     apt-get install -y dkms
     apt-get install -y unzip
     apt-get install -y libavresample-dev
-    apt-get install -y linux-headers-$(uname -r)
+
     apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
         libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
 
     # debian jessie/stretch need a few newer packages
-    CODENAME="$(lsb_release -c -s)"
     if [[ "$CODENAME" == "jessie" ]] || [[ "$CODENAME" == "stretch" ]]; then
         apt-get install -y -t buster libarchive13
         apt-get install -y -t stretch-backports debhelper init-system-helpers
     else
         apt-get install -y debhelper
+    fi
+
+    # try installing kernel dev headers in the following order:
+    # 1: headers from repos
+    # 2: headers from snapshot.debian.org
+    apt-get install -y linux-headers-${OS_KERNEL} ||
+        aptInstallKernelHeadersFromURI $(debSearch linux-headers-${OS_KERNEL})
+#    (
+#        KERNEL_META_PKG=$(echo ${OS_KERNEL} | perl -pe 's%[0-9-.]+(.*)%\1%')
+#        apt-get install -y linux-image-${KERNEL_META_PKG} linux-headers-${KERNEL_META_PKG}
+#        printwarn 'Required Kernel Update Installed'
+#        printwarn 'RTPEngine will not forward packets in-kernel until a reboot occurs'
+#    )
+
+    if (( $? != 0 )); then
+        printerr "Problem with installing the required libraries for RTPEngine"
+        exit 1
     fi
 
     # create rtpengine user and group
@@ -61,9 +128,9 @@ function install {
     git clone https://github.com/ossobv/bcg729-deb.git debian &&
     dpkg-buildpackage -us -uc -sa &&
     cd .. &&
-    dpkg -i ./libbcg729-*.deb
+    apt-get install -y ./libbcg729-*.deb
 
-    if [ $? -ne 0 ]; then
+    if (( $? != 0 )); then
         printerr "Problem installing G729 Codec"
         exit 1
     fi
@@ -77,11 +144,11 @@ function install {
     fi &&
     dpkg-buildpackage -us -uc -sa &&
     cd .. &&
-    dpkg -i ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
-        ngcp-rtpengine-kernel-dkms_*.deb
-    #./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
+    apt-get install -y ./ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
+        ./ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
+#        ./ngcp-rtpengine-kernel-source_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-recording-daemon_*${RTPENGINE_VER}*.deb
 
-    if [ $? -ne 0 ]; then
+    if (( $? != 0 )); then
         printerr "Problem installing RTPEngine DEB's"
         exit 1
     fi

@@ -66,7 +66,7 @@ function rpmSearch() {
     if [[ -z "$SEARCH_RESULTS" ]]; then
         SEARCH_RESULTS=$(
             curl --keepalive-time 5 --compressed -sL https://vault.centos.org/filelist.gz 2>/dev/null |
-                gunzip -c |
+                gunzip -c 2>/dev/null |
                 tac |
                 grep -oP ".*${OS_ARCH}.*${RPM_SEARCH}.*\.rpm" |
                 grep -m 1 "${GREP_FILTER}" |
@@ -117,13 +117,6 @@ function install {
         exit 1
     fi
 
-    # alias and link rsyslog to syslog service as in debian
-    # allowing rsyslog to be accessible via syslog namespace
-    # the settings are already there just commented out by default
-    sed -i -r 's|^[;](.*)|\1|g' /usr/lib/systemd/system/rsyslog.service
-    ln -sf /usr/lib/systemd/system/rsyslog.service /etc/systemd/system/syslog.service
-    systemctl daemon-reload
-
     # create rtpengine user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
@@ -134,7 +127,7 @@ function install {
     rm -rf rtpengine.bak 2>/dev/null
     mv -f rtpengine rtpengine.bak 2>/dev/null
     git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
-    cd ./rtpengine
+    cd rtpengine
 
     RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
     if (( $(echo "$RTPENGINE_VER" | perl -0777 -pe 's|mr(\d+\.\d+)\.(\d+)\.(\d+)|\1\2\3 >= 6.511|gm' | bc -l) )); then
@@ -151,21 +144,13 @@ function install {
     perl -i -pe 's|(%define archname) rtpengine-mr|\1 rtpengine-|' ./el/rtpengine.spec
     # build the RPM's
     rpmbuild -ba ./el/rtpengine.spec
-    # install the required RPM's
-    rpm -i ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm
-    rpm -q ngcp-rtpengine &>/dev/null; ret=$?
-    rpm -i ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm
-    rpm -q ngcp-rtpengine-dkms &>/dev/null; ((ret+=$?))
-    rpm -i ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
-    rpm -q ngcp-rtpengine-kernel &>/dev/null; ((ret+=$?))
-    # install extra RPM's if they exist (version dependent)
-    RTPENGINE_RECORDING_RPM=$(find ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH} -name "ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm" -print -quit)
-    if [[ -f "$RTPENGINE_RECORDING_RPM" ]]; then
-        rpm -i ${RTPENGINE_RECORDING_RPM}
-        rpm -q ngcp-rtpengine-recording &>/dev/null; ((ret+=$?))
-    fi
+    # install the RPM's
+    yum localinstall -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
+        ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
+        ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
+#        ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm
 
-    if (( $ret != 0 )); then
+    if (( $? != 0 )); then
         printerr "Problem installing RTPEngine RPM's"
         exit 1
     fi

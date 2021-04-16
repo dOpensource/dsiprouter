@@ -14,7 +14,7 @@ function install {
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
-    apt-get install -y logrotate rsyslog
+    apt-get install -y build-essential logrotate rsyslog coreutils
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -24,7 +24,7 @@ function install {
     chown -R kamailio:kamailio /var/run/kamailio
 
     # add repo sources to apt
-    CODENAME="$(lsb_release -c -s)"
+    CODENAME="$(lsb_release -sc)"
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
 # kamailio repo's
@@ -57,10 +57,10 @@ EOF
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
+    if ! grep -q -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
     fi
-    if ! grep -q v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
+    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
         sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
     fi
     systemctl daemon-reload
@@ -70,14 +70,14 @@ EOF
 
     # create kamailio defaults config
     (cat << 'EOF'
- RUN_KAMAILIO=yes
- USER=kamailio
- GROUP=kamailio
- SHM_MEMORY=128
- PKG_MEMORY=16
- PIDFILE=/var/run/kamailio/kamailio.pid
- CFGFILE=/etc/kamailio/kamailio.cfg
- #DUMP_CORE=yes
+RUN_KAMAILIO=yes
+USER=kamailio
+GROUP=kamailio
+SHM_MEMORY=128
+PKG_MEMORY=16
+PIDFILE=/var/run/kamailio/kamailio.pid
+CFGFILE=/etc/kamailio/kamailio.cfg
+#DUMP_CORE=yes
 EOF
     ) > /etc/default/kamailio
     # create kamailio tmp files
@@ -158,13 +158,13 @@ EOF
 
     # Setup Kamailio to use the CA cert's that are shipped with the OS
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
-    cp ${DSIP_PROJECT_DIR}/kamailio/cacert_dsiprouter.pem ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pe
+    cp ${DSIP_PROJECT_DIR}/kamailio/cacert_dsiprouter.pem ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
 
     # Setup dSIPRouter Module
     rm -rf /tmp/kamailio 2>/dev/null
     git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
     cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
-    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
+    ( cd /tmp/kamailio/src/modules/dsiprouter; make -j $(nproc); exit $?; ) &&
     cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
     return 1
 
@@ -172,7 +172,7 @@ EOF
 }
 
 function uninstall {
-    # Stop servers
+    # Stop and disable services
     systemctl stop kamailio
     systemctl disable kamailio
 
