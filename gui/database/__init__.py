@@ -9,7 +9,8 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
 from sqlalchemy import exc as sql_exceptions
 import settings
-from shared import IO, debugException, safeUriToHost, dictToStrFields
+from shared import IO, debugException, dictToStrFields
+from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
 
 
@@ -162,7 +163,7 @@ class dSIPMultiDomainMapping(object):
         TYPE_UNKNOWN = 0
         TYPE_FUSIONPBX = 1
         TYPE_FUSIONPBX_CLUSTER = 2
-        TYPE_FREEPBX = 3 
+        TYPE_FREEPBX = 3
 
 
     def __init__(self, pbx_id, db_host, db_username, db_password, domain_list=None, attr_list=None, type=0, enabled=1):
@@ -431,7 +432,7 @@ class Dispatcher(object):
 
     def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description=''):
         self.setid = setid
-        self.destination = "sip:{}".format(destination)
+        self.destination = safeFormatSipUri(destination)
         self.flags = flags
         self.priority = priority
         self.attrs = attrs

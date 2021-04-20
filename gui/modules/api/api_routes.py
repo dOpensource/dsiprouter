@@ -14,8 +14,9 @@ from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
     dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
-from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
-    debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
+from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, showApiError, \
+    debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData
+from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
 from util.file_handling import isValidFile, change_owner
@@ -111,9 +112,8 @@ def reloadKamailio():
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 
-        # Pulled tls.reload out of the reload process due to issues
+        # Pulled tls.reload out of the reload process due to issues in kamv5.3
         # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
-
 
         reload_cmds = [
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
@@ -1079,7 +1079,6 @@ def updateEndpointGroups(gwgroupid=None):
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
-
 
         if 'fusionpbx' in request_payload:
             fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
@@ -2795,7 +2794,6 @@ def getOptionMessageStatus(domain):
     else:
         response = r.json()
         records = response['result']['RECORDS']
-
 
     if not response:
         return False

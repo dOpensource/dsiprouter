@@ -27,11 +27,8 @@
 # - separate gui routes into smaller sections and import as blueprints
 # - allow hot-reloading password from python configs while dsiprouter running
 # - naming convention for system vs dsip config files is very confusing (make more explicit)
-# - rtp/sip/dmq ports are not dynamically set in kam config
 # - cleanup dependency installs/checks, many of these could be condensed
-# - need to create dsiprouter user/group on install and allow non-root execution
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
-# - add bash command completion for dsiprouter script
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -79,7 +76,7 @@ setStaticScriptSettings() {
     export SERVERNAT=0
     export TEAMS_ENABLED=1
     export REQ_PYTHON_MAJOR_VER=3
-    export IPV6_ENABLED=0
+    [[ -f /proc/net/if_inet6 ]] && export IPV6_ENABLED=1 || export IPV6_ENABLED=0
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
@@ -155,17 +152,14 @@ setDynamicScriptSettings() {
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
     # updated dynamically!
-    export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
-    export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
-    export INTERNAL_FQDN="$(hostname -f 2>/dev/null)"
-    if [[ -z "$INTERNAL_FQDN" ]]; then
-    	export INTERNAL_FQDN="$(hostname)"
-    fi
+    export INTERNAL_IP=$(getInternalIP)
+    export INTERNAL_NET=$(getInternalCIDR)
+    export INTERNAL_FQDN=$(getInternalFQDN)
     export EXTERNAL_IP=$(getExternalIP)
     if [[ -z "$EXTERNAL_IP" ]]; then
-	    export EXTERNAL_IP=$INTERNAL_IP
+	    export EXTERNAL_IP="$INTERNAL_IP"
     fi
-    export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} 2>/dev/null | sed 's/\.$//')
+    export EXTERNAL_FQDN=$(getExternalFQDN)
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
@@ -549,11 +543,12 @@ function updatePythonRuntimeSettings {
 
 function renewSSLCert {
     # Don't renew if a default cert was uploaded
-    DEFAULT_CERT_UPLOADED=$(mysql -sN --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+    local DEFAULT_CERT_UPLOADED=$(mysql -sN --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
         -e "select count(*) from dsip_certificates where domain='default'" 2> /dev/null)
     if (( ${DEFAULT_CERT_UPLOADED} == 1 )); then
 	    return
     fi
+
     certbot certificates
     if (( $? == 0 )); then
     	certbot renew
@@ -578,17 +573,13 @@ function configureSSL {
     fi
 
     # Stop nginx if started so that LetsEncrypt can leverage port 80
-    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
-	    docker stop dsiprouter-nginx 2> /dev/null
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+	    docker stop dsiprouter-nginx 2>/dev/null
     else
-    	firewall-cmd --zone=public --add-port=80/tcp --permanent
-    	firewall-cmd --reload
-
+    	firewall-cmd --zone=public --add-port=80/tcp
     fi
 
     # Try to create cert using LetsEncrypt's first
-    #if (( ${TEAMS_ENABLED} == 1 )); then
-    # Open port 80 for hostname validation
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
     certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
     if (( $? == 0 )); then
@@ -609,14 +600,11 @@ function configureSSL {
     setCertPerms
 
     # Start nginx if dSIP was installed
-    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
-	    docker stop dsiprouter-nginx 2> /dev/null
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+	    docker stop dsiprouter-nginx 2>/dev/null
     else
-   	    firewall-cmd --zone=public --remove-port=80/tcp --permanent
-    	firewall-cmd --reload
+   	    firewall-cmd --zone=public --remove-port=80/tcp
     fi
-
-    #fi
 }
 
 # set TLS certificate permissions based on users available
@@ -636,7 +624,7 @@ function setCertPerms() {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
-    local DSIP_VERSION=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
+    local DSIP_VERSION=${DSIP_VERSION:-$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})}
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://127.0.0.1:$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
@@ -936,34 +924,34 @@ function configureKamailio {
 #    resetIncrementers "dr_gw_lists"
 #    resetIncrementers "uacreg"
 
-    # Import Default Carriers
-    if cmdExists 'mysqlimport'; then
+    # truncate tables first if kamailio already installed
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
         mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-            -e "delete from address where grp=$FLT_CARRIER"
-
-        # use a tmp dir so we don't have to change repo
-        mkdir -p /tmp/defaults
-        # generate defaults subbing in dynamic values
-        cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
-        sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
-            ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
-        sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
-            ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
-        sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
-            ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
-
-        # import default carriers
-        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
-        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gw_lists.csv
-        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
-        mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_rules.csv
-
-        rm -rf /tmp/defaults
+            -e "TRUNCATE TABLE address; TRUNCATE TABLE dr_gateways; TRUNCATE TABLE dr_rules;"
     fi
+
+    # import default carriers and outbound routes
+    mkdir -p /tmp/defaults
+    # generate defaults subbing in dynamic values
+    cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
+    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+        ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
+    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+        ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
+    sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
+        ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
+
+    # import default carriers
+    mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
+    mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gw_lists.csv
+    mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
+    mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
+        --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_rules.csv
+
+    rm -rf /tmp/defaults
 
     generateKamailioConfig
 }
@@ -1151,7 +1139,7 @@ function installRTPEngine {
         enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         systemctl restart kamailio
         printdbg "configuring RTPEngine service"
-    elif [ $ret -eq 2 ]; then
+    elif (( $ret == 2 )); then
         enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         printwarn "RTPEngine install waiting on reboot"
         cleanupAndExit 0
@@ -1192,11 +1180,11 @@ function uninstallRTPEngine {
     ./rtpengine/$DISTRO/install.sh uninstall
 
     if (( $? == 0 )); then
-        disableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+            disableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
             systemctl restart kamailio
         fi
-
+    else
         printerr "RTPEngine uninstall failed"
         cleanupAndExit 1
     fi
@@ -1209,16 +1197,6 @@ function uninstallRTPEngine {
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
 
     printdbg "RTPEngine was uninstalled"
-}
-
-# Enable RTP within the Kamailio configuration so that it uses the RTPEngine
-function enableRTP {
-    disableKamailioConfigAttrib 'WITH_NAT' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg
-}
-
-# Disable RTP within the Kamailio configuration so that it doesn't use the RTPEngine
-function disableRTP {
-    enableKamailioConfigAttrib 'WITH_NAT' ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamailio.cfg
 }
 
 # TODO: allow password changes on cloud instances (remove password reset after image creation)
@@ -1372,6 +1350,9 @@ EOF
     make html >/dev/null 2>&1
     cd -
 
+    # install documentationor the CLI
+    installManPage
+
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
 
@@ -1429,6 +1410,9 @@ function uninstallDsiprouter {
     rm -f /usr/local/bin/dsiprouter
     # remove command line completion for dsiprouter.sh
     rm -f /etc/bash_completion.d/dsiprouter
+
+    # remove CLI documentation
+    uninstallManPage
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -1603,9 +1587,13 @@ uninstallSipsak() {
 #       i.e.) could-init does not update hostnames properly
 #       we should instead integrate / configure these init systems on install
 # TODO: right now we disabled systemd-resolvd and manually configure /etc/resolv.conf
-#       we should instead integrate with systemd-resolvd and openresolv
+#       we should instead integrate with systemd-resolvd or openresolv or network-manager
+# TODO: move DNSmasq install to its own directory
 installDnsmasq() {
     local START_DIR="$(pwd)"
+    local DNSMASQ_LISTEN_ADDRS="127.0.0.1"
+    local DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1")
+    local DNSMASQ_NAME_SERVERS_REV=("nameserver 127.0.0.1")
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
         printwarn "DNSmasq is already installed"
@@ -1614,9 +1602,19 @@ installDnsmasq() {
         printdbg "Attempting to install DNSmasq"
     fi
 
-    # if systemd dns resolver installed disable it
-    systemctl stop systemd-resolved 2>/dev/null
-    systemctl disable systemd-resolved 2>/dev/null
+    # ipv6 compatibility
+    if (( ${IPV6_ENABLED} == 1 )); then
+        DNSMASQ_LISTEN_ADDRS="127.0.0.1,::1"
+        DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1" "nameserver ::1")
+        DNSMASQ_NAME_SERVERS_REV=("nameserver ::1" "nameserver 127.0.0.1")
+    fi
+
+    # create dnsmasq user and group
+    # output removed, some cloud providers (DO) use caching and output is misleading
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
+    userdel dnsmasq &>/dev/null; groupdel dnsmasq &>/dev/null
+    useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
 
     # install dnsmasq
     if cmdExists 'apt-get'; then
@@ -1625,58 +1623,107 @@ installDnsmasq() {
         yum install -y dnsmasq
     fi
 
+    # if systemd dns resolver is installed disable it
+    systemctl stop systemd-resolved 2>/dev/null
+    systemctl disable systemd-resolved 2>/dev/null
+
     # dnsmasq configuration
     mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
-    cat << 'EOF' > /etc/dnsmasq.conf
+    cat << EOF >/etc/dnsmasq.conf
 port=53
 domain-needed
 bogus-priv
 strict-order
-listen-address=127.0.0.1
+listen-address=${DNSMASQ_LISTEN_ADDRS}
 bind-interfaces
+user=dnsmasq
+group=dnsmasq
+conf-file=/etc/dnsmasq.conf
+resolv-file=/etc/resolv.conf
+pid-file=/var/run/dnsmasq/dnsmasq.pid
 EOF
 
     # make sure dnsmasq is first nameserver (utilizing dhclient)
     [ ! -f "/etc/dhcp/dhclient.conf" ] && touch /etc/dhcp/dhclient.conf
     if grep -q 'DSIP_CONFIG_START' /etc/dhcp/dhclient.conf 2>/dev/null; then
-        perl -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\nprepend domain-name-servers 127.0.0.1;\n\2|gms' /etc/dhcp/dhclient.conf
+        perl -0777 -i -pe "s|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\nprepend domain-name-servers ${DNSMASQ_LISTEN_ADDRS};\n\2|gms" /etc/dhcp/dhclient.conf
     else
         printf '\n%s\n%s\n%s\n\n' \
             '#####DSIP_CONFIG_START' \
-            'prepend domain-name-servers 127.0.0.1;' \
+            "prepend domain-name-servers ${DNSMASQ_LISTEN_ADDRS};" \
             '#####DSIP_CONFIG_END' >> /etc/dhcp/dhclient.conf
     fi
-    if ! grep -q '127.0.0.1' /etc/resolv.conf 2>/dev/null; then
+    if ! grep -q -E 'nameserver 127\.0\.0\.1|nameserver ::1' /etc/resolv.conf 2>/dev/null; then
         # extra check in case no nameserver found
         if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
-            echo 'nameserver 127.0.0.1' >> /etc/resolv.conf
+            joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
         else
-            sed -ir -e '0,\|^nameserver.*|{s||nameserver 127.0.0.1\n&|}' /etc/resolv.conf
+            tac /etc/resolv.conf | sed -r -e "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS_REV[@]}" | tac)&|}" | tac >/tmp/resolv.conf
+            mv -f /tmp/resolv.conf /etc/resolv.conf
         fi
     fi
 
-    # setup hosts in cluster
+    # setup hosts in cluster node is resolvable
     # cron and kam service will configure these dynamically
     if grep -q 'DSIP_CONFIG_START' /etc/hosts 2>/dev/null; then
-        perl -e "\$external_ip='${INTERNAL_IP}';" \
-            -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${external_ip} local.cluster\n\2|gms' /etc/hosts
+        perl -e "\$int_ip='${INTERNAL_IP}'; \$ext_ip='${EXTERNAL_IP}'; \$int_fqdn='${INTERNAL_FQDN}'; \$ext_fqdn='${EXTERNAL_FQDN}';" \
+            -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${int_ip} ${int_fqdn} local.cluster\n${ext_ip} ${ext_fqdn} local.cluster\n\2|gms' /etc/hosts
     else
         printf '\n%s\n%s\n%s\n\n' \
             '#####DSIP_CONFIG_START' \
-            "${INTERNAL_IP} local.cluster" \
+            "${INTERNAL_IP} ${INTERNAL_FQDN} local.cluster" \
+            "${EXTERNAL_IP} ${EXTERNAL_FQDN} local.cluster" \
             '#####DSIP_CONFIG_END' >> /etc/hosts
     fi
+
+    # configure systemd service
+    (cat <<'EOF'
+[Unit]
+Description=dnsmasq - A lightweight DHCP and caching DNS server
+Requires=network.target
+Wants=nss-lookup.target
+Before=nss-lookup.target
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/run/dnsmasq/dnsmasq.pid
+Environment='RUN_DIR=/var/run/dnsmasq'
+PIDFile=/var/run/dnsmasq/dnsmasq.pid
+# make sure everything is setup correctly before starting
+ExecStartPre=!-/bin/mkdir -p ${RUN_DIR}
+ExecStartPre=!-/bin/chown -R dnsmasq:dnsmasq ${RUN_DIR}
+ExecStartPre=/usr/sbin/dnsmasq --test
+# We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
+# wrapper picking up extra configuration files and then execs dnsmasq
+# itself, when called with the "systemd-exec" function.
+ExecStart=/etc/init.d/dnsmasq systemd-exec
+# The systemd-*-resolvconf functions configure (and deconfigure)
+# resolvconf to work with the dnsmasq DNS server. They're called like
+# this to get correct error handling (ie don't start-resolvconf if the
+# dnsmasq daemon fails to start.
+ExecStartPost=/etc/init.d/dnsmasq systemd-start-resolvconf
+ExecStop=/etc/init.d/dnsmasq systemd-stop-resolvconf
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    ) >/etc/systemd/system/dnsmasq.service
+
+    # start on boot
+    systemctl daemon-reload
+    systemctl enable dnsmasq
 
     # update DNS hosts prior to dSIPRouter startup
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
     # update DNS hosts every minute
     cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
-    # start on boot
-    systemctl enable dnsmasq
     systemctl restart dnsmasq
     if systemctl is-active --quiet dnsmasq; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
+        pprint "DNSmasq was installed"
     else
         printerr "DNSmasq install failed"
         cleanupAndExit 1
@@ -1762,10 +1809,9 @@ function start {
     # Start the dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
         if [ $DEBUG -eq 1 ]; then
-
+            # start the reverse proxy first
             systemctl start nginx
-
-            # keep it in the foreground, only used for debugging issues
+            # keep dSIPRouter in the foreground, only used for debugging issues
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             # Make sure process is still running
             PID=$!
@@ -1777,10 +1823,9 @@ function start {
                 echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
             fi
         else
-            # normal startup, fork as background process
-
+            # start the reverse proxy first
             systemctl start nginx
-
+            # normal startup, fork dSIPRouter as background process
             systemctl start dsiprouter
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter; then
@@ -1827,7 +1872,6 @@ function stop {
 
     # Stop the dSIPRouter if told to and installed
     if (( $STOP_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
-        # normal startup, fork as background process
 	    systemctl stop nginx
         systemctl stop dsiprouter
         # Make sure process is not running
@@ -2150,23 +2194,15 @@ ANSI_GREEN="$ANSI_GREEN"
 $(declare -f printdbg)
 $(declare -f getConfigAttrib)
 $(declare -f displayLogo)
+$(declare -f getInternalIP)
 $(declare -f getExternalIP)
 $(declare -f checkConn)
 
 # updated variables on login
-INTERNAL_IP=\$(ip route get 8.8.8.8 | awk 'NR == 1 {print \$7}')
-INTERNAL_NET=\$(awk -F"." '{print \$1"."\$2"."\$3".*"}' <<<\$INTERNAL_IP)
-INTERNAL_FQDN="\$(hostname -f 2>/dev/null)"
-if [[ -z "\$INTERNAL_FQDN" ]]; then
-    INTERNAL_FQDN="\$(hostname)"
-fi
+INTERNAL_IP=\$(getInternalIP)
 EXTERNAL_IP=\$(getExternalIP)
 if [[ -z "\$EXTERNAL_IP" ]]; then
-    EXTERNAL_IP=\$INTERNAL_IP
-fi
-EXTERNAL_FQDN=\$(dig @8.8.8.8 +short -x \${EXTERNAL_IP} 2>/dev/null | sed 's/\.\$//')
-if [[ -z "\$EXTERNAL_FQDN" ]] || ! checkConn "\$EXTERNAL_FQDN"; then
-    EXTERNAL_FQDN="\$INTERNAL_FQDN"
+    EXTERNAL_IP="\$INTERNAL_IP"
 fi
 DSIP_PORT=\$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
 DSIP_GUI_PROTOCOL=\$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
@@ -2293,7 +2329,6 @@ function removeInitService {
 
 
 function upgrade {
-
     KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
     KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
     KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
@@ -2783,7 +2818,7 @@ function processCMD {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installManPage)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI=""
@@ -2985,7 +3020,7 @@ function processCMD {
             RUN_COMMANDS+=(${DEFERRED_COMMANDS[@]})
             ;;
         uninstall)
-            RUN_COMMANDS+=(setCloudPlatform uninstallManPage)
+            RUN_COMMANDS+=(setCloudPlatform)
             shift
 
             while (( $# > 0 )); do

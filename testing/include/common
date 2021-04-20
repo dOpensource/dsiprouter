@@ -56,31 +56,52 @@ process_result() {
 ipv4Test() {
     local IP="$1"
 
-    if [[ $IP =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        local IFS='.'
-        IP=($IP)
-        if (( ${IP[0]} <= 255 && ${IP[1]} <= 255 && ${IP[2]} <= 255 && ${IP[3]} <= 255 )); then
-            return 0
-        fi
+    if [[ $IP =~ ^([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# returns: 0 == success, 1 == failure
+ipv6Test() {
+    local IP="$1"
+
+    if [[ $IP =~ ^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$ ]]; then
+        return 0
     fi
     return 1
 }
 
 # notes: prints external ip, or empty string if not available
 getExternalIP() {
-    local EXTERNAL_IP=""
-    local URLS=(
-        "https://ipv4.icanhazip.com"
-        "https://api.ipify.org"
-        "https://myexternalip.com/raw"
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
+    local EXTERNAL_IP="" TIMEOUT=5
+    local IPV4_URLS=(
+        "https://icanhazip.com"
         "https://ipecho.net/plain"
+        "https://myexternalip.com/raw"
+        "https://api.ipify.org"
         "https://bot.whatismyipaddress.com"
     )
+    local IPV6_URLS=(
+        "https://icanhazip.com"
+        "https://bot.whatismyipaddress.com"
+        "https://ifconfig.co"
+        "https://ident.me"
+        "https://api6.ipify.org"
+    )
 
-    for URL in ${URLS[@]}; do
-        EXTERNAL_IP=$(curl -s --connect-timeout 2 $URL 2>/dev/null)
-        ipv4Test "$EXTERNAL_IP" && break
+    for URL in ${IPV4_URLS[@]}; do
+        EXTERNAL_IP=$(curl -4 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
     done
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_IP" ]]; then
+        for URL in ${IPV6_URLS[@]}; do
+            EXTERNAL_IP=$(curl -6 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+            ipv6Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
+        done
+    fi
 
     printf '%s' "$EXTERNAL_IP"
 }
@@ -93,7 +114,7 @@ getConfigAttrib() {
     local CONFIG_FILE="$2"
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
-    printf '%s' "${VALUE}" | perl -0777 -pe 's|^b?["'"'"']+(.+?)["'"'"']+$|\1|g'
+    printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
 }
 
 # $1 == attribute name
@@ -108,9 +129,9 @@ decryptConfigAttrib() {
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
     # if value is not a byte literal it isn't encrypted
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
-        printf '%s' "${VALUE}" | perl -0777 -pe 's|^["'"'"']+(.+?)["'"'"']+$|\1|g'
+        printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
     else
-        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import sys; sys.path.insert(0, '/etc/dsiprouter/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
     fi
 }
 

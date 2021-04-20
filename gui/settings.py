@@ -115,7 +115,7 @@ UPLOAD_FOLDER = '/tmp'
 # The installer will update this
 # '' = other or native install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean, VULTR = Vultr Cloud
-CLOUD_PLATFORM = 'DO'
+CLOUD_PLATFORM = ''
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'

@@ -20,9 +20,10 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sysloginit import initSyslogLogger
-from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
-    safeUriToHost, safeFormatSipUri, safeStripPort
+from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
+from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
+    ipToHost, hostToIP
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
@@ -1102,9 +1103,7 @@ def addUpdateInboundMapping():
                 dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
-
                 Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-
                 db.add(Gateway)
                 db.flush()
 
@@ -1200,11 +1199,8 @@ def addUpdateInboundMapping():
                     fields['gwgroup'] = gwgroupid
                     Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
                 else:
-
                     Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-
                     db.add(Gateway)
-
                 db.flush()
 
                 Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
@@ -2118,14 +2114,17 @@ def syncSettings(new_fields={}, update_net=False):
     try:
         db = SessionLoader()
 
-        # update ip's dynamically
-        # TODO: need to create external fqdn resolution funcs
+        # update network settings dynamically
         if update_net:
+            int_ip = getInternalIP()
+            int_fqdn = ipToHost(int_ip)
+            ext_ip = getExternalIP()
+            ext_fqdn = ipToHost(ext_ip)
             net_dict = {
-                'INTERNAL_IP_ADDR': getInternalIP(),
-                'INTERNAL_IP_NET': "{}.*".format(getInternalIP().rsplit(".", 1)[0]),
-                'EXTERNAL_IP_ADDR': getExternalIP(),
-                'EXTERNAL_FQDN': settings.EXTERNAL_FQDN
+                'INTERNAL_IP_ADDR': int_ip,
+                'INTERNAL_IP_NET': getInternalCIDR(),
+                'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip,
+                'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn
             }
         else:
             net_dict = {}

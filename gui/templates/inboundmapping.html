@@ -1,12 +1,14 @@
 {% extends 'table_layout.html' %}
 
+{% block title %}Inbound Routes{% endblock %}
+
 {% block custom_css %}
   {{ link_tag('combobox') }}
 {% endblock %}
 
 {% block table_headers %}
   <div>
-    <h3>List of Inbound Mappings</h3>
+    <h3>List of Inbound Routes</h3>
   </div>
 
   <div class="tableAddButton">
@@ -28,7 +30,7 @@
     <tr class='element-row'>
       <th></th>
       <th data-field="ruleid">Rule ID</th>
-      <th data-field="prefix">DID (or DID pattern)</th>
+      <th data-field="prefix">DID Prefix</th>
       <th data-field="gwgroupid" class="hidden"></th>
       <th data-field="gwgroupname">Endpoint Group</th>
       <th data-field="rulename">Name</th>
@@ -52,15 +54,15 @@
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
         <td class="gwgroupid hidden">{{ row.gwgroupid }}</td>
-	{% if "#" not in row.gwlist  %}
-          <td class='gwgroupname'>Load Balancing Group</td>
-	{% else %}
+        {% if "#" not in row.gwlist  %}
+                <td class='gwgroupname'>Load Balancing Group</td>
+        {% else %}
 	 	      {% if row.gwlist.split(',')|length > 1 %}
           		<td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}<sup> +1</sup></td>
         	{% else %}
           		<td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}</td>
         	{% endif %}
- {% endif %}
+        {% endif %}
         <td class="rulename">{{ row.rule_description|attrFilter('name') }}</td>
         <td class="gwlist hidden">{{ row.gwlist }}</td>
         <td>
@@ -98,7 +100,7 @@
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-    <h4 class="modal-title custom_align" id="Heading">Edit Your Inbound Mapping Rule</h4>
+    <h4 class="modal-title custom_align" id="Heading">Edit Your Inbound Route</h4>
   </div>
 
   <div class="modal-body">
@@ -257,7 +259,7 @@
   <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-    <h4 class="modal-title custom_align" id="Heading">Add New Inbound Mapping Rule</h4>
+    <h4 class="modal-title custom_align" id="Heading">Add New Inbound Route</h4>
   </div>
 
   <div class="modal-body">

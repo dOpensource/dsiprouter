@@ -442,13 +442,13 @@
     $('.modal-body .fusionpbx_clustersupport').change(function() {
       var modal = $(this).closest('div.modal');
       var modal_body = modal.find('.modal-body');
-	
+
       if ($(this).is(":checked") || $(this).prop("checked")) {
         	modal_body.find('.fusionpbx_clustersupport').val(1);
       }
       else {
         	modal_body.find('.fusionpbx_clustersupport').val(0);
-	}
+	    }
     });
 
     /* listener for fusionPBX toggle */

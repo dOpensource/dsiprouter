@@ -152,6 +152,12 @@
     /* if supplied, run the custom test function */
     if (typeof test === 'function') {
       var resp = test(elems);
+
+      /* sanity check, is response in correct format */
+      if (!(resp.hasOwnProperty('result') && resp.hasOwnProperty('err_node') && resp.hasOwnProperty('err_msg'))) {
+        throw new Error("validateFields(): invalid return value from test function");
+      }
+
       if (resp.result === false) {
         var err_elem = null;
         if (resp.err_node instanceof jQuery) {
@@ -238,7 +244,7 @@
    * Update reload kamailio button to indicate if reload is required
    * @param {Boolean} required    whether a reload is required
    */
-  window.reloadKamRequired = function(required = true) {
+  window.reloadKamRequired = function(required=true) {
     var reload_button = $('#reloadkam');
 
     if (reload_button.length > 0) {

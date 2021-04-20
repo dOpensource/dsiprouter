@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-e912302b74115a1ff2ae28962c7842e904a4e014
+3d9b81e460720cfd1be1c06a0024ad2f5d956375
+678fdd4e16ee1740b33cb7cc958d898c9adefbd7
 84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe
 76ce3054000c143550703246ffec4163d78a5dae
 c44ea6369c55d43bdf92131d245f20869e0ab448
@@ -1934,10 +1935,35 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION e912302b74115a1ff2ae28962c7842e904a4e014)
+[//]: # (START_SECTION 3d9b81e460720cfd1be1c06a0024ad2f5d956375)
+### Networking Updates
+
+> Commit: [3d9b81e460720cfd1be1c06a0024ad2f5d956375](https://github.com/dOpensource/dsiprouter/commit/3d9b81e460720cfd1be1c06a0024ad2f5d956375)  
+> Date: Tue, 20 Apr 2021 17:55:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#128](https://github.com/dOpensource/dsiprouter/issues/128)
+- fix subnet resolution
+- improved ipv6 support
+- updated networking python functions
+- misc GUI updates
+- add DNID files but keep disabled
+- update DNS resolution
+- add async / multiproc functions
+- update shared lib for tests
+- update comments / notes
+
+
+---
+
+[//]: # (END_SECTION 3d9b81e460720cfd1be1c06a0024ad2f5d956375)
+[//]: # (START_SECTION 678fdd4e16ee1740b33cb7cc958d898c9adefbd7)
 ### Cleanup v0.65 Base Branch
 
-> Commit: [e912302b74115a1ff2ae28962c7842e904a4e014](https://github.com/dOpensource/dsiprouter/commit/e912302b74115a1ff2ae28962c7842e904a4e014)  
+> Commit: [678fdd4e16ee1740b33cb7cc958d898c9adefbd7](https://github.com/dOpensource/dsiprouter/commit/678fdd4e16ee1740b33cb7cc958d898c9adefbd7)  
 > Date: Fri, 16 Apr 2021 14:25:08 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1951,7 +1977,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION e912302b74115a1ff2ae28962c7842e904a4e014)
+[//]: # (END_SECTION 678fdd4e16ee1740b33cb7cc958d898c9adefbd7)
 [//]: # (START_SECTION 84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe)
 ### v0.65 Extra Fixes
 

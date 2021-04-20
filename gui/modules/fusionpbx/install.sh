@@ -11,6 +11,7 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
+# TODO: replace docker workflow here by simply adding to default dsiprouter nginx configs
 function install {
     if cmdExists 'apt-get'; then
         apt-get install -y \

@@ -394,6 +394,7 @@ ipv6Test() {
     return 1
 }
 
+# output: the external IP for this system
 # notes: prints external ip, or empty string if not available
 # notes: below we have measurements for average time of each service
 #        over 10 non-cached requests, in seconds, round trip
@@ -413,40 +414,44 @@ ipv6Test() {
 #
 getExternalIP() {
     local IPV6_ENABLED=${IPV6_ENABLED:-0}
-    local EXTERNAL_IP=""
-    local URLS=() CURL_CMD="curl"
+    local EXTERNAL_IP="" TIMEOUT=5
+    local IPV4_URLS=(
+        "https://icanhazip.com"
+        "https://ipecho.net/plain"
+        "https://myexternalip.com/raw"
+        "https://api.ipify.org"
+        "https://bot.whatismyipaddress.com"
+    )
+    local IPV6_URLS=(
+        "https://icanhazip.com"
+        "https://bot.whatismyipaddress.com"
+        "https://ifconfig.co"
+        "https://ident.me"
+        "https://api6.ipify.org"
+    )
 
-    if (( ${IPV6_ENABLED} == 1 )); then
-        URLS=(
-            "https://icanhazip.com"
-            "https://bot.whatismyipaddress.com"
-            "https://ifconfig.co"
-            "https://ident.me"
-            "https://api6.ipify.org"
-        )
-        CURL_CMD="curl -6"
-        IP_TEST="ipv6Test"
-    else
-        URLS=(
-            "https://icanhazip.com"
-            "https://ipecho.net/plain"
-            "https://myexternalip.com/raw"
-            "https://api.ipify.org"
-            "https://bot.whatismyipaddress.com"
-        )
-        CURL_CMD="curl -4"
-        IP_TEST="ipv4Test"
-    fi
-
-    for URL in ${URLS[@]}; do
-        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout 2 $URL 2>/dev/null)
-        ${IP_TEST} "$EXTERNAL_IP" && break
+    for URL in ${IPV4_URLS[@]}; do
+        EXTERNAL_IP=$(curl -4 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
     done
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_IP" ]]; then
+        for URL in ${IPV6_URLS[@]}; do
+            EXTERNAL_IP=$(curl -6 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+            ipv6Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
+        done
+    fi
 
     printf '%s' "$EXTERNAL_IP"
 }
 
-# notes:    prints internal ip addr
+# output: the internal IP for this system
+# notes: prints internal ip, or empty string if not available
+# notes: tries ipv4 first then ipv6
 getInternalIP() {
-    ip route get 8.8.8.8 | awk 'NR == 1 {print $7}'
+    local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$IP" ]]; then
+        IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    fi
+    printf '%s' "$IP"
 }

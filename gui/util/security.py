@@ -7,7 +7,7 @@ from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
 from sqlalchemy import exc as sql_exceptions
-from shared import updateConfig,StatusCodes
+from shared import updateConfig, StatusCodes
 from functools import wraps
 from flask import Blueprint, jsonify, render_template, request, session
 import settings, globals
@@ -241,7 +241,7 @@ def api_security(func):
         return func(*args, **kwargs)
 
     return wrapper
-  
+
 class EasyCrypto():
     """
     Wrapper class for some simlpified crypto use cases
