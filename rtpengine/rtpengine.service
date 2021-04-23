@@ -6,6 +6,8 @@ After=network.target iptables.service redis.service syslog.service
 
 [Service]
 Type=simple
+User=rtpengine
+Group=rtpengine
 Environment='CFGFILE=/etc/default/rtpengine.conf'
 Environment='RUNDIR=/var/run/rtpengine'
 EnvironmentFile=-$RUNDIR/daemon.conf
@@ -14,9 +16,9 @@ PIDFile=/var/run/rtpengine/rtpengine.pid
 # ExecStart* requires an absolute path for the program
 ExecStartPre=!-/bin/mkdir -p ${RUNDIR}
 ExecStartPre=!-/bin/chown -R rtpengine:rtpengine ${RUNDIR}
-ExecStartPre=/usr/sbin/rtpengine-start-pre ${CFGFILE}
+ExecStartPre=!/usr/sbin/rtpengine-start-pre ${CFGFILE}
 ExecStart=/usr/sbin/rtpengine -f ${OPTIONS}
-ExecStopPost=/usr/sbin/rtpengine-stop-post ${CFGFILE}
+ExecStopPost=!/usr/sbin/rtpengine-stop-post ${CFGFILE}
 Restart=on-failure
 
 [Install]

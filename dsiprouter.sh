@@ -73,7 +73,7 @@ setStaticScriptSettings() {
     FLT_FWD_MIN=20000
     WITH_LCR=1
     export DEBUG=0
-    export SERVERNAT=0
+    OVERRIDE_SERVERNAT=0
     export TEAMS_ENABLED=1
     export REQ_PYTHON_MAJOR_VER=3
     [[ -f /proc/net/if_inet6 ]] && export IPV6_ENABLED=1 || export IPV6_ENABLED=0
@@ -151,7 +151,7 @@ setDynamicScriptSettings() {
     fi
 
     #================= DYNAMIC_CONFIG_SETTINGS =================#
-    # updated dynamically!
+    # grab network settings dynamically
     export INTERNAL_IP=$(getInternalIP)
     export INTERNAL_NET=$(getInternalCIDR)
     export INTERNAL_FQDN=$(getInternalFQDN)
@@ -163,6 +163,12 @@ setDynamicScriptSettings() {
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
+    if [[ "$EXTERNAL_IP" != "$INTERNAL_IP" ]]; then
+        export SERVERNAT=1
+    else
+        export SERVERNAT=0
+    fi
+
     # grab root db settings from env or settings file
     export ROOT_DB_USER=${ROOT_DB_USER:-$(getConfigAttrib 'ROOT_DB_USER' ${DSIP_CONFIG_FILE})}
     export ROOT_DB_PASS=${ROOT_DB_PASS:-$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})}
@@ -627,7 +633,7 @@ function updateKamailioConfig {
     local DSIP_VERSION=${DSIP_VERSION:-$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})}
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://127.0.0.1:$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
-    local DEBUG=${DEBUG:-$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})}
+    local DEBUG=${DEBUG:-$([[ "$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})" == "True" ]] && echo '1' || echo '0')}
     local ROLE=${ROLE:-$(getConfigAttrib 'ROLE' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_GW_ENABLED=${TELEBLOCK_GW_ENABLED:-$(getConfigAttrib 'TELEBLOCK_GW_ENABLED' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_GW_IP=${TELEBLOCK_GW_IP:-$(getConfigAttrib 'TELEBLOCK_GW_IP' ${DSIP_CONFIG_FILE})}
@@ -636,10 +642,15 @@ function updateKamailioConfig {
     local TELEBLOCK_MEDIA_PORT=${TELEBLOCK_MEDIA_PORT:-$(getConfigAttrib 'TELEBLOCK_MEDIA_PORT' ${DSIP_CONFIG_FILE})}
 
     # update kamailio config file
-    if [[ "$DEBUG" == "True" ]]; then
+    if (( $DEBUG == 1 )); then
         enableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         disableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+    if (( $SERVERNAT == 1 )); then
+        enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     setKamailioConfigSubstdef 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -706,6 +717,22 @@ function updateKamailioConfig {
         ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 }
 
+# update kamailio service startup commands accounting for any changes
+function updateKamailioStartup {
+    local KAM_UPDATE_OPTS=""
+
+    # update kamailio configs on reboot
+    removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
+    if (( ${OVERRIDE_SERVERNAT} == 1 )); then
+        KAM_UPDATE_OPTS="--servernat=${SERVERNAT}"
+    fi
+    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig $KAM_UPDATE_OPTS"
+
+    # make sure dsip-init service runs prior to kamailio service
+    removeDependsOnInit "kamailio.service"
+    addDependsOnInit "kamailio.service"
+}
+
 # updates and settings in rtpengine config that may change
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig {
@@ -715,6 +742,22 @@ function updateRtpengineConfig {
         INTERFACE="${INTERNAL_IP}!${EXTERNAL_IP}"
     fi
     setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+}
+
+# update rtpengine service startup commands accounting for any changes
+function updateRtpengineStartup {
+    local RTP_UPDATE_OPTS=""
+
+    # update rtpengine configs on reboot
+    removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig"
+    if (( ${OVERRIDE_SERVERNAT} == 1 )); then
+        RTP_UPDATE_OPTS="--servernat=${SERVERNAT}"
+    fi
+    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig $RTP_UPDATE_OPTS"
+
+    # make sure dsip-init service runs prior to rtpengine service
+    removeDependsOnInit "rtpengine.service"
+    addDependsOnInit "rtpengine.service"
 }
 
 # updates DNSmasq configs from DB
@@ -787,11 +830,6 @@ function generateKamailioConfig {
     # Fix the mpath
     fixMPATH
 
-    # Enable SERVERNAT
-    if [ "$SERVERNAT" == "1" ]; then
-        enableSERVERNAT
-    fi
-
     # non-module features to enable
     if (( ${WITH_LCR} == 1 )); then
         enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -800,10 +838,10 @@ function generateKamailioConfig {
     fi
 
     # Backup kamcfg and link the dsiprouter kamcfg
-    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
-    cp -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S)
-    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE}
-    rm -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
+    cp -f ${SYSTEM_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S) 2>/dev/null
+    cp -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}.$(date +%Y%m%d_%H%M%S) 2>/dev/null
+    rm -f ${SYSTEM_KAMAILIO_CONFIG_FILE} 2>/dev/null
+    rm -f ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE} 2>/dev/null
     ln -sf ${DSIP_KAMAILIO_CONFIG_FILE} ${SYSTEM_KAMAILIO_CONFIG_FILE}
     ln -sf ${DSIP_KAMAILIO_TLS_CONFIG_FILE} ${SYSTEM_KAMAILIO_TLS_CONFIG_FILE}
 
@@ -813,7 +851,7 @@ function generateKamailioConfig {
     chmod 0640 ${DSIP_KAMAILIO_CONFIG_FILE}
 }
 
-function configureKamailio {
+function configureKamailioDB {
     # make sure kamailio user and privileges exist
     if ! checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
     "${KAM_DB_USER}@localhost"; then
@@ -951,18 +989,18 @@ function configureKamailio {
     mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
         --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_rules.csv
 
+    # cleanup temp files
     rm -rf /tmp/defaults
-
-    generateKamailioConfig
 }
 
+# TODO: deprecated since CLI command is being deprecated
 function enableSERVERNAT {
     enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
     printwarn "SERVERNAT is enabled - Restarting Kamailio is required"
     printwarn "You can restart it by executing: systemctl restart kamailio"
 }
-
+# TODO: deprecated since CLI command is being deprecated
 function disableSERVERNAT {
 	disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
@@ -1123,17 +1161,13 @@ function uninstallMysql {
 
 # Install the RTPEngine from sipwise
 function installRTPEngine {
-    local RTP_UPDATE_OPTS=""
-
-    cd ${DSIP_PROJECT_DIR}
-
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]; then
         printwarn "RTPEngine is already installed"
         return
     fi
 
     printdbg "Attempting to install RTPEngine..."
-    ./rtpengine/${DISTRO}/install.sh install
+    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
     ret=$?
     if (( $ret == 0 )); then
         enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1148,12 +1182,7 @@ function installRTPEngine {
         cleanupAndExit 1
     fi
 
-    # update rtpengine configs on reboot
-    if (( ${SERVERNAT} == 1 )); then
-        RTP_UPDATE_OPTS="-servernat"
-    fi
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig $RTP_UPDATE_OPTS"
-    addDependsOnInit "rtpengine.service"
+    updateRtpengineStartup
 
     # Restart RTPEngine with the new configurations
     systemctl restart rtpengine
@@ -1170,14 +1199,12 @@ function installRTPEngine {
 
 # Remove RTPEngine
 function uninstallRTPEngine {
-    cd ${DSIP_PROJECT_DIR}
-
     if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]; then
         printwarn "RTPEngine is not installed! - uninstalling anyway to be safe"
     fi
 
     printdbg "Attempting to uninstall RTPEngine..."
-    ./rtpengine/$DISTRO/install.sh uninstall
+    ${DSIP_PROJECT_DIR}/rtpengine/$DISTRO/install.sh uninstall
 
     if (( $? == 0 )); then
         if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
@@ -1450,18 +1477,16 @@ function installKamailio {
     fi
 
     ${DSIP_PROJECT_DIR}/kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
-    if [ $? -eq 0 ]; then
+    if (( $? == 0 )); then
         configureSSL
         configureKamailio
+        generateKamailioConfig
         updateKamailioConfig
+        updateKamailioStartup
     else
         printerr "kamailio install failed"
         cleanupAndExit 1
     fi
-
-    # update kam configs on reboot
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
-    addDependsOnInit "kamailio.service"
 
     # Restart Kamailio with the new configurations
     systemctl restart kamailio
@@ -1808,7 +1833,7 @@ function start {
 
     # Start the dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
-        if [ $DEBUG -eq 1 ]; then
+        if (( $DEBUG == 1 )); then
             # start the reverse proxy first
             systemctl start nginx
             # keep dSIPRouter in the foreground, only used for debugging issues
@@ -2327,7 +2352,7 @@ function removeInitService {
     printdbg "dsip-init service removed"
 }
 
-
+# TODO: not finished, not vetted, needs more work
 function upgrade {
     KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
     KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
@@ -2349,12 +2374,9 @@ function upgrade {
     #fi
 
     # Return an error if the release doesn't exist
-   git branch -r | grep  -e "$UPGRADE_RELEASE$">null
-   if [ "$?" -eq 1 ]; then
-
+   if ! git branch -a --format='%(refname:short)' | grep -qE "^${UPGRADE_RELEASE}\$" 2>/dev/null; then
         printdbg "The $UPGRADE_RELEASE release doesn't exist. Please select another release"
         return 1
-
    fi
 
     BACKUP_DIR="/var/backups"
@@ -2371,18 +2393,15 @@ function upgrade {
     #git stash apply
 
     generateKamailioConfig
-    ret=$?
     updateKamailioConfig
-    ret=$((ret + $?))
+    updateKamailioStartup
 
-    if [ $ret -eq 0 ]; then
-        # Upgrade the version
-       setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
+    # Upgrade the version
+    setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE}
 
-    	# Restart Kamailio
-    	systemctl restart kamailio
-    	systemctl restart dsiprouter
-     fi
+    # Restart Kamailio
+    systemctl restart kamailio
+    systemctl restart dsiprouter
 }
 
 # TODO: this is unfinished
@@ -2676,7 +2695,7 @@ function usageOptions {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-servernat|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-exip <ip>|--external-ip=<ip>|" \
+        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-servernat|--servernat=<num>|-exip <ip>|--external-ip=<ip>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user][:pass][/dbname]>|--database-admin=<[user][:pass][/dbname]>|-dsipcsync <num>|--dsip-clustersync=<num>|" \
         " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>]"
@@ -2693,7 +2712,7 @@ function usageOptions {
     printf "%-30s %s\n" \
         "restart" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "configurekam" "[-debug|-servernat]"
+        "configurekam" "[-debug|-servernat|--servernat=<num>]"
     printf "%-30s %s\n" \
         "renewsslcert" "[-debug]"
     printf "%-30s %s\n" \
@@ -2714,9 +2733,9 @@ function usageOptions {
     printf "%-30s %s\n" \
         "generatekamconfig" "[-debug]"
     printf "%-30s %s\n" \
-        "updatekamconfig" "[-debug]"
+        "updatekamconfig" "[-debug|-servernat|--servernat=<num>]"
     printf "%-30s %s\n" \
-        "updatertpconfig" "[-debug|-servernat]"
+        "updatertpconfig" "[-debug|-servernat|--servernat=<num>]"
     printf "%-30s %s\n" \
         "updatednsconfig" "[-debug]"
     printf "%-30s %s\n" \
@@ -2801,6 +2820,7 @@ function preprocessCMD {
 
 # process the commands to be executed
 # TODO: add help options for each command (with subsection usage info for that command)
+# TODO: -servernat (short option w/ no value) deprecated in favor of -servernat <num> (short option w/ value)
 function processCMD {
     # pre-processing / initial checks
     preprocessCMD "$@"
@@ -2832,10 +2852,6 @@ function processCMD {
                         set -x
                         shift
                         ;;
-                    -servernat)
-                        export SERVERNAT=1
-                        shift
-                        ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
                         RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio)
@@ -2857,6 +2873,20 @@ function processCMD {
                         DISPLAY_LOGIN_INFO=1
                         RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter installRTPEngine)
                         shift
+                        ;;
+                    -servernat|--servernat=*)
+                        OVERRIDE_SERVERNAT=1
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
+                                export SERVERNAT=1
+                            else
+                                export SERVERNAT=0
+                            fi
+                            shift
+                        else
+                            export SERVERNAT=1
+                            shift
+                        fi
                         ;;
                     -exip|--external-ip=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
@@ -3343,9 +3373,11 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: add commands for configuring rtpengine using same setup
+        #       i.e.) configurertp should be externally accessible and documented
         configurekam)
             # reconfigure kamailio configs
-            RUN_COMMANDS+=(configureKamailio updateKamailioConfig)
+            RUN_COMMANDS+=(generateKamailioConfig updateKamailioConfig updateKamailioStartup)
             shift
 
             while (( $# > 0 )); do
@@ -3356,9 +3388,19 @@ function processCMD {
                         set -x
                         shift
                         ;;
-                    -servernat)
-                        export SERVERNAT=1
-                        shift
+                    -servernat|--servernat=*)
+                        OVERRIDE_SERVERNAT=1
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
+                                export SERVERNAT=1
+                            else
+                                export SERVERNAT=0
+                            fi
+                            shift
+                        else
+                            export SERVERNAT=1
+                            shift
+                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -3440,6 +3482,7 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: deprecated in favor of using updatekamconfig command
         enableservernat)
             # enable serverside nat settings for kamailio
             RUN_COMMANDS+=(enableSERVERNAT)
@@ -3462,6 +3505,7 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: deprecated in favor of using updatekamconfig command
         disableservernat)
             # disable serverside nat settings for kamailio
             RUN_COMMANDS+=(disableSERVERNAT)
@@ -3652,6 +3696,7 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: deprecated in favor of using configurekam command
         generatekamconfig)
             # generate kamailio configs from templates
             RUN_COMMANDS+=(generateKamailioConfig)
@@ -3674,6 +3719,8 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: deprecated as an EXTERNAL command, should only be used by internal scripts
+        #       users should use configurekam command to configure kamailio instead
         updatekamconfig)
             # update kamailio config
             RUN_COMMANDS+=(updateKamailioConfig)
@@ -3687,6 +3734,19 @@ function processCMD {
                         set -x
                         shift
                         ;;
+                    -servernat|--servernat=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
+                                export SERVERNAT=1
+                            else
+                                export SERVERNAT=0
+                            fi
+                            shift
+                        else
+                            export SERVERNAT=1
+                            shift
+                        fi
+                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -3696,8 +3756,11 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: deprecated as an EXTERNAL command, should only be used by internal scripts
+        #       users should use configurertp command to configure rtpengine instead
+        # TODO: create configurertp command for user configurable settings
         updatertpconfig)
-            # reset dsiprouter gui password
+            # update rtpengine config
             RUN_COMMANDS+=(updateRtpengineConfig)
             shift
 
@@ -3709,9 +3772,18 @@ function processCMD {
                         set -x
                         shift
                         ;;
-                    -servernat)
-                        export SERVERNAT=1
-                        shift
+                    -servernat|--servernat=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
+                                export SERVERNAT=1
+                            else
+                                export SERVERNAT=0
+                            fi
+                            shift
+                        else
+                            export SERVERNAT=1
+                            shift
+                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -3722,6 +3794,8 @@ function processCMD {
                 esac
             done
             ;;
+        # TODO: deprecated as an EXTERNAL command, should only be used by internal scripts
+        #       users should not need to configure dnsmasq themselves
         updatednsconfig)
             # update dnsmasq config
             RUN_COMMANDS+=(updateDnsConfig)
