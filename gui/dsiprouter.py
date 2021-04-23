@@ -247,12 +247,13 @@ def displayCarrierGroups(gwgroup=None):
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(
+                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.realm, UAC.auth_proxy).filter(
                 GatewayGroups.id == gwgroup).first()]
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
+                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.realm, UAC.auth_proxy).filter(
+                GatewayGroups.description.like(typeFilter))
 
         return render_template('carriergroups.html', rows=res)
 
@@ -304,6 +305,7 @@ def addUpdateCarrierGroups():
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
+        auth_realm = form['auth_realm'] if 'auth_realm' in form else ''
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
 
         # format data
@@ -318,6 +320,8 @@ def addUpdateCarrierGroups():
                 raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
             if len(auth_username) == 0:
                 auth_username = r_username
+            if len(auth_realm) == 0:
+                auth_realm = auth_domain
 
         # Adding
         if len(gwgroup) <= 0:
@@ -328,7 +332,7 @@ def addUpdateCarrierGroups():
 
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd":
-                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
+                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_realm, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
@@ -356,9 +360,9 @@ def addUpdateCarrierGroups():
                     # update uacreg if exists, otherwise create
                     if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                         {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                         'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
+                         'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_realm,
                          'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
-                        Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
+                        Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_realm, auth_username=auth_username,
                                      auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                         db.add(Uacreg)
 

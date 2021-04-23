@@ -80,9 +80,10 @@
       modal_body.find(".gwlist").val('');
       modal_body.find(".authtype").val('');
       modal_body.find(".r_username").val('');
-      modal_body.find(".auth_username").val('');
       modal_body.find(".auth_password").val('');
       modal_body.find(".auth_domain").val('');
+      modal_body.find(".auth_username").val('');
+      modal_body.find(".auth_realm").val('');
       modal_body.find(".auth_proxy").val('');
 
       // update gwgroup for all modals
@@ -105,7 +106,8 @@
       var auth_password = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
       var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
       var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
-      var auth_proxy = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+      var auth_realm = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+      var auth_proxy = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
 
       // grab modals to change
       var modal_body = $('#edit-group .modal-body');
@@ -120,6 +122,7 @@
       modal_body.find(".auth_password").val('');
       modal_body.find(".auth_domain").val('');
       modal_body.find(".auth_username").val('');
+      modal_body.find(".auth_realm").val('');
       modal_body.find(".auth_proxy").val('');
 
       // update gwgroup for all modals
@@ -136,6 +139,7 @@
       modal_body.find(".auth_password").val(auth_password);
       modal_body.find(".auth_domain").val(auth_domain);
       modal_body.find(".auth_username").val(auth_username);
+      modal_body.find(".auth_realm").val(auth_realm);
       modal_body.find(".auth_proxy").val(auth_proxy);
 
       // update gwgroup for all modals
@@ -308,7 +312,7 @@
     $('#carrier-groups').DataTable({
       "columnDefs": [
         {"orderable": true, "targets": [1, 2, 3]},
-        {"orderable": false, "targets": [0, 4, 5, 6, 7, 8, 9, 10, 11]},
+        {"orderable": false, "targets": [0, 4, 5, 6, 7, 8, 9, 10, 11, 12]},
       ],
       "order": [[1, 'asc']]
     });

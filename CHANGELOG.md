@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-e066940cbb3184b64a89c55f22149a0fd3b82ac6
+2463184d893048c6abe346614f53d33f34e45a68
+3860b0e3a3d786bb94cdeb7d03b6535540514367
 70f7542b32a5df58c7d04bbdf2100d91950f8bc2
 678fdd4e16ee1740b33cb7cc958d898c9adefbd7
 84ef9ab9c415b4e9808fd26ba9ba42dfbfb91fbe
@@ -1936,10 +1937,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION e066940cbb3184b64a89c55f22149a0fd3b82ac6)
+[//]: # (START_SECTION 2463184d893048c6abe346614f53d33f34e45a68)
+### Misc Bug Fixes
+
+> Commit: [2463184d893048c6abe346614f53d33f34e45a68](https://github.com/dOpensource/dsiprouter/commit/2463184d893048c6abe346614f53d33f34e45a68)  
+> Date: Fri, 23 Apr 2021 17:05:02 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add ability to change realm on carrier auth
+- fix sip uri parsing regex
+- fix misc kamailio logic
+
+
+---
+
+[//]: # (END_SECTION 2463184d893048c6abe346614f53d33f34e45a68)
+[//]: # (START_SECTION 3860b0e3a3d786bb94cdeb7d03b6535540514367)
 ### Automatically Detect If SERVERNAT Is Needed
 
-> Commit: [e066940cbb3184b64a89c55f22149a0fd3b82ac6](https://github.com/dOpensource/dsiprouter/commit/e066940cbb3184b64a89c55f22149a0fd3b82ac6)  
+> Commit: [3860b0e3a3d786bb94cdeb7d03b6535540514367](https://github.com/dOpensource/dsiprouter/commit/3860b0e3a3d786bb94cdeb7d03b6535540514367)  
 > Date: Fri, 23 Apr 2021 15:25:18 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1958,7 +1977,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION e066940cbb3184b64a89c55f22149a0fd3b82ac6)
+[//]: # (END_SECTION 3860b0e3a3d786bb94cdeb7d03b6535540514367)
 [//]: # (START_SECTION 70f7542b32a5df58c7d04bbdf2100d91950f8bc2)
 ### Networking Updates
 
