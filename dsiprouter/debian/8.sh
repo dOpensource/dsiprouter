@@ -29,10 +29,9 @@ function install {
     # make dsiprouter user has access to kamailio files
     usermod -a -G kamailio dsiprouter
 
-    # setup runtime directorys for dsiprouter and nginx
-    mkdir -p /var/run/dsiprouter /var/run/nginx
-    chown dsiprouter:dsiprouter /var/run/dsiprouter
-    chown nginx:nginx /var/run/nginx
+    # setup runtime directory for dsiprouter
+    mkdir -p ${DSIP_RUN_DIR}
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
@@ -92,6 +91,7 @@ function install {
     perl -p \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
+        -e "s|'BACKUPS_DIR\=.*'|'BACKUPS_DIR=$BACKUPS_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service

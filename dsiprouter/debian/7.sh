@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: deprecated, this script is no longer maintained
+
 # Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
 

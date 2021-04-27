@@ -1,11 +1,13 @@
-#!/usr/bin/env python3
-
 # make sure the generated source files are imported instead of the template ones
 import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
+# make sure eviron is preserved by setproctitle module
+import os
+os.environ['SPT_NOENV'] = "1"
+
 # all of our standard and project file imports
-import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal, bjoern
+import re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal, bjoern, setproctitle
 from functools import wraps
 from copy import copy
 from collections import OrderedDict
@@ -2308,6 +2310,9 @@ def initApp(flask_app):
     # change umask to 660 before creating sockets
     # this allows members of the dsiprouter group access
     os.umask(~0o660 & 0o777)
+
+    # set process name so other tools can find the process
+    setproctitle.setproctitle('dsiprouter')
 
     # start the Shared Memory Management server
     if os.path.exists(settings.DSIP_IPC_SOCK):

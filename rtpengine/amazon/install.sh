@@ -208,20 +208,12 @@ EOF
     systemctl daemon-reload
     # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
-    # Start RTPEngine
-    systemctl start rtpengine
 
-    # Start manually if the service fails to start
-    if [ $? -ne 0 ]; then
-        /usr/sbin/rtpengine --config-file=${SYSTEM_RTPENGINE_CONFIG_FILE} --pidfile=/var/run/rtpengine/rtpengine.pid
-    fi
-
-    # File to signify that the install happened
-    if [ $? -eq 0 ]; then
-        touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
-        printdbg "RTPEngine has been installed!"
+    # preliminary check that rtpengine actually installed
+    if cmdExists rtpengine; then
+        exit 0
     else
-        printerr "FAILED: RTPEngine could not be installed!"
+        exit 1
     fi
 }
 
@@ -236,10 +228,10 @@ function uninstall {
 
 case "$1" in
     uninstall|remove)
-        uninstall && exit 0
+        uninstall
         ;;
     install)
-        install && exit 0
+        install
         ;;
     *)
         printerr "usage $0 [install | uninstall]" && exit 1

@@ -11,7 +11,7 @@ fi
 function install {
     # Install dependencies for dSIPRouter
     apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
-    apt-get install -y --allow-unauthenticated libmariadbclient-dev 
+    apt-get install -y --allow-unauthenticated libmariadbclient-dev
     apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime libpq-dev
 
     # reset python cmd in case it was just installed
@@ -28,10 +28,9 @@ function install {
     # make dsiprouter user has access to kamailio files
     usermod -a -G kamailio dsiprouter
 
-    # setup runtime directorys for dsiprouter and nginx
-    mkdir -p /var/run/dsiprouter /var/run/nginx
-    chown dsiprouter:dsiprouter /var/run/dsiprouter
-    chown nginx:nginx /var/run/nginx
+    # setup runtime directory for dsiprouter
+    mkdir -p ${DSIP_RUN_DIR}
+    chown dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
@@ -46,7 +45,7 @@ function install {
         printerr "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
-   
+
     # Configure nginx
     # determine available TLS protocols (try using highest available)
     OPENSSL_VER=$(openssl version 2>/dev/null | awk '{print $2}' | perl -pe 's%([0-9])\.([0-9]).([0-9]).*%\1\2\3%')
@@ -70,7 +69,7 @@ function install {
     ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
     systemctl enable nginx
     systemctl restart nginx
- 
+
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
         cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
@@ -88,6 +87,7 @@ function install {
     perl -p \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
+        -e "s|'BACKUPS_DIR\=.*'|'BACKUPS_DIR=$BACKUPS_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
@@ -110,7 +110,7 @@ function uninstall {
     fi
 
     apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
-    apt-get remove -y --allow-unauthenticated libmariadbclient-dev 
+    apt-get remove -y --allow-unauthenticated libmariadbclient-dev
     apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
 
     # Remove Firewall for DSIP_PORT

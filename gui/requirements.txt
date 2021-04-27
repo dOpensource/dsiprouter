@@ -18,6 +18,7 @@ python_crontab
 pytz
 recommonmark
 requests
+setproctitle
 sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme

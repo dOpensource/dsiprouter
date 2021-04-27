@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-2463184d893048c6abe346614f53d33f34e45a68
+4de26cfe35cbff4ed9ada409a27f029534338e9d
+2c1e9d5bd1ae3c8bb20829b50831a43314fb5546
 3860b0e3a3d786bb94cdeb7d03b6535540514367
 70f7542b32a5df58c7d04bbdf2100d91950f8bc2
 678fdd4e16ee1740b33cb7cc958d898c9adefbd7
@@ -1937,10 +1938,34 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 2463184d893048c6abe346614f53d33f34e45a68)
+[//]: # (START_SECTION 4de26cfe35cbff4ed9ada409a27f029534338e9d)
+### Permissions And Sources Bug Fixes
+
+> Commit: [4de26cfe35cbff4ed9ada409a27f029534338e9d](https://github.com/dOpensource/dsiprouter/commit/4de26cfe35cbff4ed9ada409a27f029534338e9d)  
+> Date: Mon, 26 Apr 2021 21:22:18 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#365](https://github.com/dOpensource/dsiprouter/issues/365)
+- fix permissions issues in install script
+- fix sources issues for debian
+- remove unneeded nginx checks
+- improve rtpengine installer checks
+- improve dsiprouter startup checks and edge case handling
+- add support for process renaming in dsiprouter server
+- move location of dsiprouter CLI command to standard path
+- improve installer certbot cert checks
+
+
+---
+
+[//]: # (END_SECTION 4de26cfe35cbff4ed9ada409a27f029534338e9d)
+[//]: # (START_SECTION 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546)
 ### Misc Bug Fixes
 
-> Commit: [2463184d893048c6abe346614f53d33f34e45a68](https://github.com/dOpensource/dsiprouter/commit/2463184d893048c6abe346614f53d33f34e45a68)  
+> Commit: [2c1e9d5bd1ae3c8bb20829b50831a43314fb5546](https://github.com/dOpensource/dsiprouter/commit/2c1e9d5bd1ae3c8bb20829b50831a43314fb5546)  
 > Date: Fri, 23 Apr 2021 17:05:02 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1954,7 +1979,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 2463184d893048c6abe346614f53d33f34e45a68)
+[//]: # (END_SECTION 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546)
 [//]: # (START_SECTION 3860b0e3a3d786bb94cdeb7d03b6535540514367)
 ### Automatically Detect If SERVERNAT Is Needed
 
