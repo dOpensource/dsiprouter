@@ -94,12 +94,12 @@ _dsiprouter() {
         [-v]=''
         [--version]=''
     )
-    # available short options (without value) for each cmd
+    # available short options (with or without value) for each cmd
     declare -A sopts=(
-        [install]='-debug -servernat -all -kam -dsip -rtp -exip -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev'
+        [install]='-debug -servernat -all -kam -dsip -rtp -exip -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev -homer'
         [uninstall]='-debug -all -kam -dsip -rtp'
         [upgrade]='-debug'
-        [clusterinstall]='-debug'
+        [clusterinstall]='-debug -homer'
         [start]='-debug -all -kam -dsip -rtp'
         [stop]='-debug -all -kam -dsip -rtp'
         [restart]='-debug -all -kam -dsip -rtp'

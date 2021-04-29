@@ -2147,15 +2147,18 @@ def syncSettings(new_fields={}, update_net=False):
                  ('DSIP_USERNAME', settings.DSIP_USERNAME), ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
                  ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
                  ('DSIP_API_PORT', settings.DSIP_API_PORT), ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY), ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
-                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
+                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN),
+                 ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
                  ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY), ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
                  ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_CA', settings.DSIP_SSL_CA),
                  ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL), ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
                  ('VERSION', settings.VERSION),
                  ('DEBUG', settings.DEBUG), ('ROLE', settings.ROLE), ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
                  ('KAM_DB_HOST', settings.KAM_DB_HOST), ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER), ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
-                 ('KAM_DB_PORT', settings.KAM_DB_PORT), ('KAM_DB_NAME', settings.KAM_DB_NAME), ('KAM_DB_USER', settings.KAM_DB_USER),
-                 ('KAM_DB_PASS', settings.KAM_DB_PASS), ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH), ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
+                 ('KAM_DB_PORT', settings.KAM_DB_PORT), ('KAM_DB_NAME', settings.KAM_DB_NAME), ('KAM_DB_USER', settings.KAM_DB_USER), ('KAM_DB_PASS', settings.KAM_DB_PASS),
+                 ('KAM_WSS_PORT', settings.KAM_WSS_PORT), ('KAM_SIP_PORT', settings.KAM_SIP_PORT), ('KAM_SIPS_PORT', settings.KAM_SIPS_PORT),
+                 ('KAM_DMQ_PORT', settings.KAM_DMQ_PORT), ('KAM_HEP_PORT', settings.KAM_HEP_PORT), ('KAM_HOMER_HOST', settings.KAM_HOMER_HOST),
+                 ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH), ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
                  ('KAM_TLSCFG_PATH', settings.KAM_TLSCFG_PATH),
                  ('RTP_CFG_PATH', settings.RTP_CFG_PATH), ('SQLALCHEMY_TRACK_MODIFICATIONS', settings.SQLALCHEMY_TRACK_MODIFICATIONS),
                  ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG), ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX),
@@ -2176,14 +2179,14 @@ def syncSettings(new_fields={}, update_net=False):
             fields.update(new_fields)
             fields.update(net_dict)
 
-            # convert db specific fields
+            # convert python data types to strings for necessary fields
             orig_kam_db_host = fields['KAM_DB_HOST']
             if isinstance(settings.KAM_DB_HOST, list):
                 fields['KAM_DB_HOST'] = ','.join(settings.KAM_DB_HOST)
 
             db.execute('CALL update_dsip_settings({})'.format(','.join([':{}'.format(x) for x in fields.keys()])), fields)
 
-            # revert db specific fields
+            # revert to python data types from strings for necessary fields
             fields['KAM_DB_HOST'] = orig_kam_db_host
 
             if settings.DSIP_ID is None:
@@ -2196,6 +2199,7 @@ def syncSettings(new_fields={}, update_net=False):
             fields.update(new_fields)
             fields.update(net_dict)
 
+            # revert to python data types from strings for necessary fields
             if ',' in fields['KAM_DB_HOST']:
                 fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
 

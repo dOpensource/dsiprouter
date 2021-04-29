@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-4de26cfe35cbff4ed9ada409a27f029534338e9d
+fa209f38f2bc42adc6540965a98112d37044ae64
+dccb7db03c6f0f3ae7b2564174c848a262c15d92
 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546
 3860b0e3a3d786bb94cdeb7d03b6535540514367
 70f7542b32a5df58c7d04bbdf2100d91950f8bc2
@@ -1938,10 +1939,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 4de26cfe35cbff4ed9ada409a27f029534338e9d)
+[//]: # (START_SECTION fa209f38f2bc42adc6540965a98112d37044ae64)
+### Add Homer Integration
+
+> Commit: [fa209f38f2bc42adc6540965a98112d37044ae64](https://github.com/dOpensource/dsiprouter/commit/fa209f38f2bc42adc6540965a98112d37044ae64)  
+> Date: Wed, 28 Apr 2021 22:15:25 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#362](https://github.com/dOpensource/dsiprouter/issues/362)
+- add `-homer` CLI opt
+- add homer integration
+
+
+---
+
+[//]: # (END_SECTION fa209f38f2bc42adc6540965a98112d37044ae64)
+[//]: # (START_SECTION dccb7db03c6f0f3ae7b2564174c848a262c15d92)
 ### Permissions And Sources Bug Fixes
 
-> Commit: [4de26cfe35cbff4ed9ada409a27f029534338e9d](https://github.com/dOpensource/dsiprouter/commit/4de26cfe35cbff4ed9ada409a27f029534338e9d)  
+> Commit: [dccb7db03c6f0f3ae7b2564174c848a262c15d92](https://github.com/dOpensource/dsiprouter/commit/dccb7db03c6f0f3ae7b2564174c848a262c15d92)  
 > Date: Mon, 26 Apr 2021 21:22:18 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1961,7 +1980,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 4de26cfe35cbff4ed9ada409a27f029534338e9d)
+[//]: # (END_SECTION dccb7db03c6f0f3ae7b2564174c848a262c15d92)
 [//]: # (START_SECTION 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546)
 ### Misc Bug Fixes
 
