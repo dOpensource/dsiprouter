@@ -2875,7 +2875,7 @@ function processCMD {
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
             shift
 
-            local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI=""
+            local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
             local SET_KAM_DB_USER="" SET_KAM_DB_PASS="" SET_KAM_DB_HOST="" SET_KAM_DB_PORT="" SET_KAM_DB_NAME=""
 
             while (( $# > 0 )); do
@@ -3061,8 +3061,8 @@ function processCMD {
                         ;;
                     -homer)
                         shift
-                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -s -d ':' -f -1)
-                        TMP="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
+                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -d ':' -f -1)
+                        TMP_ARG="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
                         [[ -n "$TMP" ]] && export KAM_HEP_PORT="$TMP"
                         shift
                         # sanity check
@@ -3174,8 +3174,8 @@ function processCMD {
                         ;;
                     -homer)
                         shift
-                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -s -d ':' -f -1)
-                        TMP="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
+                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -d ':' -f -1)
+                        TMP_ARG="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
                         [[ -n "$TMP" ]] && export KAM_HEP_PORT="$TMP"
                         shift
                         # sanity check

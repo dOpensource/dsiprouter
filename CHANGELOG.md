@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-211afab72688f01a22de3a4acab8eb8348fae327
+77ed2e6191a2e09bc1ab70d0c731d235b029b9b8
+8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a
 a3f0bace7679abeef667fd463ae0f8e0608fcb86
 dccb7db03c6f0f3ae7b2564174c848a262c15d92
 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546
@@ -1940,10 +1941,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 211afab72688f01a22de3a4acab8eb8348fae327)
+[//]: # (START_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
+### Fix -homer Arg Parsing
+
+> Commit: [77ed2e6191a2e09bc1ab70d0c731d235b029b9b8](https://github.com/dOpensource/dsiprouter/commit/77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)  
+> Date: Tue, 4 May 2021 11:19:35 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
+[//]: # (START_SECTION 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)
 ### Fix Bad Param In Last Commit
 
-> Commit: [211afab72688f01a22de3a4acab8eb8348fae327](https://github.com/dOpensource/dsiprouter/commit/211afab72688f01a22de3a4acab8eb8348fae327)  
+> Commit: [8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a](https://github.com/dOpensource/dsiprouter/commit/8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)  
 > Date: Thu, 29 Apr 2021 10:07:01 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1954,7 +1970,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 211afab72688f01a22de3a4acab8eb8348fae327)
+[//]: # (END_SECTION 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)
 [//]: # (START_SECTION a3f0bace7679abeef667fd463ae0f8e0608fcb86)
 ### Add Homer Integration
 
