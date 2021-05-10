@@ -8,6 +8,7 @@
 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8
 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a
 a3f0bace7679abeef667fd463ae0f8e0608fcb86
+5d2b672f5361ed9d8e03aba38e798615b02e6f3e
 dccb7db03c6f0f3ae7b2564174c848a262c15d92
 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546
 3860b0e3a3d786bb94cdeb7d03b6535540514367
@@ -1946,13 +1947,19 @@ END_SECTION COMMITS)
 
 > Commit: [77ed2e6191a2e09bc1ab70d0c731d235b029b9b8](https://github.com/dOpensource/dsiprouter/commit/77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)  
 > Date: Tue, 4 May 2021 11:19:35 -0400  
+[//]: # (START_SECTION 5d2b672f5361ed9d8e03aba38e798615b02e6f3e)
+### Update N11/Emergency Dialing
+
+> Commit: [5d2b672f5361ed9d8e03aba38e798615b02e6f3e](https://github.com/dOpensource/dsiprouter/commit/5d2b672f5361ed9d8e03aba38e798615b02e6f3e)  
+> Date: Wed, 5 May 2021 07:47:58 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 > Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
-
-
+- update pattern matching to latest ITU standard
+- add UK and AU commonly-used emergency number matching
+- add N11 NANPA pattern matching
 ---
 
 [//]: # (END_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
@@ -1989,6 +1996,9 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a3f0bace7679abeef667fd463ae0f8e0608fcb86)
+=======
+[//]: # (END_SECTION 5d2b672f5361ed9d8e03aba38e798615b02e6f3e)
+>>>>>>> v0.65
 [//]: # (START_SECTION dccb7db03c6f0f3ae7b2564174c848a262c15d92)
 ### Permissions And Sources Bug Fixes
 
