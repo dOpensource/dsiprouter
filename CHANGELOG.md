@@ -5,6 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
+77ed2e6191a2e09bc1ab70d0c731d235b029b9b8
+8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a
+a3f0bace7679abeef667fd463ae0f8e0608fcb86
 5d2b672f5361ed9d8e03aba38e798615b02e6f3e
 dccb7db03c6f0f3ae7b2564174c848a262c15d92
 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546
@@ -1939,6 +1942,11 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
+[//]: # (START_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
+### Fix -homer Arg Parsing
+
+> Commit: [77ed2e6191a2e09bc1ab70d0c731d235b029b9b8](https://github.com/dOpensource/dsiprouter/commit/77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)  
+> Date: Tue, 4 May 2021 11:19:35 -0400  
 [//]: # (START_SECTION 5d2b672f5361ed9d8e03aba38e798615b02e6f3e)
 ### Update N11/Emergency Dialing
 
@@ -1952,11 +1960,45 @@ END_SECTION COMMITS)
 - update pattern matching to latest ITU standard
 - add UK and AU commonly-used emergency number matching
 - add N11 NANPA pattern matching
+---
+
+[//]: # (END_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
+[//]: # (START_SECTION 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)
+### Fix Bad Param In Last Commit
+
+> Commit: [8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a](https://github.com/dOpensource/dsiprouter/commit/8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)  
+> Date: Thu, 29 Apr 2021 10:07:01 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
 
 
 ---
 
+[//]: # (END_SECTION 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)
+[//]: # (START_SECTION a3f0bace7679abeef667fd463ae0f8e0608fcb86)
+### Add Homer Integration
+
+> Commit: [a3f0bace7679abeef667fd463ae0f8e0608fcb86](https://github.com/dOpensource/dsiprouter/commit/a3f0bace7679abeef667fd463ae0f8e0608fcb86)  
+> Date: Wed, 28 Apr 2021 22:15:25 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#362](https://github.com/dOpensource/dsiprouter/issues/362)
+- add `-homer` CLI opt
+- add homer integration
+
+
+---
+
+[//]: # (END_SECTION a3f0bace7679abeef667fd463ae0f8e0608fcb86)
+=======
 [//]: # (END_SECTION 5d2b672f5361ed9d8e03aba38e798615b02e6f3e)
+>>>>>>> v0.65
 [//]: # (START_SECTION dccb7db03c6f0f3ae7b2564174c848a262c15d92)
 ### Permissions And Sources Bug Fixes
 

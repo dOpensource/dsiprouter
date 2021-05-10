@@ -62,6 +62,14 @@ KAM_DB_NAME = 'kamailio'
 KAM_DB_USER = 'kamailio'
 KAM_DB_PASS = 'kamailiorw'
 
+# Kamailio Network Settings
+KAM_WSS_PORT = '4443'
+KAM_SIP_PORT = '5060'
+KAM_SIPS_PORT = '5061'
+KAM_DMQ_PORT = '5090'
+KAM_HEP_PORT = '9060'
+KAM_HOMER_HOST = ''
+
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 KAM_TLSCFG_PATH = '/etc/kamailio/tls.cfg'

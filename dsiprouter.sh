@@ -123,6 +123,7 @@ setStaticScriptSettings() {
     export KAM_SIPS_PORT=5061
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
+    export KAM_HEP_PORT=9060
 
     export DSIP_PROTO='https'
     export DSIP_API_PROTO='https'
@@ -628,6 +629,7 @@ function setCertPerms() {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig {
+    local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
     local DSIP_VERSION=${DSIP_VERSION:-$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})}
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://127.0.0.1:$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
@@ -638,6 +640,12 @@ function updateKamailioConfig {
     local TELEBLOCK_GW_PORT=${TELEBLOCK_GW_PORT:-$(getConfigAttrib 'TELEBLOCK_GW_PORT' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_MEDIA_IP=${TELEBLOCK_MEDIA_IP:-$(getConfigAttrib 'TELEBLOCK_MEDIA_IP' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_MEDIA_PORT=${TELEBLOCK_MEDIA_PORT:-$(getConfigAttrib 'TELEBLOCK_MEDIA_PORT' ${DSIP_CONFIG_FILE})}
+    local KAM_WSS_PORT=${KAM_WSS_PORT:-$(getConfigAttrib 'KAM_WSS_PORT' ${DSIP_CONFIG_FILE})}
+    local KAM_SIP_PORT=${KAM_SIP_PORT:-$(getConfigAttrib 'KAM_SIP_PORT' ${DSIP_CONFIG_FILE})}
+    local KAM_SIPS_PORT=${KAM_SIPS_PORT:-$(getConfigAttrib 'KAM_SIPS_PORT' ${DSIP_CONFIG_FILE})}
+    local KAM_DMQ_PORT=${KAM_DMQ_PORT:-$(getConfigAttrib 'KAM_DMQ_PORT' ${DSIP_CONFIG_FILE})}
+    local KAM_HEP_PORT=${KAM_HEP_PORT:-$(getConfigAttrib 'KAM_HEP_PORT' ${DSIP_CONFIG_FILE})}
+    local KAM_HOMER_HOST=${KAM_HOMER_HOST:-$(getConfigAttrib 'KAM_HEP_PORT' ${DSIP_CONFIG_FILE})}
 
     # update kamailio config file
     if (( $DEBUG == 1 )); then
@@ -650,15 +658,23 @@ function updateKamailioConfig {
     else
         disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    if [[ -n "$KAM_HOMER_HOST" ]]; then
+        enableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+    setKamailioConfigSubstdef 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'KAM_SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'KAM_SIPS_PORT' "${KAM_SIPS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'KAM_DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'KAM_WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'SIPS_PORT' "${KAM_SIPS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'HEP_PORT' "${KAM_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubstdef 'HOMER_HOST' "${KAM_HOMER_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -2716,13 +2732,13 @@ function usageOptions {
         "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-servernat|--servernat=<num>|-exip <ip>|--external-ip=<ip>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user][:pass][/dbname]>|--database-admin=<[user][:pass][/dbname]>|-dsipcsync <num>|--dsip-clustersync=<num>|" \
-        " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>]"
+        " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>|-homer <homer_host[:heplify_port]>]"
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
         "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
-        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
+        "clusterinstall" "[-debug|-homer <homer_host[:heplify_port]>|] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
@@ -2859,7 +2875,7 @@ function processCMD {
             RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
             shift
 
-            local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI=""
+            local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
             local SET_KAM_DB_USER="" SET_KAM_DB_PASS="" SET_KAM_DB_HOST="" SET_KAM_DB_PORT="" SET_KAM_DB_NAME=""
 
             while (( $# > 0 )); do
@@ -3043,6 +3059,18 @@ function processCMD {
                             shift
                         fi
                         ;;
+                    -homer)
+                        shift
+                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -d ':' -f -1)
+                        TMP_ARG="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
+                        [[ -n "$TMP" ]] && export KAM_HEP_PORT="$TMP"
+                        shift
+                        # sanity check
+                        if [[ -z "$KAM_HOMER_HOST" ]]; then
+                            printerr 'Missing required argument <homer_host> to option -homer'
+                            cleanupAndExit 1
+                        fi
+                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -3143,6 +3171,18 @@ function processCMD {
                         export DEBUG=1
                         set -x
                         shift
+                        ;;
+                    -homer)
+                        shift
+                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -d ':' -f -1)
+                        TMP_ARG="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
+                        [[ -n "$TMP" ]] && export KAM_HEP_PORT="$TMP"
+                        shift
+                        # sanity check
+                        if [[ -z "$KAM_HOMER_HOST" ]]; then
+                            printerr 'Missing required argument <homer_host> to option -homer'
+                            cleanupAndExit 1
+                        fi
                         ;;
                     *)  # add to list of nodes
                         SSH_SYNC_NODES+=( "$ARG" )
