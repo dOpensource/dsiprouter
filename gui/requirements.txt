@@ -4,7 +4,7 @@ certbot
 cron_descriptor
 dnspython
 docker
-Flask
+Flask==1.1.2
 Flask_Script
 Flask_WTF
 itsdangerous
