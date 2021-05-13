@@ -4,7 +4,7 @@ cron_descriptor
 cryptography>=3.3,<3.4
 dnspython
 docker
-Flask
+Flask==1.1.2
 Flask_Script
 Flask_WTF
 itsdangerous
