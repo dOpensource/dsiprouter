@@ -1102,9 +1102,11 @@ configureSystemRepos() {
         true
     fi
 
-    if (( $? != 0 )); then
+    if (( $? == 1 )); then
         printerr 'Could not configure system repositories'
         cleanupAndExit 1
+    elif (( $? >= 100 )); then
+	printwarn 'Some issue(s) with system repositories'
     else
         printdbg 'System repositories configured successfully'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
