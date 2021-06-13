@@ -24,6 +24,7 @@ Prerequisites:
 
 - Must run this as the root user (you can use sudo)
 - git needs to be installed
+- Hostname needs to be set to a FQDN (for certbot to get LetsEncrypt certificate)
 - The installer will handle all other dependencies
 
 
@@ -39,15 +40,17 @@ OS Support
 ^^^^^^^^^^
 
 - **Debian Stretch (tested on 9.6)**
+- **Debian Buster (tested on 10.9)**
 - **CentOS 7**
 
 
 Kamailio will be automatically installed along with dSIPRouter.
-Must be installed on a fresh install of Debian Stretch or CentOS 7.
+Must be installed on a fresh install of Debian Stretch, Debian Buster or CentOS 7.
 You will not be prompted for any information.  It will take anywhere from 4-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 Links to the installation documentation are below:
 
 - :ref:`debian9-install`
+- :ref:`debian10-install`
 - :ref:`centos7-install`
 
 Amazon AMI's
