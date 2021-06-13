@@ -518,6 +518,8 @@ Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -Enterpr
 
 Note: Log out by typing Disconnect-MicrosoftTeams
 
+Credits to Mack at dSIPRouter for the SkypeForBusiness script and `this blog post <https://seanmcavinue.net/2021/04/20/configure-teams-direct-routing-simple-deployment-via-powershell/>`_ for helping me update these commands for the new MicrosoftTeams PowerShell module.
+
 -----------------------
 Add a single Teams User
 -----------------------
