@@ -171,7 +171,7 @@ function install {
     ip6tables -I INPUT -p udp -j RTPENGINE --id 0
 
     if [ "$SERVERNAT" == "0" ]; then
-        INTERFACE=$EXTERNAL_IP
+        INTERFACE=$INTERNAL_IP
     else
         INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
     fi

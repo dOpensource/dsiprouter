@@ -102,7 +102,7 @@ function install {
     ip6tables -I INPUT -p udp -j RTPENGINE --id 0
 
     if [ "$SERVERNAT" == "0" ]; then
-        INTERFACE=$EXTERNAL_IP
+        INTERFACE=$INTERNAL_IP
     else
         INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
     fi
@@ -116,7 +116,20 @@ interface = ${INTERFACE}
 listen-ng = 127.0.0.1:7722
 port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
-log-level = 7
+#num-threads = 8
+#timeout = 60
+#silent-timeout = 3600
+#tos = 184
+#control-tos = 184
+#delete-delay = 30
+#final-timeout = 10800
+#homer = 123.234.345.456:9060
+#homer-protocol = udp
+#homer-id = 1
+#sip-source = false
+#dtls-passive = false
+log-level = 4
+log-stderr = false
 log-facility = local1
 log-facility-cdr = local1
 log-facility-rtcp = local1
