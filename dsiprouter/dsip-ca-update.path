@@ -1,0 +1,9 @@
+[Unit]
+Description=dSIPRouter CA Certs List Modification Handler
+
+[Path]
+PathChanged=/etc/dsiprouter/certs/ca-list.pem
+Unit=dsip-ca-update.service
+
+[Install]
+WantedBy=multi-user.target

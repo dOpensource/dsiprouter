@@ -3131,9 +3131,9 @@ def uploadCertificates(domain=None):
         key_file = os.path.join(cert_domain_dir, 'dsiprouter-key.pem')
         cert_file = os.path.join(cert_domain_dir, 'dsiprouter-cert.pem')
 
-        with open(key_file, 'w') as newfile:
+        with open(key_file, 'wb') as newfile:
             newfile.write(priv_key_bytes)
-        with open(cert_file, 'w') as newfile:
+        with open(cert_file, 'wb') as newfile:
             newfile.write(x509_cert_bytes)
 
         # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations

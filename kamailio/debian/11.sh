@@ -160,9 +160,9 @@ EOF
     # Setup logrotate
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
 
-    # Setup Kamailio to use the CA cert's that are shipped with the OS
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
-    cp ${DSIP_PROJECT_DIR}/kamailio/cacert_dsiprouter.pem ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
+    # Setup Kamailio to use the CA certs shipped with dSIPRouter
+    mkdir -p ${DSIP_CERTS_DIR}
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/ca-list.pem ${DSIP_CERTS_DIR}/ca-list.pem
 
     # Setup dSIPRouter Module
     rm -rf /tmp/kamailio 2>/dev/null

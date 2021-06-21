@@ -22,7 +22,7 @@ CREATE TABLE dsip_settings (
   DSIP_LOG_FACILITY int NOT NULL DEFAULT 18,
   DSIP_SSL_KEY varchar(255) NOT NULL DEFAULT '',
   DSIP_SSL_CERT varchar(255) NOT NULL DEFAULT '',
-  DSIP_SSL_CA varchar(255) NOT NULL DEFAULT '/etc/dsiprouter/certs/cacert.pem',
+  DSIP_SSL_CA varchar(255) NOT NULL DEFAULT '/etc/dsiprouter/certs/ca-list.pem',
   DSIP_SSL_EMAIL varchar(255) NOT NULL DEFAULT '',
   DSIP_CERTS_DIR varchar(255) NOT NULL DEFAULT '/etc/dsiprouter/certs',
   VERSION varchar(32) NOT NULL DEFAULT '0.61',

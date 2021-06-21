@@ -1,6 +1,7 @@
 [Unit]
 Description=dSIPRouter Service
-After=network.target mysql.service syslog.service nginx.service
+Wants=dsip-ca-update.service
+After=network.target mysql.service syslog.service nginx.service dsip-ca-update.service
 
 [Service]
 User=dsiprouter
@@ -26,3 +27,4 @@ Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
+Also=dsip-ca-update.path
