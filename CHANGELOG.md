@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-64a861cf59dc406a9f987cd4c988fd5f933b91ff
+9bcc3e3ad8e64fa14c449a1955afef231cac3f86
+c770888a48d58c8456ec56ffd316eb0587adfa41
 cd5deece1a4d5c4cfc9150942df52e92f46b1be7
 87dfe1150ac4a544c14102058b26b503124c0530
 3fd5bdf44175baf721377ad3d9ddafe31a223e7f
@@ -1952,10 +1953,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 64a861cf59dc406a9f987cd4c988fd5f933b91ff)
+[//]: # (START_SECTION 9bcc3e3ad8e64fa14c449a1955afef231cac3f86)
+### Update Advertised Address
+
+> Commit: [9bcc3e3ad8e64fa14c449a1955afef231cac3f86](https://github.com/dOpensource/dsiprouter/commit/9bcc3e3ad8e64fa14c449a1955afef231cac3f86)  
+> Date: Tue, 22 Jun 2021 15:49:02 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- when routing on local subnet with SERVERNAT use local ip for advertised address
+
+
+---
+
+[//]: # (END_SECTION 9bcc3e3ad8e64fa14c449a1955afef231cac3f86)
+[//]: # (START_SECTION c770888a48d58c8456ec56ffd316eb0587adfa41)
 ### RTPEngine and loose routing updates
 
-> Commit: [64a861cf59dc406a9f987cd4c988fd5f933b91ff](https://github.com/dOpensource/dsiprouter/commit/64a861cf59dc406a9f987cd4c988fd5f933b91ff)  
+> Commit: [c770888a48d58c8456ec56ffd316eb0587adfa41](https://github.com/dOpensource/dsiprouter/commit/c770888a48d58c8456ec56ffd316eb0587adfa41)  
 > Date: Wed, 16 Jun 2021 14:52:35 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1971,7 +1988,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 64a861cf59dc406a9f987cd4c988fd5f933b91ff)
+[//]: # (END_SECTION c770888a48d58c8456ec56ffd316eb0587adfa41)
 [//]: # (START_SECTION cd5deece1a4d5c4cfc9150942df52e92f46b1be7)
 ### Updated the contact rewrite rules and changed how the  is generated
 
