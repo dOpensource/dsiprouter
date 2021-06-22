@@ -39,9 +39,14 @@ Install Options
 OS Support
 ^^^^^^^^^^
 
-- **Debian Stretch (tested on 9.6)**
-- **Debian Buster (tested on 10.9)**
+- **Debian 11 (Bullseye) (BETA)**
+- **Debian 10 (Buster) (tested on 10.9)**
+- **Debian 9 (Stretch) (tested on 9.6)**
+- **Debian 8 (Jessie)**
+- **CentOS 8**
 - **CentOS 7**
+- **Amazon Linux 2**
+- **Ubuntu 16.04 (Xenial)**
 
 
 Kamailio will be automatically installed along with dSIPRouter.
@@ -51,7 +56,7 @@ Links to the installation documentation are below:
 
 - :ref:`debian9-install`
 - :ref:`debian10-install`
-- :ref:`centos7-install`
+- :ref:`centos7_install`
 
 Amazon AMI's
 ^^^^^^^^^^^^

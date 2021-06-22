@@ -1,4 +1,4 @@
-.. _centos7-install:
+.. _centos7_install:
 
 CentOS 7 Install
 ================
