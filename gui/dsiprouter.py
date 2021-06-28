@@ -25,7 +25,7 @@ from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
-    ipToHost, hostToIP
+    ipToHost, hostToIP, getFQDN, getHostname
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
@@ -2124,6 +2124,8 @@ def syncSettings(new_fields={}, update_net=False):
         if update_net:
             int_ip = getInternalIP()
             int_fqdn = ipToHost(int_ip)
+            if int_fqdn is None:
+                int_fqdn = getFQDN()
             ext_ip = getExternalIP()
             ext_fqdn = ipToHost(ext_ip)
             net_dict = {

@@ -64,6 +64,14 @@ def getInternalIP(ip_ver=''):
 
     return ip
 
+def getHostname():
+    """ Returns the local hostname of the system """
+    return socket.gethostname()
+
+def getFQDN():
+    """ Returns the FQDN hostname of the system """
+    return socket.getfqdn()
+
 def getExternalIP(ip_ver=''):
     """ Returns external ip of system """
 
