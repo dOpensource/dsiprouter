@@ -7,13 +7,13 @@ Supported Configurations
 Pass Thru to PBX Authentication Supported Configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-================   =================   ===========   =================   ================   ==========
-PBX Distribution    PBX Version        Driver Type   Registration Test   Ext to Ext Test    Notes 
-================   =================   ===========   =================   ================   ==========
-FreePBX            Asterisk 13.22.0    chan_sip       Pass                  Pass             see :ref:`enabling-the-path-header-for-asterisk-chan_sip`
-FreePBX            Asterisk 13.22.0    chan_pjsip     Pass                 Not Tested        suppport_path needs to be enabled
-FusionPBX          FreeSWITCH 1.6      Sofia          Pass                  Pass  
-================   =================   ===========   =================   ================   ==========
+================   =================   =====================   =================   =================   =================   ==========
+PBX Distribution    PBX Version        Driver Type / Version     Phone Tested      Registration Test    Ext to Ext Test       Notes 
+================   =================   =====================   =================   =================   =================   ==========
+FreePBX            Asterisk 13.22.0    chan_sip                                          Pass                 Pass             see :ref:`enabling-the-path-header-for-asterisk-chan_sip`
+FreePBX            Asterisk 16.9.0     chan_pjsip 2.9, 2.10    Yealink T54W, T46S        Pass                 Pass       
+FusionPBX          FreeSWITCH 1.6      Sofia                   Polycom VVX 410           Pass                 Pass  
+================   =================   =====================   =================   =================   =================   ==========
 
 
 .. _enabling-the-path-header-for-asterisk-chan_sip:

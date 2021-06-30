@@ -137,20 +137,20 @@ def getDomains(config_id=None,domain_id=None):
         if settings.DEBUG:
             debugEndpoint()
 
-            if config_id != None:
-                config_info = config(config_id)
-                plugin = config_info.getPlugin()
-                # Create instance of Media Server Class
-                if plugin:
-                    mediaserver = plugin.mediaserver(config_info)
-                    if mediaserver:
-                        domains = plugin.domains(mediaserver)
-                        # Use plugin to get list of domains by calling plugin.<pbxtype>.getDomain()
-                        domain_list = domains.read(domain_id)
-                        response_payload['msg'] = '{} domains were found'.format(len(domain_list))
-                        response_payload['data'].append(domain_list)
-            else:
-                raise Exception("The configuration id must be provided")
+        if config_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    domains = plugin.domains(mediaserver)
+                    # Use plugin to get list of domains by calling plugin.<pbxtype>.getDomain()
+                    domain_list = domains.read(domain_id)
+                    response_payload['msg'] = '{} domains were found'.format(len(domain_list))
+                    response_payload['data'].append(domain_list)
+        else:
+            raise Exception("The configuration id must be provided")
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -518,20 +518,20 @@ def getExtensions(config_id=None,domain_id=None,extension_id=None):
         if settings.DEBUG:
             debugEndpoint()
 
-            if config_id != None and domain_id != None:
-                config_info = config(config_id)
-                plugin = config_info.getPlugin()
-                # Create instance of Media Server Class
-                if plugin:
-                    mediaserver = plugin.mediaserver(config_info)
-                    if mediaserver:
-                        domains = plugin.domains(mediaserver)
-                        domain = domains.read(domain_id)
-                        extensions = plugin.extensions(mediaserver,domain[0])
-                        extension_list = extensions.read(extension_id)
-                        response_payload['msg'] = '{} extensions were found'.format(len(extension_list))
-                        response_payload['data'].append(extension_list)
-            else:
+        if config_id != None and domain_id != None:
+            config_info = config(config_id)
+            plugin = config_info.getPlugin()
+            # Create instance of Media Server Class
+            if plugin:
+                mediaserver = plugin.mediaserver(config_info)
+                if mediaserver:
+                    domains = plugin.domains(mediaserver)
+                    domain = domains.read(domain_id)
+                    extensions = plugin.extensions(mediaserver,domain[0])
+                    extension_list = extensions.read(extension_id)
+                    response_payload['msg'] = '{} extensions were found'.format(len(extension_list))
+                    response_payload['data'].append(extension_list)
+        else:
                 raise Exception("The configuration id and the domain_id must be provided")
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
