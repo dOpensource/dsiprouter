@@ -751,7 +751,7 @@ function updateKamailioStartup {
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig {
     if (( ${SERVERNAT:-0} == 0 )); then
-        INTERFACE="${EXTERNAL_IP}"
+        INTERFACE="${INTERNAL_IP}"
     else
         INTERFACE="${INTERNAL_IP}!${EXTERNAL_IP}"
     fi

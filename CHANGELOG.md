@@ -5,16 +5,32 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-348248e13737f83ef01977552875c157ede51de7
+d8ac84aa08a89a604320df81870c18c734f8fdf0
+3893533afbfaf9d5aedb02b45688ac94920cbd4f
+f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0
+0e57adcd5d68f40e0548c65c48ad40573ca24ad0
+5fdc88adec421299fa8b3ff8b9690aaef904abae
+cd7860138957fad20e630957d3352d31166c42b6
+8049a7005ab453e7d10c9f5cdd1e0831ed5374b7
+6e0410bcf3f345f6ae806b56164f56e1ee0fe69c
+9e7949acfe02915e331a268142254d23fe016e7d
 69e73480fe84c702a2746811656cf8d186d2f199
+c770888a48d58c8456ec56ffd316eb0587adfa41
+9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c
+9355e5408640fa412254ed37ce3de0789cfcbade
+24f390f44aec775aceef7578ff75809c03142b39
+f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d
+1254e8e3d5cd29b3ae67ff993a0c110e76fac270
 cd5deece1a4d5c4cfc9150942df52e92f46b1be7
 87dfe1150ac4a544c14102058b26b503124c0530
 3fd5bdf44175baf721377ad3d9ddafe31a223e7f
+a8c0496fa2525513d8cf81668c57d783eee299d7
 4e7b6462f365acbef64c97bfc49529c09289d0e1
 2483b8e17da60a6903ffb7f8476c430324ccaf46
 ffb63fe0dde68cc59cd44231e2b511ed459ceeed
 9f530bfff45f78f6e445f315d47ad2edf7850ba0
 a151524cb76414893b4bef0dca429988a30cbfa4
+5713f323069a50de8d0dce8bd2953e1d142b46bf
 da38e1cf998a6d9305c50882853da944e6cff72b
 38f5fe10292450962b2260312ee82eb1bb781de9
 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a
@@ -1953,10 +1969,134 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 348248e13737f83ef01977552875c157ede51de7)
+[//]: # (START_SECTION d8ac84aa08a89a604320df81870c18c734f8fdf0)
+### Fix Bug In Commit 9e7949a
+
+> Commit: [d8ac84aa08a89a604320df81870c18c734f8fdf0](https://github.com/dOpensource/dsiprouter/commit/d8ac84aa08a89a604320df81870c18c734f8fdf0)  
+> Date: Wed, 30 Jun 2021 09:39:45 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- resolves #393
+
+
+---
+
+[//]: # (END_SECTION d8ac84aa08a89a604320df81870c18c734f8fdf0)
+[//]: # (START_SECTION 3893533afbfaf9d5aedb02b45688ac94920cbd4f)
+### Update Defaults
+
+> Commit: [3893533afbfaf9d5aedb02b45688ac94920cbd4f](https://github.com/dOpensource/dsiprouter/commit/3893533afbfaf9d5aedb02b45688ac94920cbd4f)  
+> Date: Wed, 30 Jun 2021 08:32:20 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- change WITH_HOMER to disabled without args on install
+- update pre-commit hook to pin Flask version
+
+
+---
+
+[//]: # (END_SECTION 3893533afbfaf9d5aedb02b45688ac94920cbd4f)
+[//]: # (START_SECTION f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)
+### External Domain Name Resolution - Added logic to use the local FQDN if ip to hostname resolutions is not possible
+
+> Commit: [f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0](https://github.com/dOpensource/dsiprouter/commit/f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)  
+> Date: Mon, 28 Jun 2021 11:08:57 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)
+[//]: # (START_SECTION 0e57adcd5d68f40e0548c65c48ad40573ca24ad0)
+### MediaServer API - A tab spacing caused the GET request not to be executed when not in DEBUG mode
+
+> Commit: [0e57adcd5d68f40e0548c65c48ad40573ca24ad0](https://github.com/dOpensource/dsiprouter/commit/0e57adcd5d68f40e0548c65c48ad40573ca24ad0)  
+> Date: Fri, 25 Jun 2021 20:21:51 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0e57adcd5d68f40e0548c65c48ad40573ca24ad0)
+[//]: # (START_SECTION 5fdc88adec421299fa8b3ff8b9690aaef904abae)
+### PJSIP - Added offiical support for PJSIP - Support for PJSIP 2.9 and 2.10 - Tested with Yealink Phones - Updated the Supported Configurations page with the tested configurations - Fixes issue #379
+
+> Commit: [5fdc88adec421299fa8b3ff8b9690aaef904abae](https://github.com/dOpensource/dsiprouter/commit/5fdc88adec421299fa8b3ff8b9690aaef904abae)  
+> Date: Sun, 27 Jun 2021 20:35:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5fdc88adec421299fa8b3ff8b9690aaef904abae)
+[//]: # (START_SECTION cd7860138957fad20e630957d3352d31166c42b6)
+### MediaServer API - A tab spacing caused the GET request not to be executed when not in DEBUG mode
+
+> Commit: [cd7860138957fad20e630957d3352d31166c42b6](https://github.com/dOpensource/dsiprouter/commit/cd7860138957fad20e630957d3352d31166c42b6)  
+> Date: Fri, 25 Jun 2021 20:21:51 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cd7860138957fad20e630957d3352d31166c42b6)
+[//]: # (START_SECTION 8049a7005ab453e7d10c9f5cdd1e0831ed5374b7)
+### Update supported OS list and centos7 reference per pull request #388
+
+> Commit: [8049a7005ab453e7d10c9f5cdd1e0831ed5374b7](https://github.com/dOpensource/dsiprouter/commit/8049a7005ab453e7d10c9f5cdd1e0831ed5374b7)  
+> Date: Tue, 22 Jun 2021 14:11:03 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8049a7005ab453e7d10c9f5cdd1e0831ed5374b7)
+[//]: # (START_SECTION 6e0410bcf3f345f6ae806b56164f56e1ee0fe69c)
+### Update Advertised Address
+
+> Commit: [6e0410bcf3f345f6ae806b56164f56e1ee0fe69c](https://github.com/dOpensource/dsiprouter/commit/6e0410bcf3f345f6ae806b56164f56e1ee0fe69c)  
+> Date: Tue, 22 Jun 2021 15:49:02 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- when routing on local subnet with SERVERNAT use local ip for advertised address
+
+
+---
+
+[//]: # (END_SECTION 6e0410bcf3f345f6ae806b56164f56e1ee0fe69c)
+[//]: # (START_SECTION 9e7949acfe02915e331a268142254d23fe016e7d)
 ### TLS CA Fixes
 
-> Commit: [348248e13737f83ef01977552875c157ede51de7](https://github.com/dOpensource/dsiprouter/commit/348248e13737f83ef01977552875c157ede51de7)  
+> Commit: [9e7949acfe02915e331a268142254d23fe016e7d](https://github.com/dOpensource/dsiprouter/commit/9e7949acfe02915e331a268142254d23fe016e7d)  
 > Date: Mon, 21 Jun 2021 18:44:06 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1974,7 +2114,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 348248e13737f83ef01977552875c157ede51de7)
+[//]: # (END_SECTION 9e7949acfe02915e331a268142254d23fe016e7d)
 [//]: # (START_SECTION 69e73480fe84c702a2746811656cf8d186d2f199)
 ### Added checks to RTPENGINEOFFER to ensure the INTERNAL or EXTERNAL IP address is used for the media address
 
@@ -1990,6 +2130,103 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 69e73480fe84c702a2746811656cf8d186d2f199)
+[//]: # (START_SECTION c770888a48d58c8456ec56ffd316eb0587adfa41)
+### RTPEngine and loose routing updates
+
+> Commit: [c770888a48d58c8456ec56ffd316eb0587adfa41](https://github.com/dOpensource/dsiprouter/commit/c770888a48d58c8456ec56ffd316eb0587adfa41)  
+> Date: Wed, 16 Jun 2021 14:52:35 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- remove rtpengine "auto-enable" detection
+- rtpengine now is enabled for all messages with SDP when enabled on install
+- add recent rtpengine config updates to other OS install scripts
+- re-enabled loose routing for ACK/BYE's
+- pin Flask version in git pre-commit hook
+
+
+---
+
+[//]: # (END_SECTION c770888a48d58c8456ec56ffd316eb0587adfa41)
+[//]: # (START_SECTION 9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c)
+### Add references to PowerShell Script sources
+
+> Commit: [9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c](https://github.com/dOpensource/dsiprouter/commit/9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c)  
+> Date: Sun, 13 Jun 2021 15:05:20 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c)
+[//]: # (START_SECTION 9355e5408640fa412254ed37ce3de0789cfcbade)
+### Added Direct Routing use case
+
+> Commit: [9355e5408640fa412254ed37ce3de0789cfcbade](https://github.com/dOpensource/dsiprouter/commit/9355e5408640fa412254ed37ce3de0789cfcbade)  
+> Date: Sun, 13 Jun 2021 15:02:10 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9355e5408640fa412254ed37ce3de0789cfcbade)
+[//]: # (START_SECTION 24f390f44aec775aceef7578ff75809c03142b39)
+### Remove CentOS 7 Duplicate
+
+> Commit: [24f390f44aec775aceef7578ff75809c03142b39](https://github.com/dOpensource/dsiprouter/commit/24f390f44aec775aceef7578ff75809c03142b39)  
+> Date: Sun, 13 Jun 2021 13:11:35 -0700  
+> Author: Dan (dan@acceleratenetworks.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- This page looks to be an old duplicate not used in the published ReadTheDocs
+
+
+---
+
+[//]: # (END_SECTION 24f390f44aec775aceef7578ff75809c03142b39)
+[//]: # (START_SECTION f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d)
+### Add Debian 10 install section
+
+> Commit: [f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d](https://github.com/dOpensource/dsiprouter/commit/f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d)  
+> Date: Sun, 13 Jun 2021 13:06:25 -0700  
+> Author: Dan (dan@acceleratenetworks.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d)
+[//]: # (START_SECTION 1254e8e3d5cd29b3ae67ff993a0c110e76fac270)
+### Updated installation documentation for 0.641 and master
+
+> Commit: [1254e8e3d5cd29b3ae67ff993a0c110e76fac270](https://github.com/dOpensource/dsiprouter/commit/1254e8e3d5cd29b3ae67ff993a0c110e76fac270)  
+> Date: Sun, 13 Jun 2021 12:52:21 -0700  
+> Author: Dan (dan@acceleratenetworks.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Added Debian 10.9 installation instructions reference
+
+
+---
+
+[//]: # (END_SECTION 1254e8e3d5cd29b3ae67ff993a0c110e76fac270)
 [//]: # (START_SECTION cd5deece1a4d5c4cfc9150942df52e92f46b1be7)
 ### Updated the contact rewrite rules and changed how the  is generated
 
@@ -2035,6 +2272,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 3fd5bdf44175baf721377ad3d9ddafe31a223e7f)
+[//]: # (START_SECTION a8c0496fa2525513d8cf81668c57d783eee299d7)
+### Allow the installer to continue working if the repo public key is not available
+
+> Commit: [a8c0496fa2525513d8cf81668c57d783eee299d7](https://github.com/dOpensource/dsiprouter/commit/a8c0496fa2525513d8cf81668c57d783eee299d7)  
+> Date: Thu, 27 May 2021 05:21:42 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a8c0496fa2525513d8cf81668c57d783eee299d7)
 [//]: # (START_SECTION 4e7b6462f365acbef64c97bfc49529c09289d0e1)
 ### PJSIP Passthru Auth - Track Asterisk PJSIP IP to Domain mapping in Kamailio is not sent using the x-ast-orig-host parameter is not sent with the INVITE from the PBX
 
@@ -2110,6 +2362,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a151524cb76414893b4bef0dca429988a30cbfa4)
+[//]: # (START_SECTION 5713f323069a50de8d0dce8bd2953e1d142b46bf)
+### Pinned Flask to 1.1.2. Fixes #376
+
+> Commit: [5713f323069a50de8d0dce8bd2953e1d142b46bf](https://github.com/dOpensource/dsiprouter/commit/5713f323069a50de8d0dce8bd2953e1d142b46bf)  
+> Date: Thu, 13 May 2021 10:38:37 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5713f323069a50de8d0dce8bd2953e1d142b46bf)
 [//]: # (START_SECTION da38e1cf998a6d9305c50882853da944e6cff72b)
 ### Update N11/Emergency Dialing
 
