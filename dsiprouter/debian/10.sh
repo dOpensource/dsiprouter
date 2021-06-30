@@ -83,15 +83,18 @@ function install {
     # Setup logrotate
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
 
-    # Install dSIPRouter as a service
+    # Install dSIProuter and dSIPRouter CA update services
     perl -p \
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
-        -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|'BACKUPS_DIR\=.*'|'BACKUPS_DIR=$BACKUPS_DIR'|;" \
+        -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
-    chmod 644 /etc/systemd/system/dsiprouter.service
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip-ca-update.service > /etc/systemd/system/dsip-ca-update.service
+    perl -pe "s|PathChanged\=.*|PathChanged=${DSIP_CERTS_DIR}/ca-list.pem|;" \
+        ${DSIP_PROJECT_DIR}/dsiprouter/dsip-ca-update.path > /etc/systemd/system/dsip-ca-update.path
+    chmod 644 /etc/systemd/system/dsiprouter.service dsip-ca-update.{path,service}
     systemctl daemon-reload
     systemctl enable dsiprouter
 }
@@ -124,9 +127,9 @@ function uninstall {
     # Remove logrotate settings
     rm -f /etc/logrotate.d/dsiprouter
 
-    # Remove dSIProuter as a service
-    systemctl disable dsiprouter.service
-    rm -f /etc/systemd/system/dsiprouter.service
+    # Remove dSIProuter and dSIPRouter CA update services
+    systemctl disable dsiprouter
+    rm -f /etc/systemd/system/dsiprouter.service /etc/systemd/system/dsip-ca-update.{path,service}
     systemctl daemon-reload
 }
 

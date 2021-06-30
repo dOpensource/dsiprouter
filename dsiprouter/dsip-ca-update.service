@@ -1,0 +1,8 @@
+[Unit]
+Description=dSIPRouter CA Certs Directory Update Service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/dsiprouter updatecacertsdir
+RemainAfterExit=false
+TimeoutSec=0

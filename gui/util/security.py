@@ -244,7 +244,7 @@ def api_security(func):
 
 class EasyCrypto():
     """
-    Wrapper class for some simlpified crypto use cases
+    Wrapper class for some simplified crypto use cases
     """
 
     @staticmethod

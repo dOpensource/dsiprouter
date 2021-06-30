@@ -5,10 +5,7 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-b124ed328c778703ea15b9b8f349ee44b725f2b3
-f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0
-0e57adcd5d68f40e0548c65c48ad40573ca24ad0
-5fdc88adec421299fa8b3ff8b9690aaef904abae
+348248e13737f83ef01977552875c157ede51de7
 69e73480fe84c702a2746811656cf8d186d2f199
 cd5deece1a4d5c4cfc9150942df52e92f46b1be7
 87dfe1150ac4a544c14102058b26b503124c0530
@@ -1956,68 +1953,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION b124ed328c778703ea15b9b8f349ee44b725f2b3)
-### Update Defaults
+[//]: # (START_SECTION 348248e13737f83ef01977552875c157ede51de7)
+### TLS CA Fixes
 
-> Commit: [b124ed328c778703ea15b9b8f349ee44b725f2b3](https://github.com/dOpensource/dsiprouter/commit/b124ed328c778703ea15b9b8f349ee44b725f2b3)  
-> Date: Wed, 30 Jun 2021 08:32:20 -0400  
+> Commit: [348248e13737f83ef01977552875c157ede51de7](https://github.com/dOpensource/dsiprouter/commit/348248e13737f83ef01977552875c157ede51de7)  
+> Date: Mon, 21 Jun 2021 18:44:06 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 > Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
-- change WITH_HOMER to disabled without args on install
-- update pre-commit hook to pin Flask version
+- fix http_async_client CA dir requirements
+- rename cacert.pem to ca-list.pem
+- add dsip-ca-update services
+- link dsip-ca-update services to dsiprouter service
+- dynamically update CA dir based on ca-list.pem
+- fix a couple typos
+- add updatecacertsdir internal cmd to dsiprouter.sh
 
 
 ---
 
-[//]: # (END_SECTION b124ed328c778703ea15b9b8f349ee44b725f2b3)
-[//]: # (START_SECTION f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)
-### External Domain Name Resolution - Added logic to use the local FQDN if ip to hostname resolutions is not possible
-
-> Commit: [f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0](https://github.com/dOpensource/dsiprouter/commit/f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)  
-> Date: Mon, 28 Jun 2021 11:08:57 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)
-[//]: # (START_SECTION 0e57adcd5d68f40e0548c65c48ad40573ca24ad0)
-### MediaServer API - A tab spacing caused the GET request not to be executed when not in DEBUG mode
-
-> Commit: [0e57adcd5d68f40e0548c65c48ad40573ca24ad0](https://github.com/dOpensource/dsiprouter/commit/0e57adcd5d68f40e0548c65c48ad40573ca24ad0)  
-> Date: Fri, 25 Jun 2021 20:21:51 +0000  
-> Author: root (root@demo.dsiprouter.org)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 0e57adcd5d68f40e0548c65c48ad40573ca24ad0)
-[//]: # (START_SECTION 5fdc88adec421299fa8b3ff8b9690aaef904abae)
-### PJSIP - Added offiical support for PJSIP - Support for PJSIP 2.9 and 2.10 - Tested with Yealink Phones - Updated the Supported Configurations page with the tested configurations - Fixes issue #379
-
-> Commit: [5fdc88adec421299fa8b3ff8b9690aaef904abae](https://github.com/dOpensource/dsiprouter/commit/5fdc88adec421299fa8b3ff8b9690aaef904abae)  
-> Date: Sun, 27 Jun 2021 20:35:24 +0000  
-> Author: Mack Hendricks (mack@dopensource.com)  
-> Committer: Mack Hendricks (mack@dopensource.com)  
-> Signed:   
-
-
-
-
----
-
-[//]: # (END_SECTION 5fdc88adec421299fa8b3ff8b9690aaef904abae)
+[//]: # (END_SECTION 348248e13737f83ef01977552875c157ede51de7)
 [//]: # (START_SECTION 69e73480fe84c702a2746811656cf8d186d2f199)
 ### Added checks to RTPENGINEOFFER to ensure the INTERNAL or EXTERNAL IP address is used for the media address
 
