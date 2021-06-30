@@ -5,10 +5,23 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-77ed2e6191a2e09bc1ab70d0c731d235b029b9b8
+b124ed328c778703ea15b9b8f349ee44b725f2b3
+f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0
+0e57adcd5d68f40e0548c65c48ad40573ca24ad0
+5fdc88adec421299fa8b3ff8b9690aaef904abae
+69e73480fe84c702a2746811656cf8d186d2f199
+cd5deece1a4d5c4cfc9150942df52e92f46b1be7
+87dfe1150ac4a544c14102058b26b503124c0530
+3fd5bdf44175baf721377ad3d9ddafe31a223e7f
+4e7b6462f365acbef64c97bfc49529c09289d0e1
+2483b8e17da60a6903ffb7f8476c430324ccaf46
+ffb63fe0dde68cc59cd44231e2b511ed459ceeed
+9f530bfff45f78f6e445f315d47ad2edf7850ba0
+a151524cb76414893b4bef0dca429988a30cbfa4
+da38e1cf998a6d9305c50882853da944e6cff72b
+38f5fe10292450962b2260312ee82eb1bb781de9
 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a
 a3f0bace7679abeef667fd463ae0f8e0608fcb86
-5d2b672f5361ed9d8e03aba38e798615b02e6f3e
 dccb7db03c6f0f3ae7b2564174c848a262c15d92
 2c1e9d5bd1ae3c8bb20829b50831a43314fb5546
 3860b0e3a3d786bb94cdeb7d03b6535540514367
@@ -20,6 +33,7 @@ c44ea6369c55d43bdf92131d245f20869e0ab448
 bd30caf659cc0a10a75c9834cfc2c2061a55d6c5
 cdecaf5d747f681ee6addf2b2d6e58479e36da91
 ec4219de84f9d346f082fc668d5979aba519c047
+8664462bad30132791e54a7c90c63e8e44698fc6
 3087a23ff41b06f9efe449fee5bf647c22e9f442
 3f8d0aded39a0d20597aa1d518bad2e9e55c7b1c
 4475a9c0a8896af58be4e4b945a8406b3263b740
@@ -1942,15 +1956,207 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
-### Fix -homer Arg Parsing
+[//]: # (START_SECTION b124ed328c778703ea15b9b8f349ee44b725f2b3)
+### Update Defaults
 
-> Commit: [77ed2e6191a2e09bc1ab70d0c731d235b029b9b8](https://github.com/dOpensource/dsiprouter/commit/77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)  
-> Date: Tue, 4 May 2021 11:19:35 -0400  
-[//]: # (START_SECTION 5d2b672f5361ed9d8e03aba38e798615b02e6f3e)
+> Commit: [b124ed328c778703ea15b9b8f349ee44b725f2b3](https://github.com/dOpensource/dsiprouter/commit/b124ed328c778703ea15b9b8f349ee44b725f2b3)  
+> Date: Wed, 30 Jun 2021 08:32:20 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- change WITH_HOMER to disabled without args on install
+- update pre-commit hook to pin Flask version
+
+
+---
+
+[//]: # (END_SECTION b124ed328c778703ea15b9b8f349ee44b725f2b3)
+[//]: # (START_SECTION f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)
+### External Domain Name Resolution - Added logic to use the local FQDN if ip to hostname resolutions is not possible
+
+> Commit: [f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0](https://github.com/dOpensource/dsiprouter/commit/f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)  
+> Date: Mon, 28 Jun 2021 11:08:57 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0)
+[//]: # (START_SECTION 0e57adcd5d68f40e0548c65c48ad40573ca24ad0)
+### MediaServer API - A tab spacing caused the GET request not to be executed when not in DEBUG mode
+
+> Commit: [0e57adcd5d68f40e0548c65c48ad40573ca24ad0](https://github.com/dOpensource/dsiprouter/commit/0e57adcd5d68f40e0548c65c48ad40573ca24ad0)  
+> Date: Fri, 25 Jun 2021 20:21:51 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0e57adcd5d68f40e0548c65c48ad40573ca24ad0)
+[//]: # (START_SECTION 5fdc88adec421299fa8b3ff8b9690aaef904abae)
+### PJSIP - Added offiical support for PJSIP - Support for PJSIP 2.9 and 2.10 - Tested with Yealink Phones - Updated the Supported Configurations page with the tested configurations - Fixes issue #379
+
+> Commit: [5fdc88adec421299fa8b3ff8b9690aaef904abae](https://github.com/dOpensource/dsiprouter/commit/5fdc88adec421299fa8b3ff8b9690aaef904abae)  
+> Date: Sun, 27 Jun 2021 20:35:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5fdc88adec421299fa8b3ff8b9690aaef904abae)
+[//]: # (START_SECTION 69e73480fe84c702a2746811656cf8d186d2f199)
+### Added checks to RTPENGINEOFFER to ensure the INTERNAL or EXTERNAL IP address is used for the media address
+
+> Commit: [69e73480fe84c702a2746811656cf8d186d2f199](https://github.com/dOpensource/dsiprouter/commit/69e73480fe84c702a2746811656cf8d186d2f199)  
+> Date: Sat, 19 Jun 2021 03:38:58 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 69e73480fe84c702a2746811656cf8d186d2f199)
+[//]: # (START_SECTION cd5deece1a4d5c4cfc9150942df52e92f46b1be7)
+### Updated the contact rewrite rules and changed how the  is generated
+
+> Commit: [cd5deece1a4d5c4cfc9150942df52e92f46b1be7](https://github.com/dOpensource/dsiprouter/commit/cd5deece1a4d5c4cfc9150942df52e92f46b1be7)  
+> Date: Tue, 8 Jun 2021 20:30:25 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cd5deece1a4d5c4cfc9150942df52e92f46b1be7)
+[//]: # (START_SECTION 87dfe1150ac4a544c14102058b26b503124c0530)
+### Updated the contact rewrite rules and changed how the  is generated
+
+> Commit: [87dfe1150ac4a544c14102058b26b503124c0530](https://github.com/dOpensource/dsiprouter/commit/87dfe1150ac4a544c14102058b26b503124c0530)  
+> Date: Tue, 8 Jun 2021 20:08:02 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 87dfe1150ac4a544c14102058b26b503124c0530)
+[//]: # (START_SECTION 3fd5bdf44175baf721377ad3d9ddafe31a223e7f)
+### Updated the rewrite rule for the Contact using for Pass-Thru Registration
+
+> Commit: [3fd5bdf44175baf721377ad3d9ddafe31a223e7f](https://github.com/dOpensource/dsiprouter/commit/3fd5bdf44175baf721377ad3d9ddafe31a223e7f)  
+> Date: Sun, 6 Jun 2021 23:14:04 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3fd5bdf44175baf721377ad3d9ddafe31a223e7f)
+[//]: # (START_SECTION 4e7b6462f365acbef64c97bfc49529c09289d0e1)
+### PJSIP Passthru Auth - Track Asterisk PJSIP IP to Domain mapping in Kamailio is not sent using the x-ast-orig-host parameter is not sent with the INVITE from the PBX
+
+> Commit: [4e7b6462f365acbef64c97bfc49529c09289d0e1](https://github.com/dOpensource/dsiprouter/commit/4e7b6462f365acbef64c97bfc49529c09289d0e1)  
+> Date: Thu, 27 May 2021 07:36:47 +0000  
+> Author: Mack Hendricks (mack@goflyball.com)  
+> Committer: Mack Hendricks (mack@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4e7b6462f365acbef64c97bfc49529c09289d0e1)
+[//]: # (START_SECTION 2483b8e17da60a6903ffb7f8476c430324ccaf46)
+### Allow the installer to continue working if the repo public key is not available
+
+> Commit: [2483b8e17da60a6903ffb7f8476c430324ccaf46](https://github.com/dOpensource/dsiprouter/commit/2483b8e17da60a6903ffb7f8476c430324ccaf46)  
+> Date: Thu, 27 May 2021 05:21:42 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2483b8e17da60a6903ffb7f8476c430324ccaf46)
+[//]: # (START_SECTION ffb63fe0dde68cc59cd44231e2b511ed459ceeed)
+### Disabled DNID Lookup Module
+
+> Commit: [ffb63fe0dde68cc59cd44231e2b511ed459ceeed](https://github.com/dOpensource/dsiprouter/commit/ffb63fe0dde68cc59cd44231e2b511ed459ceeed)  
+> Date: Wed, 19 May 2021 06:37:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ffb63fe0dde68cc59cd44231e2b511ed459ceeed)
+[//]: # (START_SECTION 9f530bfff45f78f6e445f315d47ad2edf7850ba0)
+### Added support for PJSIP
+
+> Commit: [9f530bfff45f78f6e445f315d47ad2edf7850ba0](https://github.com/dOpensource/dsiprouter/commit/9f530bfff45f78f6e445f315d47ad2edf7850ba0)  
+> Date: Tue, 18 May 2021 12:01:00 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9f530bfff45f78f6e445f315d47ad2edf7850ba0)
+[//]: # (START_SECTION a151524cb76414893b4bef0dca429988a30cbfa4)
+### Pinned Flask to 1.1.2. Fixes #376
+
+> Commit: [a151524cb76414893b4bef0dca429988a30cbfa4](https://github.com/dOpensource/dsiprouter/commit/a151524cb76414893b4bef0dca429988a30cbfa4)  
+> Date: Thu, 13 May 2021 10:38:37 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a151524cb76414893b4bef0dca429988a30cbfa4)
+[//]: # (START_SECTION da38e1cf998a6d9305c50882853da944e6cff72b)
 ### Update N11/Emergency Dialing
 
-> Commit: [5d2b672f5361ed9d8e03aba38e798615b02e6f3e](https://github.com/dOpensource/dsiprouter/commit/5d2b672f5361ed9d8e03aba38e798615b02e6f3e)  
+> Commit: [da38e1cf998a6d9305c50882853da944e6cff72b](https://github.com/dOpensource/dsiprouter/commit/da38e1cf998a6d9305c50882853da944e6cff72b)  
 > Date: Wed, 5 May 2021 07:47:58 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1960,9 +2166,26 @@ END_SECTION COMMITS)
 - update pattern matching to latest ITU standard
 - add UK and AU commonly-used emergency number matching
 - add N11 NANPA pattern matching
+
+
 ---
 
-[//]: # (END_SECTION 77ed2e6191a2e09bc1ab70d0c731d235b029b9b8)
+[//]: # (END_SECTION da38e1cf998a6d9305c50882853da944e6cff72b)
+[//]: # (START_SECTION 38f5fe10292450962b2260312ee82eb1bb781de9)
+### Fix -homer Arg Parsing
+
+> Commit: [38f5fe10292450962b2260312ee82eb1bb781de9](https://github.com/dOpensource/dsiprouter/commit/38f5fe10292450962b2260312ee82eb1bb781de9)  
+> Date: Tue, 4 May 2021 11:19:35 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 38f5fe10292450962b2260312ee82eb1bb781de9)
 [//]: # (START_SECTION 8b2f0bfd2ba74ed0f0ce9fb5f3c03a669625550a)
 ### Fix Bad Param In Last Commit
 
@@ -1996,9 +2219,6 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a3f0bace7679abeef667fd463ae0f8e0608fcb86)
-=======
-[//]: # (END_SECTION 5d2b672f5361ed9d8e03aba38e798615b02e6f3e)
->>>>>>> v0.65
 [//]: # (START_SECTION dccb7db03c6f0f3ae7b2564174c848a262c15d92)
 ### Permissions And Sources Bug Fixes
 
@@ -2217,6 +2437,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION ec4219de84f9d346f082fc668d5979aba519c047)
+[//]: # (START_SECTION 8664462bad30132791e54a7c90c63e8e44698fc6)
+### Adding Logic to handle Adtrans
+
+> Commit: [8664462bad30132791e54a7c90c63e8e44698fc6](https://github.com/dOpensource/dsiprouter/commit/8664462bad30132791e54a7c90c63e8e44698fc6)  
+> Date: Mon, 29 Mar 2021 18:55:17 +0000  
+> Author: root (root@adtran.dsiprouter.net)  
+> Committer: root (root@adtran.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8664462bad30132791e54a7c90c63e8e44698fc6)
 [//]: # (START_SECTION 3087a23ff41b06f9efe449fee5bf647c22e9f442)
 ### Permissions Fix
 
