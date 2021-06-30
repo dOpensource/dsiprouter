@@ -2,6 +2,8 @@
 
 ### Contributors
 
+- Dan
+- Dan Ryan
 - Dean Forester
 - demonspork
 - dopensource

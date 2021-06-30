@@ -99,10 +99,10 @@ function install {
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip-ca-update.service > /etc/systemd/system/dsip-ca-update.service
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip-ca-update.service /etc/systemd/system/dsip-ca-update.service
     perl -pe "s|PathChanged\=.*|PathChanged=${DSIP_CERTS_DIR}/ca-list.pem|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/dsip-ca-update.path > /etc/systemd/system/dsip-ca-update.path
-    chmod 644 /etc/systemd/system/dsiprouter.service dsip-ca-update.{path,service}
+    chmod 644 /etc/systemd/system/dsiprouter.service /etc/systemd/system/dsip-ca-update.{path,service}
     systemctl daemon-reload
     systemctl enable dsiprouter
 
