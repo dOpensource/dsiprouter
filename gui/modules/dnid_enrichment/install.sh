@@ -34,7 +34,7 @@ function installSQL {
 
 function install {
     installSQL
-    enableKamailioConfigAttrib 'WITH_DNID_LNP_ENRICHMENT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    enableKamailioConfigFeature 'WITH_DNID_LNP_ENRICHMENT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
     systemctl restart kamailio
     if systemctl is-active --quiet kamailio; then
@@ -47,7 +47,7 @@ function install {
 }
 
 function uninstall {
-    disableKamailioConfigAttrib 'WITH_DNID_LNP_ENRICHMENT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    disableKamailioConfigFeature 'WITH_DNID_LNP_ENRICHMENT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
     systemctl restart kamailio
     if systemctl is-active --quiet kamailio; then

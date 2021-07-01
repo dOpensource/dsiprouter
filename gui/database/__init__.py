@@ -5,14 +5,15 @@ sys.path.insert(0, '/etc/dsiprouter/gui')
 import os
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, String
-from sqlalchemy.orm import mapper, sessionmaker, scoped_session
+from sqlalchemy import create_engine, MetaData, Table, Column, String, func, JSON
 from sqlalchemy import exc as sql_exceptions
+from sqlalchemy.orm import mapper, sessionmaker, scoped_session, attributes
+from sqlalchemy.ext.hybrid import hybrid_property, ExprComparator, Comparator
+from sqlalchemy.util import memoized_property, update_wrapper
 import settings
-from shared import IO, debugException, dictToStrFields
+from shared import IO, debugException, dictToStrFields, strFieldsToDict
 from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
-
 
 if settings.KAM_DB_TYPE == "mysql":
     try:
@@ -30,7 +31,181 @@ if settings.KAM_DB_TYPE == "mysql":
                     debugException(ex)
                 raise
 
-class Gateways(object):
+
+# TODO: not fully working yet, see if we can work with upstream devs on this
+#       this SHOULD allow JSON fields to be accessed / set using d['key']='val'
+# class hybrid_dict_property(hybrid_property):
+#     def __init__(
+#             self, fget, fset=None, fdel=None,
+#             fgetitem=None, fsetitem=None, fdelitem=None,
+#             expr=None, custom_comparator=None, update_expr=None,
+#             item_expr=None, item_custom_comparator=None, item_update_expr=None,
+#     ):
+#         self.fgetitem = fgetitem
+#         self.fsetitem = fsetitem
+#         self.fdelitem = fdelitem
+#         self.item_expr = item_expr
+#         self.item_custom_comparator = item_custom_comparator
+#         self.item_update_expr = item_update_expr
+#         super().__init__(
+#             fget, fset=fset, fdel=fdel,
+#             expr=expr, custom_comparator=custom_comparator, update_expr=update_expr,
+#         )
+#
+#     def __getitem__(self, instance, key):
+#         if self.fgetitem is None:
+#             return self.fget(instance)[key]
+#         else:
+#             return self.fgetitem(instance)
+#
+#     def __setitem__(self, instance, key, val):
+#         if self.fsetitem is None:
+#             tmp = self.fget(instance)
+#             tmp[key] = val
+#             return self.fset(instance, tmp)
+#         else:
+#             self.fsetitem(instance, key, val)
+#
+#     def __delitem__(self, instance, key):
+#         if self.fdelitem is None:
+#             tmp = self.fget(instance)
+#             del (tmp[key])
+#             self.fset(instance, tmp)
+#         else:
+#             self.fdelitem(instance, key)
+#
+#     def get_item(self, fgetitem):
+#         return self._copy(fgetitem=fgetitem)
+#
+#     def set_item(self, fsetitem):
+#         return self._copy(fsetitem=fsetitem)
+#
+#     def delete_item(self, fdelitem):
+#         return self._copy(fdelitem=fdelitem)
+#
+#     def item_expression(self, expr):
+#         return self._copy(item_expr=expr)
+#
+#     def item_comparator(self, comparator):
+#         return self._copy(item_custom_comparator=comparator)
+#
+#     def item_update_expression(self, meth):
+#         return self._copy(item_update_expr=meth)
+#
+#     @memoized_property
+#     def _item_expr_comparator(self):
+#         if self.item_custom_comparator is not None:
+#             return self._get_item_comparator(self.item_custom_comparator)
+#         elif self.item_expr is not None:
+#             return self._get_item_expr(self.item_expr)
+#         else:
+#             return self._get_item_expr(self.fgetitem)
+#
+#     def _get_item_expr(self, expr):
+#         def _item_expr(cls):
+#             return ExprComparator(cls, expr(cls), self)
+#
+#         update_wrapper(_item_expr, expr)
+#
+#         return self._get_item_comparator(_item_expr)
+#
+#     def _get_item_comparator(self, comparator):
+#
+#         proxy_attr = attributes.create_proxied_attribute(self)
+#
+#         def item_expr_comparator(owner):
+#             return proxy_attr(
+#                 owner,
+#                 self.__name__,
+#                 self,
+#                 comparator(owner),
+#                 doc=comparator.__doc__ or self.__doc__,
+#             )
+#
+#         return item_expr_comparator
+
+class ObjectWithDescription(object):
+    """
+    Handles description field setter/getter for JSON data
+    """
+
+    @hybrid_property
+    def description(self):
+        return strFieldsToDict(self._description)
+
+    @description.setter
+    def description(self, val):
+        self._description = dictToStrFields(val)
+
+    @description.deleter
+    def description(self):
+        self._description = {}
+
+    # @description.get_item
+    # def description(self, key):
+    #     return strFieldsToDict(self._description)[key]
+    #
+    # @description.set_item
+    # def description(self, key, val):
+    #     self._description[key] = val
+    #
+    # @description.delete_item
+    # def description(self, key):
+    #     del(self._description[key])
+
+    @description.expression
+    def description(cls):
+        return func.json_unquote(cls.description)
+
+    @description.update_expression
+    def description(cls, val):
+        return [(cls._description, dictToStrFields(val))]
+
+    @description.comparator
+    def description(cls):
+        return Comparator(cls._description)
+
+    # @description.item_expression
+    # def description(cls, key):
+    #     return func.json_unquote(func.json_extract(cls.description, key))
+    #
+    # @description.item_update_expression
+    # def description(cls, key, val):
+    #     tmp = strFieldsToDict(cls.description)
+    #     tmp[key] = val
+    #     return [(cls.description, dictToStrFields(tmp))]
+    #
+    # @description.item_comparator
+    # def description(cls, key):
+    #     return Comparator(cls.description[key])
+
+class ObjectWithTag(object):
+    """
+    Handles tag field setter/getter for JSON data
+    """
+    @hybrid_property
+    def tag(self):
+        return strFieldsToDict(self._tag)
+
+    @tag.setter
+    def tag(self, value):
+        self._tag = dictToStrFields(value)
+
+    @tag.deleter
+    def tag(self):
+        self._tag = {}
+
+    @tag.expression
+    def tag(cls):
+        return func.json_unquote(cls.tag)
+
+    @tag.update_expression
+    def description(cls, value):
+        return [(cls.tag, dictToStrFields(value))]
+
+
+
+class Gateways(ObjectWithDescription):
     """
     Schema for dr_gateways table\n
     Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gateways>`_\n
@@ -38,35 +213,35 @@ class Gateways(object):
     The address field can be a full SIP URI, partial URI, or only host; where host portion is an IP or FQDN
     """
 
-    def __init__(self, name, address, strip, prefix, type, gwgroup=None, addr_id=None, attrs=''):
-        description = {"name": name}
+    def __init__(self, name, address, strip, prefix, type, gwgroup=None, addr_list=None, attrs=''):
+        desc_fields = {'name': name}
         if gwgroup is not None:
-            description["gwgroup"] = str(gwgroup)
-        if addr_id is not None:
-            description['addr_id'] = str(addr_id)
+            desc_fields['gwgroup'] = gwgroup
+        if addr_list is not None:
+            desc_fields['addr_list'] = addr_list
 
         self.type = type
         self.address = address
         self.strip = strip
         self.pri_prefix = prefix
         self.attrs = attrs
-        self.description = dictToStrFields(description)
+        self.description = desc_fields
 
     pass
 
-class GatewayGroups(object):
+class GatewayGroups(ObjectWithDescription):
     """
     Schema for dr_gw_lists table\n
     Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gw-lists>`_
     """
 
     def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER):
-        self.description = "name:{},type:{}".format(name, type)
+        self.description = {'name': name, 'type': type}
         self.gwlist = ",".join(str(gw) for gw in gwlist)
 
     pass
 
-class Address(object):
+class Address(ObjectWithTag):
     """
     Schema for address table\n
     Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-address>`_\n
@@ -75,19 +250,19 @@ class Address(object):
     """
 
     def __init__(self, name, ip_addr, mask, type, gwgroup=None, port=0):
-        tag = {"name": name}
+        tag_fields = {"name": name}
         if gwgroup is not None:
-            tag["gwgroup"] = str(gwgroup)
+            tag_fields["gwgroup"] = gwgroup
 
         self.grp = type
         self.ip_addr = ip_addr
         self.mask = mask
         self.port = port
-        self.tag = dictToStrFields(tag)
+        self.tag = tag_fields
 
     pass
 
-class InboundMapping(object):
+class InboundMapping(ObjectWithDescription):
     """
     Partial Schema for modified version of dr_rules table\n
     Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-rules>`_
@@ -95,7 +270,7 @@ class InboundMapping(object):
 
     gwname = Column(String)
 
-    def __init__(self, groupid, prefix, gwlist, description=''):
+    def __init__(self, groupid, prefix, gwlist, description={}):
         self.groupid = groupid
         self.prefix = prefix
         self.gwlist = gwlist
@@ -105,13 +280,13 @@ class InboundMapping(object):
 
     pass
 
-class OutboundRoutes(object):
+class OutboundRoutes(ObjectWithDescription):
     """
     Schema for dr_rules table\n
     Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-rules>`_
     """
 
-    def __init__(self, groupid, prefix, timerec, priority, routeid, gwlist, description):
+    def __init__(self, groupid, prefix, timerec, priority, routeid, gwlist, description={}):
         self.groupid = groupid
         self.prefix = prefix
         self.timerec = timerec
@@ -122,12 +297,12 @@ class OutboundRoutes(object):
 
     pass
 
-class CustomRouting(object):
+class CustomRouting(ObjectWithDescription):
     """
     Schema for dr_custom_rules table\n
     """
 
-    def __init__(self, locality, ppm, description):
+    def __init__(self, locality, ppm, description={}):
         self.locality = locality
         self.ppm = ppm
         self.description = description
@@ -232,8 +407,8 @@ class dSIPLeases(object):
     def __init__(self, gwid, sid, ttl):
         self.gwid = gwid
         self.sid = sid
-        t = datetime.now() + timedelta(seconds=ttl)
-        self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.now() + timedelta(seconds=ttl)
+        self.expiration = now.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
 
@@ -328,7 +503,6 @@ class dSIPCertificates(object):
     """
 
     def __init__(self, domain, type, email, cert, key):
-
         self.domain = domain
         self.type = type
         self.email = email
@@ -337,18 +511,16 @@ class dSIPCertificates(object):
 
     pass
 
-class dSIPDNIDEnrichment(object):
+class dSIPDNIDEnrichment(ObjectWithDescription):
     """
     Schema for dsip_dnid_enrich_lnp table\n
     """
 
     def __init__(self, dnid, country_code='', routing_number='', rule_name=''):
-        description = {'name': rule_name}
-
         self.dnid = dnid
         self.country_code = country_code
         self.routing_number = routing_number
-        self.description = dictToStrFields(description)
+        self.description = {'name': rule_name}
 
     pass
 
@@ -424,13 +596,13 @@ class DomainAttrs(object):
 
     pass
 
-class Dispatcher(object):
+class Dispatcher(ObjectWithDescription):
     """
     Schema for dispatcher table\n
     Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dispatcher>`_
     """
 
-    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description=''):
+    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description={}):
         self.setid = setid
         self.destination = safeFormatSipUri(destination)
         self.flags = flags
@@ -571,20 +743,20 @@ def createSessionMaker():
     #                dr_gw_lists_alias.c.drlist_id == dr_groups.c.id,
     #                dr_gw_lists_alias.c.drlist_description == dr_groups.c.description)
 
-    mapper(Gateways, dr_gateways)
-    mapper(Address, address)
-    mapper(InboundMapping, inboundmapping)
-    mapper(OutboundRoutes, outboundroutes)
+    mapper(Gateways, dr_gateways, properties={'_description': dr_gateways.c.description})
+    mapper(Address, address, properties={'_description': address.c.tag})
+    mapper(InboundMapping, inboundmapping, properties={'_description': inboundmapping.c.description})
+    mapper(OutboundRoutes, outboundroutes, properties={'_description': outboundroutes.c.description})
     mapper(dSIPDomainMapping, dsip_domain_mapping)
     mapper(dSIPMultiDomainMapping, dsip_multidomain_mapping)
     mapper(Subscribers, subscriber)
-    # mapper(CustomRouting, customrouting)
+    # mapper(CustomRouting, customrouting, properties={'_description': customrouting.c.description})
     mapper(dSIPLCR, dsip_lcr)
     mapper(UAC, uacreg)
-    mapper(GatewayGroups, dr_gw_lists)
+    mapper(GatewayGroups, dr_gw_lists, properties={'_description': dr_gw_lists.c.description})
     mapper(Domain, domain)
     mapper(DomainAttrs, domain_attrs)
-    mapper(Dispatcher, dispatcher)
+    mapper(Dispatcher, dispatcher, properties={'_description': dispatcher.c.description})
     mapper(dSIPLeases, dsip_endpoint_lease)
     mapper(dSIPMaintModes, dsip_maintmode)
     mapper(dSIPCallLimits, dsip_calllimit)
@@ -593,7 +765,7 @@ def createSessionMaker():
     mapper(dSIPFailFwd, dsip_failfwd)
     mapper(dSIPCDRInfo, dsip_cdrinfo)
     mapper(dSIPCertificates, dsip_certificates)
-    mapper(dSIPDNIDEnrichment, dsip_dnid_enrichment)
+    mapper(dSIPDNIDEnrichment, dsip_dnid_enrichment, properties={'_description': dsip_dnid_enrichment.c.description})
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],

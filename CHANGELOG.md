@@ -5,6 +5,7 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
+7287564593dd788bdfc5e3472cca0bd89b84a4bc
 d8ac84aa08a89a604320df81870c18c734f8fdf0
 3893533afbfaf9d5aedb02b45688ac94920cbd4f
 f8bfe45b3cc64e49d3decc0adb7a10f493ff22a0
@@ -1969,6 +1970,32 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
+[//]: # (START_SECTION 7287564593dd788bdfc5e3472cca0bd89b84a4bc)
+### Improved DNS Hostname Resolution And Caching
+
+> Commit: [7287564593dd788bdfc5e3472cca0bd89b84a4bc](https://github.com/dOpensource/dsiprouter/commit/7287564593dd788bdfc5e3472cca0bd89b84a4bc)  
+> Date: Thu, 1 Jul 2021 12:25:12 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#325](https://github.com/dOpensource/dsiprouter/issues/325)
+- implement new caching system via cronjob
+- update dr_gateways DNS names to resolve to all available IP's
+- update uacreg DNS names to resolve to all available IP's
+- update DNS names every 5 minutes
+- update backend to transparently access/store JSON in description/tag fields
+- update all other tables to use new schema for JSON storage
+- move local address to cron updated entry in address table
+- add FLT_INTERNAL flag for internal use addresses
+- add/update a few utility functions to `dsip_lib.sh`
+- update default imports to use new JSON structure
+
+
+---
+
+[//]: # (END_SECTION 7287564593dd788bdfc5e3472cca0bd89b84a4bc)
 [//]: # (START_SECTION d8ac84aa08a89a604320df81870c18c734f8fdf0)
 ### Fix Bug In Commit 9e7949a
 

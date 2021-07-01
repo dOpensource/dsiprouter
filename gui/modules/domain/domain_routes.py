@@ -1,5 +1,4 @@
-from flask import Blueprint, session, render_template
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
+from flask import Blueprint, session
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Address
@@ -7,7 +6,6 @@ from modules.api.api_routes import addEndpointGroups
 from shared import *
 import settings
 import globals
-import re
 
 
 domains = Blueprint('domains', __name__)

@@ -77,15 +77,10 @@ def rowToDict(row):
     return d
 
 def strFieldsToDict(fields_str):
-    fields = {}
-    for field in fields_str.split(','):
-        if ':' in field:
-            tmp = field.split(':', 1)
-            fields[tmp[0]] = tmp[1]
-    return fields
+    return json.loads(fields_str)
 
 def dictToStrFields(fields_dict):
-    return ','.join("{}:{}".format(k, v) for k, v in fields_dict.items())
+    return json.dumps(fields_dict)
 
 def updateConfig(config_obj, field_dict, hot_reload=False):
     """
