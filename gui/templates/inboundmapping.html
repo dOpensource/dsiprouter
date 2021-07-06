@@ -58,12 +58,12 @@
                 <td class='gwgroupname'>Load Balancing Group</td>
         {% else %}
 	 	      {% if row.gwlist.split(',')|length > 1 %}
-          		<td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}<sup> +1</sup></td>
+          		<td class='gwgroupname'>{{ row.gwgroup_description['name'] }}<sup> +1</sup></td>
         	{% else %}
-          		<td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}</td>
+          		<td class='gwgroupname'>{{ row.gwgroup_description['name'] }}</td>
         	{% endif %}
         {% endif %}
-        <td class="rulename">{{ row.rule_description|attrFilter('name') }}</td>
+        <td class="rulename">{{ row.rule_description['name'] }}</td>
         <td class="gwlist hidden">{{ row.gwlist }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
@@ -140,12 +140,12 @@
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
-            <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
-        	    {% if epgroup['description']|attrFilter('lb') %}
-        	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
+            <option value="{{ epgroup['id'] }}">{{ epgroup['description']['name'] }}</option>
+        	    {% if epgroup['description']['lb'] %}
+        	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']['lb'] }}">{{ epgroup['description']['name'] }} LB</option>
         	    {% endif %}
-        	    {% if epgroup['description']|attrFilter('lb_ext') %}
-        	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb_ext') }}">{{ epgroup['description']|attrFilter('name') }} LB (External)</option>
+        	    {% if epgroup['description']['lb_ext'] %}
+        	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']['lb_ext'] }}">{{ epgroup['description']['name'] }} LB (External)</option>
         	    {% endif %}
           {% endfor %}
         </select>
@@ -191,7 +191,7 @@
           <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
             <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']['name'] }}</option>
             {% endfor %}
           </select>
         </div>
@@ -237,7 +237,7 @@
           <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
             <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']['name'] }}</option>
             {% endfor %}
           </select>
         </div>
@@ -295,12 +295,12 @@
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
-            <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
-      	    {% if epgroup['description']|attrFilter('lb') %}
-      	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
+            <option value="{{ epgroup['id'] }}">{{ epgroup['description']['name'] }}</option>
+      	    {% if epgroup['description']['lb'] %}
+      	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']['lb'] }}">{{ epgroup['description']['name'] }} LB</option>
       	    {% endif %}
-      	    {% if epgroup['description']|attrFilter('lb_ext') %}
-      	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb_ext') }}">{{ epgroup['description']|attrFilter('name') }} LB (External)</option>
+      	    {% if epgroup['description']['lb_ext'] %}
+      	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']['lb_ext'] }}">{{ epgroup['description']['name'] }} LB (External)</option>
       	    {% endif %}
           {% endfor %}
         </select>
@@ -346,7 +346,7 @@
           <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
             <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']['name'] }}</option>
             {% endfor %}
           </select>
         </div>
@@ -392,7 +392,7 @@
           <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
             <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']['name'] }}</option>
             {% endfor %}
           </select>
         </div>
@@ -472,7 +472,7 @@
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid">
           <option class="hidden" value="" selected disabled>Override Endpoint Group (Optional)</option>
           {% for epgroup in epgroups %}
-            <option value="#{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
+            <option value="#{{ epgroup['id'] }}">{{ epgroup['description']['name'] }}</option>
           {% endfor %}
         </select>
       </div>
@@ -516,7 +516,7 @@
           <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
             <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']['name'] }}</option>
             {% endfor %}
           </select>
         </div>
@@ -562,7 +562,7 @@
           <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
             <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
             {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
+              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']['name'] }}</option>
             {% endfor %}
           </select>
         </div>

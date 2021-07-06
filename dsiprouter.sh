@@ -1162,11 +1162,11 @@ function configureKamailioDB {
     local INTERNAL_NET_PREFIX=$(echo -n "$INTERNAL_NET" | cut -d '/' -f 2)
     # generate defaults subbing in dynamic values
     cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
-    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g; s/FLT_INTERNAL/$FLT_INTERNAL/g; s/INTERNAL_IP/$INTERNAL_IP/g s/INTERNAL_NET_PREFIX/$INTERNAL_NET_PREFIX/g" \
+    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g; s/FLT_INTERNAL/$FLT_INTERNAL/g; s/INTERNAL_IP/$INTERNAL_IP/g; s/INTERNAL_NET_PREFIX/$INTERNAL_NET_PREFIX/g;" \
         ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
-    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g; s/FLT_INTERNAL/$FLT_INTERNAL/g" \
+    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g; s/FLT_INTERNAL/$FLT_INTERNAL/g;" \
         ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
-    sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
+    sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g;" \
         ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
 
     # import default carriers
@@ -2278,7 +2278,7 @@ function setCredentials {
         cleanupAndExit 1
     fi
 
-    # update non-encrypte settings locally and gather statements for updating DB
+    # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
         setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_GUI_USER" ${DSIP_CONFIG_FILE} -q

@@ -47,8 +47,8 @@
         <td class="priority">{{ row.priority }}</td>
         <td class="routeid">{{ row.routeid }}</td>
         <td class="gwgroupid hidden">{{ row.gwgroupid }}</td>
-        <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}</td>
-        <td class="description">{{ row.description|attrFilter('name') }}</td>
+        <td class='gwgroupname'>{{ row.gwgroup_description['name'] }}</td>
+        <td class="description">{{ row.description['name'] }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit"
@@ -118,7 +118,7 @@
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected="selected" disabled>Carrier Group</option>
           {% for cgroup in cgroups %}
-            <option value="{{ cgroup['id'] }}">{{ cgroup['description']|attrFilter('name') }}</option>
+            <option value="{{ cgroup['id'] }}">{{ cgroup['description']['name'] }}</option>
           {% endfor %}
         </select>
       </div>
@@ -179,7 +179,7 @@
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
           <option class="hidden" value="" selected="selected" disabled>Carrier Group</option>
           {% for cgroup in cgroups %}
-            <option value="{{ cgroup['id'] }}">{{ cgroup['description']|attrFilter('name') }}</option>
+            <option value="{{ cgroup['id'] }}">{{ cgroup['description']['name'] }}</option>
           {% endfor %}
         </select>
         <div class="help-block with-errors"></div>

@@ -8,7 +8,7 @@ from contextlib import closing
 from collections import OrderedDict
 from datetime import datetime
 from flask import Blueprint, jsonify, render_template, request, session, send_file, Response
-from sqlalchemy import exc as sql_exceptions, and_, or_
+from sqlalchemy import exc as sql_exceptions, func as sql_func, and_, or_
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
@@ -455,7 +455,7 @@ def handleInboundMapping():
 
             gwlist = ','.join(data['servers'])
             prefix = data['did']
-            description = 'name:{}'.format(data['name']) if 'name' in data else ''
+            description = {'name': data['name']} if 'name' in data else {}
 
             # don't allow duplicate entries
             if db.query(InboundMapping).filter(InboundMapping.prefix == prefix).filter(
@@ -509,7 +509,7 @@ def handleInboundMapping():
                                 ','.join(settings.DID_PREFIX_ALLOWED_CHARS)))
                 updates['prefix'] = data['did']
             if 'name' in data:
-                updates['description'] = 'name:{}'.format(data['name'])
+                updates['description'] = {'name': data['name']}
 
             # update single rule by ruleid
             rule_id = request.args.get('ruleid')
@@ -709,7 +709,7 @@ def deleteEndpointGroup(gwgroupid):
             subscriber.delete(synchronize_session=False)
 
         typeFilter = "%gwgroup:{}%".format(gwgroupid)
-        endpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
+        endpoints = db.query(Gateways).filter(Gateways.description['gwgroup'] == gwgroupid)
         if endpoints is not None:
             address_ids = []
             for endpoint in endpoints:
@@ -899,16 +899,13 @@ def listEndpointGroups():
 
         db = SessionLoader()
 
-        endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
+        endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description['type'] == settings.FLT_PBX).all()
 
         for endpointgroup in endpointgroups:
-            # Grap the description field, which is comma seperated key/value pair
-            fields = endpointgroup.description
-
             # append summary of endpoint group data
             response_payload['data'].append({
                 'gwgroupid': endpointgroup.id,
-                'name': fields['name'],
+                'name': endpointgroup.description['name'],
                 'gwlist': endpointgroup.gwlist
             })
 
@@ -1053,9 +1050,7 @@ def updateEndpointGroups(gwgroupid=None):
         if Gwgroup is None:
             raise http_exceptions.NotFound('gwgroup does not exist')
         gwgroup_data['gwgroupid'] = gwgroupid
-        gwgroup_desc_dict = Gwgroup.description
-        gwgroup_desc_dict['name'] = request_payload['name'] if 'name' in request_payload else ''
-        Gwgroup.description = gwgroup_desc_dict
+        Gwgroup.description['name'] = request_payload['name'] if 'name' in request_payload else ''
         db.flush()
 
         # Update concurrent call limit
@@ -1134,10 +1129,11 @@ def updateEndpointGroups(gwgroupid=None):
         # Update endpoints
         # Get List of existing endpoints
         # If endpoint sent over is not in the existing endpoint list then remove it
-        gwgroup_filter = "%gwgroup:{}%".format(gwgroupid_str)
         current_endpoints_lut = {
             x.gwid: {'address': x.address, 'description_dict': x.description} \
-            for x in db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).all()
+            for x in db.query(Gateways).filter(
+                Gateways.description['gwgroup'] == gwgroupid
+            ).all()
         }
         updated_endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
         unprocessed_endpoints_lut = {}
@@ -1184,7 +1180,7 @@ def updateEndpointGroups(gwgroupid=None):
 
                 # Create dispatcher group with the set id being the gateway group id
                 dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
-                                        description=name)
+                                        description={'name': name})
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
@@ -1192,7 +1188,7 @@ def updateEndpointGroups(gwgroupid=None):
                     sip_addr_external = safeUriToHost(hostname, default_port=5080)
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                     dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external,
-                                            attrs="weight={}".format(weight), description=name)
+                                            attrs="weight={}".format(weight), description={'name': name})
                     db.add(dispatcher)
 
                 db.add(Gateway)
@@ -1254,7 +1250,7 @@ def updateEndpointGroups(gwgroupid=None):
 
             # Create dispatcher group with the set id being the gateway group id
             dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
-                                    description=name)
+                                    description={'name': name})
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
@@ -1262,7 +1258,7 @@ def updateEndpointGroups(gwgroupid=None):
                 sip_addr_external = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                 dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external,
-                                        attrs="weight={}".format(weight), description=name)
+                                        attrs="weight={}".format(weight), description={'name': name})
 
                 db.add(dispatcher)
 
@@ -1360,7 +1356,7 @@ def updateEndpointGroups(gwgroupid=None):
                             {"attrs": "weight={}".format(weight)}, synchronize_session=False)
                     else:
                         # sip_addr_external  = safeUriToHost(hostname, default_port=5080)
-                        # dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                        # dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={}".format(weight),description={'name': name})
                         # db.add(dispatcher)
                         pass
 
@@ -1373,7 +1369,7 @@ def updateEndpointGroups(gwgroupid=None):
             Gateways.address != "localhost"
         ))
         del_gateways_cleanup = db.query(Gateways).filter(and_(
-            Gateways.description.like(gwgroup_filter),
+            Gateways.description['gwgroup'] == gwgroupid,
             Gateways.gwid.notin_(gwlist),
             Gateways.address != "localhost"
         ))
@@ -1753,7 +1749,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
             # Create dispatcher group with the set id being the gateway group id
             dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
-                                    description=name)
+                                    description={'name': name})
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
@@ -1761,7 +1757,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 sip_addr_external = safeUriToHost(hostname, default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
                 dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external,
-                                        attrs="weight={}".format(weight), description=name)
+                                        attrs="weight={}".format(weight), description={'name': name})
 
                 db.add(dispatcher)
 
@@ -2505,29 +2501,29 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
-            query = (
-                """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
-                          t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
-                          t3.id AS dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
+            query = ("""
+                SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
+                          t2.id AS src_gwgroupid, JSON_EXTRACT(t2.description, '$.name') AS src_gwgroupname,
+                          t3.id AS dst_gwgroupid, JSON_EXTRACT(t3.description, '$.name') AS dst_gwgroupname,
                           t1.src_username, t1.dst_username, t1.src_ip AS src_address, t1.dst_domain AS dst_address, t1.sip_call_id AS call_id
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
                 WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}' AND t1.cdr_id IN ({cdrfilter})
-                ORDER BY t1.call_start_time DESC;"""
-            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter, cdrfilter=cdrfilter)
+                ORDER BY t1.call_start_time DESC;
+            """).format(gwgroupid=gwgroupid, dtfilter=dtfilter, cdrfilter=cdrfilter)
         else:
-            query = (
-                """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
-                          t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
-                          t3.id AS dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
+            query = ("""
+                SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
+                          t2.id AS src_gwgroupid, JSON_EXTRACT(t2.description, '$.name') AS src_gwgroupname,
+                          t3.id AS dst_gwgroupid, JSON_EXTRACT(t3.description, '$.name') AS dst_gwgroupname,
                           t1.src_username, t1.dst_username, t1.src_ip AS src_address, t1.dst_domain AS dst_address, t1.sip_call_id AS call_id
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
                 WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}'
-                ORDER BY t1.call_start_time DESC;"""
-            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
+                ORDER BY t1.call_start_time DESC;
+            """).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
 
         rows = db.execute(query)
         cdrs = []
