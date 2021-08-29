@@ -371,7 +371,7 @@ class extensions():
 
     def read(self, extension_id=None):
         cur = self.db.cursor()
-        query = "select extension_uuid,domain_uuid,extension,password,user_context,call_timeout, \
+        query = "select extension_uuid,domain_uuid,extension,password,user_context,call_timeout::integer as call_timeout, \
         enabled,outbound_caller_id_number,outbound_caller_id_name, accountcode from v_extensions where domain_uuid = %s"
         values = [self.domain_uuid]
 
