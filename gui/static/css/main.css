@@ -287,66 +287,7 @@
   color: #ffb266;
 } */
 
-@media screen and (max-width: 768px) {
-  .wrap .nav-bar .navbar-brand {
-    margin-top: 0;
-    padding-left: 0;
-  }
 
-  .wrap .side-menu-link {
-    display: inline-block;
-  }
-
-  .wrap #side-menu #qform {
-    position: absolute;
-    top: 10px;
-  }
-
-  .wrap .content {
-    left: 0;
-  }
-
-  .wrap.active .content {
-    left: 20em;
-  }
-
-  .wrap.active .content #bgrOne {
-    top: 10px;
-    -webkit-transform: rotate(225deg);
-    -moz-transform: rotate(225deg);
-    -ms-transform: rotate(225deg);
-    -o-transform: rotate(225deg);
-    transform: rotate(225deg);
-  }
-
-  .wrap.active .content #bgrTwo {
-    opacity: 0;
-  }
-
-  .wrap.active .content #bgrThree {
-    top: 10px;
-    -webkit-transform: rotate(315deg);
-    -moz-transform: rotate(315deg);
-    -ms-transform: rotate(315deg);
-    -o-transform: rotate(315deg);
-    transform: rotate(315deg);
-  }
-}
-
-@media screen and (min-width: 769px) {
-  .side-menu-link {
-    display: none;
-  }
-
-  .wrap {
-    position: relative;
-  }
-
-  .wrap .content {
-    left: 20em;
-    right: 0;
-  }
-}
 
 .panel-info > .panel-heading {
   color: #FF8100;
@@ -607,4 +548,87 @@ table.dataTable {
 .dataTables_wrapper > div:last-child {
   padding-right: 10px;
   padding-left: 10px;
+}
+
+
+/* iPhone 11 */
+@media screen and (max-width: 552px) {
+   .left-half {
+     display: none;
+   }
+
+   .right-half {
+     width: 100%;
+   }
+
+   .col-xs-4 {
+     width: 70%;
+     display: inline-block;
+   }
+
+   /*.wrap .content .content-inner .content-section {
+	margin: 0 auto;
+   }*/
+
+}
+
+@media screen and (min-width: 769px) {
+  .side-menu-link {
+    display: none;
+  }
+
+  .wrap {
+    position: relative;
+  }
+
+  .wrap .content {
+    left: 20em;
+    right: 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .wrap .nav-bar .navbar-brand {
+    margin-top: 0;
+    padding-left: 0;
+  }
+
+  .wrap .side-menu-link {
+    display: inline-block;
+  }
+
+  .wrap #side-menu #qform {
+    position: absolute;
+    top: 10px;
+  }
+
+  .wrap .content {
+    left: 0;
+  }
+
+  .wrap.active .content {
+    left: 20em;
+  }
+
+  .wrap.active .content #bgrOne {
+    top: 10px;
+    -webkit-transform: rotate(225deg);
+    -moz-transform: rotate(225deg);
+    -ms-transform: rotate(225deg);
+    -o-transform: rotate(225deg);
+    transform: rotate(225deg);
+  }
+
+  .wrap.active .content #bgrTwo {
+    opacity: 0;
+  }
+
+  .wrap.active .content #bgrThree {
+    top: 10px;
+    -webkit-transform: rotate(315deg);
+    -moz-transform: rotate(315deg);
+    -ms-transform: rotate(315deg);
+    -o-transform: rotate(315deg);
+    transform: rotate(315deg);
+  }
 }
