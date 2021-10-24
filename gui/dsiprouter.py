@@ -30,6 +30,7 @@ from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
+from modules.api.carriergroups.routes import carriergroups
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -46,10 +47,12 @@ app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
 app.register_blueprint(mediaserver)
+app.register_blueprint(carriergroups)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
 csrf.exempt(mediaserver)
+csrf.exempt(carriergroups)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
