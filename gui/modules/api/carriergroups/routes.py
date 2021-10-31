@@ -7,7 +7,7 @@ from enum import Enum
 from werkzeug import exceptions as http_exceptions
 import importlib.util
 import settings, globals
-from  modules.api.carriergroups.functions import *
+from modules.api.carriergroups.functions import *
 
 carriergroups = Blueprint('carriergroups','__name__')
 
@@ -114,8 +114,24 @@ def addCarrierGroups():
             data['auth_domain'] = auth['auth_domain'] if 'auth_domain' in auth else settings.DEFAULT_AUTH_DOMAIN
             data['auth_proxy'] = auth['auth_proxy'] if 'auth_proxy' in auth  else ''
 
+        plugin = request_payload['plugin'] if 'plugin' in request_payload else ''
+        if plugin:
+            data['plugin_name'] = plugin['name']
+            data['plugin_account_sid'] = plugin['account_sid']
+            data['plugin_account_token'] = plugin['account_token']
+        
+        endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else ''
+
+        if plugin:
+            # Import Plugin
+            from modules.api.carriergroups.plugin.twilio_carrier_v1 import init, createTrunk
+            client=init(data['plugin_account_sid'],data['plugin_account_token'])
+            if client:
+                createTrunk(client,data['name'],"193.24.24.24/32")
 
         addUpdateCarrierGroups(data)
+        #addUpdateCarrier(data)
+
         return jsonify(response_payload), StatusCodes.HTTP_OK
     
     except Exception as ex:
