@@ -337,7 +337,26 @@
             <div class="form-group">
               <input class="form-control name" type="text" name="name" placeholder="Group Name"
                      autofocus="autofocus">
+      	    </div>
+	    <div class="form-group">
+              <select class="carrier_plugins form-control" name="carrier_plugins" title="carrier_plugins" required="required">
+          		<option value="" selected="">Select Carrier Plugin (Optional)</option>
+          		<option value=""> None</option>
+          		<option value="Twilio">Twilio</option>
+              </select>
             </div>
+            
+	    <div class="form-group hidden" id="plugin_creds" name="plugin_creds" value="0">
+              <p>Please enter the plugin credentials.</p>
+                <div class="form-group">
+                  <input class="form-control account_sid" type="text" name="plugin_account_sid"
+                         placeholder="Account SID" autofocus="autofocus">
+                </div>
+                <div class="form-group">
+                  <input class="form-control account_tokene" type="password" name="plugin_account_token"
+                         placeholder="Account Token" autofocus="autofocus">
+                </div>
+	    </div>
 
             <div class="form-group">
               <div class="authoptions radio">

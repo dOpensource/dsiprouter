@@ -72,6 +72,14 @@
       return false;
     });
 
+    $('.carrier_plugins').change(function() {
+
+      var modal_body = $('#add-group .modal-body');
+      modal_body.find(".authoptions").addClass('hidden');
+      // Todo: Use the carriergroup plugin architecture to get meta data about the plugin
+      modal_body.find("#plugin_creds").removeClass('hidden');
+      
+    });
 
     $('#open-CarrierGroupAdd').click(function() {
       /** Clear out the modal */

@@ -284,6 +284,9 @@ def addUpdateCarrierGroups():
     """
     Add or Update a group of carriers
     """
+    
+    return carriergroups.addCarrierGroups()
+    
 
     db = DummySession()
 
@@ -307,7 +310,10 @@ def addUpdateCarrierGroups():
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
-
+        plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
+        plugin_account_sid = form['plugin_account_sid'] if 'plugin_account_sid' in form else ''
+        plugin_account_token = form['plugin_account_token'] if 'plugin_account_token' in form else ''
+        
         # format data
         if authtype == "userpwd":
             auth_domain = safeUriToHost(auth_domain)
@@ -320,6 +326,7 @@ def addUpdateCarrierGroups():
                 raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
             if len(auth_username) == 0:
                 auth_username = r_username
+
 
         # Adding
         if len(gwgroup) <= 0:
@@ -335,6 +342,7 @@ def addUpdateCarrierGroups():
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
+        
 
         # Updating
         else:
@@ -553,6 +561,8 @@ def addUpdateCarriers():
     """
     Add or Update a carrier
     """
+
+    return carriergroups.addUpdateCarriers()
 
     db = DummySession()
     newgwid = None

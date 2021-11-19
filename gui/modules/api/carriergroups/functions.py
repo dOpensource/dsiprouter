@@ -22,7 +22,7 @@ def addUpdateCarrierGroups(data=None):
         db = SessionLoader()
 
         if data is not None:
-            # Set the data parameter to form variable
+            # Set the form variables to data parameter
             form = data
         else:
             form = stripDictVals(request.form.to_dict())
@@ -107,7 +107,145 @@ def addUpdateCarrierGroups(data=None):
         globals.reload_required = True
         if data is None:
             return displayCarrierGroups()
-    
+        else:
+            return gwgroup
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
+
+def addUpdateCarriers(data=None):
+    """
+    Add or Update a carrier
+    """
+
+    db = DummySession()
+    newgwid = None
+
+    try:
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        db = SessionLoader()
+        
+        if data is not None:
+            # Set the form variables to data parameter
+            form = data
+            # Convert gwgroup to a string
+            gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
+            if gwgroup is not None:
+                form['gwgroup'] = str(gwgroup)
+        else:
+            form = stripDictVals(request.form.to_dict())
+
+        
+
+        gwid = form['gwid'] if 'gwid' in form else ''
+        gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
+        name = form['name'] if len(form['name']) > 0 else ''
+        hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
+        strip = form['strip'] if len(form['strip']) > 0 else '0'
+        prefix = form['prefix'] if len(form['prefix']) > 0 else ''
+
+        if len(hostname) == 0:
+            raise http_exceptions.BadRequest("Carrier hostname/address is required")
+
+        sip_addr = safeUriToHost(hostname, default_port=5060)
+        if sip_addr is None:
+            raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+        host_addr = safeStripPort(sip_addr)
+
+        # Adding
+        if len(gwid) <= 0:
+            if len(gwgroup) > 0:
+                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                db.add(Addr)
+                db.flush()
+
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
+                db.add(Gateway)
+                db.flush()
+
+                newgwid = Gateway.gwid
+                gwid = str(newgwid)
+                Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
+                gwlist = list(filter(None, Gatewaygroup.gwlist.split(",")))
+                gwlist.append(gwid)
+                Gatewaygroup.gwlist = ','.join(gwlist)
+
+            else:
+                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
+                db.add(Addr)
+                db.flush()
+
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
+                db.add(Gateway)
+
+        # Updating
+        else:
+            Gateway = db.query(Gateways).filter(Gateways.gwid == gwid).first()
+            Gateway.address = sip_addr
+            Gateway.strip = strip
+            Gateway.pri_prefix = prefix
+
+            gw_fields = strFieldsToDict(Gateway.description)
+            gw_fields['name'] = name
+            if len(gwgroup) <= 0:
+                gw_fields['gwgroup'] = gwgroup
+
+            # if address exists update
+            address_exists = False
+            if 'addr_id' in gw_fields and len(gw_fields['addr_id']) > 0:
+                Addr = db.query(Address).filter(Address.id == gw_fields['addr_id']).first()
+
+                # if entry is non existent handle in next block
+                if Addr is not None:
+                    address_exists = True
+
+                    Addr.ip_addr = host_addr
+                    addr_fields = strFieldsToDict(Addr.tag)
+                    addr_fields['name'] = name
+
+                    if len(gwgroup) > 0:
+                        addr_fields['gwgroup'] = gwgroup
+                    Addr.tag = dictToStrFields(addr_fields)
+
+            # otherwise create the address
+            if not address_exists:
+                if len(gwgroup) > 0:
+                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                else:
+                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
+
+                db.add(Addr)
+                db.flush()
+                gw_fields['addr_id'] = str(Addr.id)
+
+            # gw_fields may be updated above so set after
+            Gateway.description = dictToStrFields(gw_fields)
+
+        db.commit()
+        globals.reload_required = True
+        if data is None:
+            return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)

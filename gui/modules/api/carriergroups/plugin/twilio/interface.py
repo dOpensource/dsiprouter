@@ -1,11 +1,17 @@
 import os
 from twilio.rest import Client
 
-
-
+# Metadata about plugin
+plugin_version = 1.0
+plugin_name = "twilio"
 default_twilio_domain_name = "pstn.twilio.com"
 
 
+# Get plugin meta data
+def getPluginMetaData():
+    return "{'authfields': ['account_sid':'string','account_token':'string']}, \
+             'prefix': '+', \
+            }"
 
 # Initializes the plugin
 def init(account_sid,auth_token):
@@ -33,16 +39,18 @@ def init(account_sid,auth_token):
 def createTrunk(client,trunk_name,dsip_ip_address,twilio_domain_name=default_twilio_domain_name):
 
     try:
-         
+        # Convert trunk name to a lower case
+        trunk_name = trunk_name.lower()
         fqdn_domain_name = "{}.{}".format(trunk_name,twilio_domain_name)
         trunk = client.trunking.trunks.create(friendly_name=trunk_name,domain_name=fqdn_domain_name)
-        
-        trunk.ip_access_control_lists.create(createIPAccessControlList(client,trunk_name,dsip_ip_address))
+       
+        if trunk:
+            trunk.ip_access_control_lists.create(createIPAccessControlList(client,trunk_name,dsip_ip_address))
    
     except Exception as ex:
-        print(ex)
+        raise ex
 
-    print(trunk.sid)
+    return trunk.sid
 
 def createIPAccessControlList(client,trunk_name,dsip_ip_address):
 

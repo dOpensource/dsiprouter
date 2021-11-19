@@ -2,7 +2,7 @@ import os
 from flask import Blueprint, render_template, abort, jsonify
 from util.security import api_security
 from database import SessionLoader, DummySession, dSIPMultiDomainMapping, GatewayGroups
-from shared import showApiError,debugEndpoint,StatusCodes, getRequestData,strFieldsToDict, dictToStrFields
+from shared import getExternalIP,showApiError,debugEndpoint,StatusCodes, getRequestData,strFieldsToDict, dictToStrFields
 from enum import Enum
 from werkzeug import exceptions as http_exceptions
 import importlib.util
@@ -85,6 +85,58 @@ def listCarrierGroups():
     finally:
         db.close()
 
+@carriergroups.route('/api/v1/carriergroups/plugin/<string:plugin_name>/config',methods=['GET'])
+@api_security
+def getPluginMetaData(plugin_name):
+    """
+    Will return meta data about the plug
+
+    ===============
+    Request Payload
+    ===============
+
+    .. code-block:: json
+
+
+    {}
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            authfields: [],
+            config <string>,
+            kamreload: <bool>,
+            data: [
+                carriergroups: [
+                    {
+                    gwgroupid: <int>,
+                    name: <string>,
+                    gwlist: <string>
+                    }
+                ]
+            ]
+        }
+    """
+    # Import plugin
+    # Returns the Base directory of this file
+    base_dir = os.path.dirname(__file__)
+    try: 
+        # Use the Base Dir to specify the location of the plugin required for this domain
+        spec = importlib.util.spec_from_file_location(format(plugin_name), "{}/plugin/{}/interface.py".format(base_dir,plugin_name))
+        plugin  = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(plugin) 
+        if plugin:
+            return plugin.getPluginMetaData()
+        else:
+            return None
+    
+    except Exception as ex:
+        print(ex)
+
 @carriergroups.route('/api/v1/carriergroups',methods=['POST'])
 @api_security
 def addCarrierGroups():
@@ -117,20 +169,36 @@ def addCarrierGroups():
         plugin = request_payload['plugin'] if 'plugin' in request_payload else ''
         if plugin:
             data['plugin_name'] = plugin['name']
-            data['plugin_account_sid'] = plugin['account_sid']
-            data['plugin_account_token'] = plugin['account_token']
+            data['plugin_prefix'] = plugin['prefix'] if 'prefix' in plugin else ''
+            data['plugin_account_sid'] = plugin['account_sid'] if 'account_sid' in plugin else ''
+            data['plugin_account_token'] = plugin['account_token'] if 'account_token' in plugin else ''
         
         endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else ''
 
         if plugin:
             # Import Plugin
-            from modules.api.carriergroups.plugin.twilio_carrier_v1 import init, createTrunk
+            #from "modules.api.carriergroups.plugin.{}".format(lower(plugin_name)) import init, createTrunk
+            from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
             client=init(data['plugin_account_sid'],data['plugin_account_token'])
             if client:
-                createTrunk(client,data['name'],"193.24.24.24/32")
+                if (len(data['plugin_prefix']) == 0):
+                    plugin_prefix = "dsip"
 
-        addUpdateCarrierGroups(data)
-        #addUpdateCarrier(data)
+                trunk_name = "{}{}".format(plugin_prefix,data['name']) 
+                trunk_sid = createTrunk(client,trunk_name, getExternalIP())
+                if trunk_sid:
+                    createIPAccessControlList(client,trunk_name,getExternalIP())
+
+        gwgroup = addUpdateCarrierGroups(data)
+        print("*****:{}".format(gwgroup))
+        if gwgroup:
+            carrier_data = {}
+            carrier_data['gwgroup'] = gwgroup
+            carrier_data['name'] = trunk_name
+            carrier_data['ip_addr'] = "{}.{}".format(trunk_name, "pstn.twilio.com")
+            carrier_data['strip'] = ''
+            carrier_data['prefix'] = ''
+            addUpdateCarriers(carrier_data)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
     
