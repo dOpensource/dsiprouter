@@ -30,7 +30,7 @@ from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
-from modules.api.carriergroups.routes import carriergroups
+from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -285,7 +285,7 @@ def addUpdateCarrierGroups():
     Add or Update a group of carriers
     """
     
-    return carriergroups.addCarrierGroups()
+    return addCarrierGroups()
     
 
     db = DummySession()

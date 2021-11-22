@@ -335,25 +335,25 @@
             <input type="hidden" class="gwlist" name="gwlist">
 
             <div class="form-group">
-              <input class="form-control name" type="text" name="name" placeholder="Group Name"
+              <input class="form-control name" type="text" id="name" name="name" placeholder="Group Name"
                      autofocus="autofocus">
       	    </div>
 	    <div class="form-group">
-              <select class="carrier_plugins form-control" name="carrier_plugins" title="carrier_plugins" required="required">
-          		<option value="" selected="">Select Carrier Plugin (Optional)</option>
-          		<option value=""> None</option>
+              <select class="form-control plugin_name" id="plugin_name" name="plugin_name" title="plugin_name" required="required">
+          		<option value="None" selected="">Select Carrier Plugin (Optional)</option>
+          		<option value="None"> None</option>
           		<option value="Twilio">Twilio</option>
               </select>
             </div>
             
-	    <div class="form-group hidden" id="plugin_creds" name="plugin_creds" value="0">
+	    <div class="form-group plugin_creds hidden" id="plugin_creds" name="plugin_creds" value="0">
               <p>Please enter the plugin credentials.</p>
                 <div class="form-group">
-                  <input class="form-control account_sid" type="text" name="plugin_account_sid"
+                  <input class="form-control plugin_account_sid" id="plugin_account_sid" type="text" name="plugin_account_sid"
                          placeholder="Account SID" autofocus="autofocus">
                 </div>
                 <div class="form-group">
-                  <input class="form-control account_tokene" type="password" name="plugin_account_token"
+                  <input class="form-control plugin_account_token" id="plugin_account_token" type="password" name="plugin_account_token"
                          placeholder="Account Token" autofocus="autofocus">
                 </div>
 	    </div>
@@ -395,7 +395,7 @@
               </div>
 
             <div class="modal-footer ">
-              <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
+              <button type="submit" id="addButton" class="btn btn-lg btn-primary" style="width: 100%;"><span
                   class="glyphicon glyphicon-ok-sign"></span> Add
               </button>
             </div>

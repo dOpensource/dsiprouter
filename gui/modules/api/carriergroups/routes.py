@@ -140,7 +140,29 @@ def getPluginMetaData(plugin_name):
 @carriergroups.route('/api/v1/carriergroups',methods=['POST'])
 @api_security
 def addCarrierGroups():
-    
+    """
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <string>,
+            msg: <string>,
+            kamreload: <bool>,
+            data: [
+                {
+                    gwgroupid: <int>,
+                    endpoints: [
+                        <int>,
+                        ...
+                    ]
+                }
+            ]
+        }
+    """
+
     try:
         if settings.DEBUG:
             debugEndpoint()
@@ -189,9 +211,9 @@ def addCarrierGroups():
                 if trunk_sid:
                     createIPAccessControlList(client,trunk_name,getExternalIP())
 
-        gwgroup = addUpdateCarrierGroups(data)
-        print("*****:{}".format(gwgroup))
-        if gwgroup:
+        gwgroupid = addUpdateCarrierGroups(data)
+        print("*****:{}".format(gwgroupid))
+        if gwgroupid:
             carrier_data = {}
             carrier_data['gwgroup'] = gwgroup
             carrier_data['name'] = trunk_name
@@ -199,6 +221,9 @@ def addCarrierGroups():
             carrier_data['strip'] = ''
             carrier_data['prefix'] = ''
             addUpdateCarriers(carrier_data)
+
+        gwgroup_data['gwgroupid'] = gwgroupid
+        response_payload['data'].append(gwgroup_data)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
     
