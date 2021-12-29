@@ -7,7 +7,7 @@ This section contains a list of the common use cases that are implemented using 
 SIP Trunking Using IP Authentication
 ====================================
 dSIPRouter enables an organization to start supporting SIP Trunking within minutes.
-Here are the steps to set it up using IP Authenication:
+Here are the steps to set it up using IP Authentication:
 
 1. Login to dSIPRouter
 2. Validate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in :ref:`carrier_groups`_ and/or :ref:`global_outbound_routes`_ documentation.
