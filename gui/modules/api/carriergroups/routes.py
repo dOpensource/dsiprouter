@@ -215,13 +215,14 @@ def addCarrierGroups():
         print("*****:{}".format(gwgroupid))
         if gwgroupid:
             carrier_data = {}
-            carrier_data['gwgroup'] = gwgroup
+            carrier_data['gwgroup'] = gwgroupid
             carrier_data['name'] = trunk_name
             carrier_data['ip_addr'] = "{}.{}".format(trunk_name, "pstn.twilio.com")
             carrier_data['strip'] = ''
             carrier_data['prefix'] = ''
             addUpdateCarriers(carrier_data)
 
+        gwgroup_data = {}
         gwgroup_data['gwgroupid'] = gwgroupid
         response_payload['data'].append(gwgroup_data)
 
