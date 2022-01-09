@@ -188,8 +188,8 @@ def addCarrierGroups():
             data['auth_domain'] = auth['auth_domain'] if 'auth_domain' in auth else settings.DEFAULT_AUTH_DOMAIN
             data['auth_proxy'] = auth['auth_proxy'] if 'auth_proxy' in auth  else ''
 
-        plugin = request_payload['plugin'] if 'plugin' in request_payload else ''
-        if plugin:
+        plugin = request_payload['plugin'] if 'plugin' in request_payload else None
+        if plugin and plugin != "None":
             data['plugin_name'] = plugin['name']
             data['plugin_prefix'] = plugin['prefix'] if 'prefix' in plugin else ''
             data['plugin_account_sid'] = plugin['account_sid'] if 'account_sid' in plugin else ''
@@ -197,16 +197,12 @@ def addCarrierGroups():
         
         endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else ''
 
-        if plugin:
+        if plugin and plugin != "None":
             # Import Plugin
             #from "modules.api.carriergroups.plugin.{}".format(lower(plugin_name)) import init, createTrunk
             from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
-            try:
-                client=init(data['plugin_account_sid'],data['plugin_account_token'])
+            client=init(data['plugin_account_sid'],data['plugin_account_token'])
             
-            except Exception as ex:
-                raise ex
-
             if client:
                 if (len(data['plugin_prefix']) == 0):
                     plugin_prefix = "dsip"
@@ -218,8 +214,9 @@ def addCarrierGroups():
 
         # This creates the carrier group only
         gwgroupid = addUpdateCarrierGroups(data)
-        print("*****:{}".format(gwgroupid))
-        if gwgroupid:
+
+        # This creates the Twilio Elastic SIP Entry in the Carrier Group
+        if gwgroupid and plugin and plugin != "None":
             carrier_data = {}
             carrier_data['gwgroup'] = gwgroupid
             carrier_data['name'] = trunk_name

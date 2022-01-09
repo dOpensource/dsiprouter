@@ -31,7 +31,7 @@ def init(account_sid,auth_token):
         print("The {} key is not set".format(ke))
 
     except Exception as ex:
-
+        raise Exception( type(ex).__name__ + "-" + str(ex))
         print(ex)
         return False
 
@@ -48,7 +48,7 @@ def createTrunk(client,trunk_name,dsip_ip_address,twilio_domain_name=default_twi
             trunk.ip_access_control_lists.create(createIPAccessControlList(client,trunk_name,dsip_ip_address))
    
     except Exception as ex:
-        raise ex
+        raise Exception( type(ex).__name__ + "-" + str(ex))
 
     return trunk.sid
 
