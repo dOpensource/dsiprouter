@@ -201,7 +201,12 @@ def addCarrierGroups():
             # Import Plugin
             #from "modules.api.carriergroups.plugin.{}".format(lower(plugin_name)) import init, createTrunk
             from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
-            client=init(data['plugin_account_sid'],data['plugin_account_token'])
+            try:
+                client=init(data['plugin_account_sid'],data['plugin_account_token'])
+            
+            except Exception as ex:
+                raise ex
+
             if client:
                 if (len(data['plugin_prefix']) == 0):
                     plugin_prefix = "dsip"
@@ -211,6 +216,7 @@ def addCarrierGroups():
                 if trunk_sid:
                     createIPAccessControlList(client,trunk_name,getExternalIP())
 
+        # This creates the carrier group only
         gwgroupid = addUpdateCarrierGroups(data)
         print("*****:{}".format(gwgroupid))
         if gwgroupid:
