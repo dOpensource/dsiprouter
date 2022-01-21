@@ -562,7 +562,7 @@ def addUpdateCarriers():
     Add or Update a carrier
     """
 
-    return carriergroups.addUpdateCarriers()
+    #carriergroups.addUpdateCarriers()
 
     db = DummySession()
     newgwid = None
