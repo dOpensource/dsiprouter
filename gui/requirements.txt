@@ -8,7 +8,7 @@ docutils<0.17,>=0.12
 Flask==1.1.2
 Flask_Script
 Flask_WTF
-itsdangerous
+itsdangerous==2.0.1
 mysqlclient
 psycopg2
 psycopg2_binary
