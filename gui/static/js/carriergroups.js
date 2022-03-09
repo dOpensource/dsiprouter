@@ -1,10 +1,177 @@
 ;(function(window, document) {
   'use strict';
+  
+  // throw an error if required functions not defined
+  if (typeof validateFields === "undefined") {
+    throw new Error("validateFields() is required and is not defined");
+  }
+  if (typeof showNotification === "undefined") {
+    throw new Error("showNotification() is required and is not defined");
+  }
+  if (typeof toggleElemDisabled === "undefined") {
+    throw new Error("toggleElemDisabled() is required and is not defined");
+  }
 
+  // throw an error if required globals not defined
+  if (typeof API_BASE_URL === "undefined") {
+    throw new Error("API_BASE_URL is required and is not defined");
+  }
   // throw an error if required globals not defined
   if (typeof GUI_BASE_URL === "undefined") {
     throw new Error("GUI_BASE_URL is required and is not defined");
   }
+
+  // Add EndpointGroup
+  function addCarrierGroup(action) {
+    var selector, modal_body, url;
+
+    // The default action is a POST (creating a new EndpointGroup)
+    if (typeof action === "undefined") {
+      action = "POST";
+    }
+
+    if (action === "POST") {
+      action = "POST";
+      selector = "#add-group";
+      modal_body = $(selector + ' .modal-body');
+      url = API_BASE_URL + "carriergroups";
+    }
+    // Grab the Gateway Group ID if updating using a PUT
+    else if (action === "PUT") {
+      selector = "#edit";
+      modal_body = $(selector + ' .modal-body');
+      gwgroupid = modal_body.find(".gwgroupid").val();
+      url = API_BASE_URL + "carriergroups/" + gwgroupid;
+    }
+    else {
+      throw new Error("addGatewayGroup(): action must be either POST or PUT");
+    }
+
+    var requestPayload = {};
+    requestPayload.name = modal_body.find('.name').val();
+    var plugin_name = modal_body.find('.plugin_name').val();
+    
+    if (plugin_name != "None") {
+	    var plugin = {};
+	    plugin.name = plugin_name;
+	    plugin.account_sid = modal_body.find(".plugin_account_sid").val();
+	    plugin.account_token = modal_body.find(".plugin_account_token").val();
+    }
+
+    requestPayload.plugin = plugin;
+    
+	  
+    var auth = {};
+    if (action === "POST") {
+      if ($('input#ip.authtype').is(':checked')) {
+        auth.type = "ip";
+      }
+      else {
+        auth.type = "userpwd";
+        auth.pass = modal_body.find("#auth_password").val();
+      }
+    }
+    else if (action === "PUT") {
+      if ($('input#ip2.authtype').is(':checked')) {
+        auth.type = "ip";
+      }
+      else {
+        auth.type = "userpwd";
+        auth.pass = modal_body.find("#auth_password2").val();
+      }
+    }
+
+    auth.user = modal_body.find(".auth_username").val();
+    auth.domain = modal_body.find(".auth_domain").val();
+
+    requestPayload.auth = auth;
+
+    requestPayload.strip = modal_body.find(".strip").val();
+    requestPayload.prefix = modal_body.find(".prefix").val();
+
+    
+
+    
+    /* Process endpoints (empty endpoints are ignored) */
+    /*var endpoints = [];
+    $("tr.endpoint").each(function(i, row) {
+      var endpoint = {};
+      var gwid = $(this).find('td').eq(0).text();
+      if (gwid.length > 0) {
+        endpoint.gwid = parseInt(gwid, 10);
+      }
+      endpoint.hostname = $(this).find('td').eq(1).text();
+      endpoint.description = $(this).find('td').eq(2).text();
+      endpoint.weight = $(this).find('td').eq(3).text();
+      //endpoint.maintmode = $(this).find('td').eq(3).text();
+
+      if (!(endpoint.hostname.length === 0 && endpoint.description.length === 0)) {
+        endpoints.push(endpoint);
+      }
+    });
+    requestPayload.endpoints = endpoints;
+    */
+
+
+    // Put into JSON Message and send over
+    $.ajax({
+      type: action,
+      url: url,
+      dataType: "json",
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify(requestPayload),
+      success: function(response, textStatus, jqXHR) {
+        var btn;
+        var gwgroupid_int = response.data[0].gwgroupid;
+
+        // Update the Add Button and the table
+        if (action === "POST") {
+          btn = $('#add .modal-footer').find('#addButton');
+          btn.removeClass("btn-primary");
+        }
+        else {
+          btn = $('#edit .modal-footer').find('#updateButton');
+          btn.removeClass("btn-warning");
+        }
+
+        btn.addClass("btn-success");
+        btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
+        btn.attr("disabled", true);
+
+        if (action === "POST") {
+          gwgroup_table.row.add({
+            "name": requestPayload.name,
+            "gwgroupid": gwgroupid_int
+          }).draw();
+        }
+        else {
+          gwgroup_table.row(function(idx, data, node) {
+            return data.gwgroupid === gwgroupid_int;
+          }).data({
+            "name": requestPayload.name,
+            "gwgroupid": gwgroupid_int
+          }).draw();
+        }
+      }
+    })
+  }
+
+  /* validate fields before submitting api request */
+  $('#addButton').click(function(ev) {
+    /* prevent form default submit */
+    ev.preventDefault();
+
+    if (validateFields('#add-group')) {
+      addCarrierGroup();
+      // hide the modal after 1.5 sec
+      setTimeout(function() {
+        var add_modal = $('#add-group');
+        if (add_modal.is(':visible')) {
+          add_modal.modal('hide');
+        }
+      }, 1500);
+    }
+  });
 
   function setCarrierGroupHandlers() {
     var carriergroups_tbody = $('#carrier-groups tbody');
@@ -72,6 +239,17 @@
       return false;
     });
 
+    $('.plugin_name').change(function() {
+
+      var modal_body = $('#add-group .modal-body');
+      modal_body.find(".authoptions").addClass('hidden');
+      // Todo: Use the carriergroup plugin architecture to get meta data about the plugin
+      if ($('.plugin_name').val() != 'None')
+        modal_body.find('.plugin_creds').removeClass('hidden');
+      else
+        modal_body.find('.authoptions').addClass('hidden');;
+      
+    });
 
     $('#open-CarrierGroupAdd').click(function() {
       /** Clear out the modal */

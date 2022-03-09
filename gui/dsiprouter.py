@@ -30,6 +30,7 @@ from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
+from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -46,10 +47,12 @@ app = Flask(__name__, static_folder="./static", static_url_path="/static")
 app.register_blueprint(domains)
 app.register_blueprint(api)
 app.register_blueprint(mediaserver)
+app.register_blueprint(carriergroups)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
 csrf.exempt(mediaserver)
+csrf.exempt(carriergroups)
 numbers_api = flowroute.Numbers()
 shared_settings = objToDict(settings)
 settings_manager = createSettingsManager(shared_settings)
@@ -281,6 +284,9 @@ def addUpdateCarrierGroups():
     """
     Add or Update a group of carriers
     """
+    
+    return addCarrierGroups()
+    
 
     db = DummySession()
 
@@ -304,7 +310,10 @@ def addUpdateCarrierGroups():
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
-
+        plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
+        plugin_account_sid = form['plugin_account_sid'] if 'plugin_account_sid' in form else ''
+        plugin_account_token = form['plugin_account_token'] if 'plugin_account_token' in form else ''
+        
         # format data
         if authtype == "userpwd":
             auth_domain = safeUriToHost(auth_domain)
@@ -317,6 +326,7 @@ def addUpdateCarrierGroups():
                 raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
             if len(auth_username) == 0:
                 auth_username = r_username
+
 
         # Adding
         if len(gwgroup) <= 0:
@@ -332,6 +342,7 @@ def addUpdateCarrierGroups():
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
+        
 
         # Updating
         else:
@@ -550,6 +561,8 @@ def addUpdateCarriers():
     """
     Add or Update a carrier
     """
+
+    #carriergroups.addUpdateCarriers()
 
     db = DummySession()
     newgwid = None

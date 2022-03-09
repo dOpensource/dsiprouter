@@ -1,4 +1,4 @@
-variable "pvt_key" {
+variable "pvt_key_path" {
 	type=string
 }
 
@@ -7,10 +7,12 @@ variable "pub_key_name" {
 }
 variable "dsiprouter_prefix" {
 	type=string
+	default=""
 }
 
 variable "number_of_environments" {
 	type=number
+	default="1"
 }
 
 variable "branch" {
