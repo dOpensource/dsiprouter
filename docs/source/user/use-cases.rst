@@ -477,12 +477,18 @@ An instance of dSIPRouter can either be a single tenant configuration (like sbc.
 ------------------
 Steps to Implement
 ------------------
+
 1. `Buy a license <https://dopensource.com/dsiprouter-annual-subscriptions/>`_  and follow the license installation instructions that are emailed to you.
+
 2. Add any carriers you need for inbound and outbound routing, define appropriate routes.
+
 3. Authorize your SBC's domain with Microsoft 365 by adding a TXT record starting with ms= per `Microsoft's documentation <https://docs.microsoft.com/en-us/microsoft-365/admin/setup/add-domain?view=o365-worldwide>`_.
 Note: For multi-tenant use, authorizing the root subdomain or domain (if you use *.sbc.example.com, you would authorize sbc.example.com) should avoid the need to authorize each subdomain below this (like clientname.example.com)
+
 4. Create a global admin user with proper Teams licensing associated with the domain (or for multi-tenant both the root subdomain (eg: sbc.example.com) and client's domain (eg: client.sbc.example.com))
+
 5. Add the Teams session border controller in `Teams Admin Center <https://admin.teams.microsoft.com/direct-routing/v2>`_. Ensure the SIP port is correct (usually 5061) and the SBC is enabled!
+
 6. `Install PowerShell <https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux>`_ type pwsh then:
 
 .. code-block:: bash
@@ -492,6 +498,7 @@ Import-Module MicrosoftTeams
 $userCredential = Get-Credential
 Connect-MicrosoftTeams -Credential $userCredential
 
+   code
 
 Login Note: If your using multi-factor authentication (MFA/2FA), log in by typing Connect-MicrosoftTeams
 Debian 10 Note: If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
@@ -515,6 +522,7 @@ Get-CsOnlineUser “user@example.com" | select OnlineVoiceRoutingPolicy
 # Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
 Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
 
+   code
 
 Note: Log out by typing Disconnect-MicrosoftTeams
 
@@ -539,5 +547,6 @@ Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "U
 # Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
 Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
 
+   code
 
 Note: Log out by typing Disconnect-MicrosoftTeams
