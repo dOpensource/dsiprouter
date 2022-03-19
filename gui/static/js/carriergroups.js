@@ -21,6 +21,9 @@
     throw new Error("GUI_BASE_URL is required and is not defined");
   }
 
+  var gwgroupid;
+  var gwgroup_table = $('').DataTable();
+
   // Add EndpointGroup
   function addCarrierGroup(action) {
     var selector, modal_body, url;
@@ -81,8 +84,11 @@
       }
     }
 
-    auth.user = modal_body.find(".auth_username").val();
-    auth.domain = modal_body.find(".auth_domain").val();
+    auth.r_username = modal_body.find(".r_username").val();
+    auth.auth_username = modal_body.find(".auth_username").val();
+    auth.auth_password = auth.pass
+    auth.auth_domain = modal_body.find(".auth_domain").val();
+    auth.auth_proxy = modal_body.find(".auth_proxy").val();
 
     requestPayload.auth = auth;
 
