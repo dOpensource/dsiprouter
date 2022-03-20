@@ -71,7 +71,7 @@
       }
       else {
         auth.type = "userpwd";
-        auth.pass = modal_body.find("#auth_password").val();
+        auth.pass = modal_body.find(".auth_password").val();
       }
     }
     else if (action === "PUT") {
@@ -80,7 +80,7 @@
       }
       else {
         auth.type = "userpwd";
-        auth.pass = modal_body.find("#auth_password2").val();
+        auth.pass = modal_body.find(".auth_password2").val();
       }
     }
 
