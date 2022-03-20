@@ -30,6 +30,7 @@ def addUpdateCarrierGroups(data=None):
         gwgroup = form['gwgroup']
         name = form['name']
         new_name = form['new_name'] if 'new_name' in form else ''
+        plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
         authtype = form['authtype'] if 'authtype' in form else ''
         r_username = form['r_username'] if 'r_username' in form else ''
         auth_username = form['auth_username'] if 'auth_username' in form else ''
@@ -38,7 +39,7 @@ def addUpdateCarrierGroups(data=None):
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
 
         # format data
-        if authtype == "userpwd":
+        if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
             auth_domain = safeUriToHost(auth_domain)
             if auth_domain is None:
                 raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
@@ -58,7 +59,7 @@ def addUpdateCarrierGroups(data=None):
             gwgroup = Gwgroup.id
 
             # Add auth_domain(aka registration server) to the gateway list
-            if authtype == "userpwd":
+            if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
@@ -83,7 +84,7 @@ def addUpdateCarrierGroups(data=None):
 
             # auth form
             else:
-                if authtype == "userpwd":
+                if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
                     # update uacreg if exists, otherwise create
                     if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                         {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
