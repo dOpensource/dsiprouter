@@ -14,7 +14,6 @@ carriergroups = Blueprint('carriergroups','__name__')
 @carriergroups.route('/api/v1/carriergroups',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['DELETE'])
-@carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['PUT'])
 @api_security
 def listCarrierGroups():
     """
@@ -137,9 +136,11 @@ def getPluginMetaData(plugin_name):
     except Exception as ex:
         print(ex)
 
+@carriergroups.route('/api/v1/carriergroups',methods=['PUT'])
+@carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['PUT'])
 @carriergroups.route('/api/v1/carriergroups',methods=['POST'])
 @api_security
-def addCarrierGroups():
+def addCarrierGroups(id=None):
     """
     ================
     Response Payload
@@ -178,7 +179,10 @@ def addCarrierGroups():
         # get request data
         request_payload = getRequestData()
         data['name'] = request_payload['name']
-        data['gwgroup'] = ""
+        if id == None:
+            data['gwgroup'] = request_payload['gwgroup'] if 'gwgroup' in request_payload else ''
+        else:
+            data['gwgroup'] = id
         data['strip'] = request_payload['strip'] if 'strip' in request_payload else ''
         data['prefix'] = request_payload['prefix'] if 'prefix' in request_payload else ''
 
@@ -229,7 +233,7 @@ def addCarrierGroups():
             addUpdateCarriers(carrier_data)
 
 
-        # Add enapoints
+        # Add endpoints
         for endpoint in endpoints:
             carrier_data = {}
             carrier_data['gwgroup'] = gwgroupid
