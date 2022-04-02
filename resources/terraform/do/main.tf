@@ -27,7 +27,7 @@ resource "digitalocean_droplet" "dsiprouter" {
         host = self.ipv4_address
         user = "root"
         type = "ssh"
-        private_key = var.pvt_key_path
+        private_key = file(var.pvt_key_path)
         timeout = "5m"
         }
 
