@@ -993,7 +993,7 @@ configureSystemRepos() {
 
     printdbg 'Configuring system repositories'
     if [[ "$DISTRO" == "debian" ]]; then
-        cp -f ${DSIP_PROJECT_DIR}/resources/apt/debian/official-releases.list ${APT_OFFICIAL_SOURCES}
+        cp -f ${DSIP_PROJECT_DIR}/resources/apt/debian/$DISTRO_VER/official-releases.list ${APT_OFFICIAL_SOURCES}
         envsubst < ${DSIP_PROJECT_DIR}/resources/apt/debian/official-releases.pref > ${APT_OFFICIAL_PREFS}
         apt-get update -y
     elif [[ "$DISTRO" == "centos" ]]; then
