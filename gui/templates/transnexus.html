@@ -23,14 +23,14 @@
         {% if transnexus["authservice_enabled"] == "1" %}
           <input id="toggleTransnexus" name ="authservice_enabled" type="checkbox" checked title="Toggle Auth Service"
                  data-toggle="toggle"
-                 value="{{ transnexus["global_enabled"] }}"
+                 value="{{ transnexus["authservice_enabled"] }}"
                  data-on="<span class='icon-gryphon'></span> Enabled"
                  data-off="<span class='icon-gryphon'></span> Disabled"
                  data-width="120px">
         {% else %}
           <input id="toggleTransnexus" name="authservice_enabled" type="checkbox" title="Toggle Auth Service"
                  data-toggle="toggle"
-                 value="{{ transnexus["global_enabled"] }}"
+                 value="{{ transnexus["authservice_enabled"] }}"
                  data-on="<span class='icon-gryphon'></span> Enabled"
                  data-off="<span class='icon-gryphon'></span> Disabled"
                  data-width="120px">

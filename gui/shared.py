@@ -448,6 +448,7 @@ def updateConfig(config_obj, field_dict, hot_reload=False):
                         r")[ \t]*=[ \t]*(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?\"\"\".*\"\"\"[ \t]*$|b?'''.*'''[ \v]*$|b?\".*\"[ \t]*$|b?'.*')"
                 replace_str = "{} = {}".format(key, repr(val))
                 config_str = re.sub(regex, replace_str, config_str, flags=re.MULTILINE)
+            
             config.seek(0)
             config.write(config_str)
             config.truncate()

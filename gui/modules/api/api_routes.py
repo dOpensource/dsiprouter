@@ -149,6 +149,15 @@ def reloadKamailio():
                 {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
 
+        # Set TransNexus Settings
+
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+                'params': ['transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+                'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
+
         for cmdset in reload_cmds:
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
             if r.status_code >= 400:
