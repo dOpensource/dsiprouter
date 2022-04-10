@@ -79,7 +79,7 @@
   </div>
 
   <div class="modal-body">
-    <form class="gwform" action="/carriergroups" method="POST" role="form">
+    <form class="gwform" action="/carriers" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" class="gwid" name="gwid">
       <input type="hidden" class="gwgroup" name="gwgroup" value="{{ gwgroup|noneFilter() }}">
@@ -197,7 +197,7 @@
         </div>
 
         <div class="modal-body">
-          <form class="gwgroupform" action="/carriergroups" method="POST" role="form">
+          <form class="gwgroupform" action="/carriergroups" method="POST" onsubmit="event.preventDefault();" role="form">
           <!-- nav tabs -->
           <div id="carrier-nav" class="navbar">
             <ul class="nav nav-tabs">
@@ -273,12 +273,6 @@
                 </div>
               </div>
           </div>
-          <div class="modal-footer ">
-            <button type="submit" id="updateGroupButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
-                class="glyphicon glyphicon-ok-sign"></span> Update
-            </button>
-          </div>
-        </form>
           <!-- carriers table -->
           <div class="hidden" name="carriers-toggle">
             <div class="wrapper-horizontal edge-centered">
@@ -300,7 +294,12 @@
               </div>
             </div>
           </div>
-
+          <div class="modal-footer ">
+            <button type="submit" id="updateGroupButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
+                class="glyphicon glyphicon-ok-sign"></span> Update
+            </button>
+          </div>
+        </form>
         </div><!-- /.modal-body -->
 
       </div><!-- /.modal-content -->

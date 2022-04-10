@@ -69,11 +69,11 @@ def addUpdateCarrierGroups(data=None):
         # Updating
         else:
             # config form
-            if len(new_name) > 0:
+            if len(name) > 0:
                 Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
                 gwgroup_fields = strFieldsToDict(Gwgroup.description)
                 old_name = gwgroup_fields['name']
-                gwgroup_fields['name'] = new_name
+                gwgroup_fields['name'] = name
                 Gwgroup.description = dictToStrFields(gwgroup_fields)
 
                 Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(old_name))).first()
@@ -83,26 +83,25 @@ def addUpdateCarrierGroups(data=None):
                     Addr.tag = dictToStrFields(addr_fields)
 
             # auth form
-            else:
-                if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
-                    # update uacreg if exists, otherwise create
-                    if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                         'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
-                        Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
-                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
-                        db.add(Uacreg)
+            if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
+                # update uacreg if exists, otherwise create
+                if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
+                    {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
+                        'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
+                        'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
+                    Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
+                                    auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
+                    db.add(Uacreg)
 
-                    # update address if exists, otherwise create
-                    if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                        {'ip_addr': auth_domain}, synchronize_session=False):
-                        Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                        db.add(Addr)
-                else:
-                    # delete uacreg and address if they exist
-                    db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
-                    db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
+                # update address if exists, otherwise create
+                if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
+                    {'ip_addr': auth_domain}, synchronize_session=False):
+                    Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    db.add(Addr)
+            else:
+                # delete uacreg and address if they exist
+                db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
+                db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
 
         db.commit()
         globals.reload_required = True

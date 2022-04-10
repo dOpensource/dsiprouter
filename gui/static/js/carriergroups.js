@@ -52,6 +52,9 @@
 
     var requestPayload = {};
     requestPayload.name = modal_body.find('.name').val();
+    if (action === "PUT") {
+      requestPayload.name = modal_body.find('.new_name').val();
+    }
     var plugin_name = modal_body.find('.plugin_name').val();
     
     if (plugin_name != "None") {
@@ -120,14 +123,17 @@
             "name": requestPayload.name,
             "gwgroupid": gwgroupid_int
           }).draw();
+          location.reload(true); 
         }
         else {
+          /*
           gwgroup_table.row(function(idx, data, node) {
             return data.gwgroupid === gwgroupid_int;
           }).data({
             "name": requestPayload.name,
             "gwgroupid": gwgroupid_int
-          }).draw();
+          }).draw(); */
+          location.reload(true); 
         }
       }
     })
