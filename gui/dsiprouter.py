@@ -1673,6 +1673,68 @@ def addUpdateTeleBlock():
         error = "server"
         return showError(type=error)
 
+@app.route('/transnexus')
+def displayTransNexus():
+    """
+    Display TransNexus settings in view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        transnexus = {}
+        transnexus["authservice_enabled"] = settings.TRANSNEXUS_AUTHSERVICE_ENABLED
+        transnexus["authservice_host"] = settings.TRANSNEXUS_AUTHSERVICE_HOST
+
+        return render_template('transnexus.html', transnexus=transnexus)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+@app.route('/transnexus', methods=['POST'])
+def addUpdateTransNexus():
+    """
+    Update TransNexus config file settings
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        form = stripDictVals(request.form.to_dict())
+
+        # Update the TransNexus settings
+        transnexus = {}
+        transnexus["authservice_enabled"] = form.get('authservice_enabled',0)
+        transnexus["authservice_host"] = form.get('authservice_host', '')
+       
+        updateConfig(settings, transnexus, hot_reload=True)
+
+        globals.reload_required = True
+        return displayTransNexus()
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
 @app.route('/outboundroutes')
 def displayOutboundRoutes():
     """
