@@ -7,8 +7,11 @@ route[TRANSNEXUS_OUTBOUND] {
 	
       	xlog("L_INFO", "Transnexus Outbound Logic");
 	
+	#Store the $ru that was selected
+	$avp(dr_current_ruri) = $ru;
+
 	#Send call to clearip server
-	$ru = "sip:" + $rU + "@" + "outbound.sip.clearip.com" + ":" + "5060;transport=tcp";
+	$ru = "sip:" + $rU + "@" + $sel(cfg_get.transnexus.authservice_host) + ";transport=tcp";
 
 	#Set a failure route to get the 302
 	if (is_method("INVITE")) {
@@ -25,7 +28,8 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 	if (t_check_status("302")) {	
 		xlog("L_INFO", "Transnexus Outbound Failure Logic");
         	#Send call to Carrier
-		$ru = "sip:" + $rU + "@" + "206.147.88.37" + ":" + "5060;transport=UDP";
+		#$ru = "sip:" + $rU + "@" + "206.147.88.37" + ":" + "5060;transport=UDP";
+		$ru = $avp(dr_current_ruri);
 		#Append Identity Header
 		append_hf("Identity: $avp(Identity)\r\n");
 		#Send call outbound

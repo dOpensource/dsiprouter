@@ -756,6 +756,7 @@ function generateKamailioConfig {
     # copy of template kamailio configuration to dsiprouter system config dir
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+    cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/*.inc ${SYSTEM_KAMAILIO_CONFIG_DIR}
 
     # Set the External IP Address for the WebRTC Port
     sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
