@@ -25,13 +25,14 @@ route[TRANSNEXUS_OUTBOUND] {
 failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 
-	if (t_check_status("302")) {	
+	if (t_check_status("302|403|503")) {	
 		xlog("L_INFO", "Transnexus Outbound Failure Logic");
         	#Send call to Carrier
 		#$ru = "sip:" + $rU + "@" + "206.147.88.37" + ":" + "5060;transport=UDP";
 		$ru = $avp(dr_current_ruri);
 		#Append Identity Header
-		append_hf("Identity: $avp(Identity)\r\n");
+		if $avp(Identity) != ""
+			append_hf("Identity: $avp(Identity)\r\n");
 		#Send call outbound
 		t_relay();
 		exit;
@@ -40,10 +41,17 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 onreply_route[TRANSNEXUS_OUTBOUND_REPLY] {
 
-	if (t_check_status("302")) {	
-		#Get Identity header and append it to header
-		xlog("L_INFO", "Identity Header: $hdr(Identity),$hdr(Reason)");
-		$avp(Identity) = $hdr(Identity);
+	if (t_check_status("302|403|503")) {	
+		#Get Identity header and append it to header.  Look for Identity or X-Identity
+		if ($hdr(Identity) != "") 
+			$avp(Identity) = $hdr(Identity);
+		else if ($hdr(X-Identity) != "")
+			$avp(Identity) = $hdr(X-Identity);
+		
+		if ($avp(Identity) != "")
+			xlog("L_INFO", "Identity Header Found: $avp(Identity),$hdr(Reason)");
+		else
+			xlog("L_INFO", "Identity Header Not Found");
 	}
 }
 
