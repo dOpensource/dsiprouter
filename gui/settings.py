@@ -97,7 +97,7 @@ TELEBLOCK_MEDIA_PORT = ''
 
 # TransNexus Settings
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
-TRANSNEXUS_AUTHSERVICE_HOST = 'outbound.clearip.com'
+TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
 
 # Flowroute API Settings
 FLOWROUTE_ACCESS_KEY = ''
