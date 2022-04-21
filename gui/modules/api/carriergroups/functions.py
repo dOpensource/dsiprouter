@@ -37,6 +37,11 @@ def addUpdateCarrierGroups(data=None):
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
+        
+        # Workaround: for Twilio Elastic SIP 
+        # Set the Realm to sip.twilio.com if the domain contains a pstn.twilio.com domain.  
+        # Otherwise, set it to the name of the auth domain
+        auth_realm = "sip.twilio.com" if "pstn.twilio.com" in auth_domain else auth_domain
 
         # format data
         if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
@@ -60,7 +65,7 @@ def addUpdateCarrierGroups(data=None):
 
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
-                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
+                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_realm, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
@@ -87,7 +92,7 @@ def addUpdateCarrierGroups(data=None):
                 # update uacreg if exists, otherwise create
                 if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                     {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                        'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
+                        'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_realm,
                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
                     Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)

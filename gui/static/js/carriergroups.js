@@ -77,7 +77,7 @@
     else if (action === "PUT") {
         auth.type = modal_body.find(".authtype").val();
 	if (auth.type == "userpwd") {
-        	auth.pass = modal_body.find(".auth_password2").val();
+        	auth.pass = modal_body.find(".auth_password").val();
      	 }
     }
 
