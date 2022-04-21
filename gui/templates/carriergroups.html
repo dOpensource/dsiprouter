@@ -103,7 +103,7 @@
       </div>
 
       <div class="modal-footer ">
-        <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
+        <button type="submit" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
             class="glyphicon glyphicon-ok-sign"></span> Update
         </button>
       </div>
@@ -197,7 +197,7 @@
         </div>
 
         <div class="modal-body">
-
+          <form class="gwgroupform" action="/carriergroups" method="POST" onsubmit="event.preventDefault();" role="form">
           <!-- nav tabs -->
           <div id="carrier-nav" class="navbar">
             <ul class="nav nav-tabs">
@@ -218,7 +218,7 @@
 
            <!-- config form -->
           <div class="hidden" name="config-toggle" style="padding-top: 15px;">
-            <form class="gwgroupform" action="/carriergroups" method="POST" role="form">
+            
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" class="gwgroup" name="gwgroup">
               <input type="hidden" class="name" name="name">
@@ -228,18 +228,10 @@
                 <input class="form-control new_name" type="text" name="new_name" placeholder="Group Name"
                        autofocus="autofocus" required="required">
               </div>
-
-              <div class="modal-footer ">
-                <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
-                    class="glyphicon glyphicon-ok-sign"></span> Update
-                </button>
-              </div>
-            </form>
           </div>
 
           <!-- auth form -->
           <div class="hidden" name="auth-toggle">
-            <form class="gwgroupform" action="/carriergroups" method="POST" role="form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" class="gwgroup" name="gwgroup">
               <input type="hidden" class="name" name="name">
@@ -280,14 +272,7 @@
                          placeholder="Outbound Proxy">
                 </div>
               </div>
-              <div class="modal-footer ">
-                <button type="submit" class="btn btn-warning btn-lg" style="width: 100%;"><span
-                    class="glyphicon glyphicon-ok-sign"></span> Update
-                </button>
-              </div>
-            </form>
           </div>
-
           <!-- carriers table -->
           <div class="hidden" name="carriers-toggle">
             <div class="wrapper-horizontal edge-centered">
@@ -309,7 +294,12 @@
               </div>
             </div>
           </div>
-
+          <div class="modal-footer ">
+            <button type="submit" id="updateGroupButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
+                class="glyphicon glyphicon-ok-sign"></span> Update
+            </button>
+          </div>
+        </form>
         </div><!-- /.modal-body -->
 
       </div><!-- /.modal-content -->

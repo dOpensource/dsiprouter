@@ -1,0 +1,57 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}TransNexus Configuration{% endblock %}
+
+{% block custom_css %}
+{% endblock %}
+
+{% block body %}
+
+  <div class="col-md-12">
+    <form action="/transnexus" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="saveTeleblock">
+        <h4>TransNexus Settings</h4>
+        <button name='save' id='save' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
+                data-target="#add">Save
+        </button>
+      </div>
+      <hr>
+      <div class="form-group">
+      <label class="label-toggle">STIR/SHAKEN Authentication service </label>
+        {% if transnexus["authservice_enabled"] == "1" %}
+          <input id="toggleTransnexus" name ="authservice_enabled" type="checkbox" checked title="Toggle Auth Service"
+                 data-toggle="toggle"
+                 value="{{ transnexus["authservice_enabled"] }}"
+                 data-on="<span class='icon-gryphon'></span> Enabled"
+                 data-off="<span class='icon-gryphon'></span> Disabled"
+                 data-width="120px">
+        {% else %}
+          <input id="toggleTransnexus" name="authservice_enabled" type="checkbox" title="Toggle Auth Service"
+                 data-toggle="toggle"
+                 value="{{ transnexus["authservice_enabled"] }}"
+                 data-on="<span class='icon-gryphon'></span> Enabled"
+                 data-off="<span class='icon-gryphon'></span> Disabled"
+                 data-width="120px">
+        {% endif %}
+      </div>
+      {% if transnexus["authservice_enabled"]  == "1" %}
+        <div id="transOptions" class="form-group">
+      {% else %}
+        <div id="transnexusOptions" class="form-group hidden">
+      {% endif %}
+      <div class="form-group">
+        <input class="form-control " type="text" id="authservice_host" name="authservice_host" placeholder="Auth Service Host"
+               value="{{ transnexus["authservice_host"] }}">
+      </div>
+      </div> <!--End of TransNexus settings-->
+    </form>
+  </div>
+
+
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('transnexus') }}
+{% endblock %}

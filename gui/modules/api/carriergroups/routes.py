@@ -14,7 +14,6 @@ carriergroups = Blueprint('carriergroups','__name__')
 @carriergroups.route('/api/v1/carriergroups',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['DELETE'])
-@carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['PUT'])
 @api_security
 def listCarrierGroups():
     """
@@ -137,9 +136,11 @@ def getPluginMetaData(plugin_name):
     except Exception as ex:
         print(ex)
 
+@carriergroups.route('/api/v1/carriergroups',methods=['PUT'])
+@carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['PUT'])
 @carriergroups.route('/api/v1/carriergroups',methods=['POST'])
 @api_security
-def addCarrierGroups():
+def addCarrierGroups(id=None):
     """
     ================
     Response Payload
@@ -178,7 +179,13 @@ def addCarrierGroups():
         # get request data
         request_payload = getRequestData()
         data['name'] = request_payload['name']
-        data['gwgroup'] = ""
+        if id == None:
+            data['gwgroup'] = request_payload['gwgroup'] if 'gwgroup' in request_payload else ''
+        else:
+            data['gwgroup'] = id
+        data['strip'] = request_payload['strip'] if 'strip' in request_payload else ''
+        data['prefix'] = request_payload['prefix'] if 'prefix' in request_payload else ''
+
         auth  = request_payload['auth'] if 'auth' in request_payload else ''
         if auth:
             data['authtype'] = auth['type']
@@ -191,13 +198,13 @@ def addCarrierGroups():
         plugin = request_payload['plugin'] if 'plugin' in request_payload else None
         if plugin and plugin != "None":
             data['plugin_name'] = plugin['name']
-            data['plugin_prefix'] = plugin['prefix'] if 'prefix' in plugin else ''
+            data['plugin_prefix'] = plugin['plugin_prefix'] if 'plugin_prefix' in plugin else ''
             data['plugin_account_sid'] = plugin['account_sid'] if 'account_sid' in plugin else ''
             data['plugin_account_token'] = plugin['account_token'] if 'account_token' in plugin else ''
         
         endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else ''
 
-        if plugin and plugin != "None":
+        if plugin and plugin != "None" and data['plugin_name'] != "":
             # Import Plugin
             #from "modules.api.carriergroups.plugin.{}".format(lower(plugin_name)) import init, createTrunk
             from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
@@ -216,13 +223,26 @@ def addCarrierGroups():
         gwgroupid = addUpdateCarrierGroups(data)
 
         # This creates the Twilio Elastic SIP Entry in the Carrier Group
-        if gwgroupid and plugin and plugin != "None":
+        if gwgroupid and plugin and plugin != "None" and data['plugin_name'] != "":
             carrier_data = {}
             carrier_data['gwgroup'] = gwgroupid
             carrier_data['name'] = trunk_name
             carrier_data['ip_addr'] = "{}.{}".format(trunk_name, "pstn.twilio.com")
             carrier_data['strip'] = ''
             carrier_data['prefix'] = ''
+            addUpdateCarriers(carrier_data)
+
+
+        # Add endpoints
+        for endpoint in endpoints:
+            carrier_data = {}
+            carrier_data['gwgroup'] = gwgroupid
+            carrier_data['name'] = endpoint['name'] if 'name' in endpoint else ''
+            carrier_data['ip_addr'] = endpoint['hostname'] if 'hostname' in endpoint else ''
+            carrier_data['strip'] = endpoint['strip'] if 'strip' in endpoint else data['strip']
+            # Convert to a string
+            carrier_data['strip'] = str(carrier_data['strip']) 
+            carrier_data['prefix'] = endpoint['prefix'] if 'prefix' in endpoint else data['prefix']
             addUpdateCarriers(carrier_data)
 
         gwgroup_data = {}

@@ -31,6 +31,7 @@ from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
+from modules.api.kamailio.functions import reloadKamailio
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -1673,6 +1674,68 @@ def addUpdateTeleBlock():
         error = "server"
         return showError(type=error)
 
+@app.route('/transnexus')
+def displayTransNexus():
+    """
+    Display TransNexus settings in view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        transnexus = {}
+        transnexus["authservice_enabled"] = settings.TRANSNEXUS_AUTHSERVICE_ENABLED
+        transnexus["authservice_host"] = settings.TRANSNEXUS_AUTHSERVICE_HOST
+
+        return render_template('transnexus.html', transnexus=transnexus)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+@app.route('/transnexus', methods=['POST'])
+def addUpdateTransNexus():
+    """
+    Update TransNexus config file settings
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        form = stripDictVals(request.form.to_dict())
+
+        # Update the TransNexus settings
+        transnexus = {}
+        transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"] = form.get('authservice_enabled',0)
+        transnexus["TRANSNEXUS_AUTHSERVICE_HOST"] = form.get('authservice_host', '')
+       
+        updateConfig(settings, transnexus, hot_reload=True)
+
+        globals.reload_required = True
+        return displayTransNexus()
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
 @app.route('/outboundroutes')
 def displayOutboundRoutes():
     """
@@ -1965,80 +2028,6 @@ def deleteOutboundRoute():
     finally:
         db.close()
 
-# TODO: deprecated, has been superseded by API endpoint reloadKamailio()
-# @app.route('/reloadkam')
-# def reloadkam():
-#     """
-#     Soft Reload of kamailio modules and settings
-#     """
-#
-#     prev_reload_val = globals.reload_required
-#
-#     try:
-#         if not session.get('logged_in'):
-#             return redirect(url_for('index'))
-#
-#         if (settings.DEBUG):
-#             debugEndpoint()
-#
-#         # format some settings for kam config
-#         dsip_api_url = settings.DSIP_API_PROTO + '://' + settings.DSIP_API_HOST + ':' + str(settings.DSIP_API_PORT)
-#         if isinstance(settings.DSIP_API_TOKEN, bytes):
-#             dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-#         else:
-#             dsip_api_token = settings.DSIP_API_TOKEN
-#
-#         # -- Reloading modules --
-#         return_code = subprocess.call(['kamcmd', 'permissions.addressReload'])
-#         return_code += subprocess.call(['kamcmd', 'drouting.reload'])
-#         return_code += subprocess.call(['kamcmd', 'domain.reload'])
-#         return_code += subprocess.call(['kamcmd', 'dispatcher.reload'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'tofromprefix'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'maintmode'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'calllimit'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'gw2gwgroup'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_hardfwd'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_failfwd'])
-#         return_code += subprocess.call(['kamcmd', 'htable.reload', 'inbound_prefixmap'])
-#         return_code += subprocess.call(['kamcmd', 'uac.reg_reload'])
-#         return_code += subprocess.call(['kamcmd', 'tls.reload'])
-#
-#         # -- Updating settings --
-#         return_code += subprocess.call(
-#             ['kamcmd', 'cfg.seti', 'teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)])
-#
-#         if settings.TELEBLOCK_GW_ENABLED:
-#             return_code += subprocess.call(
-#                 ['kamcmd', 'cfg.sets', 'teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)])
-#             return_code += subprocess.call(
-#                 ['kamcmd', 'cfg.seti', 'teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)])
-#             return_code += subprocess.call(
-#                 ['kamcmd', 'cfg.sets', 'teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)])
-#             return_code += subprocess.call(
-#                 ['kamcmd', 'cfg.seti', 'teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)])
-#
-#         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'role', settings.ROLE])
-#         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_server', dsip_api_url])
-#         return_code += subprocess.call(['kamcmd', 'cfg.sets', 'server', 'api_token', dsip_api_token])
-#
-#         session['last_page'] = request.headers['Referer']
-#
-#         if return_code == 0:
-#             status_code = 1
-#             globals.reload_required = False
-#         else:
-#             status_code = 0
-#             globals.reload_required = prev_reload_val
-#         return json.dumps({"status": status_code})
-#
-#     except http_exceptions.HTTPException as ex:
-#         debugException(ex)
-#         error = "http"
-#         return showError(type=error)
-#     except Exception as ex:
-#         debugException(ex)
-#         error = "server"
-#         return showError(type=error)
 
 # custom jinja filters
 def yesOrNoFilter(list, field):
@@ -2283,6 +2272,9 @@ def initApp(flask_app):
 
     # Dynamically update settings
     syncSettings(update_net=True)
+
+    # Reload Kamailio with the settings from dSIPRouter settings config
+    reloadKamailio()
 
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"

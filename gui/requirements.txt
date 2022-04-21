@@ -4,6 +4,8 @@ certbot
 cron_descriptor
 dnspython
 docker
+Jinja2==3.0.3
+Werkzeug==2.0.2
 Flask==1.1.2
 Flask_Script
 Flask_WTF
@@ -23,5 +25,4 @@ sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme
 SQLAlchemy
-Werkzeug
 twilio

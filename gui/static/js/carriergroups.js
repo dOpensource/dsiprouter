@@ -21,6 +21,9 @@
     throw new Error("GUI_BASE_URL is required and is not defined");
   }
 
+  var gwgroupid;
+  var gwgroup_table = $('').DataTable();
+
   // Add EndpointGroup
   function addCarrierGroup(action) {
     var selector, modal_body, url;
@@ -38,9 +41,9 @@
     }
     // Grab the Gateway Group ID if updating using a PUT
     else if (action === "PUT") {
-      selector = "#edit";
+      selector = "#edit-group";
       modal_body = $(selector + ' .modal-body');
-      gwgroupid = modal_body.find(".gwgroupid").val();
+      gwgroupid = modal_body.find(".gwgroup").val();
       url = API_BASE_URL + "carriergroups/" + gwgroupid;
     }
     else {
@@ -49,6 +52,9 @@
 
     var requestPayload = {};
     requestPayload.name = modal_body.find('.name').val();
+    if (action === "PUT") {
+      requestPayload.name = modal_body.find('.new_name').val();
+    }
     var plugin_name = modal_body.find('.plugin_name').val();
     
     if (plugin_name != "None") {
@@ -63,54 +69,28 @@
 	  
     var auth = {};
     if (action === "POST") {
-      if ($('input#ip.authtype').is(':checked')) {
-        auth.type = "ip";
-      }
-      else {
-        auth.type = "userpwd";
-        auth.pass = modal_body.find("#auth_password").val();
-      }
+        auth.type = modal_body.find(".authtype").val();
+	if (auth.type == "userpwd") {
+        	auth.pass = modal_body.find(".auth_password").val();
+     	 }
     }
     else if (action === "PUT") {
-      if ($('input#ip2.authtype').is(':checked')) {
-        auth.type = "ip";
-      }
-      else {
-        auth.type = "userpwd";
-        auth.pass = modal_body.find("#auth_password2").val();
-      }
+        auth.type = modal_body.find(".authtype").val();
+	if (auth.type == "userpwd") {
+        	auth.pass = modal_body.find(".auth_password").val();
+     	 }
     }
 
-    auth.user = modal_body.find(".auth_username").val();
-    auth.domain = modal_body.find(".auth_domain").val();
+    auth.r_username = modal_body.find(".r_username").val();
+    auth.auth_username = modal_body.find(".auth_username").val();
+    auth.auth_password = auth.pass
+    auth.auth_domain = modal_body.find(".auth_domain").val();
+    auth.auth_proxy = modal_body.find(".auth_proxy").val();
 
     requestPayload.auth = auth;
 
     requestPayload.strip = modal_body.find(".strip").val();
     requestPayload.prefix = modal_body.find(".prefix").val();
-
-    
-
-    
-    /* Process endpoints (empty endpoints are ignored) */
-    /*var endpoints = [];
-    $("tr.endpoint").each(function(i, row) {
-      var endpoint = {};
-      var gwid = $(this).find('td').eq(0).text();
-      if (gwid.length > 0) {
-        endpoint.gwid = parseInt(gwid, 10);
-      }
-      endpoint.hostname = $(this).find('td').eq(1).text();
-      endpoint.description = $(this).find('td').eq(2).text();
-      endpoint.weight = $(this).find('td').eq(3).text();
-      //endpoint.maintmode = $(this).find('td').eq(3).text();
-
-      if (!(endpoint.hostname.length === 0 && endpoint.description.length === 0)) {
-        endpoints.push(endpoint);
-      }
-    });
-    requestPayload.endpoints = endpoints;
-    */
 
 
     // Put into JSON Message and send over
@@ -143,17 +123,25 @@
             "name": requestPayload.name,
             "gwgroupid": gwgroupid_int
           }).draw();
+          location.reload(true); 
         }
         else {
+          /*
           gwgroup_table.row(function(idx, data, node) {
             return data.gwgroupid === gwgroupid_int;
           }).data({
             "name": requestPayload.name,
             "gwgroupid": gwgroupid_int
-          }).draw();
+          }).draw(); */
+          location.reload(true); 
         }
       }
     })
+  }
+
+
+  function updateCarrierGroup() {
+    addCarrierGroup("PUT");
   }
 
   /* validate fields before submitting api request */
@@ -172,6 +160,26 @@
       }, 1500);
     }
   });
+
+ /* validate fields before submitting api request */
+    $('#updateGroupButton').click(function(ev) {
+      /* prevent form default submit */
+      ev.preventDefault();
+
+      if (validateFields('#edit-group')) {
+        updateCarrierGroup();
+        // hide the modal after 1.5 sec
+        setTimeout(function() {
+          var edit_modal = $('#edit-group');
+          if (edit_modal.is(':visible')) {
+            edit_modal.modal('hide');
+          }
+        }, 1500);
+      }
+
+      /* prevent page reload */
+      return false;
+    });
 
   function setCarrierGroupHandlers() {
     var carriergroups_tbody = $('#carrier-groups tbody');
