@@ -10,7 +10,7 @@ fi
 
 function install {
     # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld nginx
+    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl python3-mysqldb libpq-dev firewalld nginx
     apt-get install -y --allow-unauthenticated libmariadbclient-dev 
     apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime libpq-dev
 
