@@ -32,7 +32,7 @@ function install {
     apt-get install -y libavresample-dev
     apt-get install -y linux-headers-$(uname -r)
     apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
-        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
+        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev \
 
     # debian jessie/stretch need a few newer packages
     CODENAME="$(lsb_release -c -s)"
@@ -41,6 +41,15 @@ function install {
         apt-get install -y -t stretch-backports debhelper init-system-helpers
     else
         apt-get install -y debhelper
+    fi
+
+
+    if [[ "$CODENAME" == "bullseye" ]]; then
+	apt-get install -y -t bullseye libiptc-dev libxtables-dev
+	apt-get install -y -t bullseye libjson-perl libmosquitto-dev python3-websockets
+	# Over-ride version of RTPEngine
+	RTPENGINE_VER=mr10.4.1.1
+        printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
     fi
 
     # create rtpengine user and group
@@ -168,8 +177,8 @@ EOF
     systemctl daemon-reload
     # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
-    # Start RTPEngine
-    systemctl start rtpengine
+    # Start RTPEngine - pipe to null since it usually fails the first time
+    systemctl start rtpengine > /dev/null
 
     # Start manually if the service fails to start
     if [ $? -eq 1 ]; then
