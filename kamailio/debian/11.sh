@@ -28,12 +28,13 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
+    KAM_VERSION=55
     # add repo sources to apt
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
 # kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
+deb http://deb.kamailio.org/kamailio${KAM_VERSION} bullseye main
+#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} bullseye main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
