@@ -6,11 +6,16 @@
 {% endblock %}
 
 {% block body %}
-
+  <div>
+      {% if msg %}
+      <div class="alert alert-danger container">
+	      <h2 style="color: rgb(0, 0, 0);"><strong>{{ msg }}</strong></h2>
+      </div>
+      {% endif %}
+  </div>
   <div class="col-md-12">
     <form action="/transnexus" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
       <div class="saveTeleblock">
         <h4>TransNexus Settings</h4>
         <button name='save' id='save' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
@@ -20,7 +25,7 @@
       <hr>
       <div class="form-group">
       <label class="label-toggle">STIR/SHAKEN Authentication service </label>
-        {% if transnexus["authservice_enabled"] == "1" %}
+        {% if transnexus["authservice_enabled"] == 1 %}
           <input id="toggleTransnexus" name ="authservice_enabled" type="checkbox" checked title="Toggle Auth Service"
                  data-toggle="toggle"
                  value="{{ transnexus["authservice_enabled"] }}"
@@ -36,14 +41,20 @@
                  data-width="120px">
         {% endif %}
       </div>
-      {% if transnexus["authservice_enabled"]  == "1" %}
-        <div id="transOptions" class="form-group">
+      {% if transnexus["authservice_enabled"]  == 1 %}
+        <div id="transnexusOptions" class="form-group">
       {% else %}
         <div id="transnexusOptions" class="form-group hidden">
       {% endif %}
       <div class="form-group">
         <input class="form-control " type="text" id="authservice_host" name="authservice_host" placeholder="Auth Service Host"
                value="{{ transnexus["authservice_host"] }}">
+      </div>
+      <div class="form-group">
+        <input class="form-control " type="text" id="transnexus_license_key" name="transnexus_license_key" placeholder="License Key" value="{{ transnexus["transnexus_license_key"] }}"> 
+      </div>
+      <div class="form-group">
+	No License Key? <a class="btn btn-primary btn-sm" target="_blank" href="https://dopensource.com/product/transnexus-clearip-module/" role="button">Buy License</a>
       </div>
       </div> <!--End of TransNexus settings-->
     </form>

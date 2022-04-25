@@ -32,6 +32,7 @@ from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
+from modules.api.licensemanager.functions import validateLicense
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager
 from util.parse_json import CreateEncoder
@@ -1675,7 +1676,7 @@ def addUpdateTeleBlock():
         return showError(type=error)
 
 @app.route('/transnexus')
-def displayTransNexus():
+def displayTransNexus(msg=None):
     """
     Display TransNexus settings in view
     """
@@ -1690,8 +1691,9 @@ def displayTransNexus():
         transnexus = {}
         transnexus["authservice_enabled"] = settings.TRANSNEXUS_AUTHSERVICE_ENABLED
         transnexus["authservice_host"] = settings.TRANSNEXUS_AUTHSERVICE_HOST
+        transnexus["transnexus_license_key"] = settings.TRANSNEXUS_LICENSE_KEY
 
-        return render_template('transnexus.html', transnexus=transnexus)
+        return render_template('transnexus.html', transnexus=transnexus, msg=msg)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -1721,11 +1723,30 @@ def addUpdateTransNexus():
         transnexus = {}
         transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"] = form.get('authservice_enabled',0)
         transnexus["TRANSNEXUS_AUTHSERVICE_HOST"] = form.get('authservice_host', '')
-       
+        transnexus["TRANSNEXUS_LICENSE_KEY"] = form.get('transnexus_license_key',"")
+
+        # Check License Key
+
+        # License Key is empty
+        if transnexus["TRANSNEXUS_LICENSE_KEY"] == "" and transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"]:
+            transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"] = 0
+            updateConfig(settings, transnexus, hot_reload=True)
+            globals.reload_required = True
+            msg = "License Key is required for this module"
+            return displayTransNexus(msg)
+            
+
+        license_info = validateLicense(transnexus["TRANSNEXUS_LICENSE_KEY"])
+        if license_info["license_valid"] == True and transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"]:
+            transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"] = 1
+        else:
+            transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"] = 0
+            transnexus["TRANSNEXUS_LICENSE_KEY"] = ""
+
         updateConfig(settings, transnexus, hot_reload=True)
 
         globals.reload_required = True
-        return displayTransNexus()
+        return displayTransNexus(license_info["license_msg"])
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
