@@ -9,9 +9,7 @@ null;FLT_CARRIER;52.8.201.128;0;;;name:Skyetel 3rd Priority Outbound Call,gwgrou
 null;FLT_CARRIER;50.17.48.216;0;;;name:Skyetel 4rd Priority Outbound Call,gwgroup:2,addr_id:26
 null;FLT_CARRIER;52.32.223.28;0;;;name:Skyetel North West High Cost Outbound Traffic,gwgroup:2,addr_id:27
 null;FLT_CARRIER;52.4.178.107;0;;;name:Skyetel South East High Cost Outbound Traffic,gwgroup:2,addr_id:28
-null;FLT_CARRIER;147.75.60.160;0;;;name:Flowroute US-West-WA,gwgroup:3,addr_id:29
 null;FLT_CARRIER;34.210.91.112;0;;;name:Flowroute US-West-OR,gwgroup:3,addr_id:30
-null;FLT_CARRIER;147.75.65.192;0;;;name:Flowroute US-East-NJ,gwgroup:3,addr_id:31
 null;FLT_CARRIER;34.226.36.32;0;;;name:Flowroute US-East-VA,gwgroup:3,addr_id:32
 null;FLT_CARRIER;81.201.82.45;0;;;name:Voxbone Belgium,gwgroup:4,addr_id:33
 null;FLT_CARRIER;81.201.84.195;0;;;name:Voxbone LA,gwgroup:4,addr_id:34
