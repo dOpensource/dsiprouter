@@ -799,7 +799,7 @@ function configureKamailio {
     # make sure kamailio user and privileges exist
     mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $ROOT_DB_NAME \
         -e "CREATE USER '$KAM_DB_USER'@'localhost' IDENTIFIED BY '$KAM_DB_PASS';" \
-        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';"
+        -e "CREATE USER '$KAM_DB_USER'@'%' IDENTIFIED BY '$KAM_DB_PASS';" > /dev/null 2>&1
    if (( $? != 0 )); then
    	printwarn "The Kamailio user already exists in the database - not creating again"
    fi
