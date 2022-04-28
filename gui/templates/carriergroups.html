@@ -44,7 +44,7 @@
       <tr class='element-row' data-gwgroup="{{ row.id }}">
         <td><input type="checkbox" class="checkthis" value="1"/></td>
         <td class='gwgroup'>{{ row.id|noneFilter() }}</td>
-        <td class='name'>{{ row.description|attrFilter('name')|noneFilter() }}</td>
+        <td class='name'>{{ row.description['name']|noneFilter() }}</td>
         <td class='gwlist'>{{ row.gwlist|noneFilter() }}</td>
         <td class='authtype hide'>{{ row.r_username|noneFilter() }}</td>
         <td class='r_username hide'>{{ row.r_username|noneFilter() }}</td>

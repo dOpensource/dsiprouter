@@ -120,7 +120,7 @@ def getExternalIP(ip_ver=''):
     return next((x for x in results if x is not None), None)
 
 
-def hostToIP(host, ip_ver=''):
+def hostToIP(host, ip_ver='', only_first=True):
     """
     Convert host to IP Address\n
     Supports conversion to IPv4 and IPv6\n
@@ -130,18 +130,26 @@ def hostToIP(host, ip_ver=''):
     :type host:         str
     :param ip_ver:      IP version to use
     :type ip_ver:       str
-    :return:            IP address of host
-    :rtype:             str|None
+    :param only_first:  Whether to return all resolved addresses
+    :type only_first:   bool
+    :return:            IP address(es) of host
+    :rtype:             str|set|None
     """
 
     if ip_ver == '4' or len(ip_ver) == 0:
         try:
-            return socket.getaddrinfo(host, 0, socket.AF_INET)[0][4][0]
+            if only_first:
+                return socket.getaddrinfo(host, 0, socket.AF_INET)[0][4][0]
+            else:
+                return set([x[4][0] for x in socket.getaddrinfo(host, 0, socket.AF_INET)])
         except:
             pass
     if ip_ver == '6' or len(ip_ver) == 0:
         try:
-            return socket.getaddrinfo(host, 0, socket.AF_INET6)[0][4][0]
+            if only_first:
+                return socket.getaddrinfo(host, 0, socket.AF_INET6)[0][4][0]
+            else:
+                return set([x[4][0] for x in socket.getaddrinfo(host, 0, socket.AF_INET6)])
         except:
             pass
     return None

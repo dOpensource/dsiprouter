@@ -170,25 +170,25 @@ function decryptConfigAttrib() {
 }
 export -f decryptConfigAttrib
 
-# $1 == attribute name
+# $1 == feature name
 # $2 == kamailio config file
-function enableKamailioConfigAttrib() {
+function enableKamailioConfigFeature() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
     sed -i -r -e "s~#+(!(define|trydef|redefine)[[:space:]]? $NAME)~#\1~g" ${CONFIG_FILE}
 }
-export -f enableKamailioConfigAttrib
+export -f enableKamailioConfigFeature
 
-# $1 == attribute name
+# $1 == feature name
 # $2 == kamailio config file
-function disableKamailioConfigAttrib() {
+function disableKamailioConfigFeature() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
     sed -i -r -e "s~#+(!(define|trydef|redefine)[[:space:]]? $NAME)~##\1~g" ${CONFIG_FILE}
 }
-export -f disableKamailioConfigAttrib
+export -f disableKamailioConfigFeature
 
 # $1 == name of defined url to change
 # $2 == value to change url to
@@ -203,6 +203,24 @@ function setKamailioConfigDburl() {
         -0777 -i -pe 's~(#!(define|trydef|redefine)\s+?'"${NAME}"'\s+)['"'"'"](?!cluster\:).*['"'"'"]~\1"${dburl}"~g' ${CONFIG_FILE}
 }
 export -f setKamailioConfigDburl
+
+# $1 == name of define to change
+# $2 ==
+# $3 == kamailio config file
+# $4 == -q (quote as string)
+function setKamailioConfigDef() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    if [[ "$4" == "-q" ]]; then
+        VALUE='"'"${VALUE}"'"'
+    fi
+
+    perl -e "\$name='${NAME}'; \$value='${VALUE}';" \
+        -i -pe 's%(#+\!)(define|trydef|redefine)([ \t]+${name}[ \t]+).*%\1\2\3${value}%g' ${CONFIG_FILE}
+}
+export -f setKamailioConfigDef
 
 # $1 == name of substdef to change
 # $2 == value to change substdef to
@@ -388,6 +406,8 @@ export -f ipv6Test
 # notes: prints internal ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalIP() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
+
     local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$IP" ]]; then
         IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
@@ -470,11 +490,14 @@ export -f getInternalFQDN
 # notes: will use EXTERNAL_IP if available or look it up dynamically
 # notes: tries ipv4 first then ipv6
 function getExternalFQDN() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
+
     local EXTERNAL_IP=${EXTERNAL_IP:-$(getExternalIP)}
     local EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV4} +short -x ${EXTERNAL_IP} 2>/dev/null | head -1 | sed 's/\.$//')
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_FQDN" ]]; then
           EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV6} +short -x ${EXTERNAL_IP} 2>/dev/null | head -1 | sed 's/\.$//')
     fi
+
     printf '%s' "$EXTERNAL_FQDN"
 }
 export -f getExternalFQDN
@@ -483,6 +506,7 @@ export -f getExternalFQDN
 # notes: prints internal CIDR address, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalCIDR() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
     local PREFIX_LEN="" DEF_IFACE=""
     local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 
@@ -504,6 +528,26 @@ function getInternalCIDR() {
     fi
 }
 export -f getInternalCIDR
+
+# $1 == host to resolve
+# $2 == -a (return all resolved IPs)
+# output: IP address(es) of host
+function hostToIP() {
+    local IPV6_ENABLED=${IPV6_ENABLED:-0}
+    local HOST="$1"
+
+    local IP_ADDR=$(dig @${GOOGLE_DNS_IPV4} +short A ${HOST} 2>/dev/null)
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_FQDN" ]]; then
+        IP_ADDR=$(dig @${GOOGLE_DNS_IPV6} +short AAAA ${HOST} 2>/dev/null | head -1 | sed 's/\.$//')
+    fi
+
+    if [[ "$2" == "-a" ]]; then
+        echo -n "$IP_ADDR"
+    else
+        echo -n "$IP_ADDR" | head -1
+    fi
+}
+export -f hostToIP
 
 # $1 == cmd as executed in systemd (by ExecStart=)
 # notes: take precaution when adding long running functions as they will block startup in boot order

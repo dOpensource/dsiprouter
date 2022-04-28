@@ -1,5 +1,4 @@
-from flask import Blueprint, session, render_template
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
+from flask import Blueprint, session
 from sqlalchemy import case, func, exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Address
@@ -7,7 +6,6 @@ from modules.api.api_routes import addEndpointGroups
 from shared import *
 import settings
 import globals
-import re
 
 
 domains = Blueprint('domains', __name__)
@@ -83,7 +81,9 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 else:
                     socket_addr = settings.EXTERNAL_IP_ADDR
 
-                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr,domain),description='msteam_endpoint:{}'.format(endpoint))
+                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint,
+                                        attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr,domain),
+                                        description={'msteam_endpoint': endpoint})
                 db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
@@ -108,7 +108,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         endpointGroup = {"name":domain,"endpoints":None}
         endpoints = []
         for hostname in msteams_dns_endpoints:
-            endpoints.append({"hostname":hostname,"description":"msteams_endpoint","maintmode":False});
+            endpoints.append({"hostname": hostname,"description":"msteams_endpoint","maintmode":False});
 
         endpointGroup['endpoints'] = endpoints
         addEndpointGroups(endpointGroup,"msteams",domain)
@@ -127,7 +127,8 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
         for pbx_id in pbx_list:
-            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id, db), description='pbx_id:{}'.format(pbx_id))
+            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id, db),
+                                    description={'pbx_id': pbx_id})
             db.add(dispatcher)
 
         db.add(PBXDomainAttr1)

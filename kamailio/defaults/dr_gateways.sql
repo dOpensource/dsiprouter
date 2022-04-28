@@ -2,7 +2,8 @@
 ALTER TABLE dr_gateways
   MODIFY COLUMN pri_prefix varchar(64) NOT NULL DEFAULT '',
   MODIFY COLUMN attrs varchar(255) NOT NULL DEFAULT '',
-  MODIFY COLUMN description varchar(255) NOT NULL DEFAULT '';
+  MODIFY COLUMN description varchar(255) NOT NULL DEFAULT '{}',
+  ADD CONSTRAINT CHECK (JSON_VALID(description));
 
 -- update dr_gateways attrs column when entry created
 DROP TRIGGER IF EXISTS insert_dr_gateways;

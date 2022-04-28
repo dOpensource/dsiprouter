@@ -1,18 +1,23 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
+
+import sqlalchemy.dialects.mysql
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os
+import os, json
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, String
+from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions
+from sqlalchemy.sql import operators as sql_op
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
-from sqlalchemy import exc as sql_exceptions
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.types import TypeDecorator, VARCHAR
+from sqlalchemy.dialects.mysql import JSON as MysqlJSON
 import settings
-from shared import IO, debugException, dictToStrFields
+from shared import IO, debugException
 from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
-
 
 if settings.KAM_DB_TYPE == "mysql":
     try:
@@ -30,6 +35,177 @@ if settings.KAM_DB_TYPE == "mysql":
                     debugException(ex)
                 raise
 
+
+class JSON(MysqlJSON, TypeDecorator):
+    impl = VARCHAR
+    cache_ok = True
+
+    def __init__(self, length, *args, **kwargs):
+        self.__class__.impl = VARCHAR(length)
+        super().__init__(*args, **kwargs)
+
+    def coerce_compared_value(self, op, value):
+        if op in (sql_op.like_op, sql_op.not_like_op):
+            return String()
+        else:
+            return self
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return '{}'
+        else:
+            return json.dumps(value)
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return {}
+        else:
+            return json.loads(value)
+
+MutableDict.associate_with(JSON)
+
+# TODO: remove after validation of above implementation
+# class hybrid_dict_property(hybrid_property):
+#     def __init__(
+#         self, fget, fset=None, fdel=None,
+#         fgetitem=None, fsetitem=None, fdelitem=None,
+#         expr=None, custom_comparator=None, update_expr=None,
+#         item_expr=None, item_custom_comparator=None, item_update_expr=None,
+#     ):
+#         self.fgetitem = fgetitem
+#         self.fsetitem = fsetitem
+#         self.fdelitem = fdelitem
+#         self.item_expr = item_expr
+#         self.item_custom_comparator = item_custom_comparator
+#         self.item_update_expr = item_update_expr
+#         super().__init__(
+#             fget, fset=fset, fdel=fdel,
+#             expr=expr, custom_comparator=custom_comparator, update_expr=update_expr,
+#         )
+#
+#     def __getitem__(self, instance, key):
+#         if instance is None:
+#             return self.fget(instance)[key]
+#         else:
+#             return self.fgetitem(instance)
+#
+#     def __setitem__(self, instance, key, val):
+#         if self.fsetitem is None:
+#             tmp = self.fget(instance)
+#             tmp[key] = val
+#             return self.fset(instance, tmp)
+#         else:
+#             self.fsetitem(instance, key, val)
+#
+#     def __delitem__(self, instance, key):
+#         if self.fdelitem is None:
+#             tmp = self.fget(instance)
+#             del (tmp[key])
+#             self.fset(instance, tmp)
+#         else:
+#             self.fdelitem(instance, key)
+#
+#     def get_item(self, fgetitem):
+#         return self._copy(fgetitem=fgetitem)
+#
+#     def set_item(self, fsetitem):
+#         return self._copy(fsetitem=fsetitem)
+#
+#     def delete_item(self, fdelitem):
+#         return self._copy(fdelitem=fdelitem)
+#
+#     def item_expression(self, expr):
+#         return self._copy(item_expr=expr)
+#
+#     def item_comparator(self, comparator):
+#         return self._copy(item_custom_comparator=comparator)
+#
+#     def item_update_expression(self, meth):
+#         return self._copy(item_update_expr=meth)
+#
+#     @memoized_property
+#     def _item_expr_comparator(self):
+#         if self.item_custom_comparator is not None:
+#             return self._get_item_comparator(self.item_custom_comparator)
+#         elif self.item_expr is not None:
+#             return self._get_item_expr(self.item_expr)
+#         else:
+#             return self._get_item_expr(self.fgetitem)
+#
+#     def _get_item_expr(self, expr):
+#         def _item_expr(cls):
+#             return ExprComparator(cls, expr(cls), self)
+#
+#         update_wrapper(_item_expr, expr)
+#
+#         return self._get_item_comparator(_item_expr)
+#
+#     def _get_item_comparator(self, comparator):
+#         proxy_attr = attributes.create_proxied_attribute(self)
+#
+#         def item_expr_comparator(owner):
+#             return proxy_attr(
+#                 owner,
+#                 self.__name__,
+#                 self,
+#                 comparator(owner),
+#                 doc=comparator.__doc__ or self.__doc__,
+#             )
+#
+#         return item_expr_comparator
+#
+# class ObjectWithDescription(object):
+#     """
+#     Handles description field setter/getter for JSON data
+#     """
+#
+#     @hybrid_dict_property
+#     def description(self):
+#         return strFieldsToDict(self._description)
+#
+#     @description.setter
+#     def description(self, val):
+#         self._description = dictToStrFields(val)
+#
+#     @description.deleter
+#     def description(self):
+#         self._description = '{}'
+#
+#     @description.get_item
+#     def description(self, key):
+#         return strFieldsToDict(self._description)[key]
+#
+#     @description.set_item
+#     def description(self, key, val):
+#         tmp = strFieldsToDict(self._description)
+#         tmp[key] = val
+#         self._description = dictToStrFields(tmp)
+#
+#     @description.delete_item
+#     def description(self, key):
+#         tmp = strFieldsToDict(self._description)
+#         del(tmp[key])
+#         self._description = tmp
+#
+#     @description.expression
+#     def description(cls):
+#         return sql_func.JSON_UNQUOTE(cls._description)
+#
+#     @description.update_expression
+#     def description(cls, val):
+#         return [(cls._description, dictToStrFields(val))]
+#
+#     @description.item_expression
+#     def description(cls, key):
+#         return sql_func.JSON_UNQUOTE(sql_func.JSON_EXTRACT(cls._description, '$.{}'.format(key)))
+#
+#     @description.item_update_expression
+#     def description(cls, key, val):
+#         tmp = strFieldsToDict(cls._description)
+#         tmp[key] = val
+#         return [(cls._description, dictToStrFields(tmp))]
+
+
 class Gateways(object):
     """
     Schema for dr_gateways table\n
@@ -38,19 +214,19 @@ class Gateways(object):
     The address field can be a full SIP URI, partial URI, or only host; where host portion is an IP or FQDN
     """
 
-    def __init__(self, name, address, strip, prefix, type, gwgroup=None, addr_id=None, attrs=''):
-        description = {"name": name}
+    def __init__(self, name, address, strip, prefix, type, gwgroup=None, addr_list=None, attrs=''):
+        desc_fields = {'name': name}
         if gwgroup is not None:
-            description["gwgroup"] = str(gwgroup)
-        if addr_id is not None:
-            description['addr_id'] = str(addr_id)
+            desc_fields['gwgroup'] = gwgroup
+        if addr_list is not None:
+            desc_fields['addr_list'] = addr_list
 
         self.type = type
         self.address = address
         self.strip = strip
         self.pri_prefix = prefix
         self.attrs = attrs
-        self.description = dictToStrFields(description)
+        self.description = desc_fields
 
     pass
 
@@ -61,8 +237,10 @@ class GatewayGroups(object):
     """
 
     def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER):
-        self.description = "name:{},type:{}".format(name, type)
+        self.description = {'name': name, 'type': type}
         self.gwlist = ",".join(str(gw) for gw in gwlist)
+
+    #Column('description', JSON, nullable=False, server_default='{}')
 
     pass
 
@@ -75,15 +253,15 @@ class Address(object):
     """
 
     def __init__(self, name, ip_addr, mask, type, gwgroup=None, port=0):
-        tag = {"name": name}
+        tag_fields = {"name": name}
         if gwgroup is not None:
-            tag["gwgroup"] = str(gwgroup)
+            tag_fields["gwgroup"] = gwgroup
 
         self.grp = type
         self.ip_addr = ip_addr
         self.mask = mask
         self.port = port
-        self.tag = dictToStrFields(tag)
+        self.tag = tag_fields
 
     pass
 
@@ -95,7 +273,7 @@ class InboundMapping(object):
 
     gwname = Column(String)
 
-    def __init__(self, groupid, prefix, gwlist, description=''):
+    def __init__(self, groupid, prefix, gwlist, description={}):
         self.groupid = groupid
         self.prefix = prefix
         self.gwlist = gwlist
@@ -111,7 +289,7 @@ class OutboundRoutes(object):
     Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-rules>`_
     """
 
-    def __init__(self, groupid, prefix, timerec, priority, routeid, gwlist, description):
+    def __init__(self, groupid, prefix, timerec, priority, routeid, gwlist, description={}):
         self.groupid = groupid
         self.prefix = prefix
         self.timerec = timerec
@@ -127,7 +305,7 @@ class CustomRouting(object):
     Schema for dr_custom_rules table\n
     """
 
-    def __init__(self, locality, ppm, description):
+    def __init__(self, locality, ppm, description={}):
         self.locality = locality
         self.ppm = ppm
         self.description = description
@@ -232,8 +410,8 @@ class dSIPLeases(object):
     def __init__(self, gwid, sid, ttl):
         self.gwid = gwid
         self.sid = sid
-        t = datetime.now() + timedelta(seconds=ttl)
-        self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
+        now = datetime.now() + timedelta(seconds=ttl)
+        self.expiration = now.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
 
@@ -328,7 +506,6 @@ class dSIPCertificates(object):
     """
 
     def __init__(self, domain, type, email, cert, key):
-
         self.domain = domain
         self.type = type
         self.email = email
@@ -343,12 +520,10 @@ class dSIPDNIDEnrichment(object):
     """
 
     def __init__(self, dnid, country_code='', routing_number='', rule_name=''):
-        description = {'name': rule_name}
-
         self.dnid = dnid
         self.country_code = country_code
         self.routing_number = routing_number
-        self.description = dictToStrFields(description)
+        self.description = {'name': rule_name}
 
     pass
 
@@ -430,7 +605,7 @@ class Dispatcher(object):
     Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dispatcher>`_
     """
 
-    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description=''):
+    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description={}):
         self.setid = setid
         self.destination = safeFormatSipUri(destination)
         self.flags = flags
@@ -528,6 +703,7 @@ def createSessionMaker():
     :return:    SessionMaker() object
     """
 
+    # create session loader and db engine
     if 'SessionLoader' in globals():
         return globals()['SessionLoader']
     if not 'db_engine' in globals():
@@ -535,32 +711,49 @@ def createSessionMaker():
     else:
         db_engine = globals()['db_engine']
 
+    # create metadata based on engine
     metadata = MetaData(db_engine)
 
-    dr_gateways = Table('dr_gateways', metadata, autoload=True)
-    address = Table('address', metadata, autoload=True)
-    outboundroutes = Table('dr_rules', metadata, autoload=True)
-    inboundmapping = Table('dr_rules', metadata, autoload=True)
-    subscriber = Table('subscriber', metadata, autoload=True)
-    dsip_domain_mapping = Table('dsip_domain_mapping', metadata, autoload=True)
-    dsip_multidomain_mapping = Table('dsip_multidomain_mapping', metadata, autoload=True)
-    # fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
-    dsip_lcr = Table('dsip_lcr', metadata, autoload=True)
-    uacreg = Table('uacreg', metadata, autoload=True)
-    dr_gw_lists = Table('dr_gw_lists', metadata, autoload=True)
+    # create table definitions reflected from engine
+    # - override column definitions here if needed
+    address = Table('address', metadata,
+        Column('tag', JSON(255), nullable=False, server_default='{}'),
+        autoload=True)
+    dr_custom_rules = Table('dr_custom_rules', metadata,
+        Column('description', JSON(255), nullable=False, server_default='{}'),
+        autoload=True)
+    dr_gateways = Table('dr_gateways', metadata,
+        Column('description', JSON(255), nullable=False, server_default='{}'),
+        autoload=True)
     # dr_groups = Table('dr_groups', metadata, autoload=True)
+    dr_gw_lists = Table('dr_gw_lists', metadata,
+        Column('description', JSON(255), nullable=False, server_default='{}'),
+        autoload=True)
+    dr_rules = Table('dr_rules', metadata,
+        Column('description', JSON(255), nullable=False, server_default='{}'),
+        autoload=True, extend_existing=True)
+    dispatcher = Table('dispatcher', metadata,
+        Column('description', JSON(255), nullable=False, server_default='{}'),
+        autoload=True)
     domain = Table('domain', metadata, autoload=True)
     domain_attrs = Table('domain_attrs', metadata, autoload=True)
-    dispatcher = Table('dispatcher', metadata, autoload=True)
-    dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
-    dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
     dsip_calllimit = Table('dsip_calllimit', metadata, autoload=True)
-    dsip_notification = Table('dsip_notification', metadata, autoload=True)
-    dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
-    dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
     dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
     dsip_certificates = Table('dsip_certificates', metadata, autoload=True)
-    dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', metadata, autoload=True)
+    dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', metadata,
+        Column('description', JSON(255), nullable=False, server_default='{}'),
+        autoload=True)
+    dsip_domain_mapping = Table('dsip_domain_mapping', metadata, autoload=True)
+    dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
+    dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
+    # dsip_fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
+    dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
+    dsip_lcr = Table('dsip_lcr', metadata, autoload=True)
+    dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
+    dsip_multidomain_mapping = Table('dsip_multidomain_mapping', metadata, autoload=True)
+    dsip_notification = Table('dsip_notification', metadata, autoload=True)
+    subscriber = Table('subscriber', metadata, autoload=True)
+    uacreg = Table('uacreg', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -571,14 +764,15 @@ def createSessionMaker():
     #                dr_gw_lists_alias.c.drlist_id == dr_groups.c.id,
     #                dr_gw_lists_alias.c.drlist_description == dr_groups.c.description)
 
+    # map table definitions to class definitions
     mapper(Gateways, dr_gateways)
     mapper(Address, address)
-    mapper(InboundMapping, inboundmapping)
-    mapper(OutboundRoutes, outboundroutes)
+    mapper(InboundMapping, dr_rules)
+    mapper(OutboundRoutes, dr_rules)
     mapper(dSIPDomainMapping, dsip_domain_mapping)
     mapper(dSIPMultiDomainMapping, dsip_multidomain_mapping)
     mapper(Subscribers, subscriber)
-    # mapper(CustomRouting, customrouting)
+    mapper(CustomRouting, dr_custom_rules)
     mapper(dSIPLCR, dsip_lcr)
     mapper(UAC, uacreg)
     mapper(GatewayGroups, dr_gw_lists)
@@ -600,6 +794,7 @@ def createSessionMaker():
     #     'description': [dr_groups.c.description, dr_gw_lists_alias.c.drlist_description],
     # })
 
+    # bind and return scoped session
     loadSession = scoped_session(sessionmaker(bind=db_engine))
     return loadSession
 

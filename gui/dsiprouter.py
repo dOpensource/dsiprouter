@@ -16,16 +16,16 @@ from flask import Flask, render_template, request, redirect, jsonify, flash, ses
 from flask_script import Manager, Server
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
-from sqlalchemy import func, exc as sql_exceptions
+from sqlalchemy import exc as sql_exceptions, func as sql_func
 from sqlalchemy.orm import load_only
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
+    stripDictVals, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
-    ipToHost, hostToIP, getFQDN, getHostname
+    ipToHost, hostToIP, isValidIP, getFQDN, getHostname
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
@@ -243,19 +243,21 @@ def displayCarrierGroups(gwgroup=None):
 
         db = SessionLoader()
 
-        typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
-
         # res must be a list()
         if gwgroup is not None and gwgroup != "":
             res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.realm, UAC.auth_proxy).filter(
-                GatewayGroups.id == gwgroup).first()]
+                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.realm, UAC.auth_proxy
+            ).filter(
+                GatewayGroups.id == gwgroup
+            ).first()]
         else:
             res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
                 GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.realm, UAC.auth_proxy).filter(
-                GatewayGroups.description.like(typeFilter))
+                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.realm, UAC.auth_proxy
+            ).filter(
+                GatewayGroups.description['type'] == settings.FLT_CARRIER
+            ).all()
 
         return render_template('carriergroups.html', rows=res)
 
@@ -315,6 +317,13 @@ def addUpdateCarrierGroups():
             auth_domain = safeUriToHost(auth_domain)
             if auth_domain is None:
                 raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
+            auth_host = safeStripPort(auth_domain)
+            if not isValidIP(auth_host):
+                auth_host_addr_list = hostToIP(auth_host, only_first=False)
+                if auth_host_addr_list is None:
+                    raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
+            else:
+                auth_host_addr_list = [auth_host]
             if len(auth_proxy) == 0:
                 auth_proxy = auth_domain
             auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
@@ -334,49 +343,53 @@ def addUpdateCarrierGroups():
 
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd":
+                addr_name = name + "-uac"
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_realm, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
-                Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
-                db.add(Addr)
+                for auth_host in auth_host_addr_list:
+                    Addr = Address(addr_name, auth_host, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    db.add(Addr)
 
         # Updating
         else:
             # config form
             if len(new_name) > 0:
                 Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-                gwgroup_fields = strFieldsToDict(Gwgroup.description)
-                old_name = gwgroup_fields['name']
-                gwgroup_fields['name'] = new_name
-                Gwgroup.description = dictToStrFields(gwgroup_fields)
+                old_name = Gwgroup.description['name']
+                Gwgroup.description['name'] = new_name
 
-                Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(old_name))).first()
-                if Addr is not None:
-                    addr_fields = strFieldsToDict(Addr.tag)
-                    addr_fields['name'] = 'name:{}-uac'.format(new_name)
-                    Addr.tag = dictToStrFields(addr_fields)
+                addr_name = new_name + "-uac"
+                addr_old_name = old_name + "-uac"
+                for Addr in db.query(Address).filter(Address.tag['name'] == addr_old_name).all():
+                    Addr.tag['name'] = addr_name
 
             # auth form
             else:
+                addr_name = name + "-uac"
+
                 if authtype == "userpwd":
                     # update uacreg if exists, otherwise create
                     if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
                         {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_realm,
-                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
+                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False
+                    ):
                         Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_realm, auth_username=auth_username,
                                      auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
                         db.add(Uacreg)
 
-                    # update address if exists, otherwise create
-                    if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                        {'ip_addr': auth_domain}, synchronize_session=False):
-                        Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    # delete old addresses
+                    db.query(Address).filter(Address.tag['name'] == addr_name).delete(synchronize_session=False)
+
+                    # create new addresses
+                    for auth_host in auth_host_addr_list:
+                        Addr = Address(addr_name, auth_host, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                         db.add(Addr)
                 else:
                     # delete uacreg and address if they exist
                     db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
-                    db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
+                    db.query(Address).filter(Address.tag['name'] == addr_name).delete(synchronize_session=False)
 
         db.commit()
         globals.reload_required = True
@@ -424,8 +437,7 @@ def deleteCarrierGroups():
 
         gwgroup = form['gwgroup']
         gwlist = form['gwlist'] if 'gwlist' in form else ''
-
-        Addrs = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(gwgroup)))
+        Addrs = db.query(Address).filter(Address.tag['gwgroup'] == gwgroup)
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup)
         gwgroup_row = Gwgroup.first()
         if gwgroup_row is not None:
@@ -499,7 +511,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             gateway_rules = {}
             for rule in rules:
                 if str(gwid) in filter(None, rule.gwlist.split(',')):
-                    gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                    gateway_rules[rule.ruleid] = rule.description['name']
             carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         # get carriers by carrier group
@@ -514,7 +526,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                     gateway_rules = {}
                     for rule in rules:
                         if gateway_id in filter(None, rule.gwlist.split(',')):
-                            gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                            gateway_rules[rule.ruleid] = rule.description['name']
                     carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         # get all carriers
@@ -525,7 +537,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 gateway_rules = {}
                 for rule in rules:
                     if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
-                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                        gateway_rules[rule.ruleid] = rule.description['name']
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
@@ -579,22 +591,34 @@ def addUpdateCarriers():
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
 
+        # validate required args
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
-
+        # properly format the SIP uri
         sip_addr = safeUriToHost(hostname, default_port=5060)
         if sip_addr is None:
             raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
-        host_addr = safeStripPort(sip_addr)
+        # resolve all IP's for this hostname
+        host = safeStripPort(sip_addr)
+        if not isValidIP(host):
+            host_addr_list = hostToIP(host, only_first=False)
+            if host_addr_list is None:
+                raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
+        else:
+            host_addr_list = [host]
+        addr_id_list = []
 
         # Adding
         if len(gwid) <= 0:
             if len(gwgroup) > 0:
-                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                db.add(Addr)
-                db.flush()
+                for host_addr in host_addr_list:
+                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
+                    db.add(Addr)
+                    db.flush()
+                    addr_id_list.append(Addr.id)
 
-                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup,
+                                   addr_list=addr_id_list)
                 db.add(Gateway)
                 db.flush()
 
@@ -606,11 +630,13 @@ def addUpdateCarriers():
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
             else:
-                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
-                db.add(Addr)
-                db.flush()
+                for host_addr in host_addr_list:
+                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
+                    db.add(Addr)
+                    db.flush()
+                    addr_id_list.append(Addr.id)
 
-                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_list=addr_id_list)
                 db.add(Gateway)
 
         # Updating
@@ -620,41 +646,28 @@ def addUpdateCarriers():
             Gateway.strip = strip
             Gateway.pri_prefix = prefix
 
-            gw_fields = strFieldsToDict(Gateway.description)
-            gw_fields['name'] = name
+            Gateway.description['name'] = name
             if len(gwgroup) <= 0:
-                gw_fields['gwgroup'] = gwgroup
+                Gateway.description['gwgroup'] = gwgroup
 
-            # if address exists update
-            address_exists = False
-            if 'addr_id' in gw_fields and len(gw_fields['addr_id']) > 0:
-                Addr = db.query(Address).filter(Address.id == gw_fields['addr_id']).first()
+            # delete old addresses
+            if 'addr_list' in Gateway.description and len(Gateway.description['addr_list']) > 0:
+                db.query(Address).filter(Address.id.in_(Gateway.description['addr_list'])).delete(
+                    synchronize_session=False)
 
-                # if entry is non existent handle in next block
-                if Addr is not None:
-                    address_exists = True
-
-                    Addr.ip_addr = host_addr
-                    addr_fields = strFieldsToDict(Addr.tag)
-                    addr_fields['name'] = name
-
-                    if len(gwgroup) > 0:
-                        addr_fields['gwgroup'] = gwgroup
-                    Addr.tag = dictToStrFields(addr_fields)
-
-            # otherwise create the address
-            if not address_exists:
-                if len(gwgroup) > 0:
-                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                else:
-                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
-
+            # create new addresses
+            if len(gwgroup) > 0:
+                gwgroup_field = gwgroup
+            else:
+                gwgroup_field = None
+            for host_addr in host_addr_list:
+                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup_field)
                 db.add(Addr)
                 db.flush()
-                gw_fields['addr_id'] = str(Addr.id)
+                addr_id_list.append(Addr.id)
 
-            # gw_fields may be updated above so set after
-            Gateway.description = dictToStrFields(gw_fields)
+            # update description fields
+            Gateway.description['addr_list'] = host_addr_list
 
         db.commit()
         globals.reload_required = True
@@ -706,16 +719,14 @@ def deleteCarriers():
 
         Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
         Gateway_Row = Gateway.first()
-        gw_fields = strFieldsToDict(Gateway_Row.description)
 
         # find associated gwgroup if not provided
         if len(gwgroup) <= 0:
-            gwgroup = gw_fields['gwgroup'] if 'gwgroup' in gw_fields else ''
+            gwgroup = Gateway_Row.description['gwgroup'] if 'gwgroup' in Gateway_Row.description else ''
 
         # remove associated address if exists
-        if 'addr_id' in gw_fields:
-            Addr = db.query(Address).filter(Address.id == gw_fields['addr_id'])
-            Addr.delete(synchronize_session=False)
+        if 'addr_list' in Gateway_Row.description:
+            db.query(Address).filter(Address.id.in_(Gateway_Row.description['addr_list'])).delete(synchronize_session=False)
 
         # grab any related carrier groups
         Gatewaygroups = db.execute('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET({}, dr_gw_lists.gwlist)'.format(gwid))
@@ -928,14 +939,14 @@ def deletePBX():
 
         gwid = form['gwid']
         name = form['name']
+        uac_addr_name = "uac-{}".format(name)
 
         gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
+        db.query(Address).filter(Address.id.in_(gateway.first().description['addr_list'])).delete(synchronize_session=False)
+        db.query(Address).filter(Address.tag['name'] == uac_addr_name).delete(synchronize_session=False)
         gateway.delete(synchronize_session=False)
-        address = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
-        address.delete(synchronize_session=False)
         subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwid)
         subscriber.delete(synchronize_session=False)
-        address.delete(synchronize_session=False)
 
         domainmultimapping = db.query(dSIPMultiDomainMapping).filter(dSIPMultiDomainMapping.pbx_id == gwid)
         res = domainmultimapping.options(load_only("domain_list", "attr_list")).first()
@@ -998,9 +1009,7 @@ def displayInboundMapping():
 
         db = SessionLoader()
 
-        endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
-        carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
-
+        # TODO: optimize query and indexes, replace raw query with ORM query or stored procedure
         res = db.execute("""select * from (
     select r.ruleid, r.groupid, r.prefix, r.gwlist, r.description as rule_description, g.id as gwgroupid, g.description as gwgroup_description from dr_rules as r left join dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') where r.groupid = {flt_inbound}
 ) as t1 left join (
@@ -1013,14 +1022,18 @@ def displayInboundMapping():
     select ff.dr_ruleid as ff_ruleid, ff.dr_groupid as ff_groupid, ff.did as ff_fwddid, NULL as ff_gwgroupid from dsip_failfwd as ff left join dr_rules as r on ff.dr_ruleid = r.ruleid where ff.dr_groupid = {flt_outbound}
 ) as t3 on t1.ruleid = t3.ff_ruleid""".format(flt_inbound=settings.FLT_INBOUND, flt_outbound=settings.FLT_OUTBOUND))
 
-        epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
+        epgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description['type'] == settings.FLT_PBX
+        ).all()
         gwgroups = db.query(GatewayGroups).filter(
-            (GatewayGroups.description.like(endpoint_filter)) | (GatewayGroups.description.like(carrier_filter))).all()
+            (GatewayGroups.description['type'] == settings.FLT_PBX) |
+            (GatewayGroups.description['type'] == settings.FLT_CARRIER)
+        ).all()
 
         # sort endpoint groups by name
-        epgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())
+        epgroups.sort(key=lambda x: x.description['name'].lower())
         # sort gateway groups by type then by name
-        gwgroups.sort(key=lambda x: (strFieldsToDict(x.description)['type'], strFieldsToDict(x.description)['name'].lower()))
+        gwgroups.sort(key=lambda x: (x.description['type'], x.description['name'].lower()))
 
         dids = []
         if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
@@ -1078,7 +1091,7 @@ def addUpdateInboundMapping():
         ruleid = form['ruleid'] if 'ruleid' in form else None
         gwgroupid = form['gwgroupid'] if 'gwgroupid' in form and form['gwgroupid'] != "0" else ''
         prefix = form['prefix'] if 'prefix' in form else ''
-        description = 'name:{}'.format(form['rulename']) if 'rulename' in form else ''
+        description = {'name':form['rulename']} if 'rulename' in form else {}
         hardfwd_enabled = int(form['hardfwd_enabled'])
         hf_gwgroupid = form['hf_gwgroupid'] if 'hf_gwgroupid' in form and form['hf_gwgroupid'] != "0" else ''
         hf_groupid = form['hf_groupid'] if 'hf_groupid' in form else ''
@@ -1104,24 +1117,19 @@ def addUpdateInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
 
             if "lb_" in gwgroupid:
-                x = gwgroupid.split("_");
+                x = gwgroupid.split("_")
                 gwgroupid = x[1]
                 dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
-                Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
                 db.add(Gateway)
-                db.flush()
-
-                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32,1, gwgroup=gwgroupid)
-                db.add(Addr)
                 db.flush()
 
                 # Define an Inbound Mapping that maps to the newly created gateway
                 gwlist = Gateway.gwid
                 IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
                 db.add(IMap)
-                db.flush()
 
                 db.commit()
                 return displayInboundMapping()
@@ -1193,27 +1201,24 @@ def addUpdateInboundMapping():
             inserts = []
 
             if "lb_" in gwgroupid:
-                x = gwgroupid.split("_");
+                x = gwgroupid.split("_")
                 gwgroupid = x[1]
                 dispatcher_id = x[2].zfill(4)
 
                 # Create a gateway
-                Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
+                Gateway = db.query(Gateways).filter(
+                    (Gateways.description['gwgroupid'] == gwgroupid) &
+                    (Gateways.description['lb'] == dispatcher_id)
+                ).first()
                 if Gateway:
-                    fields = strFieldsToDict(Gateway.description)
-                    fields['lb'] = dispatcher_id
-                    fields['gwgroup'] = gwgroupid
-                    Gateway.update({'prefix':dispatcher_id,'description': dictToStrFields(fields)})
+                    Gateway.description['prefix'] = dispatcher_id
                 else:
-                    Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                    Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX,
+                                       gwgroup=gwgroupid)
+                    Gateway.description['lb'] = dispatcher_id
+                    Gateway.description['gwgroup'] = gwgroupid
                     db.add(Gateway)
                 db.flush()
-
-                Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
-                if Addr is None:
-                    Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
-                    db.add(Addr)
-                    db.flush()
 
                 # Assign Gateway id to the gateway list
                 gwlist = Gateway.gwid
@@ -1262,7 +1267,7 @@ def addUpdateInboundMapping():
                         if len(hf_gwgroupid) > 0:
                             gwlist = '#{}'.format(hf_gwgroupid)
                             db.query(InboundMapping).filter(InboundMapping.groupid == hf_groupid).update(
-                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)},
+                                {'prefix': '', 'gwlist': gwlist, 'description': {'name':'Hard Forward from {} to DID {}'.format(prefix, hf_fwddid)}},
                                 synchronize_session=False)
                         else:
                             hf_rule = db.query(InboundMapping).filter(
@@ -1323,7 +1328,7 @@ def addUpdateInboundMapping():
                         else:
                             fwdgroupid = int(lastfwd.groupid) + 1
 
-                        ffwd = InboundMapping(fwdgroupid, '', gwlist, 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid))
+                        ffwd = InboundMapping(fwdgroupid, '', gwlist, {'name':'Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)})
                         inserts.append(ffwd)
                     # if no gwgroup selected we dont need dr_rules we set dr_groupid to FLT_OUTBOUND and we create htable
                     else:
@@ -1343,7 +1348,7 @@ def addUpdateInboundMapping():
                         if len(ff_gwgroupid) > 0:
                             gwlist = '#{}'.format(ff_gwgroupid)
                             db.query(InboundMapping).filter(InboundMapping.groupid == ff_groupid).update(
-                                {'prefix': '', 'gwlist': gwlist, 'description': 'name:Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)},
+                                {'prefix': '', 'gwlist': gwlist, 'description': {'name':'Failover Forward from {} to DID {}'.format(prefix, ff_fwddid)}},
                                 synchronize_session=False)
                         else:
                             ff_rule = db.query(InboundMapping).filter(
@@ -1510,9 +1515,9 @@ def processInboundMappingImport(filename, override_gwgroupid, name, db):
                 else:
                     gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
             if len(row) > 1:
-                description = 'name:{}'.format(row[2])
+                description = {'name': row[2]}
             else:
-                description = 'name:{}'.format(name)
+                description = {'name': name}
 
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwgroupid, description)
             db.add(IMap)
@@ -1681,23 +1686,23 @@ def displayOutboundRoutes():
 
         db = SessionLoader()
 
-        carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
-
         rows = db.query(OutboundRoutes).filter(
             (OutboundRoutes.groupid == settings.FLT_OUTBOUND) |
             ((OutboundRoutes.groupid >= settings.FLT_LCR_MIN) &
              (OutboundRoutes.groupid < settings.FLT_FWD_MIN))).outerjoin(
             dSIPLCR, dSIPLCR.dr_groupid == OutboundRoutes.groupid).outerjoin(
-            GatewayGroups, func.REPLACE(OutboundRoutes.gwlist, '#', '') == GatewayGroups.id).add_columns(
+            GatewayGroups, sql_func.REPLACE(OutboundRoutes.gwlist, '#', '') == GatewayGroups.id).add_columns(
             dSIPLCR.from_prefix, dSIPLCR.cost, dSIPLCR.dr_groupid, OutboundRoutes.ruleid,
-            OutboundRoutes.prefix, OutboundRoutes.routeid, func.REPLACE(OutboundRoutes.gwlist, '#', '').label('gwgroupid'),
+            OutboundRoutes.prefix, OutboundRoutes.routeid, sql_func.REPLACE(OutboundRoutes.gwlist, '#', '').label('gwgroupid'),
             OutboundRoutes.timerec, OutboundRoutes.priority, OutboundRoutes.description,
             GatewayGroups.description.label('gwgroup_description'), GatewayGroups.gwlist)
 
-        cgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(carrier_filter)).all()
+        cgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description['type'] == settings.FLT_CARRIER
+        ).all()
 
         # sort carrier groups by name
-        cgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())
+        cgroups.sort(key=lambda x: x.description['name'].lower())
 
         teleblock = {}
         teleblock["gw_enabled"] = settings.TELEBLOCK_GW_ENABLED
@@ -1761,7 +1766,7 @@ def addUpateOutboundRoutes():
         priority = int(form['priority']) if 'priority' in form and len(form['priority']) > 0 else 0
         routeid = form['routeid'] if 'routeid' in form else ''
         gwgroupid = form['gwgroupid'] if 'gwgroupid' in form and form['gwgroupid'] != "0" else ''
-        description = 'name:{}'.format(form['name']) if 'name' in form else ''
+        description = {'name': form['name']} if 'name' in form else {}
 
         pattern = None
         gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
@@ -1774,8 +1779,12 @@ def addUpateOutboundRoutes():
                 print("from_prefix: {}".format(from_prefix))
 
                 # Grab the lastest groupid and increment
-                mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
-                                                (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
+                mlcr = db.query(dSIPLCR).filter(
+                    (dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
+                    (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)
+                ).order_by(
+                    dSIPLCR.dr_groupid.desc()
+                ).first()
                 db.commit()
 
                 # Start LCR routes with a groupid in settings (default is 10000)
@@ -1830,8 +1839,12 @@ def addUpateOutboundRoutes():
                 # Adding a From prefix to an existing To
                 elif prefix is not None and groupid == settings.FLT_OUTBOUND:
                     # Create a new groupid
-                    mlcr = db.query(dSIPLCR).filter((dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
-                                                    (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)).order_by(dSIPLCR.dr_groupid.desc()).first()
+                    mlcr = db.query(dSIPLCR).filter(
+                        (dSIPLCR.dr_groupid >= settings.FLT_LCR_MIN) &
+                        (dSIPLCR.dr_groupid < settings.FLT_FWD_MIN)
+                    ).order_by(
+                        dSIPLCR.dr_groupid.desc()
+                    ).first()
 
                     # Start LCR routes with a groupid set in settings (default is 10000)
                     if mlcr is None:
@@ -2039,18 +2052,6 @@ def yesOrNoFilter(list, field):
 def noneFilter(list):
     if list is None:
         return ""
-    else:
-        return list
-
-def attrFilter(list, field):
-    if list is None:
-        return ""
-    if ":" in list:
-        d = dict(item.split(":") for item in list.split(","))
-        try:
-            return d[field]
-        except:
-            return
     else:
         return list
 
@@ -2272,7 +2273,6 @@ def initApp(flask_app):
     flask_app.config['TIMED_SERIALIZER'] = URLSafeTimedSerializer(flask_app.config["SECRET_KEY"])
 
     # Add jinja2 filters
-    flask_app.jinja_env.filters["attrFilter"] = attrFilter
     flask_app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
     flask_app.jinja_env.filters["noneFilter"] = noneFilter
     flask_app.jinja_env.filters["imgFilter"] = imgFilter

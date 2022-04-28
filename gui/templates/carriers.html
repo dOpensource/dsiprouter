@@ -27,7 +27,7 @@
     {% endif %}
       <td><input type="checkbox" class="checkthis" value="1"/></td>
       <td class='gwid'>{{ row.gwid }}</td>
-      <td class='name'>{{ row.description|attrFilter('name') }}</td>
+      <td class='name'>{{ row.description['name'] }}</td>
       <td class='ip_addr'>{{ row.address }}</td>
       <td class='strip'>{{ row.strip }}</td>
       <td class='prefix'>{{ row.pri_prefix }}</td>

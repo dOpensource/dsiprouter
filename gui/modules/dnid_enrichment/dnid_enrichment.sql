@@ -6,7 +6,7 @@ CREATE TABLE dsip_dnid_enrich_lnp (
   dnid varchar(64) NOT NULL,
   country_code varchar(64) NOT NULL DEFAULT '',
   routing_number varchar(64) NOT NULL DEFAULT '',
-  description varchar(128) NOT NULL DEFAULT '',
+  description varchar(255) NOT NULL DEFAULT '{}',
   PRIMARY KEY (id)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8;

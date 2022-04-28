@@ -67,6 +67,7 @@ setStaticScriptSettings() {
     FLT_CARRIER=8
     FLT_PBX=9
     FLT_MSTEAMS=22
+    FLT_INTERNAL=20
     FLT_OUTBOUND=8000
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
@@ -514,6 +515,14 @@ export -f reconfigureMysqlSystemdService
 
 # generate dynamic python config settings on install
 function configurePythonSettings {
+    setConfigAttrib 'FLT_CARRIER' "$FLT_CARRIER" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_PBX' "$FLT_PBX" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_MSTEAMS' "$FLT_MSTEAMS" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_INTERNAL' "$FLT_INTERNAL" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_OUTBOUND' "$FLT_OUTBOUND" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_INBOUND' "$FLT_INBOUND" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_LCR_MIN' "$FLT_LCR_MIN" ${DSIP_CONFIG_FILE}
+    setConfigAttrib 'FLT_FWD_MIN' "$FLT_FWD_MIN" ${DSIP_CONFIG_FILE}
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_RTPENGINE_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
@@ -649,19 +658,19 @@ function updateKamailioConfig {
 
     # update kamailio config file
     if (( $DEBUG == 1 )); then
-        enableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        disableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
+        disableKamailioConfigFeature 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     if (( $SERVERNAT == 1 )); then
-        enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+        disableKamailioConfigFeature 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     if [[ -n "$KAM_HOMER_HOST" ]]; then
-        enableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        disableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     setKamailioConfigSubstdef 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -675,6 +684,14 @@ function updateKamailioConfig {
     setKamailioConfigSubstdef 'DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'HEP_PORT' "${KAM_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubstdef 'HOMER_HOST' "${KAM_HOMER_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_CARRIER' "$FLT_CARRIER" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_PBX' "$FLT_PBX" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_MSTEAMS' "$FLT_MSTEAMS" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_INTERNAL' "$FLT_INTERNAL" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_OUTBOUND' "$FLT_OUTBOUND" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_INBOUND' "$FLT_INBOUND" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_LCR_MIN' "$FLT_LCR_MIN" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigDef 'FLT_FWD_MIN' "$FLT_FWD_MIN" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -700,7 +717,7 @@ function updateKamailioConfig {
     # note: the '@' symbol must be escaped in perl regex
     if printf '%s' "$KAM_DB_HOST" | grep -q -oP '(\[.*\]|.*,.*)'; then
         # db connection is clustered
-        enableKamailioConfigAttrib 'WITH_DBCLUSTER' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_DBCLUSTER' ${DSIP_KAMAILIO_CONFIG_FILE}
 
         # TODO: support different type/user/pass/port/name per connection
         # TODO: support multiple clusters
@@ -837,6 +854,121 @@ function updateCACertsDir {
     chmod 640 ${DSIP_CERTS_DIR}/ca/cert.*.pem
 }
 
+# Update dynamic addresses in address table
+function updateDynamicAddresses {
+    local OLD_ADDR_IDS=( ) NEW_ADDR_IDS=( ) NEW_ADDR_LIST=( ) SQL_STATEMENTS=( )
+    lcaol OLD_ADDR_ID="" UAC_ID="" SIP_ADDR="" INSERT_TEMPLATE=""
+
+    # update resolved IP address entries for dr_gateways entries using DNS addresses
+    # - dr_gateways to address mapping: dr_gateways.description['addr_list'] -> address.id
+    while IFS= read -r ROW; do
+        # split up the fields
+        OLD_ADDR_IDS=( $(cut -d $'\t' -f 1 <<<"$ROW") )
+        SIP_ADDR=$(cut -d $'\t' -f 2 <<<"$ROW")
+
+        # get other address fields (should be same for the list of addresses)
+        INSERT_TEMPLATE=$(
+            mysql -sNA --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
+                -e "SELECT * FROM address WHERE id IN (${OLD_ADDR_IDS[@]}) LIMIT 1;" |
+                awk -F $'\t' '{printf "INSERT INTO address VALUES(NULL,%s,RESOLVED_ADDR,%s,%s,%s);",$2,$4,$5,$6}'
+        )
+
+        # delete old addresses and create new ones
+        SQL_STATEMENTS+=("DELETE FROM address WHERE id IN (${OLD_ADDR_IDS[@]});")
+        for ADDR in $(hostToIP -a "$SIP_ADDR"); do
+            NEW_ADDR_LIST+=("$ADDR")
+            SQL_STATEMENTS+=( $(perl -e "\$addr='$ADDR';" -pe 's%RESOLVED_ADDR%${addr}%' <<<"$INSERT_TEMPLATE" 2>/dev/null) )
+        done
+
+        # run sql statements as a transaction and check for errors
+        sqlAsTransaction --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" --db="$KAM_DB_NAME" "${SQL_STATEMENTS[@]}"
+        (( $? != 0 )) && { printerr 'Failed updating gateway associated addresses'; cleanupAndExit 1; }
+
+        # update address list
+        NEW_ADDR_IDS=( $(
+        mysql -sNA --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
+            -e "SELECT id FROM address WHERE ip_addr IN ($(joinwith '' ',' '' ${NEW_ADDR_LIST[@]});"
+        ) )
+
+        # run sql statements as a transaction and check for errors
+        sqlAsTransaction --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" --db="$KAM_DB_NAME" \
+            "UPDATE dr_gateways SET description = JSON_REPLACE(description, '$.addr_list', '[$(joinwith '' ',' '' ${NEW_ADDR_IDS[@]})]');"
+        (( $? != 0 )) && { printerr 'Failed updating gateway associated addresses'; cleanupAndExit 1; }
+
+    done < <(
+    mysql -sNA --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME <<-'EOF'
+SELECT REGEXP_REPLACE(JSON_EXTRACT(description, '$.addr_list'), '\\[([^\\[\\]]+)\\]', '\\1') AS addr_list, address AS sip_addr
+FROM dr_gateways
+WHERE JSON_EXISTS(description, '$.addr_list')
+  AND REGEXP_REPLACE(address,
+    '^'
+    '(?:(?P<proto>[a-zA-Z]+):/?/?)?'
+    '(?:(?P<userpw>[a-zA-Z0-9\\-_.]+(?::.+)?)(?:@))?'
+    '(?:'
+    '(?:\\[?(?P<ipv6>(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\\]?)|'
+    '(?P<ipv4>(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.(?:[0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))|'
+    '(?P<host>(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9_][a-zA-Z0-9\\-_]*[a-zA-Z0-9])\\.)*(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9]))'
+    ')'
+    '(?::(?P<port>[1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5]))?'
+    '(?P<path>/[^\\s?;]*)?'
+    '(?:(?:[?;])(?P<params>.*))?'
+    '$',
+    '\\5') <> '';
+EOF
+)
+
+    # reset vars
+    OLD_ADDR_IDS=( ) NEW_ADDR_IDS=( ) NEW_ADDR_LIST=( ) SQL_STATEMENTS=( )
+    OLD_ADDR_ID="" UAC_ID="" SIP_ADDR="" INSERT_TEMPLATE=""
+
+    # update resolved IP address entries for dr_gateways and uacreg entries using DNS addresses
+    # - dr_gateways to address mapping: dr_gateways.description['addr_list'] -> address.id
+    # - uacreg to address mapping: uacreg.l_uuid -> dr_gw_lists.id, dr_gw_lists.description['name']+'-uac' -> address.tag['name']
+    while IFS= read -r ROW; do
+        # split up the fields
+        OLD_ADDR_ID=$(cut -d $'\t' -f 1 <<<"$ROW")
+        UAC_ID=$(cut -d $'\t' -f 2 <<<"$ROW")
+
+        # get other address fields (will make new address associated to uac entry)
+        INSERT_TEMPLATE=$(
+            mysql -sNA --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
+                -e "SELECT * FROM address WHERE id='$OLD_ADDR_ID' LIMIT 1;" |
+                awk -F $'\t' '{printf "INSERT INTO address VALUES(NULL,%s,RESOLVED_ADDR,%s,%s,%s);",$2,$4,$5,$6}'
+        )
+
+        # delete old addresses and create new ones
+        SQL_STATEMENTS+=("DELETE FROM address WHERE id='$OLD_ADDR_ID';")
+        for ADDR in $(hostToIP -a "$SIP_ADDR"); do
+            NEW_ADDR_LIST+=("$ADDR")
+            SQL_STATEMENTS+=( $(perl -e "\$addr='$ADDR';" -pe 's%RESOLVED_ADDR%${addr}%' <<<"$INSERT_TEMPLATE" 2>/dev/null) )
+        done
+
+        # update address list
+        NEW_ADDR_IDS=( $(
+        mysql -sNA --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
+            -e "SELECT id FROM address WHERE ip_addr IN ($(joinwith '' ',' '' ${NEW_ADDR_LIST[@]});"
+        ) )
+    done < <(
+    mysql -sNA --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME <<-'EOF'
+SELECT t1.id AS uac_id, t3.id AS addr_id
+FROM uacreg t1
+  JOIN dr_gw_lists t2 ON t1.l_uuid = t2.id
+  JOIN address t3 ON CONCAT(JSON_UNQUOTE(JSON_EXTRACT(t2.description, '$.name')), '-uac') =
+                     JSON_UNQUOTE(JSON_EXTRACT(t3.tag, '$.name'));
+EOF
+)
+
+    # run sql statements after collecting them all, as a transaction and check for errors
+    sqlAsTransaction --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" --db="$KAM_DB_NAME" "${SQL_STATEMENTS[@]}"
+    (( $? != 0 )) && { printerr 'Failed updating uac auth associated addresses'; cleanupAndExit 1; }
+
+    # update local addresses that may change as network changes
+    local INTERNAL_NET_PREFIX=$(echo -n "$INTERNAL_NET" | cut -d '/' -f 2)
+    sqlAsTransaction --user="$MYSQL_ROOT_USERNAME" --password="$MYSQL_ROOT_PASSWORD" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" --db="$KAM_DB_NAME" \
+        "UPDATE address set ip_addr='$INTERNAL_IP', mask='$INTERNAL_NET_PREFIX' WHERE JSON_UNQUOTE(JSON_EXTRACT(tag, '$.name')) = 'dsip-internal';"
+    (( $? != 0 )) && { printerr 'Failed updating internal dynamic addresses'; cleanupAndExit 1; }
+}
+
 function generateKamailioConfig {
     # copy of template kamailio configuration to dsiprouter system config dir
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -857,9 +989,9 @@ function generateKamailioConfig {
 
     # non-module features to enable
     if (( ${WITH_LCR} == 1 )); then
-        enableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        disableKamailioConfigAttrib 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
+        disableKamailioConfigFeature 'WITH_LCR' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 
     # Backup kamcfg and link the dsiprouter kamcfg
@@ -911,13 +1043,29 @@ function configureKamailioDB {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/address.sql
 
+    # Update schema for carrierroute table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/carrierroute.sql
+
+    # Update schema for carrierfailureroute table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/carrierfailureroute.sql
+
     # Update schema for dispatcher table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dispatcher.sql
 
+    # Update schema for domainpolicy table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/domainpolicy.sql
+
     # Update schema for dr_gateways table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dr_gateways.sql
+
+    # Update schema for dr_groups table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/dr_groups.sql
 
     # Update schema for dr_gw_lists table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
@@ -927,9 +1075,25 @@ function configureKamailioDB {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/dr_rules.sql
 
+    # Update schema for globalblacklist table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/globalblacklist.sql
+
+    # Update schema for lcr_gw table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/lcr_gw.sql
+
+    # Update schema for speed_dial table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/speed_dial.sql
+
     # Update schema for subscribers table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${DSIP_DEFAULTS_DIR}/subscriber.sql
+
+    # Update schema for trusted table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${DSIP_DEFAULTS_DIR}/trusted.sql
 
     # Install schema for custom LCR logic
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
@@ -995,13 +1159,14 @@ function configureKamailioDB {
 
     # import default carriers and outbound routes
     mkdir -p /tmp/defaults
+    local INTERNAL_NET_PREFIX=$(echo -n "$INTERNAL_NET" | cut -d '/' -f 2)
     # generate defaults subbing in dynamic values
     cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
-    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g; s/FLT_INTERNAL/$FLT_INTERNAL/g; s/INTERNAL_IP/$INTERNAL_IP/g; s/INTERNAL_NET_PREFIX/$INTERNAL_NET_PREFIX/g;" \
         ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address.csv
-    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
+    sed "s/FLT_CARRIER/$FLT_CARRIER/g; s/FLT_PBX/$FLT_PBX/g; s/FLT_MSTEAMS/$FLT_MSTEAMS/g; s/FLT_INTERNAL/$FLT_INTERNAL/g;" \
         ${DSIP_DEFAULTS_DIR}/dr_gateways.csv > /tmp/defaults/dr_gateways.csv
-    sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g" \
+    sed "s/FLT_OUTBOUND/$FLT_OUTBOUND/g; s/FLT_INBOUND/$FLT_INBOUND/g;" \
         ${DSIP_DEFAULTS_DIR}/dr_rules.csv > /tmp/defaults/dr_rules.csv
 
     # import default carriers
@@ -1020,14 +1185,14 @@ function configureKamailioDB {
 
 # TODO: deprecated since CLI command is being deprecated
 function enableSERVERNAT {
-    enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    enableKamailioConfigFeature 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
     printwarn "SERVERNAT is enabled - Restarting Kamailio is required"
     printwarn "You can restart it by executing: systemctl restart kamailio"
 }
 # TODO: deprecated since CLI command is being deprecated
 function disableSERVERNAT {
-	disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+	disableKamailioConfigFeature 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
 
 	printwarn "SERVERNAT is disabled - Restarting Kamailio is required"
 	printdbg "You can restart it by executing: systemctl restart kamailio"
@@ -1117,7 +1282,7 @@ configureSystemRepos() {
         printerr 'Could not configure system repositories'
         cleanupAndExit 1
     elif (( $? >= 100 )); then
-	printwarn 'Some issue(s) with system repositories'
+	    printwarn 'Some issue(s) with system repositories'
     else
         printdbg 'System repositories configured successfully'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
@@ -1199,11 +1364,11 @@ function installRTPEngine {
     ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
     ret=$?
     if (( $ret == 0 )); then
-        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         systemctl restart kamailio
         printdbg "configuring RTPEngine service"
     elif (( $ret == 2 )); then
-        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        enableKamailioConfigFeature 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
         printwarn "RTPEngine install waiting on reboot"
         cleanupAndExit 0
     else
@@ -1237,7 +1402,7 @@ function uninstallRTPEngine {
 
     if (( $? == 0 )); then
         if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
-            disableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+            disableKamailioConfigFeature 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
             systemctl restart kamailio
         fi
     else
@@ -1513,6 +1678,8 @@ function installKamailio {
         generateKamailioConfig
         updateKamailioConfig
         updateKamailioStartup
+        # update dynamic addresses every 5 minutes
+        cronAppend "*/5 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatedynamicaddrs"
     else
         printerr "kamailio install failed"
         cleanupAndExit 1
@@ -1552,6 +1719,9 @@ function uninstallKamailio {
     # remove kam service dependencies
     removeInitCmd "dsiprouter.sh updatekamconfig"
     removeDependsOnInit "kamailio.service"
+
+    # remove cronjobs for kamailio
+    cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatedynamicaddrs"
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
@@ -2108,7 +2278,7 @@ function setCredentials {
         cleanupAndExit 1
     fi
 
-    # update non-encrypte settings locally and gather statements for updating DB
+    # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
         setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_GUI_USER" ${DSIP_CONFIG_FILE} -q
@@ -3891,8 +4061,30 @@ function processCMD {
             ;;
         # internal command, generates CA dir from CA bundle file
         updatecacertsdir)
-            # update dnsmasq config
+            # update cacerts config
             RUN_COMMANDS+=(updateCACertsDir)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        updatedynamicaddrs)
+            # update resolved DNS addresses
+            RUN_COMMANDS+=(updateDynamicAddresses)
             shift
 
             while (( $# > 0 )); do
