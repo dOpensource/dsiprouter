@@ -38,10 +38,10 @@ def addUpdateCarrierGroups(data=None):
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
         auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
         
-        # Workaround: for Twilio Elastic SIP 
-        # Set the Realm to sip.twilio.com if the domain contains a pstn.twilio.com domain.  
+        # Workaround: for Twilio Elastic SIP and Programmable SIP 
+        # Set the Realm to sip.twilio.com if the domain contains a pstn.twilio.com or sip.twilio.com domain.  
         # Otherwise, set it to the name of the auth domain
-        auth_realm = "sip.twilio.com" if "pstn.twilio.com" in auth_domain else auth_domain
+        auth_realm = "sip.twilio.com" if "twilio.com" in auth_domain else auth_domain
 
         # format data
         if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
