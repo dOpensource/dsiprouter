@@ -1,6 +1,6 @@
 route[TRANSNEXUS_OUTBOUND] {
   	 # Only route if request is coming from an Endpoint
-        if (!allow_source_address(FLT_PBX)) {
+        if (!is_method("INVITE") and !allow_source_address(FLT_CARRIER)) {
                 xlog("L_INFO", "[TRANSNEXUS_OUTBOUND] <$ci> $si not allowed to talk with Transnexus \n");
                 return;
         }
@@ -12,6 +12,7 @@ route[TRANSNEXUS_OUTBOUND] {
 
 	#Send call to clearip server
 	$ru = "sip:" + $rU + "@" + $sel(cfg_get.transnexus.authservice_host) + ";transport=tcp";
+	$du = $ru;
 
 	#Set a failure route to get the 302
 	if (is_method("INVITE")) {
@@ -27,16 +28,32 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 	if (t_check_status("302|403|503")) {	
 		xlog("L_INFO", "Transnexus Outbound Failure Logic");
-        	#Send call to Carrier
-		#$ru = "sip:" + $rU + "@" + "206.147.88.37" + ":" + "5060;transport=UDP";
-		$ru = $avp(dr_current_ruri);
+        	
+
 		#Append Identity Header
 		if $avp(Identity) != ""
 			append_hf("Identity: $avp(Identity)\r\n");
-		#Send call outbound
-		t_relay();
-		exit;
-	}
+	
+		#Check if contact contains
+		if($hdr(Contact)=~"clearip.com") {
+
+			#Send call outbound using dSIPRouter Routes
+			$ru = $avp(dr_current_ruri);
+			$du = $ru;
+			t_relay();
+			exit;
+		}
+		else {
+			#Remove the main branch
+			$ru = $null;
+
+			#Get Redirects from Transnexus
+			get_redirects("*");
+			
+			#Route to redirects
+			t_relay();
+		}
+	}	
 }
 
 onreply_route[TRANSNEXUS_OUTBOUND_REPLY] {
