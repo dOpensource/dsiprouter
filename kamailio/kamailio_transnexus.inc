@@ -1,11 +1,19 @@
 route[TRANSNEXUS_OUTBOUND] {
-  	 # Only route if request is coming from an Endpoint
-        if (!is_method("INVITE") and !allow_source_address(FLT_CARRIER)) {
-                xlog("L_INFO", "[TRANSNEXUS_OUTBOUND] <$ci> $si not allowed to talk with Transnexus \n");
-                return;
-        }
+  	
+	# Only route if request is coming from an Endpoint
+	# and is an INVITE
+
+	if (allow_source_address(FLT_CARRIER)) {
+		return;
+
+	}
+       
+	if (!is_method("INVITE")) {
+		return;		
+	}
+			
 	
-      	xlog("L_INFO", "Transnexus Outbound Logic");
+      	xlog("L_INFO", "Transnexus Outbound Logic - method: $rm");
 	
 	#Store the $ru that was selected
 	$avp(dr_current_ruri) = $ru;
@@ -19,7 +27,7 @@ route[TRANSNEXUS_OUTBOUND] {
 		t_on_reply("TRANSNEXUS_OUTBOUND_REPLY");
                 t_on_failure("TRANSNEXUS_OUTBOUND_FAILURE");
         }
-
+	
 
 }
 
@@ -28,8 +36,7 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 	if (t_check_status("302|403|503")) {	
 		xlog("L_INFO", "Transnexus Outbound Failure Logic");
-        	
-
+		
 		#Append Identity Header
 		if $avp(Identity) != ""
 			append_hf("Identity: $avp(Identity)\r\n");
@@ -41,7 +48,6 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 			$ru = $avp(dr_current_ruri);
 			$du = $ru;
 			t_relay();
-			exit;
 		}
 		else {
 			#Remove the main branch
@@ -49,12 +55,12 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 			#Get Redirects from Transnexus
 			get_redirects("*");
-			
 			#Route to redirects
 			t_relay();
 		}
 	}	
 }
+
 
 onreply_route[TRANSNEXUS_OUTBOUND_REPLY] {
 
@@ -70,9 +76,22 @@ onreply_route[TRANSNEXUS_OUTBOUND_REPLY] {
 		else
 			xlog("L_INFO", "Identity Header Not Found");
 	}
+
+
+	if (is_method("BYE")) {
+
+		xlog("L_INFO", "*******TRANSNEXUS_OUTBOUND_REPLY BYE*******");
+	}
+
 }
 
+onreply_route[TRANSNEXUS_CARRIER_REPLY] {
+	
+	xlog("L_INFO", "*******TRANSNEXUS_CARRIER_REPLY*******");
 
+	
+
+}
 
 
 route[TRANSNEXUS_INBOUND] {
