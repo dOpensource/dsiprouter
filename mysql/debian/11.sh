@@ -16,30 +16,6 @@ function install {
     apt-get install -y --allow-unauthenticated default-mysql-server ||
         apt-get install -y --allow-unauthenticated mariadb-server
 
-    # alias mariadb.service to mysql.service and mysqld.service as in debian repo
-    # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-[Install]
-Alias=
-Alias=mysqld.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysql.service
-    chmod 0644 /lib/systemd/system/mysql.service
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-[Install]
-Alias=
-Alias=mysql.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysqld.service
-    chmod 0644 /lib/systemd/system/mysqld.service
-    systemctl daemon-reload
-
     # if db is remote don't run local service
     reconfigureMysqlSystemdService
 
