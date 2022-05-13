@@ -16,7 +16,8 @@ route[TRANSNEXUS_OUTBOUND] {
       	xlog("L_INFO", "Transnexus Outbound Logic - method: $rm");
 	
 	#Store the $ru that was selected
-	$avp(dr_current_ruri) = $ru;
+	$avp(dr_orig_ruri) = $ru;
+	$avp(dr_orig_du) = $du;
 
 	#Send call to clearip server
 	$ru = "sip:" + $rU + "@" + $sel(cfg_get.transnexus.authservice_host) + ";transport=tcp";
@@ -41,15 +42,10 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 		if $avp(Identity) != ""
 			append_hf("Identity: $avp(Identity)\r\n");
 	
+		
 		#Check if contact contains
-		if($hdr(Contact)=~"clearip.com") {
+		if ((int)$sel(cfg_get.transnexus.authservice_lrn_enabled)) {
 
-			#Send call outbound using dSIPRouter Routes
-			$ru = $avp(dr_current_ruri);
-			$du = $ru;
-			t_relay();
-		}
-		else {
 			#Remove the main branch
 			$ru = $null;
 
@@ -57,6 +53,16 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 			get_redirects("*");
 			#Route to redirects
 			t_relay();
+			exit;
+
+
+		} else {
+			
+			#Send call outbound using dSIPRouter Routes
+			$ru = $avp(dr_orig_ruri);
+			$du = $avp(dr_orig_du);
+			t_relay();
+			exit;
 		}
 	}	
 }
