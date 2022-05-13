@@ -116,8 +116,6 @@ route[STIRSHAKEN_INBOUND] {
 }
 
 
-route[]
-
 onreply_route[STIRSHAKEN_INBOUND_REPLY] {
 
 	if (t_check_status("302")) {	
