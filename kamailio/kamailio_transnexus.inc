@@ -1,5 +1,13 @@
 route[TRANSNEXUS_OUTBOUND] {
-  	
+  
+      	xlog("L_INFO", "Transnexus Outbound Logic - original: $var(orig_rU)");
+	
+	# Return if emergency route
+	if ( $var(orig_rU) =~ $sel(cfg_get.server.emergency_numbers) ) {
+		return;
+	}	
+
+
 	# Only route if request is coming from an Endpoint
 	# and is an INVITE
 
