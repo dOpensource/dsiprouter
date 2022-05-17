@@ -57,13 +57,21 @@ route[STIRSHAKEN_OUTBOUND] {
 			
 
     xlog("L_INFO", "STIRSHAKEN Outbound Logic - method: $rm");
-	
-	 	#Send call to clearip server
-	$ru = "sip:" + $rU + "@" + $sel(cfg_get.transnexus.authservice_host) + ";transport=tcp";
-	$du = $ru;
 
-	#Set a failure route to get the 302
+	# get the outbound caller id number
+    $var(caller_from_number) = $fU;
 
+    # Check if the number exist in the dr_rules htable
+    if ($sht(dr_rules=>$var(caller_from_number))){
+
+        if (1 == stirshaken_add_identity($sel(cfg_get.stir_shaken.stir_shaken_key_path), "B", "+44100", "+44200", "")) {
+			xlog("Shaken authentication added (SIP Identity Header created)\n");
+		} else {
+			xlog("Failed\n");
+		}
+
+
+    }
 
 }
 
