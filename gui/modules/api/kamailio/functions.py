@@ -55,7 +55,7 @@ def reloadKamailio():
                 {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
                  'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
 
-        # Settings for TransNexus 
+        # Settings for TransNexus
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
              'params': ['transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED)]})
@@ -66,7 +66,7 @@ def reloadKamailio():
         # Settings for STIR/SHAKEN
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_enabled ', str(settings.STIR_SHAKEN_ENABLED)]})
+             'params': ['stir_shaken', 'stir_shaken_enabled', str(settings.STIR_SHAKEN_ENABLED)]})
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
              'params': ['stir_shaken', 'stir_shaken_prefix_a', str(settings.STIR_SHAKEN_PREFIX_A)]})
