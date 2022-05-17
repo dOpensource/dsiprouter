@@ -49,29 +49,21 @@ route[STIRSHAKEN_OUTBOUND] {
 
 	if (allow_source_address(FLT_CARRIER)) {
 		return;
-
 	}
        
 	if (!is_method("INVITE")) {
 		return;		
 	}
 			
-	
+
     xlog("L_INFO", "STIRSHAKEN Outbound Logic - method: $rm");
 	
-	#Store the $ru that was selected
-	$avp(dr_current_ruri) = $ru;
-
-	#Send call to clearip server
+	 	#Send call to clearip server
 	$ru = "sip:" + $rU + "@" + $sel(cfg_get.transnexus.authservice_host) + ";transport=tcp";
 	$du = $ru;
 
 	#Set a failure route to get the 302
-	if (is_method("INVITE")) {
-		t_on_reply("STIRSHAKEN_OUTBOUND_REPLY");
-                t_on_failure("STIRSHAKEN_OUTBOUND_FAILURE");
-        }
-	
+
 
 }
 
