@@ -12,7 +12,6 @@ function install {
     # Install required libraries
     apt-get install -y logrotate rsyslog
     apt-get install -y firewalld
-    apt-get install -y iptables-dev
     apt-get install -y libcurl4-openssl-dev
     apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
     apt-get install -y markdown
@@ -50,6 +49,8 @@ function install {
 	# Over-ride version of RTPEngine
 	RTPENGINE_VER=mr10.4.1.1
         printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
+    else
+        apt-get install -y iptables-dev
     fi
 
     # create rtpengine user and group
