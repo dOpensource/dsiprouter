@@ -47,7 +47,7 @@ function install {
 	apt-get install -y -t bullseye libjson-perl libmosquitto-dev python3-websockets
 	apt-get install -y -t bullseye libbcg729-dev
 	# Over-ride version of RTPEngine
-	RTPENGINE_VER=mr10.4.1.1
+	RTPENGINE_VER=mr10.4.1
         printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
     else
         apt-get install -y iptables-dev
