@@ -89,9 +89,9 @@ function install {
     fi &&
     dpkg-buildpackage -us -uc -sa &&
     cd .. &&
-    dpkg -i ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
-        ngcp-rtpengine-kernel-dkms_*.deb
-    #./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
+    systemctl mask ngcp-rtpengine-daemon.service &&
+    apt-get install -y ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
+        ./ngcp-rtpengine-kernel-dkms_*.deb ./ngcp-rtpengine-utils_*.deb ./ngcp-rtpengine-recording-daemon_*.deb
 
     if [ $? -ne 0 ]; then
         printerr "Problem installing RTPEngine DEB's"
@@ -169,12 +169,10 @@ EOF
 
     # Setup tmp files
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    systemctl stop ngcp-rtpengine-daemon
     rm -f /etc/systemd/system/rtpengine.service /etc/init.d/ngcp-rtpengine-daemon
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine.service /etc/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
-    chmod +x /usr/sbin/rtpengine*
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
+    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post}
 
     # Reload systemd configs
     systemctl daemon-reload
