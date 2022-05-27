@@ -22,8 +22,7 @@ function install {
     apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
     apt-get install -y libavfilter-dev
     apt-get install -y libavformat-dev
-    apt-get install -y libmysqlclient-dev
-    apt-get install -y libmariadbclient-dev
+    apt-get install -y libmariadbclient-dev-compat
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
