@@ -34,13 +34,13 @@ route[TRANSNEXUS_OUTBOUND] {
 	#Set a failure route to get the 302
 	if (is_method("INVITE")) {
 		t_on_reply("TRANSNEXUS_OUTBOUND_REPLY");
-                t_on_failure("TRANSNEXUS_OUTBOUND_FAILURE");
+                t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER");
         }
 	
 
 }
 
-failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
+failure_route[TRANSNEXUS_OUTBOUND_CARRIER] {
 
 
 	if (t_check_status("302|403|503")) {	
@@ -59,10 +59,16 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 			#Get Redirects from Transnexus
 			get_redirects("*");
-			#Route to redirects
-			t_relay();
-			exit;
-
+			
+			#Try one contact at a time
+			if (!t_load_contacts()) {
+				t_reply("500", "Server Internal Error - Cannot load contacts from TransNexus. Check TransNexus config!");
+				exit;
+			}
+			else {
+				t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER_NEXT");
+				t_relay();
+			}
 
 		} else {
 			
@@ -75,6 +81,17 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 	}	
 }
 
+failure_route[TRANSNEXUS_OUTBOUND_CARRIER_NEXT] {
+
+	if (!t_next_contacts()) {
+        	t_reply("408", "Request Timeout");
+	} 	
+	else {
+		t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER_NEXT");
+        	t_relay();
+
+	}
+}
 
 onreply_route[TRANSNEXUS_OUTBOUND_REPLY] {
 
