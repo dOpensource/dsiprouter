@@ -66,6 +66,7 @@ failure_route[TRANSNEXUS_OUTBOUND_CARRIER] {
 				exit;
 			}
 			else {
+				t_next_contacts();
 				t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER_NEXT");
 				t_relay();
 			}
