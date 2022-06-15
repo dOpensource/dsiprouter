@@ -34,13 +34,13 @@ route[TRANSNEXUS_OUTBOUND] {
 	#Set a failure route to get the 302
 	if (is_method("INVITE")) {
 		t_on_reply("TRANSNEXUS_OUTBOUND_REPLY");
-                t_on_failure("TRANSNEXUS_OUTBOUND_FAILURE");
+                t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER");
         }
 	
 
 }
 
-failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
+failure_route[TRANSNEXUS_OUTBOUND_CARRIER] {
 
 
 	if (t_check_status("302|403|503")) {	
@@ -59,10 +59,17 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 
 			#Get Redirects from Transnexus
 			get_redirects("*");
-			#Route to redirects
-			t_relay();
-			exit;
-
+			
+			#Try one contact at a time
+			if (!t_load_contacts()) {
+				t_reply("500", "Server Internal Error - Cannot load contacts from TransNexus. Check TransNexus config!");
+				exit;
+			}
+			else {
+				t_next_contacts();
+				t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER_NEXT");
+				t_relay();
+			}
 
 		} else {
 			
@@ -75,6 +82,17 @@ failure_route[TRANSNEXUS_OUTBOUND_FAILURE] {
 	}	
 }
 
+failure_route[TRANSNEXUS_OUTBOUND_CARRIER_NEXT] {
+
+	if (!t_next_contacts()) {
+        	t_reply("408", "Request Timeout");
+	} 	
+	else {
+		t_on_failure("TRANSNEXUS_OUTBOUND_CARRIER_NEXT");
+        	t_relay();
+
+	}
+}
 
 onreply_route[TRANSNEXUS_OUTBOUND_REPLY] {
 
@@ -107,45 +125,54 @@ onreply_route[TRANSNEXUS_CARRIER_REPLY] {
 
 }
 
-
 route[TRANSNEXUS_INBOUND] {
-  	 # Only route if request is coming from an Endpoint
+         # Only route if request is coming from an Endpoint
         if (!allow_source_address(FLT_CARRIER)) {
                 xlog("L_INFO", "[TRANSNEXUS_INBOUND] <$ci> $si not allowed to talk with Transnexus \n");
                 return;
         }
-	
-      	xlog("L_INFO", "Transnexus Inbound Logic");
-	
-	#Send call to clearip server
-	$ru = "sip:" + $rU + "@" + "inbound.sip.clearip.com" + ":" + "5060;transport=tcp";
 
-	#Set a failure route to get the 302
-	if (is_method("INVITE")) {
-		t_on_reply("TRANSNEXUS_INBOUND_REPLY");
+        xlog("L_INFO", "[TRANSNEXUS_INBOUND] Transnexus Inbound Logic");
+
+        #Store the $ru that was selected
+        $avp(dr_orig_ruri) = $ru;
+
+        #Send call to clearip server for validation
+        $ru = "sip:" + $rU + "@" + $sel(cfg_get.transnexus.verifyservice_host) + ";transport=tcp";
+
+        xlog("L_INFO", "[TRANSNEXUS_INBOUND] ru = $ru");
+        #Set a failure route to get the 302
+        if (is_method("INVITE")) {
+                t_on_reply("TRANSNEXUS_INBOUND_REPLY");
                 t_on_failure("TRANSNEXUS_INBOUND_FAILURE");
         }
-
+        t_relay();
 }
 
 onreply_route[TRANSNEXUS_INBOUND_REPLY] {
 
-	if (t_check_status("302")) {	
-		#Get Identity header and append it to header
-		xlog("L_INFO", "Identity Header: $hdr(Identity),$hdr(Reason)");
-		exit;
-	}
+        if (t_check_status("302")) {
+                #Get Identity header and append it to header
+                xlog("L_INFO", "Identity Header: $hdr(Identity),$hdr(Reason)");
+                $avp(X-P-Asserted-Identity) = $hdr(P-Asserted-Identity);
+        }
 }
 
 failure_route[TRANSNEXUS_INBOUND_FAILURE] {
 
-	
-	if (t_check_status("302")) {	
-		
-		xlog("L_INFO", "Transnexus Inbound Failure Logic");
-		# Route back to freeswitch or just call NumberSentry API from here
-		t_drop_replies();
-		send_reply("100", "Trying");
-		exit;
-	}
+
+        if (t_check_status("302")) {
+
+                xlog("L_INFO", "Transnexus Inbound Failure Logic");
+                t_drop_replies();
+                send_reply("100", "Trying");
+                append_hf("X-P-Asserted-Identity: $avp(X-P-Asserted-Identity)\r\n");
+		# Replace with the original URI
+        	$ru = $avp(dr_orig_ruri);
+		# Import custom logic to route the inbound call
+		import_file "kamailio_transnexus_inbound_custom.inc"
+		route(NEXTHOP);
+		return;
+        }
 }
+

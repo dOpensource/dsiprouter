@@ -38,7 +38,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.643'
+VERSION = '0.644'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -99,6 +99,8 @@ TELEBLOCK_MEDIA_PORT = ''
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
 TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
 TRANSNEXUS_LICENSE_KEY = ''
+TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
+TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
 
 # Flowroute API Settings
 FLOWROUTE_ACCESS_KEY = ''
