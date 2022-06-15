@@ -2068,7 +2068,7 @@ def displayStirShaken(msg=None):
         stir_shaken["stir_shaken_prefix_b"] = settings.STIR_SHAKEN_PREFIX_B
         stir_shaken["stir_shaken_prefix_c"] = settings.STIR_SHAKEN_PREFIX_C
         stir_shaken["stir_shaken_prefix_invalid"] = settings.STIR_SHAKEN_PREFIX_INVALID
-        stir_shaken["stir_shaken_block_invalid"] = settings.STIR_SHAKEN_PREFIX_INVALID
+        stir_shaken["stir_shaken_block_invalid"] = settings.STIR_SHAKEN_BLOCK_INVALID
 
         return render_template('stirshaken.html', stir_shaken=stir_shaken, msg=msg)
 

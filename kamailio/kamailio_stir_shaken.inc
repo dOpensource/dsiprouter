@@ -64,10 +64,10 @@ route[STIRSHAKEN_OUTBOUND] {
     # Check if the number exist in the dr_rules htable
     if ($sht(dr_rules=>$var(caller_from_number))){
 
-        if (1 == stirshaken_add_identity($sel(cfg_get.stir_shaken.stir_shaken_key_path), "A", "+44100", "+44200", "")) {
-			xlog("Shaken authentication added (SIP Identity Header created)\n");
+        if (1 == stirshaken_add_identity($sel(cfg_get.stir_shaken.stir_shaken_key_path), "A", "$fU", "$tU", "")) {
+			xlog("L_INFO", "Shaken authentication added (SIP Identity Header created)\n");
 		} else {
-			xlog("Failed to add identity\n");
+			xlog("L_INFO", "Failed to add identity\n");
 		}
 
 
