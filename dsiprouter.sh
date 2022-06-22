@@ -624,6 +624,9 @@ function updateKamailioConfig {
     local TELEBLOCK_GW_PORT=${TELEBLOCK_GW_PORT:-$(getConfigAttrib 'TELEBLOCK_GW_PORT' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_MEDIA_IP=${TELEBLOCK_MEDIA_IP:-$(getConfigAttrib 'TELEBLOCK_MEDIA_IP' ${DSIP_CONFIG_FILE})}
     local TELEBLOCK_MEDIA_PORT=${TELEBLOCK_MEDIA_PORT:-$(getConfigAttrib 'TELEBLOCK_MEDIA_PORT' ${DSIP_CONFIG_FILE})}
+    
+    # Set the External IP Address for the WebRTC Port
+    sed -i "s/server:\(.*\):4443/server:$EXTERNAL_IP:4443/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
     # update kamailio config file
     if [[ "$DEBUG" == "True" ]]; then
@@ -757,9 +760,6 @@ function generateKamailioConfig {
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/kamailio_dsiprouter.cfg ${DSIP_KAMAILIO_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/tls_dsiprouter.cfg ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
     cp -f ${DSIP_KAMAILIO_CONFIG_DIR}/*.inc ${SYSTEM_KAMAILIO_CONFIG_DIR}
-
-    # Set the External IP Address for the WebRTC Port
-    sed -i "s/EXTERNAL_IP/$EXTERNAL_IP/g" ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 
     # version specific settings
     if (( ${KAM_VERSION} >= 52 )); then
