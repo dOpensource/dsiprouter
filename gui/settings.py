@@ -38,7 +38,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.643'
+VERSION = '0.644'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -99,11 +99,23 @@ TELEBLOCK_MEDIA_PORT = ''
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
 TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
 TRANSNEXUS_LICENSE_KEY = ''
+TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
+TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
 
 # Flowroute API Settings
 FLOWROUTE_ACCESS_KEY = ''
 FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
+
+
+# STIR/SHAKEN Settings
+STIR_SHAKEN_ENABLED = 0
+STIR_SHAKEN_PREFIX_A = ''
+STIR_SHAKEN_PREFIX_B = ''
+STIR_SHAKEN_PREFIX_C = ''
+STIR_SHAKEN_PREFIX_INVALID = ''
+STIR_SHAKEN_BLOCK_INVALID = 0
+
 
 # updated dynamically! These values will be overwritten
 INTERNAL_IP_ADDR = '68.183.203.128'
