@@ -62,6 +62,12 @@ def reloadKamailio():
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
             'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+            'params': ['transnexus', 'verifyservice_enabled', str(settings.TRANSNEXUS_VERIFYSERVICE_ENABLED)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+            'params': ['transnexus', 'verifyservice_host', str(settings.TRANSNEXUS_VERIFYSERVICE_HOST)]})
 
         # Settings for STIR/SHAKEN
         reload_cmds.append(
