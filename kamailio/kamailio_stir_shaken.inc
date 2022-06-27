@@ -36,6 +36,11 @@ route[STIRSHAKEN_INBOUND] {
             uac_replace_from("VERIFIED  $fU","");
 	    }
     } else {
+    	if ($sel(cfg_get.stir_shaken.stir_shaken_block_invalid) == 1) {
+		sl_reply("488", "Blocked due to invalid or missing STIR/SHAKEN Identity Header");
+		exit;
+
+	}
         xlog("L_INFO", "Shaken Identity is invalid\n");
         uac_replace_from("$sel(cfg_get.stir_shaken.stir_shaken_prefix_invalid)  $fU","");
     }
