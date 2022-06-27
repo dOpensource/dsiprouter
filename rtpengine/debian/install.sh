@@ -47,6 +47,7 @@ function install {
     if [[ "$CODENAME" == "bullseye" ]]; then
 	apt-get install -y -t bullseye libiptc-dev libxtables-dev
 	apt-get install -y -t bullseye libjson-perl libmosquitto-dev python3-websockets
+	apt-get install -y libbcg729-0  libbcg729-dev
 	# Over-ride version of RTPEngine
 	RTPENGINE_VER=mr10.4.1.1
         printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
@@ -60,21 +61,26 @@ function install {
     # build deb packages and install
     cd ${SRC_DIR}
 
-    # TODO: this needs replaced with a better build process (maybe cpack?)
-    CODEC_VER=1.0.4
-    rm -rf bcg729-${CODEC_VER}.bak 2>/dev/null
-    mv -f bcg729-${CODEC_VER} bcg729-${CODEC_VER}.bak 2>/dev/null
-    curl -s https://codeload.github.com/BelledonneCommunications/bcg729/tar.gz/${CODEC_VER} > bcg729_${CODEC_VER}.orig.tar.gz &&
-    tar -xf bcg729_${CODEC_VER}.orig.tar.gz &&
-    cd bcg729-${CODEC_VER} &&
-    git clone https://github.com/ossobv/bcg729-deb.git debian &&
-    dpkg-buildpackage -us -uc -sa &&
-    cd .. &&
-    dpkg -i ./libbcg729-*.deb
+    # Only build bcg729 support if not installing on bullseye
 
-    if [ $? -ne 0 ]; then
-        printerr "Problem installing G729 Codec"
-        exit 1
+    if [[ "$CODENAME" != "bullseye" ]]; then
+    	# TODO: this needs replaced with a better build process (maybe cpack?)
+    	CODEC_VER=1.0.4
+    	rm -rf bcg729-${CODEC_VER}.bak 2>/dev/null
+    	mv -f bcg729-${CODEC_VER} bcg729-${CODEC_VER}.bak 2>/dev/null
+    	curl -s https://codeload.github.com/BelledonneCommunications/bcg729/tar.gz/${CODEC_VER} > bcg729_${CODEC_VER}.orig.tar.gz &&
+   	 tar -xf bcg729_${CODEC_VER}.orig.tar.gz &&
+    	cd bcg729-${CODEC_VER} &&
+    	git clone https://github.com/ossobv/bcg729-deb.git debian &&
+    	dpkg-buildpackage -us -uc -sa &&
+    	cd .. &&
+    	dpkg -i ./libbcg729-*.deb
+    
+
+    	if [ $? -ne 0 ]; then
+        	printerr "Problem installing G729 Codec"
+        	exit 1
+   	 fi
     fi
 
     rm -rf rtpengine.bak 2>/dev/null
