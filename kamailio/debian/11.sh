@@ -173,6 +173,27 @@ EOF
     cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
     return 1
 
+    # Setup STIRSHAKEN Module
+    ## Get required packages
+    apt-get install -y libcurl4-openssl-dev libjwt-dev libjansson-dev cmake
+
+    ## Compile and install libjwt
+    git clone https://github.com/benmcollins/libjwt.git /tmp/libjwt &&
+    ( cd /tmp/libjwt; autoreconf -i; ./configure; make; make install; exit $?; )
+
+    ## Compile and install libks
+    git clone https://github.com/signalwire/libks /tmp/libks &&
+    ( cd /tmp/libks; cmake .; make install; exit $?; )
+
+    ## Install libstirshaken module
+    git clone https://github.com/signalwire/libstirshaken /tmp/libstirshaken
+    ( cd /tmp/libstirshaken; ./bootstrap.sh; ./configure; make; make install; ldconfig; exit $?; )
+
+    ## Compile and install Kamailio STIRShaken Module
+    ( cd /tmp/kamailio/src/modules/stirshaken; make; exit $?; ) &&
+    cp -f /tmp/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR} ||
+    return 1
+
     return 0
 }
 
@@ -183,6 +204,12 @@ function uninstall {
 
     # Backup kamailio configuration directory
     mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
+
+    # Uninstall Stirshaken Required Packages
+    cd /tmp/libjwt; make uninstall; cd /tmp; rm -rf /tmp/libjwt
+    cd /tmp/libks; make uninstall; cd /tmp; rm -rf /tmp/libks
+    cd /tmp/libstirshaken; make uninstall; cd /tmp; rm -rf /tmp/libstirshaken
+    cd /tmp; rm -rf /tmp/kamailio
 
     # Uninstall Kamailio modules
     apt-get -y remove --purge kamailio\*

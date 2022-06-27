@@ -2049,6 +2049,85 @@ def deleteOutboundRoute():
     finally:
         db.close()
 
+@app.route('/stirshaken')
+def displayStirShaken(msg=None):
+    """
+    Display TransNexus settings in view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        stir_shaken = {}
+        stir_shaken["stir_shaken_enabled"] = settings.STIR_SHAKEN_ENABLED
+        stir_shaken["stir_shaken_prefix_a"] = settings.STIR_SHAKEN_PREFIX_A
+        stir_shaken["stir_shaken_prefix_b"] = settings.STIR_SHAKEN_PREFIX_B
+        stir_shaken["stir_shaken_prefix_c"] = settings.STIR_SHAKEN_PREFIX_C
+        stir_shaken["stir_shaken_prefix_invalid"] = settings.STIR_SHAKEN_PREFIX_INVALID
+        stir_shaken["stir_shaken_block_invalid"] = settings.STIR_SHAKEN_BLOCK_INVALID
+
+        return render_template('stirshaken.html', stir_shaken=stir_shaken, msg=msg)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/stirshaken', methods=['POST'])
+def addUpdateStirShaken():
+    """
+    Update STIR/SHAKEN config file settings
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        form = stripDictVals(request.form.to_dict())
+
+        stir_shaken = {}
+        stir_shaken["STIR_SHAKEN_ENABLED"] = form.get('stir_shaken_enabled', 0)
+        stir_shaken["STIR_SHAKEN_PREFIX_A"] = form.get('stir_shaken_prefix_a', '')
+        stir_shaken["STIR_SHAKEN_PREFIX_B"] = form.get('stir_shaken_prefix_b', '')
+        stir_shaken["STIR_SHAKEN_PREFIX_C"] = form.get('stir_shaken_prefix_c', '')
+        stir_shaken["STIR_SHAKEN_PREFIX_INVALID"] = form.get('stir_shaken_prefix_invalid', '')
+        stir_shaken["STIR_SHAKEN_BLOCK_INVALID"] = form.get('stir_shaken_block_invalid', 0)
+
+        if stir_shaken["STIR_SHAKEN_ENABLED"] == "1":
+            stir_shaken["STIR_SHAKEN_ENABLED"] = 1
+        else:
+            stir_shaken["STIR_SHAKEN_ENABLED"] = 0
+
+        if stir_shaken["STIR_SHAKEN_BLOCK_INVALID"] == "on":
+            stir_shaken["STIR_SHAKEN_BLOCK_INVALID"] = 1
+        else:
+            stir_shaken["STIR_SHAKEN_BLOCK_INVALID"] = 0
+
+        updateConfig(settings, stir_shaken, hot_reload=True)
+        globals.reload_required = True
+        return displayStirShaken()
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
 
 # custom jinja filters
 def yesOrNoFilter(list, field):
