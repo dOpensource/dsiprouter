@@ -54,7 +54,7 @@ EOF
 
     # Install Kamailio packages
     apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules kamailio-extra-modules \
-        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules
+        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules kamailio-json-modules
 
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
