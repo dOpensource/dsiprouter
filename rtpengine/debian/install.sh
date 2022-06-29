@@ -71,11 +71,10 @@ function install {
     	curl -s https://codeload.github.com/BelledonneCommunications/bcg729/tar.gz/${CODEC_VER} > bcg729_${CODEC_VER}.orig.tar.gz &&
    	 tar -xf bcg729_${CODEC_VER}.orig.tar.gz &&
     	cd bcg729-${CODEC_VER} &&
-    	git clone https://github.com/ossobv/bcg729-deb.git debian &&
-    	dpkg-buildpackage -us -uc -sa &&
+    	git clone https://github.com/ossobv/bcg729-deb.git -b v${CODEC_VER}-0osso3 debian &&
+	dpkg-buildpackage -us -uc -sa &&
     	cd .. &&
     	dpkg -i ./libbcg729-*.deb
-    
 
     	if [ $? -ne 0 ]; then
         	printerr "Problem installing G729 Codec"
