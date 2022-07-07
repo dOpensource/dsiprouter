@@ -28,6 +28,7 @@ function install {
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
+    apt-get install -y cmake
     apt-get install -y unzip
     apt-get install -y libavresample-dev
     apt-get install -y linux-headers-$(uname -r)
@@ -47,7 +48,7 @@ function install {
     if [[ "$CODENAME" == "bullseye" ]]; then
 	apt-get install -y -t bullseye libiptc-dev libxtables-dev
 	apt-get install -y -t bullseye libjson-perl libmosquitto-dev python3-websockets
-	apt-get install -y libbcg729-0  libbcg729-dev
+	apt-get install -y libbcg729-0  libbcg729-dev libavcodec-extra
 	# Over-ride version of RTPEngine
 	RTPENGINE_VER=mr10.4.1.1
         printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
