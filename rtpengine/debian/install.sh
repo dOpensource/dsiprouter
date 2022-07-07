@@ -22,7 +22,8 @@ function install {
     apt-get install -y libhiredis-dev
     apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
     apt-get install -y libavfilter-dev
-    apt-get install -y libavformat-dev
+    apt-get install -y libavformat-dev 
+    apt-get isntall -y libavcodec-extra
     apt-get install -y libmysqlclient-dev
     apt-get install -y libmariadbclient-dev
     apt-get install -y default-libmysqlclient-dev
@@ -48,7 +49,7 @@ function install {
     if [[ "$CODENAME" == "bullseye" ]]; then
 	apt-get install -y -t bullseye libiptc-dev libxtables-dev
 	apt-get install -y -t bullseye libjson-perl libmosquitto-dev python3-websockets
-	apt-get install -y libbcg729-0  libbcg729-dev libavcodec-extra
+	apt-get install -y libbcg729-0  libbcg729-dev
 	# Over-ride version of RTPEngine
 	RTPENGINE_VER=mr10.4.1.1
         printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
