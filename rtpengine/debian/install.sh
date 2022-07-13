@@ -22,12 +22,14 @@ function install {
     apt-get install -y libhiredis-dev
     apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
     apt-get install -y libavfilter-dev
-    apt-get install -y libavformat-dev
+    apt-get install -y libavformat-dev 
+    apt-get isntall -y libavcodec-extra
     apt-get install -y libmysqlclient-dev
     apt-get install -y libmariadbclient-dev
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
+    apt-get install -y cmake
     apt-get install -y unzip
     apt-get install -y libavresample-dev
     apt-get install -y linux-headers-$(uname -r)
