@@ -1,5 +1,5 @@
-pvt_key_path="/Users/mack/.ssh/dopensource-training"
+pvt_key_path="/Users/mackhendricks/.ssh/dopensource-training"
 dsiprouter_prefix="dev"
 number_of_environments=1
-pub_key_name="dopensource_training"
-
+pub_key_name="dopensource-training"
+additional_commands="echo"

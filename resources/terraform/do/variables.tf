@@ -24,3 +24,8 @@ variable "image" {
 	type=string
 	default="debian-10-x64"
 }
+
+variable "additional_commands" {
+	type=string
+	default="echo"
+}
