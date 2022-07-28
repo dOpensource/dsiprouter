@@ -85,35 +85,31 @@ def login():
         db = SessionLoader()
 
         # Check for existing user
-        existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).all()
-
-
+        existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
 
         if existing_user:
-            response_payload = {'error': 'User Already Exists', 'data': request_data}
 
-            print("Saved Password: ", (existing_user['password']))
-            print("Decrypted: ", (AES_CTR.decrypt(existing_user['password'])))
+            print("Saved Password: ", (existing_user.password))
+            print("Decrypted: ", (AES_CTR.decrypt(existing_user.password).decode('utf-8')))
             print("Provided: ", (request_data['password']))
 
-            if str(request_data['password']) == AES_CTR.decrypt(existing_user['password']):
+            if str(request_data['password']) == AES_CTR.decrypt(existing_user.password).decode('utf-8'):
 
-                existing_user['token'] = uuid.uuid4()
-                existing_user['token_expiration'] = datetime.datetime.now() + datetime.timedelta(days=1)
-                db.update(existing_user)
-                db.flush()
-                db.commit()
+                if (not existing_user.token) or (datetime.datetime.now() > existing_user.token_expiration):
+                    existing_user.token = uuid.uuid4()
+                    existing_user.token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
+                    db.commit()
 
-                response_payload['data'] = {
+                response_payload = {
                     'message': 'Login successful',
-                    'token': existing_user['token'],
-                    'expiration_date': existing_user['token_expiration']
+                    'token': existing_user.token,
+                    'expiration_date': existing_user.token_expiration
                 }
 
                 return jsonify(response_payload), StatusCodes.HTTP_OK
 
             else:
-                response_payload['data'] = {
+                response_payload = {
                     "message": 'Invalid credentials',
                     'payload': request_data
                 }
