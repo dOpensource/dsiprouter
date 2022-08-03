@@ -12,7 +12,6 @@ Install (Don't Proxy audio (RTP) traffic)
 
 .. code-block:: bash
 
-  yum update -y
   yum install -y git
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
@@ -24,7 +23,7 @@ One Line Version:
 
 .. code-block:: bash
 
-   yum update -y && yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -kam -dsip
+   yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -kam -dsip
 
 
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
@@ -37,7 +36,6 @@ If you need to proxy RTP traffic then use -all install option. The command to in
 
 .. code-block:: bash
 
-  yum update -y
   yum install -y git
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
@@ -49,7 +47,7 @@ One Line Version:
 
 .. code-block:: bash
 
-  yum update -y && yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -all
+  yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -all
 
 
 Install (Proxy audio (RTP) traffic with PBX and dSIPRouter behind NAT)
@@ -59,7 +57,6 @@ If you have a requirement where the PBX's and dSIPRouter are behind NAT then use
 
 .. code-block:: bash
 
-  yum update -y
   yum install -y git
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
@@ -71,4 +68,4 @@ One Line Version:
 
 .. code-block:: bash
 
-  yum update -y && yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -all
+  yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -all

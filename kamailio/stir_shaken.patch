@@ -1,0 +1,69 @@
+diff --git a/include/stir_shaken.h b/include/stir_shaken.h
+index d408be5..4f5e08d 100644
+--- a/include/stir_shaken.h
++++ b/include/stir_shaken.h
+@@ -19,6 +19,7 @@ extern "C" {
+ 
+ #include <pthread.h>
+ 
++#include <openssl/opensslv.h>
+ #include <openssl/crypto.h>
+ #include <openssl/pem.h>
+ #include <openssl/rand.h>
+diff --git a/src/stir_shaken.c b/src/stir_shaken.c
+index afe28e2..a755d6b 100644
+--- a/src/stir_shaken.c
++++ b/src/stir_shaken.c
+@@ -723,7 +723,13 @@ stir_shaken_status_t stir_shaken_is_key_trusted(stir_shaken_context_t *ss, EVP_P
+ 	}
+ 
+ 	// Let SSL confirm
+-	if (!EVP_PKEY_cmp(pkey, candidate_pkey)) {
++	if (!
++#if OPENSSL_VERSION_NUMBER >= 0x30000000L
++		EVP_PKEY_eq(pkey, candidate_pkey)
++#else
++		EVP_PKEY_cmp(pkey, candidate_pkey)
++#endif
++	) {
+ 		return STIR_SHAKEN_STATUS_FALSE;
+ 	}
+ 
+diff --git a/test/stir_shaken_test_12.c b/test/stir_shaken_test_12.c
+index 43caa1e..265aa1f 100644
+--- a/test/stir_shaken_test_12.c
++++ b/test/stir_shaken_test_12.c
+@@ -101,7 +101,13 @@ stir_shaken_status_t stir_shaken_unit_test_x509_cert_path_verification(void)
+ 	snprintf(ca.tn_auth_list_uri, STIR_SHAKEN_BUFLEN, "http://ca.com/api");
+ 	//sp.cert.x = stir_shaken_generate_x509_cert_from_csr(&ss, sp.code, sp.csr.req, ca.keys.private_key, ca.issuer_c, ca.issuer_cn, sp.serial, sp.expiry_days);
+ 	pkey = X509_REQ_get_pubkey(sp.csr.req);
+-	stir_shaken_assert(1 == EVP_PKEY_cmp(pkey, sp.keys.public_key), "Public key in CSR different than SP's");
++	stir_shaken_assert(1 == 
++#if OPENSSL_VERSION_NUMBER >= 0x30000000L
++                EVP_PKEY_eq(pkey, sp.keys.public_key),
++#else
++                EVP_PKEY_cmp(pkey, sp.keys.public_key),
++#endif
++		"Public key in CSR different than SP's");
+ 	//sp.cert.x = stir_shaken_generate_x509_end_entity_cert(&ss, ca.cert.x, ca.keys.private_key, sp.keys.public_key, ca.issuer_c, ca.issuer_cn, sp.subject_c, sp.subject_cn, ca.serial_sp, ca.expiry_days_sp, ca.number_start_sp, ca.number_end_sp);
+ 	sp.cert.x = stir_shaken_generate_x509_end_entity_cert_from_csr(&ss, ca.cert.x, ca.keys.private_key, ca.issuer_c, ca.issuer_cn, sp.csr.req, ca.serial, ca.expiry_days, ca.tn_auth_list_uri);
+ 	PRINT_SHAKEN_ERROR_IF_SET
+diff --git a/test/stir_shaken_test_17.c b/test/stir_shaken_test_17.c
+index aa862b3..7fde1be 100644
+--- a/test/stir_shaken_test_17.c
++++ b/test/stir_shaken_test_17.c
+@@ -153,7 +153,13 @@ stir_shaken_status_t stir_shaken_unit_test_vs_verify(void)
+ 	snprintf(ca.tn_auth_list_uri, STIR_SHAKEN_BUFLEN, "http://ca.com/api");
+ 	//sp.cert.x = stir_shaken_generate_x509_cert_from_csr(&ss, sp.code, sp.csr.req, ca.keys.private_key, ca.issuer_c, ca.issuer_cn, sp.serial, sp.expiry_days);
+ 	pkey = X509_REQ_get_pubkey(sp.csr.req);
+-	stir_shaken_assert(1 == EVP_PKEY_cmp(pkey, sp.keys.public_key), "Public key in CSR different than SP's");
++	stir_shaken_assert(1 == 
++#if OPENSSL_VERSION_NUMBER >= 0x30000000L
++                EVP_PKEY_eq(pkey, sp.keys.public_key),
++#else
++                EVP_PKEY_cmp(pkey, sp.keys.public_key),
++#endif
++		"Public key in CSR different than SP's");
+ 	//sp.cert.x = stir_shaken_generate_x509_end_entity_cert(&ss, ca.cert.x, ca.keys.private_key, sp.keys.public_key, ca.issuer_c, ca.issuer_cn, sp.subject_c, sp.subject_cn, ca.serial_sp, ca.expiry_days_sp, ca.number_start_sp, ca.number_end_sp);
+ 	sp.cert.x = stir_shaken_generate_x509_end_entity_cert_from_csr(&ss, ca.cert.x, ca.keys.private_key, ca.issuer_c, ca.issuer_cn, sp.csr.req, ca.serial, ca.expiry_days, ca.tn_auth_list_uri);
+ 	PRINT_SHAKEN_ERROR_IF_SET

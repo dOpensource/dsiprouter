@@ -11,14 +11,14 @@ DSIP_CLUSTER_SYNC = False
 DSIP_PROTO = 'https'
 DSIP_PORT = '5000'
 DSIP_USERNAME = 'admin'
-DSIP_PASSWORD = 'admin' 
+DSIP_PASSWORD = 'admin'
 DSIP_API_TOKEN = 'admin'
 DSIP_API_PROTO = 'https'
 DSIP_API_PORT = 5000
 DSIP_PRIV_KEY = '/etc/dsiprouter/privkey'
-DSIP_PID_FILE = '/var/run/dsiprouter/dsiprouter.pid'
-DSIP_UNIX_SOCK = '/var/run/dsiprouter/dsiprouter.sock'
-DSIP_IPC_SOCK = '/var/run/dsiprouter/ipc.sock'
+DSIP_PID_FILE = '/run/dsiprouter/dsiprouter.pid'
+DSIP_UNIX_SOCK = '/run/dsiprouter/dsiprouter.sock'
+DSIP_IPC_SOCK = '/run/dsiprouter/ipc.sock'
 DSIP_IPC_PASS = 'admin'
 # dsiprouter logging settings
 # syslog level and facility values based on:
@@ -32,13 +32,13 @@ DSIP_LOG_FACILITY = 18
 # email for re-certification must match certs
 DSIP_SSL_KEY = '/etc/dsiprouter/certs/dsiprouter-key.pem'
 DSIP_SSL_CERT = '/etc/dsiprouter/certs/dsiprouter-cert.pem'
-DSIP_SSL_CA = '/etc/dsiprouter/certs/cacert.pem'
+DSIP_SSL_CA = '/etc/dsiprouter/certs/ca-list.pem'
 DSIP_SSL_EMAIL = 'admin@sbc4.customers.dsiprouter.net'
 DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.644'
+VERSION = '0.70'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -65,7 +65,7 @@ KAM_DB_PASS = 'kamailiorw'
 KAM_KAMCMD_PATH = '/usr/sbin/kamcmd'
 KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 KAM_TLSCFG_PATH = '/etc/kamailio/tls.cfg'
-RTP_CFG_PATH = '/etc/kamailio/kamailio.cfg'
+RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # SQLAlchemy Settings
 

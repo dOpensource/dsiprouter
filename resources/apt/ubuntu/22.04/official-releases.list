@@ -1,0 +1,17 @@
+#-------------------------------------------------------------------
+# packages from ubuntu 22.04 (jammy) release
+#-------------------------------------------------------------------
+deb https://nyc.mirrors.clouvider.net/ubuntu/ jammy main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ jammy main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ jammy-security main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ jammy-security main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ jammy-updates main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ jammy-updates main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ jammy-backports main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ jammy-backports main restricted universe multiverse
+
+#deb https://nyc.mirrors.clouvider.net/ubuntu/ jammy-proposed main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ jammy-proposed main restricted universe multiverse

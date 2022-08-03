@@ -5,6 +5,6 @@
 test="Syslog Started"
 
 # Is service started
-systemctl is-active --quiet syslog; ret=$?
+systemctl is-active --quiet rsyslog; ret=$?
 
-process_result "$test" $ret 
+process_result "$test" $ret

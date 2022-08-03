@@ -5,6 +5,6 @@
 test="Mysql Started"
 
 # Is service started
-systemctl is-active --quiet mysql; ret=$?
+systemctl is-active --quiet mariadb; ret=$?
 
-process_result "$test" $ret 
+process_result "$test" $ret

@@ -17,8 +17,12 @@ export ANSI_GREEN="${ESC_SEQ}1;32m"
 export ANSI_YELLOW="${ESC_SEQ}1;33m"
 export ANSI_CYAN="${ESC_SEQ}1;36m"
 
+# public IP's us for testing / DNS lookups in scripts
+export GOOGLE_DNS_IPV4="8.8.8.8"
+export GOOGLE_DNS_IPV6="2001:4860:4860::8888"
+
 # Constants for imported functions
-export DSIP_INIT_FILE="/etc/systemd/system/dsip-init.service"
+export DSIP_INIT_FILE="/lib/systemd/system/dsip-init.service"
 DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
@@ -131,7 +135,6 @@ function setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
-    # shellcheck disable=SC1087
     sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 export -f setConfigAttrib
@@ -240,10 +243,16 @@ function setRtpengineConfigAttrib() {
 export -f setRtpengineConfigAttrib
 
 # output: Linux Distro name
-function getDisto() {
-    cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2
+function getDistroName() {
+    grep '^ID=' /etc/os-release 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2
 }
-export -f getDisto
+export -f getDistroName
+
+# output: Linux Distro version
+function getDistroVer() {
+    grep '^VERSION_ID=' /etc/os-release 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2
+}
+export -f getDistroVer
 
 # $1 == command to test
 # returns: 0 == true, 1 == false
@@ -315,7 +324,7 @@ export -f isInstanceDO
 function getInstanceID() {
     if (( ${AWS_ENABLED:-0} == 1)); then
         curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
-        ec2-metadata -i 2>/dev/null
+        ec2-metadata -i 2>/dev/null | awk '{print $2}'
     elif (( ${DO_ENABLED:-0} == 1 )); then
         curl -s -f http://169.254.169.254/metadata/v1/id 2>/dev/null
     elif (( ${GCE_ENABLED:-0} == 1 )); then
@@ -327,7 +336,7 @@ function getInstanceID() {
     else
         if isInstanceAMI; then
             curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
-            ec2-metadata -i 2>/dev/null
+            ec2-metadata -i 2>/dev/null | awk '{print $2}'
         elif isInstanceDO; then
             curl -s -f http://169.254.169.254/metadata/v1/id 2>/dev/null
         elif isInstanceGCE; then
@@ -381,6 +390,28 @@ function ipv6Test() {
 }
 export -f ipv6Test
 
+# output: the internal IP for this system
+# notes: prints internal ip, or empty string if not available
+# notes: tries ipv4 first then ipv6
+function getInternalIP() {
+    local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$IP" ]]; then
+        IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    fi
+    printf '%s' "$IP"
+}
+export -f getInternalIP
+
+# TODO: run requests in parallel and grab first good one (start ipv4 first)
+#       this is what we are already doing in gui/util/networking.py
+#       this would be much faster bcuz DNS exceptions take a while to handle
+#       GNU parallel should not be used bcuz package support is not very good
+#       this should instead use a pure bash version of GNU parallel, refs:
+#       https://stackoverflow.com/questions/10909685/run-parallel-multiple-commands-at-once-in-the-same-terminal
+#       https://www.cyberciti.biz/faq/how-to-run-command-or-code-in-parallel-in-bash-shell-under-linux-or-unix/
+#       https://unix.stackexchange.com/questions/305039/pausing-a-bash-script-until-previous-commands-are-finished
+#       https://unix.stackexchange.com/questions/497614/bash-execute-background-process-whilst-reading-output
+#       https://stackoverflow.com/questions/3338030/multiple-bash-traps-for-the-same-signal
 # output: the external IP for this system
 # notes: prints external ip, or empty string if not available
 # notes: below we have measurements for average time of each service
@@ -402,38 +433,83 @@ export -f ipv6Test
 function getExternalIP() {
     local IPV6_ENABLED=${IPV6_ENABLED:-0}
     local EXTERNAL_IP="" TIMEOUT=5
-    local URLS=() CURL_CMD="curl"
+    local IPV4_URLS=(
+        "https://icanhazip.com"
+        "https://ipecho.net/plain"
+        "https://myexternalip.com/raw"
+        "https://api.ipify.org"
+        "https://bot.whatismyipaddress.com"
+    )
+    local IPV6_URLS=(
+        "https://icanhazip.com"
+        "https://bot.whatismyipaddress.com"
+        "https://ifconfig.co"
+        "https://ident.me"
+        "https://api6.ipify.org"
+    )
 
-    if (( ${IPV6_ENABLED} == 1 )); then
-        URLS=(
-            "https://icanhazip.com"
-            "https://bot.whatismyipaddress.com"
-            "https://ifconfig.co"
-            "https://ident.me"
-            "https://api6.ipify.org"
-        )
-        CURL_CMD="curl -6"
-        IP_TEST="ipv6Test"
-    else
-        URLS=(
-            "https://icanhazip.com"
-            "https://ipecho.net/plain"
-            "https://myexternalip.com/raw"
-            "https://api.ipify.org"
-            "https://bot.whatismyipaddress.com"
-        )
-        CURL_CMD="curl -4"
-        IP_TEST="ipv4Test"
-    fi
-
-    for URL in "${URLS[@]}"; do
-        EXTERNAL_IP=$(${CURL_CMD} -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
-        ${IP_TEST} "$EXTERNAL_IP" && break
+    for URL in ${IPV4_URLS[@]}; do
+        EXTERNAL_IP=$(curl -4 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+        ipv4Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
     done
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_IP" ]]; then
+        for URL in ${IPV6_URLS[@]}; do
+            EXTERNAL_IP=$(curl -6 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+            ipv6Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
+        done
+    fi
 
     printf '%s' "$EXTERNAL_IP"
 }
 export -f getExternalIP
+
+# output: the internal FQDN for this system
+# notes: prints internal FQDN, or empty string if not available
+function getInternalFQDN() {
+    printf '%s' "$(hostname -f 2>/dev/null || hostname)"
+}
+export -f getInternalFQDN
+
+# output: the external FQDN for this system
+# notes: prints external FQDN, or empty string if not available
+# notes: will use EXTERNAL_IP if available or look it up dynamically
+# notes: tries ipv4 first then ipv6
+function getExternalFQDN() {
+    local EXTERNAL_IP=${EXTERNAL_IP:-$(getExternalIP)}
+    local EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV4} +short -x ${EXTERNAL_IP} 2>/dev/null | head -1 | sed 's/\.$//')
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_FQDN" ]]; then
+          EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV6} +short -x ${EXTERNAL_IP} 2>/dev/null | head -1 | sed 's/\.$//')
+    fi
+    printf '%s' "$EXTERNAL_FQDN"
+}
+export -f getExternalFQDN
+
+# output: the internal IP CIDR for this system
+# notes: prints internal CIDR address, or empty string if not available
+# notes: tries ipv4 first then ipv6
+function getInternalCIDR() {
+    local PREFIX_LEN="" DEF_IFACE=""
+    local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+
+    # if ipv4 stack returned good result use it, otherwise try ipv6
+    if [[ -n "$IP" ]]; then
+        DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+        PREFIX_LEN=$(ip -4 route list | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+    elif (( ${IPV6_ENABLED} == 1 )); then
+        IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+        DEF_IFACE=$(ip -6 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:::/0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+        PREFIX_LEN=$(ip -6 route list 2>/dev/null | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!::/0|default).*/(\d+) .*via [\w:/.]*.*$%\1%) { print; exit; } }')
+    fi
+
+    # make sure output is empty if error occurred
+    if [[ -z "$IP" || -z "$PREFIX_LEN" ]]; then
+        echo -n ''
+    else
+        printf '%s/%s' "$IP" "$PREFIX_LEN"
+    fi
+}
+export -f getInternalCIDR
 
 # $1 == cmd as executed in systemd (by ExecStart=)
 # notes: take precaution when adding long running functions as they will block startup in boot order
@@ -463,10 +539,11 @@ export -f removeInitCmd
 # notes: the Before= section of init will link to an After= dependency on daemon-reload
 function addDependsOnInit() {
     local SERVICE="$1"
-    local TMP_FILE="${DSIP_INIT_FILE}.tmp"
 
-    tac ${DSIP_INIT_FILE} | sed -r "0,\|^Before\=.*|{s|^Before\=.*|Before=${SERVICE}\n&|}" | tac > ${TMP_FILE}
-    mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
+    # sanity check, does the entry already exist?
+    grep -q -oP "^(Before\=|Wants\=).*${SERVICE}.*" 2>/dev/null ${DSIP_INIT_FILE} && return 0;
+
+    perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${DSIP_INIT_FILE}
     systemctl daemon-reload
 }
 export -f addDependsOnInit
@@ -475,7 +552,7 @@ export -f addDependsOnInit
 function removeDependsOnInit() {
     local SERVICE="$1"
 
-    sed -i "\|^Before=${SERVICE}|d" ${DSIP_INIT_FILE}
+    perl -i -e "\$service='$SERVICE';" -pe 's%^((?:Before\=|Wants\=).*?)( ${service}|${service} |${service})(.*)%\1\3%g;' ${DSIP_INIT_FILE}
     systemctl daemon-reload
 }
 export -f removeDependsOnInit
@@ -553,6 +630,58 @@ function checkDB() {
     return 1
 }
 export -f checkDB
+
+# usage: checkDBUserExists [options] <user>@<host>
+# options:  --user=<mysql user>
+#           --pass=<mysql password>
+#           --host=<mysql host>
+#           --port=<mysql port>
+# notes: make sure to test for proper DB connection
+# returns: 0 if user exists, 1 on DB connection failure, 2 if user does not exist
+function checkDBUserExists() {
+    local MYSQL_CHECK_USER=""
+    local MYSQL_CHECK_HOST=""
+    local MYSQL_USER=${MYSQL_USER:-root}
+    local MYSQL_PASS=${MYSQL_PASS:-}
+    local MYSQL_HOST=${MYSQL_HOST:-localhost}
+    local MYSQL_PORT=${MYSQL_PORT:-3306}
+
+    while (( $# > 0 )); do
+        # last arg is user and database
+        if (( $# == 1 )); then
+            MYSQL_CHECK_USER=$(printf '%s' "$1" | cut -d '@' -f 1)
+            MYSQL_CHECK_HOST=$(printf '%s' "$1" | cut -d '@' -f 2)
+            shift
+            break
+        fi
+
+        case "$1" in
+            --user*)
+                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --pass*)
+                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --host*)
+                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            --port*)
+                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                shift
+                ;;
+            *)  # not valid option skip
+                shift
+                ;;
+        esac
+    done
+
+    return $(mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+        -e "SELECT IF(EXISTS(SELECT 1 FROM mysql.user WHERE User='${MYSQL_CHECK_USER}' AND Host='${MYSQL_CHECK_HOST}'),0,2);" 2>/dev/null)
+}
+export -f checkDBUserExists
 
 # usage: dumpDB [options] <database>
 # options:  --user=<mysql user>

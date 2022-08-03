@@ -9,8 +9,11 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install {
-    # Install Dependencies
-    # ...
+    # create mysql user and group
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
+    userdel mysql &>/dev/null; groupdel mysql &>/dev/null
+    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
     apt-get install -y --allow-unauthenticated default-mysql-server ||
@@ -18,9 +21,6 @@ function install {
 
     # if db is remote don't run local service
     reconfigureMysqlSystemdService
-
-    # Enable mysql on boot
-    systemctl enable mysql
 
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
@@ -40,14 +40,11 @@ function install {
 
 function uninstall {
     # Stop and disable services
-    systemctl stop mysql
-    systemctl disable mysql
+    systemctl stop mariadb
+    systemctl disable mariadb
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
-
-    # remove mysql unit files we created
-    rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
 
     # Uninstall mysql / mariadb packages
     apt-get -y remove --purge mysql\*

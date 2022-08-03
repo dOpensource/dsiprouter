@@ -62,7 +62,7 @@ EOF
     chown -R mysql:mysql /var/run/mariadb /var/lib/mysql /var/log/mariadb /usr/share/mysql
 
     # Enable mysql on boot
-    systemctl enable mysql
+    systemctl enable mariadb
 
     # TODO: selinux/apparmor permissions for mysql
     #       firewall rules (cluster install needs remote access)
@@ -79,8 +79,8 @@ EOF
 
 function uninstall {
     # Stop servers
-    systemctl stop mysql
-    systemctl disable mysql
+    systemctl stop mariadb
+    systemctl disable mariadb
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)

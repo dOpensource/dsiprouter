@@ -157,7 +157,7 @@ EOF
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
     systemctl stop ngcp-rtpengine-daemon
     rm -f /etc/systemd/system/rtpengine.service /etc/init.d/ngcp-rtpengine-daemon
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine.service /etc/systemd/system/rtpengine.service
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
     chmod +x /usr/sbin/rtpengine*

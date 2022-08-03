@@ -8,11 +8,60 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
+# TODO: add support for searching packages.debian.org
+function debSearch() {
+    local DEB_SEARCH="$1" SEARCH_RESULTS=""
+
+    # search debian snapshots for package
+    if [[ $(curl -sLI -w "%{http_code}" "https://snapshot.debian.org/binary/?bin=${DEB_SEARCH}" -o /dev/null) == "200" ]]; then
+        SEARCH_RESULTS=$(curl -sL "https://snapshot.debian.org/binary/?bin=${DEB_SEARCH}" 2>/dev/null | grep -oP '<li><a href="../../\K.*(?=")' | head -1)
+        SEARCH_RESULTS=$(curl -sL "https://snapshot.debian.org/${SEARCH_RESULTS}" 2>/dev/null | grep -oP "<a href=\"\K.*${DEB_SEARCH}.*\.deb(?=\")" | head -1)
+        if [[ -n "$SEARCH_RESULTS" ]]; then
+            echo "https://snapshot.debian.org${SEARCH_RESULTS}"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+function aptInstallKernelHeadersFromURI() {
+    local RET=0
+    local KERN_HDR_URI="$1" KERN_HDR_DEB=$(basename "$1")
+    local KERN_HDR_COMMON_URI="" KERN_HDR_COMMON_DEB=""
+
+    (
+        # download the .deb file
+        cd /tmp/
+        curl -sLO "$KERN_HDR_URI"
+
+        # install dependent common headers
+        KERN_HDR_COMMON_URI=$(debSearch $(dpkg --info "$KERN_HDR_DEB" 2>/dev/null | grep 'Depends:' | cut -d ':' -f 2 | tr ',' '\n' | grep -oP 'linux-headers-.*-common')) &&
+            KERN_HDR_COMMON_DEB=$(basename "$KERN_HDR_COMMON_URI") &&
+            curl -sLO "$KERN_HDR_COMMON_URI" && {
+                apt-get install -y ./${KERN_HDR_COMMON_DEB}
+                RET=$((RET + $?))
+                apt-get install -y -f
+                rm -f "$KERN_HDR_COMMON_DEB"
+            }
+
+        # install the kernel headers
+        apt-get install -y ./${KERN_HDR_DEB}
+        RET=$((RET + $?))
+        rm -f "$KERN_HDR_DEB"
+        exit $RET
+    )
+
+    return $?
+}
+
 function install {
+    local OS_KERNEL=$(uname -r)
+
     # Install required libraries
+    # TODO: consolidate and version properly per supported distro versions
     apt-get install -y logrotate rsyslog
     apt-get install -y firewalld
-    apt-get install -y iptables-dev
     apt-get install -y libcurl4-openssl-dev
     apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
     apt-get install -y markdown
@@ -22,119 +71,145 @@ function install {
     apt-get install -y libhiredis-dev
     apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
     apt-get install -y libavfilter-dev
-    apt-get install -y libavformat-dev 
-    apt-get isntall -y libavcodec-extra
-    apt-get install -y libmysqlclient-dev
+    apt-get install -y libavformat-dev
+    apt-get install -y libavcodec-extra
+    # TODO: move mysql dev headers install to mysql dir for easier version management
+    apt-get install -y default-libmysqlclient-dev ||
+        apt-get install -y libmysqlclient-dev
     apt-get install -y libmariadbclient-dev
-    apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
     apt-get install -y cmake
     apt-get install -y unzip
     apt-get install -y libavresample-dev
-    apt-get install -y linux-headers-$(uname -r)
+
     apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
-        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev \
+        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
 
-    # debian jessie/stretch need a few newer packages
-    CODENAME="$(lsb_release -c -s)"
-    if [[ "$CODENAME" == "jessie" ]] || [[ "$CODENAME" == "stretch" ]]; then
-        apt-get install -y -t buster libarchive13
-        apt-get install -y -t stretch-backports debhelper init-system-helpers
-    else
-        apt-get install -y debhelper
-    fi
+    # older versions need a few newer packages
+    case "${DISTRO_VER}" in
+        9)
+            apt-get install -y -t buster libarchive13
+            apt-get install -y -t stretch-backports debhelper init-system-helpers
+            apt-get install -y -t bullseye libbcg729-0 libbcg729-dev
+            apt-get install -y iptables-dev libiptc-dev
+            ;;
+        10)
+            apt-get install -y -t bullseye libbcg729-0 libbcg729-dev
+            apt-get install -y debhelper iptables-dev libiptc-dev
+            ;;
+        *)
+            apt-get install -y debhelper libbcg729-0 libbcg729-dev libxtables-dev libiptc-dev
+            ;;
+    esac
 
+    # try installing kernel dev headers in the following order:
+    # 1: headers from repos
+    # 2: headers from snapshot.debian.org
+    apt-get install -y linux-headers-${OS_KERNEL} ||
+        aptInstallKernelHeadersFromURI $(debSearch linux-headers-${OS_KERNEL})
+#    (
+#        KERNEL_META_PKG=$(echo ${OS_KERNEL} | perl -pe 's%[0-9-.]+(.*)%\1%')
+#        apt-get install -y linux-image-${KERNEL_META_PKG} linux-headers-${KERNEL_META_PKG}
+#        printwarn 'Required Kernel Update Installed'
+#        printwarn 'RTPEngine will not forward packets in-kernel until a reboot occurs'
+#    )
 
-    if [[ "$CODENAME" == "bullseye" ]]; then
-	apt-get install -y -t bullseye libiptc-dev libxtables-dev
-	apt-get install -y -t bullseye libjson-perl libmosquitto-dev python3-websockets
-	apt-get install -y libbcg729-0  libbcg729-dev
-	# Over-ride version of RTPEngine
-	RTPENGINE_VER=mr10.4.1.1
-        printdbg "Overriding RTPEngine Version to ${RTPENGINE_VER}"
+    if (( $? != 0 )); then
+        printerr "Problem with installing the required libraries for RTPEngine"
+        exit 1
     fi
 
     # create rtpengine user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
+    userdel rtpengine &>/dev/null; groupdel rtpengine &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
 
-    # build deb packages and install
-    cd ${SRC_DIR}
-
-    # Only build bcg729 support if not installing on bullseye
-
-    if [[ "$CODENAME" != "bullseye" ]]; then
-    	# TODO: this needs replaced with a better build process (maybe cpack?)
-    	CODEC_VER=1.0.4
-    	rm -rf bcg729-${CODEC_VER}.bak 2>/dev/null
-    	mv -f bcg729-${CODEC_VER} bcg729-${CODEC_VER}.bak 2>/dev/null
-    	curl -s https://codeload.github.com/BelledonneCommunications/bcg729/tar.gz/${CODEC_VER} > bcg729_${CODEC_VER}.orig.tar.gz &&
-   	 tar -xf bcg729_${CODEC_VER}.orig.tar.gz &&
-    	cd bcg729-${CODEC_VER} &&
-    	git clone https://github.com/ossobv/bcg729-deb.git -b v${CODEC_VER}-0osso3 debian &&
-	dpkg-buildpackage -us -uc -sa &&
-    	cd .. &&
-    	dpkg -i ./libbcg729-*.deb
-
-    	if [ $? -ne 0 ]; then
-        	printerr "Problem installing G729 Codec"
-        	exit 1
-   	 fi
+    ## compile and install RTPEngine as an RPM package
+    ## reuse repo if it exists and matches version we want to install
+    if [[ -d ${SRC_DIR}/rtpengine ]]; then
+        if [[ "x$(cd ${SRC_DIR}/rtpengine 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${RTPENGINE_VER}" ]]; then
+            rm -rf ${SRC_DIR}/rtpengine
+            git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+        fi
+    else
+        git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
+    (
+        cd ${SRC_DIR}/rtpengine &&
+        if [[ -e "${SRC_DIR}/rtpengine/debian/flavors/no_ngcp" ]]; then
+            ${SRC_DIR}/rtpengine/debian/flavors/no_ngcp
+        fi &&
+        dpkg-buildpackage -us -uc -sa &&
+        cd .. &&
+        apt-get install -y ./ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
+            ./ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
+#            ./ngcp-rtpengine-recording-daemon_*${RTPENGINE_VER}*.deb
+        exit $?
+    )
 
-    rm -rf rtpengine.bak 2>/dev/null
-    mv -f rtpengine rtpengine.bak 2>/dev/null
-    git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER} &&
-    cd rtpengine &&
-    if [[ -e "$(pwd)/debian/flavors/no_ngcp" ]]; then
-        ./debian/flavors/no_ngcp
-    fi &&
-    dpkg-buildpackage -us -uc -sa &&
-    cd .. &&
-    dpkg -i ./ngcp-rtpengine-daemon_*.deb ./ngcp-rtpengine-iptables_*.deb ./ngcp-rtpengine-kernel-source_*.deb \
-        ngcp-rtpengine-kernel-dkms_*.deb
-    #./ngcp-rtpengine-recording-daemon_*.deb ./ngcp-rtpengine-utils_*.deb
-
-    if [ $? -ne 0 ]; then
+    if (( $? != 0 )); then
         printerr "Problem installing RTPEngine DEB's"
         exit 1
     fi
+
+    # make sure RTPEngine kernel module configured
+    if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
+        printerr "Problem installing RTPEngine kernel module"
+        exit 1
+    fi
+
+    # sanity check, did the new module load?
+    if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
+        printwarn "Could not load new RTPEngine kernel module"
+    else
+        # set the forwarding table for the kernel module
+        echo 'add 0' > /proc/rtpengine/control
+        iptables -I INPUT -p udp -j RTPENGINE --id 0
+        ip6tables -I INPUT -p udp -j RTPENGINE --id 0
+    fi
+
+    # stop the demaon so we can configure it properly
+    systemctl stop ngcp-rtpengine-daemon
 
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
-    # Remove RTPEngine kernel module if previously inserted
-    if lsmod | grep 'xt_RTPENGINE'; then
-        rmmod xt_RTPENGINE
-    fi
-    # Load new RTPEngine kernel module
-    depmod -a &&
-    modprobe xt_RTPENGINE
-
-    # set the forwarding table for the kernel module
-    echo 'add 0' > /proc/rtpengine/control
-    iptables -I INPUT -p udp -j RTPENGINE --id 0
-    ip6tables -I INPUT -p udp -j RTPENGINE --id 0
-
     if [ "$SERVERNAT" == "0" ]; then
-        INTERFACE=$EXTERNAL_IP
+        INTERFACE=$INTERNAL_IP
     else
         INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
     fi
 
     # rtpengine config file
-    # set table = 0 for kernel packet forwarding
+    # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
+    # TODO: move from 2 seperate config files to generating entire config
+    #       1st we should change to generating config using rtpengine-start-pre
+    #       eventually we should create a cofig parser similar to how kamailio config is parsed
     (cat << EOF
 [rtpengine]
 table = 0
+no-fallback = false
 interface = ${INTERFACE}
 listen-ng = 127.0.0.1:7722
 port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}
-log-level = 7
+#num-threads = 8
+#timeout = 60
+#silent-timeout = 3600
+#tos = 184
+#control-tos = 184
+#delete-delay = 30
+#final-timeout = 10800
+#homer = 123.234.345.456:9060
+#homer-protocol = udp
+#homer-id = 1
+#sip-source = false
+#dtls-passive = false
+log-level = 4
+log-stderr = false
 log-facility = local1
 log-facility-cdr = local1
 log-facility-rtcp = local1
@@ -145,13 +220,12 @@ EOF
     (cat << 'EOF'
 RUN_RTPENGINE=yes
 CONFIG_FILE=/etc/rtpengine/rtpengine.conf
-# CONFIG_SECTION=rtpengine
+CONFIG_SECTION=rtpengine
 PIDFILE=/var/run/rtpengine/rtpengine.pid
 MANAGE_IPTABLES=yes
 TABLE=0
 SET_USER=rtpengine
 SET_GROUP=rtpengine
-LOG_STDERR=yes
 EOF
     ) > /etc/default/rtpengine.conf
 
@@ -173,9 +247,9 @@ EOF
 
     # Setup tmp files
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    systemctl stop ngcp-rtpengine-daemon
-    rm -f /etc/systemd/system/rtpengine.service /etc/init.d/ngcp-rtpengine-daemon
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine.service /etc/systemd/system/rtpengine.service
+
+    # Reconfigure systemd service files
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
     chmod +x /usr/sbin/rtpengine*
@@ -184,30 +258,32 @@ EOF
     systemctl daemon-reload
     # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
-    # Start RTPEngine - pipe to null since it usually fails the first time
-    systemctl start rtpengine > /dev/null
 
-    # Start manually if the service fails to start
-    if [ $? -eq 1 ]; then
-        /usr/sbin/rtpengine --config-file=${SYSTEM_RTPENGINE_CONFIG_FILE} --pidfile=/var/run/rtpengine/rtpengine.pid
-    fi
-
-    # File to signify that the install happened
-    if [ $? -eq 0 ]; then
-        touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
-        printdbg "RTPEngine has been installed!"
+    # preliminary check that rtpengine actually installed
+    if cmdExists rtpengine; then
+        exit 0
     else
-        printerr "FAILED: RTPEngine could not be installed!"
+        exit 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
+    systemctl disable rtpengine
     systemctl stop rtpengine
-    rm -f /usr/sbin/rtpengine
-    rm -f /etc/rsyslog.d/rtpengine.conf
-    rm -f /etc/logrotate.d/rtpengine
-    printdbg "Removed RTPEngine for $DISTRO"
+    rm -f /etc/systemd/system/rtpengine.service
+    systemctl daemon-reload
+
+    apt-get remove -y ngcp-rtpengine\*
+
+    rm -f /usr/sbin/rtpengine* /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
+
+    # check that rtpengine actually uninstalled
+    if ! cmdExists rtpengine; then
+        exit 0
+    else
+        exit 1
+    fi
 }
 
 case "$1" in

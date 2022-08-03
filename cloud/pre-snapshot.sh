@@ -3,17 +3,17 @@
 # Summary: clean up / harden system before creating an image
 #
 
-cmdExists() {
+function cmdExists() {
     if command -v "$1" > /dev/null 2>&1; then
         return 0
     else
         return 1
     fi
 }
-getDisto() {
-    cat /etc/os-release 2>/dev/null | grep '^ID=' | cut -d '=' -f 2 | cut -d '"' -f 2
+function getDistroName() {
+    grep '^ID=' /etc/os-release 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2
 }
-joinwith() {
+function joinwith() {
     local START="$1" IFS="$2" END="$3" ARR=()
     shift;shift;shift
 
@@ -33,17 +33,17 @@ if cmdExists 'apt-get'; then
     export UCF_FORCE_CONFFNEW=YES
     ucf --purge /boot/grub/menu.lst
 
+    apt-mark hold linux-image-* linux-headers-*
     apt-get -y update
     apt-get -y upgrade
+    apt-mark unhold linux-image-* linux-headers-*
 
     apt-get -y --purge remove xinetd nis yp-tools tftpd atftpd tftpd-hpa telnetd rsh-server rsh-redone-server
 
     apt-get -y autoremove
     apt-get -y autoclean
-
 elif cmdExists 'yum'; then
-    yum -y update
-    yum -y upgrade
+    yum -y upgrade --exclude='linux-image-*' --exclude='linux-headers-*'
 
     yum -y erase xinetd ypserv tftp-server telnet-server rsh-server
 
@@ -115,7 +115,7 @@ EOF
 
 # delete any accounts attempting to be root
 BAD_USERS=$(joinwith '' ';' 'd' `awk -F ':' '($3 == "0") && !/root/ {print FNR}' /etc/passwd`)
-sed -i "/${BAD_USERS}/d" /etc/passwd
+[[ ! -z "${BAD_USERS}" ]] && sed -i "/${BAD_USERS}/d" /etc/passwd
 
 # kernel hardening
 # source: https://www.cyberciti.biz/tips/linux-security.html
@@ -128,6 +128,7 @@ sed -i "/${BAD_USERS}/d" /etc/passwd
 
 # Turn on execshield
 kernel.exec-shield=1
+# ASLR enabled on boot
 kernel.randomize_va_space=1
 # Enable IP spoofing protection
 net.ipv4.conf.all.rp_filter=1
@@ -141,26 +142,31 @@ net.ipv4.conf.all.log_martians = 1
 EOF
 ) > /etc/sysctl.conf
 
-# remove logs and any information from build process
-rm -rf /tmp/* /var/tmp/*
-history -c
-cat /dev/null | tee /root/.*history /home/*/.*history
-unset HISTFILE
-find /var/log -mtime -1 -type f -exec truncate -s 0 {} \;
-rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
-rm -rf /var/lib/cloud/instances/*
-rm -f /root/.ssh/authorized_keys /etc/ssh/*key* /home/*/.ssh/authorized_keys
-touch /etc/ssh/revoked_keys; chmod 600 /etc/ssh/revoked_keys
-dd if=/dev/zero of=/zerofile 2> /dev/null; sync; rm -f /zerofile; sync
-cat /dev/null > /var/log/lastlog; cat /dev/null > /var/log/wtmp
-
 # ensure address space layout randomization (ASLR) is enabled
 echo '2' > /proc/sys/kernel/randomize_va_space
 
-# regenerate host server host keys
+# remove ssh keys, remove known hosts files, regenerate host server keys
+rm -f /etc/ssh/*key* /root/.ssh/{authorized_keys,known_hosts} /home/*/.ssh/{authorized_keys,known_hosts} 2>/dev/null
+touch /etc/ssh/revoked_keys; chmod 600 /etc/ssh/revoked_keys
 if cmdExists 'apt-get'; then
     dpkg-reconfigure -f noninteractive openssh-server
 fi
 systemctl restart sshd
+
+# remove logs and any information from build process
+rm -rf /tmp/* /var/tmp/*
+history -c
+truncate -s 0 /root/.*history /home/*/.*history 2>/dev/null
+unset HISTFILE
+find /var/log -mtime -1 -type f -exec truncate -s 0 {} +
+rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
+find /usr/local/src -mindepth 1 -maxdepth 1 -type d  -exec rm -rf {} +
+find /usr/local/src -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
+find /var/lib/cloud -mindepth 1 -maxdepth 1 -type d ! -name 'seed' ! -name 'scripts' -exec rm -rf {} +
+find /var/lib/cloud -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
+truncate -s 0 /var/log/lastlog /var/log/wtmp
+
+# clear disk cache
+dd if=/dev/zero of=/zerofile 2> /dev/null; sync; rm -f /zerofile; sync
 
 exit 0

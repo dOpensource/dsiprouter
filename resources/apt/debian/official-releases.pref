@@ -38,17 +38,6 @@
 #
 
 #-------------------------------------------------------------------
-# priority for debian 8 (jessie) release packages
-#-------------------------------------------------------------------
-Package: *
-Pin: release o=Debian,n=jessie
-Pin-Priority: $APT_JESSIE_PRIORITY
-
-Package: *
-Pin: release o=Debian,n=jessie-updates
-Pin-Priority: $APT_JESSIE_PRIORITY
-
-#-------------------------------------------------------------------
 # priority for debian 9 (stretch) release packages
 #-------------------------------------------------------------------
 Package: *
@@ -98,8 +87,20 @@ Pin: release o=Debian,n=bullseye-backports
 Pin-Priority: $APT_BULLSEYE_PRIORITY
 
 #-------------------------------------------------------------------
-# priority for debian 12 (sid) release packages
+# priority for debian 12 (bookworm) release packages
 #-------------------------------------------------------------------
 Package: *
-Pin: release o=Debian,n=sid
-Pin-Priority: $APT_SID_PRIORITY
+Pin: release o=Debian,n=bookworm
+Pin-Priority: $APT_BOOKWORM_PRIORITY
+
+Package: *
+Pin: release o=Debian,n=bookworm-updates
+Pin-Priority: $APT_BOOKWORM_PRIORITY
+
+Package: *
+Pin: release o=Debian,n=bookworm-security
+Pin-Priority: $APT_BOOKWORM_PRIORITY
+
+Package: *
+Pin: release o=Debian,n=bookworm-backports
+Pin-Priority: $APT_BOOKWORM_PRIORITY

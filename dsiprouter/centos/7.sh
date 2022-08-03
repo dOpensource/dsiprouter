@@ -48,9 +48,9 @@ function install {
     usermod -a -G kamailio dsiprouter
 
     # setup runtime directorys for dsiprouter and nginx
-    mkdir -p /var/run/dsiprouter /var/run/nginx
-    chown dsiprouter:dsiprouter /var/run/dsiprouter
-    chown nginx:nginx /var/run/nginx
+    mkdir -p ${DSIP_RUN_DIR} /run/nginx
+    chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+    chown -R nginx:nginx /run/nginx
 
     # give dsiprouter permissions in SELINUX
     semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
@@ -123,8 +123,8 @@ function install {
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
-        ${DSIP_PROJECT_DIR}/dsiprouter/dsiprouter.service > /etc/systemd/system/dsiprouter.service
-    chmod 644 /etc/systemd/system/dsiprouter.service
+        ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v2.service > /lib/systemd/system/dsiprouter.service
+    chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
 
@@ -168,7 +168,7 @@ function uninstall {
 
     # Remove dSIProuter as a service
     systemctl disable dsiprouter.service
-    rm -f /etc/systemd/system/dsiprouter.service
+    rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
 }
 

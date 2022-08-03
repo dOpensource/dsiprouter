@@ -18,13 +18,15 @@ OS_KERNEL=$(uname -r)
 # search for RPM using external APIs mirrors and archives
 # not guaranteed to find an RPM, outputs empty string if search fails
 # arguments:
-# $1 == rpm to search for
+#   $1 == rpm to search for
 # options:
-# -f <grep filter>
-# --filter=<grep filter>
+#   -d <distro filter>
+#   --distro=<distro filter>
+#   -f <grep filter>
+#   --filter=<grep filter>
 # TODO: add support for searching https://linuxsoft.cern.ch as well
 function rpmSearch() {
-    local RPM_SEARCH="" GREP_FILTER="" SEARCH_RESULTS=""
+    local RPM_SEARCH="" DISTRO_FILTER="$DISTRO" GREP_FILTER="" SEARCH_RESULTS=""
 
     while (( $# > 0 )); do
         # last arg is user and database
@@ -35,6 +37,15 @@ function rpmSearch() {
         fi
 
         case "$1" in
+            -d)
+                shift
+                DISTRO_FILTER="$1"
+                shift
+                ;;
+            --distro=*)
+                DISTRO_FILTER="$(echo "$1" | cut -d '=' -f 2)"
+                shift
+                ;;
             -f)
                 shift
                 GREP_FILTER="$1"
@@ -54,10 +65,10 @@ function rpmSearch() {
 
     # grab the results of the search using an API on rpmfind.net
     SEARCH_RESULTS=$(
-        curl -sL "https://www.rpmfind.net/linux/rpm2html/search.php?query=${RPM_SEARCH}&system=${DISTRO}&arch=${OS_ARCH}" 2>/dev/null |
+        curl -sL "https://www.rpmfind.net/linux/rpm2html/search.php?query=${RPM_SEARCH}&system=${DISTRO_FILTER}&arch=${OS_ARCH}" 2>/dev/null |
             perl -e "\$rpmfind_base_url='https://rpmfind.net'; \$rpm_search='${RPM_SEARCH}'; @matches=(); " -0777 -e \
                 '$html = do { local $/; <STDIN> };
-                @matches = ($html =~ m%(?<=\<a href=["'"'"'])([-a-zA-Z0-9\@\:\%\._\+~#=/]*kernel-devel[-a-zA-Z0-9\@\:\%\._\+\~\#\=]*\.rpm)(?=["'"'"']\>)%g);
+                @matches = ($html =~ m%(?<=\<a href=["'"'"'])([-a-zA-Z0-9\@\:\%\._\+~#=/]*${rpm_search}[-a-zA-Z0-9\@\:\%\._\+\~\#\=]*\.rpm)(?=["'"'"']\>)%g);
                 foreach my $match (@matches) { print "${rpmfind_base_url}${match}\n"; }' 2>/dev/null |
             grep -m 1 "${GREP_FILTER}"
     )
@@ -260,7 +271,7 @@ EOF
 
     # Setup tmp files
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine.service /etc/systemd/system/rtpengine.service
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
     chmod +x /usr/sbin/rtpengine*

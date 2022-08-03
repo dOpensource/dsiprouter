@@ -1,5 +1,14 @@
 #-------------------------------------------------------------------
-# packages from debian 12 (sid) release
+# packages from debian 12 (bookworm) release
 #-------------------------------------------------------------------
-deb http://deb.debian.org/debian/ sid main contrib non-free
-#deb-src http://deb.debian.org/debian/ sid main contrib non-free
+deb https://deb.debian.org/debian/ bookworm main contrib non-free
+#deb-src https://deb.debian.org/debian/ bookworm main contrib non-free
+
+deb https://deb.debian.org/debian/ bookworm-updates main contrib non-free
+#deb-src https://deb.debian.org/debian/ bookworm-updates main contrib non-free
+
+deb https://deb.debian.org/debian/ bookworm-backports main
+#deb-src https://deb.debian.org/debian/ bookworm-backports main
+
+deb https://deb.debian.org/debian-security/ bookworm-security main
+#deb-src https://deb.debian.org/debian-security/ bookworm-security main

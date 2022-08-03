@@ -1,0 +1,17 @@
+#-------------------------------------------------------------------
+# packages from ubuntu 20.04 (focal) release
+#-------------------------------------------------------------------
+deb https://nyc.mirrors.clouvider.net/ubuntu/ focal main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ focal main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ focal-security main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ focal-security main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ focal-updates main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ focal-updates main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ focal-backports main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ focal-backports main restricted universe multiverse
+
+#deb https://nyc.mirrors.clouvider.net/ubuntu/ focal-proposed main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ focal-proposed main restricted universe multiverse

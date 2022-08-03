@@ -1,0 +1,60 @@
+## default priory assignments
+# priority 1
+# versions coming from archives which in their Release files are marked as "NotAutomatic: yes",
+# but not as "ButAutomaticUpgrades: yes" like the Ubuntu experimental archive.
+#
+# priority 100
+# a version that is already installed (if any) and to the versions coming from archives which,
+# in their Release files are marked as "NotAutomatic: yes" and "ButAutomaticUpgrades: yes",
+# like the Ubuntu backports archive since squeeze-backports.
+#
+# priority 500
+# versions that do not belong to the target release.
+#
+# priority 990
+# versions that belong to the target release.
+#
+## interpretation of priority (P)
+# P >= 1000
+# causes a version to be installed even if this constitutes a downgrade of the package
+#
+# 990 <= P < 1000
+# causes a version to be installed even if it does not come from the target release, unless the installed version is more recent
+#
+# 500 <= P < 990
+# causes a version to be installed unless there is a version available belonging to the target release or the installed version is more recent
+#
+# 100 <= P < 500
+# causes a version to be installed unless there is a version available belonging to some other distribution or the installed version is more recent
+#
+# 0 < P < 100
+# causes a version to be installed only if there is no installed version of the package
+#
+# P < 0
+# prevents the version from being installed
+#
+# P = 0
+# has undefined behaviour (do not use it)
+#
+
+#-------------------------------------------------------------------
+# priority for ubuntu 20.04 (focal) release packages
+#-------------------------------------------------------------------
+Package: *
+Pin: release o=Ubuntu,n=focal
+Pin-Priority: $APT_FOCAL_PRIORITY
+
+Package: *
+Pin: release o=Ubuntu,a=focal
+Pin-Priority: $APT_FOCAL_PRIORITY
+
+#-------------------------------------------------------------------
+# priority for ubuntu 22.04 (jammy) release packages
+#-------------------------------------------------------------------
+Package: *
+Pin: release o=Ubuntu,n=jammy
+Pin-Priority: $APT_JAMMY_PRIORITY
+
+Package: *
+Pin: release o=Ubuntu,a=jammy
+Pin-Priority: $APT_JAMMY_PRIORITY

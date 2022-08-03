@@ -2,16 +2,23 @@
 
 ### Contributors
 
+- Asiel Lara
+- Dan
+- Dan Ryan
 - Dean Forester
 - demonspork
 - dopensource
 - hailthemelody
+- James Peru Mmbono
 - jornsby
 - littleguga
 - Mack
+- Mack Hendicks
+- Mack hendricks
 - Mack Hendricks
 - matmurdock
 - Mat Murdock
+- Maurice Rogers
 - mhendricks
 - ncannon01
 - Nicole
@@ -22,4 +29,6 @@
 - Richard Bolaji
 - RichSosa28
 - root
+- TheGolg
+- TuxPowered
 - Tyler Moore

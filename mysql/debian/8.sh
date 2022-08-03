@@ -46,7 +46,7 @@ EOF
     reconfigureMysqlSystemdService
 
     # Enable mysql on boot
-    systemctl enable mysql
+    systemctl enable mariadb
 
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
@@ -66,8 +66,8 @@ EOF
 
 function uninstall {
     # Stop servers
-    systemctl stop mysql
-    systemctl disable mysql
+    systemctl stop mariadb
+    systemctl disable mariadb
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)

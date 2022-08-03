@@ -1,14 +1,29 @@
 #-------------------------------------------------------------------
 # packages from debian 10 (buster) release
 #-------------------------------------------------------------------
-deb http://deb.debian.org/debian/ buster main contrib non-free
-#deb-src http://deb.debian.org/debian/ buster main contrib non-free
+deb https://deb.debian.org/debian/ buster main contrib non-free
+#deb-src https://deb.debian.org/debian/ buster main contrib non-free
 
-deb http://deb.debian.org/debian/ buster-updates main contrib non-free
-#deb-src http://deb.debian.org/debian/ buster-updates main contrib non-free
+deb https://deb.debian.org/debian/ buster-updates main contrib non-free
+#deb-src https://deb.debian.org/debian/ buster-updates main contrib non-free
 
-deb http://deb.debian.org/debian-security buster/updates main
-#deb-src http://deb.debian.org/debian-security buster/updates main
+deb https://deb.debian.org/debian/ buster-backports main contrib non-free
+#deb-src https://deb.debian.org/debian/ buster-backports main contrib non-free
 
-deb http://deb.debian.org/debian buster-backports main
-#deb-src http://deb.debian.org/debian buster-backports main
+deb https://deb.debian.org/debian-security/ buster/updates main
+#deb-src https://deb.debian.org/debian-security/ buster/updates main
+
+#-------------------------------------------------------------------
+# packages from debian 11 (bullseye) release
+#-------------------------------------------------------------------
+deb https://deb.debian.org/debian/ bullseye main contrib non-free
+#deb-src https://deb.debian.org/debian/ bullseye main contrib non-free
+
+deb https://deb.debian.org/debian/ bullseye-updates main contrib non-free
+#deb-src https://deb.debian.org/debian/ bullseye-updates main contrib non-free
+
+deb https://deb.debian.org/debian/ bullseye-backports main
+#deb-src https://deb.debian.org/debian/ bullseye-backports main
+
+deb https://deb.debian.org/debian-security/ bullseye-security main
+#deb-src https://deb.debian.org/debian-security/ bullseye-security main
