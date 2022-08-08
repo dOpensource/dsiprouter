@@ -2,6 +2,7 @@
 Description=dSIPRouter Service
 After=network.target mariab.service rsyslog.service nginx.service
 Wants=nginx.service mariadb.service
+PartOf=nginx.service
 
 [Service]
 Type=simple

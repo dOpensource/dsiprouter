@@ -1125,7 +1125,7 @@ function uninstallMysql() {
     fi
 
     printdbg "Attempting to uninstall MySQL..."
-    ${DSIP_PROJECT_DIR}/mysql/$DISTRO/${DISTRO_VER}.sh uninstall
+    ${DSIP_PROJECT_DIR}/mysql/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
 
     if (( $? != 0 )); then
         printerr "MySQL uninstall failed"
@@ -1135,6 +1135,54 @@ function uninstallMysql() {
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled
     printdbg "MySQL was uninstalled"
+}
+
+# Install and configure nginx server
+function installNginx() {
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
+        printwarn "nginx is already installed"
+        return
+    fi
+
+    printdbg "Attempting to install / configure nginx..."
+    ${DSIP_PROJECT_DIR}/nginx/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
+
+    if (( $? != 0 )); then
+        printerr "nginx install failed"
+        cleanupAndExit 1
+    fi
+
+    # Restart nginx with the new configurations
+    systemctl restart nginx
+    if systemctl is-active --quiet nginx; then
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled
+        printdbg "------------------------------------"
+        pprint "nginx Installation is complete!"
+        printdbg "------------------------------------"
+    else
+        printerr "nginx install failed"
+        cleanupAndExit 1
+    fi
+}
+
+# Remove nginx and its configs
+function uninstallNginx() {
+    if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
+        printwarn "nginx is not installed - skipping removal"
+        return
+    fi
+
+    printdbg "Attempting to uninstall nginx..."
+    ${DSIP_PROJECT_DIR}/nginx/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+
+    if (( $? != 0 )); then
+        printerr "nginx uninstall failed"
+        cleanupAndExit 1
+    fi
+
+    # Remove the hidden installed file, which denotes if it's installed or not
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled
+    printdbg "nginx was uninstalled"
 }
 
 # Install the RTPEngine from sipwise
@@ -2965,7 +3013,7 @@ function processCMD() {
                     -dsip|--dsiprouter)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installMysql installDsiprouter)
+                        RUN_COMMANDS+=(installSipsak installMysql installNginx installDsiprouter)
                         shift
                         ;;
                     -rtp|--rtpengine)
@@ -2976,7 +3024,7 @@ function processCMD() {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter installRTPEngine)
+                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
                     -servernat|--servernat=*)
@@ -3154,7 +3202,7 @@ function processCMD() {
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
                 DISPLAY_LOGIN_INFO=1
-                RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installDsiprouter)
+                RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter)
             fi
 
             # add displaying logo and login info to deferred commands
@@ -3185,7 +3233,7 @@ function processCMD() {
                         ;;
                     -dsip|--dsiprouter)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallDsiprouter)
+                        RUN_COMMANDS+=(uninstallDsiprouter uninstallNginx)
                         shift
                         ;;
                     -kam|--kamailio)
@@ -3197,7 +3245,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -3211,7 +3259,7 @@ function processCMD() {
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
-                RUN_COMMANDS+=(uninstallDsiprouter uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak)
+                RUN_COMMANDS+=(uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak)
             fi
 
             # clean dev environment if configured

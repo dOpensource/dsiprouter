@@ -95,10 +95,10 @@ function install {
     # setup our own nginx configs
     perl -e "\$tls_protocols='${TLS_PROTOCOLS}';" \
         -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
-        ${DSIP_PROJECT_DIR}/resources/nginx/nginx.conf >/etc/nginx/nginx.conf
+        ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
     perl -e "\$dsip_port='${DSIP_PORT}'; \$dsip_unix_sock='${DSIP_UNIX_SOCK}'; \$dsip_ssl_cert='${DSIP_SSL_CERT}'; \$dsip_ssl_key='${DSIP_SSL_KEY}';" \
         -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
-        ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
+        ${DSIP_PROJECT_DIR}/nginx/configs/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
     ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
 
     systemctl enable nginx

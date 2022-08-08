@@ -1,0 +1,24 @@
+# ExecStop sends SIGSTOP (graceful stop) to the main process
+# If, after 5s nginx is still running, sends SIGQUIT to main process
+# If, after 10s nginx is still running, sends SIGTERM to all processes
+[Unit]
+Description=A high performance web server and a reverse proxy server
+Documentation=man:nginx(8)
+After=network.target network-online.target nss-lookup.target remote-fs.target
+
+[Service]
+Type=forking
+Environment='RUNDIR=/run/nginx'
+PIDFile=/run/nginx/nginx.pid
+ExecStartPre=!-/bin/mkdir -p ${RUNDIR}
+ExecStartPre=!-/bin/chown -R nginx:nginx ${RUNDIR}
+ExecStartPre=/usr/sbin/nginx -t
+ExecStart=/usr/sbin/nginx
+ExecReload=/usr/sbin/nginx -s reload
+ExecStop=!-/usr/sbin/nginx-stop ${MAINPID} ${RUNDIR}/nginx.pid
+TimeoutStopSec=0
+KillMode=mixed
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

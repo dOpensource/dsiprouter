@@ -9,14 +9,32 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install {
-    # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl python3 python3-pip python-dev libpq-dev firewalld
-    apt-get install -y --allow-unauthenticated libmysqlclient-dev libmariadb-client-lgpl-dev
-    apt-get install -y logrotate rsyslog perl pandoc sngrep libev-dev uuid-runtime libpq-dev
-    easy_install3 pip
 
-    # reset python cmd in case it was just installed
-    setPythonCmd
+    # Get the default version of python enabled
+    VER=`python -V 2>&1`
+    VER=`echo $VER | cut -d " " -f 2`
+    # Uninstall 3.6 and install a specific version of 3.6 if already installed
+    if [[ "$VER" =~ 3.6 ]]; then
+        yum remove -y rs-epel-release
+        yum remove -y python36  python36-libs python36-devel python36-pip
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
+    elif [[ "$VER" =~ 3 ]]; then
+        yum remove -y rs-epel-release
+        yum remove -y python3* python3*-libs python3*-devel python3*-pip
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
+    else
+        yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+        yum install -y python36u python36u-libs python36u-devel python36u-pip
+    fi
+
+   # Install dependencies for dSIPRouter
+    yum install -y yum-utils
+    yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
+    yum install -y firewalld nginx
+    yum install -y python36 python36-libs python36-devel python36-pip MySQL-python
+    yum install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 
     # create dsiprouter and nginx user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -34,19 +52,32 @@ function install {
     chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
     chown -R nginx:nginx /run/nginx
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl start firewalld
+    # give dsiprouter permissions in SELINUX
+    semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
+        semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
+
+    # reset python cmd in case it was just installed
+    setPythonCmd
+
+    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    if (( $? != 0 )); then
+        systemctl restart dbus
+        systemctl restart firewalld
+    fi
 
     # Setup Firewall for DSIP_PORT
-    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
-    firewall-cmd --reload
+    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
+
+    # Enable and start firewalld if not already running
+    systemctl enable firewalld
+    systemctl restart firewalld
 
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 ${PYTHON_CMD} -m pip install
     if [ $? -eq 1 ]; then
         printerr "dSIPRouter install failed: Couldn't install required libraries"
         exit 1
     fi
+
 
     # Configure nginx
     # determine available TLS protocols (try using highest available)
@@ -64,13 +95,19 @@ function install {
     # setup our own nginx configs
     perl -e "\$tls_protocols='${TLS_PROTOCOLS}';" \
         -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
-        ${DSIP_PROJECT_DIR}/resources/nginx/nginx.conf >/etc/nginx/nginx.conf
+        ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
     perl -e "\$dsip_port='${DSIP_PORT}'; \$dsip_unix_sock='${DSIP_UNIX_SOCK}'; \$dsip_ssl_cert='${DSIP_SSL_CERT}'; \$dsip_ssl_key='${DSIP_SSL_KEY}';" \
         -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
-        ${DSIP_PROJECT_DIR}/resources/nginx/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
+        ${DSIP_PROJECT_DIR}/nginx/configs/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
     ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
+
     systemctl enable nginx
     systemctl restart nginx
+
+    # Configure rsyslog defaults
+    if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
+        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
+    fi
 
     # Setup dSIPRouter Logging
     cp -f ${DSIP_PROJECT_DIR}/resources/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
@@ -90,7 +127,11 @@ function install {
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
+
+    # add hook to bash_completion in the standard debian location
+    echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
 }
+
 
 function uninstall {
     # Uninstall dependencies for dSIPRouter
@@ -105,7 +146,15 @@ function uninstall {
         exit 0
     fi
 
-    apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev libpq-dev firewalld
+    yum remove -y python36u\*
+    yum remove -y ius-release
+    yum remove -y nginx
+    yum groupremove -y "Development Tools"
+
+    # Remove the repos
+    rm -f /etc/yum.repos.d/ius*
+    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
+    yum clean all
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
@@ -122,6 +171,7 @@ function uninstall {
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
 }
+
 
 case "$1" in
     uninstall|remove)

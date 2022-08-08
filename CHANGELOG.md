@@ -5,12 +5,122 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-23b0096d55705e3810fc9c0f71971e2ec35a07f1
+c42053e08d736c1941399f981a6d69403eb678fc
+ccea19047f2b1959fe0bbc0e6cf70a66576e5d15
+9f3515967f6a05789cce7aba8b03bb107ae5582f
+99fed4a8840a27dfe1e4de27b95374787874f71f
+000e370c48da86b40a2d68259c8f42238ca83df7
+d3b28a7ce77894f343e51cd6a9bbd78cea91c1b5
+62080422649deb5cda3c5ea671c1deb34e256b1a
+0391b278289365f96fc6508b6c7da7e49e01706d
+48cd1ec6288a0ff4eee7a80b8008f2cd9cd05aa2
+06ca6ce25a2c753d46405b198407cc7db62d2b03
+1e1bf37e1dafaf7c366702da190a778a0736ea02
+11bc68b1196f2232e074eb965496c77182d2155a
+383a57bb4bc9ded9ad28942670dcb7a2022fdaf5
+d71a50bd712c066bbd538ecee5a3b089d1e4d829
+b4b5cc7f8f826c07956bff054d30c84ff5e8de49
+9c62c9ed74006af75e9c679498f5e91a39cf9200
+6f44e913e57a62e8f4d4ecca83fa84cbf35cbd60
+5e305d87a1466106c6658c64d1454a0b1e44ad36
+912aa73b0dc8f3c8bc684b22e92f0af878ba1a85
+362c144d2ab056c0bfd03d8221ace09767ba5841
+08458ff1258fa668ed48edf0e00b9bf6aa38f07a
+42681d1ec76c6b4b64acec9fa44c1c1c8821be56
+c40702e443e6c3fece31cc66338d051527067d88
+6fa6d008767b45244978e9b0c53998f5cb3116d8
+92689753326c9a96f642d5cda16b08378ea96c7d
+7d76b585c66154d3542e92329c53ae313b6d0ae2
+2466ccf4a9638b5428a9e515aa47b52e476b1840
+4a3ad21a37a98251a2412d22294faf1f81df6b1b
+9c2fbcae2aec2174783e03b53e978e7a9fa62a2f
+5cb96769844687f19c809c8b25b37e595256a4bf
+43da59b8384e66f889ae00548fbbca76c55c6bc6
+56d29640a2d9e59628534fc959b7f66c4eae6673
+34e30b6dc3e50e80f8cfa229416d4c409fc49832
+2a362b9331c4ee2e7b5473712ca54d98643586b2
+3ce7eca6f9e31f5351260e085a4e720ede16d066
+e9f3dd7059bd73e4a73ebee4e5eabd7bfaffbdc5
+162e3ed4fdc9e48d0f5e2c061cbb1d44db317735
+34e29bcb6fef9fea67de067928e27aa861ee4063
+c879639b5cd8d54da6e96ca9a3f474e734d14594
+c83d719784414c97bbf89b9d6f991582b82dfaa1
+6eb5efb7f4a3be4515745cdbe8951c5ee5a3b14a
+c809094393142acd2ac025f641d920d7182136e5
+eab2b7b5092a97bfa14369902d5701ac58313944
+26294003c2dbb0f98ba0fbacd2498eb91fcbf0ec
+f477820eb11f1af06e73b4f022c8059a4e6b78e3
+c71a5ca053c4deecd0843da72208315964c45569
+2a2878e14b3a04aefd74efd015a86ff7d4efacc0
+6b90261785a05f79a7ef429d66e15302409f9d78
+a5c9d5b01d592c3d619cf7eac6ac86978a2a159c
+d7733ecb8cefd4f46b082145e7dad84b3d675389
+4d4db52fab645f470698e36b2c3580dcd6f7ad8f
+e2eb9514adda76bfa18b23a58038507d9030f5c5
+c2a9e73dd7a7fb9a04aee38b259f189f5d0bc610
+de7ec6b999347b86b156ef40014234372912dfac
+f8fca5557f1734f828e5f8f876a4f200c7993d37
+f09171cd444f0f5b0c5570d484f18526283e6cdc
+4c0d9220766f3bc7794972a5796ad898ec6ad879
+a3b873763dc004f2739099f55161d3e3a5ec671c
+6b717430ef4cc75169b4de8573ba9222dfa32d13
+11659a3b1a6d9c951a61c812e63d73de4a264270
+4ded45556e2c896781186e19c843cc298e0cf140
+a7a3355724e86989dbe1d985a63274ccf29251f2
+de781ab923da6bea54d6e3998d63fd8ceac1291d
+74b38a9eaa123bb6e97aebf90d2d186f27bc6a4e
+0303d05981d4e72ff831f582e0cf232ec804d2ae
+2d053086bfd08f11997514781f8949c9fb4a017b
+467e0353d1ed92c2cdd297b4070e833f8f269313
+1398c9f37f6e2aee88fd6d62ab0a1b50ca4529d9
+ffa050d4259d859128d75f34368e0430005967a0
+868444e2dcfad98ad93fba8bafced1bb0428ae39
+6f7e10ef918323380c8f2f1147c443608206d92d
+d098638cebee6123d756893963770e245dc96d6a
+60afad7298ae532c4d51a6214fe118b0c0442a0a
+dfafb9953c70e936ccb9a3c6772993d43c9be4cb
+f5ba6be88f6da2d66c52bb039f224b274cb68ca8
+fe8e22a60b89b11d803880aba12a3bbfd43d37a7
+197eb7aa1b572796a9a1b9fc5d8e8bf52c85684b
+5f442e34c294153e1db463c432a0d73464aca3f2
+54d48156e8c9953a74121afa7173cde21f3f466c
+f00b06f414e6708f9381a16a2db46fe4e60e4ab8
+d8fbb36687663b2b5fd474043b63732bae8980fd
+28a6cec3232c02ad1a55b856fb667a17f16e157a
+660a32a135b8bac31aa59c495ae68f9467193bb4
+87d4aed54ceb44e31c22a0cf0e6902d3a09ec84e
+323f38bf35f4078e9896a8f01a0535832c68ecaa
+e8f4ae98679f93c18759fb23153dcc61060356cc
+cd7860138957fad20e630957d3352d31166c42b6
+8049a7005ab453e7d10c9f5cdd1e0831ed5374b7
+9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c
+9355e5408640fa412254ed37ce3de0789cfcbade
+24f390f44aec775aceef7578ff75809c03142b39
+f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d
+1254e8e3d5cd29b3ae67ff993a0c110e76fac270
+a8c0496fa2525513d8cf81668c57d783eee299d7
+5713f323069a50de8d0dce8bd2953e1d142b46bf
+cdecaf5d747f681ee6addf2b2d6e58479e36da91
+ec4219de84f9d346f082fc668d5979aba519c047
+d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f
+6c7532ccec112d6faf8ce47f1d89151e4a46f316
+1fb969abeb8eefc633be50e11e3905d688526cdf
+64f141ba6ced44e6a0b9f1b1680a8edb5755415f
+813dcdc3199fa5157a3b4a83dd52580c5570e659
+a77ffb5e2988d7ebb01f59464707cebf33a0adb4
+863343903605d610f5b42f72805f993c401cc862
+26f16646507d81a840cce049069872c431905ca9
+3b41901eb9baad1139d245b6220fb502c7c546ca
+e44d74fb9848cb5812512da7e216e73c6bbbdad3
+9203d051d69e9176f2bb659c70c29cceab90b084
+7e4b557bccfd166ac746c73e98e7c76e6c2c9d57
 6757683347f947e730ff668bac4a3d578b8044db
 1bf0cc47ceaa158aa24880be5e7f9b66dd67c956
 063aa3646d4e6a39baeaa5fa26bc329139f05914
 a1f4a720a824ed2e11d64e7fa22bfaa6a2da7eab
 01042e110ecc152ce807322aeb53baba5c06bc2f
+a495613e9c6d52bdf921c9d005d4b7206ed6feb2
+f59ff1f05c8742ceabc0903bf453732976268ca2
 500a9c4cbe3531658e7b6fad0c9298dc38e504ca
 da5a1a010e9c2950043daeca6766b5c1e5f01e9a
 9bd78475c38ea4e4a2e91fbdd3d35e79ec292cf2
@@ -103,6 +213,8 @@ e809c5c57ffdf627915db95e5f94e895f90291bb
 916e120ec3bbf7ea7089e93b8386b0facf00c4a0
 76c7c679a947122e08cc5985623bbefbeb0681c7
 085931328e9be893c65b674c9e491924afa88ca4
+c569928e35f25ab269b0aeab25423093f9db96b5
+195bd8e7cc20468054182bb08fac2e80b80a0bea
 14d26b51fa983c686b95a60afdfb145ea61c1bef
 cff105fd47bada8ce5bafe07a5e6f85ac2b8579e
 85874fade92d329fb0f6d7f824e06035f83eee97
@@ -1894,10 +2006,1687 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 23b0096d55705e3810fc9c0f71971e2ec35a07f1)
+[//]: # (START_SECTION c42053e08d736c1941399f981a6d69403eb678fc)
+### Bug Fixes for Updated OS Support
+
+> Commit: [c42053e08d736c1941399f981a6d69403eb678fc](https://github.com/dOpensource/dsiprouter/commit/c42053e08d736c1941399f981a6d69403eb678fc)  
+> Date: Mon, 8 Aug 2022 15:36:23 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update `dsiprouter.service` to stop/restart `nginx.service`
+- move nginx install into seperate directory
+- normalize nginx service for better support across OS
+- fix typo in mysql install
+- remove unsupported debian/ubuntu scripts
+- fix `requirements.txt` regression and update pre-commit hook
+
+
+---
+
+[//]: # (END_SECTION c42053e08d736c1941399f981a6d69403eb678fc)
+[//]: # (START_SECTION ccea19047f2b1959fe0bbc0e6cf70a66576e5d15)
+### Update OS Installation Support
+
+> Commit: [ccea19047f2b1959fe0bbc0e6cf70a66576e5d15](https://github.com/dOpensource/dsiprouter/commit/ccea19047f2b1959fe0bbc0e6cf70a66576e5d15)  
+> Date: Wed, 3 Aug 2022 11:39:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update debian11 support to STABLE
+- add STABLE support for amazon linux 2
+- add ALPHA support for redhat linux 8
+- add ALPHA support for alma linux 8
+- add ALPHA support for rocky linux 8
+- add ALPHA support for ubuntu 22.04
+- add ALPHA support for ubuntu 20.04
+- deprecate support for debian 8
+- deprecate support for centos 8
+- deprecate support for centos 7
+- deprecate support for ubuntu 16.04
+- fix cloud-init/dsip-init service integration
+- fix dsiprouter /etc/hosts management
+- fix dsiprouter apt repo management
+- fix dnsmasq installation
+- add WIP for dsiprouter /etc/resolv.conf management
+- add cached DNS name updates to dsip-init and cron
+- add backwards compatibility for systemd v219
+- fix kernel image/header conflicts in image creation
+- move permissions changes to new `chown` dsiprouter command
+- fix `clusterinstall` not copying project files on second run
+- update source installs to reuse source files on additional install attempts
+- add back in support for configuring homer on install
+- fix `-dsipkey` arg parsing when setting dsip private key
+- add comments and deprecation notices
+- fix missing kamailio config settings update on install
+- refactor kamailio config locations
+- move dsiprouter services to `/lib/systemd/system` *aligning with most installers*
+- move dsiprouter script to `/usr/bin` *aligning with most installers*
+- add automatic servernat detection `-servernat` now overrides this
+- update rtpengine version
+- update ip / hostname resolution bash functions to align with python ones
+- add networking functions needed for IPv6 support
+- update `build_image.sh` to support passing args via any cloud provisioner
+- fix locale not set on some cloud images
+- fix dependency loop on `dsip-init` with subsequent install attempts
+- fix vulter cloud install check
+- add WIP libstirshaken openssl 3.x.x support
+- fix `setCredentials` not setting password in some cases
+
+
+---
+
+[//]: # (END_SECTION ccea19047f2b1959fe0bbc0e6cf70a66576e5d15)
+[//]: # (START_SECTION 9f3515967f6a05789cce7aba8b03bb107ae5582f)
+### Updated Terraform Scripts
+
+> Commit: [9f3515967f6a05789cce7aba8b03bb107ae5582f](https://github.com/dOpensource/dsiprouter/commit/9f3515967f6a05789cce7aba8b03bb107ae5582f)  
+> Date: Tue, 26 Jul 2022 23:13:10 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9f3515967f6a05789cce7aba8b03bb107ae5582f)
+[//]: # (START_SECTION 99fed4a8840a27dfe1e4de27b95374787874f71f)
+### Added the file keyword
+
+> Commit: [99fed4a8840a27dfe1e4de27b95374787874f71f](https://github.com/dOpensource/dsiprouter/commit/99fed4a8840a27dfe1e4de27b95374787874f71f)  
+> Date: Mon, 25 Jul 2022 11:03:13 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 99fed4a8840a27dfe1e4de27b95374787874f71f)
+[//]: # (START_SECTION 000e370c48da86b40a2d68259c8f42238ca83df7)
+### relocated apt command for libavcodec-extra
+
+> Commit: [000e370c48da86b40a2d68259c8f42238ca83df7](https://github.com/dOpensource/dsiprouter/commit/000e370c48da86b40a2d68259c8f42238ca83df7)  
+> Date: Thu, 7 Jul 2022 10:34:53 -0700  
+> Author: TuxPowered (vw.jetta.dude@gmail.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Relocaed install of libavcodec-extra to main block to be included in all debian builds.
+
+
+---
+
+[//]: # (END_SECTION 000e370c48da86b40a2d68259c8f42238ca83df7)
+[//]: # (START_SECTION d3b28a7ce77894f343e51cd6a9bbd78cea91c1b5)
+### Added Build dependency for RTPEngine
+
+> Commit: [d3b28a7ce77894f343e51cd6a9bbd78cea91c1b5](https://github.com/dOpensource/dsiprouter/commit/d3b28a7ce77894f343e51cd6a9bbd78cea91c1b5)  
+> Date: Thu, 7 Jul 2022 10:27:49 -0700  
+> Author: TuxPowered (vw.jetta.dude@gmail.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- RTPEngine fails to build on Debian 10. 
+- Added cmake dependency and libavcodec-extra. 
+- libavcodec-extra - is recommended by RTPEngine github on debian installs to support wider codecs
+
+- You can not build using 
+- `dsiprouter.sh install -rtp` or `dsiprouter.sh install -all -servernat` without getting the RTPEngine failed to install error.
+
+
+---
+
+[//]: # (END_SECTION d3b28a7ce77894f343e51cd6a9bbd78cea91c1b5)
+[//]: # (START_SECTION 62080422649deb5cda3c5ea671c1deb34e256b1a)
+### Create FUNDING.yml
+
+> Commit: [62080422649deb5cda3c5ea671c1deb34e256b1a](https://github.com/dOpensource/dsiprouter/commit/62080422649deb5cda3c5ea671c1deb34e256b1a)  
+> Date: Thu, 30 Jun 2022 14:38:16 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 62080422649deb5cda3c5ea671c1deb34e256b1a)
+[//]: # (START_SECTION 0391b278289365f96fc6508b6c7da7e49e01706d)
+### Added a tag to the bcg729 repo which forces a specific version
+
+> Commit: [0391b278289365f96fc6508b6c7da7e49e01706d](https://github.com/dOpensource/dsiprouter/commit/0391b278289365f96fc6508b6c7da7e49e01706d)  
+> Date: Wed, 29 Jun 2022 06:30:51 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0391b278289365f96fc6508b6c7da7e49e01706d)
+[//]: # (START_SECTION 48cd1ec6288a0ff4eee7a80b8008f2cd9cd05aa2)
+### Added support for installing the json module
+
+> Commit: [48cd1ec6288a0ff4eee7a80b8008f2cd9cd05aa2](https://github.com/dOpensource/dsiprouter/commit/48cd1ec6288a0ff4eee7a80b8008f2cd9cd05aa2)  
+> Date: Wed, 29 Jun 2022 04:48:15 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 48cd1ec6288a0ff4eee7a80b8008f2cd9cd05aa2)
+[//]: # (START_SECTION 06ca6ce25a2c753d46405b198407cc7db62d2b03)
+### Added Kamailio logic to block invalidated calls
+
+> Commit: [06ca6ce25a2c753d46405b198407cc7db62d2b03](https://github.com/dOpensource/dsiprouter/commit/06ca6ce25a2c753d46405b198407cc7db62d2b03)  
+> Date: Mon, 27 Jun 2022 16:55:44 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 06ca6ce25a2c753d46405b198407cc7db62d2b03)
+[//]: # (START_SECTION 1e1bf37e1dafaf7c366702da190a778a0736ea02)
+### Use the libbcg729 library on Debian Bullseyee
+
+> Commit: [1e1bf37e1dafaf7c366702da190a778a0736ea02](https://github.com/dOpensource/dsiprouter/commit/1e1bf37e1dafaf7c366702da190a778a0736ea02)  
+> Date: Mon, 27 Jun 2022 05:14:35 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1e1bf37e1dafaf7c366702da190a778a0736ea02)
+[//]: # (START_SECTION 11bc68b1196f2232e074eb965496c77182d2155a)
+### Update 11.sh
+
+> Commit: [11bc68b1196f2232e074eb965496c77182d2155a](https://github.com/dOpensource/dsiprouter/commit/11bc68b1196f2232e074eb965496c77182d2155a)  
+> Date: Sun, 26 Jun 2022 23:53:02 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Added support for json
+
+
+---
+
+[//]: # (END_SECTION 11bc68b1196f2232e074eb965496c77182d2155a)
+[//]: # (START_SECTION 383a57bb4bc9ded9ad28942670dcb7a2022fdaf5)
+### Update 11.sh
+
+> Commit: [383a57bb4bc9ded9ad28942670dcb7a2022fdaf5](https://github.com/dOpensource/dsiprouter/commit/383a57bb4bc9ded9ad28942670dcb7a2022fdaf5)  
+> Date: Sun, 26 Jun 2022 23:35:31 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 383a57bb4bc9ded9ad28942670dcb7a2022fdaf5)
+[//]: # (START_SECTION d71a50bd712c066bbd538ecee5a3b089d1e4d829)
+### Refactoring the Transnexus custom logic include
+
+> Commit: [d71a50bd712c066bbd538ecee5a3b089d1e4d829](https://github.com/dOpensource/dsiprouter/commit/d71a50bd712c066bbd538ecee5a3b089d1e4d829)  
+> Date: Thu, 23 Jun 2022 21:00:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d71a50bd712c066bbd538ecee5a3b089d1e4d829)
+[//]: # (START_SECTION b4b5cc7f8f826c07956bff054d30c84ff5e8de49)
+### Changed logic that updates the TLS address in tls.cfg
+
+> Commit: [b4b5cc7f8f826c07956bff054d30c84ff5e8de49](https://github.com/dOpensource/dsiprouter/commit/b4b5cc7f8f826c07956bff054d30c84ff5e8de49)  
+> Date: Wed, 22 Jun 2022 19:27:50 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b4b5cc7f8f826c07956bff054d30c84ff5e8de49)
+[//]: # (START_SECTION 9c62c9ed74006af75e9c679498f5e91a39cf9200)
+### Made STIR/SHAKEN and TransNexus STIR/SHAKEN module off by default
+
+> Commit: [9c62c9ed74006af75e9c679498f5e91a39cf9200](https://github.com/dOpensource/dsiprouter/commit/9c62c9ed74006af75e9c679498f5e91a39cf9200)  
+> Date: Wed, 15 Jun 2022 14:12:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9c62c9ed74006af75e9c679498f5e91a39cf9200)
+[//]: # (START_SECTION 6f44e913e57a62e8f4d4ecca83fa84cbf35cbd60)
+### Fixed Stir/Shaken: - Fixed the UI - The proper orgination and destination number will be set in the identity header on outbound calls - Fixed the Kamailio Reload
+
+> Commit: [6f44e913e57a62e8f4d4ecca83fa84cbf35cbd60](https://github.com/dOpensource/dsiprouter/commit/6f44e913e57a62e8f4d4ecca83fa84cbf35cbd60)  
+> Date: Wed, 15 Jun 2022 12:56:15 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6f44e913e57a62e8f4d4ecca83fa84cbf35cbd60)
+[//]: # (START_SECTION 5e305d87a1466106c6658c64d1454a0b1e44ad36)
+### Fixed issues with installing the stirshaken libaries
+
+> Commit: [5e305d87a1466106c6658c64d1454a0b1e44ad36](https://github.com/dOpensource/dsiprouter/commit/5e305d87a1466106c6658c64d1454a0b1e44ad36)  
+> Date: Wed, 15 Jun 2022 01:46:44 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5e305d87a1466106c6658c64d1454a0b1e44ad36)
+[//]: # (START_SECTION 912aa73b0dc8f3c8bc684b22e92f0af878ba1a85)
+### Added the VerifyService to TransNexus module
+
+> Commit: [912aa73b0dc8f3c8bc684b22e92f0af878ba1a85](https://github.com/dOpensource/dsiprouter/commit/912aa73b0dc8f3c8bc684b22e92f0af878ba1a85)  
+> Date: Tue, 14 Jun 2022 18:18:18 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 912aa73b0dc8f3c8bc684b22e92f0af878ba1a85)
+[//]: # (START_SECTION 362c144d2ab056c0bfd03d8221ace09767ba5841)
+### Fixed an issue with LRN not selecting the first contact to try
+
+> Commit: [362c144d2ab056c0bfd03d8221ace09767ba5841](https://github.com/dOpensource/dsiprouter/commit/362c144d2ab056c0bfd03d8221ace09767ba5841)  
+> Date: Mon, 6 Jun 2022 14:09:48 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 362c144d2ab056c0bfd03d8221ace09767ba5841)
+[//]: # (START_SECTION 08458ff1258fa668ed48edf0e00b9bf6aa38f07a)
+### Changed LRN support to sequential routing versus parallel routing
+
+> Commit: [08458ff1258fa668ed48edf0e00b9bf6aa38f07a](https://github.com/dOpensource/dsiprouter/commit/08458ff1258fa668ed48edf0e00b9bf6aa38f07a)  
+> Date: Sun, 5 Jun 2022 19:00:48 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 08458ff1258fa668ed48edf0e00b9bf6aa38f07a)
+[//]: # (START_SECTION 42681d1ec76c6b4b64acec9fa44c1c1c8821be56)
+### Fixed a typo that prevented the  UI from loading teh config values
+
+> Commit: [42681d1ec76c6b4b64acec9fa44c1c1c8821be56](https://github.com/dOpensource/dsiprouter/commit/42681d1ec76c6b4b64acec9fa44c1c1c8821be56)  
+> Date: Tue, 17 May 2022 09:24:25 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 42681d1ec76c6b4b64acec9fa44c1c1c8821be56)
+[//]: # (START_SECTION c40702e443e6c3fece31cc66338d051527067d88)
+### UI Updates
+
+> Commit: [c40702e443e6c3fece31cc66338d051527067d88](https://github.com/dOpensource/dsiprouter/commit/c40702e443e6c3fece31cc66338d051527067d88)  
+> Date: Tue, 17 May 2022 08:42:19 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c40702e443e6c3fece31cc66338d051527067d88)
+[//]: # (START_SECTION 6fa6d008767b45244978e9b0c53998f5cb3116d8)
+### Integrated the UI with the Settings  reloading
+
+> Commit: [6fa6d008767b45244978e9b0c53998f5cb3116d8](https://github.com/dOpensource/dsiprouter/commit/6fa6d008767b45244978e9b0c53998f5cb3116d8)  
+> Date: Tue, 17 May 2022 07:44:09 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6fa6d008767b45244978e9b0c53998f5cb3116d8)
+[//]: # (START_SECTION 92689753326c9a96f642d5cda16b08378ea96c7d)
+### Added support to bypass TransNexus STIR/SHAKEN when calling emergency numbers
+
+> Commit: [92689753326c9a96f642d5cda16b08378ea96c7d](https://github.com/dOpensource/dsiprouter/commit/92689753326c9a96f642d5cda16b08378ea96c7d)  
+> Date: Mon, 16 May 2022 06:29:17 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 92689753326c9a96f642d5cda16b08378ea96c7d)
+[//]: # (START_SECTION 7d76b585c66154d3542e92329c53ae313b6d0ae2)
+### STIR SHAKEN inbound call checkpoint
+
+> Commit: [7d76b585c66154d3542e92329c53ae313b6d0ae2](https://github.com/dOpensource/dsiprouter/commit/7d76b585c66154d3542e92329c53ae313b6d0ae2)  
+> Date: Fri, 13 May 2022 18:01:17 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7d76b585c66154d3542e92329c53ae313b6d0ae2)
+[//]: # (START_SECTION 2466ccf4a9638b5428a9e515aa47b52e476b1840)
+### Load the stirshaken module
+
+> Commit: [2466ccf4a9638b5428a9e515aa47b52e476b1840](https://github.com/dOpensource/dsiprouter/commit/2466ccf4a9638b5428a9e515aa47b52e476b1840)  
+> Date: Fri, 13 May 2022 12:54:34 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2466ccf4a9638b5428a9e515aa47b52e476b1840)
+[//]: # (START_SECTION 4a3ad21a37a98251a2412d22294faf1f81df6b1b)
+### Removed unused code
+
+> Commit: [4a3ad21a37a98251a2412d22294faf1f81df6b1b](https://github.com/dOpensource/dsiprouter/commit/4a3ad21a37a98251a2412d22294faf1f81df6b1b)  
+> Date: Fri, 13 May 2022 12:46:24 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4a3ad21a37a98251a2412d22294faf1f81df6b1b)
+[//]: # (START_SECTION 9c2fbcae2aec2174783e03b53e978e7a9fa62a2f)
+### Testing the incoming calls
+
+> Commit: [9c2fbcae2aec2174783e03b53e978e7a9fa62a2f](https://github.com/dOpensource/dsiprouter/commit/9c2fbcae2aec2174783e03b53e978e7a9fa62a2f)  
+> Date: Fri, 13 May 2022 12:31:01 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9c2fbcae2aec2174783e03b53e978e7a9fa62a2f)
+[//]: # (START_SECTION 5cb96769844687f19c809c8b25b37e595256a4bf)
+### Added Support for Native Kamailio STIR/Shaken Support
+
+> Commit: [5cb96769844687f19c809c8b25b37e595256a4bf](https://github.com/dOpensource/dsiprouter/commit/5cb96769844687f19c809c8b25b37e595256a4bf)  
+> Date: Fri, 13 May 2022 06:21:37 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5cb96769844687f19c809c8b25b37e595256a4bf)
+[//]: # (START_SECTION 43da59b8384e66f889ae00548fbbca76c55c6bc6)
+### Added toggle switch to enable or disable transnexus LRN
+
+> Commit: [43da59b8384e66f889ae00548fbbca76c55c6bc6](https://github.com/dOpensource/dsiprouter/commit/43da59b8384e66f889ae00548fbbca76c55c6bc6)  
+> Date: Thu, 12 May 2022 18:08:12 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 43da59b8384e66f889ae00548fbbca76c55c6bc6)
+[//]: # (START_SECTION 56d29640a2d9e59628534fc959b7f66c4eae6673)
+### Fixed Mariadb systemctl service script
+
+> Commit: [56d29640a2d9e59628534fc959b7f66c4eae6673](https://github.com/dOpensource/dsiprouter/commit/56d29640a2d9e59628534fc959b7f66c4eae6673)  
+> Date: Tue, 10 May 2022 13:47:49 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 56d29640a2d9e59628534fc959b7f66c4eae6673)
+[//]: # (START_SECTION 34e30b6dc3e50e80f8cfa229416d4c409fc49832)
+### Fixed an issue that caused the BYE from the endpoints not to work properly
+
+> Commit: [34e30b6dc3e50e80f8cfa229416d4c409fc49832](https://github.com/dOpensource/dsiprouter/commit/34e30b6dc3e50e80f8cfa229416d4c409fc49832)  
+> Date: Sat, 7 May 2022 01:43:28 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 34e30b6dc3e50e80f8cfa229416d4c409fc49832)
+[//]: # (START_SECTION 2a362b9331c4ee2e7b5473712ca54d98643586b2)
+### Transnexus Module Updates: - Now supports LCR - Contacts are followed if they are outside of the clearip domain - Fixed an issue that prevented the dSIPRouter carrier route from being followed - Fixed a bug that stopped the Transnexus module from being enabled during dSIPRouter startup
+
+> Commit: [2a362b9331c4ee2e7b5473712ca54d98643586b2](https://github.com/dOpensource/dsiprouter/commit/2a362b9331c4ee2e7b5473712ca54d98643586b2)  
+> Date: Thu, 5 May 2022 02:23:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2a362b9331c4ee2e7b5473712ca54d98643586b2)
+[//]: # (START_SECTION 3ce7eca6f9e31f5351260e085a4e720ede16d066)
+### Will automatically setup up the realm properly for Twilio Programmable Voice (sip.twilio.com)
+
+> Commit: [3ce7eca6f9e31f5351260e085a4e720ede16d066](https://github.com/dOpensource/dsiprouter/commit/3ce7eca6f9e31f5351260e085a4e720ede16d066)  
+> Date: Fri, 29 Apr 2022 05:36:59 +0000  
+> Author: root (root@ip-172-31-19-223.ec2.internal)  
+> Committer: root (root@ip-172-31-19-223.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3ce7eca6f9e31f5351260e085a4e720ede16d066)
+[//]: # (START_SECTION e9f3dd7059bd73e4a73ebee4e5eabd7bfaffbdc5)
+### Added our v2 License Manager - Initial commit
+
+> Commit: [e9f3dd7059bd73e4a73ebee4e5eabd7bfaffbdc5](https://github.com/dOpensource/dsiprouter/commit/e9f3dd7059bd73e4a73ebee4e5eabd7bfaffbdc5)  
+> Date: Mon, 25 Apr 2022 05:55:25 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e9f3dd7059bd73e4a73ebee4e5eabd7bfaffbdc5)
+[//]: # (START_SECTION 162e3ed4fdc9e48d0f5e2c061cbb1d44db317735)
+### dSIPRouter Installer: - Silenced a warning message when installing Kamailio
+
+> Commit: [162e3ed4fdc9e48d0f5e2c061cbb1d44db317735](https://github.com/dOpensource/dsiprouter/commit/162e3ed4fdc9e48d0f5e2c061cbb1d44db317735)  
+> Date: Sun, 24 Apr 2022 12:15:18 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 162e3ed4fdc9e48d0f5e2c061cbb1d44db317735)
+[//]: # (START_SECTION 34e29bcb6fef9fea67de067928e27aa861ee4063)
+### dSIPRouter on Debian 11: - Added the python3-mysqldb to the Debian 11 installer so that dSIPRouter installs properly
+
+> Commit: [34e29bcb6fef9fea67de067928e27aa861ee4063](https://github.com/dOpensource/dsiprouter/commit/34e29bcb6fef9fea67de067928e27aa861ee4063)  
+> Date: Sat, 23 Apr 2022 10:42:20 +0000  
+> Author: Mack Hendicks (mack.hendricks@gmail.com)  
+> Committer: Mack Hendicks (mack.hendricks@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 34e29bcb6fef9fea67de067928e27aa861ee4063)
+[//]: # (START_SECTION c879639b5cd8d54da6e96ca9a3f474e734d14594)
+### Fixes for RTPEngine for Debian 11 - Implemented an override for the rtpengine version to mr10.4.1.1 - Added required packages for mr10.4.1.1 - Added logic to ensure rtpengine is installed properly on Debian 11
+
+> Commit: [c879639b5cd8d54da6e96ca9a3f474e734d14594](https://github.com/dOpensource/dsiprouter/commit/c879639b5cd8d54da6e96ca9a3f474e734d14594)  
+> Date: Sat, 23 Apr 2022 09:08:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c879639b5cd8d54da6e96ca9a3f474e734d14594)
+[//]: # (START_SECTION c83d719784414c97bbf89b9d6f991582b82dfaa1)
+### Fixed Install for Debian 11 - Changed the Kamailio version to 5.5
+
+> Commit: [c83d719784414c97bbf89b9d6f991582b82dfaa1](https://github.com/dOpensource/dsiprouter/commit/c83d719784414c97bbf89b9d6f991582b82dfaa1)  
+> Date: Sat, 23 Apr 2022 03:18:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c83d719784414c97bbf89b9d6f991582b82dfaa1)
+[//]: # (START_SECTION 6eb5efb7f4a3be4515745cdbe8951c5ee5a3b14a)
+### Fixed issue with looping ACK's
+
+> Commit: [6eb5efb7f4a3be4515745cdbe8951c5ee5a3b14a](https://github.com/dOpensource/dsiprouter/commit/6eb5efb7f4a3be4515745cdbe8951c5ee5a3b14a)  
+> Date: Thu, 21 Apr 2022 17:44:40 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6eb5efb7f4a3be4515745cdbe8951c5ee5a3b14a)
+[//]: # (START_SECTION c809094393142acd2ac025f641d920d7182136e5)
+### Twilio Username/Password Auth Fixes: - Hardcoded logic that sets the realm to sip.twilio.com, which allows username/password auth to work - Fixed a bug that caused the password not to be saved when updating the CarrierGroup
+
+> Commit: [c809094393142acd2ac025f641d920d7182136e5](https://github.com/dOpensource/dsiprouter/commit/c809094393142acd2ac025f641d920d7182136e5)  
+> Date: Thu, 21 Apr 2022 03:07:08 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c809094393142acd2ac025f641d920d7182136e5)
+[//]: # (START_SECTION eab2b7b5092a97bfa14369902d5701ac58313944)
+### TransNexus Update - Changed the default outbound server address to sip.clearip.com
+
+> Commit: [eab2b7b5092a97bfa14369902d5701ac58313944](https://github.com/dOpensource/dsiprouter/commit/eab2b7b5092a97bfa14369902d5701ac58313944)  
+> Date: Thu, 21 Apr 2022 03:03:22 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION eab2b7b5092a97bfa14369902d5701ac58313944)
+[//]: # (START_SECTION 26294003c2dbb0f98ba0fbacd2498eb91fcbf0ec)
+### Added suppot for TransNexus sending either X-Identity or Identity with the identity information
+
+> Commit: [26294003c2dbb0f98ba0fbacd2498eb91fcbf0ec](https://github.com/dOpensource/dsiprouter/commit/26294003c2dbb0f98ba0fbacd2498eb91fcbf0ec)  
+> Date: Fri, 15 Apr 2022 23:33:16 +0000  
+> Author: root (root@guest.guest)  
+> Committer: root (root@guest.guest)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 26294003c2dbb0f98ba0fbacd2498eb91fcbf0ec)
+[//]: # (START_SECTION f477820eb11f1af06e73b4f022c8059a4e6b78e3)
+### Added logic to install dSIPRouter Kamailio module includes
+
+> Commit: [f477820eb11f1af06e73b4f022c8059a4e6b78e3](https://github.com/dOpensource/dsiprouter/commit/f477820eb11f1af06e73b4f022c8059a4e6b78e3)  
+> Date: Wed, 13 Apr 2022 11:27:11 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f477820eb11f1af06e73b4f022c8059a4e6b78e3)
+[//]: # (START_SECTION c71a5ca053c4deecd0843da72208315964c45569)
+### Added logic to handle updating Transnexus Settings via the UI and during startup of dSIPRouter
+
+> Commit: [c71a5ca053c4deecd0843da72208315964c45569](https://github.com/dOpensource/dsiprouter/commit/c71a5ca053c4deecd0843da72208315964c45569)  
+> Date: Sun, 10 Apr 2022 19:52:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c71a5ca053c4deecd0843da72208315964c45569)
+[//]: # (START_SECTION 2a2878e14b3a04aefd74efd015a86ff7d4efacc0)
+### Added support for Transnexus UI
+
+> Commit: [2a2878e14b3a04aefd74efd015a86ff7d4efacc0](https://github.com/dOpensource/dsiprouter/commit/2a2878e14b3a04aefd74efd015a86ff7d4efacc0)  
+> Date: Sun, 10 Apr 2022 15:20:46 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2a2878e14b3a04aefd74efd015a86ff7d4efacc0)
+[//]: # (START_SECTION 6b90261785a05f79a7ef429d66e15302409f9d78)
+### Updated CarrierGroups - Added logic to handle updating the Name of the carrier group - Updated CarrierGroup Javascript to handle updates from the UI - Configured CarrierGroup page so that it reloads after an update
+
+> Commit: [6b90261785a05f79a7ef429d66e15302409f9d78](https://github.com/dOpensource/dsiprouter/commit/6b90261785a05f79a7ef429d66e15302409f9d78)  
+> Date: Sun, 10 Apr 2022 00:02:15 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6b90261785a05f79a7ef429d66e15302409f9d78)
+[//]: # (START_SECTION a5c9d5b01d592c3d619cf7eac6ac86978a2a159c)
+### Fixes: - Pinned the version of Jinja2 and http server Fixes #429 - Debian Sources for the current version of the OS will be added to the system versus for all versions Fixes #406
+
+> Commit: [a5c9d5b01d592c3d619cf7eac6ac86978a2a159c](https://github.com/dOpensource/dsiprouter/commit/a5c9d5b01d592c3d619cf7eac6ac86978a2a159c)  
+> Date: Sun, 3 Apr 2022 00:30:45 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a5c9d5b01d592c3d619cf7eac6ac86978a2a159c)
+[//]: # (START_SECTION d7733ecb8cefd4f46b082145e7dad84b3d675389)
+### Added libffi-dev to Debian 10 install file. Fixes #86
+
+> Commit: [d7733ecb8cefd4f46b082145e7dad84b3d675389](https://github.com/dOpensource/dsiprouter/commit/d7733ecb8cefd4f46b082145e7dad84b3d675389)  
+> Date: Sat, 2 Apr 2022 21:52:08 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d7733ecb8cefd4f46b082145e7dad84b3d675389)
+[//]: # (START_SECTION 4d4db52fab645f470698e36b2c3580dcd6f7ad8f)
+### Update main.tf
+
+> Commit: [4d4db52fab645f470698e36b2c3580dcd6f7ad8f](https://github.com/dOpensource/dsiprouter/commit/4d4db52fab645f470698e36b2c3580dcd6f7ad8f)  
+> Date: Fri, 1 Apr 2022 21:59:57 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4d4db52fab645f470698e36b2c3580dcd6f7ad8f)
+[//]: # (START_SECTION e2eb9514adda76bfa18b23a58038507d9030f5c5)
+### Update main.tf
+
+> Commit: [e2eb9514adda76bfa18b23a58038507d9030f5c5](https://github.com/dOpensource/dsiprouter/commit/e2eb9514adda76bfa18b23a58038507d9030f5c5)  
+> Date: Fri, 1 Apr 2022 21:59:38 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e2eb9514adda76bfa18b23a58038507d9030f5c5)
+[//]: # (START_SECTION c2a9e73dd7a7fb9a04aee38b259f189f5d0bc610)
+### Update main.tf
+
+> Commit: [c2a9e73dd7a7fb9a04aee38b259f189f5d0bc610](https://github.com/dOpensource/dsiprouter/commit/c2a9e73dd7a7fb9a04aee38b259f189f5d0bc610)  
+> Date: Fri, 1 Apr 2022 21:53:19 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c2a9e73dd7a7fb9a04aee38b259f189f5d0bc610)
+[//]: # (START_SECTION de7ec6b999347b86b156ef40014234372912dfac)
+### Added support for Transnexus
+
+> Commit: [de7ec6b999347b86b156ef40014234372912dfac](https://github.com/dOpensource/dsiprouter/commit/de7ec6b999347b86b156ef40014234372912dfac)  
+> Date: Tue, 29 Mar 2022 07:11:02 +0000  
+> Author: root (root@kam-test.us-central1-a.c.detection-calls.internal)  
+> Committer: root (root@kam-test.us-central1-a.c.detection-calls.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION de7ec6b999347b86b156ef40014234372912dfac)
+[//]: # (START_SECTION f8fca5557f1734f828e5f8f876a4f200c7993d37)
+### Updated the CarrierGroup API to support updates via PUT
+
+> Commit: [f8fca5557f1734f828e5f8f876a4f200c7993d37](https://github.com/dOpensource/dsiprouter/commit/f8fca5557f1734f828e5f8f876a4f200c7993d37)  
+> Date: Tue, 29 Mar 2022 02:36:32 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f8fca5557f1734f828e5f8f876a4f200c7993d37)
+[//]: # (START_SECTION f09171cd444f0f5b0c5570d484f18526283e6cdc)
+### Fixed the CarrierGroup Add model - The authentication for the CarrierGroup is delegated to the Plugin so the CarrierGroup creation is not responsible for setting up IP Auth of UserPassword auth
+
+> Commit: [f09171cd444f0f5b0c5570d484f18526283e6cdc](https://github.com/dOpensource/dsiprouter/commit/f09171cd444f0f5b0c5570d484f18526283e6cdc)  
+> Date: Sun, 20 Mar 2022 22:18:43 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f09171cd444f0f5b0c5570d484f18526283e6cdc)
+[//]: # (START_SECTION 4c0d9220766f3bc7794972a5796ad898ec6ad879)
+### Fixed a JavaScript issue with the CarrierGroup UI
+
+> Commit: [4c0d9220766f3bc7794972a5796ad898ec6ad879](https://github.com/dOpensource/dsiprouter/commit/4c0d9220766f3bc7794972a5796ad898ec6ad879)  
+> Date: Sun, 20 Mar 2022 16:03:30 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4c0d9220766f3bc7794972a5796ad898ec6ad879)
+[//]: # (START_SECTION a3b873763dc004f2739099f55161d3e3a5ec671c)
+### Fixed the CarrierGroup API - Endpoints can now be created during the inital creation of a CarrierGroup - A Global Strip and Prefix can be set and applied during the initial configuration of a CarrierGroup - Fixed a bug that prevented the Username/Password auth from working - Fixed an issue with the Plugin architecture that caused an error when the Plugin name was not specified when the plugin stanza was present
+
+> Commit: [a3b873763dc004f2739099f55161d3e3a5ec671c](https://github.com/dOpensource/dsiprouter/commit/a3b873763dc004f2739099f55161d3e3a5ec671c)  
+> Date: Sat, 19 Mar 2022 23:58:32 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a3b873763dc004f2739099f55161d3e3a5ec671c)
+[//]: # (START_SECTION 6b717430ef4cc75169b4de8573ba9222dfa32d13)
+### Backported PJSIP Fix
+
+> Commit: [6b717430ef4cc75169b4de8573ba9222dfa32d13](https://github.com/dOpensource/dsiprouter/commit/6b717430ef4cc75169b4de8573ba9222dfa32d13)  
+> Date: Wed, 9 Mar 2022 08:37:16 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6b717430ef4cc75169b4de8573ba9222dfa32d13)
+[//]: # (START_SECTION 11659a3b1a6d9c951a61c812e63d73de4a264270)
+### Backporting Fix for #421 Microsoft Teams Silent Ringback
+
+> Commit: [11659a3b1a6d9c951a61c812e63d73de4a264270](https://github.com/dOpensource/dsiprouter/commit/11659a3b1a6d9c951a61c812e63d73de4a264270)  
+> Date: Tue, 22 Feb 2022 23:08:22 -0800  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 11659a3b1a6d9c951a61c812e63d73de4a264270)
+[//]: # (START_SECTION 4ded45556e2c896781186e19c843cc298e0cf140)
+### Fix for #421 Microsoft Teams Silent Ringback
+
+> Commit: [4ded45556e2c896781186e19c843cc298e0cf140](https://github.com/dOpensource/dsiprouter/commit/4ded45556e2c896781186e19c843cc298e0cf140)  
+> Date: Tue, 22 Feb 2022 22:52:19 -0800  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4ded45556e2c896781186e19c843cc298e0cf140)
+[//]: # (START_SECTION a7a3355724e86989dbe1d985a63274ccf29251f2)
+### Fix for #421 Microsoft Teams Silent Ringback
+
+> Commit: [a7a3355724e86989dbe1d985a63274ccf29251f2](https://github.com/dOpensource/dsiprouter/commit/a7a3355724e86989dbe1d985a63274ccf29251f2)  
+> Date: Tue, 22 Feb 2022 22:42:04 -0800  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a7a3355724e86989dbe1d985a63274ccf29251f2)
+[//]: # (START_SECTION de781ab923da6bea54d6e3998d63fd8ceac1291d)
+### fix #418 Error itsdangerous== 2.1.0 version with Flask==1.1.2
+
+> Commit: [de781ab923da6bea54d6e3998d63fd8ceac1291d](https://github.com/dOpensource/dsiprouter/commit/de781ab923da6bea54d6e3998d63fd8ceac1291d)  
+> Date: Mon, 21 Feb 2022 13:39:03 -0300  
+> Author: Asiel Lara (asiel.lb@stic.cl)  
+> Committer: Asiel Lara (asiel.lb@stic.cl)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION de781ab923da6bea54d6e3998d63fd8ceac1291d)
+[//]: # (START_SECTION 74b38a9eaa123bb6e97aebf90d2d186f27bc6a4e)
+### Fixed MSTeams Issue - The ACK from the PSTN was not reaching Microsoft Teams
+
+> Commit: [74b38a9eaa123bb6e97aebf90d2d186f27bc6a4e](https://github.com/dOpensource/dsiprouter/commit/74b38a9eaa123bb6e97aebf90d2d186f27bc6a4e)  
+> Date: Mon, 21 Feb 2022 04:40:09 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 74b38a9eaa123bb6e97aebf90d2d186f27bc6a4e)
+[//]: # (START_SECTION 0303d05981d4e72ff831f582e0cf232ec804d2ae)
+### Updated the version to reflect v0.643
+
+> Commit: [0303d05981d4e72ff831f582e0cf232ec804d2ae](https://github.com/dOpensource/dsiprouter/commit/0303d05981d4e72ff831f582e0cf232ec804d2ae)  
+> Date: Sat, 12 Feb 2022 02:53:20 +0000  
+> Author: root (root@dev-dsip-v0.6430)  
+> Committer: root (root@dev-dsip-v0.6430)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0303d05981d4e72ff831f582e0cf232ec804d2ae)
+[//]: # (START_SECTION 2d053086bfd08f11997514781f8949c9fb4a017b)
+### Update api_routes.py
+
+> Commit: [2d053086bfd08f11997514781f8949c9fb4a017b](https://github.com/dOpensource/dsiprouter/commit/2d053086bfd08f11997514781f8949c9fb4a017b)  
+> Date: Tue, 1 Feb 2022 19:02:17 +0100  
+> Author: TheGolg (98840856+TheGolg@users.noreply.github.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- fix bug to upload certificates via post
+
+
+---
+
+[//]: # (END_SECTION 2d053086bfd08f11997514781f8949c9fb4a017b)
+[//]: # (START_SECTION 467e0353d1ed92c2cdd297b4070e833f8f269313)
+### Updates: - Changed the max_expires header so that the SIP UA and SIP UC controls this without having a max of 1 hour - Fixed the UI so that CarrierGroup UI works with the new CarrierGroup API
+
+> Commit: [467e0353d1ed92c2cdd297b4070e833f8f269313](https://github.com/dOpensource/dsiprouter/commit/467e0353d1ed92c2cdd297b4070e833f8f269313)  
+> Date: Fri, 21 Jan 2022 18:34:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 467e0353d1ed92c2cdd297b4070e833f8f269313)
+[//]: # (START_SECTION 1398c9f37f6e2aee88fd6d62ab0a1b50ca4529d9)
+### Update terraform.tfvars.sample
+
+> Commit: [1398c9f37f6e2aee88fd6d62ab0a1b50ca4529d9](https://github.com/dOpensource/dsiprouter/commit/1398c9f37f6e2aee88fd6d62ab0a1b50ca4529d9)  
+> Date: Sat, 15 Jan 2022 07:47:37 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1398c9f37f6e2aee88fd6d62ab0a1b50ca4529d9)
+[//]: # (START_SECTION ffa050d4259d859128d75f34368e0430005967a0)
+### Updated pvt_key_path variable
+
+> Commit: [ffa050d4259d859128d75f34368e0430005967a0](https://github.com/dOpensource/dsiprouter/commit/ffa050d4259d859128d75f34368e0430005967a0)  
+> Date: Sun, 9 Jan 2022 23:49:28 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ffa050d4259d859128d75f34368e0430005967a0)
+[//]: # (START_SECTION 868444e2dcfad98ad93fba8bafced1bb0428ae39)
+### Updated variables
+
+> Commit: [868444e2dcfad98ad93fba8bafced1bb0428ae39](https://github.com/dOpensource/dsiprouter/commit/868444e2dcfad98ad93fba8bafced1bb0428ae39)  
+> Date: Sun, 9 Jan 2022 23:42:20 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 868444e2dcfad98ad93fba8bafced1bb0428ae39)
+[//]: # (START_SECTION 6f7e10ef918323380c8f2f1147c443608206d92d)
+### Fixed the CarrierGroup UI to allow it to work properly when a carrier plugin is not used
+
+> Commit: [6f7e10ef918323380c8f2f1147c443608206d92d](https://github.com/dOpensource/dsiprouter/commit/6f7e10ef918323380c8f2f1147c443608206d92d)  
+> Date: Sun, 9 Jan 2022 22:59:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6f7e10ef918323380c8f2f1147c443608206d92d)
+[//]: # (START_SECTION d098638cebee6123d756893963770e245dc96d6a)
+### Fixed Carriergroup API - Added exception handling that prevents a carriergroup from being created if the plugin doesn't work
+
+> Commit: [d098638cebee6123d756893963770e245dc96d6a](https://github.com/dOpensource/dsiprouter/commit/d098638cebee6123d756893963770e245dc96d6a)  
+> Date: Sun, 9 Jan 2022 03:40:52 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d098638cebee6123d756893963770e245dc96d6a)
+[//]: # (START_SECTION 60afad7298ae532c4d51a6214fe118b0c0442a0a)
+### Added support for the Carriergroup API Issue #413
+
+> Commit: [60afad7298ae532c4d51a6214fe118b0c0442a0a](https://github.com/dOpensource/dsiprouter/commit/60afad7298ae532c4d51a6214fe118b0c0442a0a)  
+> Date: Sat, 8 Jan 2022 23:36:20 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 60afad7298ae532c4d51a6214fe118b0c0442a0a)
+[//]: # (START_SECTION dfafb9953c70e936ccb9a3c6772993d43c9be4cb)
+### Added support to deal with Zoiper Softphone on Android Fixes #411
+
+> Commit: [dfafb9953c70e936ccb9a3c6772993d43c9be4cb](https://github.com/dOpensource/dsiprouter/commit/dfafb9953c70e936ccb9a3c6772993d43c9be4cb)  
+> Date: Thu, 30 Dec 2021 15:41:02 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION dfafb9953c70e936ccb9a3c6772993d43c9be4cb)
+[//]: # (START_SECTION f5ba6be88f6da2d66c52bb039f224b274cb68ca8)
+### Update use-cases.rst
+
+> Commit: [f5ba6be88f6da2d66c52bb039f224b274cb68ca8](https://github.com/dOpensource/dsiprouter/commit/f5ba6be88f6da2d66c52bb039f224b274cb68ca8)  
+> Date: Wed, 29 Dec 2021 17:05:24 +0300  
+> Author: James Peru Mmbono (jmsperu@gmail.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Corrected spelling from Authenication to Authentication
+
+
+---
+
+[//]: # (END_SECTION f5ba6be88f6da2d66c52bb039f224b274cb68ca8)
+[//]: # (START_SECTION fe8e22a60b89b11d803880aba12a3bbfd43d37a7)
+### Updated carriergroups UI to work with the new API
+
+> Commit: [fe8e22a60b89b11d803880aba12a3bbfd43d37a7](https://github.com/dOpensource/dsiprouter/commit/fe8e22a60b89b11d803880aba12a3bbfd43d37a7)  
+> Date: Mon, 22 Nov 2021 02:41:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fe8e22a60b89b11d803880aba12a3bbfd43d37a7)
+[//]: # (START_SECTION 197eb7aa1b572796a9a1b9fc5d8e8bf52c85684b)
+### Carriergroup Enhancements - Created a module to isolate logic for carriergroups - Added a plugin architecture for carriers - Added support for the carrier plugin architecture to the UI
+
+> Commit: [197eb7aa1b572796a9a1b9fc5d8e8bf52c85684b](https://github.com/dOpensource/dsiprouter/commit/197eb7aa1b572796a9a1b9fc5d8e8bf52c85684b)  
+> Date: Fri, 19 Nov 2021 04:12:02 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 197eb7aa1b572796a9a1b9fc5d8e8bf52c85684b)
+[//]: # (START_SECTION 5f442e34c294153e1db463c432a0d73464aca3f2)
+### Integrated new carriergroup API with Twilio Plugin
+
+> Commit: [5f442e34c294153e1db463c432a0d73464aca3f2](https://github.com/dOpensource/dsiprouter/commit/5f442e34c294153e1db463c432a0d73464aca3f2)  
+> Date: Sun, 31 Oct 2021 17:30:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5f442e34c294153e1db463c432a0d73464aca3f2)
+[//]: # (START_SECTION 54d48156e8c9953a74121afa7173cde21f3f466c)
+### Initial commit of the CarrierGroups API with Carrier Plugin Architecture
+
+> Commit: [54d48156e8c9953a74121afa7173cde21f3f466c](https://github.com/dOpensource/dsiprouter/commit/54d48156e8c9953a74121afa7173cde21f3f466c)  
+> Date: Sun, 24 Oct 2021 22:54:42 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 54d48156e8c9953a74121afa7173cde21f3f466c)
+[//]: # (START_SECTION f00b06f414e6708f9381a16a2db46fe4e60e4ab8)
+### Fixed an issue with route headers on ACK and BYE's
+
+> Commit: [f00b06f414e6708f9381a16a2db46fe4e60e4ab8](https://github.com/dOpensource/dsiprouter/commit/f00b06f414e6708f9381a16a2db46fe4e60e4ab8)  
+> Date: Sun, 17 Oct 2021 15:44:01 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f00b06f414e6708f9381a16a2db46fe4e60e4ab8)
+[//]: # (START_SECTION d8fbb36687663b2b5fd474043b63732bae8980fd)
+### Updated the version to v0.642
+
+> Commit: [d8fbb36687663b2b5fd474043b63732bae8980fd](https://github.com/dOpensource/dsiprouter/commit/d8fbb36687663b2b5fd474043b63732bae8980fd)  
+> Date: Mon, 27 Sep 2021 03:33:23 +0000  
+> Author: Mack hendricks (mack@dopensource.com)  
+> Committer: Mack hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d8fbb36687663b2b5fd474043b63732bae8980fd)
+[//]: # (START_SECTION 28a6cec3232c02ad1a55b856fb667a17f16e157a)
+### UI Fixes - Login screen looks correct on a mobile device - Dashboard screen displays the widgets vertically on a mobile device
+
+> Commit: [28a6cec3232c02ad1a55b856fb667a17f16e157a](https://github.com/dOpensource/dsiprouter/commit/28a6cec3232c02ad1a55b856fb667a17f16e157a)  
+> Date: Mon, 27 Sep 2021 03:29:09 +0000  
+> Author: Mack hendricks (mack@dopensource.com)  
+> Committer: Mack hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 28a6cec3232c02ad1a55b856fb667a17f16e157a)
+[//]: # (START_SECTION 660a32a135b8bac31aa59c495ae68f9467193bb4)
+### Fixes - Looping ACK when in SERVERNAT mode - Added support for International Emergency Numbers and US National Suicide prevention - Created a generic test for removing the Route header when it matches the ip external ip address of dSIP
+
+> Commit: [660a32a135b8bac31aa59c495ae68f9467193bb4](https://github.com/dOpensource/dsiprouter/commit/660a32a135b8bac31aa59c495ae68f9467193bb4)  
+> Date: Fri, 24 Sep 2021 15:03:57 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 660a32a135b8bac31aa59c495ae68f9467193bb4)
+[//]: # (START_SECTION 87d4aed54ceb44e31c22a0cf0e6902d3a09ec84e)
+### Fixed Issues: - The SDP was not being written correctly when in a Servernat configuration - The Route header from the carrier in the WITHINDLG was configued to track the ip address of the selected media server and route the call back correctly
+
+> Commit: [87d4aed54ceb44e31c22a0cf0e6902d3a09ec84e](https://github.com/dOpensource/dsiprouter/commit/87d4aed54ceb44e31c22a0cf0e6902d3a09ec84e)  
+> Date: Tue, 21 Sep 2021 06:38:07 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 87d4aed54ceb44e31c22a0cf0e6902d3a09ec84e)
+[//]: # (START_SECTION 323f38bf35f4078e9896a8f01a0535832c68ecaa)
+### Fixes Issue #400
+
+> Commit: [323f38bf35f4078e9896a8f01a0535832c68ecaa](https://github.com/dOpensource/dsiprouter/commit/323f38bf35f4078e9896a8f01a0535832c68ecaa)  
+> Date: Sun, 29 Aug 2021 16:18:33 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 323f38bf35f4078e9896a8f01a0535832c68ecaa)
+[//]: # (START_SECTION e8f4ae98679f93c18759fb23153dcc61060356cc)
+### Fix up formatting errors in MS Teams Docs, #388 and #395
+
+> Commit: [e8f4ae98679f93c18759fb23153dcc61060356cc](https://github.com/dOpensource/dsiprouter/commit/e8f4ae98679f93c18759fb23153dcc61060356cc)  
+> Date: Sat, 17 Jul 2021 22:00:51 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e8f4ae98679f93c18759fb23153dcc61060356cc)
+[//]: # (START_SECTION cd7860138957fad20e630957d3352d31166c42b6)
+### MediaServer API - A tab spacing caused the GET request not to be executed when not in DEBUG mode
+
+> Commit: [cd7860138957fad20e630957d3352d31166c42b6](https://github.com/dOpensource/dsiprouter/commit/cd7860138957fad20e630957d3352d31166c42b6)  
+> Date: Fri, 25 Jun 2021 20:21:51 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cd7860138957fad20e630957d3352d31166c42b6)
+[//]: # (START_SECTION 8049a7005ab453e7d10c9f5cdd1e0831ed5374b7)
+### Update supported OS list and centos7 reference per pull request #388
+
+> Commit: [8049a7005ab453e7d10c9f5cdd1e0831ed5374b7](https://github.com/dOpensource/dsiprouter/commit/8049a7005ab453e7d10c9f5cdd1e0831ed5374b7)  
+> Date: Tue, 22 Jun 2021 14:11:03 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8049a7005ab453e7d10c9f5cdd1e0831ed5374b7)
+[//]: # (START_SECTION 9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c)
+### Add references to PowerShell Script sources
+
+> Commit: [9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c](https://github.com/dOpensource/dsiprouter/commit/9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c)  
+> Date: Sun, 13 Jun 2021 15:05:20 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9bd7986c4952c2f473c2fae2eee8ff0aaea06a4c)
+[//]: # (START_SECTION 9355e5408640fa412254ed37ce3de0789cfcbade)
+### Added Direct Routing use case
+
+> Commit: [9355e5408640fa412254ed37ce3de0789cfcbade](https://github.com/dOpensource/dsiprouter/commit/9355e5408640fa412254ed37ce3de0789cfcbade)  
+> Date: Sun, 13 Jun 2021 15:02:10 -0700  
+> Author: Dan Ryan (dan@acceleratenetworks.com)  
+> Committer: Dan Ryan (dan@acceleratenetworks.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9355e5408640fa412254ed37ce3de0789cfcbade)
+[//]: # (START_SECTION 24f390f44aec775aceef7578ff75809c03142b39)
+### Remove CentOS 7 Duplicate
+
+> Commit: [24f390f44aec775aceef7578ff75809c03142b39](https://github.com/dOpensource/dsiprouter/commit/24f390f44aec775aceef7578ff75809c03142b39)  
+> Date: Sun, 13 Jun 2021 13:11:35 -0700  
+> Author: Dan (dan@acceleratenetworks.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- This page looks to be an old duplicate not used in the published ReadTheDocs
+
+
+---
+
+[//]: # (END_SECTION 24f390f44aec775aceef7578ff75809c03142b39)
+[//]: # (START_SECTION f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d)
+### Add Debian 10 install section
+
+> Commit: [f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d](https://github.com/dOpensource/dsiprouter/commit/f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d)  
+> Date: Sun, 13 Jun 2021 13:06:25 -0700  
+> Author: Dan (dan@acceleratenetworks.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f5017f5afa9e2f2bfea9fa9fb20ee8989a51ab2d)
+[//]: # (START_SECTION 1254e8e3d5cd29b3ae67ff993a0c110e76fac270)
+### Updated installation documentation for 0.641 and master
+
+> Commit: [1254e8e3d5cd29b3ae67ff993a0c110e76fac270](https://github.com/dOpensource/dsiprouter/commit/1254e8e3d5cd29b3ae67ff993a0c110e76fac270)  
+> Date: Sun, 13 Jun 2021 12:52:21 -0700  
+> Author: Dan (dan@acceleratenetworks.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Added Debian 10.9 installation instructions reference
+
+
+---
+
+[//]: # (END_SECTION 1254e8e3d5cd29b3ae67ff993a0c110e76fac270)
+[//]: # (START_SECTION a8c0496fa2525513d8cf81668c57d783eee299d7)
+### Allow the installer to continue working if the repo public key is not available
+
+> Commit: [a8c0496fa2525513d8cf81668c57d783eee299d7](https://github.com/dOpensource/dsiprouter/commit/a8c0496fa2525513d8cf81668c57d783eee299d7)  
+> Date: Thu, 27 May 2021 05:21:42 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a8c0496fa2525513d8cf81668c57d783eee299d7)
+[//]: # (START_SECTION 5713f323069a50de8d0dce8bd2953e1d142b46bf)
+### Pinned Flask to 1.1.2. Fixes #376
+
+> Commit: [5713f323069a50de8d0dce8bd2953e1d142b46bf](https://github.com/dOpensource/dsiprouter/commit/5713f323069a50de8d0dce8bd2953e1d142b46bf)  
+> Date: Thu, 13 May 2021 10:38:37 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5713f323069a50de8d0dce8bd2953e1d142b46bf)
+[//]: # (START_SECTION cdecaf5d747f681ee6addf2b2d6e58479e36da91)
+### Fixed issue with CDR's not working
+
+> Commit: [cdecaf5d747f681ee6addf2b2d6e58479e36da91](https://github.com/dOpensource/dsiprouter/commit/cdecaf5d747f681ee6addf2b2d6e58479e36da91)  
+> Date: Wed, 31 Mar 2021 15:00:44 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cdecaf5d747f681ee6addf2b2d6e58479e36da91)
+[//]: # (START_SECTION ec4219de84f9d346f082fc668d5979aba519c047)
+### Fixed issue that prevented CDR's from being created when loose routing is not being used
+
+> Commit: [ec4219de84f9d346f082fc668d5979aba519c047](https://github.com/dOpensource/dsiprouter/commit/ec4219de84f9d346f082fc668d5979aba519c047)  
+> Date: Tue, 30 Mar 2021 23:59:25 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ec4219de84f9d346f082fc668d5979aba519c047)
+[//]: # (START_SECTION d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f)
+### Fixed Endpoint Group UI Bug - Removed entries from the dispatcher table when the weight was 0
+
+> Commit: [d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f](https://github.com/dOpensource/dsiprouter/commit/d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f)  
+> Date: Thu, 11 Mar 2021 19:38:16 +0000  
+> Author: root (root@ip-172-31-5-106.ec2.internal)  
+> Committer: root (root@ip-172-31-5-106.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d7d03e0bf8481ce48fc6bc5c8d7c1b56fc46575f)
+[//]: # (START_SECTION 6c7532ccec112d6faf8ce47f1d89151e4a46f316)
+### Turned SETTINGS.DEBUG to False
+
+> Commit: [6c7532ccec112d6faf8ce47f1d89151e4a46f316](https://github.com/dOpensource/dsiprouter/commit/6c7532ccec112d6faf8ce47f1d89151e4a46f316)  
+> Date: Sun, 21 Feb 2021 17:13:01 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6c7532ccec112d6faf8ce47f1d89151e4a46f316)
+[//]: # (START_SECTION 1fb969abeb8eefc633be50e11e3905d688526cdf)
+### Fixed the carrier group endpoints - Some of the endpoints were not tied to the correct carrier group
+
+> Commit: [1fb969abeb8eefc633be50e11e3905d688526cdf](https://github.com/dOpensource/dsiprouter/commit/1fb969abeb8eefc633be50e11e3905d688526cdf)  
+> Date: Sat, 20 Feb 2021 23:31:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1fb969abeb8eefc633be50e11e3905d688526cdf)
+[//]: # (START_SECTION 64f141ba6ced44e6a0b9f1b1680a8edb5755415f)
+### Fixed the carrier group endpoints - Some of the endpoints were not tied to the correct carrier group
+
+> Commit: [64f141ba6ced44e6a0b9f1b1680a8edb5755415f](https://github.com/dOpensource/dsiprouter/commit/64f141ba6ced44e6a0b9f1b1680a8edb5755415f)  
+> Date: Sat, 20 Feb 2021 23:28:35 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 64f141ba6ced44e6a0b9f1b1680a8edb5755415f)
+[//]: # (START_SECTION 813dcdc3199fa5157a3b4a83dd52580c5570e659)
+### Updated the lease API
+
+> Commit: [813dcdc3199fa5157a3b4a83dd52580c5570e659](https://github.com/dOpensource/dsiprouter/commit/813dcdc3199fa5157a3b4a83dd52580c5570e659)  
+> Date: Sat, 20 Feb 2021 19:27:22 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 813dcdc3199fa5157a3b4a83dd52580c5570e659)
+[//]: # (START_SECTION a77ffb5e2988d7ebb01f59464707cebf33a0adb4)
+### Fixed issue with Record Routes so that a single NLB can be used
+
+> Commit: [a77ffb5e2988d7ebb01f59464707cebf33a0adb4](https://github.com/dOpensource/dsiprouter/commit/a77ffb5e2988d7ebb01f59464707cebf33a0adb4)  
+> Date: Tue, 16 Feb 2021 19:38:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a77ffb5e2988d7ebb01f59464707cebf33a0adb4)
+[//]: # (START_SECTION 863343903605d610f5b42f72805f993c401cc862)
+### Fixed the crontab
+
+> Commit: [863343903605d610f5b42f72805f993c401cc862](https://github.com/dOpensource/dsiprouter/commit/863343903605d610f5b42f72805f993c401cc862)  
+> Date: Tue, 16 Feb 2021 19:26:31 +0000  
+> Author: root (root@ip-172-31-8-204.ec2.internal)  
+> Committer: root (root@ip-172-31-8-204.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 863343903605d610f5b42f72805f993c401cc862)
+[//]: # (START_SECTION 26f16646507d81a840cce049069872c431905ca9)
+### Added support for writing multiple record routes for an INBOUND and OUTBOUND load balancer
+
+> Commit: [26f16646507d81a840cce049069872c431905ca9](https://github.com/dOpensource/dsiprouter/commit/26f16646507d81a840cce049069872c431905ca9)  
+> Date: Fri, 12 Feb 2021 17:45:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 26f16646507d81a840cce049069872c431905ca9)
+[//]: # (START_SECTION 3b41901eb9baad1139d245b6220fb502c7c546ca)
+### Added support for creating the Kamailio DB user
+
+> Commit: [3b41901eb9baad1139d245b6220fb502c7c546ca](https://github.com/dOpensource/dsiprouter/commit/3b41901eb9baad1139d245b6220fb502c7c546ca)  
+> Date: Fri, 12 Feb 2021 00:21:07 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3b41901eb9baad1139d245b6220fb502c7c546ca)
+[//]: # (START_SECTION e44d74fb9848cb5812512da7e216e73c6bbbdad3)
+### Added support for creating the Kamailio DB user
+
+> Commit: [e44d74fb9848cb5812512da7e216e73c6bbbdad3](https://github.com/dOpensource/dsiprouter/commit/e44d74fb9848cb5812512da7e216e73c6bbbdad3)  
+> Date: Fri, 12 Feb 2021 00:07:27 +0000  
+> Author: root (root@demo.dsiprouter.org)  
+> Committer: root (root@demo.dsiprouter.org)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e44d74fb9848cb5812512da7e216e73c6bbbdad3)
+[//]: # (START_SECTION 9203d051d69e9176f2bb659c70c29cceab90b084)
+### Fixes: - Documentation generation - Moved the Message of The Day creation to after dSIP is started the first time
+
+> Commit: [9203d051d69e9176f2bb659c70c29cceab90b084](https://github.com/dOpensource/dsiprouter/commit/9203d051d69e9176f2bb659c70c29cceab90b084)  
+> Date: Wed, 10 Feb 2021 17:31:40 +0000  
+> Author: root (root@ip-172-31-58-119.ec2.internal)  
+> Committer: root (root@ip-172-31-58-119.ec2.internal)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9203d051d69e9176f2bb659c70c29cceab90b084)
+[//]: # (START_SECTION 7e4b557bccfd166ac746c73e98e7c76e6c2c9d57)
 ### Fix Ordering Issues
 
-> Commit: [23b0096d55705e3810fc9c0f71971e2ec35a07f1](https://github.com/dOpensource/dsiprouter/commit/23b0096d55705e3810fc9c0f71971e2ec35a07f1)  
+> Commit: [7e4b557bccfd166ac746c73e98e7c76e6c2c9d57](https://github.com/dOpensource/dsiprouter/commit/7e4b557bccfd166ac746c73e98e7c76e6c2c9d57)  
 > Date: Wed, 10 Feb 2021 12:00:19 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -1910,7 +3699,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 23b0096d55705e3810fc9c0f71971e2ec35a07f1)
+[//]: # (END_SECTION 7e4b557bccfd166ac746c73e98e7c76e6c2c9d57)
 [//]: # (START_SECTION 6757683347f947e730ff668bac4a3d578b8044db)
 ### Add Cryptography Conflict Resolution In Pre-Commit Hook
 
@@ -1986,6 +3775,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 01042e110ecc152ce807322aeb53baba5c06bc2f)
+[//]: # (START_SECTION a495613e9c6d52bdf921c9d005d4b7206ed6feb2)
+### Fixed WebRTC Support - Added a TLS server certificate settings for the WebRTC port, which is 4443 - Update the Kam configuration script to update the settings
+
+> Commit: [a495613e9c6d52bdf921c9d005d4b7206ed6feb2](https://github.com/dOpensource/dsiprouter/commit/a495613e9c6d52bdf921c9d005d4b7206ed6feb2)  
+> Date: Wed, 10 Feb 2021 02:23:23 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a495613e9c6d52bdf921c9d005d4b7206ed6feb2)
+[//]: # (START_SECTION f59ff1f05c8742ceabc0903bf453732976268ca2)
+### Added support for setting the language for the domain
+
+> Commit: [f59ff1f05c8742ceabc0903bf453732976268ca2](https://github.com/dOpensource/dsiprouter/commit/f59ff1f05c8742ceabc0903bf453732976268ca2)  
+> Date: Wed, 10 Feb 2021 01:30:18 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f59ff1f05c8742ceabc0903bf453732976268ca2)
 [//]: # (START_SECTION 500a9c4cbe3531658e7b6fad0c9298dc38e504ca)
 ### Fix RTPEngine Errors When Not Installed
 
@@ -3421,6 +5240,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 085931328e9be893c65b674c9e491924afa88ca4)
+[//]: # (START_SECTION c569928e35f25ab269b0aeab25423093f9db96b5)
+### Delete requirements.txt
+
+> Commit: [c569928e35f25ab269b0aeab25423093f9db96b5](https://github.com/dOpensource/dsiprouter/commit/c569928e35f25ab269b0aeab25423093f9db96b5)  
+> Date: Thu, 3 Dec 2020 18:24:16 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c569928e35f25ab269b0aeab25423093f9db96b5)
+[//]: # (START_SECTION 195bd8e7cc20468054182bb08fac2e80b80a0bea)
+### Create requirements.txt
+
+> Commit: [195bd8e7cc20468054182bb08fac2e80b80a0bea](https://github.com/dOpensource/dsiprouter/commit/195bd8e7cc20468054182bb08fac2e80b80a0bea)  
+> Date: Thu, 3 Dec 2020 18:23:23 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 195bd8e7cc20468054182bb08fac2e80b80a0bea)
 [//]: # (START_SECTION 14d26b51fa983c686b95a60afdfb145ea61c1bef)
 ### Update .readthedocs.yml
 

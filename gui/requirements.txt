@@ -8,8 +8,11 @@ docutils<0.17,>=0.12
 Flask==1.1.2
 Flask_Script
 Flask_WTF
-itsdangerous
+itsdangerous==2.0.1
+Jinja2==3.0.3
 mysqlclient
+MySQL-python
+pem
 psycopg2
 psycopg2_binary
 pycryptodome
@@ -19,8 +22,9 @@ python_crontab
 pytz
 recommonmark
 requests
-Sphinx==3.5.4
+sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme
 SQLAlchemy
-Werkzeug
+twilio
+Werkzeug==2.0.2

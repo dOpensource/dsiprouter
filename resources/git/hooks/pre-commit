@@ -29,9 +29,14 @@ EXCLUDE_DIRS=( )
 # destination file
 REQUIREMENTS_FILE="requirements.txt"
 # pipreqs only catches stdlib libraries
-INCLUDE_LIBS=('cryptography>=3.3,<3.4' 'mysqlclient' 'docker' 'certbot' 'sphinx' 'recommonmark' 'sphinxcontrib-httpdomain' 'sphinx-rtd-theme')
+INCLUDE_LIBS=(
+	'cryptography>=3.3,<3.4' 'Jinja2==3.0.3' 'Werkzeug==2.0.2' 'itsdangerous==2.0.1' 'Flask==1.1.2' 'docutils<0.17,>=0.12'
+	'mysqlclient' 'docker' 'certbot' 'sphinx' 'recommonmark' 'sphinxcontrib-httpdomain' 'sphinx-rtd-theme' 'pem' 'twilio'
+)
 # excludes for conflicting libs
-EXCLUDE_LIBS=('cryptography' 'docker_py' 'pyspark' 'acme.hello' 'josepy')
+EXCLUDE_LIBS=(
+	'cryptography' 'Jinja2' 'Werkzeug' 'itsdangerous' 'Flask' 'docker_py' 'pyspark' 'acme.hello' 'josepy'
+)
 
 
 # utility function
@@ -78,9 +83,9 @@ createRequirements() {
         OUT_FILE="${PYTHON_PROJECT}/${REQUIREMENTS_FILE}"
 
         if (( ${#EXCLUDE_LIBS[@]} != 0 )); then
-            LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --print ${EXCLUDE_ARGS} ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | cut -d '=' -f 1 | grep -E -v $(joinwith '^' '|' '$' ${EXCLUDE_LIBS[@]}); exit ${PIPESTATUS[0]};) )
+            LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --mode no-pin --print ${EXCLUDE_ARGS} ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | grep -E -v $(joinwith '^' '|' '$' ${EXCLUDE_LIBS[@]}); exit ${PIPESTATUS[0]};) )
         else
-            LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --print ${EXCLUDE_ARGS} ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d' | cut -d '=' -f 1; exit ${PIPESTATUS[0]};) )
+            LIBS=( ${INCLUDE_LIBS[@]} $(pipreqs --mode no-pin --print ${EXCLUDE_ARGS} ${PYTHON_PROJECT} 2>/dev/null | sed -r '/^\s*$/d'; exit ${PIPESTATUS[0]};) )
         fi
 
         # make sure pipreqs didn't fail
