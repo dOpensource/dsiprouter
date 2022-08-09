@@ -24,6 +24,10 @@ while (( $# > 0 )); do
             BUILD_OPTIONS=$(echo "$1" | cut -d '=' -f 2)
             shift
             ;;
+        *)
+            echo "[ERROR] argument $ARG is not valid"
+            exit 1
+            ;;
     esac
 done
 

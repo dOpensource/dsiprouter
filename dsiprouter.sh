@@ -1267,7 +1267,7 @@ function installDsiprouter() {
     configurePythonSettings
     ${DSIP_PROJECT_DIR}/dsiprouter/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
 
-	if [ $? -ne 0 ]; then
+	if (( $? != 0 )); then
 	    printerr "dSIPRouter install failed"
 	    cleanupAndExit 1
 	else
@@ -1401,8 +1401,11 @@ EOF
     # add dependency on dsip-init service in startup boot order
     addDependsOnInit "dsiprouter.service"
 
-    # Restart dSIPRouter and Kamailio with new configurations
-    if [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]; then
+    # Restart dSIPRouter / nginx / Kamailio with new configurations
+    if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled ]]; then
+        systemctl restart nginx
+    fi
+    if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled ]]; then
     	systemctl restart kamailio
     fi
     systemctl restart dsiprouter
@@ -2400,7 +2403,7 @@ function createInitService() {
             ;;
     esac
 
-    (cat << 'EOF'
+    (cat << EOF
 [Unit]
 Description=dSIPRouter Init Service
 Requires=network.target

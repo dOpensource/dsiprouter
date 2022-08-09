@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-c42053e08d736c1941399f981a6d69403eb678fc
+2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8
+96221e574830aea41cfc23c9237cbc6a336a8e95
 ccea19047f2b1959fe0bbc0e6cf70a66576e5d15
 9f3515967f6a05789cce7aba8b03bb107ae5582f
 99fed4a8840a27dfe1e4de27b95374787874f71f
@@ -2006,10 +2007,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION c42053e08d736c1941399f981a6d69403eb678fc)
+[//]: # (START_SECTION 2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8)
+### Fix pre-commit and requirements.txt
+
+> Commit: [2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8](https://github.com/dOpensource/dsiprouter/commit/2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8)  
+> Date: Tue, 9 Aug 2022 09:40:24 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8)
+[//]: # (START_SECTION 96221e574830aea41cfc23c9237cbc6a336a8e95)
 ### Bug Fixes for Updated OS Support
 
-> Commit: [c42053e08d736c1941399f981a6d69403eb678fc](https://github.com/dOpensource/dsiprouter/commit/c42053e08d736c1941399f981a6d69403eb678fc)  
+> Commit: [96221e574830aea41cfc23c9237cbc6a336a8e95](https://github.com/dOpensource/dsiprouter/commit/96221e574830aea41cfc23c9237cbc6a336a8e95)  
 > Date: Mon, 8 Aug 2022 15:36:23 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2026,7 +2042,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION c42053e08d736c1941399f981a6d69403eb678fc)
+[//]: # (END_SECTION 96221e574830aea41cfc23c9237cbc6a336a8e95)
 [//]: # (START_SECTION ccea19047f2b1959fe0bbc0e6cf70a66576e5d15)
 ### Update OS Installation Support
 

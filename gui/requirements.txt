@@ -11,7 +11,6 @@ Flask_WTF
 itsdangerous==2.0.1
 Jinja2==3.0.3
 mysqlclient
-MySQL-python
 pem
 psycopg2
 psycopg2_binary

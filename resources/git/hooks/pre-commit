@@ -35,7 +35,7 @@ INCLUDE_LIBS=(
 )
 # excludes for conflicting libs
 EXCLUDE_LIBS=(
-	'cryptography' 'Jinja2' 'Werkzeug' 'itsdangerous' 'Flask' 'docker_py' 'pyspark' 'acme.hello' 'josepy'
+	'cryptography' 'Jinja2' 'Werkzeug' 'itsdangerous' 'Flask' 'docker_py' 'pyspark' 'acme.hello' 'josepy' 'MySQL-python'
 )
 
 
