@@ -898,10 +898,9 @@ function configureKamailio {
         # use a tmp dir so we don't have to change repo
         mkdir -p /tmp/defaults
 
-        # copy over default gateway lists
-        cp -f ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv /tmp/defaults/dr_gw_lists.csv
-
         # sub in dynamic values
+        sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
+            ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv > /tmp/defaults/dr_gw_lists.csv
         sed "s/FLT_CARRIER/$FLT_CARRIER/g" \
             ${DSIP_DEFAULTS_DIR}/address.csv > /tmp/defaults/address_carrier.csv
         sed "s/FLT_MSTEAMS/$FLT_MSTEAMS/g" \
@@ -915,7 +914,7 @@ function configureKamailio {
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
-            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME ${DSIP_DEFAULTS_DIR}/dr_gw_lists.csv
+            --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gw_lists.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
             --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
         mysqlimport --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
@@ -1961,7 +1960,7 @@ function setCredentials {
 			fi
 		done
 		printwarn "The database user: ${SET_KAM_DB_USER} was created"
-		
+
 	fi
     else
         printerr 'Connection to DB failed'
@@ -3489,9 +3488,9 @@ function processCMD {
                             DB_CONN_URI="$1"
                             shift
                         fi
-		
+
 			if (( "$1" == "-createdbuser" )); then
-				
+
 				CREATE_KAM_DB_USER=1
 				shift
 
