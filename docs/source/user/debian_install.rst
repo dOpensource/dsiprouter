@@ -13,7 +13,7 @@ Install (Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: bash
 
-  hostnamectl set-hostname 
+  hostnamectl set-hostname <YOUR.DOMAINNAME.COM>
   apt update && apt install -y git curl
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter -b master dsiprouter
