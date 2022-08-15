@@ -80,6 +80,8 @@ HostKey /etc/ssh/ssh_host_rsa_key
 HostKey /etc/ssh/ssh_host_dsa_key
 HostKey /etc/ssh/ssh_host_ecdsa_key
 HostKey /etc/ssh/ssh_host_ed25519_key
+# where to check for authorized keys
+AuthorizedKeysFile .ssh/authorized_keys
 
 # |== Security Settings ==|
 # Process is unprivileged until auth is complete
@@ -107,7 +109,7 @@ PrintMotd yes
 TCPKeepAlive yes
 ClientAliveInterval 240
 # Allow client to pass locale environment variable
-AcceptEnv LANG LC_*
+AcceptEnv LANG LANGUAGE LC_*
 # Allow sftp over ssh
 Subsystem sftp /usr/lib/openssh/sftp-server
 EOF
@@ -148,10 +150,10 @@ echo '2' > /proc/sys/kernel/randomize_va_space
 # remove ssh keys, remove known hosts files, regenerate host server keys
 rm -f /etc/ssh/*key* /root/.ssh/{authorized_keys,known_hosts} /home/*/.ssh/{authorized_keys,known_hosts} 2>/dev/null
 touch /etc/ssh/revoked_keys; chmod 600 /etc/ssh/revoked_keys
-if cmdExists 'apt-get'; then
-    dpkg-reconfigure -f noninteractive openssh-server
-fi
-systemctl restart sshd
+#if cmdExists 'apt-get'; then
+#    dpkg-reconfigure -f noninteractive openssh-server
+#fi
+#systemctl restart sshd
 
 # remove logs and any information from build process
 rm -rf /tmp/* /var/tmp/*
@@ -167,6 +169,6 @@ find /var/lib/cloud -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
 truncate -s 0 /var/log/lastlog /var/log/wtmp
 
 # clear disk cache
-dd if=/dev/zero of=/zerofile 2> /dev/null; sync; rm -f /zerofile; sync
+dd if=/dev/zero of=/zerofile 2>/dev/null; rm -f /zerofile; sync
 
 exit 0

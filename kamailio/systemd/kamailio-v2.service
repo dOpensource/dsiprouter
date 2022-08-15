@@ -1,0 +1,30 @@
+[Unit]
+Description=Kamailio - the Open Source SIP Server
+DefaultDependencies=no
+Requires=basic.target network.target
+After=network.target network-online.target systemd-journald.socket basic.target
+After=rsyslog.service dnsmasq.service mariadb.service
+Wants=mariadb.service
+
+[Service]
+Type=forking
+User=kamailio
+Group=kamailio
+Environment='RUNDIR=/run/kamailio'
+EnvironmentFile=/etc/default/kamailio
+EnvironmentFile=-/etc/default/kamailio.d/*.conf
+# PIDFile requires a full absolute path
+PIDFile=/run/kamailio/kamailio.pid
+# Exec* requires a full absolute path
+ExecStartPre=!-/bin/mkdir -p $RUNDIR
+ExecStartPre=!-/bin/chown -R kamailio:kamailio $RUNDIR
+ExecStart=/usr/sbin/kamailio -P $PIDFILE -f $CFGFILE -m $SHM_MEMORY -M $PKG_MEMORY --atexit=no
+Restart=on-failure
+# /run/kamailio in tmpfs
+RuntimeDirectory=kamailio
+RuntimeDirectoryMode=0770
+# necessary for chown of control files e.g. for jsonrpcs and ctl modules
+AmbientCapabilities=CAP_CHOWN
+
+[Install]
+WantedBy=multi-user.target

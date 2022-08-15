@@ -267,11 +267,11 @@ function validateOSInfo() {
                 export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=990 APT_BOOKWORM_PRIORITY=500
                 ;;
             10)
-                KAM_VERSION=${KAM_VERSION:-53}
+                KAM_VERSION=${KAM_VERSION:-55}
                 export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=990 APT_BULLSEYE_PRIORITY=500 APT_BOOKWORM_PRIORITY=100
                 ;;
             9)
-                KAM_VERSION=${KAM_VERSION:-53}
+                KAM_VERSION=${KAM_VERSION:-55}
                 export APT_STRETCH_PRIORITY=990 APT_BUSTER_PRIORITY=500 APT_BULLSEYE_PRIORITY=100 APT_BOOKWORM_PRIORITY=50
                 ;;
             7|8)
@@ -1632,7 +1632,7 @@ function uninstallSipsak() {
 #       currently the dnsmasq configurations are being clobbered by other services
 # TODO: move DNSmasq install to its own directory
 function installDnsmasq() {
-    local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS DNSMASQ_NAME_SERVERS_REV
+    local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
         printwarn "DNSmasq is already installed"
@@ -1645,11 +1645,9 @@ function installDnsmasq() {
     if (( ${IPV6_ENABLED} == 1 )); then
         DNSMASQ_LISTEN_ADDRS="127.0.0.1,::1"
         DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1" "nameserver ::1")
-        DNSMASQ_NAME_SERVERS_REV=("nameserver ::1" "nameserver 127.0.0.1")
     else
         DNSMASQ_LISTEN_ADDRS="127.0.0.1"
         DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1")
-        DNSMASQ_NAME_SERVERS_REV=("nameserver 127.0.0.1")
     fi
 
     # create dnsmasq user and group
@@ -1701,8 +1699,7 @@ EOF
         if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
             joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
         else
-            tac /etc/resolv.conf | sed -r -e "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS_REV[@]}" | tac)&|}" | tac >/tmp/resolv.conf
-            mv -f /tmp/resolv.conf /etc/resolv.conf
+            sed -i -r "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS[@]}")&|}" /etc/resolv.conf
         fi
     fi
 
@@ -1725,10 +1722,11 @@ EOF
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=network.target
+Requires=basic.target network.target
+After=network.target network-online.target basic.target
 Wants=nss-lookup.target
 Before=nss-lookup.target
-After=network.target
+DefaultDependencies=no
 
 [Service]
 Type=forking
@@ -1758,8 +1756,10 @@ EOF
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=network.target
-After=network.target
+Requires=basic.target network.target
+After=network.target network-online.target basic.target
+Before=multi-user.target
+DefaultDependencies=no
 
 [Service]
 Type=simple
@@ -1784,8 +1784,10 @@ EOF
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=network.target
-After=network.target
+Requires=basic.target network.target
+After=network.target network-online.target basic.target
+Before=multi-user.target
+DefaultDependencies=no
 
 [Service]
 Type=simple
@@ -2325,14 +2327,14 @@ EOF
 
     chmod +x /etc/update-motd.d/00-dsiprouter
 
-    # for debian < v9 we have to update the dynamic motd location
-    if [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
-        sed -i -r 's|^(session.*pam_motd\.so.*motd=/run/motd).*|\1|' /etc/pam.d/sshd
-    # for centos7 and debian we have to update it 'manually'
-    elif [[ "$DISTRO" == "centos" ]]; then
-        /etc/update-motd.d/00-dsiprouter > /etc/motd
-        cronAppend "*/5 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
-    fi
+    # debian-based distro's will update it automatically
+    # for rhel-based distro's we simply update it via cronjob
+    case "$DISTRO" in
+        amzn|rhel|almalinux|rocky)
+            /etc/update-motd.d/00-dsiprouter > /etc/motd
+            cronAppend "*/5 * * * *  /etc/update-motd.d/00-dsiprouter > /etc/motd"
+            ;;
+    esac
 }
 
 # revert to old MOTD banner for ssh logins
@@ -2341,10 +2343,12 @@ function revertBanner() {
     rm -f /etc/update-motd.d/00-dsiprouter
     chmod +x /etc/update-motd.d/* 2>/dev/null
 
-    # remove cron entry for centos7 and debian < v9
-    if [[ "$DISTRO" == "centos" ]] || [[ "$DISTRO" == "debian" && $DISTRO_VER -lt 9 ]]; then
-        cronRemove '/etc/update-motd.d/00-dsiprouter'
-    fi
+    # remove cron entry for rhel-based distros
+    case "$DISTRO" in
+        amzn|rhel|almalinux|rocky)
+            cronRemove '/etc/update-motd.d/00-dsiprouter'
+            ;;
+    esac
 }
 
 # =================
@@ -2377,20 +2381,21 @@ function createInitService() {
 
     # configure cloud-init to work with alongside our init services
     if [[ -n "$CLOUD_PLATFORM" ]]; then
-        cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/dsip-init.cfg /etc/cloud/cloud.cfg.d/99-dsip-init.cfg
-        cp -rf ${DSIP_PROJECT_DIR}/cloud/cloud-init/templates/. /etc/cloud/templates/
-        # TODO: figure out why cloud-init fails to create ssh keys on debian images newer than 20220503
-        #       the code snippet below is a workaround but breaks AWS AMID scanner validation
-#cat << 'EOF' >>/etc/cloud/cloud.cfg.d/99-dsip-init.cfg
-#
-#runcmd:
-#  - [ /bin/bash, -c, '"if [[ $(find / -regex \.\*/AMID.py 2>/dev/null | head -1)x == x ]]; then echo [$(date)]: AMID scanner not found; else echo [$(date)]: AMID scanner found; fi"' ]
-#  - [ /bin/bash, -c, '"if [[ $(find / -regex \.\*/AMID.py 2>/dev/null | head -1)x == x ]]; then curl -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key -o /home/admin/.ssh/authorized_keys; chmod 600 /home/admin/.ssh/authorized_keys; fi"' ]
-#EOF
+        cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/configs/${CLOUD_PLATFORM}.cfg /etc/cloud/cloud.cfg.d/99-dsip-init.cfg
+        cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/templates/hosts.${DISTRO}.tmpl /etc/cloud/templates/hosts.tmpl
+
+        # patch for cloud-init.service circular ordering dependency
+        # TODO: commit this upstream to cloud-init project
+        case "$DISTRO" in
+            debian|ubuntu)
+                perl -i -pe 's%(Before\=sysinit\.target)%#\1%' /lib/systemd/system/cloud-init.service
+                systemctl daemon-reload
+                ;;
+        esac
     fi
 
     case "$DISTRO" in
-        centos|amazon)
+        amzn|rhel|almalinux|rocky)
             # TODO: this should be moved to a separate install dir called syslog
             # alias and link rsyslog to syslog service as in debian
             # allowing rsyslog to be accessible via syslog namespace
@@ -2406,9 +2411,11 @@ function createInitService() {
     (cat << EOF
 [Unit]
 Description=dSIPRouter Init Service
-Requires=network.target
+DefaultDependencies=no
+Requires=basic.target network.target
 Wants=rsyslog.service mariadb.service dnsmasq.service nginx.service
-After=network.target network-online.target cloud-init.target rsyslog.service mariadb.service dnsmasq.service nginx.service
+After=network.target network-online.target systemd-journald.socket basic.target cloud-init.target
+After=rsyslog.service mariadb.service dnsmasq.service nginx.service
 Before=
 
 [Service]
@@ -2425,11 +2432,9 @@ EOF
     # set default permissions
     chmod 0644 ${DSIP_INIT_FILE}
 
-    # enable service and start on boot
+    # enable dsip-init service on boot
     systemctl daemon-reload
     systemctl enable dsip-init
-    # startup with required services
-    systemctl start dsip-init
 }
 
 function removeInitService() {

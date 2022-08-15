@@ -65,7 +65,7 @@ USER=kamailio
 GROUP=kamailio
 SHM_MEMORY=128
 PKG_MEMORY=16
-PIDFILE=/var/run/kamailio/kamailio.pid
+PIDFILE=/run/kamailio/kamailio.pid
 CFGFILE=/etc/kamailio/kamailio.cfg
 #DUMP_CORE=yes
 EOF
@@ -124,16 +124,10 @@ EOF
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
-    # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q v 'mariadb.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e 's/(After=.*)/\1 mariadb.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if ! grep -q v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
+    # Configure Kamailio systemd service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v1.service /etc/systemd/system/kamailio.service
+    chmod 644 /etc/systemd/system/kamailio.service
     systemctl daemon-reload
-
-    # Enable Kamailio for system startup
     systemctl enable kamailio
 
     # Configure rsyslog defaults
@@ -191,8 +185,9 @@ EOF
         curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
         tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
     fi
-    ( cd ${SRC_DIR}/openssl && ./Configure linux-$(uname -m) && make; exit $?; ) ||
-    { printerr 'Failed to compile openssl'; return 1; }
+    ( cd ${SRC_DIR}/openssl && ./Configure linux-$(uname -m) && make &&
+        cp -f ${SRC_DIR}/openssl/{libssl.so.1.1,libcrypto.so.1.1} /usr/lib64/; exit $?;
+    ) || { printerr 'Failed to compile openssl'; return 1; }
 
     ## compile and install libstirshaken
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then

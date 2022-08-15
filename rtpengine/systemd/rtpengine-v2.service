@@ -1,8 +1,11 @@
 [Unit]
 Description=RTPEngine proxy for RTP and other media streams
-After=network.target iptables.service redis.service rsyslog.service
+Requires=basic.target network.target
+After=network.target network-online.target systemd-journald.socket basic.target
+After=iptables.service redis.service rsyslog.service
 # iptables.service is required only if the RTPEngine uses its kernel module.
 # redis.service is required if the Redis server is working on the same machine along with the RTPEngine
+DefaultDependencies=no
 
 [Service]
 Type=simple

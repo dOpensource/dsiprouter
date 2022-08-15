@@ -4,7 +4,9 @@
 [Unit]
 Description=A high performance web server and a reverse proxy server
 Documentation=man:nginx(8)
-After=network.target network-online.target nss-lookup.target remote-fs.target
+Requires=basic.target network.target
+After=network.target network-online.target basic.target nss-lookup.target remote-fs.target
+DefaultDependencies=no
 
 [Service]
 Type=forking

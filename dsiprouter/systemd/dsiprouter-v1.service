@@ -1,6 +1,9 @@
 [Unit]
 Description=dSIPRouter Service
-After=network.target mariab.service rsyslog.service nginx.service
+DefaultDependencies=no
+Requires=basic.target network.target
+After=network.target network-online.target systemd-journald.socket basic.target
+After=rsyslog.service mariadb.service nginx.service
 Wants=nginx.service mariadb.service
 PartOf=nginx.service
 

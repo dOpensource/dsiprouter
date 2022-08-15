@@ -19,7 +19,7 @@ function install() {
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
-        libcurl4-openssl-dev libjansson-dev cmake firewalld certbot
+        libcurl4-openssl-dev libjansson-dev cmake firewalld certbot build-essential
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -68,7 +68,7 @@ USER=kamailio
 GROUP=kamailio
 SHM_MEMORY=128
 PKG_MEMORY=16
-PIDFILE=/var/run/kamailio/kamailio.pid
+PIDFILE=/run/kamailio/kamailio.pid
 CFGFILE=/etc/kamailio/kamailio.cfg
 #DUMP_CORE=yes
 EOF
@@ -136,16 +136,10 @@ EOF
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
-    # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q -v 'mariadb.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e 's/(After=.*)/\1 mariadb.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
+    # Configure Kamailio systemd service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
+    chmod 644 /etc/systemd/system/kamailio.service
     systemctl daemon-reload
-
-    # Enable Kamailio for system startup
     systemctl enable kamailio
 
     # Configure rsyslog defaults

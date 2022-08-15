@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8
+077a6fc4230c2c4eb0d149fea4c0252a4bde6649
+d50f15b4c4eb65069dbaae31e3bc5b86075bd57f
 96221e574830aea41cfc23c9237cbc6a336a8e95
 ccea19047f2b1959fe0bbc0e6cf70a66576e5d15
 9f3515967f6a05789cce7aba8b03bb107ae5582f
@@ -2007,10 +2008,32 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8)
+[//]: # (START_SECTION 077a6fc4230c2c4eb0d149fea4c0252a4bde6649)
+### Cloud Deployment Fixes
+
+> Commit: [077a6fc4230c2c4eb0d149fea4c0252a4bde6649](https://github.com/dOpensource/dsiprouter/commit/077a6fc4230c2c4eb0d149fea4c0252a4bde6649)  
+> Date: Mon, 15 Aug 2022 17:49:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fixed dependency ordering issue on rhel-based distro's
+- fixed bug in current version of debian-based `cloud-init.service`
+- updated `pre-snapshot.sh` to be slightly faster
+- fixed dnsmasq/cloud-init host resolution conflicts
+- fixed dhclient/cloud-init DNS resolution conflicts
+- standardized `kamailio.service` unit file
+- added STIR/SHAKEN support in debian10/debian9 installation scripts
+
+
+---
+
+[//]: # (END_SECTION 077a6fc4230c2c4eb0d149fea4c0252a4bde6649)
+[//]: # (START_SECTION d50f15b4c4eb65069dbaae31e3bc5b86075bd57f)
 ### Fix pre-commit and requirements.txt
 
-> Commit: [2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8](https://github.com/dOpensource/dsiprouter/commit/2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8)  
+> Commit: [d50f15b4c4eb65069dbaae31e3bc5b86075bd57f](https://github.com/dOpensource/dsiprouter/commit/d50f15b4c4eb65069dbaae31e3bc5b86075bd57f)  
 > Date: Tue, 9 Aug 2022 09:40:24 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2021,7 +2044,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 2efeed3fd8d1caaf8fd75b2dab54bf9dc5ed6ec8)
+[//]: # (END_SECTION d50f15b4c4eb65069dbaae31e3bc5b86075bd57f)
 [//]: # (START_SECTION 96221e574830aea41cfc23c9237cbc6a336a8e95)
 ### Bug Fixes for Updated OS Support
 

@@ -13,9 +13,9 @@ function install {
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
 
     # Install Dependencies
-    apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev
-    apt-get install -y logrotate rsyslog
-    apt-get install -y build-essential
+    apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
+        libcurl4-openssl-dev libjansson-dev cmake firewalld certbot
+    apt-get install -y -t buster build-essential
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -49,24 +49,12 @@ EOF
     apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules kamailio-extra-modules \
-        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules
+    apt-get install -y kamailio kamailio-mysql-modules kamailio-extra-modules kamailio-tls-modules \
+        kamailio-websocket-modules kamailio-presence-modules kamailio-json-modules
 
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
-
-    # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q -v 'mariadb.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e 's/(After=.*)/\1 mariadb.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if ! grep -q -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
-    systemctl daemon-reload
-
-    # Enable Kamailio for system startup
-    systemctl enable kamailio
 
     # create kamailio defaults config
     (cat << 'EOF'
@@ -75,7 +63,7 @@ USER=kamailio
 GROUP=kamailio
 SHM_MEMORY=128
 PKG_MEMORY=16
-PIDFILE=/var/run/kamailio/kamailio.pid
+PIDFILE=/run/kamailio/kamailio.pid
 CFGFILE=/etc/kamailio/kamailio.cfg
 #DUMP_CORE=yes
 EOF
@@ -143,6 +131,12 @@ EOF
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
+    # Configure Kamailio systemd service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
+    chmod 644 /etc/systemd/system/kamailio.service
+    systemctl daemon-reload
+    systemctl enable kamailio
+
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
         cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
@@ -160,13 +154,48 @@ EOF
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
     cp ${DSIP_PROJECT_DIR}/kamailio/ca-list.pem ${DSIP_SSL_CA}
 
-    # Setup dSIPRouter Module
-    rm -rf /tmp/kamailio 2>/dev/null
-    git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
-    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
-    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
-    cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
-    return 1
+    # setup dSIPRouter module for kamailio
+    ## reuse repo if it exists and matches version we want to install
+    if [[ -d ${SRC_DIR}/kamailio ]]; then
+        if [[ "x$(cd ${SRC_DIR}/kamailio 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${KAM_VERSION_FULL}" ]]; then
+            rm -rf ${SRC_DIR}/kamailio
+            git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        fi
+    else
+        git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+    fi
+    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ ${SRC_DIR}/kamailio/src/modules/ &&
+    ( cd ${SRC_DIR}/kamailio/src/modules/dsiprouter && make; exit $?; ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR}/ ||
+    { printerr 'Failed to compile and install dSIPRouter module'; return 1; }
+
+    # setup STIR/SHAKEN module for kamailio
+    ## compile and install libjwt
+    if [[ ! -d ${SRC_DIR}/libjwt ]]; then
+        git clone --depth 1 https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+    fi
+    ( cd ${SRC_DIR}/libjwt && autoreconf -i && ./configure --prefix=/usr && make && make install; exit $?; ) ||
+    { printerr 'Failed to compile and install libjwt'; return 1; }
+
+    ## compile and install libks
+    if [[ ! -d ${SRC_DIR}/libks ]]; then
+        git clone --single-branch https://github.com/signalwire/libks ${SRC_DIR}/libks
+    fi
+    ( cd ${SRC_DIR}/libks && cmake -DCMAKE_INSTALL_PREFIX=/usr . && make install; exit $?; ) ||
+    { printerr 'Failed to compile and install libks'; return 1; }
+
+    ## compile and install libstirshaken
+    if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
+        git clone --depth 1 https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
+    fi
+    ( cd ${SRC_DIR}/libstirshaken && ./bootstrap.sh && ./configure --prefix=/usr &&
+        make && make install && ldconfig; exit $?;
+    ) || { printerr 'Failed to compile and install libstirshaken'; return 1; }
+
+    ## compile and install STIR/SHAKEN module
+    ( cd ${SRC_DIR}/kamailio/src/modules/stirshaken && make; exit $?; ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ ||
+    { printerr 'Failed to compile and install STIR/SHAKEN module'; return 1; }
 
     return 0
 }
