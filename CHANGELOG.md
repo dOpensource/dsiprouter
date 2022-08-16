@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-077a6fc4230c2c4eb0d149fea4c0252a4bde6649
+47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a
+b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a
 d50f15b4c4eb65069dbaae31e3bc5b86075bd57f
 96221e574830aea41cfc23c9237cbc6a336a8e95
 ccea19047f2b1959fe0bbc0e6cf70a66576e5d15
@@ -2008,10 +2009,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 077a6fc4230c2c4eb0d149fea4c0252a4bde6649)
+[//]: # (START_SECTION 47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a)
+### Fix Cloud Platform Password Reset Boot Hang
+
+> Commit: [47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a](https://github.com/dOpensource/dsiprouter/commit/47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a)  
+> Date: Tue, 16 Aug 2022 08:51:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- reverted password resetting for cloud platforms to use cron instead of systemd
+
+
+---
+
+[//]: # (END_SECTION 47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a)
+[//]: # (START_SECTION b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a)
 ### Cloud Deployment Fixes
 
-> Commit: [077a6fc4230c2c4eb0d149fea4c0252a4bde6649](https://github.com/dOpensource/dsiprouter/commit/077a6fc4230c2c4eb0d149fea4c0252a4bde6649)  
+> Commit: [b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a](https://github.com/dOpensource/dsiprouter/commit/b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a)  
 > Date: Mon, 15 Aug 2022 17:49:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2029,7 +2046,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 077a6fc4230c2c4eb0d149fea4c0252a4bde6649)
+[//]: # (END_SECTION b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a)
 [//]: # (START_SECTION d50f15b4c4eb65069dbaae31e3bc5b86075bd57f)
 ### Fix pre-commit and requirements.txt
 

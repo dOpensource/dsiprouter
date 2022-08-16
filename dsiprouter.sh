@@ -1324,6 +1324,7 @@ function installDsiprouter() {
     # for cloud images the instance-id may change (could be a clone)
     # add to startup process a password reset to ensure its set correctly
     # this is only for cloud image builds and is removed after first boot
+    # this can't be run from systemd as we need to remove the one-time cmd afterwards (blocking boot process)
     if (( $IMAGE_BUILD == 1 )) && (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 || $VULTR_ENABLED == 1 )); then
         (cat << EOF
 #!/usr/bin/env bash
@@ -1332,19 +1333,19 @@ function installDsiprouter() {
 DSIP_INIT_FILE="$DSIP_INIT_FILE"
 
 # declare imported functions from library
-$(declare -f removeInitCmd)
+$(declare -f cronRemove)
 
 # reset admin user password and remove startup cmd from dsip-init
 ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword -fid
 
-removeInitCmd '.reset_admin_pass.sh'
+cronRemove '.reset_admin_pass.sh'
 rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
 
 exit 0
 EOF
         ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
         chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
-        addInitCmd "${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh"
+        cronAppend "@reboot ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh"
 
         # Required changes for Debian-based AMI's
         if (( $AWS_ENABLED == 1 )) && [[ $DISTRO == "debian" || $DISTRO == "ubuntu" ]]; then
@@ -1368,7 +1369,12 @@ $(declare -f isInstanceGCE)
 $(declare -f isInstanceAZURE)
 $(declare -f isInstanceVULTR)
 $(declare -f getInstanceID)
-$(declare -f removeInitCmd)
+$(declare -f cronRemove)
+
+# wait for mysql to start
+while ! systemctl is-active --quiet mariadb; do
+    sleep 2
+done
 
 # reset debian user password and remove startup cmd from dsip-init
 INSTANCE_ID=\$(getInstanceID)
@@ -1378,7 +1384,7 @@ mysql -e "DROP USER 'debian-sys-maint'@'localhost';
     FLUSH PRIVILEGES;"
 
 sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
-removeInitCmd '.reset_debiansys_user.sh'
+cronRemove '.reset_debiansys_user.sh'
 rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
 
 exit 0
@@ -1386,7 +1392,7 @@ EOF
             ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
             # note that the script will remove itself after execution
             chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-            addInitCmd "${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
+            cronAppend "@reboot ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
         fi
     fi
 
@@ -2082,8 +2088,12 @@ EOF
     # can NOT be hot reloaded while running
     elif (( $RESET_KAM_DB_PASS == 1 )); then
         printwarn 'Restarting services with new configurations'
-        systemctl restart kamailio
-        systemctl restart dsiprouter
+        if systemctl is-active --quiet kamailio; then
+            systemctl restart kamailio
+        fi
+        if systemctl is-active --quiet dsiprouter; then
+            systemctl restart dsiprouter
+        fi
         printdbg 'Credentials have been updated'
     # all configs already hot reloaded
     else
