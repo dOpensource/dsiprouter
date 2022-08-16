@@ -56,8 +56,6 @@ function aptInstallKernelHeadersFromURI() {
 }
 
 function install {
-    local OS_KERNEL=$(uname -r)
-
     # Install required libraries
     # TODO: consolidate and version properly per supported distro versions
     apt-get install -y logrotate rsyslog
@@ -106,14 +104,17 @@ function install {
     # try installing kernel dev headers in the following order:
     # 1: headers from repos
     # 2: headers from snapshot.debian.org
-    apt-get install -y linux-headers-${OS_KERNEL} ||
-        aptInstallKernelHeadersFromURI $(debSearch linux-headers-${OS_KERNEL})
-#    (
-#        KERNEL_META_PKG=$(echo ${OS_KERNEL} | perl -pe 's%[0-9-.]+(.*)%\1%')
-#        apt-get install -y linux-image-${KERNEL_META_PKG} linux-headers-${KERNEL_META_PKG}
-#        printwarn 'Required Kernel Update Installed'
-#        printwarn 'RTPEngine will not forward packets in-kernel until a reboot occurs'
-#    )
+    # note: headers must be installed for all kernels on the system
+    for OS_KERNEL in $(ls /lib/modules/ 2>/dev/null); do
+        apt-get install -y linux-headers-${OS_KERNEL} ||
+            aptInstallKernelHeadersFromURI $(debSearch linux-headers-${OS_KERNEL})
+#       (
+#           KERNEL_META_PKG=$(echo ${OS_KERNEL} | perl -pe 's%[0-9-.]+(.*)%\1%')
+#            apt-get install -y linux-image-${KERNEL_META_PKG} linux-headers-${KERNEL_META_PKG}
+#            printwarn 'Required Kernel Update Installed'
+#            printwarn 'RTPEngine will not forward packets in-kernel until a reboot occurs'
+#        )
+    done
 
     if (( $? != 0 )); then
         printerr "Problem with installing the required libraries for RTPEngine"
@@ -154,15 +155,10 @@ function install {
         exit 1
     fi
 
-    # make sure RTPEngine kernel module configured
-    if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
-        printerr "Problem installing RTPEngine kernel module"
-        exit 1
-    fi
-
-    # sanity check, did the new module load?
+    # sanity check, did the new kernel module load?
     if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
-        printwarn "Could not load new RTPEngine kernel module"
+        printerr "Could not load new RTPEngine kernel module"
+        exit 1
     else
         # set the forwarding table for the kernel module
         echo 'add 0' > /proc/rtpengine/control

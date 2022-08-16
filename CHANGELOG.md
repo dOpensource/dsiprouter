@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-a9a5904d6c8c496a9778c8a5da848bf38f42be98
+699ab1a2f9bfb2fb09202445e0327a56b6cd769f
+e61d6d6e9ff125381d4813a5db0782eff5066e66
 466bdfbc9a916580d2e70950af6fb54ef4cf8bb5
 b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a
 d50f15b4c4eb65069dbaae31e3bc5b86075bd57f
@@ -2010,10 +2011,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION a9a5904d6c8c496a9778c8a5da848bf38f42be98)
+[//]: # (START_SECTION 699ab1a2f9bfb2fb09202445e0327a56b6cd769f)
+### Improve RTPEngine Kernel Module Compilation
+
+> Commit: [699ab1a2f9bfb2fb09202445e0327a56b6cd769f](https://github.com/dOpensource/dsiprouter/commit/699ab1a2f9bfb2fb09202445e0327a56b6cd769f)  
+> Date: Tue, 16 Aug 2022 13:24:51 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- installer will now compile `xt_RTPENGINE.ko` for all installed kernels
+
+
+---
+
+[//]: # (END_SECTION 699ab1a2f9bfb2fb09202445e0327a56b6cd769f)
+[//]: # (START_SECTION e61d6d6e9ff125381d4813a5db0782eff5066e66)
 ### Fix Password Resetting Bug
 
-> Commit: [a9a5904d6c8c496a9778c8a5da848bf38f42be98](https://github.com/dOpensource/dsiprouter/commit/a9a5904d6c8c496a9778c8a5da848bf38f42be98)  
+> Commit: [e61d6d6e9ff125381d4813a5db0782eff5066e66](https://github.com/dOpensource/dsiprouter/commit/e61d6d6e9ff125381d4813a5db0782eff5066e66)  
 > Date: Tue, 16 Aug 2022 10:50:45 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2025,7 +2042,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION a9a5904d6c8c496a9778c8a5da848bf38f42be98)
+[//]: # (END_SECTION e61d6d6e9ff125381d4813a5db0782eff5066e66)
 [//]: # (START_SECTION 466bdfbc9a916580d2e70950af6fb54ef4cf8bb5)
 ### Fix Cloud Platform Password Reset Boot Hang
 
