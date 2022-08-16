@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a
+a9a5904d6c8c496a9778c8a5da848bf38f42be98
+466bdfbc9a916580d2e70950af6fb54ef4cf8bb5
 b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a
 d50f15b4c4eb65069dbaae31e3bc5b86075bd57f
 96221e574830aea41cfc23c9237cbc6a336a8e95
@@ -2009,10 +2010,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a)
+[//]: # (START_SECTION a9a5904d6c8c496a9778c8a5da848bf38f42be98)
+### Fix Password Resetting Bug
+
+> Commit: [a9a5904d6c8c496a9778c8a5da848bf38f42be98](https://github.com/dOpensource/dsiprouter/commit/a9a5904d6c8c496a9778c8a5da848bf38f42be98)  
+> Date: Tue, 16 Aug 2022 10:50:45 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fixed bug where `resetpassword` would not default to gui password with `-fid` option
+
+
+---
+
+[//]: # (END_SECTION a9a5904d6c8c496a9778c8a5da848bf38f42be98)
+[//]: # (START_SECTION 466bdfbc9a916580d2e70950af6fb54ef4cf8bb5)
 ### Fix Cloud Platform Password Reset Boot Hang
 
-> Commit: [47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a](https://github.com/dOpensource/dsiprouter/commit/47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a)  
+> Commit: [466bdfbc9a916580d2e70950af6fb54ef4cf8bb5](https://github.com/dOpensource/dsiprouter/commit/466bdfbc9a916580d2e70950af6fb54ef4cf8bb5)  
 > Date: Tue, 16 Aug 2022 08:51:46 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2024,7 +2041,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 47e31b3a4c6a4a6330abc6de4b06424c33fc5e4a)
+[//]: # (END_SECTION 466bdfbc9a916580d2e70950af6fb54ef4cf8bb5)
 [//]: # (START_SECTION b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a)
 ### Cloud Deployment Fixes
 

@@ -3727,13 +3727,8 @@ function processCMD() {
                 shift
             fi
 
-            # default to only resetting dsip gui password
-            if (( $# == 0 )); then
-                RESET_DSIP_GUI_PASS=1
-            else
-                RESET_DSIP_GUI_PASS=0
-            fi
-
+            # we default to resetting only the dsip gui password
+            # otherwise only the credentials specified are reset
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
@@ -3750,14 +3745,17 @@ function processCMD() {
                         ;;
                     -ac|--api-creds)
                         RESET_DSIP_API_TOKEN=1
+                        RESET_DSIP_GUI_PASS=${RESET_DSIP_GUI_PASS:-0}
                         shift
                         ;;
                     -kc|--kam-creds)
                         RESET_KAM_DB_PASS=1
+                        RESET_DSIP_GUI_PASS=${RESET_DSIP_GUI_PASS:-0}
                         shift
                         ;;
                     -ic|--ipc-creds)
                         RESET_DSIP_IPC_TOKEN=1
+                        RESET_DSIP_GUI_PASS=${RESET_DSIP_GUI_PASS:-0}
                         shift
                         ;;
                     -fid|--force-instance-id)
