@@ -84,7 +84,10 @@ def reloadKamailio():
              'params': ['stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID)]})
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_key_url', str(settings.STIR_SHAKEN_KEY_URL)]})
+             'params': ['stir_shaken', 'stir_shaken_key_path', str(settings.STIR_SHAKEN_KEY_PATH)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL)]})
 
 
 
