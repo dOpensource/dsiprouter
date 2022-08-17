@@ -158,7 +158,7 @@ def reloadKamailio():
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                 'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
 
-         # Settings for STIR/SHAKEN
+        # Settings for STIR/SHAKEN
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
              'params': ['stir_shaken', 'stir_shaken_enabled', str(settings.STIR_SHAKEN_ENABLED)]})
@@ -177,6 +177,12 @@ def reloadKamailio():
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
              'params': ['stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_key_path', str(settings.STIR_SHAKEN_KEY_PATH)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL)]})
 
         for cmdset in reload_cmds:
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
