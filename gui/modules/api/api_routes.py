@@ -158,6 +158,26 @@ def reloadKamailio():
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
                 'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
 
+         # Settings for STIR/SHAKEN
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_enabled', str(settings.STIR_SHAKEN_ENABLED)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_prefix_a', str(settings.STIR_SHAKEN_PREFIX_A)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_prefix_b', str(settings.STIR_SHAKEN_PREFIX_B)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_prefix_c', str(settings.STIR_SHAKEN_PREFIX_C)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_prefix_invalid', str(settings.STIR_SHAKEN_PREFIX_INVALID)]})
+        reload_cmds.append(
+            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
+             'params': ['stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID)]})
+
         for cmdset in reload_cmds:
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
             if r.status_code >= 400:

@@ -1,1 +1,6 @@
 .idea
+/resources/terraform/do/*.tfstate
+/resources/terraform/do/*.backup
+/resources/terraform/do/.terraform
+/resources/terraform/do/*.hcl
+/resources/terraform/do/terraform.tfvars

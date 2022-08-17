@@ -2068,7 +2068,8 @@ def displayStirShaken(msg=None):
         stir_shaken["stir_shaken_prefix_b"] = settings.STIR_SHAKEN_PREFIX_B
         stir_shaken["stir_shaken_prefix_c"] = settings.STIR_SHAKEN_PREFIX_C
         stir_shaken["stir_shaken_prefix_invalid"] = settings.STIR_SHAKEN_PREFIX_INVALID
-        stir_shaken["stir_shaken_block_invalid"] = settings.STIR_SHAKEN_PREFIX_INVALID
+        stir_shaken["stir_shaken_block_invalid"] = settings.STIR_SHAKEN_BLOCK_INVALID
+        stir_shaken["stir_shaken_key_url"] = settings.STIR_SHAKEN_KEY_URL
 
         return render_template('stirshaken.html', stir_shaken=stir_shaken, msg=msg)
 
@@ -2104,6 +2105,7 @@ def addUpdateStirShaken():
         stir_shaken["STIR_SHAKEN_PREFIX_C"] = form.get('stir_shaken_prefix_c', '')
         stir_shaken["STIR_SHAKEN_PREFIX_INVALID"] = form.get('stir_shaken_prefix_invalid', '')
         stir_shaken["STIR_SHAKEN_BLOCK_INVALID"] = form.get('stir_shaken_block_invalid', 0)
+        stir_shaken["STIR_SHAKEN_KEY_URL"] = form.get('stir_shaken_key_url', '')
 
         if stir_shaken["STIR_SHAKEN_ENABLED"] == "1":
             stir_shaken["STIR_SHAKEN_ENABLED"] = 1
