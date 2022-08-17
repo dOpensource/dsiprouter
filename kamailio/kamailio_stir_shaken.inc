@@ -43,15 +43,19 @@ route[STIRSHAKEN_INBOUND] {
 }
 
 route[STIRSHAKEN_OUTBOUND] {
+
+    xlog("L_INFO", "[STIRSHAKEN_OUTBOUND] In the STIRSHAKEN_OUTBOUND logic.  \n");
   	
 	# Only route if request is coming from an Endpoint
 	# and is an INVITE
 
 	if (allow_source_address(FLT_CARRIER)) {
+        xlog("L_INFO", "[STIRSHAKEN_OUTBOUND] <$ci> $si This is a carrier ignoring \n");
 		return;
 	}
        
 	if (!is_method("INVITE")) {
+	    xlog("L_INFO", "[STIRSHAKEN_OUTBOUND] This is a invite message, ignoring. \n");
 		return;		
 	}
 			
