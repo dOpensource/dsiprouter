@@ -1322,9 +1322,8 @@ function installDsiprouter() {
     updatePermissions
 
     # for cloud images the instance-id may change (could be a clone)
-    # add to startup process a password reset to ensure its set correctly
-    # this is only for cloud image builds and is removed after first boot
-    # this can't be run from systemd as we need to remove the one-time cmd afterwards (blocking boot process)
+    # add to cloud-init startup process a password reset to ensure its set correctly
+    # this is only for cloud image builds and will run when the instance is initialized or the instance-id is changed
     if (( $IMAGE_BUILD == 1 )) && (( $AWS_ENABLED == 1 || $DO_ENABLED == 1 || $GCE_ENABLED == 1 || $AZURE_ENABLED == 1 || $VULTR_ENABLED == 1 )); then
         (cat << EOF
 #!/usr/bin/env bash
@@ -1332,31 +1331,25 @@ function installDsiprouter() {
 # declare any constants imported functions rely on
 DSIP_INIT_FILE="$DSIP_INIT_FILE"
 
-# declare imported functions from library
-$(declare -f cronRemove)
-
-# reset admin user password and remove startup cmd from dsip-init
+# reset admin user password
 ${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword -fid
-
-cronRemove '.reset_admin_pass.sh'
-rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
 
 exit 0
 EOF
-        ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
-        chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh
-        cronAppend "@reboot ${DSIP_SYSTEM_CONFIG_DIR}/.reset_admin_pass.sh"
+        ) >/var/lib/cloud/scripts/per-instance/99-dsip-reset-guiadminpass.sh
+        chmod +x /var/lib/cloud/scripts/per-instance/99-dsip-reset-guiadminpass.sh
 
-        # Required changes for Debian-based AMI's
-        if (( $AWS_ENABLED == 1 )) && [[ $DISTRO == "debian" || $DISTRO == "ubuntu" ]]; then
-            # Remove debian-sys-maint password for initial AMI scan
-            sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
+        # Required changes for Debian-based images
+        case "$DISTRO" in
+            debian|ubuntu)
+                # Remove debian-sys-maint password for initial image scan
+                sed -i "s/password =.*/password = /g" /etc/mysql/debian.cnf
 
-            # Change default password for debian-sys-maint to instance-id at next boot
-            # we must also change the corresponding password in /etc/mysql/debian.cnf
-            # to comply with AWS AMI image standards
-            # this must run at startup as well so create temp script and add to dsip-init
-            (cat << EOF
+                # Change default password for debian-sys-maint to instance-id at next boot
+                # we must also change the corresponding password in /etc/mysql/debian.cnf
+                # to comply with AWS AMI image standards
+                # this must run at startup as well so create temp script and add to dsip-init
+                (cat << EOF
 #!/usr/bin/env bash
 
 # declare any constants imported functions rely on
@@ -1369,14 +1362,13 @@ $(declare -f isInstanceGCE)
 $(declare -f isInstanceAZURE)
 $(declare -f isInstanceVULTR)
 $(declare -f getInstanceID)
-$(declare -f cronRemove)
 
 # wait for mysql to start
 while ! systemctl is-active --quiet mariadb; do
     sleep 2
 done
 
-# reset debian user password and remove startup cmd from dsip-init
+# reset debian user password
 INSTANCE_ID=\$(getInstanceID)
 mysql -e "DROP USER 'debian-sys-maint'@'localhost';
     CREATE USER 'debian-sys-maint'@'localhost' IDENTIFIED BY '\${INSTANCE_ID}';
@@ -1384,16 +1376,13 @@ mysql -e "DROP USER 'debian-sys-maint'@'localhost';
     FLUSH PRIVILEGES;"
 
 sed -i "s|password =.*|password = \${INSTANCE_ID}|g" /etc/mysql/debian.cnf
-cronRemove '.reset_debiansys_user.sh'
-rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
 
 exit 0
 EOF
-            ) > ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-            # note that the script will remove itself after execution
-            chmod +x ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh
-            cronAppend "@reboot ${DSIP_SYSTEM_CONFIG_DIR}/.reset_debiansys_user.sh"
-        fi
+                ) >/var/lib/cloud/scripts/per-instance/99-dsip-reset-debsysuser.sh
+                chmod +x /var/lib/cloud/scripts/per-instance/99-dsip-reset-debsysuser.sh
+                ;;
+        esac
     fi
 
     # generate documentation for the GUI
