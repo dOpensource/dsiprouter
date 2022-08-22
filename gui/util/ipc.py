@@ -40,15 +40,20 @@ def setSharedSettings(fields_dict={}, address=settings.DSIP_IPC_SOCK, authkey=No
     settings_proxy.update(list(fields_dict.items()))
 
 def sendSyncSettingsSignal(pid_file=settings.DSIP_PID_FILE, load_shared_settings=False):
-    with open(pid_file, 'r') as f:
-        pid = f.read()
+    """
+    Send signals to GUI process to synchronize settings from disk or shared memory
 
-    if len(pid) > 0:
-        pid = int(pid)
-        try:
-            if not load_shared_settings:
-                os.kill(pid, signal.SIGUSR1)
-            else:
-                os.kill(pid, signal.SIGUSR2)
-        except ProcessLookupError:
-            pass
+    :param pid_file:                path to PID file for process to send to
+    :type pid_file:                 str
+    :param load_shared_settings:    whether to load settings from shared memory or not
+    :type load_shared_settings:     bool
+    :return:                        None
+    :rtype:                         None
+    :except:                        OSError ProcessLookupError ValueError
+    """
+    with open(pid_file, 'r') as f:
+        pid = int(f.read())
+        if not load_shared_settings:
+            os.kill(pid, signal.SIGUSR1)
+        else:
+            os.kill(pid, signal.SIGUSR2)

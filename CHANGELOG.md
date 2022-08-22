@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-699ab1a2f9bfb2fb09202445e0327a56b6cd769f
+4d893d3b10ad256dcb589fa0d3478d90c6fa3492
+93ae11d1afb8dc6b94739a56bcf278ae3ba8c112
+6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598
 e61d6d6e9ff125381d4813a5db0782eff5066e66
 466bdfbc9a916580d2e70950af6fb54ef4cf8bb5
 b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a
@@ -2011,10 +2013,46 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 699ab1a2f9bfb2fb09202445e0327a56b6cd769f)
+[//]: # (START_SECTION 4d893d3b10ad256dcb589fa0d3478d90c6fa3492)
+### Fix Amazon Linux Cloud Image Password Reset
+
+> Commit: [4d893d3b10ad256dcb589fa0d3478d90c6fa3492](https://github.com/dOpensource/dsiprouter/commit/4d893d3b10ad256dcb589fa0d3478d90c6fa3492)  
+> Date: Mon, 22 Aug 2022 15:53:05 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix a bug where cloud-init would hang on instance first boot
+- add `-q|--quiet` option to `resetpassword` dsiprouter command
+- make cloud instance initial password reset silent
+- refactor IPC function `sendSyncSettingsSignal()`
+- refactor code from `resetPassword()` into `setCredentials()` function
+
+
+---
+
+[//]: # (END_SECTION 4d893d3b10ad256dcb589fa0d3478d90c6fa3492)
+[//]: # (START_SECTION 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112)
+### Fix Cloud Image Password Reset
+
+> Commit: [93ae11d1afb8dc6b94739a56bcf278ae3ba8c112](https://github.com/dOpensource/dsiprouter/commit/93ae11d1afb8dc6b94739a56bcf278ae3ba8c112)  
+> Date: Fri, 19 Aug 2022 17:20:48 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- make password resetting more reliable by hooking into cloud-init
+
+
+---
+
+[//]: # (END_SECTION 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112)
+[//]: # (START_SECTION 6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598)
 ### Improve RTPEngine Kernel Module Compilation
 
-> Commit: [699ab1a2f9bfb2fb09202445e0327a56b6cd769f](https://github.com/dOpensource/dsiprouter/commit/699ab1a2f9bfb2fb09202445e0327a56b6cd769f)  
+> Commit: [6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598](https://github.com/dOpensource/dsiprouter/commit/6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598)  
 > Date: Tue, 16 Aug 2022 13:24:51 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2026,7 +2064,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 699ab1a2f9bfb2fb09202445e0327a56b6cd769f)
+[//]: # (END_SECTION 6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598)
 [//]: # (START_SECTION e61d6d6e9ff125381d4813a5db0782eff5066e66)
 ### Fix Password Resetting Bug
 
