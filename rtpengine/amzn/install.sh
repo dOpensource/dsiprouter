@@ -248,16 +248,6 @@ function install {
         exit 1
     fi
 
-    # sanity check, did the new module load?
-    if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
-        printwarn "Could not load new RTPEngine kernel module"
-    else
-        # set the forwarding table for the kernel module
-        echo 'add 0' > /proc/rtpengine/control
-        iptables -I INPUT -p udp -j RTPENGINE --id 0
-        ip6tables -I INPUT -p udp -j RTPENGINE --id 0
-    fi
-
     # stop the demaon so we can configure it properly
     systemctl stop ngcp-rtpengine-daemon
 

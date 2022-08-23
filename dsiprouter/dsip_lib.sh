@@ -802,7 +802,7 @@ export -f dumpDBUser
 #           --db=<mysql database name>
 # returns:  0 if DB exists, 1 otherwise
 function sqlAsTransaction() {
-    local MYSQL_DBNAME=""
+    local MYSQL_DBNAME
     local MYSQL_USER=${MYSQL_USER:-root}
     local MYSQL_PASS=${MYSQL_PASS:-}
     local MYSQL_HOST=${MYSQL_HOST:-localhost}
@@ -838,6 +838,9 @@ function sqlAsTransaction() {
         esac
     done
 
+    # creating the procedure will fail if we don't select a database
+    MYSQL_DBNAME=${MYSQL_DBNAME:-mysql}
+
     # if query was piped to stdin use that instead of positional args
     if [[ ! -t 0 ]]; then
         SQL_STATEMENTS=( $(</dev/stdin) )
@@ -870,6 +873,9 @@ DROP PROCEDURE tryStatements;
 select @ret;
 EOF
     )
+
+    # in case we had an error connecting
+    STATUS=$((STATUS + $?))
 
     return $STATUS
 }

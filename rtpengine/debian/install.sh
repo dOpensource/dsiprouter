@@ -155,15 +155,10 @@ function install {
         exit 1
     fi
 
-    # sanity check, did the new kernel module load?
-    if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
-        printerr "Could not load new RTPEngine kernel module"
+    # make sure RTPEngine kernel module configured
+    if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
+        printerr "Problem installing RTPEngine kernel module"
         exit 1
-    else
-        # set the forwarding table for the kernel module
-        echo 'add 0' > /proc/rtpengine/control
-        iptables -I INPUT -p udp -j RTPENGINE --id 0
-        ip6tables -I INPUT -p udp -j RTPENGINE --id 0
     fi
 
     # stop the demaon so we can configure it properly

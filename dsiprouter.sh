@@ -1213,6 +1213,11 @@ function installRTPEngine() {
     # Restart RTPEngine with the new configurations
     systemctl restart rtpengine
     if systemctl is-active --quiet rtpengine; then
+        # sanity check, did the new kernel module load?
+        if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
+            printerr "Could not load new RTPEngine kernel module"
+            cleanupAndExit 1
+        fi
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
         printdbg "------------------------------------"
         pprint "RTPEngine Installation is complete!"
@@ -1275,11 +1280,14 @@ function installDsiprouter() {
 	fi
 
     # if python was just installed its not exported in this proc yet
- 	setPythonCmd
+    setPythonCmd
     if [ $? -ne 0 ]; then
         printerr "dSIPRouter install failed"
         cleanupAndExit 1
     fi
+
+    # configure dsiprouter modules
+    installModules
 
     # add dsiprouter CLI command to the path
     ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
@@ -1327,9 +1335,6 @@ function installDsiprouter() {
 
     # pass the variables on to setCredentials()
     setCredentials
-
-    # configure dsiprouter modules
-    installModules
 
     # TODO: should only update necessary permissions here (certs, dsiprouter)
     updatePermissions
@@ -2102,7 +2107,8 @@ function setCredentials() {
     if [[ -n "${SET_DSIP_IPC_TOKEN}" ]]; then
         DSIP_RELOAD_TYPE=2
     fi
-    if [[ -n "${SET_KAM_DB_USER}" ]]; then
+    # note: SQL query will fail if the username is not actually changed, check it determine if we need to run this logic
+    if [[ -n "${SET_KAM_DB_USER}" && "${SET_KAM_DB_USER}" != "${KAM_DB_USER}" ]]; then
         # if user exists update username, otherwise we need to create the user
         if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
         "${KAM_DB_USER}@localhost"; then
@@ -2131,7 +2137,8 @@ function setCredentials() {
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
-    if [[ -n "${SET_KAM_DB_HOST}" ]]; then
+    # note: since the host is required in the DB URI when parsing we also check if it actually changed to determine if we need to run this logic
+    if [[ -n "${SET_KAM_DB_HOST}" && "${SET_KAM_DB_HOST}" != "${KAM_DB_HOST}" ]]; then
         #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-$KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
         #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
         setConfigAttrib 'KAM_DB_HOST' "$SET_KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
@@ -2160,14 +2167,27 @@ function setCredentials() {
         setConfigAttrib 'ROOT_DB_USER' "$SET_ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q
     fi
     if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
-        DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'localhost' = PASSWORD('${SET_KAM_DB_PASS}');")
-        DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' = PASSWORD('${SET_KAM_DB_PASS}');")
+        DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_ROOT_DB_USER:-$ROOT_DB_USER}'@'localhost' = PASSWORD('${SET_ROOT_DB_PASS}');")
+        DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_ROOT_DB_USER:-$ROOT_DB_USER}'@'%' = PASSWORD('${SET_ROOT_DB_PASS}');")
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_ROOT_DB_NAME}" ]]; then
         setConfigAttrib 'ROOT_DB_NAME' "$SET_ROOT_DB_NAME" ${DSIP_CONFIG_FILE} -q
     fi
     DEFERRED_SQL_STATEMENTS+=("flush privileges;")
+
+    # update encrypted settings locally and in DB
+    # NOTE: we must run this before the live DB credentials are changed otherwise we won't be able to connect
+    ${PYTHON_CMD} << EOF
+import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
+sys.path.insert(0, '/etc/dsiprouter/gui')
+from util.security import Credentials;
+Credentials.setCreds(dsip_creds='${SET_DSIP_GUI_PASS}', api_creds='${SET_DSIP_API_TOKEN}', kam_creds='${SET_KAM_DB_PASS}', mail_creds='${SET_DSIP_MAIL_PASS}', ipc_creds='${SET_DSIP_IPC_TOKEN}');
+EOF
+    if (( $? != 0 )); then
+        printerr 'Failed setting encrypted credentials'
+        cleanupAndExit 1
+    fi
 
     # allow settings that don't require DB to be running to be updated (we verified at the start of this func whether we needed DB)
     if systemctl is-active --quiet mariadb; then
@@ -2180,24 +2200,12 @@ function setCredentials() {
             fi
         fi
 
-        # update DB live settings (privileges etc..)
+        # update live DB settings (DB user passwords, privileges, etc..)
         sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${DEFERRED_SQL_STATEMENTS[@]}"
         if (( $? != 0 )); then
             printerr 'Failed setting credentials on DB'
             cleanupAndExit 1
         fi
-    fi
-
-    # update encrypted settings
-    ${PYTHON_CMD} << EOF
-import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
-sys.path.insert(0, '/etc/dsiprouter/gui')
-from util.security import Credentials;
-Credentials.setCreds(dsip_creds='${SET_DSIP_GUI_PASS}', api_creds='${SET_DSIP_API_TOKEN}', kam_creds='${SET_KAM_DB_PASS}', mail_creds='${SET_DSIP_MAIL_PASS}', ipc_creds='${SET_DSIP_IPC_TOKEN}');
-EOF
-    if (( $? != 0 )); then
-        printerr 'Failed setting encrypted credentials'
-        cleanupAndExit 1
     fi
 
     # export variables for later usage in this script
@@ -2217,15 +2225,17 @@ EOF
     export ROOT_DB_NAME=${SET_ROOT_DB_NAME:-$ROOT_DB_NAME}
 
     # reload/synchronize settings for each service
-    # note that we reload the service only if it is currently running (otherwise it messes with boot ordering)
+    # note: we reload the service only if it is currently running (otherwise it messes with boot ordering)
+    # note: updateKamailioConfig() combines configuring kam config and hot reloading in the same function
     if (( ${MYSQL_RELOAD_TYPE} == 2 )); then
         if systemctl is-active --quiet mariadb; then
             systemctl restart mariadb
         fi
     fi
-    if (( ${KAM_RELOAD_TYPE} == 1 )); then
+    if (( ${KAM_RELOAD_TYPE} > 0 )); then
         updateKamailioConfig
-    elif (( ${KAM_RELOAD_TYPE} == 2 )); then
+    fi
+    if (( ${KAM_RELOAD_TYPE} == 2 )); then
         if systemctl is-active --quiet kamailio; then
             systemctl restart kamailio
         fi
@@ -3737,11 +3747,11 @@ function processCMD() {
             # preconditions checks and setting variables to pass to setCredentials()
             if (( ${RESET_DSIP_GUI_PASS:-1} == 1 )); then
                 if (( ${IMAGE_BUILD} == 1 || ${RESET_FORCE_INSTANCE_ID:-0} == 1 )); then
-                    if [[ -z "$CLOUD_PLATFORM" ]]; then
-                        printerr "Cloud Instance password reset requested, but Cloud Platform is unsupported or not found"
+                    SET_DSIP_GUI_PASS=$(getInstanceID)
+                    if [[ -z "$SET_DSIP_GUI_PASS" ]]; then
+                        printerr "Could not retrieve the instance ID for password reset"
                         cleanupAndExit 1
                     fi
-                    SET_DSIP_GUI_PASS=$(getInstanceID)
                 else
                     SET_DSIP_GUI_PASS=$(urandomChars 64)
                 fi

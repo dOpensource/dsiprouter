@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-4d893d3b10ad256dcb589fa0d3478d90c6fa3492
+baf2f592f1f0a74df3ab438ac486802db85e05bf
+bb710c9d8412c556055e4f49a406bab60142dee9
 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112
 6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598
 e61d6d6e9ff125381d4813a5db0782eff5066e66
@@ -2013,10 +2014,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 4d893d3b10ad256dcb589fa0d3478d90c6fa3492)
+[//]: # (START_SECTION baf2f592f1f0a74df3ab438ac486802db85e05bf)
+### Update Credential Setting SQL Statements
+
+> Commit: [baf2f592f1f0a74df3ab438ac486802db85e05bf](https://github.com/dOpensource/dsiprouter/commit/baf2f592f1f0a74df3ab438ac486802db85e05bf)  
+> Date: Tue, 23 Aug 2022 12:51:28 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update SQL statements in `setCredentials()` to use the newer API
+- fix bug in password reset preventing cloud instance pw reset
+- fix rtpengine kernel module loaded check on install
+
+
+---
+
+[//]: # (END_SECTION baf2f592f1f0a74df3ab438ac486802db85e05bf)
+[//]: # (START_SECTION bb710c9d8412c556055e4f49a406bab60142dee9)
 ### Fix Amazon Linux Cloud Image Password Reset
 
-> Commit: [4d893d3b10ad256dcb589fa0d3478d90c6fa3492](https://github.com/dOpensource/dsiprouter/commit/4d893d3b10ad256dcb589fa0d3478d90c6fa3492)  
+> Commit: [bb710c9d8412c556055e4f49a406bab60142dee9](https://github.com/dOpensource/dsiprouter/commit/bb710c9d8412c556055e4f49a406bab60142dee9)  
 > Date: Mon, 22 Aug 2022 15:53:05 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2032,7 +2051,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 4d893d3b10ad256dcb589fa0d3478d90c6fa3492)
+[//]: # (END_SECTION bb710c9d8412c556055e4f49a406bab60142dee9)
 [//]: # (START_SECTION 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112)
 ### Fix Cloud Image Password Reset
 
