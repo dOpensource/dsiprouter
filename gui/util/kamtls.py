@@ -4,6 +4,7 @@ sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import re, socket
 import settings
+from networking import ipv6Test, hostToIP
 
 # Server name matching options
 KAM_TLS_SNI_DOMAIN = 0
@@ -18,7 +19,7 @@ DOMAIN_END_HEADER = '#========== {domain}_end ==========#'
 def createCustomTLSConfig(domain, ip, port, server_name_mode):
     """
     Create a Domain TLS Profile string for the Kamailio TLS Config\n
-    Reference: https://kamailio.org/docs/modules/5.3.x/modules/tls.html
+    Reference: https://kamailio.org/docs/modules/5.5.x/modules/tls.html
 
     :param domain:              domain profile to create
     :type domain:               str
@@ -95,22 +96,23 @@ def getCustomTLSConfigs(domain_filter=None):
 
             if domain_filter is None:
                 regex = DOMAIN_START_HEADER.format(domain=r'(?P<domain>.*?)').encode('utf-8') + \
-                        rb'''\n(?:\[server\:(?!default)(?P<server_ip>.*?)\:(?P<server_port>.*?)\])\n(?P<server_params>.*?)\n(?=\[|#)\n*''' + \
-                        rb'''(?:\[client\:(?!default)(?P<client_ip>.*?)\:(?P<client_port>.*?)\])\n(?P<client_params>.*?)(?=\[|#)''' + \
+                        rb'''\n(?:\[server\:(?!default)\[?(?P<server_ip>.*?)\]?\:(?P<server_port>[0-9]+)\])\n(?P<server_params>.*?)\n(?=\[|#)\n*''' + \
+                        rb'''(?:\[client\:(?!default)\[?(?P<client_ip>.*?)\]?\:(?P<client_port>[0-9]+)\])\n(?P<client_params>.*?)(?=\[|#)''' + \
                         DOMAIN_END_HEADER.format(domain=r'(?P=domain)').encode('utf-8')
             else:
                 regex = DOMAIN_START_HEADER.format(domain=r'(?P<domain>(?:.*?\.)*{})'.format(domain_filter)).encode('utf-8') + \
-                        rb'''\n(?:\[server\:(?!default)(?P<server_ip>.*?)\:(?P<server_port>.*?)\])\n(?P<server_params>.*?)\n(?=\[|#)\n*''' + \
-                        rb'''(?:\[client\:(?!default)(?P<client_ip>.*?)\:(?P<client_port>.*?)\])\n(?P<client_params>.*?)(?=\[|#)''' + \
+                        rb'''\n(?:\[server\:(?!default)\[?(?P<server_ip>.*?)\]?\:(?P<server_port>[0-9]+)\])\n(?P<server_params>.*?)\n(?=\[|#)\n*''' + \
+                        rb'''(?:\[client\:(?!default)\[?(?P<client_ip>.*?)\]?\:(?P<client_port>[0-9]+)\])\n(?P<client_params>.*?)(?=\[|#)''' + \
                         DOMAIN_END_HEADER.format(domain=r'(?P=domain)').encode('utf-8')
             matches = [x.groupdict() for x in re.finditer(regex, kamtlscfg_bytes, flags=re.DOTALL | re.MULTILINE)]
 
             for match in matches:
                 domain = match['domain'].decode('utf-8')
+                ip = match['server_ip'].decode('utf-8')
                 server_config_strs = match['server_params'].decode('utf-8').rstrip().split('\n')
                 client_config_strs = match['client_params'].decode('utf-8').rstrip().split('\n')
                 custom_configs[domain] = {
-                    'ip': match['server_ip'].decode('utf-8'),
+                    'ip': ip if not ipv6Test(ip) else '[' + ip + ']',
                     'port': int(match['server_port'].decode('utf-8')),
                     'server': {x.split(' = ')[0]: x.split(' = ')[1] for x in server_config_strs},
                     'client': {x.split(' = ')[0]: x.split(' = ')[1] for x in client_config_strs}
@@ -138,8 +140,12 @@ def addCustomTLSConfig(domain, ip='', port=5061, server_name_mode=KAM_TLS_SNI_DO
     """
 
     try:
+        # TLS config does not accept hostnames, resolve IP if needed
         if len(ip) == 0:
-            ip = socket.getaddrinfo(domain, 0, family=socket.AF_INET, flags=socket.AI_CANONNAME)[0][4][0]
+            ip = hostToIP(domain)
+        # IPv6 addresses require square brackets
+        elif ipv6Test(ip):
+            ip = '[' + ip + ']'
         domain_config_bytes = createCustomTLSConfig(domain, ip, port, server_name_mode).encode('utf-8')
 
         with open(settings.KAM_TLSCFG_PATH, 'r+b') as kamtlscfg_file:

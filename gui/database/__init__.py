@@ -9,7 +9,8 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String
 from sqlalchemy.orm import mapper, sessionmaker, scoped_session
 from sqlalchemy import exc as sql_exceptions
 import settings
-from shared import IO, debugException, safeUriToHost, dictToStrFields
+from shared import IO, debugException, dictToStrFields
+from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
 
 
@@ -32,7 +33,7 @@ if settings.KAM_DB_TYPE == "mysql":
 class Gateways(object):
     """
     Schema for dr_gateways table\n
-    Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gateways>`_\n
+    Documentation: `dr_gateways table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-gateways>`_\n
     Allowed address types: SIP URI, IP address or DNS domain name\n
     The address field can be a full SIP URI, partial URI, or only host; where host portion is an IP or FQDN
     """
@@ -56,7 +57,7 @@ class Gateways(object):
 class GatewayGroups(object):
     """
     Schema for dr_gw_lists table\n
-    Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-gw-lists>`_
+    Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-gw-lists>`_
     """
 
     def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER):
@@ -68,7 +69,7 @@ class GatewayGroups(object):
 class Address(object):
     """
     Schema for address table\n
-    Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-address>`_\n
+    Documentation: `address table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-address>`_\n
     Allowed address types: exact IP address, subnet IP address or DNS domain name\n
     The ip_addr field is either an IP address or DNS domain name; mask field is for subnet
     """
@@ -89,7 +90,7 @@ class Address(object):
 class InboundMapping(object):
     """
     Partial Schema for modified version of dr_rules table\n
-    Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-rules>`_
+    Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-rules>`_
     """
 
     gwname = Column(String)
@@ -107,7 +108,7 @@ class InboundMapping(object):
 class OutboundRoutes(object):
     """
     Schema for dr_rules table\n
-    Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dr-rules>`_
+    Documentation: `dr_rules table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-rules>`_
     """
 
     def __init__(self, groupid, prefix, timerec, priority, routeid, gwlist, description):
@@ -162,7 +163,7 @@ class dSIPMultiDomainMapping(object):
         TYPE_UNKNOWN = 0
         TYPE_FUSIONPBX = 1
         TYPE_FUSIONPBX_CLUSTER = 2
-        TYPE_FREEPBX = 3 
+        TYPE_FREEPBX = 3
 
 
     def __init__(self, pbx_id, db_host, db_username, db_password, domain_list=None, attr_list=None, type=0, enabled=1):
@@ -208,7 +209,7 @@ class dSIPDomainMapping(object):
 class Subscribers(object):
     """
     Schema for subscriber table\n
-    Documentation: `subscriber table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-subscriber>`_
+    Documentation: `subscriber table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-subscriber>`_
     """
 
     def __init__(self, username, password, domain, gwid, email_address=None):
@@ -354,7 +355,7 @@ class dSIPDNIDEnrichment(object):
 class UAC(object):
     """
     Schema for uacreg table\n
-    Documentation: `uacreg table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-uacreg>`_
+    Documentation: `uacreg table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-uacreg>`_
     """
 
     class FLAGS(Enum):
@@ -391,7 +392,7 @@ class UAC(object):
 class Domain(object):
     """
     Schema for domain table\n
-    Documentation: `domain table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-domain>`_
+    Documentation: `domain table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-domain>`_
     """
 
     def __init__(self, domain, did=None, last_modified=datetime.utcnow()):
@@ -406,7 +407,7 @@ class Domain(object):
 class DomainAttrs(object):
     """
     Schema for domain_attrs table\n
-    Documentation: `domain_attrs table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-domain-attrs>`_
+    Documentation: `domain_attrs table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-domain-attrs>`_
     """
 
     class FLAGS(Enum):
@@ -426,12 +427,12 @@ class DomainAttrs(object):
 class Dispatcher(object):
     """
     Schema for dispatcher table\n
-    Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.1.x.html#gen-db-dispatcher>`_
+    Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dispatcher>`_
     """
 
     def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description=''):
         self.setid = setid
-        self.destination = "sip:{}".format(destination)
+        self.destination = safeFormatSipUri(destination)
         self.flags = flags
         self.priority = priority
         self.attrs = attrs

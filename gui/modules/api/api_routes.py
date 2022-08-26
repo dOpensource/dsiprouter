@@ -14,8 +14,9 @@ from werkzeug.utils import secure_filename
 from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
     dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
     dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
-from shared import allowed_file, dictToStrFields, getExternalIP, hostToIP, isCertValid, rowToDict, showApiError, \
-    debugEndpoint, StatusCodes, strFieldsToDict, IO, getRequestData, safeUriToHost, safeStripPort
+from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, showApiError, debugEndpoint, StatusCodes, \
+    strFieldsToDict, IO, getRequestData
+from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
 from util.file_handling import isValidFile, change_owner

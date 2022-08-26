@@ -7,7 +7,7 @@ from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
 from sqlalchemy import exc as sql_exceptions
-from shared import updateConfig,StatusCodes
+from shared import updateConfig, StatusCodes
 from functools import wraps
 from flask import Blueprint, jsonify, render_template, request, session
 import settings, globals
@@ -105,7 +105,7 @@ class Credentials():
 
         if len(api_creds) > 0:
             if len(api_creds) > Credentials.CREDS_MAX_LEN:
-                raise ValueError('kamailio credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+                raise ValueError('api credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
             fields['DSIP_API_TOKEN'] = AES_CTR.encrypt(api_creds)
 
         if len(kam_creds) > 0:
@@ -120,7 +120,7 @@ class Credentials():
 
         if len(ipc_creds) > 0:
             if len(ipc_creds) > Credentials.CREDS_MAX_LEN:
-                raise ValueError('mail credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+                raise ValueError('ipc credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
             fields['DSIP_IPC_PASS'] = AES_CTR.encrypt(ipc_creds)
 
         # some fields are not synced with DB
@@ -128,9 +128,10 @@ class Credentials():
             local_fields['ROOT_DB_PASS'] = AES_CTR.encrypt(rootdb_creds)
 
         # update settings based on where they are loaded from
-        if settings.LOAD_SETTINGS_FROM == 'file':
-            updateConfig(settings, fields)
-        elif settings.LOAD_SETTINGS_FROM == 'db':
+        if len(fields) > 0 or len(local_fields) > 0:
+            # update file settings including local fields
+            updateConfig(settings, dict(fields, **local_fields))
+            # update db settings
             from database import SessionLoader, DummySession
             db = DummySession()
             try:
@@ -143,10 +144,7 @@ class Credentials():
                 db.rollback()
                 raise
             finally:
-                db.remove()
-
-        # update local only settings everytime
-        updateConfig(settings, local_fields)
+                db.close()
 
 class AES_CTR():
     """
@@ -241,7 +239,7 @@ def api_security(func):
         return func(*args, **kwargs)
 
     return wrapper
-  
+
 class EasyCrypto():
     """
     Wrapper class for some simlpified crypto use cases

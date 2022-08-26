@@ -20,9 +20,10 @@ from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from werkzeug.middleware.proxy_fix import ProxyFix
 from sysloginit import initSyslogLogger
-from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
-    safeUriToHost, safeFormatSipUri, safeStripPort
+from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
+from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
+    ipToHost, hostToIP
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
     dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
@@ -34,7 +35,7 @@ from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
 from modules.api.licensemanager.functions import validateLicense
 from util.security import Credentials, AES_CTR, urandomChars
-from util.ipc import createSettingsManager
+from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
 import globals
 import settings
@@ -56,8 +57,7 @@ csrf.exempt(api)
 csrf.exempt(mediaserver)
 csrf.exempt(carriergroups)
 numbers_api = flowroute.Numbers()
-shared_settings = objToDict(settings)
-settings_manager = createSettingsManager(shared_settings)
+settings_manager = DummySettingsManager()
 
 @app.before_first_request
 def before_first_request():
@@ -286,9 +286,9 @@ def addUpdateCarrierGroups():
     """
     Add or Update a group of carriers
     """
-    
+
     return addCarrierGroups()
-    
+
 
     db = DummySession()
 
@@ -315,7 +315,7 @@ def addUpdateCarrierGroups():
         plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
         plugin_account_sid = form['plugin_account_sid'] if 'plugin_account_sid' in form else ''
         plugin_account_token = form['plugin_account_token'] if 'plugin_account_token' in form else ''
-        
+
         # format data
         if authtype == "userpwd":
             auth_domain = safeUriToHost(auth_domain)
@@ -340,11 +340,11 @@ def addUpdateCarrierGroups():
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd":
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
-                    local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
+                    local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
-        
+
 
         # Updating
         else:
@@ -371,7 +371,7 @@ def addUpdateCarrierGroups():
                          'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
                          'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
                         Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
-                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_IP_ADDR, remote_domain=auth_domain)
+                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                         db.add(Uacreg)
 
                     # update address if exists, otherwise create
@@ -785,6 +785,7 @@ def displayEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
+        # NOTE: not including IPv6 address here as we only need to connect over IPv4 to fusion DB
         return render_template('endpointgroups.html', dsiprouter_ip=settings.EXTERNAL_IP_ADDR,
                                DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
 
@@ -1123,15 +1124,15 @@ def addUpdateInboundMapping():
                 db.add(Gateway)
                 db.flush()
 
-                Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32,1, gwgroup=gwgroupid)
-                db.add(Addr)
-                db.flush()
+                db.add_all([
+                    Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid),
+                    Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid)
+                ])
 
                 # Define an Inbound Mapping that maps to the newly created gateway
                 gwlist = Gateway.gwid
                 IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
                 db.add(IMap)
-                db.flush()
 
                 db.commit()
                 return displayInboundMapping()
@@ -1217,19 +1218,16 @@ def addUpdateInboundMapping():
                 else:
 
                     Gateway = Gateways("drouting_to_dispatcher", "localhost",0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-
                     db.add(Gateway)
 
                 db.flush()
-
-                Addr = db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).first()
-                if Addr is None:
-                    Addr = Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)
-                    db.add(Addr)
-                    db.flush()
-
                 # Assign Gateway id to the gateway list
                 gwlist = Gateway.gwid
+
+                if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
+                    db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
+                if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
+                    db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -1734,7 +1732,7 @@ def addUpdateTransNexus():
             globals.reload_required = True
             msg = "License Key is required for this module"
             return displayTransNexus(msg)
-            
+
 
         license_info = validateLicense(transnexus["TRANSNEXUS_LICENSE_KEY"])
         if license_info["license_valid"] == True and transnexus["TRANSNEXUS_AUTHSERVICE_ENABLED"]:
@@ -2220,14 +2218,24 @@ def syncSettings(new_fields={}, update_net=False):
     try:
         db = SessionLoader()
 
-        # update ip's dynamically
-        # TODO: need to create external fqdn resolution funcs
+        # TODO: updating the dsiprouter settings file/dsip_settings table should be done by dsiprouter.sh (CLI commands run by dsip-init.service) instead
+        #       we need to start enforcing the concept on least privileges for our services and the system users running them
+        # update network settings dynamically
         if update_net:
+            int_ip = getInternalIP('4')
+            int_ip6 = getInternalIP('6')
+            int_fqdn = ipToHost(int_ip)
+            ext_ip = getExternalIP('4')
+            ext_ip6 = getExternalIP('4')
+            ext_fqdn = ipToHost(ext_ip)
             net_dict = {
-                'INTERNAL_IP_ADDR': getInternalIP(),
-                'INTERNAL_IP_NET': "{}.*".format(getInternalIP().rsplit(".", 1)[0]),
-                'EXTERNAL_IP_ADDR': getExternalIP(),
-                'EXTERNAL_FQDN': settings.EXTERNAL_FQDN
+                'INTERNAL_IP_ADDR': int_ip,
+                'INTERNAL_IP_NET': getInternalCIDR('4'),
+                'INTERNAL_IP6_ADDR': int_ip6,
+                'INTERNAL_IP6_NET': getInternalCIDR('4'),
+                'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip,
+                'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6,
+                'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn
             }
         else:
             net_dict = {}
@@ -2240,30 +2248,26 @@ def syncSettings(new_fields={}, update_net=False):
             # format fields for DB
             fields = OrderedDict(
                 [('DSIP_ID', settings.DSIP_ID), ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID), ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
-                 ('DSIP_PROTO', settings.DSIP_PROTO), ('DSIP_PORT', settings.DSIP_PORT),
-                 ('DSIP_USERNAME', settings.DSIP_USERNAME), ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
-                 ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
+                 ('DSIP_PROTO', settings.DSIP_PROTO), ('DSIP_PORT', settings.DSIP_PORT), ('DSIP_USERNAME', settings.DSIP_USERNAME),
+                 ('DSIP_PASSWORD', settings.DSIP_PASSWORD), ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS), ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
                  ('DSIP_API_PORT', settings.DSIP_API_PORT), ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY), ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
-                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN), ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
-                 ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY), ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
-                 ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_CA', settings.DSIP_SSL_CA),
-                 ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL), ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
-                 ('VERSION', settings.VERSION),
-                 ('DEBUG', settings.DEBUG), ('ROLE', settings.ROLE), ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
-                 ('KAM_DB_HOST', settings.KAM_DB_HOST), ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER), ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
-                 ('KAM_DB_PORT', settings.KAM_DB_PORT), ('KAM_DB_NAME', settings.KAM_DB_NAME), ('KAM_DB_USER', settings.KAM_DB_USER),
-                 ('KAM_DB_PASS', settings.KAM_DB_PASS), ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH), ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
-                 ('KAM_TLSCFG_PATH', settings.KAM_TLSCFG_PATH),
-                 ('RTP_CFG_PATH', settings.RTP_CFG_PATH), ('SQLALCHEMY_TRACK_MODIFICATIONS', settings.SQLALCHEMY_TRACK_MODIFICATIONS),
-                 ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG), ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX),
-                 ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
+                 ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK), ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK), ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN),
+                 ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL), ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY), ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
+                 ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT), ('DSIP_SSL_CA', settings.DSIP_SSL_CA), ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL),
+                 ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR), ('VERSION', settings.VERSION), ('DEBUG', settings.DEBUG),
+                 ('ROLE', settings.ROLE), ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT), ('KAM_DB_HOST', settings.KAM_DB_HOST),
+                 ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER), ('KAM_DB_TYPE', settings.KAM_DB_TYPE), ('KAM_DB_PORT', settings.KAM_DB_PORT),
+                 ('KAM_DB_NAME', settings.KAM_DB_NAME), ('KAM_DB_USER', settings.KAM_DB_USER), ('KAM_DB_PASS', settings.KAM_DB_PASS),
+                 ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH), ('KAM_CFG_PATH', settings.KAM_CFG_PATH), ('KAM_TLSCFG_PATH', settings.KAM_TLSCFG_PATH),
+                 ('RTP_CFG_PATH', settings.RTP_CFG_PATH), ('SQLALCHEMY_TRACK_MODIFICATIONS', settings.SQLALCHEMY_TRACK_MODIFICATIONS), ('SQLALCHEMY_SQL_DEBUG', settings.SQLALCHEMY_SQL_DEBUG),
+                 ('FLT_CARRIER', settings.FLT_CARRIER), ('FLT_PBX', settings.FLT_PBX), ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
                  ('FLT_OUTBOUND', settings.FLT_OUTBOUND), ('FLT_INBOUND', settings.FLT_INBOUND), ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
                  ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
-                 ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
-                 ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP), ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
-                 ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
-                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
-                 ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET), ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR), ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
+                 ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT), ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP),
+                 ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT), ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
+                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR), ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET),
+                 ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR), ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET), ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
+                 ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR), ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
                  ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER), ('CLOUD_PLATFORM', settings.CLOUD_PLATFORM), ('MAIL_SERVER', settings.MAIL_SERVER),
                  ('MAIL_PORT', settings.MAIL_PORT), ('MAIL_USE_TLS', settings.MAIL_USE_TLS), ('MAIL_USERNAME', settings.MAIL_USERNAME),
                  ('MAIL_PASSWORD', settings.MAIL_PASSWORD), ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
@@ -2324,6 +2328,14 @@ def sigHandler(signum=None, frame=None):
     elif signum == signal.SIGUSR2.value:
         shared_settings = dict(settings_manager.getSettings().items())
         syncSettings(shared_settings)
+    # run teardown logic before exiting
+    elif signum == signal.SIGINT.value:
+        teardown()
+        sys.exit()
+    # run teardown logic before exiting
+    elif signum == signal.SIGTERM:
+        teardown()
+        sys.exit()
 
 def replaceAppLoggers(log_handler):
     """ Handle configuration of web server loggers """
@@ -2402,21 +2414,27 @@ def initApp(flask_app):
     signal.signal(signal.SIGHUP, sigHandler)
     signal.signal(signal.SIGUSR1, sigHandler)
     signal.signal(signal.SIGUSR2, sigHandler)
+    signal.signal(signal.SIGINT, sigHandler)
+    signal.signal(signal.SIGTERM, sigHandler)
 
     # change umask to 660 before creating sockets
     # this allows members of the dsiprouter group access
     os.umask(~0o660 & 0o777)
 
-    # start the Shared Memory Management server
+    # remove sockets / PID file from previous runs (only happens on SIGKILL)
     if os.path.exists(settings.DSIP_IPC_SOCK):
         os.remove(settings.DSIP_IPC_SOCK)
+    if os.path.exists(settings.DSIP_UNIX_SOCK):
+        os.remove(settings.DSIP_UNIX_SOCK)
+    # write out the main proc's PID
+    with open(settings.DSIP_PID_FILE, 'w') as pidfd:
+        pidfd.write(str(os.getpid()))
+
+    # start the Shared Memory Management server
+    settings_manager = createSettingsManager(objToDict(settings))
     settings_manager.start()
 
     # start the Flask App server
-    if os.path.exists(settings.DSIP_UNIX_SOCK):
-        os.remove(settings.DSIP_UNIX_SOCK)
-    with open(settings.DSIP_PID_FILE, 'w') as pidfd:
-        pidfd.write(str(os.getpid()))
     bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
 
 def teardown():
@@ -2434,12 +2452,11 @@ def teardown():
         pass
     try:
         os.remove(settings.DSIP_PID_FILE)
+        os.remove(settings.DSIP_IPC_SOCK)
+        os.remove(settings.DSIP_UNIX_SOCK)
     except:
         pass
 
 
 if __name__ == "__main__":
-    try:
-        initApp(app)
-    finally:
-        teardown()
+    initApp(app)

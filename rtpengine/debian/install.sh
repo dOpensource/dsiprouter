@@ -168,10 +168,16 @@ function install {
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
-    if [ "$SERVERNAT" == "0" ]; then
-        INTERFACE=$INTERNAL_IP
+    if (( ${SERVERNAT:-0} == 0 )); then
+        INTERFACE="ipv4/${INTERNAL_IP}"
+        if (( ${IPV6_ENABLED} == 1 )); then
+            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
+        fi
     else
-        INTERFACE=$INTERNAL_IP!$EXTERNAL_IP
+        INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
+        if (( ${IPV6_ENABLED} == 1 )); then
+            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
+        fi
     fi
 
     # rtpengine config file

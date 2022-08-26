@@ -19,55 +19,54 @@
 
   <div class="content-section"> <!-- begin backup/restore section -->
     <div class="col-md-12">
-    <div id="endpoint-nav" class="navbar"> <!-- begin nav tabs -->
-      <ul class="nav nav-tabs">
-        <li role="presentation" class="auth-tab active">
-          <a href="#backup" name="backup-toggle" data-toggle="tab">Backup</a>
-        </li>
-        <li role="presentation">
-          <a href="#restore" name="restore-toggle" data-toggle="tab">Restore</a>
-        </li>
-      </ul>
-    </div><!-- end nav tabs -->
+      <div id="endpoint-nav" class="navbar"> <!-- begin nav tabs -->
+        <ul class="nav nav-tabs">
+          <li role="presentation" class="auth-tab active">
+            <a href="#backup" name="backup-toggle" data-toggle="tab">Backup</a>
+          </li>
+          <li role="presentation">
+            <a href="#restore" name="restore-toggle" data-toggle="tab">Restore</a>
+          </li>
+        </ul>
+      </div><!-- end nav tabs -->
 
-    <div class="tab-content"> <!-- begin tab content -->
-      <div id="backup" class="tab-pane fade in active" name="backup-toggle">
-        <div class="form-group">
-          <button id="start-Backup" class="btn btn-success btn-md">Download Backup</button>
+      <div class="tab-content"> <!-- begin tab content -->
+        <div id="backup" class="tab-pane fade in active" name="backup-toggle">
+          <div class="form-group">
+            <button id="start-Backup" class="btn btn-success btn-md">Download Backup</button>
+          </div>
         </div>
-      </div>
 
-      <div id="restore" class="tab-pane fade in" name="restore-toggle">
-        <form id="restore-backup" action="#">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div id="restore" class="tab-pane fade in" name="restore-toggle">
+          <form id="restore-backup" action="#">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-          <div class="form-group" style="position:relative;">
-            <a class='btn btn-primary' href='javascript:;'>
-              Choose Backup File...
-              <input type="file"
-                     style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;'
-                     name="file" size="40"
-                     onchange='$("#upload-file-info").html($(this).val());$("#start-Restore").show();'>
-            </a>
-            &nbsp;
-            <span class='label label-info' id="upload-file-info"></span>
-          </div>
-          <div id="start-Restore" style="display:none">
-            <div class="form-group">
-
-              <input type="text" name="db_username" placeholder="database username">
+            <div class="form-group" style="position:relative;">
+              <a class='btn btn-primary' href='javascript:;'>
+                Choose Backup File...
+                <input type="file"
+                       style='position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";opacity:0;background-color:transparent;color:transparent;'
+                       name="file" size="40"
+                       onchange='$("#upload-file-info").html($(this).val());$("#start-Restore").show();'>
+              </a>
+              &nbsp;
+              <span class='label label-info' id="upload-file-info"></span>
             </div>
-            <div class="form-group">
 
-              <input type="password" name="db_password" placeholder="database password">
+            <div id="start-Restore" style="display:none">
+              <div class="form-group">
+                <input type="text" name="db_username" placeholder="database username">
+              </div>
+              <div class="form-group">
+                <input type="password" name="db_password" placeholder="database password">
+              </div>
+              <div class="form-group">
+                <input type="submit" class="btn btn-success btn-md" value="Start Restore"/>
+              </div>
             </div>
-            <div class="form-group">
-              <input type="submit" class="btn btn-success btn-md" value="Start Restore"/>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div> <!-- end tab content -->
+          </form>
+        </div>
+      </div> <!-- end tab content -->
     </div>
   </div> <!-- end backup/restore section -->
 

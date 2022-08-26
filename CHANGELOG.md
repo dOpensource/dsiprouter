@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-baf2f592f1f0a74df3ab438ac486802db85e05bf
+87f9c3ade95343c8b3c3341a7480bb24977ec4b5
+460f0c26cd2bb10b4e44f1f62024525d7b1eadf6
 bb710c9d8412c556055e4f49a406bab60142dee9
 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112
 6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598
@@ -2014,10 +2015,42 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION baf2f592f1f0a74df3ab438ac486802db85e05bf)
+[//]: # (START_SECTION 87f9c3ade95343c8b3c3341a7480bb24977ec4b5)
+### Enhanced IPv6 Support
+
+> Commit: [87f9c3ade95343c8b3c3341a7480bb24977ec4b5](https://github.com/dOpensource/dsiprouter/commit/87f9c3ade95343c8b3c3341a7480bb24977ec4b5)  
+> Date: Fri, 26 Aug 2022 11:22:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#192](https://github.com/dOpensource/dsiprouter/issues/192)
+- add support for ipv6 routing
+- add support for ipv6 NAT/SERVERNAT environments
+- add support for TLS over ipv6
+- add support for ipv4 <-> ipv6 translation and routing
+- add support for forwarding media over ipv6
+- add support for transcoding over ipv6
+- cleanup kamailio configs and bad formatting in code
+- fix ifdef checks in pre-commit hook
+- add some commenting to areas of codebase
+- add/move networking utility functions
+- refactor mulitiprocessing namespace
+- fix bug in `security.py` preventing credentials being set in some edge cases
+- update networking functions in `dsip_lib.sh`
+- update GUI auth entry functions to use fqdn instead of external ipv4 address
+- add support for ipv6 addresses in domain entries from GUI
+- update signal handling logic to handle SIGINT and SIGQUIT
+
+
+---
+
+[//]: # (END_SECTION 87f9c3ade95343c8b3c3341a7480bb24977ec4b5)
+[//]: # (START_SECTION 460f0c26cd2bb10b4e44f1f62024525d7b1eadf6)
 ### Update Credential Setting SQL Statements
 
-> Commit: [baf2f592f1f0a74df3ab438ac486802db85e05bf](https://github.com/dOpensource/dsiprouter/commit/baf2f592f1f0a74df3ab438ac486802db85e05bf)  
+> Commit: [460f0c26cd2bb10b4e44f1f62024525d7b1eadf6](https://github.com/dOpensource/dsiprouter/commit/460f0c26cd2bb10b4e44f1f62024525d7b1eadf6)  
 > Date: Tue, 23 Aug 2022 12:51:28 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2031,7 +2064,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION baf2f592f1f0a74df3ab438ac486802db85e05bf)
+[//]: # (END_SECTION 460f0c26cd2bb10b4e44f1f62024525d7b1eadf6)
 [//]: # (START_SECTION bb710c9d8412c556055e4f49a406bab60142dee9)
 ### Fix Amazon Linux Cloud Image Password Reset
 

@@ -255,7 +255,7 @@ systemctl restart fail2ban</code></pre>
             <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
 iptables-save
 # Run this command if your using fail2ban
-sed -i -r "s|(ignoreip = .*)|\1 &lt;ip address&gt;/32|" /etc/fail2ban/jail.conf
+sed -i -r "s|(ignoreip = .*)|\1 {{dsiprouter_ip}}/32|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of freepbx tab -->
@@ -431,12 +431,12 @@ systemctl restart fail2ban</code></pre>
                        data-width="125px">
                 FusionPBX Domain Support
               </label>
-	    </div>
+	          </div>
             <div class="checkbox-inline">
-		    <label class="checkbox-inline">
-			    <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0">Cluster Support
-		    </label>
-	    </div>
+		          <label class="checkbox-inline">
+			          <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0">Cluster Support
+		          </label>
+	          </div>
            </div>
             <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
           <div class="alert alert-warning pre-scrollable">
@@ -478,7 +478,7 @@ systemctl restart fail2ban</code></pre>
             <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
 iptables-save
 # Run this command if your using fail2ban
-sed -i -r "s|(ignoreip = .*)|\1 &lt;ip address&gt;/32|" /etc/fail2ban/jail.conf
+sed -i -r "s|(ignoreip = .*)|\1 &lt;{{dsiprouter_ip}}&gt;/32|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of freepbx tab -->

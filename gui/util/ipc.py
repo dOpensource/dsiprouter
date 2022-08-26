@@ -23,6 +23,21 @@ def createSettingsManager(shared_settings, address=settings.DSIP_IPC_SOCK, authk
     manager = SettingsManager(address=address, authkey=authkey)
     return manager
 
+class DummySettingsManager():
+    """
+    Sole purpose is to allow the settings manager to be defined globally and lazy loaded on startup
+    """
+
+    @staticmethod
+    def noop(*args, **kwargs):
+        return None
+    def getSettings(self, *args, **kwargs):
+        DummySettingsManager.noop(*args, **kwargs)
+    def start(self, *args, **kwargs):
+        DummySettingsManager.noop(*args, **kwargs)
+    def shutdown(self, *args, **kwargs):
+        DummySettingsManager.noop(*args, **kwargs)
+
 # TODO: add error handling / good return codes for the following funcs
 def setSharedSettings(fields_dict={}, address=settings.DSIP_IPC_SOCK, authkey=None):
     if authkey is None:

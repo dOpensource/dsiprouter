@@ -7,31 +7,40 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from util.decorator import pyasync
+from util.pyasync import thread
 from util.security import AES_CTR
 from shared import debugException
 import settings
 
-@pyasync
+@thread
 def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAULT_SUBJECT,
                sender=settings.MAIL_DEFAULT_SENDER, data=None, attachments=[]):
     """
     Send an Email asynchronously to recipients
-    :param recipients:  list
-    :param text_body:   str
-    :param html_body:   str
-    :param subject:     str
-    :param sender:      str
-    :param data:        dict
-    :param attachments: list
-    :return:            None
+
+    :param recipients:      email addresses we are sending to
+    :type recipients:       list|tuple
+    :param text_body:       email plain text message to send
+    :type text_body:        str
+    :param html_body:       email html message to send
+    :type html_body:        str
+    :param subject:         subject of the email
+    :type subject:          str
+    :param sender:          email address we are sending from
+    :type sender:           str
+    :param data:            key, value pairs to add to message
+    :type data:             dict
+    :param attachments:     list|tuple
+    :type attachments:      files to attach to email
+    :return:                no return value
+    :rtype:                 None
     """
 
     try:
         if data is not None:
             text_body += "\r\n\n"
             for key, value in data.items():
-                text_body += "{}: {}\n".format(key,value)
+                text_body += "{}: {}\n".format(str(key),str(value))
             text_body += "\n"
 
         # print("Creating email")

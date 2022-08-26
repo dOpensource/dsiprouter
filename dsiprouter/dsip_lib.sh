@@ -22,7 +22,8 @@ export GOOGLE_DNS_IPV4="8.8.8.8"
 export GOOGLE_DNS_IPV6="2001:4860:4860::8888"
 
 # Constants for imported functions
-export DSIP_INIT_FILE="/lib/systemd/system/dsip-init.service"
+export DSIP_INIT_FILE=${DSIP_INIT_FILE:-"/lib/systemd/system/dsip-init.service"}
+export DSIP_SYSTEM_CONFIG_DIR=${DSIP_SYSTEM_CONFIG_DIR:-"/etc/dsiprouter"}
 DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
@@ -165,7 +166,7 @@ function decryptConfigAttrib() {
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
         printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
     else
-        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import sys; sys.path.insert(0, '/etc/dsiprouter/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import sys; sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
     fi
 }
 export -f decryptConfigAttrib
@@ -390,15 +391,37 @@ function ipv6Test() {
 }
 export -f ipv6Test
 
+# $1 == [-4|-6] to force specific IP version
 # output: the internal IP for this system
 # notes: prints internal ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalIP() {
-    local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$IP" ]]; then
-        IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    local INTERNAL_IP=""
+
+    case "$1" in
+        -4)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=0
+            ;;
+        -6)
+            local IPV4_ENABLED=0
+            local IPV6_ENABLED=1
+            ;;
+        *)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=${IPV6_ENABLED:-0}
+            ;;
+    esac
+
+    if (( ${IPV4_ENABLED} == 1 )); then
+        INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
     fi
-    printf '%s' "$IP"
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
+        INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    fi
+
+    printf '%s' "$INTERNAL_IP"
 }
 export -f getInternalIP
 
@@ -412,6 +435,7 @@ export -f getInternalIP
 #       https://unix.stackexchange.com/questions/305039/pausing-a-bash-script-until-previous-commands-are-finished
 #       https://unix.stackexchange.com/questions/497614/bash-execute-background-process-whilst-reading-output
 #       https://stackoverflow.com/questions/3338030/multiple-bash-traps-for-the-same-signal
+# $1 == [-4|-6] to force specific IP version
 # output: the external IP for this system
 # notes: prints external ip, or empty string if not available
 # notes: below we have measurements for average time of each service
@@ -431,7 +455,6 @@ export -f getInternalIP
 # | https://api6.ipify.org            | 1.08510  | IPV6        |
 #
 function getExternalIP() {
-    local IPV6_ENABLED=${IPV6_ENABLED:-0}
     local EXTERNAL_IP="" TIMEOUT=5
     local IPV4_URLS=(
         "https://icanhazip.com"
@@ -448,26 +471,43 @@ function getExternalIP() {
         "https://api6.ipify.org"
     )
 
-    for URL in ${IPV4_URLS[@]}; do
-        EXTERNAL_IP=$(curl -4 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
-        ipv4Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
-    done
+    case "$1" in
+        -4)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=0
+            ;;
+        -6)
+            local IPV4_ENABLED=0
+            local IPV6_ENABLED=1
+            ;;
+        *)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=${IPV6_ENABLED:-0}
+            ;;
+    esac
+
+    if (( ${IPV4_ENABLED} == 1 )); then
+        for URL in ${IPV4_URLS[@]}; do
+            EXTERNAL_IP=$(curl -4 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
+            ipv4Test "$EXTERNAL_IP" && { printf '%s' "$EXTERNAL_IP"; return 0; }
+        done
+    fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_IP" ]]; then
         for URL in ${IPV6_URLS[@]}; do
             EXTERNAL_IP=$(curl -6 -s --connect-timeout $TIMEOUT $URL 2>/dev/null)
-            ipv6Test "$EXTERNAL_IP" && break || EXTERNAL_IP=""
+            ipv6Test "$EXTERNAL_IP" && { printf '%s' "$EXTERNAL_IP"; return 0; }
         done
     fi
 
-    printf '%s' "$EXTERNAL_IP"
+    return 1
 }
 export -f getExternalIP
 
 # output: the internal FQDN for this system
 # notes: prints internal FQDN, or empty string if not available
 function getInternalFQDN() {
-    printf '%s' "$(hostname -f 2>/dev/null || hostname)"
+    printf '%s' "$(hostname -f 2>/dev/null || hostname 2>/dev/null)"
 }
 export -f getInternalFQDN
 
@@ -476,36 +516,55 @@ export -f getInternalFQDN
 # notes: will use EXTERNAL_IP if available or look it up dynamically
 # notes: tries ipv4 first then ipv6
 function getExternalFQDN() {
-    local EXTERNAL_IP=${EXTERNAL_IP:-$(getExternalIP)}
-    local EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV4} +short -x ${EXTERNAL_IP} 2>/dev/null | head -1 | sed 's/\.$//')
-    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$EXTERNAL_FQDN" ]]; then
-          EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV6} +short -x ${EXTERNAL_IP} 2>/dev/null | head -1 | sed 's/\.$//')
+    local EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV4} +short -x ${EXTERNAL_IP:-$(getExternalIP -4)} 2>/dev/null | head -1 | sed 's/\.$//')
+    if (( ${IPV6_ENABLED:-0} == 1 )) && [[ -z "$EXTERNAL_FQDN" ]]; then
+          EXTERNAL_FQDN=$(dig @${GOOGLE_DNS_IPV6} +short -x ${EXTERNAL_IP6:-$(getExternalIP -6)} 2>/dev/null | head -1 | sed 's/\.$//')
     fi
     printf '%s' "$EXTERNAL_FQDN"
 }
 export -f getExternalFQDN
 
+# $1 == [-4|-6] to force specific IP version
 # output: the internal IP CIDR for this system
 # notes: prints internal CIDR address, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalCIDR() {
-    local PREFIX_LEN="" DEF_IFACE=""
+    local PREFIX_LEN="" DEF_IFACE="" INTERNAL_IP=""
     local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 
-    # if ipv4 stack returned good result use it, otherwise try ipv6
-    if [[ -n "$IP" ]]; then
-        DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-        PREFIX_LEN=$(ip -4 route list | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
-    elif (( ${IPV6_ENABLED} == 1 )); then
-        IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-        DEF_IFACE=$(ip -6 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:::/0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-        PREFIX_LEN=$(ip -6 route list 2>/dev/null | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!::/0|default).*/(\d+) .*via [\w:/.]*.*$%\1%) { print; exit; } }')
+    case "$1" in
+        -4)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=0
+            ;;
+        -6)
+            local IPV4_ENABLED=0
+            local IPV6_ENABLED=1
+            ;;
+        *)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=${IPV6_ENABLED:-0}
+            ;;
+    esac
+
+    if (( ${IPV4_ENABLED} == 1 )); then
+        INTERNAL_IP=$(getInternalIP -4)
+        if [[ -n "$INTERNAL_IP" ]]; then
+            DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+            PREFIX_LEN=$(ip -4 route list | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+        fi
+    fi
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
+        INTERNAL_IP=$(getInternalIP -6)
+        if [[ -n "$INTERNAL_IP" ]]; then
+            DEF_IFACE=$(ip -6 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:::/0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+            PREFIX_LEN=$(ip -6 route list 2>/dev/null | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!::/0|default).*/(\d+) .*via [\w:/.]*.*$%\1%) { print; exit; } }')
+        fi
     fi
 
     # make sure output is empty if error occurred
-    if [[ -z "$IP" || -z "$PREFIX_LEN" ]]; then
-        echo -n ''
-    else
+    if [[ -n "$INTERNAL_IP" && -n "$PREFIX_LEN" ]]; then
         printf '%s/%s' "$IP" "$PREFIX_LEN"
     fi
 }

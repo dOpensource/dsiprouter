@@ -30,8 +30,8 @@ term_width = shutil.get_terminal_size((80, 24))[0]
 # global constants
 CSRC_STYLE_IFDEF_REGEX = re.compile(rb'^\#if(?:n?def)?')
 CSRC_STYLE_ENDIF_REGEX = re.compile(rb'^\#endif')
-KAMCFG_STYLE_IFDEF_REGEX = re.compile(rb'^\#if(?:n?def)?')
-KAMCFG_STYLE_ENDIF_REGEX = re.compile(rb'^\#endif')
+KAMCFG_STYLE_IFDEF_REGEX = re.compile(rb'^\#\!if(?:n?def)?')
+KAMCFG_STYLE_ENDIF_REGEX = re.compile(rb'^\#\!endif')
 
 # holds state for entire test
 test_succeeded = True
@@ -47,7 +47,7 @@ unmatched_endifs = []
 #   + preprocessor statement closure
 def haveValidSyntax(test_files, syntax='c-src'):
     global files_checked, current_file, unmatched_ifdefs, unmatched_endifs
-    
+
     if syntax == 'c-src':
         ifdef_regex = CSRC_STYLE_IFDEF_REGEX
         endif_regex = CSRC_STYLE_ENDIF_REGEX
@@ -56,10 +56,10 @@ def haveValidSyntax(test_files, syntax='c-src'):
         endif_regex = KAMCFG_STYLE_ENDIF_REGEX
     else:
         return False
-    
+
     for test_file in test_files:
         current_file = test_file
-        
+
         with open(test_file, 'rb') as fp:
             i = 1
             for line in fp:
@@ -71,12 +71,12 @@ def haveValidSyntax(test_files, syntax='c-src'):
                     except IndexError:
                         unmatched_endifs.append(i)
                 i += 1
-        
+
         files_checked += 1
-                
+
         if len(unmatched_ifdefs) != 0 or len(unmatched_endifs) != 0:
             return False
-        
+
     return True
 
 # print summary of test results
@@ -104,7 +104,7 @@ def printErrorInfo():
             for i in unmatched_ifdefs:
                 print('{}: line {}'.format(current_file, str(i)), file=sys.stderr)
             print('|', '='*(term_width-2), '|', sep='', file=sys.stderr)
-        
+
         if len(unmatched_endifs) != 0:
             header = 'unmatched endifs'
             header_len = len(header)
@@ -116,7 +116,7 @@ def printErrorInfo():
                 print('{}: line {}'.format(current_file, str(i)), file=sys.stderr)
             print('|', '='*(term_width-2), '|', sep='', file=sys.stderr)
 
-# wrapper for the final cleanup 
+# wrapper for the final cleanup
 def printResultsAndExit():
     printSummary()
     printErrorInfo()

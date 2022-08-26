@@ -1,7 +1,7 @@
 import os, psycopg2, hashlib, MySQLdb, subprocess, docker
 from database import dSIPMultiDomainMapping
 from util.security import AES_CTR
-from shared import safeUriToHost
+from util.networking import safeUriToHost
 
 # TODO: error handling here is pretty bad, we need to establish connection from main func and pass conn/cursors to sub funcs
 #       I implemented an exmaple in sync_needed() of proper connection / cursor handling, we need to move that to the entry func

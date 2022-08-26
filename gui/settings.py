@@ -71,7 +71,7 @@ RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # Will disable modification tracking
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = True
+SQLALCHEMY_SQL_DEBUG = False
 
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table
@@ -118,9 +118,12 @@ STIR_SHAKEN_BLOCK_INVALID = 0
 
 
 # updated dynamically! These values will be overwritten
-INTERNAL_IP_ADDR = '68.183.203.128'
-INTERNAL_IP_NET = '68.183.203.*'
-EXTERNAL_IP_ADDR = '68.183.203.128'
+INTERNAL_IP_ADDR = '192.168.0.1'
+INTERNAL_IP_NET = '192.168.0.1/24'
+INTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'
+INTERNAL_IP6_NET = '2604:a880:400:d0::2048:3001/64'
+EXTERNAL_IP_ADDR = '1.1.1.1'
+EXTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'
 EXTERNAL_FQDN = 'sip.dsiprouter.org'
 
 # upload folder for files
@@ -129,9 +132,9 @@ UPLOAD_FOLDER = '/tmp'
 # Cloud Platform
 # The cloud platform the dSIPRouter is installed on
 # The installer will update this
-# '' = other or native install
+# '' = other or bare metal install
 # AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean, VULTR = Vultr Cloud
-CLOUD_PLATFORM = 'DO'
+CLOUD_PLATFORM = ''
 
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
@@ -140,7 +143,7 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter 1-1 <>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # backup settings
