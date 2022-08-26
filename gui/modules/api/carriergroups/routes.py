@@ -1,13 +1,11 @@
-import os
-from flask import Blueprint, render_template, abort, jsonify
+import os, importlib.util
+from flask import Blueprint, jsonify
+from database import SessionLoader, DummySession, GatewayGroups
+from shared import showApiError,debugEndpoint,StatusCodes, getRequestData,strFieldsToDict
 from util.security import api_security
-from database import SessionLoader, DummySession, dSIPMultiDomainMapping, GatewayGroups
-from shared import getExternalIP,showApiError,debugEndpoint,StatusCodes, getRequestData,strFieldsToDict, dictToStrFields
-from enum import Enum
-from werkzeug import exceptions as http_exceptions
-import importlib.util
+from util.networking import getExternalIP
+from modules.api.carriergroups.functions import addUpdateCarrierGroups, addUpdateCarriers
 import settings, globals
-from modules.api.carriergroups.functions import *
 
 carriergroups = Blueprint('carriergroups','__name__')
 
@@ -123,16 +121,16 @@ def getPluginMetaData(plugin_name):
     # Import plugin
     # Returns the Base directory of this file
     base_dir = os.path.dirname(__file__)
-    try: 
+    try:
         # Use the Base Dir to specify the location of the plugin required for this domain
         spec = importlib.util.spec_from_file_location(format(plugin_name), "{}/plugin/{}/interface.py".format(base_dir,plugin_name))
         plugin  = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(plugin) 
+        spec.loader.exec_module(plugin)
         if plugin:
             return plugin.getPluginMetaData()
         else:
             return None
-    
+
     except Exception as ex:
         print(ex)
 
@@ -169,10 +167,10 @@ def addCarrierGroups(id=None):
             debugEndpoint()
 
         db = SessionLoader()
-    
+
         # defaults.. keep data returned separate from returned metadata
         response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-        
+
         # Dictionary to store request parameters
         data = {}
 
@@ -201,7 +199,7 @@ def addCarrierGroups(id=None):
             data['plugin_prefix'] = plugin['plugin_prefix'] if 'plugin_prefix' in plugin else ''
             data['plugin_account_sid'] = plugin['account_sid'] if 'account_sid' in plugin else ''
             data['plugin_account_token'] = plugin['account_token'] if 'account_token' in plugin else ''
-        
+
         endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else ''
 
         if plugin and plugin != "None" and data['plugin_name'] != "":
@@ -209,12 +207,12 @@ def addCarrierGroups(id=None):
             #from "modules.api.carriergroups.plugin.{}".format(lower(plugin_name)) import init, createTrunk
             from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
             client=init(data['plugin_account_sid'],data['plugin_account_token'])
-            
+
             if client:
                 if (len(data['plugin_prefix']) == 0):
                     plugin_prefix = "dsip"
 
-                trunk_name = "{}{}".format(plugin_prefix,data['name']) 
+                trunk_name = "{}{}".format(plugin_prefix,data['name'])
                 trunk_sid = createTrunk(client,trunk_name, getExternalIP())
                 if trunk_sid:
                     createIPAccessControlList(client,trunk_name,getExternalIP())
@@ -241,7 +239,7 @@ def addCarrierGroups(id=None):
             carrier_data['ip_addr'] = endpoint['hostname'] if 'hostname' in endpoint else ''
             carrier_data['strip'] = endpoint['strip'] if 'strip' in endpoint else data['strip']
             # Convert to a string
-            carrier_data['strip'] = str(carrier_data['strip']) 
+            carrier_data['strip'] = str(carrier_data['strip'])
             carrier_data['prefix'] = endpoint['prefix'] if 'prefix' in endpoint else data['prefix']
             addUpdateCarriers(carrier_data)
 
@@ -250,7 +248,7 @@ def addCarrierGroups(id=None):
         response_payload['data'].append(gwgroup_data)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
-    
+
     except Exception as ex:
         db.rollback()
         db.flush()

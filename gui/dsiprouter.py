@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 # make sure the generated source files are imported instead of the template ones
+import socket
 import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, re, json, subprocess, urllib.parse, glob, datetime, csv, logging, signal, bjoern
+import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern
 from functools import wraps
 from copy import copy
 from collections import OrderedDict
@@ -37,8 +38,7 @@ from modules.api.licensemanager.functions import validateLicense
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
-import globals
-import settings
+import globals, settings
 
 
 # TODO: unit testing per component
@@ -2224,9 +2224,9 @@ def syncSettings(new_fields={}, update_net=False):
         if update_net:
             int_ip = getInternalIP('4')
             int_ip6 = getInternalIP('6')
-            int_fqdn = ipToHost(int_ip)
+            int_fqdn = socket.getfqdn()
             ext_ip = getExternalIP('4')
-            ext_ip6 = getExternalIP('4')
+            ext_ip6 = getExternalIP('6')
             ext_fqdn = ipToHost(ext_ip)
             net_dict = {
                 'INTERNAL_IP_ADDR': int_ip,

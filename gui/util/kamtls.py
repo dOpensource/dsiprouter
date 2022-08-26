@@ -4,7 +4,7 @@ sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import re, socket
 import settings
-from networking import ipv6Test, hostToIP
+from util.networking import ipv6Test, hostToIP
 
 # Server name matching options
 KAM_TLS_SNI_DOMAIN = 0

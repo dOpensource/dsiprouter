@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-87f9c3ade95343c8b3c3341a7480bb24977ec4b5
+8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84
+287e9f6759b3d18f48dbf6ca170fa48be2b00c82
 460f0c26cd2bb10b4e44f1f62024525d7b1eadf6
 bb710c9d8412c556055e4f49a406bab60142dee9
 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112
@@ -2015,10 +2016,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 87f9c3ade95343c8b3c3341a7480bb24977ec4b5)
+[//]: # (START_SECTION 8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84)
+### Fix Refactoring Bugs
+
+> Commit: [8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84](https://github.com/dOpensource/dsiprouter/commit/8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84)  
+> Date: Fri, 26 Aug 2022 13:32:13 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix a few bugs from code refactoring in [287e9f6](https://github.com/dOpensource/dsiprouter/commit/287e9f6)
+
+
+---
+
+[//]: # (END_SECTION 8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84)
+[//]: # (START_SECTION 287e9f6759b3d18f48dbf6ca170fa48be2b00c82)
 ### Enhanced IPv6 Support
 
-> Commit: [87f9c3ade95343c8b3c3341a7480bb24977ec4b5](https://github.com/dOpensource/dsiprouter/commit/87f9c3ade95343c8b3c3341a7480bb24977ec4b5)  
+> Commit: [287e9f6759b3d18f48dbf6ca170fa48be2b00c82](https://github.com/dOpensource/dsiprouter/commit/287e9f6759b3d18f48dbf6ca170fa48be2b00c82)  
 > Date: Fri, 26 Aug 2022 11:22:54 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2046,7 +2063,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 87f9c3ade95343c8b3c3341a7480bb24977ec4b5)
+[//]: # (END_SECTION 287e9f6759b3d18f48dbf6ca170fa48be2b00c82)
 [//]: # (START_SECTION 460f0c26cd2bb10b4e44f1f62024525d7b1eadf6)
 ### Update Credential Setting SQL Statements
 

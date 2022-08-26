@@ -1,12 +1,10 @@
-from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
-    safeUriToHost, safeFormatSipUri, safeStripPort
-from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
-    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
-    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
-from sqlalchemy import func, exc as sql_exceptions
+from flask import request
+from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 import settings, globals
+from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
+from database import SessionLoader, DummySession, Gateways, Address, UAC, GatewayGroups
+from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 
 def addUpdateCarrierGroups(data=None):
     """
