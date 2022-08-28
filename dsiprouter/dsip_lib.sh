@@ -421,7 +421,7 @@ function getInternalIP() {
         INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 	# Disable IPV6 if it's not routable, which means routing hasn't been setup
 	if (( "$?" != 0 )); then
-		$IPV6_ENABLED=0
+		IPV6_ENABLED=0
 	fi
     fi
 
