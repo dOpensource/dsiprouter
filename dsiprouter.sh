@@ -50,7 +50,7 @@
 #exec 19> >(awk -v time=$(date +"[%Y-%m-%d_%H:%M:%S] ") '{ print time, $0; fflush(); }' > /tmp/debug/trace.log)
 #
 #BASH_XTRACEFD="19"
-#set -x
+set -x
 #===========================================================#
 
 
@@ -638,6 +638,8 @@ function updateKamailioConfig() {
     else
         disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    #Workaround for IPV6 Bug
+    export IPV6_ENABLED=0
     if (( $IPV6_ENABLED == 1 )); then
         enableKamailioConfigAttrib 'WITH_IPV6' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
