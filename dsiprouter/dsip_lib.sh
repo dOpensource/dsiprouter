@@ -395,6 +395,9 @@ export -f ipv6Test
 # output: the internal IP for this system
 # notes: prints internal ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
+# TODO: currently we only check for the internal IP associated with the default interface/default route
+#       this will fail if the internal IP is not assigned to the default interface/default route
+#       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
 function getInternalIP() {
     local INTERNAL_IP=""
 
@@ -419,10 +422,6 @@ function getInternalIP() {
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
         INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	# Disable IPV6 if it's not routable, which means routing hasn't been setup
-	if (( "$?" != 0 )); then
-		IPV6_ENABLED=0
-	fi
     fi
 
     printf '%s' "$INTERNAL_IP"

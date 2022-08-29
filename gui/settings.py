@@ -118,6 +118,7 @@ STIR_SHAKEN_BLOCK_INVALID = 0
 
 
 # updated dynamically! These values will be overwritten
+IPV6_ENABLED = False
 INTERNAL_IP_ADDR = '192.168.0.1'
 INTERNAL_IP_NET = '192.168.0.1/24'
 INTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'

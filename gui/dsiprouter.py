@@ -1124,10 +1124,10 @@ def addUpdateInboundMapping():
                 db.add(Gateway)
                 db.flush()
 
-                db.add_all([
-                    Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid),
-                    Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid)
-                ])
+                addresses = [Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)]
+                if settings.IPV6_ENABLED:
+                    addresses.append(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                db.add_all(addresses)
 
                 # Define an Inbound Mapping that maps to the newly created gateway
                 gwlist = Gateway.gwid
@@ -1226,8 +1226,9 @@ def addUpdateInboundMapping():
 
                 if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
                     db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
-                if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
-                    db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                if settings.IPV6_ENABLED:
+                    if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
+                        db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -2228,7 +2229,18 @@ def syncSettings(new_fields={}, update_net=False):
             ext_ip = getExternalIP('4')
             ext_ip6 = getExternalIP('6')
             ext_fqdn = ipToHost(ext_ip)
+            if os.path.exists('/proc/net/if_inet6'):
+                try:
+                    with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
+                        s.connect((int_ip6, 0))
+                    ipv6_enabled = True
+                except:
+                    ipv6_enabled = False
+            else:
+                ipv6_enabled = False
+
             net_dict = {
+                'IPV6_ENABLED': ipv6_enabled,
                 'INTERNAL_IP_ADDR': int_ip,
                 'INTERNAL_IP_NET': getInternalCIDR('4'),
                 'INTERNAL_IP6_ADDR': int_ip6,
@@ -2265,9 +2277,9 @@ def syncSettings(new_fields={}, update_net=False):
                  ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
                  ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT), ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP),
                  ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT), ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
-                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR), ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET),
-                 ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR), ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET), ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
-                 ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR), ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
+                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('IPV6_ENABLED', settings.IPV6_ENABLED), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
+                 ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET), ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR), ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET),
+                 ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR), ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR), ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
                  ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER), ('CLOUD_PLATFORM', settings.CLOUD_PLATFORM), ('MAIL_SERVER', settings.MAIL_SERVER),
                  ('MAIL_PORT', settings.MAIL_PORT), ('MAIL_USE_TLS', settings.MAIL_USE_TLS), ('MAIL_USERNAME', settings.MAIL_USERNAME),
                  ('MAIL_PASSWORD', settings.MAIL_PASSWORD), ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),

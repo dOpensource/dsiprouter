@@ -5,7 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84
+f395b698de60d669e9dfcc564caef0d8aa7b6f84
+a1d72b29d902e17d92a80db3eeb00b7d0e2d7123
+1c4ffe41812941046a1cf1c1cb869b5021273c88
+94b70f189ccb0199130e2abfc9a87cf9c9b193a9
+f1bd6c453827140e70170b7cd86de21bf5e8aeed
+fe91ef431b330c83f063b8251cbd3fc0bcbb7d4a
 287e9f6759b3d18f48dbf6ca170fa48be2b00c82
 460f0c26cd2bb10b4e44f1f62024525d7b1eadf6
 bb710c9d8412c556055e4f49a406bab60142dee9
@@ -2016,10 +2021,94 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84)
+[//]: # (START_SECTION f395b698de60d669e9dfcc564caef0d8aa7b6f84)
+### General Bug Fixes for Release
+
+> Commit: [f395b698de60d669e9dfcc564caef0d8aa7b6f84](https://github.com/dOpensource/dsiprouter/commit/f395b698de60d669e9dfcc564caef0d8aa7b6f84)  
+> Date: Mon, 29 Aug 2022 13:14:19 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix IPv6 address resolution issues on AWS
+- fix IPv6 TLS conditional configuration
+- add conditional checks for IPv6 logic
+- fix missing cloud platform in `dsip_settings` table constraint
+- update STIR/SHAKEN configs to utilize new flags
+- add `IPV6_ENABLED` setting to DB and python settings
+- reset defaults and remove unwanted testing variables
+- fix SSH banner logic
+- fix FQDN aliasing in kamailio config
+
+
+---
+
+[//]: # (END_SECTION f395b698de60d669e9dfcc564caef0d8aa7b6f84)
+[//]: # (START_SECTION a1d72b29d902e17d92a80db3eeb00b7d0e2d7123)
+### Disabled IPV6 and TLS IPV6
+
+> Commit: [a1d72b29d902e17d92a80db3eeb00b7d0e2d7123](https://github.com/dOpensource/dsiprouter/commit/a1d72b29d902e17d92a80db3eeb00b7d0e2d7123)  
+> Date: Sun, 28 Aug 2022 23:28:40 +0000  
+> Author: root (root@dev-070-dsip-v0.700)  
+> Committer: root (root@dev-070-dsip-v0.700)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a1d72b29d902e17d92a80db3eeb00b7d0e2d7123)
+[//]: # (START_SECTION 1c4ffe41812941046a1cf1c1cb869b5021273c88)
+### Pushed a workaround to disable IPV6 support
+
+> Commit: [1c4ffe41812941046a1cf1c1cb869b5021273c88](https://github.com/dOpensource/dsiprouter/commit/1c4ffe41812941046a1cf1c1cb869b5021273c88)  
+> Date: Sun, 28 Aug 2022 23:02:59 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1c4ffe41812941046a1cf1c1cb869b5021273c88)
+[//]: # (START_SECTION 94b70f189ccb0199130e2abfc9a87cf9c9b193a9)
+### Added IPV6 Enabled Logic to Kamailio
+
+> Commit: [94b70f189ccb0199130e2abfc9a87cf9c9b193a9](https://github.com/dOpensource/dsiprouter/commit/94b70f189ccb0199130e2abfc9a87cf9c9b193a9)  
+> Date: Sun, 28 Aug 2022 20:06:57 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 94b70f189ccb0199130e2abfc9a87cf9c9b193a9)
+[//]: # (START_SECTION f1bd6c453827140e70170b7cd86de21bf5e8aeed)
+### IPV6 Installer Detection: --Added logic to test if traffic can be routed to an IPV6 address - if not disables it
+
+> Commit: [f1bd6c453827140e70170b7cd86de21bf5e8aeed](https://github.com/dOpensource/dsiprouter/commit/f1bd6c453827140e70170b7cd86de21bf5e8aeed)  
+> Date: Sun, 28 Aug 2022 18:20:11 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f1bd6c453827140e70170b7cd86de21bf5e8aeed)
+[//]: # (START_SECTION fe91ef431b330c83f063b8251cbd3fc0bcbb7d4a)
 ### Fix Refactoring Bugs
 
-> Commit: [8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84](https://github.com/dOpensource/dsiprouter/commit/8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84)  
+> Commit: [fe91ef431b330c83f063b8251cbd3fc0bcbb7d4a](https://github.com/dOpensource/dsiprouter/commit/fe91ef431b330c83f063b8251cbd3fc0bcbb7d4a)  
 > Date: Fri, 26 Aug 2022 13:32:13 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2031,7 +2120,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 8e73caf7b4a2b4e5ec1beaee6a805b2c71ef1e84)
+[//]: # (END_SECTION fe91ef431b330c83f063b8251cbd3fc0bcbb7d4a)
 [//]: # (START_SECTION 287e9f6759b3d18f48dbf6ca170fa48be2b00c82)
 ### Enhanced IPv6 Support
 
