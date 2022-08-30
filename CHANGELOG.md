@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-f395b698de60d669e9dfcc564caef0d8aa7b6f84
+56420fe1019b6a643edc003cbecf92ed8cd9362b
+fe84f3a2e63bc5190493b469fa2524ddbc585cb7
 a1d72b29d902e17d92a80db3eeb00b7d0e2d7123
 1c4ffe41812941046a1cf1c1cb869b5021273c88
 94b70f189ccb0199130e2abfc9a87cf9c9b193a9
@@ -2021,10 +2022,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION f395b698de60d669e9dfcc564caef0d8aa7b6f84)
+[//]: # (START_SECTION 56420fe1019b6a643edc003cbecf92ed8cd9362b)
+### Fix IPv6 Enabled Check
+
+> Commit: [56420fe1019b6a643edc003cbecf92ed8cd9362b](https://github.com/dOpensource/dsiprouter/commit/56420fe1019b6a643edc003cbecf92ed8cd9362b)  
+> Date: Tue, 30 Aug 2022 08:28:45 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add check for routable IPv6 address before enabling IPv6 in kamailio
+
+
+---
+
+[//]: # (END_SECTION 56420fe1019b6a643edc003cbecf92ed8cd9362b)
+[//]: # (START_SECTION fe84f3a2e63bc5190493b469fa2524ddbc585cb7)
 ### General Bug Fixes for Release
 
-> Commit: [f395b698de60d669e9dfcc564caef0d8aa7b6f84](https://github.com/dOpensource/dsiprouter/commit/f395b698de60d669e9dfcc564caef0d8aa7b6f84)  
+> Commit: [fe84f3a2e63bc5190493b469fa2524ddbc585cb7](https://github.com/dOpensource/dsiprouter/commit/fe84f3a2e63bc5190493b469fa2524ddbc585cb7)  
 > Date: Mon, 29 Aug 2022 13:14:19 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2044,7 +2061,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION f395b698de60d669e9dfcc564caef0d8aa7b6f84)
+[//]: # (END_SECTION fe84f3a2e63bc5190493b469fa2524ddbc585cb7)
 [//]: # (START_SECTION a1d72b29d902e17d92a80db3eeb00b7d0e2d7123)
 ### Disabled IPV6 and TLS IPV6
 

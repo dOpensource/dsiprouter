@@ -620,14 +620,16 @@ function removeDependsOnInit() {
 export -f removeDependsOnInit
 
 # $1 == ip or hostname
-# $2 == port
+# $2 == port (optional)
 # returns: 0 == connection good, 1 == connection bad
-# note: timeout is set to 3 sec
+# NOTE: if port is not given a ping test will be used instead
 function checkConn() {
-    if cmdExists 'nc'; then
-        nc -w 3 "$1" "$2" < /dev/null &>/dev/null; return $?
+    local TIMEOUT=3
+
+    if (( $# == 2 )); then
+        timeout $TIMEOUT bash -c "< /dev/tcp/$1/$2" &>/dev/null; return $?
     else
-        timeout 3 bash -c "< /dev/tcp/$1/$2" &>/dev/null; return $?
+        ping -q -W $TIMEOUT -c 3 "$1" &>/dev/null; return $?
     fi
 }
 export -f checkConn
