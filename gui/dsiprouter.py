@@ -27,7 +27,7 @@ from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFor
     ipToHost, hostToIP
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
-    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd
+    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, dSIPUser
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -35,6 +35,7 @@ from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
 from modules.api.licensemanager.functions import validateLicense
+from modules.api.auth.routes import user
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
@@ -51,11 +52,13 @@ app.register_blueprint(domains)
 app.register_blueprint(api)
 app.register_blueprint(mediaserver)
 app.register_blueprint(carriergroups)
+app.register_blueprint(user)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
 csrf.exempt(mediaserver)
 csrf.exempt(carriergroups)
+csrf.exempt(user)
 numbers_api = flowroute.Numbers()
 settings_manager = DummySettingsManager()
 

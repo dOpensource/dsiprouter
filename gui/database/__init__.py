@@ -442,6 +442,21 @@ class Dispatcher(object):
 
 # TODO: create class for dsip_settings table
 
+class dSIPUser(object):
+    """
+    Schema for the dSIPROuter User table
+    """
+    def __init__(self, firstname, lastname, username, password, roles, domains, token, token_expiration):
+        self.firstname = firstname
+        self.lastname = lastname
+        self.username = username
+        self.password = password
+        self.roles = roles
+        self.domains = domains
+        self.token = token
+        self.token_expiration = token_expiration
+    pass
+
 
 def getDBURI():
     """
@@ -561,6 +576,7 @@ def createSessionMaker():
     dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
     dsip_certificates = Table('dsip_certificates', metadata, autoload=True)
     dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', metadata, autoload=True)
+    dsip_user = Table('dsip_user', metadata, autoload=True)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -594,6 +610,7 @@ def createSessionMaker():
     mapper(dSIPCDRInfo, dsip_cdrinfo)
     mapper(dSIPCertificates, dsip_certificates)
     mapper(dSIPDNIDEnrichment, dsip_dnid_enrichment)
+    mapper(dSIPUser, dsip_user)
 
     # mapper(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
