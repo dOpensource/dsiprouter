@@ -85,13 +85,13 @@ def login():
         db = SessionLoader()
 
         # Check for existing user
-        existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).all()
+        # existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
+        existing_user = db.query(dSIPUser).filter(dSIPUser.username == "yahoo2").first()
 
 
 
         if existing_user:
             response_payload = {'error': 'User Already Exists', 'data': request_data}
-
             print("Saved Password: ", (existing_user['password']))
             print("Decrypted: ", (AES_CTR.decrypt(existing_user['password'])))
             print("Provided: ", (request_data['password']))
