@@ -255,18 +255,6 @@ function install {
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /var/run/rtpengine
 
-    if (( ${SERVERNAT:-0} == 0 )); then
-        INTERFACE="ipv4/${INTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
-        fi
-    else
-        INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
-        fi
-    fi
-
     # rtpengine config file
     # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
     # TODO: move from 2 seperate config files to generating entire config
@@ -276,7 +264,7 @@ function install {
 [rtpengine]
 table = 0
 no-fallback = false
-interface = ${INTERFACE}
+interface = 127.0.0.1
 listen-ng = 127.0.0.1:7722
 port-min = ${RTP_PORT_MIN}
 port-max = ${RTP_PORT_MAX}

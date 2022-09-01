@@ -75,7 +75,6 @@ function setStaticScriptSettings() {
     FLT_FWD_MIN=20000
     WITH_LCR=1
     export DEBUG=0
-    OVERRIDE_SERVERNAT=0
     export TEAMS_ENABLED=1
     export REQ_PYTHON_MAJOR_VER=3
     export PROJECT_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio/configs"
@@ -166,12 +165,17 @@ function setDynamicScriptSettings() {
     if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
     	export EXTERNAL_FQDN="$INTERNAL_FQDN"
     fi
-    # TODO: NAT can be enabled separately for the IPv6 and IPv4 networks, we need to check for each one individually
-    #       we should separate logic by defining a WITH_SERVERNAT flag here and in the kamailio config
-    if [[ "$EXTERNAL_IP" != "$INTERNAL_IP" || "$EXTERNAL_IP6" != "$INTERNAL_IP6" ]]; then
+    # if the resolved public ip address is is the same as the resolved internal address then enable serverside NAT
+    if [[ "$EXTERNAL_IP" != "$INTERNAL_IP" ]]; then
         export SERVERNAT=1
     else
         export SERVERNAT=0
+    fi
+    # enable them independent of each other, NOTE: ipv6 NAT networks are rarely used
+    if (( ${IPV6_ENABLED} == 1 )) && [[ "$EXTERNAL_IP6" != "$INTERNAL_IP6" ]]; then
+        export SERVERNAT6=1
+    else
+        export SERVERNAT6=0
     fi
 
     # grab root db settings from env or settings file
@@ -655,6 +659,11 @@ function updateKamailioConfig() {
     else
         disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    if (( $SERVERNAT6 == 1 )); then
+        enableKamailioConfigAttrib 'WITH_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
     if (( $IPV6_ENABLED == 1 )); then
         enableKamailioConfigAttrib 'WITH_IPV6' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
@@ -764,9 +773,6 @@ function updateKamailioStartup {
 
     # update kamailio configs on reboot
     removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
-    if (( ${OVERRIDE_SERVERNAT} == 1 )); then
-        KAM_UPDATE_OPTS="--servernat=${SERVERNAT}"
-    fi
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig $KAM_UPDATE_OPTS"
 
     # make sure dsip-init service runs prior to kamailio service
@@ -777,17 +783,21 @@ function updateKamailioStartup {
 # updates and settings in rtpengine config that may change
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig() {
-    if (( ${SERVERNAT:-0} == 0 )); then
+    local INTERFACE=""
+
+    if (( ${SERVERNAT} == 1 )); then
+        INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
+    else
         INTERFACE="ipv4/${INTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
+    fi
+    if (( ${IPV6_ENABLED} == 1 )); then
+        if (( ${SERVERNAT6} == 1 )); then
+            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
+        else
             INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
         fi
-    else
-        INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
-        fi
     fi
+
     setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
 }
 
@@ -797,9 +807,6 @@ function updateRtpengineStartup() {
 
     # update rtpengine configs on reboot
     removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig"
-    if (( ${OVERRIDE_SERVERNAT} == 1 )); then
-        RTP_UPDATE_OPTS="--servernat=${SERVERNAT}"
-    fi
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig $RTP_UPDATE_OPTS"
 
     # make sure dsip-init service runs prior to rtpengine service
@@ -1036,21 +1043,6 @@ function configureKamailioDB() {
     rm -rf /tmp/defaults
 }
 
-# TODO: deprecated since CLI command is being deprecated
-function enableSERVERNAT {
-    enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
-
-    printwarn "SERVERNAT is enabled - Restarting Kamailio is required"
-    printwarn "You can restart it by executing: systemctl restart kamailio"
-}
-# TODO: deprecated since CLI command is being deprecated
-function disableSERVERNAT {
-	disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
-
-	printwarn "SERVERNAT is disabled - Restarting Kamailio is required"
-	printdbg "You can restart it by executing: systemctl restart kamailio"
-}
-
 # Try to locate the Kamailio modules directory.  It will use the last modules directory found
 function fixMPATH() {
     mpath=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h/' -quit 2>/dev/null)
@@ -1262,38 +1254,38 @@ function installRTPEngine() {
 
     printdbg "Attempting to install RTPEngine..."
     ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
-    ret=$?
-    if (( $ret == 0 )); then
-        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
-        systemctl restart kamailio
-        printdbg "configuring RTPEngine service"
-    elif (( $ret == 2 )); then
-        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
-        printwarn "RTPEngine install waiting on reboot"
-        cleanupAndExit 0
-    else
+    if (( $? != 0 )); then
         printerr "RTPEngine install failed"
         cleanupAndExit 1
     fi
 
+    # config updates that are the same across all OS
+    updateRtpengineConfig
+    # add the config updates to dsip-init service
     updateRtpengineStartup
 
-    # Restart RTPEngine with the new configurations
+    # restart RTPEngine with the new configurations
     systemctl restart rtpengine
-    if systemctl is-active --quiet rtpengine; then
-        # sanity check, did the new kernel module load?
-        if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
-            printerr "Could not load new RTPEngine kernel module"
-            cleanupAndExit 1
-        fi
-        touch ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
-        printdbg "------------------------------------"
-        pprint "RTPEngine Installation is complete!"
-        printdbg "------------------------------------"
-    else
+    # did the service actually start with the changes?
+    if ! systemctl is-active --quiet rtpengine; then
         printerr "RTPEngine install failed"
         cleanupAndExit 1
     fi
+    # sanity check, did the new kernel module load?
+    if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
+        printerr "Could not load new RTPEngine kernel module"
+        cleanupAndExit 1
+    fi
+    # if we got here we know everything installed properly, update kamailio to use rtpengine
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+        enableKamailioConfigAttrib 'WITH_RTPENGINE' ${DSIP_KAMAILIO_CONFIG_FILE}
+        systemctl restart kamailio
+    fi
+
+    touch ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
+    printdbg "------------------------------------"
+    pprint "RTPEngine Installation is complete!"
+    printdbg "------------------------------------"
 }
 
 # Remove RTPEngine
@@ -2326,7 +2318,7 @@ function updateBanner() {
     # move old banner files
     mkdir -p /etc/update-motd.d
     cp -f /etc/motd ${BACKUPS_DIR}/motd.bak
-    truncaste -s 0 /etc/motd
+    truncate -s 0 /etc/motd
     chmod -x /etc/update-motd.d/* 2>/dev/null
 
     # add our custom banner script (dynamically updates MOTD banner)
@@ -3087,20 +3079,6 @@ function processCMD() {
                         RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
-                    -servernat|--servernat=*)
-                        OVERRIDE_SERVERNAT=1
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
-                                export SERVERNAT=1
-                            else
-                                export SERVERNAT=0
-                            fi
-                            shift
-                        else
-                            export SERVERNAT=1
-                            shift
-                        fi
-                        ;;
                     -exip|--external-ip=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
                             TMP=$(echo "$1" | cut -d '=' -f 2)
@@ -3619,20 +3597,6 @@ function processCMD() {
                         set -x
                         shift
                         ;;
-                    -servernat|--servernat=*)
-                        OVERRIDE_SERVERNAT=1
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
-                                export SERVERNAT=1
-                            else
-                                export SERVERNAT=0
-                            fi
-                            shift
-                        else
-                            export SERVERNAT=1
-                            shift
-                        fi
-                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -3694,52 +3658,6 @@ function processCMD() {
         installmodules)
             # reconfigure dsiprouter modules
             RUN_COMMANDS+=(installModules)
-            shift
-
-            while (( $# > 0 )); do
-                OPT="$1"
-                case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
-                    *)  # fail on unknown option
-                        printerr "Invalid option [$OPT] for command [$ARG]"
-                        usageOptions
-                        cleanupAndExit 1
-                        shift
-                        ;;
-                esac
-            done
-            ;;
-        # TODO: deprecated in favor of using updatekamconfig command
-        enableservernat)
-            # enable serverside nat settings for kamailio
-            RUN_COMMANDS+=(enableSERVERNAT)
-            shift
-
-            while (( $# > 0 )); do
-                OPT="$1"
-                case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
-                    *)  # fail on unknown option
-                        printerr "Invalid option [$OPT] for command [$ARG]"
-                        usageOptions
-                        cleanupAndExit 1
-                        shift
-                        ;;
-                esac
-            done
-            ;;
-        # TODO: deprecated in favor of using updatekamconfig command
-        disableservernat)
-            # disable serverside nat settings for kamailio
-            RUN_COMMANDS+=(disableSERVERNAT)
             shift
 
             while (( $# > 0 )); do
@@ -3995,19 +3913,6 @@ function processCMD() {
                         set -x
                         shift
                         ;;
-                    -servernat|--servernat=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
-                                export SERVERNAT=1
-                            else
-                                export SERVERNAT=0
-                            fi
-                            shift
-                        else
-                            export SERVERNAT=1
-                            shift
-                        fi
-                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -4032,19 +3937,6 @@ function processCMD() {
                         export DEBUG=1
                         set -x
                         shift
-                        ;;
-                    -servernat|--servernat=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            if (( $(echo "$1" | cut -d '=' -f 2) > 0 )); then
-                                export SERVERNAT=1
-                            else
-                                export SERVERNAT=0
-                            fi
-                            shift
-                        else
-                            export SERVERNAT=1
-                            shift
-                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"

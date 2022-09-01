@@ -59,6 +59,7 @@ if cmdExists "apt-get"; then
     apt-get update -qq -y >/dev/null
     apt-get install -qq -y git perl >/dev/null
 
+    # TODO: move to installScriptRequirements()
     # make sure english UTF-8 locale is installed
     if ! locale -a 2>/dev/null | grep -q 'en_US.UTF-8'; then
           perl -i -pe 's%# (en_US\.UTF-8 UTF-8)%\1%' /etc/locale.gen

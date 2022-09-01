@@ -215,10 +215,10 @@ function uninstall() {
     rm -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}
 
     # Uninstall Stirshaken Required Packages
-    ( cd /libjwt; make uninstall; exit $?; ) && rm -rf /libjwt
-    ( cd /libks; make uninstall; exit $?; ) && rm -rf /libks
-    ( cd /libstirshaken; make uninstall;exit $?; ) && rm -rf /libstirshaken
-    rm -rf /kamailio
+    ( cd ${SRC_DIR}/libjwt; make uninstall; exit $?; ) && rm -rf ${SRC_DIR}/libjwt
+    ( cd ${SRC_DIR}/libks; make uninstall; exit $?; ) && rm -rf ${SRC_DIR}/libks
+    ( cd ${SRC_DIR}/libstirshaken; make uninstall;exit $?; ) && rm -rf ${SRC_DIR}/libstirshaken
+    rm -rf ${SRC_DIR}/kamailio
 
     # Uninstall Kamailio modules
     apt-get -y remove --purge kamailio\*

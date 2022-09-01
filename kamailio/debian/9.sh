@@ -206,7 +206,14 @@ function uninstall {
     systemctl disable kamailio
 
     # Backup kamailio configuration directory
-    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
+    cp -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${BACKUPS_DIR}/kamailio/
+    rm -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}
+
+    # Uninstall Stirshaken Required Packages
+    ( cd ${SRC_DIR}/libjwt; make uninstall; exit $?; ) && rm -rf ${SRC_DIR}/libjwt
+    ( cd ${SRC_DIR}/libks; make uninstall; exit $?; ) && rm -rf ${SRC_DIR}/libks
+    ( cd ${SRC_DIR}/libstirshaken; make uninstall;exit $?; ) && rm -rf ${SRC_DIR}/libstirshaken
+    rm -rf ${SRC_DIR}/kamailio
 
     # Uninstall Kamailio modules
     apt-get -y remove --purge kamailio\*
@@ -225,16 +232,19 @@ function uninstall {
 
     # Remove logrotate settings
     rm -f /etc/logrotate.d/kamailio
+
+    return 0
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac
