@@ -5,7 +5,12 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-56420fe1019b6a643edc003cbecf92ed8cd9362b
+e30003525d64f1a4a982df45477cf12702a34160
+0b07c0332e0153766bc273f29979cf2beec337e8
+ae07741723edb6b01165ece997a1da2d172fb50e
+3e684eef5ec045020461fbafe4ce58245a096de2
+bab65db299f3412abc5fa28b2dffc16aff574c55
+c0478fe2ab8142e746a703956b89a3f5ec69f524
 fe84f3a2e63bc5190493b469fa2524ddbc585cb7
 a1d72b29d902e17d92a80db3eeb00b7d0e2d7123
 1c4ffe41812941046a1cf1c1cb869b5021273c88
@@ -2022,10 +2027,92 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 56420fe1019b6a643edc003cbecf92ed8cd9362b)
+[//]: # (START_SECTION e30003525d64f1a4a982df45477cf12702a34160)
+### Fix Default Network Sync Settings
+
+> Commit: [e30003525d64f1a4a982df45477cf12702a34160](https://github.com/dOpensource/dsiprouter/commit/e30003525d64f1a4a982df45477cf12702a34160)  
+> Date: Fri, 2 Sep 2022 11:22:52 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- set network settings to empty string when resolution fails
+- make teardown code more reliable
+- fix sqlalchemy debug settings not being set
+
+
+---
+
+[//]: # (END_SECTION e30003525d64f1a4a982df45477cf12702a34160)
+[//]: # (START_SECTION 0b07c0332e0153766bc273f29979cf2beec337e8)
+### IPv6 Serverside NAT Features
+
+> Commit: [0b07c0332e0153766bc273f29979cf2beec337e8](https://github.com/dOpensource/dsiprouter/commit/0b07c0332e0153766bc273f29979cf2beec337e8)  
+> Date: Thu, 1 Sep 2022 14:34:48 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add support for isolated enablement of serverside NAT on ipv4 or ipv6
+- add support for rtpengine interface switching on ipv6 w/ or w/o serverside NAT
+- fix a few typos
+- remove `-servernat` option, serverside NAT is now automatically detected/configured
+
+
+---
+
+[//]: # (END_SECTION 0b07c0332e0153766bc273f29979cf2beec337e8)
+[//]: # (START_SECTION ae07741723edb6b01165ece997a1da2d172fb50e)
+### Updated module to use new dSIP networking library
+
+> Commit: [ae07741723edb6b01165ece997a1da2d172fb50e](https://github.com/dOpensource/dsiprouter/commit/ae07741723edb6b01165ece997a1da2d172fb50e)  
+> Date: Wed, 31 Aug 2022 01:10:09 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION ae07741723edb6b01165ece997a1da2d172fb50e)
+[//]: # (START_SECTION 3e684eef5ec045020461fbafe4ce58245a096de2)
+### Replace main.tf after removing it by accident
+
+> Commit: [3e684eef5ec045020461fbafe4ce58245a096de2](https://github.com/dOpensource/dsiprouter/commit/3e684eef5ec045020461fbafe4ce58245a096de2)  
+> Date: Tue, 30 Aug 2022 19:32:08 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3e684eef5ec045020461fbafe4ce58245a096de2)
+[//]: # (START_SECTION bab65db299f3412abc5fa28b2dffc16aff574c55)
+### User API Checkpoint
+
+> Commit: [bab65db299f3412abc5fa28b2dffc16aff574c55](https://github.com/dOpensource/dsiprouter/commit/bab65db299f3412abc5fa28b2dffc16aff574c55)  
+> Date: Tue, 30 Aug 2022 19:25:40 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION bab65db299f3412abc5fa28b2dffc16aff574c55)
+[//]: # (START_SECTION c0478fe2ab8142e746a703956b89a3f5ec69f524)
 ### Fix IPv6 Enabled Check
 
-> Commit: [56420fe1019b6a643edc003cbecf92ed8cd9362b](https://github.com/dOpensource/dsiprouter/commit/56420fe1019b6a643edc003cbecf92ed8cd9362b)  
+> Commit: [c0478fe2ab8142e746a703956b89a3f5ec69f524](https://github.com/dOpensource/dsiprouter/commit/c0478fe2ab8142e746a703956b89a3f5ec69f524)  
 > Date: Tue, 30 Aug 2022 08:28:45 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2037,7 +2124,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 56420fe1019b6a643edc003cbecf92ed8cd9362b)
+[//]: # (END_SECTION c0478fe2ab8142e746a703956b89a3f5ec69f524)
 [//]: # (START_SECTION fe84f3a2e63bc5190493b469fa2524ddbc585cb7)
 ### General Bug Fixes for Release
 

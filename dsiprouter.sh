@@ -551,8 +551,10 @@ function configurePythonSettings() {
 function updatePythonRuntimeSettings() {
     if (( ${DEBUG} == 1 )); then
         setConfigAttrib 'DEBUG' 'True' ${DSIP_CONFIG_FILE}
+        setConfigAttrib 'SQLALCHEMY_SQL_DEBUG' 'True' ${DSIP_CONFIG_FILE}
     else
         setConfigAttrib 'DEBUG' 'False' ${DSIP_CONFIG_FILE}
+        setConfigAttrib 'SQLALCHEMY_SQL_DEBUG' 'True' ${DSIP_CONFIG_FILE}
     fi
 }
 

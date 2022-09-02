@@ -2228,6 +2228,8 @@ def syncSettings(new_fields={}, update_net=False):
         if update_net:
             int_ip = getInternalIP('4')
             int_ip6 = getInternalIP('6')
+            int_net = getInternalCIDR('4')
+            int_net6 = getInternalCIDR('6')
             int_fqdn = socket.getfqdn()
             ext_ip = getExternalIP('4')
             ext_ip6 = getExternalIP('6')
@@ -2244,13 +2246,13 @@ def syncSettings(new_fields={}, update_net=False):
 
             net_dict = {
                 'IPV6_ENABLED': ipv6_enabled,
-                'INTERNAL_IP_ADDR': int_ip,
-                'INTERNAL_IP_NET': getInternalCIDR('4'),
-                'INTERNAL_IP6_ADDR': int_ip6,
-                'INTERNAL_IP6_NET': getInternalCIDR('4'),
-                'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip,
-                'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6,
-                'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn
+                'INTERNAL_IP_ADDR': int_ip if int_ip is not None else '',
+                'INTERNAL_IP_NET': int_net if int_net is not None else '',
+                'INTERNAL_IP6_ADDR': int_ip6 if int_ip6 is not None else '',
+                'INTERNAL_IP6_NET': int_net6 if int_net6 is not None else '',
+                'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip if int_ip is not None else '',
+                'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6 if int_ip6 is not None else '',
+                'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn if int_fqdn is not None else ''
             }
         else:
             net_dict = {}
@@ -2406,6 +2408,7 @@ def initApp(flask_app):
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
+    flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
     # Set flask JSON encoder
     flask_app.json_encoder = CreateEncoder()
@@ -2436,7 +2439,7 @@ def initApp(flask_app):
     # this allows members of the dsiprouter group access
     os.umask(~0o660 & 0o777)
 
-    # remove sockets / PID file from previous runs (only happens on SIGKILL)
+    # remove sockets / PID file from previous runs (only possible on SIGKILL or system halt)
     if os.path.exists(settings.DSIP_IPC_SOCK):
         os.remove(settings.DSIP_IPC_SOCK)
     if os.path.exists(settings.DSIP_UNIX_SOCK):
@@ -2467,7 +2470,13 @@ def teardown():
         pass
     try:
         os.remove(settings.DSIP_PID_FILE)
+    except:
+        pass
+    try:
         os.remove(settings.DSIP_IPC_SOCK)
+    except:
+        pass
+    try:
         os.remove(settings.DSIP_UNIX_SOCK)
     except:
         pass

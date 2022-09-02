@@ -517,7 +517,11 @@ def createValidEngine(uri_list):
 
     for conn_uri in uri_list:
         try:
-            db_engine = create_engine(conn_uri, echo=True, pool_recycle=300, pool_size=10,
+            db_engine = create_engine(conn_uri,
+                echo=settings.SQLALCHEMY_SQL_DEBUG,
+                echo_pool=settings.SQLALCHEMY_SQL_DEBUG,
+                pool_recycle=300,
+                pool_size=10,
                 isolation_level="READ UNCOMMITTED",
                 connect_args={"connect_timeout": 5})
             # test connection

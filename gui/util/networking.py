@@ -41,9 +41,14 @@ def isValidIP(address, ip_ver=''):
         return True
 
 def getInternalIP(ip_ver=''):
-    """ Returns local ip of system """
+    """
+    Get the internally routable ip address of the system
 
-    ip = None
+    :param ip_ver:  IP version to fetch '4'=>ipv4,'6'=>ipv6,''=>try both
+    :type ip_ver:   str
+    :return:        Internal IP address
+    :rtype:         str|None
+    """
 
     if ip_ver == '4':
         sock_types = (socket.AF_INET,)
@@ -58,14 +63,21 @@ def getInternalIP(ip_ver=''):
                 s.connect(('www.google.com', 0))
                 ip = s.getsockname()[0]
                 if isValidIP(ip):
-                    break
+                    return ip
         except:
             pass
 
-    return ip
+    return None
 
 def getExternalIP(ip_ver=''):
-    """ Returns external ip of system """
+    """
+    Get the externally routable ip address of the system
+
+    :param ip_ver:  IP version to fetch '4'=>ipv4,'6'=>ipv6,''=>try both
+    :type ip_ver:   str
+    :return:        External IP address
+    :rtype:         str|None
+    """
 
     tasks = []
     _allowed_gai_family = urllib3_conn.allowed_gai_family
