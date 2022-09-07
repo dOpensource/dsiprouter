@@ -1,4 +1,4 @@
-import os, psycopg2, hashlib, MySQLdb, subprocess, docker
+import os, psycopg2, hashlib, MySQLdb, subprocess, docker,shutil
 from database import dSIPMultiDomainMapping
 from util.security import AES_CTR
 from util.networking import safeUriToHost
@@ -258,6 +258,18 @@ def update_nginx(sources):
     output.write(input.read().replace("##SERVERLIST##", serverList))
     output.close()
     input.close()
+    
+    # Build a config for the native Nginx instance
+
+    input = open(script_dir + "/dsiprouter-provisioner.tpl")
+    output = open(script_dir + "/dsiprouter-provisioner.conf", "w")
+    output.write(input.read().replace("##SERVERLIST##", serverList))
+    output.close()
+    input.close()
+
+    # Copy config to Native Nginx Server and restart Nginx
+    shutil.copy(script_dir + "/dsiprouter-provisioner.conf", '/etc/nginx/sites-enabled/dsiprouter-provisioner.conf')
+    os.system('systemctl restart nginx')
 
     # Check if dsiprouter-nginx is running. If so, reload nginx
 
