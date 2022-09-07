@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-7ea479204455fe4d8e2db1b2fe103a64afde1aa0
+0e0489aa5130c73061a93258b4a0408ebe19375f
+921d13593df8d28e981991d9a5e4aabe5ca0fffa
 c5e6aa71ce58895c10091db1c7acfac7bb53cdef
 273915422552702005f6ad070f3c726ef4836335
 0b07c0332e0153766bc273f29979cf2beec337e8
@@ -2029,10 +2030,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 7ea479204455fe4d8e2db1b2fe103a64afde1aa0)
+[//]: # (START_SECTION 0e0489aa5130c73061a93258b4a0408ebe19375f)
+### Add Instance Build Script for Cloud Installs
+
+> Commit: [0e0489aa5130c73061a93258b4a0408ebe19375f](https://github.com/dOpensource/dsiprouter/commit/0e0489aa5130c73061a93258b4a0408ebe19375f)  
+> Date: Wed, 7 Sep 2022 12:38:33 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- added build script for instances making automation easier to script
+
+
+---
+
+[//]: # (END_SECTION 0e0489aa5130c73061a93258b4a0408ebe19375f)
+[//]: # (START_SECTION 921d13593df8d28e981991d9a5e4aabe5ca0fffa)
 ### Update Image Build Logic
 
-> Commit: [7ea479204455fe4d8e2db1b2fe103a64afde1aa0](https://github.com/dOpensource/dsiprouter/commit/7ea479204455fe4d8e2db1b2fe103a64afde1aa0)  
+> Commit: [921d13593df8d28e981991d9a5e4aabe5ca0fffa](https://github.com/dOpensource/dsiprouter/commit/921d13593df8d28e981991d9a5e4aabe5ca0fffa)  
 > Date: Wed, 7 Sep 2022 08:46:38 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2045,7 +2062,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 7ea479204455fe4d8e2db1b2fe103a64afde1aa0)
+[//]: # (END_SECTION 921d13593df8d28e981991d9a5e4aabe5ca0fffa)
 [//]: # (START_SECTION c5e6aa71ce58895c10091db1c7acfac7bb53cdef)
 ### FusionPBX Provisioning Update: - Added support for proxying phone provisioning profiles from FusionPBX using the native Nginx server
 
