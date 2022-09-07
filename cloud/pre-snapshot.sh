@@ -23,6 +23,16 @@ function joinwith() {
 
     echo "${ARR[*]}"
 }
+# removed from cleanup logic as this is run on virtual hardware
+# we shouldn't need to flush the disks, this saves us time
+function clearDiskCache() {
+    dd if=/dev/zero of=/zerofile 2>/dev/null; rm -f /zerofile; sync
+}
+# removed from cleanup logic to allow running this script from cloud-init
+function cleanupCloudInit() {
+    find /var/lib/cloud -mindepth 1 -maxdepth 1 -type d ! -name 'seed' ! -name 'scripts' -exec rm -rf {} +
+    find /var/lib/cloud -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
+}
 
 # make sure all security updates are installed
 # remove insecure services (FTP, Telnet, Rlogin/Rsh)
@@ -164,11 +174,6 @@ find /var/log -mtime -1 -type f -exec truncate -s 0 {} +
 rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
 find /usr/local/src -mindepth 1 -maxdepth 1 -type d  -exec rm -rf {} +
 find /usr/local/src -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
-find /var/lib/cloud -mindepth 1 -maxdepth 1 -type d ! -name 'seed' ! -name 'scripts' -exec rm -rf {} +
-find /var/lib/cloud -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
 truncate -s 0 /var/log/lastlog /var/log/wtmp
-
-# clear disk cache
-dd if=/dev/zero of=/zerofile 2>/dev/null; rm -f /zerofile; sync
 
 exit 0

@@ -46,9 +46,9 @@ function cmdExists() {
     fi
 }
 
-# wait for cloud vps boot processes to finish before starting
+# wait for any other programs using package manager to complete
 if cmdExists "apt-get"; then
-    while [ ! -f /var/lib/cloud/instance/boot-finished ] || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+    while fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
         sleep 1
     done
 
@@ -66,7 +66,7 @@ if cmdExists "apt-get"; then
           locale-gen
     fi
 elif cmdExists "yum"; then
-    while [ ! -f /var/lib/cloud/instance/boot-finished ] || [ -f /var/run/yum.pid ]; do
+    while [ -f /var/run/yum.pid ]; do
         sleep 1
     done
 

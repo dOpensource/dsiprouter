@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-e30003525d64f1a4a982df45477cf12702a34160
+7ea479204455fe4d8e2db1b2fe103a64afde1aa0
+c5e6aa71ce58895c10091db1c7acfac7bb53cdef
+273915422552702005f6ad070f3c726ef4836335
 0b07c0332e0153766bc273f29979cf2beec337e8
 ae07741723edb6b01165ece997a1da2d172fb50e
 3e684eef5ec045020461fbafe4ce58245a096de2
@@ -2027,10 +2029,42 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION e30003525d64f1a4a982df45477cf12702a34160)
+[//]: # (START_SECTION 7ea479204455fe4d8e2db1b2fe103a64afde1aa0)
+### Update Image Build Logic
+
+> Commit: [7ea479204455fe4d8e2db1b2fe103a64afde1aa0](https://github.com/dOpensource/dsiprouter/commit/7ea479204455fe4d8e2db1b2fe103a64afde1aa0)  
+> Date: Wed, 7 Sep 2022 08:46:38 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- remove check for cloud-init completion allowing script execution from cloud-init
+- remove cloud-init cleanup logic to allow cloud-init to finish proper boot
+
+
+---
+
+[//]: # (END_SECTION 7ea479204455fe4d8e2db1b2fe103a64afde1aa0)
+[//]: # (START_SECTION c5e6aa71ce58895c10091db1c7acfac7bb53cdef)
+### FusionPBX Provisioning Update: - Added support for proxying phone provisioning profiles from FusionPBX using the native Nginx server
+
+> Commit: [c5e6aa71ce58895c10091db1c7acfac7bb53cdef](https://github.com/dOpensource/dsiprouter/commit/c5e6aa71ce58895c10091db1c7acfac7bb53cdef)  
+> Date: Wed, 7 Sep 2022 11:59:57 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c5e6aa71ce58895c10091db1c7acfac7bb53cdef)
+[//]: # (START_SECTION 273915422552702005f6ad070f3c726ef4836335)
 ### Fix Default Network Sync Settings
 
-> Commit: [e30003525d64f1a4a982df45477cf12702a34160](https://github.com/dOpensource/dsiprouter/commit/e30003525d64f1a4a982df45477cf12702a34160)  
+> Commit: [273915422552702005f6ad070f3c726ef4836335](https://github.com/dOpensource/dsiprouter/commit/273915422552702005f6ad070f3c726ef4836335)  
 > Date: Fri, 2 Sep 2022 11:22:52 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2044,7 +2078,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION e30003525d64f1a4a982df45477cf12702a34160)
+[//]: # (END_SECTION 273915422552702005f6ad070f3c726ef4836335)
 [//]: # (START_SECTION 0b07c0332e0153766bc273f29979cf2beec337e8)
 ### IPv6 Serverside NAT Features
 
