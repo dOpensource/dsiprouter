@@ -2,11 +2,16 @@
 route[STIRSHAKEN_INBOUND] {
   	 # Only route if request is coming from an Endpoint
     if (!allow_source_address(FLT_CARRIER)) {
-            xlog("L_INFO", "[STIRSHAKEN_INBOUND] <$ci> $si not allowed to talk with this server \n");
-            return;
+        xlog("L_INFO", "[STIRSHAKEN_INBOUND] <$ci> $si not allowed to talk with this server \n");
+        return;
     }
 
     xlog("L_INFO", "STIR/SHAKEN Inbound Logic");
+
+    if ($hdrc(Identity) == 0 ){
+        xlog("L_INFO", "[STIRSHAKEN_INBOUND] Missing the Identity Header Skipping this logic \n");
+        return;
+    }
 
 	#Verify Call Identity
 
