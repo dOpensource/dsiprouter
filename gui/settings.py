@@ -115,6 +115,8 @@ STIR_SHAKEN_PREFIX_B = ''
 STIR_SHAKEN_PREFIX_C = ''
 STIR_SHAKEN_PREFIX_INVALID = ''
 STIR_SHAKEN_BLOCK_INVALID = 0
+STIR_SHAKEN_CERT_URL = ''
+STIR_SHAKEN_KEY_PATH = ''
 
 
 # updated dynamically! These values will be overwritten
