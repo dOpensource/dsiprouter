@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes 
-from util.networking import getInternalIP, getExternalIP, hostToIP, safeUriToHost, safeFormatSipUri, safeStripPort
-=======
 from shared import getInternalIP, getExternalIP, updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, hostToIP, IO, objToDict, StatusCodes, \
     safeUriToHost, safeFormatSipUri, safeStripPort
->>>>>>> origin/feature/media_server_v2
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, \
     Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
