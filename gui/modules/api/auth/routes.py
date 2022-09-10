@@ -10,15 +10,93 @@ import importlib.util
 import settings, globals
 from database import dSIPUser
 from modules.api.auth.functions import *
+<<<<<<< HEAD
+=======
+from modules.api.auth.functions import addDSIPUser
+>>>>>>> origin/feature/media_server_v2
 import uuid
 import datetime
 
 user = Blueprint('user', __name__)
 
 
+<<<<<<< HEAD
 @user.route('/api/v1/auth/user', methods=['POST'])
 @api_security
 def postUser():
+=======
+@user.route('/api/v1/auth/login', methods=['POST'])
+# @api_security
+def login():
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"username": str, "password": str}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'username', 'password'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    db = DummySession()
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        # get request data
+        request_data = getRequestData()
+
+        db = SessionLoader()
+
+        # Check for existing user
+        existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
+
+        if existing_user:
+
+            print("Saved Password: ", existing_user.password)
+            print("Decrypted: ", AES_CTR.decrypt(existing_user.password).decode('utf-8'))
+            print("Provided: ", request_data['password'])
+
+            if str(request_data['password']) == AES_CTR.decrypt(existing_user.password).decode('utf-8'):
+
+                if (not existing_user.token) or (datetime.datetime.now() > existing_user.token_expiration):
+                    existing_user.token = uuid.uuid4()
+                    existing_user.token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
+                    db.commit()
+
+                response_payload = {
+                    'message': 'Login successful',
+                    'token': existing_user.token,
+                    'expiration_date': existing_user.token_expiration
+                }
+
+                return jsonify(response_payload), StatusCodes.HTTP_OK
+
+            else:
+                response_payload = {
+                    "message": 'Invalid credentials',
+                    'payload': request_data
+                }
+
+                return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
+
+        else:
+            # If user does not exist  return an invalid credentials message
+            response_payload['data'] = {
+                "message": 'Invalid credentials',
+                'payload': request_data
+            }
+
+            return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@user.route('/api/v1/auth/user', methods=['POST'])
+@api_security
+def createUser():
+>>>>>>> origin/feature/media_server_v2
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"firstname": str, "lastname": str, "username": str, "password": str, "roles": dict,
                                "domains": dict}
@@ -61,6 +139,7 @@ def postUser():
         return showApiError(ex)
 
 
+<<<<<<< HEAD
 @user.route('/api/v1/auth/login', methods=['POST'])
 # @api_security
 def login():
@@ -69,6 +148,51 @@ def login():
 
     # ensure requred args are provided
     REQUIRED_ARGS = {'username', 'password'}
+=======
+@user.route('/api/v1/auth/user', methods=['GET'])
+def listUsers():
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    db = DummySession()
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        db = SessionLoader()
+
+        # Check for existing user
+        user_list = db.query(dSIPUser).all()
+        response_payload = []
+
+        for the_user in user_list:
+            response_payload.append(
+                {
+                    "id": the_user.id,
+                    "username": the_user.username,
+                    "firstname": the_user.firstname,
+                    "lastname": the_user.lastname,
+                    "roles": [],
+                    "domains": []
+                }
+            )
+
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@user.route('/api/v1/auth/user/<int:id>', methods=['GET'])
+# @api_security
+def getUser(id=None):
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    # VALID_REQUEST_DATA_ARGS = {"firstname": str, "lastname": str, "username": str, "password": str, "roles": dict, "domains": dict}
+
+    # ensure requred args are provided
+    # REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
+>>>>>>> origin/feature/media_server_v2
 
     # defaults.. keep data returned separate from returned metadata
     response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
@@ -79,12 +203,67 @@ def login():
         if (settings.DEBUG):
             debugEndpoint()
 
+<<<<<<< HEAD
+=======
+        if id is None:
+            response_payload = {'error': 'Invalid Request',
+                                'msg': 'Invalid Request. You seem to be missing the ID parameter.'}
+            return jsonify(response_payload), StatusCodes.HTTP_BAD_REQUEST
+
+        db = SessionLoader()
+
+        # Check for existing user
+        existing_user = db.query(dSIPUser).get(id)
+        if (existing_user):
+            response_payload = {
+                "username": existing_user.username,
+                "firstname": existing_user.firstname,
+                "lastname": existing_user.lastname,
+                "roles": [],
+                "domains": []
+            }
+            return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        else:
+            response_payload = {'error': 'User Not Found', 'msg': 'User Not Found'}
+            return jsonify(response_payload), StatusCodes.HTTP_NOT_FOUND
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@user.route('/api/v1/auth/user/<int:id>', methods=['PUT'])
+# @api_security
+def updateUser(id=None):
+    # use a whitelist to avoid possible buffer overflow vulns or crashes
+    VALID_REQUEST_DATA_ARGS = {"firstname": str, "lastname": str, "username": str, "password": str, "roles": dict,
+                               "domains": dict}
+
+    # ensure requred args are provided
+    REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
+
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+
+    db = DummySession()
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        if id is None:
+            response_payload = {'error': 'Invalid Request',
+                                'msg': 'Invalid Request. You seem to be missing the ID parameter.'}
+            return jsonify(response_payload), StatusCodes.HTTP_BAD_REQUEST
+
+>>>>>>> origin/feature/media_server_v2
         # get request data
         request_data = getRequestData()
 
         db = SessionLoader()
 
         # Check for existing user
+<<<<<<< HEAD
         # existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
         existing_user = db.query(dSIPUser).filter(dSIPUser.username == "yahoo2").first()
 
@@ -128,6 +307,64 @@ def login():
             }
 
             return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
+=======
+        existing_user = db.query(dSIPUser).get(id)
+        if existing_user:
+
+            existing_user.firstname = request_data['firstname']
+            existing_user.lastname = request_data['lastname']
+            existing_user.username = request_data['username']
+            existing_user.password = AES_CTR.encrypt(request_data['password'])
+            existing_user.roles = ''
+            existing_user.domains = ''
+            db.commit()
+
+            response_payload = {"message": 'User updated successfully', 'data': {
+                "username": existing_user.username,
+                "firstname": existing_user.firstname,
+                "lastname": existing_user.lastname,
+                "roles": [],
+                "domains": []
+            }}
+
+            return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        else:
+            response_payload = {'error': 'User Not Found', 'msg': 'User Not Found'}
+            return jsonify(response_payload), StatusCodes.HTTP_NOT_FOUND
+
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@user.route('/api/v1/auth/user/<int:id>', methods=['DELETE'])
+# @api_security
+def deleteUser(id=None):
+    db = DummySession()
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        if id is None:
+            response_payload = {'error': 'Invalid Request',
+                                'msg': 'Invalid Request. You seem to be missing the ID parameter.'}
+            return jsonify(response_payload), StatusCodes.HTTP_BAD_REQUEST
+
+        db = SessionLoader()
+
+        # Check for existing user
+        existing_user = db.query(dSIPUser).get(id)
+        if existing_user:
+            db.delete(existing_user)
+            db.commit()
+            response_payload = {"message": 'User deleted successfully'}
+            return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        else:
+            response_payload = {'error': 'User Not Found', 'msg': 'User Not Found'}
+            return jsonify(response_payload), StatusCodes.HTTP_NOT_FOUND
+>>>>>>> origin/feature/media_server_v2
 
     except Exception as ex:
         return showApiError(ex)
