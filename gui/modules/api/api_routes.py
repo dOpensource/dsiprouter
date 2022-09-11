@@ -779,16 +779,18 @@ def deleteEndpointGroup(gwgroupid):
             did_list_string=""
             for did in domain_attrs:
                 did_list_string = did_list_string + "," + "'" + did[0] + "'"
-            if did_list_string[0][0] == ",":
-                did_list_string = did_list_string[1:]
+            if domain_attrs.rowcount > 0:
+                if did_list_string[0][0] == ",":
+                    did_list_string = did_list_string[1:]
 
             # Delete all domains
             query = "delete from domain where did in (select did from domain_attrs where name = 'created_by' and value='{}')".format(gwgroupid);
             db.execute(query)
 
             # Delete all domains_attrs
-            query = "delete from domain_attrs where did in ({})".format(did_list_string);
-            db.execute(query)
+            if len(did_list_string) > 0:
+                query = "delete from domain_attrs where did in ({})".format(did_list_string);
+                db.execute(query)
 
             # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
