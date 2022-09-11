@@ -74,6 +74,20 @@
                        value="{{ stir_shaken["stir_shaken_prefix_invalid"] }}">
             </div>
 
+            <div class="form-group">
+                <input class="form-control " type="text" id="stir_shaken_cert_url"
+                       name="stir_shaken_cert_url"
+                       placeholder="Certificate URL"
+                       value="{{ stir_shaken["stir_shaken_cert_url"] }}">
+            </div>
+
+            <div class="form-group">
+                <input class="form-control " type="text" id="stir_shaken_key_path"
+                       name="stir_shaken_key_path"
+                       placeholder="Key Path"
+                       value="{{ stir_shaken["stir_shaken_key_path"] }}">
+            </div>
+
             <div class="checkbox">
                 <label>
                     <input type="checkbox" name="stir_shaken_block_invalid" {{ 'checked' if (stir_shaken["stir_shaken_block_invalid"] == 1) else '' }}>  Block Invalidated Calls

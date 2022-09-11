@@ -1,6 +1,5 @@
-from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes 
-from util.networking import getInternalIP, getExternalIP, hostToIP, safeUriToHost, safeFormatSipUri, safeStripPort
+from shared import  updateConfig, getCustomRoutes, debugException, debugEndpoint, \
+    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError,  IO, objToDict, StatusCodes
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, \
     Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
