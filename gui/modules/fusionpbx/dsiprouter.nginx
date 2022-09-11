@@ -1,5 +1,5 @@
     upstream fusionpbx {
-	server 157.245.249.106:443;
+	server fusionpbx5.dsiprouter.net:443;
   
   }
 

@@ -2471,7 +2471,7 @@ def fetchNumberEnrichment(request_payload=None):
 # TODO: standardize response payload (use data param)
 # TODO: stop shadowing builtin functions! -> type == builtin
 # return value should be used in an http/flask context
-def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfilter=''):
+def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfilter='',nonCompletedCalls=True):
     """
     Generate CDRs Report for a gwgroup
 
@@ -2520,7 +2520,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
                 WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}' AND t1.cdr_id IN ({cdrfilter})
-                ORDER BY t1.call_start_time DESC;"""
+                ORDER BY t1.call_start_time DESC"""
             ).format(gwgroupid=gwgroupid, dtfilter=dtfilter, cdrfilter=cdrfilter)
         else:
             query = (
@@ -2532,14 +2532,30 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
                 WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}'
-                ORDER BY t1.call_start_time DESC;"""
+                ORDER BY t1.call_start_time DESC"""
             ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
+
+        if nonCompletedCalls == True:
+            
+           NonCompletedCallsQuery =(
+                """SELECT acc.id as cdr_id, acc.time, 0, acc.calltype,
+                acc.src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
+                acc.dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
+                acc.src_user,acc.dst_user,acc.src_ip,acc.dst_domain,acc.callid 
+                FROM acc
+                JOIN dr_gw_lists t2 ON (acc.src_gwgroupid = t2.id)
+                LEFT JOIN dr_gw_lists t3 ON (acc.dst_gwgroupid = t3.id)
+                WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND acc.time >= '{dtfilter}'
+                ORDER BY acc.time DESC"""
+            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
+
+           query = "(" + query + ")" + " UNION " + "(" + NonCompletedCallsQuery + ")" 
 
         rows  = db.execute(query)
         cdrs = []
         for row in rows:
             data = {}
-            data['cdr_id'] = row[0]
+            data['cdr_id'] = int(row[0])
             data['call_start_time'] = row[1]
             data['call_duration'] = str(row[2])
             data['call_direction'] = row[3]
