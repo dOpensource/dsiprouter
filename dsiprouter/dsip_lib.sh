@@ -205,17 +205,17 @@ function setKamailioConfigDburl() {
 }
 export -f setKamailioConfigDburl
 
-# $1 == name of substdef to change
-# $2 == value to change substdef to
+# $1 == name of subst/substdef/substdefs to change
+# $2 == value to change subst/substdef/substdefs to
 # $3 == kamailio config file
-function setKamailioConfigSubstdef() {
+function setKamailioConfigSubst() {
     local NAME="$1"
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
-    sed -i -r -e "s~(#!substdef.*!$NAME!).*(!.*)~\1$VALUE\2~g" ${CONFIG_FILE}
+    sed -i -r -e "s~(#!subst(?:def|defs)?.*!$NAME!).*(!.*)~\1$VALUE\2~g" ${CONFIG_FILE}
 }
-export -f setKamailioConfigSubstdef
+export -f setKamailioConfigSubst
 
 # $1 == name of global variable to change
 # $2 == value to change variable to

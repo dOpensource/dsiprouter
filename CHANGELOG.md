@@ -5,7 +5,16 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-0e0489aa5130c73061a93258b4a0408ebe19375f
+fe5fe1811527c10ba4319f57fe650f866dd7820b
+f2a5fd1d4363af84a8bbe880bc807563bc00ca0a
+c854fb813aabca89cd859016f9b6c9d24d2988f4
+7087d856b39143ba0c9ed14b4ce5c199152a9687
+6e25bc7cd582d62cfa688c2203be577804624435
+bfdc34035cb07a2272672d964b855c64b81a63c7
+c121e97d6aba9f566a53f017f8695903bee03556
+a1738694639365fc09a7f4c49ea4f94bb45d5d2a
+fff6275b60335280698dbb6a609a1ab34229542e
+2cec15e1f3d8d856511225cbd305a35ffc7d33ba
 921d13593df8d28e981991d9a5e4aabe5ca0fffa
 c5e6aa71ce58895c10091db1c7acfac7bb53cdef
 273915422552702005f6ad070f3c726ef4836335
@@ -24,6 +33,11 @@ fe91ef431b330c83f063b8251cbd3fc0bcbb7d4a
 460f0c26cd2bb10b4e44f1f62024525d7b1eadf6
 bb710c9d8412c556055e4f49a406bab60142dee9
 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112
+d5b61a29a7bf53a7ad91810072e4737d8939c642
+3323aabfeea77579cf71ce92bc6e615332e5390b
+d32faad6427e6fe36d3f643fdf8585d01f6452ea
+c028ac3999a88df3c2c62a342e1918f31ea9f0b8
+6b1eec58bb6b77641f782b5414f0ba2980fb4317
 6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598
 e61d6d6e9ff125381d4813a5db0782eff5066e66
 466bdfbc9a916580d2e70950af6fb54ef4cf8bb5
@@ -31,8 +45,12 @@ b5e8df8a4d4b82994d6be2b6a0dbbd26dcb34e5a
 d50f15b4c4eb65069dbaae31e3bc5b86075bd57f
 96221e574830aea41cfc23c9237cbc6a336a8e95
 ccea19047f2b1959fe0bbc0e6cf70a66576e5d15
+1e029d26dcbbc3ce204cfe49d25502d1ec23355c
+37b20891477f13d5f7d4bd166cf461329d733e32
+781eff6363f2efb44e47ddb863651be491421106
 9f3515967f6a05789cce7aba8b03bb107ae5582f
 99fed4a8840a27dfe1e4de27b95374787874f71f
+dffdbab53a21c0b96b6fca16f5bf772f0921dcf8
 000e370c48da86b40a2d68259c8f42238ca83df7
 d3b28a7ce77894f343e51cd6a9bbd78cea91c1b5
 62080422649deb5cda3c5ea671c1deb34e256b1a
@@ -2030,10 +2048,150 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 0e0489aa5130c73061a93258b4a0408ebe19375f)
+[//]: # (START_SECTION fe5fe1811527c10ba4319f57fe650f866dd7820b)
+### Fix DMQ Error Messages When Not Enabled
+
+> Commit: [fe5fe1811527c10ba4319f57fe650f866dd7820b](https://github.com/dOpensource/dsiprouter/commit/fe5fe1811527c10ba4319f57fe650f866dd7820b)  
+> Date: Tue, 13 Sep 2022 11:07:23 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#454](https://github.com/dOpensource/dsiprouter/issues/454)
+- ensure dmq relication option is disabled on htables when `WITH_DMQ` is disabled
+
+
+---
+
+[//]: # (END_SECTION fe5fe1811527c10ba4319f57fe650f866dd7820b)
+[//]: # (START_SECTION f2a5fd1d4363af84a8bbe880bc807563bc00ca0a)
+### Update CLI Documentation
+
+> Commit: [f2a5fd1d4363af84a8bbe880bc807563bc00ca0a](https://github.com/dOpensource/dsiprouter/commit/f2a5fd1d4363af84a8bbe880bc807563bc00ca0a)  
+> Date: Mon, 12 Sep 2022 21:00:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #452
+- update CLI documentation for current cmds/options
+- structured/re-usable cmdline documentation file to come in next release
+
+
+---
+
+[//]: # (END_SECTION f2a5fd1d4363af84a8bbe880bc807563bc00ca0a)
+[//]: # (START_SECTION c854fb813aabca89cd859016f9b6c9d24d2988f4)
+### FusionPBX Edge Case: - An Endpoing Group with FusionPBX support enabled can now be deleted properly if the FusionPBX setup doesn't complete properly during setup
+
+> Commit: [c854fb813aabca89cd859016f9b6c9d24d2988f4](https://github.com/dOpensource/dsiprouter/commit/c854fb813aabca89cd859016f9b6c9d24d2988f4)  
+> Date: Sun, 11 Sep 2022 20:02:43 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c854fb813aabca89cd859016f9b6c9d24d2988f4)
+[//]: # (START_SECTION 7087d856b39143ba0c9ed14b4ce5c199152a9687)
+### CDR Updates: - Fixed #312 - Fixed #387 - Added a CDR refresh button on the CDR page - The default soft order is based on the Call DateTime in descending order
+
+> Commit: [7087d856b39143ba0c9ed14b4ce5c199152a9687](https://github.com/dOpensource/dsiprouter/commit/7087d856b39143ba0c9ed14b4ce5c199152a9687)  
+> Date: Sun, 11 Sep 2022 01:52:04 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7087d856b39143ba0c9ed14b4ce5c199152a9687)
+[//]: # (START_SECTION 6e25bc7cd582d62cfa688c2203be577804624435)
+### Removed unused imports that were preventing the app from starting
+
+> Commit: [6e25bc7cd582d62cfa688c2203be577804624435](https://github.com/dOpensource/dsiprouter/commit/6e25bc7cd582d62cfa688c2203be577804624435)  
+> Date: Fri, 9 Sep 2022 22:14:33 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6e25bc7cd582d62cfa688c2203be577804624435)
+[//]: # (START_SECTION bfdc34035cb07a2272672d964b855c64b81a63c7)
+### Update dthe file with the latest code
+
+> Commit: [bfdc34035cb07a2272672d964b855c64b81a63c7](https://github.com/dOpensource/dsiprouter/commit/bfdc34035cb07a2272672d964b855c64b81a63c7)  
+> Date: Fri, 9 Sep 2022 21:40:14 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION bfdc34035cb07a2272672d964b855c64b81a63c7)
+[//]: # (START_SECTION c121e97d6aba9f566a53f017f8695903bee03556)
+### updating the routes file with the latest code
+
+> Commit: [c121e97d6aba9f566a53f017f8695903bee03556](https://github.com/dOpensource/dsiprouter/commit/c121e97d6aba9f566a53f017f8695903bee03556)  
+> Date: Fri, 9 Sep 2022 21:12:05 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c121e97d6aba9f566a53f017f8695903bee03556)
+[//]: # (START_SECTION a1738694639365fc09a7f4c49ea4f94bb45d5d2a)
+### Reverted Accidental changes to main terraform file
+
+> Commit: [a1738694639365fc09a7f4c49ea4f94bb45d5d2a](https://github.com/dOpensource/dsiprouter/commit/a1738694639365fc09a7f4c49ea4f94bb45d5d2a)  
+> Date: Fri, 9 Sep 2022 18:08:52 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a1738694639365fc09a7f4c49ea4f94bb45d5d2a)
+[//]: # (START_SECTION fff6275b60335280698dbb6a609a1ab34229542e)
+### Added extra logic to handle inbound calls with no identity header
+
+> Commit: [fff6275b60335280698dbb6a609a1ab34229542e](https://github.com/dOpensource/dsiprouter/commit/fff6275b60335280698dbb6a609a1ab34229542e)  
+> Date: Fri, 9 Sep 2022 10:50:24 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fff6275b60335280698dbb6a609a1ab34229542e)
+[//]: # (START_SECTION 2cec15e1f3d8d856511225cbd305a35ffc7d33ba)
 ### Add Instance Build Script for Cloud Installs
 
-> Commit: [0e0489aa5130c73061a93258b4a0408ebe19375f](https://github.com/dOpensource/dsiprouter/commit/0e0489aa5130c73061a93258b4a0408ebe19375f)  
+> Commit: [2cec15e1f3d8d856511225cbd305a35ffc7d33ba](https://github.com/dOpensource/dsiprouter/commit/2cec15e1f3d8d856511225cbd305a35ffc7d33ba)  
 > Date: Wed, 7 Sep 2022 12:38:33 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2045,7 +2203,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 0e0489aa5130c73061a93258b4a0408ebe19375f)
+[//]: # (END_SECTION 2cec15e1f3d8d856511225cbd305a35ffc7d33ba)
 [//]: # (START_SECTION 921d13593df8d28e981991d9a5e4aabe5ca0fffa)
 ### Update Image Build Logic
 
@@ -2362,6 +2520,81 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 93ae11d1afb8dc6b94739a56bcf278ae3ba8c112)
+[//]: # (START_SECTION d5b61a29a7bf53a7ad91810072e4737d8939c642)
+### Added back in the logic to block incoming calls if the flag is set
+
+> Commit: [d5b61a29a7bf53a7ad91810072e4737d8939c642](https://github.com/dOpensource/dsiprouter/commit/d5b61a29a7bf53a7ad91810072e4737d8939c642)  
+> Date: Tue, 16 Aug 2022 22:12:48 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d5b61a29a7bf53a7ad91810072e4737d8939c642)
+[//]: # (START_SECTION 3323aabfeea77579cf71ce92bc6e615332e5390b)
+### Reload the Key Path from the UI as Well
+
+> Commit: [3323aabfeea77579cf71ce92bc6e615332e5390b](https://github.com/dOpensource/dsiprouter/commit/3323aabfeea77579cf71ce92bc6e615332e5390b)  
+> Date: Tue, 16 Aug 2022 21:50:14 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3323aabfeea77579cf71ce92bc6e615332e5390b)
+[//]: # (START_SECTION d32faad6427e6fe36d3f643fdf8585d01f6452ea)
+### Used the specified signing key to sign the outbound calls
+
+> Commit: [d32faad6427e6fe36d3f643fdf8585d01f6452ea](https://github.com/dOpensource/dsiprouter/commit/d32faad6427e6fe36d3f643fdf8585d01f6452ea)  
+> Date: Tue, 16 Aug 2022 21:19:43 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d32faad6427e6fe36d3f643fdf8585d01f6452ea)
+[//]: # (START_SECTION c028ac3999a88df3c2c62a342e1918f31ea9f0b8)
+### Added an entry for the certificate key path
+
+> Commit: [c028ac3999a88df3c2c62a342e1918f31ea9f0b8](https://github.com/dOpensource/dsiprouter/commit/c028ac3999a88df3c2c62a342e1918f31ea9f0b8)  
+> Date: Tue, 16 Aug 2022 20:33:30 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c028ac3999a88df3c2c62a342e1918f31ea9f0b8)
+[//]: # (START_SECTION 6b1eec58bb6b77641f782b5414f0ba2980fb4317)
+### update kamalio log messages
+
+> Commit: [6b1eec58bb6b77641f782b5414f0ba2980fb4317](https://github.com/dOpensource/dsiprouter/commit/6b1eec58bb6b77641f782b5414f0ba2980fb4317)  
+> Date: Tue, 16 Aug 2022 19:11:12 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6b1eec58bb6b77641f782b5414f0ba2980fb4317)
 [//]: # (START_SECTION 6fa0a5b3ae7d5ac1d267cfbb7937a283ec3c3598)
 ### Improve RTPEngine Kernel Module Compilation
 
@@ -2522,6 +2755,51 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION ccea19047f2b1959fe0bbc0e6cf70a66576e5d15)
+[//]: # (START_SECTION 1e029d26dcbbc3ce204cfe49d25502d1ec23355c)
+### user CRUD checkpoint
+
+> Commit: [1e029d26dcbbc3ce204cfe49d25502d1ec23355c](https://github.com/dOpensource/dsiprouter/commit/1e029d26dcbbc3ce204cfe49d25502d1ec23355c)  
+> Date: Thu, 28 Jul 2022 13:07:23 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1e029d26dcbbc3ce204cfe49d25502d1ec23355c)
+[//]: # (START_SECTION 37b20891477f13d5f7d4bd166cf461329d733e32)
+### Login logic working
+
+> Commit: [37b20891477f13d5f7d4bd166cf461329d733e32](https://github.com/dOpensource/dsiprouter/commit/37b20891477f13d5f7d4bd166cf461329d733e32)  
+> Date: Wed, 27 Jul 2022 23:48:29 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 37b20891477f13d5f7d4bd166cf461329d733e32)
+[//]: # (START_SECTION 781eff6363f2efb44e47ddb863651be491421106)
+### User API Checkpoint
+
+> Commit: [781eff6363f2efb44e47ddb863651be491421106](https://github.com/dOpensource/dsiprouter/commit/781eff6363f2efb44e47ddb863651be491421106)  
+> Date: Wed, 27 Jul 2022 11:36:06 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 781eff6363f2efb44e47ddb863651be491421106)
 [//]: # (START_SECTION 9f3515967f6a05789cce7aba8b03bb107ae5582f)
 ### Updated Terraform Scripts
 
@@ -2552,6 +2830,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 99fed4a8840a27dfe1e4de27b95374787874f71f)
+[//]: # (START_SECTION dffdbab53a21c0b96b6fca16f5bf772f0921dcf8)
+### Tweaks to the stir shaken setup
+
+> Commit: [dffdbab53a21c0b96b6fca16f5bf772f0921dcf8](https://github.com/dOpensource/dsiprouter/commit/dffdbab53a21c0b96b6fca16f5bf772f0921dcf8)  
+> Date: Sun, 10 Jul 2022 09:31:22 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION dffdbab53a21c0b96b6fca16f5bf772f0921dcf8)
 [//]: # (START_SECTION 000e370c48da86b40a2d68259c8f42238ca83df7)
 ### relocated apt command for libavcodec-extra
 

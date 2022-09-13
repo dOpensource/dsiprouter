@@ -673,30 +673,32 @@ function updateKamailioConfig() {
     fi
     if (( $DSIP_CLUSTER_SYNC == 1 )); then
         enableKamailioConfigAttrib 'WITH_DMQ' ${DSIP_KAMAILIO_CONFIG_FILE}
+        setKamailioConfigSubst 'DMQ_REPLICATE_ENABLED' '1' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         disableKamailioConfigAttrib 'WITH_DMQ' ${DSIP_KAMAILIO_CONFIG_FILE}
+        setKamailioConfigSubst 'DMQ_REPLICATE_ENABLED' '0' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     if [[ -n "$KAM_HOMER_HOST" ]]; then
         enableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         disableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    #setKamailioConfigSubstdef 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    #setKamailioConfigSubstdef 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'INTERNAL_IP6_ADDR' "${INTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'INTERNAL_IP6_NET' "${INTERNAL_NET6}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'SIPS_PORT' "${KAM_SIPS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'HEP_PORT' "${KAM_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubstdef 'HOMER_HOST' "${KAM_HOMER_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    #setKamailioConfigSubst 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    #setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP6_ADDR' "${INTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP6_NET' "${INTERNAL_NET6}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'SIPS_PORT' "${KAM_SIPS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'HEP_PORT' "${KAM_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'HOMER_HOST' "${KAM_HOMER_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
