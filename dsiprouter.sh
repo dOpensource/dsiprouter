@@ -2887,7 +2887,6 @@ function updatePermissions() {
     return 0
 }
 
-# TODO: command line options documentation and command line completion needs updated
 function usageOptions() {
     linebreak() {
         printf '_%.0s' $(seq 1 ${COLUMNS:-100}) && echo ''
@@ -2902,16 +2901,16 @@ function usageOptions() {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-servernat|--servernat=<num>|-exip <ip>|--external-ip=<ip>|" \
+        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-homer <homerhost[:heplifyport]>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user][:pass][/dbname]>|--database-admin=<[user][:pass][/dbname]>|-dsipcsync <num>|--dsip-clustersync=<num>|" \
-        " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-homer <homerhost[:heplifyport]>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>]"
+        " " "-dsipkey <32 chars>|--dsip-privkey=<32 chars>|-with_lcr|--with_lcr=<num>|-with_dev|--with_dev=<num>]"
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "upgrade" "[-debug] <-rel <release number>|--release=<release number>>"
-    printf "%-30s %s\n" \
         "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
+    printf "%-30s %s\n" \
+        "upgrade" "[-debug|-dsipcid <num>|--dsip-clusterid=<num>] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
@@ -2919,7 +2918,7 @@ function usageOptions() {
     printf "%-30s %s\n" \
         "restart" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "configurekam" "[-debug|-servernat|--servernat=<num>]"
+        "configurekam" "[-debug]"
     printf "%-30s %s\n" \
         "renewsslcert" "[-debug]"
     printf "%-30s %s\n" \
@@ -2927,24 +2926,12 @@ function usageOptions() {
     printf "%-30s %s\n" \
         "installmodules" "[-debug]"
     printf "%-30s %s\n" \
-        "enableservernat" "[-debug]"
-    printf "%-30s %s\n" \
-        "disableservernat" "[-debug]"
-    printf "%-30s %s\n" \
         "resetpassword" "[-debug|-q|--quiet|-all|--all|-dc|--dsip-creds|-ac|--api-creds|-kc|--kam-creds|-ic|--ipc-creds|-fid|--force-instance-id]"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
         "setcredentials" "[-debug|-dc <[user][:pass]>|--dsip-creds=<[user][:pass]>|-ac <token>|--api-creds=<token>|" \
         " " "-kc <[user[:pass]@]dbhost[:port][/dbname]>|--kam-creds=<[user[:pass]@]dbhost[:port][/dbname]>|" \
         " " "-mc <[user][:pass]>|--mail-creds=<[user][:pass]>|-ic <token>|--ipc-creds=<token>]|" \
         " " "-dac <[user][:pass][/dbname]>|--db-admin-creds=<[user][:pass][/dbname]>"
-    printf "%-30s %s\n" \
-        "generatekamconfig" "[-debug]"
-    printf "%-30s %s\n" \
-        "updatekamconfig" "[-debug|-servernat|--servernat=<num>]"
-    printf "%-30s %s\n" \
-        "updatertpconfig" "[-debug|-servernat|--servernat=<num>]"
-    printf "%-30s %s\n" \
-        "updatednsconfig" "[-debug]"
     printf "%-30s %s\n" \
         "version|-v|--version" ""
     printf "%-30s %s\n" \
@@ -3027,8 +3014,6 @@ function preprocessCMD() {
 
 # process the commands to be executed
 # TODO: add help options for each command (with subsection usage info for that command)
-# TODO: -servernat (short option w/ no value) deprecated in favor of -servernat <num> (short option w/ value)
-# TODO: add command for redoing permissions (similar to fwconsole chown), use in dsiprouter.server pre-exec
 function processCMD() {
     # pre-processing / initial checks
     preprocessCMD "$@"
@@ -3081,21 +3066,21 @@ function processCMD() {
                         RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
-                    -exip|--external-ip=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            TMP=$(echo "$1" | cut -d '=' -f 2)
-                            shift
-                        else
-                            shift
-                            TMP="$1"
-                            shift
-                        fi
-                        if ipv6Test "$TMP"; then
-                            export EXTERNAL_IP6="$TMP"
-                        else
-                            export EXTERNAL_IP="$TMP"
-                        fi
-                        ;;
+#                    -exip|--external-ip=*)
+#                        if echo "$1" | grep -q '=' 2>/dev/null; then
+#                            TMP=$(echo "$1" | cut -d '=' -f 2)
+#                            shift
+#                        else
+#                            shift
+#                            TMP="$1"
+#                            shift
+#                        fi
+#                        if ipv6Test "$TMP"; then
+#                            export EXTERNAL_IP6="$TMP"
+#                        else
+#                            export EXTERNAL_IP="$TMP"
+#                        fi
+#                        ;;
                     -db|--database=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
                             DB_CONN_URI=$(printf '%s' "$1" | cut -d '=' -f 2)
@@ -3376,6 +3361,54 @@ function processCMD() {
                 cleanupAndExit 1
             fi
             ;;
+	    upgrade)
+            # upgrade dsiprouter version
+            RUN_COMMANDS+=(upgrade)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    -dsipcid|--dsip-clusterid=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            setConfigAttrib 'DSIP_CLUSTER_ID' "$(echo "$1" | cut -d '=' -f 2)" ${DSIP_CONFIG_FILE}
+                            shift
+                        else
+                            shift
+                            setConfigAttrib 'DSIP_CLUSTER_ID' "$1" ${DSIP_CONFIG_FILE}
+                            shift
+                        fi
+                        ;;
+                    -rel|--release=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            export UPGRADE_RELEASE="$(echo "$1" | cut -d '=' -f 2)"
+			                shift
+                        else
+                            shift
+                            export UPGRADE_RELEASE="$1"
+                            shift
+			            fi
+
+                        if [[ -z "$UPGRADE_RELEASE" ]]; then
+                            printerr "Please specify a release tag (ie v0.64)"
+                            usageOptions
+                            cleanupAndExit 1
+                        fi
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        cleanupAndExit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
         start)
             # start installed services
             RUN_COMMANDS+=(start)
@@ -3534,55 +3567,8 @@ function processCMD() {
         chown)
             shift
             # pass the rest of the user args to the local function
+            # NOTE: options parsing here is internal-only and not documented for the user
             updatePermissions "$@"
-            ;;
-	    upgrade)
-            # reconfigure kamailio configs
-            RUN_COMMANDS+=(upgrade)
-            shift
-
-            while (( $# > 0 )); do
-                OPT="$1"
-                case $OPT in
-                    -debug)
-                        export DEBUG=1
-                        set -x
-                        shift
-                        ;;
-                    -dsipcid|--dsip-clusterid=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            setConfigAttrib 'DSIP_CLUSTER_ID' "$(echo "$1" | cut -d '=' -f 2)" ${DSIP_CONFIG_FILE}
-                            shift
-                        else
-                            shift
-                            setConfigAttrib 'DSIP_CLUSTER_ID' "$1" ${DSIP_CONFIG_FILE}
-                            shift
-                        fi
-                        ;;
-                    -rel|--release=*)
-                        if echo "$1" | grep -q '=' 2>/dev/null; then
-                            export UPGRADE_RELEASE="$(echo "$1" | cut -d '=' -f 2)"
-			                shift
-                        else
-                            shift
-                            export UPGRADE_RELEASE="$1"
-                            shift
-			            fi
-
-                        if [[ -z "$UPGRADE_RELEASE" ]]; then
-                            printerr "Please specify a release tag (ie v0.64)"
-                            usageOptions
-                            cleanupAndExit 1
-                        fi
-                        ;;
-                    *)  # fail on unknown option
-                        printerr "Invalid option [$OPT] for command [$ARG]"
-                        usageOptions
-                        cleanupAndExit 1
-                        shift
-                        ;;
-                esac
-            done
             ;;
         # TODO: add commands for configuring rtpengine using same setup
         #       i.e.) configurertp should be externally accessible and documented

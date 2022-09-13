@@ -14,8 +14,8 @@ _dsiprouter() {
     declare -a cmds=(
         install
         uninstall
-        upgrade
         clusterinstall
+        upgrade
         start
         stop
         restart
@@ -23,14 +23,8 @@ _dsiprouter() {
         renewsslcert
 	    configuresslcert
         installmodules
-        enableservernat
-        disableservernat
         resetpassword
         setcredentials
-        generatekamconfig
-        updatekamconfig
-        updatertpconfig
-        updatednsconfig
         help
         -h
         --help
@@ -40,10 +34,10 @@ _dsiprouter() {
     )
     # available long options (with value) for each cmd
     declare -A llopts=(
-        [install]='--external-ip= --database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev='
+        [install]='--database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev='
         [uninstall]=''
-        [upgrade]='--release='
         [clusterinstall]=''
+        [upgrade]='--dsip-clusterid= --release='
         [start]=''
         [stop]=''
         [restart]=''
@@ -51,14 +45,8 @@ _dsiprouter() {
         [renewsslcert]=''
         [configuresslcert]=''
         [installmodules]=''
-        [enableservernat]=''
-        [disableservernat]=''
         [resetpassword]=''
         [setcredentials]='--dsip-creds= --api-creds= --kam-creds= --mail-creds= --ipc-creds= --db-admin-creds='
-        [generatekamconfig]=''
-        [updatekamconfig]=''
-        [updatertpconfig]=''
-        [updatednsconfig]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -70,8 +58,8 @@ _dsiprouter() {
     declare -A lopts=(
         [install]='--all --kamailio --dsiprouter --rtpengine'
         [uninstall]='--all --kamailio --dsiprouter --rtpengine'
-        [upgrade]=''
         [clusterinstall]='--'
+        [upgrade]=''
         [start]='--all --kamailio --dsiprouter --rtpengine'
         [stop]='--all --kamailio --dsiprouter --rtpengine'
         [restart]='--all --kamailio --dsiprouter --rtpengine'
@@ -79,14 +67,8 @@ _dsiprouter() {
         [renewsslcert]=''
         [configuresslcert]='--force'
         [installmodules]=''
-        [enableservernat]=''
-        [disableservernat]=''
         [resetpassword]='--all --dsip-creds --api-creds --kam-creds --ipc-creds --force-instance-id'
         [setcredentials]=''
-        [generatekamconfig]=''
-        [updatekamconfig]=''
-        [updatertpconfig]=''
-        [updatednsconfig]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -96,25 +78,19 @@ _dsiprouter() {
     )
     # available short options (without value) for each cmd
     declare -A sopts=(
-        [install]='-debug -servernat -all -kam -dsip -rtp -exip -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev'
+        [install]='-debug -all -kam -dsip -rtp -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev'
         [uninstall]='-debug -all -kam -dsip -rtp'
-        [upgrade]='-debug'
         [clusterinstall]='-debug'
+        [upgrade]='-debug'
         [start]='-debug -all -kam -dsip -rtp'
         [stop]='-debug -all -kam -dsip -rtp'
         [restart]='-debug -all -kam -dsip -rtp'
-        [configurekam]='-debug -servernat'
+        [configurekam]='-debug'
         [renewsslcert]='-debug'
         [configuresslcert]='-debug -f'
         [installmodules]='-debug'
-        [enableservernat]='-debug'
-        [disableservernat]='-debug'
-        [resetpassword]='-debug -all -dc -ac -kc -ic -fid'
+        [resetpassword]='-debug -q -all -dc -ac -kc -ic -fid'
         [setcredentials]='-debug --dc -ac -kc -mc -ic -dac'
-        [generatekamconfig]='-debug'
-        [updatekamconfig]='-debug'
-        [updatertpconfig]='-debug -servernat'
-        [updatednsconfig]='-debug'
         [help]=''
         [-h]=''
         [--help]=''
