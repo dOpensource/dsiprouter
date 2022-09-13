@@ -232,6 +232,36 @@ function setKamailioConfigGlobal() {
 export -f setKamailioConfigGlobal
 
 # $1 == attribute name
+# $2 == rtpengine config file
+function enableRtpengineConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    sed -i -r -e "s~^#+(${NAME}[ \t]*=[ \t]*.*)~\1~g" ${CONFIG_FILE}
+}
+export -f enableRtpengineConfigAttrib
+
+# $1 == attribute name
+# $2 == rtpengine config file
+function disableRtpengineConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    sed -i -r -e "s~^#*(${NAME}[ \t]*=[ \t]*.*)~#\1~g" ${CONFIG_FILE}
+}
+export -f disableRtpengineConfigAttrib
+
+# $1 == attribute name
+# $2 == rtpengine config file
+function getRtpengineConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    grep -oP '^(?!#+)('${NAME}'[ \t]*=[ \t]*\K.*)' ${CONFIG_FILE}
+}
+export -f getRtpengineConfigAttrib
+
+# $1 == attribute name
 # $2 == value of attribute
 # $3 == rtpengine config file
 function setRtpengineConfigAttrib() {
@@ -239,7 +269,8 @@ function setRtpengineConfigAttrib() {
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
-    sed -i -r -e "s|(${NAME}\s?=\s?.*)|$NAME = $VALUE|g" ${CONFIG_FILE}
+    perl -e "\$name='$NAME'; \$value='$VALUE';" \
+        -i -pe 's%^(?!#+)(${name}[ \t]*=[ \t]*.*)%${name} = ${value}%g' ${CONFIG_FILE}
 }
 export -f setRtpengineConfigAttrib
 

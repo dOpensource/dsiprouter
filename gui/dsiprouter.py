@@ -2286,10 +2286,11 @@ def syncSettings(new_fields={}, update_net=False):
                  ('FLT_FWD_MIN', settings.FLT_FWD_MIN), ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN), ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
                  ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP), ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT), ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP),
                  ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT), ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY), ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
-                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('IPV6_ENABLED', settings.IPV6_ENABLED), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
+                 ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL), ('HOMER_HEP_HOST', settings.HOMER_HEP_HOST), ('FLOWROUTE_API_ROOT_URL', settings.HOMER_HEP_PORT),
+                 ('IPV6_ENABLED', settings.IPV6_ENABLED), ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
                  ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET), ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR), ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET),
                  ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR), ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR), ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
-                 ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER), ('CLOUD_PLATFORM', settings.CLOUD_PLATFORM), ('MAIL_SERVER', settings.MAIL_SERVER),
+                 ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER), ('MAIL_SERVER', settings.MAIL_SERVER),
                  ('MAIL_PORT', settings.MAIL_PORT), ('MAIL_USE_TLS', settings.MAIL_USE_TLS), ('MAIL_USERNAME', settings.MAIL_USERNAME),
                  ('MAIL_PASSWORD', settings.MAIL_PASSWORD), ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
                  ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER), ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT)]

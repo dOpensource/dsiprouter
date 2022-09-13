@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-fe5fe1811527c10ba4319f57fe650f866dd7820b
+ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95
+6721e7478d45d27d4af231c34c270a87f6d98b75
 f2a5fd1d4363af84a8bbe880bc807563bc00ca0a
 c854fb813aabca89cd859016f9b6c9d24d2988f4
 7087d856b39143ba0c9ed14b4ce5c199152a9687
@@ -2048,10 +2049,32 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION fe5fe1811527c10ba4319f57fe650f866dd7820b)
+[//]: # (START_SECTION ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95)
+### Merge Homer Support
+
+> Commit: [ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95](https://github.com/dOpensource/dsiprouter/commit/ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95)  
+> Date: Tue, 13 Sep 2022 15:28:04 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#456](https://github.com/dOpensource/dsiprouter/issues/456)
+- merge in Homer support from v0.65
+- move rtpengine configs into seperate dir
+- add functions for managing rtpengine config to `dsip_lib.sh`
+- update `dsip_settings` table columns
+- move sections of `settings.py` to their proper locations
+- add / cleanup comments
+
+
+---
+
+[//]: # (END_SECTION ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95)
+[//]: # (START_SECTION 6721e7478d45d27d4af231c34c270a87f6d98b75)
 ### Fix DMQ Error Messages When Not Enabled
 
-> Commit: [fe5fe1811527c10ba4319f57fe650f866dd7820b](https://github.com/dOpensource/dsiprouter/commit/fe5fe1811527c10ba4319f57fe650f866dd7820b)  
+> Commit: [6721e7478d45d27d4af231c34c270a87f6d98b75](https://github.com/dOpensource/dsiprouter/commit/6721e7478d45d27d4af231c34c270a87f6d98b75)  
 > Date: Tue, 13 Sep 2022 11:07:23 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2064,7 +2087,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION fe5fe1811527c10ba4319f57fe650f866dd7820b)
+[//]: # (END_SECTION 6721e7478d45d27d4af231c34c270a87f6d98b75)
 [//]: # (START_SECTION f2a5fd1d4363af84a8bbe880bc807563bc00ca0a)
 ### Update CLI Documentation
 

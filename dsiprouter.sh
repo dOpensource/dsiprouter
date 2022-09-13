@@ -24,7 +24,6 @@
 # - allow user to move carriers freely between carrier groups
 # - allow a carrier to be in more than one carrier group
 # - add ncurses selection menu for enabling / disabling modules
-# - separate gui routes into smaller sections and import as blueprints
 # - naming convention for system vs dsip config files is very confusing (make more explicit)
 # - cleanup dependency installs/checks, many of these could be condensed
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
@@ -123,7 +122,7 @@ function setStaticScriptSettings() {
     export KAM_SIPS_PORT=5061
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
-    export KAM_HEP_PORT=9060
+    export HOMER_HEP_PORT=9060
 
     export DSIP_PROTO='https'
     export DSIP_API_PROTO='https'
@@ -524,7 +523,7 @@ function reconfigureMysqlSystemdService() {
 }
 export -f reconfigureMysqlSystemdService
 
-# generate dynamic python config settings on install
+# generate dynamic python config based on install settings
 function configurePythonSettings() {
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
@@ -544,10 +543,13 @@ function configurePythonSettings() {
     setConfigAttrib 'DSIP_PROJECT_DIR' "$DSIP_PROJECT_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'DSIP_DOCS_DIR' "$DSIP_DOCS_DIR" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_TLSCFG_PATH' "$SYSTEM_KAMAILIO_TLS_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'HOMER_HEP_HOST' "$HOMER_HEP_HOST" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'HOMER_HEP_PORT' "$HOMER_HEP_PORT" ${DSIP_CONFIG_FILE}
 }
 
 # update settings file based on cmdline args
 # should be used prior to app execution
+# TODO: add CLI command and run prior to startup in dsiprouter.service
 function updatePythonRuntimeSettings() {
     if (( ${DEBUG} == 1 )); then
         setConfigAttrib 'DEBUG' 'True' ${DSIP_CONFIG_FILE}
@@ -647,8 +649,8 @@ function updateKamailioConfig() {
     local KAM_SIP_PORT=${KAM_SIP_PORT:-$(getConfigAttrib 'KAM_SIP_PORT' ${DSIP_CONFIG_FILE})}
     local KAM_SIPS_PORT=${KAM_SIPS_PORT:-$(getConfigAttrib 'KAM_SIPS_PORT' ${DSIP_CONFIG_FILE})}
     local KAM_DMQ_PORT=${KAM_DMQ_PORT:-$(getConfigAttrib 'KAM_DMQ_PORT' ${DSIP_CONFIG_FILE})}
-    local KAM_HEP_PORT=${KAM_HEP_PORT:-$(getConfigAttrib 'KAM_HEP_PORT' ${DSIP_CONFIG_FILE})}
-    local KAM_HOMER_HOST=${KAM_HOMER_HOST:-$(getConfigAttrib 'KAM_HEP_PORT' ${DSIP_CONFIG_FILE})}
+    local HOMER_HEP_HOST=${HOMER_HEP_HOST:-$(getConfigAttrib 'HOMER_HEP_HOST' ${DSIP_CONFIG_FILE})}
+    local HOMER_HEP_PORT=${HOMER_HEP_PORT:-$(getConfigAttrib 'HOMER_HEP_PORT' ${DSIP_CONFIG_FILE})}
 
     # update kamailio config file
     if (( $DEBUG == 1 )); then
@@ -678,7 +680,7 @@ function updateKamailioConfig() {
         disableKamailioConfigAttrib 'WITH_DMQ' ${DSIP_KAMAILIO_CONFIG_FILE}
         setKamailioConfigSubst 'DMQ_REPLICATE_ENABLED' '0' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    if [[ -n "$KAM_HOMER_HOST" ]]; then
+    if [[ -n "$HOMER_HEP_HOST" ]]; then
         enableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         disableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -697,8 +699,8 @@ function updateKamailioConfig() {
     setKamailioConfigSubst 'SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'SIPS_PORT' "${KAM_SIPS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'HEP_PORT' "${KAM_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'HOMER_HOST' "${KAM_HOMER_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'HOMER_HOST' "${HOMER_HEP_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'HEP_PORT' "${HOMER_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -788,6 +790,9 @@ function updateKamailioStartup {
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig() {
     local INTERFACE=""
+    local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
+    local RTP_PORT_MIN=${RTP_PORT_MIN:-$(getRtpengineConfigAttrib 'RTP_PORT_MIN' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
+    local RTP_PORT_MAX=${RTP_PORT_MAX:-$(getRtpengineConfigAttrib 'RTP_PORT_MAX' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
 
     if (( ${SERVERNAT} == 1 )); then
         INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
@@ -801,8 +806,22 @@ function updateRtpengineConfig() {
             INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
         fi
     fi
-
     setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+
+    setRtpengineConfigAttrib 'port-min' "$RTP_PORT_MIN" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    setRtpengineConfigAttrib 'port-max' "$RTP_PORT_MAX" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+
+    if [[ -n "$HOMER_HEP_HOST" ]]; then
+        enableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        enableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        enableRtpengineConfigAttrib 'homer-id' ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        setRtpengineConfigAttrib 'homer' "$HOMER_HEP_HOST" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        setRtpengineConfigAttrib 'homer-id' "$DSIP_ID" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    else
+        disableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        disableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        disableRtpengineConfigAttrib 'homer-id' ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    fi
 }
 
 # update rtpengine service startup commands accounting for any changes
@@ -3212,12 +3231,12 @@ function processCMD() {
                         ;;
                     -homer)
                         shift
-                        export KAM_HOMER_HOST=$(printf '%s' "$1" | cut -d ':' -f -1)
+                        export HOMER_HEP_HOST=$(printf '%s' "$1" | cut -d ':' -f -1)
                         TMP_ARG="$(printf '%s' "$1" | cut -s -d ':' -f 2)"
-                        [[ -n "$TMP_ARG" ]] && export KAM_HEP_PORT="$TMP_ARG"
+                        [[ -n "$TMP_ARG" ]] && export HOMER_HEP_PORT="$TMP_ARG"
                         shift
                         # sanity check
-                        if [[ -z "$KAM_HOMER_HOST" ]]; then
+                        if [[ -z "$HOMER_HEP_HOST" ]]; then
                             printerr 'Missing required argument <homer_host> to option -homer'
                             cleanupAndExit 1
                         fi

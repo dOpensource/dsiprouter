@@ -259,47 +259,11 @@ function install {
     # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
     # TODO: move from 2 seperate config files to generating entire config
     #       1st we should change to generating config using rtpengine-start-pre
-    #       eventually we should create a cofig parser similar to how kamailio config is parsed
-    (cat << EOF
-[rtpengine]
-table = 0
-no-fallback = false
-interface = 127.0.0.1
-listen-ng = 127.0.0.1:7722
-port-min = ${RTP_PORT_MIN}
-port-max = ${RTP_PORT_MAX}
-#num-threads = 8
-#timeout = 60
-#silent-timeout = 3600
-#tos = 184
-#control-tos = 184
-#delete-delay = 30
-#final-timeout = 10800
-#homer = 123.234.345.456:9060
-#homer-protocol = udp
-#homer-id = 1
-#sip-source = false
-#dtls-passive = false
-log-level = 4
-log-stderr = false
-log-facility = local1
-log-facility-cdr = local1
-log-facility-rtcp = local1
-EOF
-    ) > ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    #       eventually we should create a config parser similar to how kamailio config is parsed
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
     # setup rtpengine defaults file
-    (cat << 'EOF'
-RUN_RTPENGINE=yes
-CONFIG_FILE=/etc/rtpengine/rtpengine.conf
-CONFIG_SECTION=rtpengine
-PIDFILE=/var/run/rtpengine/rtpengine.pid
-MANAGE_IPTABLES=yes
-TABLE=0
-SET_USER=rtpengine
-SET_GROUP=rtpengine
-EOF
-    ) > /etc/default/rtpengine.conf
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld

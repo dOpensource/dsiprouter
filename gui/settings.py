@@ -2,8 +2,8 @@
 # settings in this section are synced with the DB
 
 # dSIPRouter settings
-# dSIPRouter will need to be restarted for any changes to take effect - except for Teleblock settings
-# unless hot reloading settings is enabled when updating settings, see shared.updateConfig()
+# dSIPRouter will need to be restarted for any changes to take effect - except settings that can be hot reloaded
+# for more information on hot reloading and shared memory via IPC see shared.updateConfig() and dsiprouter.syncSettings()
 
 DSIP_ID = 1
 DSIP_CLUSTER_ID = 1
@@ -68,8 +68,7 @@ KAM_TLSCFG_PATH = '/etc/kamailio/tls.cfg'
 RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # SQLAlchemy Settings
-
-# Will disable modification tracking
+# TODO: deprecated, marked for removal (replace with value of DEBUG)
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SQLALCHEMY_SQL_DEBUG = False
 
@@ -95,29 +94,14 @@ TELEBLOCK_GW_PORT = '5066'
 TELEBLOCK_MEDIA_IP = ''
 TELEBLOCK_MEDIA_PORT = ''
 
-# TransNexus Settings
-TRANSNEXUS_AUTHSERVICE_ENABLED = 0
-TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
-TRANSNEXUS_LICENSE_KEY = ''
-TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
-TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
-
 # Flowroute API Settings
 FLOWROUTE_ACCESS_KEY = ''
 FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
-
-# STIR/SHAKEN Settings
-STIR_SHAKEN_ENABLED = 0
-STIR_SHAKEN_PREFIX_A = ''
-STIR_SHAKEN_PREFIX_B = ''
-STIR_SHAKEN_PREFIX_C = ''
-STIR_SHAKEN_PREFIX_INVALID = ''
-STIR_SHAKEN_BLOCK_INVALID = 0
-STIR_SHAKEN_CERT_URL = ''
-STIR_SHAKEN_KEY_PATH = ''
-
+# Homer settings
+HOMER_HEP_HOST = ''
+HOMER_HEP_PORT = 9060
 
 # updated dynamically! These values will be overwritten
 IPV6_ENABLED = False
@@ -132,13 +116,6 @@ EXTERNAL_FQDN = 'sip.dsiprouter.org'
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
 
-# Cloud Platform
-# The cloud platform the dSIPRouter is installed on
-# The installer will update this
-# '' = other or bare metal install
-# AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean, VULTR = Vultr Cloud
-CLOUD_PLATFORM = ''
-
 # email server config
 MAIL_SERVER = 'smtp.gmail.com'
 MAIL_PORT = 587
@@ -149,12 +126,39 @@ MAIL_ASCII_ATTACHMENTS = False
 MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
-# backup settings
-BACKUP_FOLDER = '/var/backups/dsiprouter'
 ################# End DB-Backed Settings #################
 
 ################# Local-Only Settings ####################
 # settings in this section are not stored on the DB
+
+# Cloud Platform
+# The cloud platform the dSIPRouter is installed on
+# The installer will update this
+# '' = other or bare metal install
+# AWS = Amazon Web Services, GCP = Google Cloud Platform, AZURE = Microsoft Azure, DO = Digital Ocean, VULTR = Vultr Cloud
+CLOUD_PLATFORM = ''
+
+# backup settings
+BACKUP_FOLDER = '/var/backups/dsiprouter'
+
+# TransNexus Settings
+# TODO: marked for review, these settings should be synced across cluster in the DB
+TRANSNEXUS_AUTHSERVICE_ENABLED = 0
+TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
+TRANSNEXUS_LICENSE_KEY = ''
+TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
+TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
+
+# STIR/SHAKEN Settings
+# TODO: marked for review, these settings should be synced across cluster in the DB
+STIR_SHAKEN_ENABLED = 0
+STIR_SHAKEN_PREFIX_A = ''
+STIR_SHAKEN_PREFIX_B = ''
+STIR_SHAKEN_PREFIX_C = ''
+STIR_SHAKEN_PREFIX_INVALID = ''
+STIR_SHAKEN_BLOCK_INVALID = 0
+STIR_SHAKEN_CERT_URL = ''
+STIR_SHAKEN_KEY_PATH = ''
 
 # where the project was installed
 DSIP_PROJECT_DIR = '/opt/dsiprouter'
