@@ -2555,6 +2555,10 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
 
         rows  = db.execute(query)
         cdrs = []
+        dataFields = ['cdr_id','call_start_time','call_duration','call_direction','src_gwgroupid',
+                'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname','src_username',
+                'dst_username','src_address','dst_address','call_id']
+
         for row in rows:
             data = {}
             data['cdr_id'] = int(row[0])
@@ -2583,9 +2587,14 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             filename = secure_filename('{}_{}.csv'.format(gwgroupName, now))
             csv_file = '/tmp/{}'.format(filename)
             with open(csv_file, 'w', newline='') as csv_fp:
-                dict_writer = csv.DictWriter(csv_fp, fieldnames=cdrs[0].keys())
-                dict_writer.writeheader()
-                dict_writer.writerows(cdrs)
+                if len(cdrs) > 0:
+                    dict_writer = csv.DictWriter(csv_fp, fieldnames=cdrs[0].keys())
+                    dict_writer.writeheader()
+                    dict_writer.writerows(cdrs)
+                else:
+                    dict_writer = csv.DictWriter(csv_fp, fieldnames=dataFields)
+                    dict_writer.writeheader()
+                
 
             if email:
                 # recipients required
@@ -2622,7 +2631,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
-def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None):
+def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None, dtfilter=None, nonCompletedCalls=None):
     """
     Purpose
 
@@ -2638,8 +2647,12 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None):
         email = bool(request.args.get('email', False))
     if filter is None:
         filter = request.args.get('filter', '')
+    if dtfilter is None:
+        dtfilter = request.args.get('dtfilter', '')
+    if nonCompletedCalls is None:
+        nonCompletedCalls = bool(request.args.get('nonCompletedCalls', True))
 
-    return generateCDRS(gwgroupid, type, email, cdrfilter=filter)
+    return generateCDRS(gwgroupid, type, email, cdrfilter=filter, dtfilter=dtfilter, nonCompletedCalls=nonCompletedCalls)
 
 
 # TODO: standardize response payload (use data param)
