@@ -5,7 +5,9 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95
+a638e7a92a254c3af04b267f1b20b049f7afe30b
+53d99e58631b8304aeb76ca3e0b62143dd445f68
+224667b7be2a2416e73475803fd164f99d1081da
 6721e7478d45d27d4af231c34c270a87f6d98b75
 f2a5fd1d4363af84a8bbe880bc807563bc00ca0a
 c854fb813aabca89cd859016f9b6c9d24d2988f4
@@ -2049,10 +2051,42 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95)
+[//]: # (START_SECTION a638e7a92a254c3af04b267f1b20b049f7afe30b)
+### Update Precommit Checks
+
+> Commit: [a638e7a92a254c3af04b267f1b20b049f7afe30b](https://github.com/dOpensource/dsiprouter/commit/a638e7a92a254c3af04b267f1b20b049f7afe30b)  
+> Date: Wed, 14 Sep 2022 20:25:21 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update syntax checker to add more use cases
+- fix bug in `dsip_lib.sh` set* regex functions
+
+
+---
+
+[//]: # (END_SECTION a638e7a92a254c3af04b267f1b20b049f7afe30b)
+[//]: # (START_SECTION 53d99e58631b8304aeb76ca3e0b62143dd445f68)
+### Updated CDR's: - Added support for nonCompletedCalls to the API - Exposed the Data Time Filter (dtfilter)  to the CDR API - Fixed the csv option so that empty CDR's doesn't cause an error
+
+> Commit: [53d99e58631b8304aeb76ca3e0b62143dd445f68](https://github.com/dOpensource/dsiprouter/commit/53d99e58631b8304aeb76ca3e0b62143dd445f68)  
+> Date: Wed, 14 Sep 2022 13:20:22 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 53d99e58631b8304aeb76ca3e0b62143dd445f68)
+[//]: # (START_SECTION 224667b7be2a2416e73475803fd164f99d1081da)
 ### Merge Homer Support
 
-> Commit: [ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95](https://github.com/dOpensource/dsiprouter/commit/ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95)  
+> Commit: [224667b7be2a2416e73475803fd164f99d1081da](https://github.com/dOpensource/dsiprouter/commit/224667b7be2a2416e73475803fd164f99d1081da)  
 > Date: Tue, 13 Sep 2022 15:28:04 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2070,7 +2104,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION ec36676f0173cb7e3dc2ac2323a63c5cda1a6d95)
+[//]: # (END_SECTION 224667b7be2a2416e73475803fd164f99d1081da)
 [//]: # (START_SECTION 6721e7478d45d27d4af231c34c270a87f6d98b75)
 ### Fix DMQ Error Messages When Not Enabled
 

@@ -213,7 +213,8 @@ function setKamailioConfigSubst() {
     local VALUE="$2"
     local CONFIG_FILE="$3"
 
-    sed -i -r -e "s~(#!subst(?:def|defs)?.*!$NAME!).*(!.*)~\1$VALUE\2~g" ${CONFIG_FILE}
+    perl -e "\$name='$NAME'; \$value='$VALUE';" \
+        -i -pe 's~(#!subst(?:def|defs)?.*!${name}!).*(!.*)~\1${value}\2~g' ${CONFIG_FILE}
 }
 export -f setKamailioConfigSubst
 
@@ -257,7 +258,7 @@ function getRtpengineConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    grep -oP '^(?!#+)('${NAME}'[ \t]*=[ \t]*\K.*)' ${CONFIG_FILE}
+    grep -oP '^(?!#)('${NAME}'[ \t]*=[ \t]*\K.*)' ${CONFIG_FILE}
 }
 export -f getRtpengineConfigAttrib
 
@@ -270,7 +271,7 @@ function setRtpengineConfigAttrib() {
     local CONFIG_FILE="$3"
 
     perl -e "\$name='$NAME'; \$value='$VALUE';" \
-        -i -pe 's%^(?!#+)(${name}[ \t]*=[ \t]*.*)%${name} = ${value}%g' ${CONFIG_FILE}
+        -i -pe 's%^(?!#)(${name}[ \t]*=[ \t]*.*)%${name} = ${value}%g' ${CONFIG_FILE}
 }
 export -f setRtpengineConfigAttrib
 

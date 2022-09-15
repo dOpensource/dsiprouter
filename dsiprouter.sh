@@ -930,6 +930,7 @@ function generateKamailioConfig() {
         disableKamailioConfigAttrib 'WITH_STIRSHAKEN' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 
+    # TODO: move this to updatePermissions()
     # kamcfg will contain plaintext passwords / tokens
     # make sure we give it reasonable permissions
     chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
