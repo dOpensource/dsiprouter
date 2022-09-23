@@ -694,6 +694,7 @@ function updateKamailioConfig() {
     setKamailioConfigSubst 'INTERNAL_IP6_NET' "${INTERNAL_NET6}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_FQDN' "${INTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}

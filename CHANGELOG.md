@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-6e8346b4738a8f45c9dbcede1ddde29073d4acc3
+828b93a1a011212ba24e07523d48517c1f3ce2e3
+a8185ebd21e1e7b26aeadda1e39c36c8d9278052
 858d692c20fb15b7e897c58e428ed094423a136a
 53d99e58631b8304aeb76ca3e0b62143dd445f68
 224667b7be2a2416e73475803fd164f99d1081da
@@ -2052,10 +2053,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 6e8346b4738a8f45c9dbcede1ddde29073d4acc3)
+[//]: # (START_SECTION 828b93a1a011212ba24e07523d48517c1f3ce2e3)
+### Misc Bug Fixes for v0.70
+
+> Commit: [828b93a1a011212ba24e07523d48517c1f3ce2e3](https://github.com/dOpensource/dsiprouter/commit/828b93a1a011212ba24e07523d48517c1f3ce2e3)  
+> Date: Fri, 23 Sep 2022 15:05:43 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix missing update for INTERNAL_FQDN in `kamailio.cfg`
+- fix formatting in `kamailio.cfg`
+
+
+---
+
+[//]: # (END_SECTION 828b93a1a011212ba24e07523d48517c1f3ce2e3)
+[//]: # (START_SECTION a8185ebd21e1e7b26aeadda1e39c36c8d9278052)
 ### v0.70 Misc Fixes
 
-> Commit: [6e8346b4738a8f45c9dbcede1ddde29073d4acc3](https://github.com/dOpensource/dsiprouter/commit/6e8346b4738a8f45c9dbcede1ddde29073d4acc3)  
+> Commit: [a8185ebd21e1e7b26aeadda1e39c36c8d9278052](https://github.com/dOpensource/dsiprouter/commit/a8185ebd21e1e7b26aeadda1e39c36c8d9278052)  
 > Date: Fri, 23 Sep 2022 10:59:04 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2068,7 +2086,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 6e8346b4738a8f45c9dbcede1ddde29073d4acc3)
+[//]: # (END_SECTION a8185ebd21e1e7b26aeadda1e39c36c8d9278052)
 [//]: # (START_SECTION 858d692c20fb15b7e897c58e428ed094423a136a)
 ### Update Precommit Checks
 
