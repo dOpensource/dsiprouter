@@ -1760,7 +1760,7 @@ function installDnsmasq() {
     #systemctl disable systemd-resolved 2>/dev/null
 
     # dnsmasq configuration
-    mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
+    mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bak 2>/dev/null
     cat << EOF >/etc/dnsmasq.conf
 port=53
 domain-needed

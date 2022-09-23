@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-a638e7a92a254c3af04b267f1b20b049f7afe30b
+6e8346b4738a8f45c9dbcede1ddde29073d4acc3
+858d692c20fb15b7e897c58e428ed094423a136a
 53d99e58631b8304aeb76ca3e0b62143dd445f68
 224667b7be2a2416e73475803fd164f99d1081da
 6721e7478d45d27d4af231c34c270a87f6d98b75
@@ -2051,10 +2052,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION a638e7a92a254c3af04b267f1b20b049f7afe30b)
+[//]: # (START_SECTION 6e8346b4738a8f45c9dbcede1ddde29073d4acc3)
+### v0.70 Misc Fixes
+
+> Commit: [6e8346b4738a8f45c9dbcede1ddde29073d4acc3](https://github.com/dOpensource/dsiprouter/commit/6e8346b4738a8f45c9dbcede1ddde29073d4acc3)  
+> Date: Fri, 23 Sep 2022 10:59:04 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix typo in `dsiprouter.py`
+- update kamailio log configs to use a standard prefix
+
+
+---
+
+[//]: # (END_SECTION 6e8346b4738a8f45c9dbcede1ddde29073d4acc3)
+[//]: # (START_SECTION 858d692c20fb15b7e897c58e428ed094423a136a)
 ### Update Precommit Checks
 
-> Commit: [a638e7a92a254c3af04b267f1b20b049f7afe30b](https://github.com/dOpensource/dsiprouter/commit/a638e7a92a254c3af04b267f1b20b049f7afe30b)  
+> Commit: [858d692c20fb15b7e897c58e428ed094423a136a](https://github.com/dOpensource/dsiprouter/commit/858d692c20fb15b7e897c58e428ed094423a136a)  
 > Date: Wed, 14 Sep 2022 20:25:21 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2067,7 +2085,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION a638e7a92a254c3af04b267f1b20b049f7afe30b)
+[//]: # (END_SECTION 858d692c20fb15b7e897c58e428ed094423a136a)
 [//]: # (START_SECTION 53d99e58631b8304aeb76ca3e0b62143dd445f68)
 ### Updated CDR's: - Added support for nonCompletedCalls to the API - Exposed the Data Time Filter (dtfilter)  to the CDR API - Fixed the csv option so that empty CDR's doesn't cause an error
 
