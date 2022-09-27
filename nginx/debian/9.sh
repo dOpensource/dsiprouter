@@ -46,7 +46,7 @@ function install() {
 
     # configure nginx systemd service
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-stop.sh /usr/sbin/nginx-stop
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v2.service /etc/systemd/system/nginx.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v1.service /etc/systemd/system/nginx.service
     chmod 644 /etc/systemd/system/nginx.service
     systemctl daemon-reload
     systemctl enable nginx

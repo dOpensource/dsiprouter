@@ -753,25 +753,25 @@ function updateKamailioConfig() {
     fi
 
     # update kamailio TLS config file
-    if (( ${IPV6_ENABLED} == 1 )); then
-        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}'; "'$ipv6_config=
-            "[server:['"${EXTERNAL_IP6}"']:'"${KAM_WSS_PORT}"']\n" .
-            "method = TLSv1.2+\n" .
-            "verify_certificate = no\n" .
-            "require_certificate = no\n" .
-            "private_key = /etc/dsiprouter/certs/dsiprouter-key.pem\n" .
-            "certificate = /etc/dsiprouter/certs/dsiprouter-cert.pem\n" .
-            "ca_list = /etc/dsiprouter/certs/ca-list.pem\n" .
-            "#crl = /etc/dsiprouter/certs/crl.pem\n";' \
-            -0777 -i -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
-            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1${ipv6_config}\2%s;' \
-            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
-    else
-        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" -0777 -i \
-            -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
-            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1\2%s;' \
-            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
-    fi
+#    if (( ${IPV6_ENABLED} == 1 )); then
+#        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}'; "'$ipv6_config=
+#            "[server:['"${EXTERNAL_IP6}"']:'"${KAM_WSS_PORT}"']\n" .
+#            "method = TLSv1.2+\n" .
+#            "verify_certificate = no\n" .
+#            "require_certificate = no\n" .
+#            "private_key = /etc/dsiprouter/certs/dsiprouter-key.pem\n" .
+#            "certificate = /etc/dsiprouter/certs/dsiprouter-cert.pem\n" .
+#            "ca_list = /etc/dsiprouter/certs/ca-list.pem\n" .
+#            "#crl = /etc/dsiprouter/certs/crl.pem\n";' \
+#            -0777 -i -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
+#            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1${ipv6_config}\2%s;' \
+#            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+#    else
+#        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" -0777 -i \
+#            -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
+#            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1\2%s;' \
+#            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+#    fi
 }
 
 # update kamailio service startup commands accounting for any changes
@@ -890,17 +890,16 @@ function updateDnsConfig() {
     fi
 }
 
-# TODO: this logic was important for some reason but not sure why I created it
 function updateCACertsDir() {
     awk -v dsip_certs_dir="${DSIP_CERTS_DIR}" \
         'BEGIN {c=0;}
         /BEGIN CERT/{c++} {
-            print > "${dsip_certs_dir}/ca/cert." c ".pem"
+            print > dsip_certs_dir "/ca/cert." c ".pem"
         }' <${DSIP_SSL_CA}
     openssl rehash ${DSIP_CERTS_DIR}/ca/
-    chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}/ca/
-    chmod 640 ${DSIP_CERTS_DIR}/ca/*
+    updatePermissions certs
 }
+export -f updateCACertsDir
 
 function generateKamailioConfig() {
     # Backup kamcfg, generate fresh config from templates, and link it in where kamailio wants it
@@ -931,11 +930,7 @@ function generateKamailioConfig() {
         disableKamailioConfigAttrib 'WITH_STIRSHAKEN' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 
-    # TODO: move this to updatePermissions()
-    # kamcfg will contain plaintext passwords / tokens
-    # make sure we give it reasonable permissions
-    chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
-    chmod 0640 ${DSIP_KAMAILIO_CONFIG_FILE}
+    updatePermissions kamailio
 }
 
 function configureKamailioDB() {
@@ -1391,6 +1386,7 @@ function installDsiprouter() {
     # 1:    set via cmdline arg
     # 2:    set prior to externally
     # 3:    generate new key
+    # TODO: create bash-native equivalent function for creating the private key
     if [[ -n "${SET_DSIP_PRIV_KEY}" ]]; then
         printf '%s' "${SET_DSIP_PRIV_KEY}" > ${DSIP_PRIV_KEY}
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
@@ -1421,8 +1417,8 @@ function installDsiprouter() {
     # pass the variables on to setCredentials()
     setCredentials
 
-    # TODO: should only update necessary permissions here (certs, dsiprouter)
-    updatePermissions
+    # NOTE: some of the previous files/dirs get updated here to allow dsiprouter access
+    updatePermissions certs kamailio dsiprouter
 
     # for cloud images the instance-id may change (could be a clone)
     # add to cloud-init startup process a password reset to ensure its set correctly
@@ -1872,6 +1868,7 @@ EOF
         # therefore we have to create backward compatible versions of our service files
         # the following snippet may be useful in the future when we support later versions
         #SYSTEMD_VER=$(systemctl --version | head -1 | awk '{print $2}')
+        # TODO: the same issue occurs on debian9 with systemd ver 232
         amzn|rhel)
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
 [Unit]
@@ -1906,7 +1903,7 @@ EOF
     # update DNS hosts prior to dSIPRouter startup
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
     # update DNS hosts every minute
-    if ! crontab -l | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" 2>/dev/null; then
+    if ! crontab -l 2>/dev/null | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"; then
         cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
     fi
 
@@ -2853,9 +2850,11 @@ EOSSH
     done
 ) || cleanupAndExit $?; }
 
-# $1 == subset of permissions to update, one of:
-#   certs - update X509 certificate permissions only
+# $@ == subset of permissions to update
+# TODO: update systemd ExecStartPre commands to use this logic instead
 function updatePermissions() {
+    local ARG=""
+
     # set permissions on the X509 certs used by dsiprouter and kamailio
     # [special use case]: testing kamailio service startup
     # in this case kamailio needs access before dsiprouter user is created
@@ -2864,48 +2863,101 @@ function updatePermissions() {
             # dsiprouter needs to have control over the certs to allow changes
             # note that nginx should never have write access
             chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
-            find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
         else
             # dsiprouter user does not yet exist so make sure kamailio user has access
             chown -R root:kamailio ${DSIP_CERTS_DIR}
-            find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
         fi
+        find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
+    }
+    # set permissions for files/dirs used by dnsmasq
+    setDnsmasqPerms() {
+        mkdir -p /run/dnsmasq
+        chown -R dnsmasq:dnsmasq /run/dnsmasq
+    }
+    # set permissions for files/dirs used by nginx
+    setNginxPerms() {
+        mkdir -p /run/nginx
+        chown -R nginx:nginx /run/nginx
+    }
+    # set permissions for files/dirs used by kamailio
+    setKamailioPerms() {
+        mkdir -p /run/kamailio
+        chown -R kamailio:kamailio /run/kamailio
+
+        # dsiprouter needs to have control over the kamailio dir
+        # this allows dsiprouter to update kamailio dynamically
+        # kamailio configs will contain plaintext passwords / tokens
+        # in the case where the dsiprouter user does not yet exist we set stricter permissions
+        if id -u dsiprouter &>/dev/null; then
+            chown -R dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+        else
+            chown -R root:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+        fi
+        find ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/ -type f -exec chmod 640 {} +
+    }
+    # set permissions for files/dirs used by dsiprouter
+    setDsiprouterPerms() {
+        mkdir -p ${DSIP_RUN_DIR}
+        chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+
+        # dsiprouter user is the only one making backups
+        chown -R dsiprouter:root ${BACKUPS_DIR}
+        # dsiprouter private key only readable by dsiprouter
+        chown dsiprouter:root ${DSIP_PRIV_KEY}
+        chmod 400 ${DSIP_PRIV_KEY}
+        # dsiprouter gui files readable and writable only by dsiprouter
+        chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
+        find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
+        # uuid file should only be readable by dsiprouter and kamailio
+        chown dsiprouter:kamailio ${DSIP_UUID_FILE}
+        chmod 440 ${DSIP_UUID_FILE}
+    }
+    # set permissions for files/dirs used by rtpengine
+    setRtpenginePerms() {
+        mkdir -p /run/rtpengine
+        chown -R rtpengine:rtpengine /run/rtpengine
     }
 
-    case "$1" in
-        certs)
-            setCertPerms
-            ;;
-        *)
-            # if not called from systemd service, handle the run dirs
-            mkdir -p ${DSIP_RUN_DIR}
-            chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-            mkdir -p /run/dnsmasq
-            chown -R dnsmasq:dnsmasq /run/dnsmasq
-            mkdir -p /run/kamailio
-            chown -R kamailio:kamailio /run/kamailio
-            mkdir -p /run/rtpengine
-            chown -R rtpengine:rtpengine /run/rtpengine
-            mkdir -p /run/nginx
-            chown -R nginx:nginx /run/nginx
-            # dsiprouter user is the only one making backups
-            chown -R dsiprouter:root ${BACKUPS_DIR}
-            # dsiprouter private key only readable by dsiprouter
-            chown dsiprouter:root ${DSIP_PRIV_KEY}
-            chmod 400 ${DSIP_PRIV_KEY}
-            # dsiprouter gui files readable and writable by dsiprouter
-            chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
-            find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
-            # uuid file should only be readable by dsiprouter and kamailio
-            chown dsiprouter:kamailio ${DSIP_UUID_FILE}
-            chmod 440 ${DSIP_UUID_FILE}
-            # dsiprouter needs to have control over the kamailio dir
-            # this allows dsiprouter to update kamailio dynamically
-            chown -R dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
-            find ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/ -type f -exec chmod 640 {} +
-            setCertPerms
-            ;;
-    esac
+    # no args given set permissions for all services
+    if (( $# == 0 )); then
+        setDnsmasqPerms
+        setNginxPerms
+        setKamailioPerms
+        setDsiprouterPerms
+        setRtpenginePerms
+        setCertPerms
+        return 0
+    fi
+
+    # parse args and select subset of permissions to set
+    while (( $# > 0 )); do
+        ARG="$1"
+        shift
+        case "$ARG" in
+            certs)
+                setCertPerms
+                ;;
+            dnsmasq)
+                setDnsmasqPerms
+                ;;
+            nginx)
+                setNginxPerms
+                ;;
+            kamailio)
+                setKamailioPerms
+                ;;
+            dsiprouter)
+                setDsiprouterPerms
+                ;;
+            rtpengine)
+                setRtpenginePerms
+                ;;
+            *)
+                printerr "$0(): Invalid argument [$ARG]"
+                return 1
+                ;;
+        esac
+    done
 
     return 0
 }
@@ -3982,7 +4034,7 @@ function processCMD() {
                 esac
             done
             ;;
-        # internal command, generates CA dir from CA bundle file
+        # internal command, generate CA dir from CA bundle file
         updatecacertsdir)
             # update dnsmasq config
             RUN_COMMANDS+=(updateCACertsDir)

@@ -71,7 +71,7 @@ function install() {
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
         -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
-        ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v2.service > /lib/systemd/system/dsiprouter.service
+        ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v1.service > /lib/systemd/system/dsiprouter.service
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter

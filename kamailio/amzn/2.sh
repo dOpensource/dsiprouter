@@ -51,7 +51,7 @@ EOF
     yum makecache -y
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
-        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json
+        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid
 
 
     # get info about the kamailio install for later use in script
@@ -145,7 +145,8 @@ EOF
 
     # Setup Kamailio to use the CA cert's that are shipped with the OS
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/ca-list.pem ${DSIP_SSL_CA}
+    ln -s /etc/ssl/certs/ca-bundle.crt ${DSIP_SSL_CA}
+    updateCACertsDir
 
     # setup dSIPRouter module for kamailio
     ## reuse repo if it exists and matches version we want to install
