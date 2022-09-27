@@ -269,7 +269,7 @@ def update_nginx(sources):
 
     # Copy config to Native Nginx Server and restart Nginx
     shutil.copy(script_dir + "/dsiprouter-provisioner.conf", '/etc/nginx/sites-enabled/dsiprouter-provisioner.conf')
-    os.system('systemctl restart nginx')
+    os.system('systemctl reload nginx')
 
     # Check if dsiprouter-nginx is running. If so, reload nginx
 
