@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-d604cdd7130dbda54133ed8406bc89824b69d680
+11d632d1e01cdb8394b632b701192cad41262676
+cdd8aac9f751a212fcca7f01e7a5159d6ab749f2
 a1cba27cee11cd0de0a46ebec89c65eeb86a302a
 c3fa6d356292be28d495bdd1a32973880bb31068
 b3f6d0264ce15c28953af1f995738d0d4b335f8b
@@ -2057,10 +2058,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION d604cdd7130dbda54133ed8406bc89824b69d680)
+[//]: # (START_SECTION 11d632d1e01cdb8394b632b701192cad41262676)
 ### Installation Bug Fixes
 
-> Commit: [d604cdd7130dbda54133ed8406bc89824b69d680](https://github.com/dOpensource/dsiprouter/commit/d604cdd7130dbda54133ed8406bc89824b69d680)  
+> Commit: [11d632d1e01cdb8394b632b701192cad41262676](https://github.com/dOpensource/dsiprouter/commit/11d632d1e01cdb8394b632b701192cad41262676)  
+> Date: Wed, 28 Sep 2022 14:31:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix credential setting functions edge case not setting DB pass
+- add workaround for TLS module not reloading
+
+
+---
+
+[//]: # (END_SECTION 11d632d1e01cdb8394b632b701192cad41262676)
+[//]: # (START_SECTION cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)
+### Installation Bug Fixes
+
+> Commit: [cdd8aac9f751a212fcca7f01e7a5159d6ab749f2](https://github.com/dOpensource/dsiprouter/commit/cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)  
 > Date: Wed, 28 Sep 2022 08:21:37 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2074,7 +2092,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION d604cdd7130dbda54133ed8406bc89824b69d680)
+[//]: # (END_SECTION cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)
 [//]: # (START_SECTION a1cba27cee11cd0de0a46ebec89c65eeb86a302a)
 ### Installation Bug Fixes
 

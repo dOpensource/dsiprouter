@@ -2144,9 +2144,8 @@ function setCredentials() {
     local SET_ROOT_DB_NAME="${SET_ROOT_DB_NAME}"
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
-    # the SQL statements to run for these updates
-    local SQL_STATEMENTS=()
-    local DEFERRED_SQL_STATEMENTS=()
+    # the commands to execute for these updates
+    local SHELL_CMDS=() SQL_STATEMENTS=() DEFERRED_SQL_STATEMENTS=()
     # how settings will be propagated to live systems
     # 0 == no reload required, 1 == hot reload required, 2 == service reload required
     # note that parsing variables for higher numbered reloading should take precedence
@@ -2176,11 +2175,11 @@ function setCredentials() {
     # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
-        setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_GUI_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'DSIP_USERNAME' '$SET_DSIP_GUI_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_MAIL_USER}" ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings set MAIL_USERNAME='${SET_DSIP_MAIL_USER}' where DSIP_ID=${DSIP_ID};")
-        setConfigAttrib 'MAIL_USERNAME' "$SET_DSIP_MAIL_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_API_TOKEN}" ]]; then
         KAM_RELOAD_TYPE=1
@@ -2188,25 +2187,43 @@ function setCredentials() {
     if [[ -n "${SET_DSIP_IPC_TOKEN}" ]]; then
         DSIP_RELOAD_TYPE=2
     fi
-    # note: SQL query will fail if the username is not actually changed, check it determine if we need to run this logic
-    if [[ -n "${SET_KAM_DB_USER}" && "${SET_KAM_DB_USER}" != "${KAM_DB_USER}" ]]; then
-        # if user exists update username, otherwise we need to create the user
+    if [[ -n "${SET_KAM_DB_USER}" ]]; then
+        # TODO: make this simpler by using DROP USER IF EXISTS statements instead
+        # if user exists update username, otherwise we need to create the new user
         if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
         "${KAM_DB_USER}@localhost"; then
+            # if the user we want to rename to exists delete that user first
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@localhost"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'localhost';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("RENAME USER '${KAM_DB_USER}'@'localhost' TO '${SET_KAM_DB_USER}'@'localhost';")
         else
+            # if the new user we want to create exists delete that user first
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@localhost"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'localhost';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("CREATE USER '$SET_KAM_DB_USER'@'localhost' IDENTIFIED BY '${SET_KAM_DB_PASS:-$KAM_DB_PASS}';")
             DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'localhost';")
         fi
         if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
         "${KAM_DB_USER}@%"; then
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@%"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'%';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("RENAME USER '${KAM_DB_USER}'@'%' TO '${SET_KAM_DB_USER}'@'%';")
         else
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@%"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'%';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("CREATE USER '$SET_KAM_DB_USER'@'%' IDENTIFIED BY '${SET_KAM_DB_PASS:-$KAM_DB_PASS}';")
             DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'%';")
         fi
         SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='${SET_KAM_DB_USER}' WHERE DSIP_ID=${DSIP_ID};")
-        setConfigAttrib 'KAM_DB_USER' "$SET_KAM_DB_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_USER' '$SET_KAM_DB_USER' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
@@ -2218,11 +2235,11 @@ function setCredentials() {
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
-    # note: since the host is required in the DB URI when parsing we also check if it actually changed to determine if we need to run this logic
+    # NOTE: since the host is required in the DB URI when parsing args we also check if it actually changed to determine if we need to run this logic
     if [[ -n "${SET_KAM_DB_HOST}" && "${SET_KAM_DB_HOST}" != "${KAM_DB_HOST}" ]]; then
         #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-$KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
         #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
-        setConfigAttrib 'KAM_DB_HOST' "$SET_KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_HOST' '$SET_KAM_DB_HOST' ${DSIP_CONFIG_FILE} -q;")
         reconfigureMysqlSystemdService
 
         DSIP_RELOAD_TYPE=2
@@ -2230,14 +2247,14 @@ function setCredentials() {
         MYSQL_RELOAD_TYPE=2
     fi
     if [[ -n "${SET_KAM_DB_PORT}" ]]; then
-        setConfigAttrib 'KAM_DB_PORT' "$SET_KAM_DB_PORT" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_PORT' '$SET_KAM_DB_PORT' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_KAM_DB_NAME}" ]]; then
-        setConfigAttrib 'KAM_DB_NAME' "$SET_KAM_DB_NAME" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_NAME' '$SET_KAM_DB_NAME' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
@@ -2245,7 +2262,7 @@ function setCredentials() {
     if [[ -n "${SET_ROOT_DB_USER}" ]]; then
         DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'localhost' TO '${SET_ROOT_DB_USER}'@'localhost';")
 
-        setConfigAttrib 'ROOT_DB_USER' "$SET_ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_USER' '$SET_ROOT_DB_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_ROOT_DB_USER:-$ROOT_DB_USER}'@'localhost' = PASSWORD('${SET_ROOT_DB_PASS}');")
@@ -2253,12 +2270,13 @@ function setCredentials() {
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_ROOT_DB_NAME}" ]]; then
-        setConfigAttrib 'ROOT_DB_NAME' "$SET_ROOT_DB_NAME" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_NAME' '$SET_ROOT_DB_NAME' ${DSIP_CONFIG_FILE} -q;")
     fi
     DEFERRED_SQL_STATEMENTS+=("flush privileges;")
 
     # update encrypted settings locally and in DB
-    # NOTE: we must run this before the live DB credentials are changed otherwise we won't be able to connect
+    # NOTE: we must run this before the config files AND live DB credentials are changed otherwise we won't be able to connect
+    # TODO: replace with bash-native functions
     ${PYTHON_CMD} << EOF
 import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
 sys.path.insert(0, '/etc/dsiprouter/gui')
@@ -2273,12 +2291,10 @@ EOF
     # allow settings that don't require DB to be running to be updated (we verified at the start of this func whether we needed DB)
     if systemctl is-active --quiet mariadb; then
         # update non-encrypted settings on DB
-        if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
-            sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${SQL_STATEMENTS[@]}"
-            if (( $? != 0 )); then
-                printerr 'Failed setting credentials on DB'
-                cleanupAndExit 1
-            fi
+        sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${SQL_STATEMENTS[@]}"
+        if (( $? != 0 )); then
+            printerr 'Failed setting credentials on DB'
+            cleanupAndExit 1
         fi
 
         # update live DB settings (DB user passwords, privileges, etc..)
@@ -2288,6 +2304,9 @@ EOF
             cleanupAndExit 1
         fi
     fi
+
+    # finally update the local config files
+    eval "${SHELL_CMDS[@]}"
 
     # export variables for later usage in this script
     export DSIP_USERNAME=${SET_DSIP_GUI_USER:-$DSIP_USERNAME}
