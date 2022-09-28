@@ -1085,10 +1085,13 @@ function installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -y &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl
     elif cmdExists 'yum'; then
-        yum install -y curl wget gawk perl sed git bind-utils
+        yum install -y curl wget gawk perl sed git bind-utils openssl
     fi
+
+    # used by openssl rnd generator
+    dd if=/dev/urandom of="${HOME}/.rnd" bs=1024 count=1 2>/dev/null
 
     if (( $? != 0 )); then
         printerr 'Could not install script requirements'

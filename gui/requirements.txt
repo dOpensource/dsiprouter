@@ -1,7 +1,7 @@
 bjoern
 certbot
 cron_descriptor
-cryptography>=3.3,<3.4
+cryptography
 dnspython
 docker
 docutils<0.17,>=0.12

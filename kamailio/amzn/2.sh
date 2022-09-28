@@ -179,15 +179,14 @@ EOF
         ln -sft /usr/lib64/ /usr/lib/libks.so* && ln -sft /usr/lib64/pkgconfig/ /usr/lib/pkgconfig/libks.pc; exit $?;
     ) || { printerr 'Failed to compile and install libks'; return 1; }
 
-    ## compile openssl v1.1.1 (workaround for amazon linux repo conflicts)
-    ## currently we don't overwrite the system packages (openssl/openssl-devel)
+    ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
+    ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
     if [[ ! -d ${SRC_DIR}/openssl ]]; then
         ( cd ${SRC_DIR} &&
         curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
         tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
     fi
-    ( cd ${SRC_DIR}/openssl && ./Configure linux-$(uname -m) && make &&
-        cp -f ${SRC_DIR}/openssl/{libssl.so.1.1,libcrypto.so.1.1} /usr/lib64/; exit $?;
+    ( cd ${SRC_DIR}/openssl && ./Configure --prefix=/usr linux-$(uname -m) && make && make install; exit $?;
     ) || { printerr 'Failed to compile openssl'; return 1; }
 
     ## compile and install libstirshaken
