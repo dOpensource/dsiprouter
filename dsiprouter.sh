@@ -496,8 +496,9 @@ function reconfigureMysqlSystemdService() {
     local KAMDB_HOST="${SET_KAM_DB_HOST:-$KAM_DB_HOST}"
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
-    case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"${INTERNAL_IP6}"|"${EXTERNAL_IP6}"|"$(hostname)"|"$(hostname -f 2>/dev/null)")
+    case "$KAMDB_HOST" in
+        # in this case mysql server is running on this node
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"${INTERNAL_IP6}"|"${EXTERNAL_IP6}"|"$(hostname 2>/dev/null)"|"$(hostname -f 2>/dev/null)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl disable mariadb
@@ -506,6 +507,7 @@ function reconfigureMysqlSystemdService() {
 
             printf '%s' 'local' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
             ;;
+        # in this case mysql server is running on a remote node
         *)
             # if previously was local and now remote or inital run and is remote replace service files w/ dummy
             if [[ "${KAMDB_LOCATION}" == "local" ]] || [[ "${KAMDB_LOCATION}" == "" ]]; then
@@ -579,7 +581,9 @@ function renewSSLCert() {
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
         updatePermissions certs
-        kamcmd tls.reload
+        # have to restart kamailio due to bug in tls module
+        #kamcmd tls.reload
+        systemctl restart kamailio
     else
         printerr "Failed Renewing Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
     fi
@@ -2150,6 +2154,8 @@ function setCredentials() {
     # 0 == no reload required, 1 == hot reload required, 2 == service reload required
     # note that parsing variables for higher numbered reloading should take precedence
     local DSIP_RELOAD_TYPE=1 KAM_RELOAD_TYPE=0 MYSQL_RELOAD_TYPE=0
+    # whether or not we will be running logic to update settings on the DB
+    local RUN_SQL_STATEMENTS=1
 
     # sanity check, can we connect to the DB as the root user?
     # we determine if user already changed DB creds (and just want dsiprouter to store them accordingly)
@@ -2170,6 +2176,8 @@ function setCredentials() {
             printerr 'Connection to DB failed'
             cleanupAndExit 1
         fi
+        # no DB updates necessary
+        RUN_SQL_STATEMENTS=0
     fi
 
     # update non-encrypted settings locally and gather statements for updating DB
@@ -2289,7 +2297,7 @@ EOF
     fi
 
     # allow settings that don't require DB to be running to be updated (we verified at the start of this func whether we needed DB)
-    if systemctl is-active --quiet mariadb; then
+    if (( ${RUN_SQL_STATEMENTS} == 1 )); then
         # update non-encrypted settings on DB
         sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${SQL_STATEMENTS[@]}"
         if (( $? != 0 )); then

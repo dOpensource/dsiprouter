@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-11d632d1e01cdb8394b632b701192cad41262676
+261eee311b7dd3e777728999a310ad1cc4bb12c7
+b3a9b851f5b0c095eede8d5913f102b4f62b04f0
 cdd8aac9f751a212fcca7f01e7a5159d6ab749f2
 a1cba27cee11cd0de0a46ebec89c65eeb86a302a
 c3fa6d356292be28d495bdd1a32973880bb31068
@@ -2058,10 +2059,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 11d632d1e01cdb8394b632b701192cad41262676)
+[//]: # (START_SECTION 261eee311b7dd3e777728999a310ad1cc4bb12c7)
 ### Installation Bug Fixes
 
-> Commit: [11d632d1e01cdb8394b632b701192cad41262676](https://github.com/dOpensource/dsiprouter/commit/11d632d1e01cdb8394b632b701192cad41262676)  
+> Commit: [261eee311b7dd3e777728999a310ad1cc4bb12c7](https://github.com/dOpensource/dsiprouter/commit/261eee311b7dd3e777728999a310ad1cc4bb12c7)  
+> Date: Thu, 29 Sep 2022 09:37:20 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix unpatched `tls.reload` commands
+- fix typo in `reconfigureMysqlSystemdService()`
+- fix cloud-init edge case where DB passwords not updated
+
+
+---
+
+[//]: # (END_SECTION 261eee311b7dd3e777728999a310ad1cc4bb12c7)
+[//]: # (START_SECTION b3a9b851f5b0c095eede8d5913f102b4f62b04f0)
+### Installation Bug Fixes
+
+> Commit: [b3a9b851f5b0c095eede8d5913f102b4f62b04f0](https://github.com/dOpensource/dsiprouter/commit/b3a9b851f5b0c095eede8d5913f102b4f62b04f0)  
 > Date: Wed, 28 Sep 2022 14:31:09 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2074,7 +2093,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 11d632d1e01cdb8394b632b701192cad41262676)
+[//]: # (END_SECTION b3a9b851f5b0c095eede8d5913f102b4f62b04f0)
 [//]: # (START_SECTION cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)
 ### Installation Bug Fixes
 
