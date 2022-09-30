@@ -1,7 +1,7 @@
 import os, psycopg2, hashlib, MySQLdb, subprocess, docker,shutil
 from database import dSIPMultiDomainMapping
 from util.security import AES_CTR
-from util.networking import safeUriToHost
+from util.networking import safeUriToHost, hostToIP
 
 # TODO: error handling here is pretty bad, we need to establish connection from main func and pass conn/cursors to sub funcs
 #       I implemented an exmaple in sync_needed() of proper connection / cursor handling, we need to move that to the entry func
@@ -125,7 +125,7 @@ def sync_db(source, dest):
         if fpbx_conn is not None:
             print("Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
         fpbx_curs = fpbx_conn.cursor()
-        fpbx_curs.execute("""select domain_name from v_domains where domain_enabled='true'""")
+        fpbx_curs.execute("""select domain_name from v_domains where domain_enabled='true' and domain_name <> %s""",[hostToIP(fpbx_hostname)])
         rows = fpbx_curs.fetchall()
         if rows is not None:
             counter = 0
@@ -223,96 +223,101 @@ def reloadkam(kamcmd_path):
 def update_nginx(sources):
     print("Updating Nginx")
 
-    # Connect to docker
-    client = docker.from_env()
-    if client is not None:
-        print("Got handle to docker")
+#    # Connect to docker
+#    client = docker.from_env()
+#    if client is not None:
+#        print("Got handle to docker")
+#
+#    try:
+#        # If there isn't any FusionPBX sources then just shutdown the container
+#        if len(sources) < 1:
+#            containers = client.containers.list()
+#            for container in containers:
+#                if container.name == "dsiprouter-nginx":
+#                    # Stop the container
+#                    container.stop()
+#                    container.remove(force=True)
+#                    print("Stopped nginx container")
+#            return
+#    except Exception as e:
+#        os.remove("./.sync-lock")
+#        print(e)
 
+    # Create the Nginx file
     try:
-        # If there isn't any FusionPBX sources then just shutdown the container
-        if len(sources) < 1:
-            containers = client.containers.list()
-            for container in containers:
-                if container.name == "dsiprouter-nginx":
-                    # Stop the container
-                    container.stop()
-                    container.remove(force=True)
-                    print("Stopped nginx container")
-            return
+        serverList = ""
+        for source in sources:
+            serverList += "server " + safeUriToHost(str(source)) + ":443;\n"
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+        # TODO: Marked for removal in next release 
+        # Build a config for the docker instance of Nginx
+        #input = open(script_dir + "/dsiprouter.nginx.tpl")
+        #output = open(script_dir + "/dsiprouter.nginx", "w")
+        #output.write(input.read().replace("##SERVERLIST##", serverList))
+        #output.close()
+        #input.close()
+    
+        # Build a config for the native Nginx instance
+
+        input = open(script_dir + "/dsiprouter-provisioner.tpl")
+        output = open(script_dir + "/dsiprouter-provisioner.conf", "w")
+        output.write(input.read().replace("##SERVERLIST##", serverList))
+        output.close()
+        input.close()
+
+        # Copy config to Native Nginx Server and restart Nginx
+        shutil.copy(script_dir + "/dsiprouter-provisioner.conf", '/etc/nginx/sites-enabled/dsiprouter-provisioner.conf')
+        os.system('systemctl reload nginx')
+    
     except Exception as e:
         os.remove("./.sync-lock")
         print(e)
 
-    # Create the Nginx file
-
-    serverList = ""
-    for source in sources:
-        serverList += "server " + safeUriToHost(str(source)) + ":443;\n"
-
-    # print(serverList)
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    # print(script_dir)
-
-    input = open(script_dir + "/dsiprouter.nginx.tpl")
-    output = open(script_dir + "/dsiprouter.nginx", "w")
-    output.write(input.read().replace("##SERVERLIST##", serverList))
-    output.close()
-    input.close()
-    
-    # Build a config for the native Nginx instance
-
-    input = open(script_dir + "/dsiprouter-provisioner.tpl")
-    output = open(script_dir + "/dsiprouter-provisioner.conf", "w")
-    output.write(input.read().replace("##SERVERLIST##", serverList))
-    output.close()
-    input.close()
-
-    # Copy config to Native Nginx Server and restart Nginx
-    shutil.copy(script_dir + "/dsiprouter-provisioner.conf", '/etc/nginx/sites-enabled/dsiprouter-provisioner.conf')
-    os.system('systemctl reload nginx')
-
-    # Check if dsiprouter-nginx is running. If so, reload nginx
-
-    containers = client.containers.list()
-    print("past container list")
-    for container in containers:
-        if container.name == "dsiprouter-nginx":
-            # Execute a command to reload nginx
-            container.exec_run("nginx -s reload")
-            print("Reloaded nginx")
-            return
-
-    # Start the container if one is not running
-    try:
-        print("trying to create a container")
-        host_volume_path = script_dir + "/dsiprouter.nginx"
-        html_volume_path = script_dir + "/html"
-        cert_volume_path = script_dir + "/certs"
-        # host_volume_path = script_dir
-        print(host_volume_path)
-        # remove the container with a name of dsiprouter-nginx to avoid conflicts if it already exists
-        containerList = client.containers.list('dsiprouter-nginx')
-        containerFound = False
-        for c in containerList:
-            if c.name == "dsiprouter-nginx":
-                containerFound = True
-        if containerFound:
-            print("dsiprouter-nginx found...about to remove it and recreate")
-            container = client.containers.get('dsiprouter-nginx')
-            container.remove()
-        client.containers.run(image='nginx:latest',
-                              name="dsiprouter-nginx",
-                              ports={'80/tcp': '80/tcp', '443/tcp': '443/tcp'},
-                              volumes={
-                                  host_volume_path: {'bind': '/etc/nginx/conf.d/default.conf', 'mode': 'rw'},
-                                  html_volume_path: {'bind': '/etc/nginx/html', 'mode': 'rw'},
-                                  cert_volume_path: {'bind': '/etc/ssl/certs', 'mode': 'rw'}
-                              },
-                              detach=True)
-        print("created a container")
-    except Exception as e:
-        os.remove("./.sync-lock")
-        print(str(e))
+#    Depricating the use of docker containers - logic will be removed during the next release
+#    # Check if dsiprouter-nginx is running. If so, reload nginx
+#
+#    containers = client.containers.list()
+#    print("past container list")
+#    for container in containers:
+#        if container.name == "dsiprouter-nginx":
+#            # Execute a command to reload nginx
+#            container.exec_run("nginx -s reload")
+#            print("Reloaded nginx")
+#            return
+#
+#    # Start the container if one is not running
+#    try:
+#        print("trying to create a container")
+#        host_volume_path = script_dir + "/dsiprouter.nginx"
+#        html_volume_path = script_dir + "/html"
+#        cert_volume_path = script_dir + "/certs"
+#        # host_volume_path = script_dir
+#        print(host_volume_path)
+#        # remove the container with a name of dsiprouter-nginx to avoid conflicts if it already exists
+#        containerList = client.containers.list('dsiprouter-nginx')
+#        containerFound = False
+#        for c in containerList:
+#            if c.name == "dsiprouter-nginx":
+#                containerFound = True
+#        if containerFound:
+#            print("dsiprouter-nginx found...about to remove it and recreate")
+#            container = client.containers.get('dsiprouter-nginx')
+#            container.remove()
+#        client.containers.run(image='nginx:latest',
+#                              name="dsiprouter-nginx",
+#                              ports={'80/tcp': '80/tcp', '443/tcp': '443/tcp'},
+#                              volumes={
+#                                  host_volume_path: {'bind': '/etc/nginx/conf.d/default.conf', 'mode': 'rw'},
+#                                  html_volume_path: {'bind': '/etc/nginx/html', 'mode': 'rw'},
+#                                  cert_volume_path: {'bind': '/etc/ssl/certs', 'mode': 'rw'}
+#                              },
+#                              detach=True)
+#        print("created a container")
+#    except Exception as e:
+#        os.remove("./.sync-lock")
+#        print(str(e))
 
 
 def sync_needed(source, dest):
@@ -356,14 +361,14 @@ def sync_needed(source, dest):
         kam_conn = MySQLdb.connect(host=kam_hostname, user=kam_username, passwd=kam_password, db=kam_database)
         kam_curs = kam_conn.cursor()
         if kam_curs is not None:
-            print("[sync_needed] Connection to Kamailio DB:{} database was successful".format(kam_hostname))
+            print("[sync_needed] Connection to Kamailio DB: {} database was successful".format(kam_hostname))
 
         # Get a connection to the FusionPBX Server
         fpbx_conn = psycopg2.connect(dbname=fpbx_database, user=fpbx_username, host=fpbx_hostname, port=fpbx_port, password=fpbx_password)
         if fpbx_conn is not None:
-            print("[sync_needed] Connection to FusionPBX:{} database was successful".format(fpbx_hostname))
+            print("[sync_needed] Connection to FusionPBX DB: {} database was successful".format(fpbx_hostname))
         fpbx_curs = fpbx_conn.cursor()
-        fpbx_curs.execute("""select domain_name from v_domains where domain_enabled='true'""")
+        fpbx_curs.execute("""select domain_name from v_domains where domain_enabled='true' and domain_name <> %s""",[hostToIP(fpbx_hostname)])
         rows = fpbx_curs.fetchall()
         if rows is not None:
             domain_name_str = ""
@@ -443,7 +448,7 @@ def run_sync(settings):
                 #drop_fusionpbx_domains(sources[key], dest)
                 sync_db(sources[key], dest)
             else:
-                print("[run_sync] No sync needed for source: {}".format(sources[key][1]))
+                print("[run_sync] No changes - no sync needed for source: {}".format(sources[key][1]))
 
         # Reload Kamailio
         reloadkam(settings.KAM_KAMCMD_PATH)
