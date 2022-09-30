@@ -5,7 +5,13 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-828b93a1a011212ba24e07523d48517c1f3ce2e3
+261eee311b7dd3e777728999a310ad1cc4bb12c7
+b3a9b851f5b0c095eede8d5913f102b4f62b04f0
+cdd8aac9f751a212fcca7f01e7a5159d6ab749f2
+a1cba27cee11cd0de0a46ebec89c65eeb86a302a
+c3fa6d356292be28d495bdd1a32973880bb31068
+b3f6d0264ce15c28953af1f995738d0d4b335f8b
+3238a10fb81d182766c38caaee646e3f79e98e71
 a8185ebd21e1e7b26aeadda1e39c36c8d9278052
 858d692c20fb15b7e897c58e428ed094423a136a
 53d99e58631b8304aeb76ca3e0b62143dd445f68
@@ -2053,10 +2059,116 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 828b93a1a011212ba24e07523d48517c1f3ce2e3)
+[//]: # (START_SECTION 261eee311b7dd3e777728999a310ad1cc4bb12c7)
+### Installation Bug Fixes
+
+> Commit: [261eee311b7dd3e777728999a310ad1cc4bb12c7](https://github.com/dOpensource/dsiprouter/commit/261eee311b7dd3e777728999a310ad1cc4bb12c7)  
+> Date: Thu, 29 Sep 2022 09:37:20 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix unpatched `tls.reload` commands
+- fix typo in `reconfigureMysqlSystemdService()`
+- fix cloud-init edge case where DB passwords not updated
+
+
+---
+
+[//]: # (END_SECTION 261eee311b7dd3e777728999a310ad1cc4bb12c7)
+[//]: # (START_SECTION b3a9b851f5b0c095eede8d5913f102b4f62b04f0)
+### Installation Bug Fixes
+
+> Commit: [b3a9b851f5b0c095eede8d5913f102b4f62b04f0](https://github.com/dOpensource/dsiprouter/commit/b3a9b851f5b0c095eede8d5913f102b4f62b04f0)  
+> Date: Wed, 28 Sep 2022 14:31:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix credential setting functions edge case not setting DB pass
+- add workaround for TLS module not reloading
+
+
+---
+
+[//]: # (END_SECTION b3a9b851f5b0c095eede8d5913f102b4f62b04f0)
+[//]: # (START_SECTION cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)
+### Installation Bug Fixes
+
+> Commit: [cdd8aac9f751a212fcca7f01e7a5159d6ab749f2](https://github.com/dOpensource/dsiprouter/commit/cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)  
+> Date: Wed, 28 Sep 2022 08:21:37 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix openssl version conflict on amazon linux
+- fix openssl missing rnd file on amazon linux
+- fix missing wheel package on amazon linux
+
+
+---
+
+[//]: # (END_SECTION cdd8aac9f751a212fcca7f01e7a5159d6ab749f2)
+[//]: # (START_SECTION a1cba27cee11cd0de0a46ebec89c65eeb86a302a)
+### Installation Bug Fixes
+
+> Commit: [a1cba27cee11cd0de0a46ebec89c65eeb86a302a](https://github.com/dOpensource/dsiprouter/commit/a1cba27cee11cd0de0a46ebec89c65eeb86a302a)  
+> Date: Tue, 27 Sep 2022 15:45:14 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix permissions errors on install
+- silence false positive error crontab missing
+- fix ipv6 connection check for older iproute versions
+- fix systemd service formats for debian9
+- fix missing uuid module for amazon linux 2
+- fix kamailio TLS configurations
+- fix dupliacte init commands when re-running install
+- fix kamailio service for old systemd versions
+
+
+---
+
+[//]: # (END_SECTION a1cba27cee11cd0de0a46ebec89c65eeb86a302a)
+[//]: # (START_SECTION c3fa6d356292be28d495bdd1a32973880bb31068)
+### dSIPRouter Provisioning: - Changed the provisioning template to run on port 443 and SSL by default - Supports /provision and /app/provision URLs for obtaining provisioning profiles
+
+> Commit: [c3fa6d356292be28d495bdd1a32973880bb31068](https://github.com/dOpensource/dsiprouter/commit/c3fa6d356292be28d495bdd1a32973880bb31068)  
+> Date: Tue, 27 Sep 2022 14:05:41 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c3fa6d356292be28d495bdd1a32973880bb31068)
+[//]: # (START_SECTION b3f6d0264ce15c28953af1f995738d0d4b335f8b)
+### FusionPBX Sync: - Nginx will now do a reload when FusionPBX Sync is enabled vs a restart
+
+> Commit: [b3f6d0264ce15c28953af1f995738d0d4b335f8b](https://github.com/dOpensource/dsiprouter/commit/b3f6d0264ce15c28953af1f995738d0d4b335f8b)  
+> Date: Tue, 27 Sep 2022 10:24:38 +0000  
+> Author: root (root@mack-dsip-v0.700)  
+> Committer: root (root@mack-dsip-v0.700)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b3f6d0264ce15c28953af1f995738d0d4b335f8b)
+[//]: # (START_SECTION 3238a10fb81d182766c38caaee646e3f79e98e71)
 ### Misc Bug Fixes for v0.70
 
-> Commit: [828b93a1a011212ba24e07523d48517c1f3ce2e3](https://github.com/dOpensource/dsiprouter/commit/828b93a1a011212ba24e07523d48517c1f3ce2e3)  
+> Commit: [3238a10fb81d182766c38caaee646e3f79e98e71](https://github.com/dOpensource/dsiprouter/commit/3238a10fb81d182766c38caaee646e3f79e98e71)  
 > Date: Fri, 23 Sep 2022 15:05:43 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2069,7 +2181,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 828b93a1a011212ba24e07523d48517c1f3ce2e3)
+[//]: # (END_SECTION 3238a10fb81d182766c38caaee646e3f79e98e71)
 [//]: # (START_SECTION a8185ebd21e1e7b26aeadda1e39c36c8d9278052)
 ### v0.70 Misc Fixes
 

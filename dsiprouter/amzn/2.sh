@@ -17,7 +17,7 @@ function install() {
 
     # Install dependencies for dSIPRouter
     yum install -y yum-utils firewalld python3 python3-libs python3-devel python3-pip MySQL-python \
-        logrotate rsyslog perl libev-devel util-linux postgresql-devel
+        logrotate rsyslog perl libev-devel util-linux postgresql-devel python3-wheel
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
 
     # reset python cmd in case it was just installed

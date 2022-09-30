@@ -30,12 +30,12 @@ EXCLUDE_DIRS=( )
 REQUIREMENTS_FILE="requirements.txt"
 # pipreqs only catches stdlib libraries
 INCLUDE_LIBS=(
-	'cryptography>=3.3,<3.4' 'Jinja2==3.0.3' 'Werkzeug==2.0.2' 'itsdangerous==2.0.1' 'Flask==1.1.2' 'docutils<0.17,>=0.12'
+	'Jinja2==3.0.3' 'Werkzeug==2.0.2' 'itsdangerous==2.0.1' 'Flask==1.1.2' 'docutils<0.17,>=0.12'
 	'mysqlclient' 'docker' 'certbot' 'sphinx' 'recommonmark' 'sphinxcontrib-httpdomain' 'sphinx-rtd-theme' 'pem' 'twilio'
 )
 # excludes for conflicting libs
 EXCLUDE_LIBS=(
-	'cryptography' 'Jinja2' 'Werkzeug' 'itsdangerous' 'Flask' 'docker_py' 'pyspark' 'acme.hello' 'josepy' 'MySQL-python'
+	'Jinja2' 'Werkzeug' 'itsdangerous' 'Flask' 'docker_py' 'pyspark' 'acme.hello' 'josepy' 'MySQL-python'
 )
 
 

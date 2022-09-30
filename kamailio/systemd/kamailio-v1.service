@@ -20,9 +20,6 @@ ExecStartPre=/bin/mkdir -p $RUNDIR
 ExecStartPre=/bin/chown -R kamailio:kamailio $RUNDIR
 ExecStart=/usr/sbin/kamailio -P $PIDFILE -f $CFGFILE -m $SHM_MEMORY -M $PKG_MEMORY --atexit=no
 Restart=on-failure
-# /run/kamailio in tmpfs
-RuntimeDirectory=kamailio
-RuntimeDirectoryMode=0770
 # necessary for chown of control files e.g. for jsonrpcs and ctl modules
 AmbientCapabilities=CAP_CHOWN
 

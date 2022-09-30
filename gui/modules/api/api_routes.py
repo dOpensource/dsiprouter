@@ -120,7 +120,6 @@ def reloadKamailio():
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'dispatcher.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
@@ -2538,12 +2537,12 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
 
         if nonCompletedCalls == True:
-            
+
            NonCompletedCallsQuery =(
                 """SELECT acc.id as cdr_id, acc.time, 0, acc.calltype,
                 acc.src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
                 acc.dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
-                acc.src_user,acc.dst_user,acc.src_ip,acc.dst_domain,acc.callid 
+                acc.src_user,acc.dst_user,acc.src_ip,acc.dst_domain,acc.callid
                 FROM acc
                 JOIN dr_gw_lists t2 ON (acc.src_gwgroupid = t2.id)
                 LEFT JOIN dr_gw_lists t3 ON (acc.dst_gwgroupid = t3.id)
@@ -2551,7 +2550,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                 ORDER BY acc.time DESC"""
             ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
 
-           query = "(" + query + ")" + " UNION " + "(" + NonCompletedCallsQuery + ")" 
+           query = "(" + query + ")" + " UNION " + "(" + NonCompletedCallsQuery + ")"
 
         rows  = db.execute(query)
         cdrs = []
@@ -2594,7 +2593,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                 else:
                     dict_writer = csv.DictWriter(csv_fp, fieldnames=dataFields)
                     dict_writer.writeheader()
-                
+
 
             if email:
                 # recipients required

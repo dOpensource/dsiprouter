@@ -156,7 +156,8 @@ EOF
 
     # Setup Kamailio to use the CA cert's that are shipped with the OS
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/ca-list.pem ${DSIP_SSL_CA}
+    ln -s /etc/ssl/certs/ca-bundle.crt ${DSIP_SSL_CA}
+    updateCACertsDir
 
     # setup dSIPRouter module for kamailio
     ## reuse repo if it exists and matches version we want to install

@@ -198,7 +198,14 @@ function install {
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
+    case "${DISTRO_VER}" in
+        9)
+            cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /etc/systemd/system/rtpengine.service
+            ;;
+        *)
+            cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
+            ;;
+    esac
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
     chmod +x /usr/sbin/rtpengine*

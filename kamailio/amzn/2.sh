@@ -51,7 +51,7 @@ EOF
     yum makecache -y
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
-        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json
+        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid
 
 
     # get info about the kamailio install for later use in script
@@ -145,7 +145,8 @@ EOF
 
     # Setup Kamailio to use the CA cert's that are shipped with the OS
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/ca-list.pem ${DSIP_SSL_CA}
+    ln -s /etc/ssl/certs/ca-bundle.crt ${DSIP_SSL_CA}
+    updateCACertsDir
 
     # setup dSIPRouter module for kamailio
     ## reuse repo if it exists and matches version we want to install
@@ -178,15 +179,14 @@ EOF
         ln -sft /usr/lib64/ /usr/lib/libks.so* && ln -sft /usr/lib64/pkgconfig/ /usr/lib/pkgconfig/libks.pc; exit $?;
     ) || { printerr 'Failed to compile and install libks'; return 1; }
 
-    ## compile openssl v1.1.1 (workaround for amazon linux repo conflicts)
-    ## currently we don't overwrite the system packages (openssl/openssl-devel)
+    ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
+    ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
     if [[ ! -d ${SRC_DIR}/openssl ]]; then
         ( cd ${SRC_DIR} &&
         curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
         tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
     fi
-    ( cd ${SRC_DIR}/openssl && ./Configure linux-$(uname -m) && make &&
-        cp -f ${SRC_DIR}/openssl/{libssl.so.1.1,libcrypto.so.1.1} /usr/lib64/; exit $?;
+    ( cd ${SRC_DIR}/openssl && ./Configure --prefix=/usr linux-$(uname -m) && make && make install; exit $?;
     ) || { printerr 'Failed to compile openssl'; return 1; }
 
     ## compile and install libstirshaken

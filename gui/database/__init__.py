@@ -458,7 +458,7 @@ class dSIPUser(object):
     pass
 
 
-def getDBURI():
+def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_host=None, db_port=None, db_name=None):
     """
     Get any and all DB Connection URI's
     Facilitates HA DB Server connections through multiple host's defined in settings
@@ -466,37 +466,43 @@ def getDBURI():
     """
     uri_list = []
 
-    # check environment vars if in debug mode
-    if settings.DEBUG:
-        settings.KAM_DB_DRIVER = os.getenv('KAM_DB_DRIVER', settings.KAM_DB_DRIVER)
-        settings.KAM_DB_HOST = os.getenv('KAM_DB_HOST', settings.KAM_DB_HOST)
-        settings.KAM_DB_TYPE = os.getenv('KAM_DB_TYPE', settings.KAM_DB_TYPE)
-        settings.KAM_DB_PORT = os.getenv('KAM_DB_PORT', settings.KAM_DB_PORT)
-        settings.KAM_DB_NAME = os.getenv('KAM_DB_NAME', settings.KAM_DB_NAME)
-        settings.KAM_DB_USER = os.getenv('KAM_DB_USER', settings.KAM_DB_USER)
-        settings.KAM_DB_PASS = os.getenv('KAM_DB_PASS', settings.KAM_DB_PASS)
+    # URI is built from the following by order of precedence:
+    # 1: function arguments
+    # 2: environment variables (debug mode only)
+    # 3: settings file
+    if db_driver is None:
+        db_driver = os.getenv('KAM_DB_DRIVER', settings.KAM_DB_DRIVER) if settings.DEBUG else settings.KAM_DB_DRIVER
+    if db_type is None:
+        db_type = os.getenv('KAM_DB_TYPE', settings.KAM_DB_TYPE) if settings.DEBUG else settings.KAM_DB_TYPE
+    if db_user is None:
+        db_user = os.getenv('KAM_DB_USER', settings.KAM_DB_USER) if settings.DEBUG else settings.KAM_DB_USER
+    if db_pass is None:
+        db_pass = os.getenv('KAM_DB_PASS', settings.KAM_DB_PASS) if settings.DEBUG else settings.KAM_DB_PASS
+    if db_host is None:
+        db_host = os.getenv('KAM_DB_HOST', settings.KAM_DB_HOST) if settings.DEBUG else settings.KAM_DB_HOST
+    if db_port is None:
+        db_port = os.getenv('KAM_DB_PORT', settings.KAM_DB_PORT) if settings.DEBUG else settings.KAM_DB_PORT
+    if db_name is None:
+        db_name = os.getenv('KAM_DB_NAME', settings.KAM_DB_NAME) if settings.DEBUG else settings.KAM_DB_NAME
 
-    # need to decrypt password
-    if isinstance(settings.KAM_DB_PASS, bytes):
-        kampass = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
-    else:
-        kampass = settings.KAM_DB_PASS
-
-    if settings.KAM_DB_TYPE != "":
-        sql_uri = settings.KAM_DB_TYPE + "{driver}" + "://" + settings.KAM_DB_USER + ":" + kampass + "@" + "{host}" + "/" + settings.KAM_DB_NAME
-
-        driver = ""
-        if len(settings.KAM_DB_DRIVER) > 0:
-            driver = '+{}'.format(settings.KAM_DB_DRIVER)
-
-        if isinstance(settings.KAM_DB_HOST, list):
-            for host in settings.KAM_DB_HOST:
-                uri_list.append(sql_uri.format(host=host, driver=driver))
+    if db_type != "":
+        # need to decrypt password
+        if isinstance(db_pass, bytes):
+            db_pass = AES_CTR.decrypt(db_pass).decode('utf-8')
+        # formatting for driver
+        if len(db_driver) > 0:
+            db_driver = '+{}'.format(db_driver)
+        # string template
+        db_uri_str = db_type + db_driver + "://" + db_user + ":" + db_pass + "@" + "{host}" + "/" + db_name
+        # for cluster of DB add all hosts
+        if isinstance(db_host, list):
+            for host in db_host:
+                uri_list.append(db_uri_str.format(host=host))
         else:
-            uri_list.append(sql_uri.format(host=settings.KAM_DB_HOST, driver=driver))
+            uri_list.append(db_uri_str.format(host=db_host))
 
     if settings.DEBUG:
-        IO.printdbg('getDBURI() returned: [{}]'.format(','.join('"{0}"'.format(uri) for uri in uri_list)))
+        IO.printdbg('createDBURI() returned: [{}]'.format(','.join('"{0}"'.format(uri) for uri in uri_list)))
 
     return uri_list
 
@@ -550,7 +556,7 @@ def createSessionMaker():
     if 'SessionLoader' in globals():
         return globals()['SessionLoader']
     if not 'db_engine' in globals():
-        db_engine = createValidEngine(getDBURI())
+        db_engine = createValidEngine(createDBURI())
     else:
         db_engine = globals()['db_engine']
 
@@ -698,5 +704,5 @@ class DummySession():
 # this does have the requirement of new session instancing per request
 
 # Make the engine and session maker global
-db_engine = createValidEngine(getDBURI())
+db_engine = createValidEngine(createDBURI())
 SessionLoader = createSessionMaker()

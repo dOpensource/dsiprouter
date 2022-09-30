@@ -7,9 +7,7 @@ import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 def reloadKamailio():
-
     try:
-
         # format some settings for kam config
         dsip_api_url = settings.DSIP_API_PROTO + '://' + '127.0.0.1' + ':' + str(settings.DSIP_API_PORT)
         if isinstance(settings.DSIP_API_TOKEN, bytes):
@@ -17,7 +15,7 @@ def reloadKamailio():
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 
-        # Pulled tls.reload out of the reload process due to issues
+        # Pulled tls.reload out of the reload process due to issues (something to do with memory requirements)
         # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
 
 
@@ -25,7 +23,6 @@ def reloadKamailio():
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'dispatcher.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
@@ -108,7 +105,7 @@ def reloadKamailio():
                 ex.code = r.status_code
                 raise ex
 
-        IO.printinfo("[---- Reloaded Kamailio with dSIPRouter Settings ----]")    
+        IO.printinfo("[---- Reloaded Kamailio with dSIPRouter Settings ----]")
     except Exception as ex:
-        IO.printerr("[---- Could not reload Kamailio with dSIPRouter Settings ----]")  
+        IO.printerr("[---- Could not reload Kamailio with dSIPRouter Settings ----]")
         raise ex

@@ -386,14 +386,14 @@ export -f getInstanceID
 # $1 == crontab entry to append
 function cronAppend() {
     local ENTRY="$1"
-    crontab -l | { cat; echo "$ENTRY"; } | crontab -
+    crontab -l 2>/dev/null | { cat; echo "$ENTRY"; } | crontab -
 }
 export -f cronAppend
 
 # $1 == crontab entry to remove
 function cronRemove() {
     local ENTRY="$1"
-    crontab -l | grep -v -F -w "$ENTRY" | crontab -
+    crontab -l 2>/dev/null | grep -v -F -w "$ENTRY" | crontab -
 }
 export -f cronRemove
 
@@ -612,6 +612,9 @@ function addInitCmd() {
     local CMD=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
     local TMP_FILE="${DSIP_INIT_FILE}.tmp"
 
+    # sanity check, does the entry already exist?
+    grep -q -oP "^ExecStart\=.*${CMD}.*" 2>/dev/null ${DSIP_INIT_FILE} && return 0
+
     tac ${DSIP_INIT_FILE} | sed -r "0,\|^ExecStart\=.*|{s|^ExecStart\=.*|ExecStart=${CMD}\n&|}" | tac > ${TMP_FILE}
     mv -f ${TMP_FILE} ${DSIP_INIT_FILE}
 
@@ -635,7 +638,7 @@ function addDependsOnInit() {
     local SERVICE="$1"
 
     # sanity check, does the entry already exist?
-    grep -q -oP "^(Before\=|Wants\=).*${SERVICE}.*" 2>/dev/null ${DSIP_INIT_FILE} && return 0;
+    grep -q -oP "^(Before\=|Wants\=).*${SERVICE}.*" 2>/dev/null ${DSIP_INIT_FILE} && return 0
 
     perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${DSIP_INIT_FILE}
     systemctl daemon-reload
@@ -656,12 +659,17 @@ export -f removeDependsOnInit
 # returns: 0 == connection good, 1 == connection bad
 # NOTE: if port is not given a ping test will be used instead
 function checkConn() {
-    local TIMEOUT=3
+    local TIMEOUT=3 IP_ADDR="" PING_V6_SELECTOR=""
 
     if (( $# == 2 )); then
         timeout $TIMEOUT bash -c "< /dev/tcp/$1/$2" &>/dev/null; return $?
     else
-        ping -q -W $TIMEOUT -c 3 "$1" &>/dev/null; return $?
+        # NOTE: older versions of ping don't automatically detect IP address version
+        IP_ADDR=$(getent hosts "$1" 2>/dev/null | awk '{ print $1 ; exit }')
+        if ipv6Test "$IP_ADDR"; then
+            PING_V6_SELECTOR="-6"
+        fi
+        ping $PING_V6_SELECTOR -q -W $TIMEOUT -c 3 "$1" &>/dev/null; return $?
     fi
 }
 export -f checkConn

@@ -496,8 +496,9 @@ function reconfigureMysqlSystemdService() {
     local KAMDB_HOST="${SET_KAM_DB_HOST:-$KAM_DB_HOST}"
     local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
 
-    case "$KAM_DB_HOST" in
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"${INTERNAL_IP6}"|"${EXTERNAL_IP6}"|"$(hostname)"|"$(hostname -f 2>/dev/null)")
+    case "$KAMDB_HOST" in
+        # in this case mysql server is running on this node
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"${INTERNAL_IP6}"|"${EXTERNAL_IP6}"|"$(hostname 2>/dev/null)"|"$(hostname -f 2>/dev/null)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl disable mariadb
@@ -506,6 +507,7 @@ function reconfigureMysqlSystemdService() {
 
             printf '%s' 'local' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
             ;;
+        # in this case mysql server is running on a remote node
         *)
             # if previously was local and now remote or inital run and is remote replace service files w/ dummy
             if [[ "${KAMDB_LOCATION}" == "local" ]] || [[ "${KAMDB_LOCATION}" == "" ]]; then
@@ -579,7 +581,9 @@ function renewSSLCert() {
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
         updatePermissions certs
-        kamcmd tls.reload
+        # have to restart kamailio due to bug in tls module
+        #kamcmd tls.reload
+        systemctl restart kamailio
     else
         printerr "Failed Renewing Cert for ${EXTERNAL_FQDN} using LetsEncrypt"
     fi
@@ -753,25 +757,25 @@ function updateKamailioConfig() {
     fi
 
     # update kamailio TLS config file
-    if (( ${IPV6_ENABLED} == 1 )); then
-        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}'; "'$ipv6_config=
-            "[server:['"${EXTERNAL_IP6}"']:'"${KAM_WSS_PORT}"']\n" .
-            "method = TLSv1.2+\n" .
-            "verify_certificate = no\n" .
-            "require_certificate = no\n" .
-            "private_key = /etc/dsiprouter/certs/dsiprouter-key.pem\n" .
-            "certificate = /etc/dsiprouter/certs/dsiprouter-cert.pem\n" .
-            "ca_list = /etc/dsiprouter/certs/ca-list.pem\n" .
-            "#crl = /etc/dsiprouter/certs/crl.pem\n";' \
-            -0777 -i -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
-            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1${ipv6_config}\2%s;' \
-            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
-    else
-        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" -0777 -i \
-            -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
-            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1\2%s;' \
-            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
-    fi
+#    if (( ${IPV6_ENABLED} == 1 )); then
+#        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}'; "'$ipv6_config=
+#            "[server:['"${EXTERNAL_IP6}"']:'"${KAM_WSS_PORT}"']\n" .
+#            "method = TLSv1.2+\n" .
+#            "verify_certificate = no\n" .
+#            "require_certificate = no\n" .
+#            "private_key = /etc/dsiprouter/certs/dsiprouter-key.pem\n" .
+#            "certificate = /etc/dsiprouter/certs/dsiprouter-cert.pem\n" .
+#            "ca_list = /etc/dsiprouter/certs/ca-list.pem\n" .
+#            "#crl = /etc/dsiprouter/certs/crl.pem\n";' \
+#            -0777 -i -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
+#            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1${ipv6_config}\2%s;' \
+#            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+#    else
+#        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" -0777 -i \
+#            -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
+#            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1\2%s;' \
+#            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
+#    fi
 }
 
 # update kamailio service startup commands accounting for any changes
@@ -890,17 +894,16 @@ function updateDnsConfig() {
     fi
 }
 
-# TODO: this logic was important for some reason but not sure why I created it
 function updateCACertsDir() {
     awk -v dsip_certs_dir="${DSIP_CERTS_DIR}" \
         'BEGIN {c=0;}
         /BEGIN CERT/{c++} {
-            print > "${dsip_certs_dir}/ca/cert." c ".pem"
+            print > dsip_certs_dir "/ca/cert." c ".pem"
         }' <${DSIP_SSL_CA}
     openssl rehash ${DSIP_CERTS_DIR}/ca/
-    chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}/ca/
-    chmod 640 ${DSIP_CERTS_DIR}/ca/*
+    updatePermissions certs
 }
+export -f updateCACertsDir
 
 function generateKamailioConfig() {
     # Backup kamcfg, generate fresh config from templates, and link it in where kamailio wants it
@@ -931,11 +934,7 @@ function generateKamailioConfig() {
         disableKamailioConfigAttrib 'WITH_STIRSHAKEN' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 
-    # TODO: move this to updatePermissions()
-    # kamcfg will contain plaintext passwords / tokens
-    # make sure we give it reasonable permissions
-    chown root:kamailio ${DSIP_KAMAILIO_CONFIG_FILE}
-    chmod 0640 ${DSIP_KAMAILIO_CONFIG_FILE}
+    updatePermissions kamailio
 }
 
 function configureKamailioDB() {
@@ -1090,10 +1089,13 @@ function installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -y &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl
     elif cmdExists 'yum'; then
-        yum install -y curl wget gawk perl sed git bind-utils
+        yum install -y curl wget gawk perl sed git bind-utils openssl
     fi
+
+    # used by openssl rnd generator
+    dd if=/dev/urandom of="${HOME}/.rnd" bs=1024 count=1 2>/dev/null
 
     if (( $? != 0 )); then
         printerr 'Could not install script requirements'
@@ -1391,6 +1393,7 @@ function installDsiprouter() {
     # 1:    set via cmdline arg
     # 2:    set prior to externally
     # 3:    generate new key
+    # TODO: create bash-native equivalent function for creating the private key
     if [[ -n "${SET_DSIP_PRIV_KEY}" ]]; then
         printf '%s' "${SET_DSIP_PRIV_KEY}" > ${DSIP_PRIV_KEY}
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
@@ -1421,8 +1424,8 @@ function installDsiprouter() {
     # pass the variables on to setCredentials()
     setCredentials
 
-    # TODO: should only update necessary permissions here (certs, dsiprouter)
-    updatePermissions
+    # NOTE: some of the previous files/dirs get updated here to allow dsiprouter access
+    updatePermissions certs kamailio dsiprouter
 
     # for cloud images the instance-id may change (could be a clone)
     # add to cloud-init startup process a password reset to ensure its set correctly
@@ -1872,6 +1875,7 @@ EOF
         # therefore we have to create backward compatible versions of our service files
         # the following snippet may be useful in the future when we support later versions
         #SYSTEMD_VER=$(systemctl --version | head -1 | awk '{print $2}')
+        # TODO: the same issue occurs on debian9 with systemd ver 232
         amzn|rhel)
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
 [Unit]
@@ -1906,7 +1910,7 @@ EOF
     # update DNS hosts prior to dSIPRouter startup
     addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
     # update DNS hosts every minute
-    if ! crontab -l | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" 2>/dev/null; then
+    if ! crontab -l 2>/dev/null | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"; then
         cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
     fi
 
@@ -2144,13 +2148,14 @@ function setCredentials() {
     local SET_ROOT_DB_NAME="${SET_ROOT_DB_NAME}"
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
-    # the SQL statements to run for these updates
-    local SQL_STATEMENTS=()
-    local DEFERRED_SQL_STATEMENTS=()
+    # the commands to execute for these updates
+    local SHELL_CMDS=() SQL_STATEMENTS=() DEFERRED_SQL_STATEMENTS=()
     # how settings will be propagated to live systems
     # 0 == no reload required, 1 == hot reload required, 2 == service reload required
     # note that parsing variables for higher numbered reloading should take precedence
     local DSIP_RELOAD_TYPE=1 KAM_RELOAD_TYPE=0 MYSQL_RELOAD_TYPE=0
+    # whether or not we will be running logic to update settings on the DB
+    local RUN_SQL_STATEMENTS=1
 
     # sanity check, can we connect to the DB as the root user?
     # we determine if user already changed DB creds (and just want dsiprouter to store them accordingly)
@@ -2171,16 +2176,18 @@ function setCredentials() {
             printerr 'Connection to DB failed'
             cleanupAndExit 1
         fi
+        # no DB updates necessary
+        RUN_SQL_STATEMENTS=0
     fi
 
     # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
-        setConfigAttrib 'DSIP_USERNAME' "$SET_DSIP_GUI_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'DSIP_USERNAME' '$SET_DSIP_GUI_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_MAIL_USER}" ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings set MAIL_USERNAME='${SET_DSIP_MAIL_USER}' where DSIP_ID=${DSIP_ID};")
-        setConfigAttrib 'MAIL_USERNAME' "$SET_DSIP_MAIL_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_API_TOKEN}" ]]; then
         KAM_RELOAD_TYPE=1
@@ -2188,25 +2195,43 @@ function setCredentials() {
     if [[ -n "${SET_DSIP_IPC_TOKEN}" ]]; then
         DSIP_RELOAD_TYPE=2
     fi
-    # note: SQL query will fail if the username is not actually changed, check it determine if we need to run this logic
-    if [[ -n "${SET_KAM_DB_USER}" && "${SET_KAM_DB_USER}" != "${KAM_DB_USER}" ]]; then
-        # if user exists update username, otherwise we need to create the user
+    if [[ -n "${SET_KAM_DB_USER}" ]]; then
+        # TODO: make this simpler by using DROP USER IF EXISTS statements instead
+        # if user exists update username, otherwise we need to create the new user
         if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
         "${KAM_DB_USER}@localhost"; then
+            # if the user we want to rename to exists delete that user first
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@localhost"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'localhost';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("RENAME USER '${KAM_DB_USER}'@'localhost' TO '${SET_KAM_DB_USER}'@'localhost';")
         else
+            # if the new user we want to create exists delete that user first
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@localhost"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'localhost';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("CREATE USER '$SET_KAM_DB_USER'@'localhost' IDENTIFIED BY '${SET_KAM_DB_PASS:-$KAM_DB_PASS}';")
             DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'localhost';")
         fi
         if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
         "${KAM_DB_USER}@%"; then
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@%"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'%';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("RENAME USER '${KAM_DB_USER}'@'%' TO '${SET_KAM_DB_USER}'@'%';")
         else
+            if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
+            "${SET_KAM_DB_USER}@%"; then
+                DEFERRED_SQL_STATEMENTS+=("DROP USER '${SET_KAM_DB_USER}'@'%';")
+            fi
             DEFERRED_SQL_STATEMENTS+=("CREATE USER '$SET_KAM_DB_USER'@'%' IDENTIFIED BY '${SET_KAM_DB_PASS:-$KAM_DB_PASS}';")
             DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'%';")
         fi
         SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='${SET_KAM_DB_USER}' WHERE DSIP_ID=${DSIP_ID};")
-        setConfigAttrib 'KAM_DB_USER' "$SET_KAM_DB_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_USER' '$SET_KAM_DB_USER' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
@@ -2218,11 +2243,11 @@ function setCredentials() {
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
-    # note: since the host is required in the DB URI when parsing we also check if it actually changed to determine if we need to run this logic
+    # NOTE: since the host is required in the DB URI when parsing args we also check if it actually changed to determine if we need to run this logic
     if [[ -n "${SET_KAM_DB_HOST}" && "${SET_KAM_DB_HOST}" != "${KAM_DB_HOST}" ]]; then
         #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_KAM_DB_USER:-$KAM_DB_USER}' and Host<>'${KAM_DB_HOST}';")
         #DEFERRED_SQL_STATEMENTS+=("update mysql.user set Host='${SET_KAM_DB_HOST}' where User='${SET_ROOT_DB_USER:-$ROOT_DB_USER}' and Host='${KAM_DB_HOST}';")
-        setConfigAttrib 'KAM_DB_HOST' "$SET_KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_HOST' '$SET_KAM_DB_HOST' ${DSIP_CONFIG_FILE} -q;")
         reconfigureMysqlSystemdService
 
         DSIP_RELOAD_TYPE=2
@@ -2230,14 +2255,14 @@ function setCredentials() {
         MYSQL_RELOAD_TYPE=2
     fi
     if [[ -n "${SET_KAM_DB_PORT}" ]]; then
-        setConfigAttrib 'KAM_DB_PORT' "$SET_KAM_DB_PORT" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_PORT' '$SET_KAM_DB_PORT' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_KAM_DB_NAME}" ]]; then
-        setConfigAttrib 'KAM_DB_NAME' "$SET_KAM_DB_NAME" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_NAME' '$SET_KAM_DB_NAME' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
@@ -2245,7 +2270,7 @@ function setCredentials() {
     if [[ -n "${SET_ROOT_DB_USER}" ]]; then
         DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'localhost' TO '${SET_ROOT_DB_USER}'@'localhost';")
 
-        setConfigAttrib 'ROOT_DB_USER' "$SET_ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_USER' '$SET_ROOT_DB_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_ROOT_DB_USER:-$ROOT_DB_USER}'@'localhost' = PASSWORD('${SET_ROOT_DB_PASS}');")
@@ -2253,12 +2278,13 @@ function setCredentials() {
     fi
     # TODO: allow changing live database name
     if [[ -n "${SET_ROOT_DB_NAME}" ]]; then
-        setConfigAttrib 'ROOT_DB_NAME' "$SET_ROOT_DB_NAME" ${DSIP_CONFIG_FILE} -q
+        SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_NAME' '$SET_ROOT_DB_NAME' ${DSIP_CONFIG_FILE} -q;")
     fi
     DEFERRED_SQL_STATEMENTS+=("flush privileges;")
 
     # update encrypted settings locally and in DB
-    # NOTE: we must run this before the live DB credentials are changed otherwise we won't be able to connect
+    # NOTE: we must run this before the config files AND live DB credentials are changed otherwise we won't be able to connect
+    # TODO: replace with bash-native functions
     ${PYTHON_CMD} << EOF
 import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
 sys.path.insert(0, '/etc/dsiprouter/gui')
@@ -2271,14 +2297,12 @@ EOF
     fi
 
     # allow settings that don't require DB to be running to be updated (we verified at the start of this func whether we needed DB)
-    if systemctl is-active --quiet mariadb; then
+    if (( ${RUN_SQL_STATEMENTS} == 1 )); then
         # update non-encrypted settings on DB
-        if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
-            sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${SQL_STATEMENTS[@]}"
-            if (( $? != 0 )); then
-                printerr 'Failed setting credentials on DB'
-                cleanupAndExit 1
-            fi
+        sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "${SQL_STATEMENTS[@]}"
+        if (( $? != 0 )); then
+            printerr 'Failed setting credentials on DB'
+            cleanupAndExit 1
         fi
 
         # update live DB settings (DB user passwords, privileges, etc..)
@@ -2288,6 +2312,9 @@ EOF
             cleanupAndExit 1
         fi
     fi
+
+    # finally update the local config files
+    eval "${SHELL_CMDS[@]}"
 
     # export variables for later usage in this script
     export DSIP_USERNAME=${SET_DSIP_GUI_USER:-$DSIP_USERNAME}
@@ -2853,9 +2880,11 @@ EOSSH
     done
 ) || cleanupAndExit $?; }
 
-# $1 == subset of permissions to update, one of:
-#   certs - update X509 certificate permissions only
+# $@ == subset of permissions to update
+# TODO: update systemd ExecStartPre commands to use this logic instead
 function updatePermissions() {
+    local ARG=""
+
     # set permissions on the X509 certs used by dsiprouter and kamailio
     # [special use case]: testing kamailio service startup
     # in this case kamailio needs access before dsiprouter user is created
@@ -2864,48 +2893,101 @@ function updatePermissions() {
             # dsiprouter needs to have control over the certs to allow changes
             # note that nginx should never have write access
             chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
-            find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
         else
             # dsiprouter user does not yet exist so make sure kamailio user has access
             chown -R root:kamailio ${DSIP_CERTS_DIR}
-            find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
         fi
+        find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
+    }
+    # set permissions for files/dirs used by dnsmasq
+    setDnsmasqPerms() {
+        mkdir -p /run/dnsmasq
+        chown -R dnsmasq:dnsmasq /run/dnsmasq
+    }
+    # set permissions for files/dirs used by nginx
+    setNginxPerms() {
+        mkdir -p /run/nginx
+        chown -R nginx:nginx /run/nginx
+    }
+    # set permissions for files/dirs used by kamailio
+    setKamailioPerms() {
+        mkdir -p /run/kamailio
+        chown -R kamailio:kamailio /run/kamailio
+
+        # dsiprouter needs to have control over the kamailio dir
+        # this allows dsiprouter to update kamailio dynamically
+        # kamailio configs will contain plaintext passwords / tokens
+        # in the case where the dsiprouter user does not yet exist we set stricter permissions
+        if id -u dsiprouter &>/dev/null; then
+            chown -R dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+        else
+            chown -R root:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+        fi
+        find ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/ -type f -exec chmod 640 {} +
+    }
+    # set permissions for files/dirs used by dsiprouter
+    setDsiprouterPerms() {
+        mkdir -p ${DSIP_RUN_DIR}
+        chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+
+        # dsiprouter user is the only one making backups
+        chown -R dsiprouter:root ${BACKUPS_DIR}
+        # dsiprouter private key only readable by dsiprouter
+        chown dsiprouter:root ${DSIP_PRIV_KEY}
+        chmod 400 ${DSIP_PRIV_KEY}
+        # dsiprouter gui files readable and writable only by dsiprouter
+        chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
+        find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
+        # uuid file should only be readable by dsiprouter and kamailio
+        chown dsiprouter:kamailio ${DSIP_UUID_FILE}
+        chmod 440 ${DSIP_UUID_FILE}
+    }
+    # set permissions for files/dirs used by rtpengine
+    setRtpenginePerms() {
+        mkdir -p /run/rtpengine
+        chown -R rtpengine:rtpengine /run/rtpengine
     }
 
-    case "$1" in
-        certs)
-            setCertPerms
-            ;;
-        *)
-            # if not called from systemd service, handle the run dirs
-            mkdir -p ${DSIP_RUN_DIR}
-            chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-            mkdir -p /run/dnsmasq
-            chown -R dnsmasq:dnsmasq /run/dnsmasq
-            mkdir -p /run/kamailio
-            chown -R kamailio:kamailio /run/kamailio
-            mkdir -p /run/rtpengine
-            chown -R rtpengine:rtpengine /run/rtpengine
-            mkdir -p /run/nginx
-            chown -R nginx:nginx /run/nginx
-            # dsiprouter user is the only one making backups
-            chown -R dsiprouter:root ${BACKUPS_DIR}
-            # dsiprouter private key only readable by dsiprouter
-            chown dsiprouter:root ${DSIP_PRIV_KEY}
-            chmod 400 ${DSIP_PRIV_KEY}
-            # dsiprouter gui files readable and writable by dsiprouter
-            chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
-            find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
-            # uuid file should only be readable by dsiprouter and kamailio
-            chown dsiprouter:kamailio ${DSIP_UUID_FILE}
-            chmod 440 ${DSIP_UUID_FILE}
-            # dsiprouter needs to have control over the kamailio dir
-            # this allows dsiprouter to update kamailio dynamically
-            chown -R dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
-            find ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/ -type f -exec chmod 640 {} +
-            setCertPerms
-            ;;
-    esac
+    # no args given set permissions for all services
+    if (( $# == 0 )); then
+        setDnsmasqPerms
+        setNginxPerms
+        setKamailioPerms
+        setDsiprouterPerms
+        setRtpenginePerms
+        setCertPerms
+        return 0
+    fi
+
+    # parse args and select subset of permissions to set
+    while (( $# > 0 )); do
+        ARG="$1"
+        shift
+        case "$ARG" in
+            certs)
+                setCertPerms
+                ;;
+            dnsmasq)
+                setDnsmasqPerms
+                ;;
+            nginx)
+                setNginxPerms
+                ;;
+            kamailio)
+                setKamailioPerms
+                ;;
+            dsiprouter)
+                setDsiprouterPerms
+                ;;
+            rtpengine)
+                setRtpenginePerms
+                ;;
+            *)
+                printerr "$0(): Invalid argument [$ARG]"
+                return 1
+                ;;
+        esac
+    done
 
     return 0
 }
@@ -3982,7 +4064,7 @@ function processCMD() {
                 esac
             done
             ;;
-        # internal command, generates CA dir from CA bundle file
+        # internal command, generate CA dir from CA bundle file
         updatecacertsdir)
             # update dnsmasq config
             RUN_COMMANDS+=(updateCACertsDir)
