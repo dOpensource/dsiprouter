@@ -156,7 +156,7 @@ EOF
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
 
     # Setup Kamailio to use the CA cert's that are shipped with the OS
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs/stirshaken
     ln -s /etc/ssl/certs/ca-certificates.crt ${DSIP_SSL_CA}
     updateCACertsDir
 

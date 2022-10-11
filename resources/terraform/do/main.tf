@@ -33,7 +33,7 @@ resource "digitalocean_droplet" "dsiprouter" {
 
         provisioner "remote-exec" {
           inline = [
-	"apt-get update -y && apt-get install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git -b ${var.branch} && cd dsiprouter && ./dsiprouter.sh install -all && ${var.additional_commands}"
+	"apt-get update -y && sleep 30 && apt-get install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git -b ${var.branch} && cd dsiprouter && ./dsiprouter.sh install -all && ${var.additional_commands}"
         ]
       }
 }
