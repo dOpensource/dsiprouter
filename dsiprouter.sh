@@ -49,7 +49,7 @@
 #exec 19> >(awk -v time=$(date +"[%Y-%m-%d_%H:%M:%S] ") '{ print time, $0; fflush(); }' > /tmp/debug/trace.log)
 #
 #BASH_XTRACEFD="19"
-#set -x
+set -x
 #===========================================================#
 
 
@@ -75,6 +75,7 @@ function setStaticScriptSettings() {
     WITH_LCR=1
     export DEBUG=0
     export TEAMS_ENABLED=1
+    export DMZ_ENABLED=0
     export REQ_PYTHON_MAJOR_VER=3
     export PROJECT_KAMAILIO_CONFIG_DIR="${DSIP_PROJECT_DIR}/kamailio/configs"
     export PROJECT_DSIP_DEFAULTS_DIR="${DSIP_PROJECT_DIR}/kamailio/defaults"
@@ -655,6 +656,7 @@ function updateKamailioConfig() {
     local KAM_DMQ_PORT=${KAM_DMQ_PORT:-$(getConfigAttrib 'KAM_DMQ_PORT' ${DSIP_CONFIG_FILE})}
     local HOMER_HEP_HOST=${HOMER_HEP_HOST:-$(getConfigAttrib 'HOMER_HEP_HOST' ${DSIP_CONFIG_FILE})}
     local HOMER_HEP_PORT=${HOMER_HEP_PORT:-$(getConfigAttrib 'HOMER_HEP_PORT' ${DSIP_CONFIG_FILE})}
+    local DMZ_ENABLED=${DMZ_ENABLED:-$(getConfigAttrib 'DMZ_ENABLED' ${DSIP_CONFIG_FILE})}
 
     # update kamailio config file
     if (( $DEBUG == 1 )); then
@@ -676,6 +678,11 @@ function updateKamailioConfig() {
         enableKamailioConfigAttrib 'WITH_IPV6' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         disableKamailioConfigAttrib 'WITH_IPV6' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+    if (( $DMZ_ENABLED == 1 )); then
+        enableKamailioConfigAttrib 'WITH_DMZ' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_DMZ' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     if (( $DSIP_CLUSTER_SYNC == 1 )); then
         enableKamailioConfigAttrib 'WITH_DMQ' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -810,6 +817,11 @@ function updateRtpengineConfig() {
         else
             INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
         fi
+    fi
+    if (( ${DMZ_ENABLED} == 1 )); then
+        INTERFACE="public/${EXTERNAL_IP};private/${IXTERNAL_IP}"
+    else
+        INTERFACE="ipv4/${INTERNAL_IP}"
     fi
     setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
@@ -3171,6 +3183,24 @@ function processCMD() {
                         RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
+                    -dmz|--dmz=*)
+			# Example --dmz=public_interface,private_interface
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            TMP=$(echo "$1" | cut -d '=' -f 2)
+                            shift
+                        else
+                            shift
+                            TMP="$1"
+                            shift
+                        fi
+			#Split dmz value
+			PUBLIC_INTERFACE=$(echo "$TMP" | cut -d ',' -f 1)
+			PRIVATE_INTERFACE=$(echo "$TMP" | cut -d ',' -f 2)
+			export INTERNAL_IP=$(getIP -4 "$PRIVATE_INTERFACE")
+			export EXTERNAL_IP=$(getIP -4 "$PUBLIC_INTERFACE")
+			DMZ_ENABLED=1
+                        setConfigAttrib 'DMZ_ENABLED' "True" ${DSIP_CONFIG_FILE}
+			;;
 #                    -exip|--external-ip=*)
 #                        if echo "$1" | grep -q '=' 2>/dev/null; then
 #                            TMP=$(echo "$1" | cut -d '=' -f 2)

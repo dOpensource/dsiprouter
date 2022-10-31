@@ -423,6 +423,7 @@ function ipv6Test() {
 }
 export -f ipv6Test
 
+
 # $1 == [-4|-6] to force specific IP version
 # output: the internal IP for this system
 # notes: prints internal ip, or empty string if not available
@@ -448,17 +449,79 @@ function getInternalIP() {
             ;;
     esac
 
+    # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-        INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+	
+        # Marked for removal because it depends on DNS
+	#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+	INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
-        INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+        # Marked for removal because it depends on DNS
+        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+	INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$INTERNAL_IP"
 }
 export -f getInternalIP
+
+# $1 == [-4|-6] to force specific IP version
+# $2 == network interface 
+# output: the internal IP for this system
+# notes: prints ip, or empty string if not available
+# notes: tries ipv4 first then ipv6
+# TODO: currently we only check for the internal IP associated with the default interface/default route
+#       this will fail if the internal IP is not assigned to the default interface/default route
+#       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
+function getIP() {
+    local IP=""
+
+    case "$1" in
+        -4)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=0
+            ;;
+        -6)
+            local IPV4_ENABLED=0
+            local IPV6_ENABLED=1
+            ;;
+        *)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=${IPV6_ENABLED:-0}
+            ;;
+    esac
+
+    # Use the provided interface or get the first interface - other then lo
+    if ! [ -z $2 ]; then
+	    INTERFACE=$2
+    else
+	    if (( ${IPV6_ENABLED} == 1 )); then
+		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+	    else
+	    	INTERFACE=$(ip -4 route show default | awk '{print $5}')
+	    fi
+    fi
+
+   
+    # Get the ip address without depending on DNS
+    if (( ${IPV4_ENABLED} == 1 )); then
+	
+        # Marked for removal because it depends on DNS
+	#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+	IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    fi
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
+        # Marked for removal because it depends on DNS
+        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+	IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    fi
+
+    printf '%s' "$IP"
+}
+export -f getIP
 
 # TODO: run requests in parallel and grab first good one (start ipv4 first)
 #       this is what we are already doing in gui/util/networking.py
