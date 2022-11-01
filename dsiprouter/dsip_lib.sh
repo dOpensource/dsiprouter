@@ -448,6 +448,12 @@ function getInternalIP() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
+	    
+    if (( ${IPV6_ENABLED} == 1 )); then
+	INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+    else
+	INTERFACE=$(ip -4 route show default | awk '{print $5}')
+    fi
 
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then

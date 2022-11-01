@@ -103,6 +103,10 @@ FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 HOMER_HEP_HOST = ''
 HOMER_HEP_PORT = 9060
 
+# DMZ support
+# INTERNAL_IP_ADDR becomes private ip and EXTERNAL_IP_ADDR becomes the public ip
+DMZ_ENABLED = True
+
 # updated dynamically! These values will be overwritten
 IPV6_ENABLED = False
 INTERNAL_IP_ADDR = '192.168.0.1'

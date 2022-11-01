@@ -49,7 +49,7 @@
 #exec 19> >(awk -v time=$(date +"[%Y-%m-%d_%H:%M:%S] ") '{ print time, $0; fflush(); }' > /tmp/debug/trace.log)
 #
 #BASH_XTRACEFD="19"
-set -x
+#set -x
 #===========================================================#
 
 
