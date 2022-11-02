@@ -145,10 +145,13 @@ function setDynamicScriptSettings() {
             printerr "IPV6 enabled but address [$INTERNAL_IP6] is not routable"
             cleanupAndExit 1
         fi
-        export IPV6_ENABLED=1
+        export IPV6_ENABLED=0
     else
         export IPV6_ENABLED=0
     fi
+
+    # Determine if DMZ was enabled
+    export DMZ_ENABLED=${DMZ_ENABLED:-$(getConfigAttrib 'DMZ_ENABLED' ${DSIP_CONFIG_FILE})}
 
     # grab the ipv4 network and domain settings dynamically
     export INTERNAL_IP=$(getInternalIP -4)
@@ -819,7 +822,7 @@ function updateRtpengineConfig() {
         fi
     fi
     if (( ${DMZ_ENABLED} == 1 )); then
-        INTERFACE="public/${EXTERNAL_IP};private/${IXTERNAL_IP}"
+        INTERFACE="public/${EXTERNAL_IP};private/${INTERNAL_IP}"
     else
         INTERFACE="ipv4/${INTERNAL_IP}"
     fi
@@ -3197,6 +3200,7 @@ function processCMD() {
 			PUBLIC_INTERFACE=$(echo "$TMP" | cut -d ',' -f 1)
 			PRIVATE_INTERFACE=$(echo "$TMP" | cut -d ',' -f 2)
 			export INTERNAL_IP=$(getIP -4 "$PRIVATE_INTERFACE")
+			export INTERNAL_IP_NET=$(getInternalCIDR -4 "$INTERNAL_IP")
 			export EXTERNAL_IP=$(getIP -4 "$PUBLIC_INTERFACE")
 			DMZ_ENABLED=1
                         setConfigAttrib 'DMZ_ENABLED' "True" ${DSIP_CONFIG_FILE}

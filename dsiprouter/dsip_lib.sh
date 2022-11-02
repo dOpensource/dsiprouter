@@ -629,12 +629,13 @@ function getExternalFQDN() {
 export -f getExternalFQDN
 
 # $1 == [-4|-6] to force specific IP version
+# $2 == interface
 # output: the internal IP CIDR for this system
 # notes: prints internal CIDR address, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalCIDR() {
     local PREFIX_LEN="" DEF_IFACE="" INTERNAL_IP=""
-    local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    #local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 
     case "$1" in
         -4)
@@ -650,12 +651,20 @@ function getInternalCIDR() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
+    
+    if ! [ -z $2 ]; then
+	    INTERFACE=$2
+    fi
 
     if (( ${IPV4_ENABLED} == 1 )); then
-        INTERNAL_IP=$(getInternalIP -4)
+        INTERNAL_IP=$(getIP -4 "$INTERFACE")
         if [[ -n "$INTERNAL_IP" ]]; then
-            DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-            PREFIX_LEN=$(ip -4 route list | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+		if [[ -n "$INTERFACE" ]]; then
+			DEF_IFACE=$INTERFACE
+		else
+            		DEF_IFACE=$(ip -4 route list scope global  2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+            	fi
+		PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
         fi
     fi
 
@@ -669,7 +678,7 @@ function getInternalCIDR() {
 
     # make sure output is empty if error occurred
     if [[ -n "$INTERNAL_IP" && -n "$PREFIX_LEN" ]]; then
-        printf '%s/%s' "$IP" "$PREFIX_LEN"
+        printf '%s/%s' "$INTERNAL_IP" "$PREFIX_LEN"
     fi
 }
 export -f getInternalCIDR
