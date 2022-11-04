@@ -39,8 +39,8 @@ CREATE TABLE `acc` (
   `src_domain`    varchar(128)     NOT NULL DEFAULT '',
   `cdr_id`        int(10) UNSIGNED NOT NULL DEFAULT '0',
   `calltype`      varchar(20)               DEFAULT NULL,
-  `src_gwgroupid` varchar(10)  NOT NULL DEFAULT '0',
-  `dst_gwgroupid` varchar(10)  NOT NULL DEFAULT '0',
+  `src_gwgroupid` varchar(10)      NOT NULL DEFAULT '0',
+  `dst_gwgroupid` varchar(10)      NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `acc_callid` (`callid`)
   );
@@ -71,8 +71,8 @@ CREATE TABLE `cdrs` (
   `created`         datetime         NOT NULL,
   `calltype`        varchar(20)               DEFAULT NULL,
   `fraud`           bool             NOT NULL DEFAULT '0',
-  `src_gwgroupid`   varchar(10)  NOT NULL DEFAULT '0',
-  `dst_gwgroupid`   varchar(10)  NOT NULL DEFAULT '0',
+  `src_gwgroupid`   varchar(10)      NOT NULL DEFAULT '0',
+  `dst_gwgroupid`   varchar(10)      NOT NULL DEFAULT '0',
   PRIMARY KEY (`cdr_id`)
   );
 /*!40101 SET character_set_client = @saved_cs_client */;
