@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-55999c50bc20618f66ce373a78fd0d138965ea3e
+f479b3139e108d9222232ee56314c2b91dcbad26
+3b02dc02eeaee8d4e8ca13741489c2e6f72de230
 a787ec5760bf147c755950116a9e440d181a2e9d
 35b4d7233eeda44587c59f0593f5599f82898f65
 1fc9ae71deb1b5191c68a3171bf9b5269e198b80
@@ -2082,10 +2083,26 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 55999c50bc20618f66ce373a78fd0d138965ea3e)
+[//]: # (START_SECTION f479b3139e108d9222232ee56314c2b91dcbad26)
+### Fix Missing Kamailio Config Subst
+
+> Commit: [f479b3139e108d9222232ee56314c2b91dcbad26](https://github.com/dOpensource/dsiprouter/commit/f479b3139e108d9222232ee56314c2b91dcbad26)  
+> Date: Sat, 10 Dec 2022 13:17:06 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add missing subst defines to kamailio config
+
+
+---
+
+[//]: # (END_SECTION f479b3139e108d9222232ee56314c2b91dcbad26)
+[//]: # (START_SECTION 3b02dc02eeaee8d4e8ca13741489c2e6f72de230)
 ### Increase CDR Field Sizes
 
-> Commit: [55999c50bc20618f66ce373a78fd0d138965ea3e](https://github.com/dOpensource/dsiprouter/commit/55999c50bc20618f66ce373a78fd0d138965ea3e)  
+> Commit: [3b02dc02eeaee8d4e8ca13741489c2e6f72de230](https://github.com/dOpensource/dsiprouter/commit/3b02dc02eeaee8d4e8ca13741489c2e6f72de230)  
 > Date: Sat, 10 Dec 2022 13:12:31 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2098,7 +2115,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 55999c50bc20618f66ce373a78fd0d138965ea3e)
+[//]: # (END_SECTION 3b02dc02eeaee8d4e8ca13741489c2e6f72de230)
 [//]: # (START_SECTION a787ec5760bf147c755950116a9e440d181a2e9d)
 ### Removed Rabbit MQ logic
 
