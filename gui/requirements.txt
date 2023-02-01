@@ -6,13 +6,13 @@ dnspython
 docker
 docutils<0.17,>=0.12
 Flask==1.1.2
-Flask_Script
 Flask_WTF
 itsdangerous==2.0.1
 Jinja2==3.0.3
 mysqlclient
 pem
 psycopg2
+psycopg2_binary
 pycryptodome
 PyMySQL
 pyOpenSSL
@@ -23,6 +23,6 @@ requests
 sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme
-SQLAlchemy
+SQLAlchemy~=2.0
 twilio
 Werkzeug==2.0.2

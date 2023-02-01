@@ -27,6 +27,13 @@ export DSIP_SYSTEM_CONFIG_DIR=${DSIP_SYSTEM_CONFIG_DIR:-"/etc/dsiprouter"}
 DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
+# reuse credential settings from python files (exported for later usage)
+export SALT_LEN=$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export CREDS_MAX_LEN=$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export HASH_ITERATIONS=$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
 
@@ -152,6 +159,7 @@ function getConfigAttrib() {
 }
 export -f getConfigAttrib
 
+# TODO: openssl native version
 # $1 == attribute name
 # $2 == python config file
 # output: attribute value decrypted
@@ -171,6 +179,7 @@ function decryptConfigAttrib() {
 }
 export -f decryptConfigAttrib
 
+# TODO: openssl native version
 # $1 == attribute name
 # $2 == kamailio config file
 function enableKamailioConfigAttrib() {
@@ -1107,8 +1116,31 @@ export -f parseDBConnURI
 # $1 == number of characters to get
 # output: string of random printable characters
 function urandomChars() {
-    local LEN="$1"
-    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w ${LEN} 2>/dev/null | head -n 1
+	local LEN=32 FILTER="a-zA-Z0-9"
+
+    while (( $# > 0 )); do
+    	# last arg is length
+        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
+			LEN="$1"
+			shift
+            break
+        fi
+
+        case "$1" in
+        	# user defined salt
+            -f)
+                shift
+                FILTER="$1"
+                shift
+                ;;
+			# not valid option skip
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    tr -dc "$FILTER" </dev/urandom | dd if=/dev/stdin of=/dev/stdout bs=1 count="$LEN" 2>/dev/null
 }
 export -f urandomChars
 
@@ -1149,3 +1181,42 @@ function sendKamCmd() {
     curl -s -m 3 -X GET -d '{"method": "'"${CMD}"'", "jsonrpc": "2.0", "id": 1, "params": '"${PARAMS}"'}' ${KAM_API_URL}
 }
 export -f sendKamCmd
+
+# TODO: input validation
+# TODO: ensure openssl installed in script requirements
+function hashCreds() {
+	local CREDS="" SALT="$(urandomChars -f 'a-fA-F0-9' $SALT_LEN)"
+
+	# grab credentials from stdin if provided
+	if [[ ! -t 0 ]]; then
+		CREDS=$(</dev/stdin)
+	fi
+
+    while (( $# > 0 )); do
+    	# last arg is credentials
+        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
+			CREDS="$1"
+			shift
+            break
+        fi
+
+        case "$1" in
+        	# user defined salt
+            -s)
+                shift
+                SALT="$1"
+                shift
+                ;;
+			# not valid option skip
+            *)
+                shift
+                ;;
+        esac
+    done
+
+	local RET=(
+		$(openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter "$HASH_ITERATIONS" -salt -S "$SALT" -k "$CREDS" -P | cut -d '=' -f 2)
+	)
+	echo -n "${RET[1]}${RET[2]}${RET[0]}"
+}
+export -f hashCreds

@@ -256,7 +256,7 @@ class IO():
         def lognolvl(message):
             logging.getLogger().log(logging.NOTSET, str(message).strip())
 
-def debugException(ex=None, log_ex=True, print_ex=True, showstack=False):
+def debugException(ex=None, log_ex=True, print_ex=True, showstack=True):
     """
     Debugging of an exception: print and/or log frame and/or stacktrace
     :param ex:          The exception object
@@ -512,8 +512,10 @@ def getRequestData():
         data = request.form.to_dict(flat=False)
     elif 'application/x-www-form-urlencoded' in content_type:
         data = request.form.to_dict(flat=False)
+    elif 'application/json' in content_type:
+        data = request.get_json()
     else:
-        data = request.get_json(force=True)
+        data = request.get_json(force=True, silent=True)
 
     # fix data if client is sloppy (http_async_client)
     if request.headers.get('User-Agent') == 'http_async_client':

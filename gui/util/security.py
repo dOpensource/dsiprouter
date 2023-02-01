@@ -1,12 +1,14 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, hashlib, binascii, string, ssl, OpenSSL
+import os, hashlib, binascii, string, ssl, OpenSSL, secrets
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
 from sqlalchemy import exc as sql_exceptions
+from sqlalchemy.sql import text
 from shared import updateConfig, StatusCodes
 from functools import wraps
 from flask import Blueprint, jsonify, render_template, request, session
@@ -41,11 +43,13 @@ class Credentials():
 
     HASH_LEN = 64
     HASH_ENCODED_LEN = 128
-    SALT_LEN = 64
-    SALT_ENCODED_LEN = 128
+    SALT_LEN = 16
+    SALT_ENCODED_LEN = 32
     CREDS_MAX_LEN = 64
-    HASHED_CREDS_ENCODED_MAX_LEN = 256
+    DK_LEN = 48
+    HASHED_CREDS_ENCODED_MAX_LEN = 160
     AESCTR_CREDS_ENCODED_MAX_LEN = 160
+    HASH_ITERATIONS = 100000
 
     @staticmethod
     def hashCreds(creds, salt=None):
@@ -54,23 +58,32 @@ class Credentials():
 
         :param creds:   byte string to hash
         :type creds:    bytes|str
-        :param salt:    salt to hash creds with as hex encoded byte string
+        :param salt:    salt to hash creds with (hex encoded byte string or string)
         :type salt:     bytes|str
         :return:        hash+salt as hex encoded byte string
         :rtype:         bytes
         """
-        if not isinstance(creds, bytes):
+        if isinstance(creds, bytes):
+            pass
+        elif isinstance(creds, str):
             creds = creds.encode('utf-8')
+        else:
+            raise ValueError('credentials must be a string or byte string')
+        if len(creds) > Credentials.CREDS_MAX_LEN:
+            raise ValueError('credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
+
         if salt is None:
             salt = get_random_bytes(Credentials.SALT_LEN)
-        else:
-            if not isinstance(salt, bytes):
-                salt = salt.encode('utf-8')
+        elif isinstance(salt, str):
+            salt = salt.encode('utf-8')
+        elif isinstance(salt, bytes):
             salt = binascii.unhexlify(salt)
+        else:
+            raise ValueError('salt must be a string or byte string')
         if len(salt) != Credentials.SALT_LEN:
             raise ValueError('Salt must be {} bytes long'.format(str(Credentials.SALT_LEN)))
 
-        hash = hashlib.pbkdf2_hmac('sha512', creds, salt, 100000)
+        hash = hashlib.pbkdf2_hmac('sha512', creds, salt, Credentials.HASH_ITERATIONS, dklen=Credentials.DK_LEN)
         return binascii.hexlify(hash)+binascii.hexlify(salt)
 
     @staticmethod
@@ -132,19 +145,8 @@ class Credentials():
             # update file settings including local fields
             updateConfig(settings, dict(fields, **local_fields))
             # update db settings
-            from database import SessionLoader, DummySession
-            db = DummySession()
-            try:
-                db = SessionLoader()
-                db.execute(
-                    'update dsip_settings set {} where DSIP_ID={}'.format(', '.join(['{}=:{}'.format(x, x) for x in fields.keys()]), settings.DSIP_ID),
-                    fields)
-                db.commit()
-            except sql_exceptions.SQLAlchemyError:
-                db.rollback()
-                raise
-            finally:
-                db.close()
+            from database import updateDsipSettingsTable
+            updateDsipSettingsTable(fields)
 
 class AES_CTR():
     """
@@ -216,7 +218,7 @@ class APIToken:
                 else:
                     tokencheck = settings.DSIP_API_TOKEN
 
-                return tokencheck == self.token
+                return secrets.compare_digest(tokencheck, self.token)
 
             return False
         except:

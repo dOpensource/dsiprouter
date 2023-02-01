@@ -27,9 +27,7 @@
 # - naming convention for system vs dsip config files is very confusing (make more explicit)
 # - cleanup dependency installs/checks, many of these could be condensed
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
-# - DSIP_ID needs to be known before during install instead of resolved in dsiprouter.py startup
-#   our logic for adding a node to an existing cluster depended on this and DSIP_ID=None in settings.py
-#   this was changed to DSIP_ID=1 as the default due to the install script relying on this value
+# - update MAIL_DEFAULT_SENDER with system hostname on install
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -62,8 +60,6 @@ export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 
 # settings used by script that are user configurable
 function setStaticScriptSettings() {
-    #================== STATIC_CONFIG_SETTINGS ===================#
-
     # Define some defaults and environment variables
     FLT_CARRIER=8
     FLT_PBX=9
@@ -194,15 +190,10 @@ function setDynamicScriptSettings() {
     export KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE} 2>/dev/null)}
 
-    # grab credential max lengths from python files for later use
-    # we use perl bcuz python may not be installed when this is run
-    export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'HASHED_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
-        perl -pe 's%.*HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
-    export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
-        perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
-
     # set the email used to obtain LetsEncrypt Certificates
     export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
+
+	export DSIP_ID=$(cat /etc/machine-id | hashCreds)
 }
 
 # Check if we are on a VPS Cloud Instance
@@ -531,6 +522,7 @@ export -f reconfigureMysqlSystemdService
 
 # generate dynamic python config based on install settings
 function configurePythonSettings() {
+	setConfigAttrib 'DSIP_ID' "$DSIP_ID" ${DSIP_CONFIG_FILE} -qb
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_RTPENGINE_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
@@ -559,10 +551,8 @@ function configurePythonSettings() {
 function updatePythonRuntimeSettings() {
     if (( ${DEBUG} == 1 )); then
         setConfigAttrib 'DEBUG' 'True' ${DSIP_CONFIG_FILE}
-        setConfigAttrib 'SQLALCHEMY_SQL_DEBUG' 'True' ${DSIP_CONFIG_FILE}
     else
         setConfigAttrib 'DEBUG' 'False' ${DSIP_CONFIG_FILE}
-        setConfigAttrib 'SQLALCHEMY_SQL_DEBUG' 'True' ${DSIP_CONFIG_FILE}
     fi
 }
 
@@ -699,8 +689,8 @@ function updateKamailioConfig() {
     else
         disableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    #setKamailioConfigSubst 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    #setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP6_ADDR' "${INTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -2017,17 +2007,17 @@ function start() {
             updatePermissions
             # start the reverse proxy first
             systemctl start nginx
-            # keep dSIPRouter in the foreground, only used for debugging issues
+            # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
-            # Make sure process is still running
-            PID=$!
-            if ! ps -p ${PID} &>/dev/null; then
-                printerr "Unable to start dSIPRouter"
-                cleanupAndExit 1
-            else
-                pprint "dSIPRouter was started under pid ${PID}"
-                echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
-            fi
+#            # Make sure process is still running
+#            PID=$!
+#            if ! ps -p ${PID} &>/dev/null; then
+#                printerr "Unable to start dSIPRouter"
+#                cleanupAndExit 1
+#            else
+#                pprint "dSIPRouter was started under pid ${PID}"
+#                echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
+#            fi
         else
             # normal startup, fork dSIPRouter as background process
             systemctl start dsiprouter
@@ -2884,7 +2874,7 @@ function clusterInstall() { (
         chmod 0400 ${DSIP_PRIV_KEY}
 
         # run script command
-        DSIP_ID=$((i+1)) ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+        ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
 EOSSH
         if (( $? != 0 )); then
             printerr "Remote install on ${SSH_HOSTS[$i]} failed"
@@ -4152,7 +4142,7 @@ function processCMD() {
     # 2. rtpengine
     for RUN_COMMAND in "${RUN_COMMANDS[@]}"; do
         $RUN_COMMAND
-        RETVAL+=$?
+        RETVAL=$((RETVAL + $?))
     done
     cleanupAndExit $RETVAL
 } #end of processCMD

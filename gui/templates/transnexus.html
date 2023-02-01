@@ -6,56 +6,44 @@
 {% endblock %}
 
 {% block body %}
-  <div>
-      {% if msg %}
-      <div class="alert alert-danger container">
-	      <h2 style="color: rgb(0, 0, 0);"><strong>{{ msg }}</strong></h2>
-      </div>
-      {% endif %}
-  </div>
+  {% if settings.TRANSNEXUS_AUTHSERVICE_ENABLED == 1 %}
+    {% set authservice_checked = 'checked' %}
+    {% set transnexusOptions_hidden = 'hidden' %}
+  {% else %}
+    {% set authservice_checked = '' %}
+    {% set transnexusOptions_hidden = '' %}
+  {% endif %}
+
   <div class="col-md-12">
     <form action="/transnexus" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <div class="saveTeleblock">
+
+      <div>
         <h4>TransNexus Settings</h4>
         <button name='save' id='save' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
                 data-target="#add">Save
         </button>
       </div>
+
       <hr>
+
       <div class="form-group">
-      <label class="label-toggle">STIR/SHAKEN Authentication service </label>
-        {% if transnexus["authservice_enabled"] == 1 %}
-          <input id="toggleTransnexus" name ="authservice_enabled" type="checkbox" checked title="Toggle Auth Service"
-                 data-toggle="toggle"
-                 value="{{ transnexus["authservice_enabled"] }}"
-                 data-on="<span class='icon-gryphon'></span> Enabled"
-                 data-off="<span class='icon-gryphon'></span> Disabled"
-                 data-width="120px">
-        {% else %}
-          <input id="toggleTransnexus" name="authservice_enabled" type="checkbox" title="Toggle Auth Service"
-                 data-toggle="toggle"
-                 value="{{ transnexus["authservice_enabled"] }}"
-                 data-on="<span class='icon-gryphon'></span> Enabled"
-                 data-off="<span class='icon-gryphon'></span> Disabled"
-                 data-width="120px">
-        {% endif %}
+        <label class="label-toggle">STIR/SHAKEN Authentication service </label>
+        <input id="toggleTransnexus" name="authservice_enabled" type="checkbox" {{ authservice_checked }}
+               title="Toggle Auth Service"
+               data-toggle="toggle"
+               value="{{ settings.TRANSNEXUS_AUTHSERVICE_ENABLED }}"
+               data-on="<span class='icon-gryphon'></span> Enabled"
+               data-off="<span class='icon-gryphon'></span> Disabled"
+               data-width="120px">
       </div>
-      {% if transnexus["authservice_enabled"]  == 1 %}
-        <div id="transnexusOptions" class="form-group">
-      {% else %}
-        <div id="transnexusOptions" class="form-group hidden">
-      {% endif %}
-      <div class="form-group">
-        <input class="form-control " type="text" id="authservice_host" name="authservice_host" placeholder="Auth Service Host"
-               value="{{ transnexus["authservice_host"] }}">
-      </div>
-      <div class="form-group">
-        <input class="form-control " type="text" id="transnexus_license_key" name="transnexus_license_key" placeholder="License Key" value="{{ transnexus["transnexus_license_key"] }}"> 
-      </div>
-      <div class="form-group">
-	No License Key? <a class="btn btn-primary btn-sm" target="_blank" href="https://dopensource.com/product/transnexus-clearip-module/" role="button">Buy License</a>
-      </div>
+
+      <div id="transnexusOptions" class="form-group {{ transnexusOptions_hidden }}">
+        <div class="form-group">
+          <input class="form-control " type="text" id="authservice_host" name="authservice_host"
+                 placeholder="Auth Service Host"
+                 value="{{ settings.TRANSNEXUS_AUTHSERVICE_HOST }}">
+        </div>
       </div> <!--End of TransNexus settings-->
     </form>
   </div>
