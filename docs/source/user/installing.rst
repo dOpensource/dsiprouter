@@ -4,7 +4,7 @@
 Installing dSIPRouter
 =====================
 
-Install dSIPRouter takes approximately 4-9 minutes to install.  The following video shows you the install process:
+Install dSIPRouter takes approximately 9-12 minutes to install.  The following video shows you the install process:
 
 .. raw:: html
 
