@@ -39,8 +39,8 @@ Install Options
 OS Support
 ^^^^^^^^^^
 
-- **Debian 11 (Bullseye) (BETA)**
-- **Debian 10 (Buster) (tested on 10.9)**
+- **Debian 11 (Bullseye)**
+- **Debian 10 (Buster)**
 - **CentOS 8**
 - **CentOS 7**
 - **Amazon Linux 2**
@@ -50,7 +50,8 @@ OS Support
 Kamailio will be automatically installed along with dSIPRouter.
 Must be installed on a fresh install of Debian Stretch, Debian Buster or CentOS.
 You will not be prompted for any information.  It will take anywhere from  9-12 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
-Links to the installation documentation are below:
+
+We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:
 
 - :ref:`debian10-install`
 - :ref:`centos7_install`
