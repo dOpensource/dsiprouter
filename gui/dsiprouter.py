@@ -11,7 +11,7 @@ from functools import wraps
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory, Blueprint
+from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory, Blueprint, Response
 from flask_script import Manager, Server
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
@@ -39,7 +39,10 @@ from modules.api.auth.routes import user
 from util.security import Credentials, AES_CTR, urandomChars
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
+from modules.upgrade import UpdateUtils
 import globals, settings
+import subprocess
+
 
 
 # TODO: unit testing per component
@@ -2129,6 +2132,119 @@ def addUpdateStirShaken():
         debugException(ex)
         error = "http"
         return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+
+@app.route('/upgrade')
+def displayUpgrade(msg=None):
+    """
+    Display Upgrade settings in view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        current_version = float(settings.VERSION)
+        latest_version = float(UpdateUtils.get_latest_version())
+
+        upgrade_available = 0
+        if latest_version > current_version:
+            upgrade_available = 1
+
+        upgrade_settings = {}
+        upgrade_settings["current_version"] = settings.VERSION
+        upgrade_settings["latest_version"] = UpdateUtils.get_latest_version()
+        # TODO: check if upgrade is allowed
+        upgrade_settings["upgrade_allowed"] = 1
+        upgrade_settings["upgrade_available"] = 1 #upgrade_available
+
+
+        return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/upgrade/start', methods=['POST'])
+def start_upgrade():
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        logging.info("Starting upgrade")
+
+        # log_file_name = "/var/log/dsiprouter_upgrade.log"
+        # os.remove(log_file_name)
+
+        # # Fork a child process
+        # pid = os.fork()
+        # # Check if we are in the child process
+        # if pid == 0:
+        #     # Run the child script
+        #     logging.info("Running the upgrade script")
+        #     os.execlp('python3', 'python3', '/opt/dsiprouter/resources/upgrade/0.71/upgrade.py')
+        # else:
+        #     # Disconnect from the child process
+        #     os.waitpid(pid, 0)
+
+        process = subprocess.Popen(["/usr/local/bin/python3", "/opt/dsiprouter/resources/upgrade/0.71/upgrade.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        # decode the output to string
+        output_str = output.decode("utf-8")
+        logging.info("Upgrade output: {}".format(output_str))
+
+        flash("Upgrade started. Please wait for the upgrade to complete. You will be redirected to the login page.",
+              "success")
+        return displayUpgrade()
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/upgrade/log')
+def getUpgradeLog(msg=None):
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        filename = "/var/log/dsiprouter_upgrade.log"
+        with open(filename, 'r') as file:
+            content = file.read()
+            return Response(content, content_type='text/plain')
+    except FileNotFoundError:
+        return 'File not found', 404
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+
     except Exception as ex:
         debugException(ex)
         error = "server"
