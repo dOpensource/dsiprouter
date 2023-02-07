@@ -9,7 +9,7 @@ class UpdateUtils():
         payload = {}
         headers = {
             'Accept': 'application/vnd.github+json',
-            'Authorization': 'Bearer  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',
+            'Authorization': 'Bearer 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',
             'X-GitHub-Api-Version': '2022-11-28',
         }
 
@@ -24,7 +24,7 @@ class UpdateUtils():
         payload = {}
         headers = {
             'Accept': 'application/vnd.github+json',
-            'Authorization': 'Bearer  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',
+            'Authorization': 'Bearer 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',
             'X-GitHub-Api-Version': '2022-11-28',
         }
 

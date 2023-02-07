@@ -5,7 +5,7 @@ function getUpgradeInfo() {
     $('#upgrade_form').hide();
     $('#upgrade_output_row').show();
 
-    $.get("/upgrade-status", function (response) {
+    $.get("/upgrade/log", function (response) {
         $("#upgrade_output").text(response);
         $('#page_bottom')[0].scrollIntoView();
         // $(document).scrollTop($(document).height());
@@ -32,7 +32,7 @@ function getUpgradeInfo() {
 
             $.ajax({
                 type: "POST",
-                url: "/upgrade",
+                url: "/upgrade/start",
                 async: true,
                 data: formData,
                 success: function (response) {

@@ -16,13 +16,5 @@
     "select 3;"
   ],
   "dsiprouter": [
-    {
-      "working_dir": "/opt/dsiprouter/",
-      "commands": [
-        "git pull",
-        "git checkout origin/0.71",
-        "dsiprouter restart"
-      ]
-    }
   ]
 }

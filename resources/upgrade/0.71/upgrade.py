@@ -28,6 +28,7 @@ def start_upgrade():
         logging.info("Version Check Passed. Proceeding with upgrade to version " + upgrade_settings['version'])
         backup_system()
         upgrade_database()
+        upgrade_dsiprouter()
         logging.info("Upgrade complete.")
         sys.exit(0)
     else:
@@ -71,29 +72,29 @@ def backup_system():
     try:
         tar_cmd = f"tar -zcvf {backup_destination}/dsip_project_{timestamp}.tar.gz {dsip_project_dir}"
         output = subprocess.check_output(tar_cmd, shell=True)
-        logging.info(output.decode("utf-8"))
+        # logging.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
         logging.error("Error backing up dSIP project directory")
-        logging.error(e.output.decode("utf-8"))
+        # logging.error(e.output.decode("utf-8"))
 
     try:
         logging.info("Backing up config directory")
         tar_cmd = f"tar -zcvf {backup_destination}/dsip_config_{timestamp}.tar.gz {dsip_config_dir}"
         output = subprocess.check_output(tar_cmd, shell=True)
-        logging.info(output.decode("utf-8"))
+        # logging.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
         logging.error("Error backing up dSIP project directory")
-        logging.error(e.output.decode("utf-8"))
+        # logging.error(e.output.decode("utf-8"))
 
     # backup the kamailio config
     try:
         logging.info("Backing up kamailio config")
         tar_cmd = f"tar -zcvf {backup_destination}/kamailio_config_{timestamp}.tar.gz {kamailio_config_dir}"
         output = subprocess.check_output(tar_cmd, shell=True)
-        logging.info(output.decode("utf-8"))
+        # logging.info(output.decode("utf-8"))
     except subprocess.CalledProcessError as e:
         logging.error("Error backing up dSIP project directory")
-        logging.error(e.output.decode("utf-8"))
+        # logging.error(e.output.decode("utf-8"))
 
     logging.info("Backup complete")
 
@@ -158,8 +159,7 @@ def upgrade_dsiprouter():
     global upgrade_settings
 
     for command in upgrade_settings['dsiprouter']:
-        kamcmd = settings.KAM_KAMCMD_PATH + " " + command
-        os.system(kamcmd)
+        os.system(command)
 
 
 context = daemon.DaemonContext(
