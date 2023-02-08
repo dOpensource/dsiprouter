@@ -21,6 +21,7 @@ def wcApiPropagateHttpError(method):
     return wrapper
 
 class WoocommerceLicense(object):
+    # this API key is locked down to only allow functionality below
     SERVER = {
         "baseurl": "https://dopensource.com/wp-json/lmfwc/v2/licenses/",
         "key": "ck_068f510a518ff5ecf1cbdcbc7db7f9bac2331613",

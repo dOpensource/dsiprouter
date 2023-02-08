@@ -36,18 +36,6 @@ def isCertValid(hostname, externalip, port=5061):
         # the ability to connect using the cert.
         return result
 
-# TODO: kam jsonrpc url should be set in settings.py / install script
-def healthCheck():
-    """
-    Checks the health of dsiprouter
-    """
-
-    cmdset = {"method": "dsiprouter.health_check", "jsonrpc": "2.0", "id": 1}
-    r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
-    if r is not None and r.status_code == 200:
-        return True
-    return False
-
 def objToDict(obj):
     """
     converts an arbitrary object to dict

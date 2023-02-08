@@ -28,9 +28,10 @@ DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
 # reuse credential settings from python files (exported for later usage)
-export SALT_LEN=$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-export CREDS_MAX_LEN=$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-export HASH_ITERATIONS=$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+SALT_LEN=$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+DK_LEN_DEFAULT=$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+CREDS_MAX_LEN=$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+HASH_ITERATIONS=$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
 export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
 export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
 
@@ -94,6 +95,15 @@ function toupper() {
     fi
 }
 export -f toupper
+
+function hextoint() {
+	if [[ -t 0 ]]; then
+		printf '%d' "0x$1" 2>/dev/null
+	else
+		printf '%d' "0x$(</dev/stdin)" 2>/dev/null
+	fi
+}
+rxport -f hextoint
 
 ######################################
 # Traceback / Debug helper functions #
@@ -1183,9 +1193,10 @@ function sendKamCmd() {
 export -f sendKamCmd
 
 # TODO: input validation
-# TODO: ensure openssl installed in script requirements
+# TODO: swap with bash native version?
 function hashCreds() {
-	local CREDS="" SALT="$(urandomChars -f 'a-fA-F0-9' $SALT_LEN)"
+	local CREDS SALT DK_LEN
+	local PYTHON=${PYTHON_CMD:-python3}
 
 	# grab credentials from stdin if provided
 	if [[ ! -t 0 ]]; then
@@ -1207,6 +1218,12 @@ function hashCreds() {
                 SALT="$1"
                 shift
                 ;;
+        	# user defined derived key length
+            -l)
+                shift
+                DK_LEN="$1"
+                shift
+                ;;
 			# not valid option skip
             *)
                 shift
@@ -1214,9 +1231,15 @@ function hashCreds() {
         esac
     done
 
-	local RET=(
-		$(openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter "$HASH_ITERATIONS" -salt -S "$SALT" -k "$CREDS" -P | cut -d '=' -f 2)
-	)
-	echo -n "${RET[1]}${RET[2]}${RET[0]}"
+    # defaults if not set by args
+    SALT=${SALT:-$(urandomChars -f 'a-fA-F0-9' $SALT_LEN)}
+    DK_LEN=${DK_LEN:-$DK_LEN_DEFAULT}
+
+	# python native version
+	# no external dependencies other than vanilla python3
+	${PYTHON} -c "import hashlib,binascii; print(binascii.hexlify(hashlib.pbkdf2_hmac('sha512', '$CREDS'.encode('utf-8'), '$SALT'.encode('utf-8'), iterations=$HASH_ITERATIONS, dklen=$DK_LEN)).decode('utf-8'));"
+	# bash native version
+	# currently too slow for production usage
+	#${DSIP_PROJECT_DIR}/dsiprouter/pbkdf2.sh 'sha512' "$CREDS" "$SALT" "$HASH_ITERATIONS" 4
 }
 export -f hashCreds

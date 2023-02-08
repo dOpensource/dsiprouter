@@ -96,6 +96,7 @@ FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # Homer settings
+HOMER_ID = None
 HOMER_HEP_HOST = ''
 HOMER_HEP_PORT = 9060
 

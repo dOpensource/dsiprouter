@@ -10,7 +10,7 @@ from werkzeug import exceptions as http_exceptions
 from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
 from database import SessionLoader, DummySession, Domain, DomainAttrs, Dispatcher, Gateways, Address
 from modules.api.api_routes import addEndpointGroups
-from shared import debugException, debugEndpoint, showError, strFieldsToDict, healthCheck, stripDictVals
+from shared import debugException, debugEndpoint, showError, strFieldsToDict, stripDictVals
 import settings, globals
 
 domains = Blueprint('domains', __name__)

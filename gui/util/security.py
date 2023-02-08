@@ -41,25 +41,24 @@ class Credentials():
     Wrapper class for credential management functions
     """
 
-    HASH_LEN = 64
-    HASH_ENCODED_LEN = 128
     SALT_LEN = 16
-    SALT_ENCODED_LEN = 32
     CREDS_MAX_LEN = 64
-    DK_LEN = 48
-    HASHED_CREDS_ENCODED_MAX_LEN = 160
+    DK_LEN_DEFAULT = 48
+    HASHED_CREDS_ENCODED_MAX_LEN = 128
     AESCTR_CREDS_ENCODED_MAX_LEN = 160
-    HASH_ITERATIONS = 100000
+    HASH_ITERATIONS = 10000
 
     @staticmethod
-    def hashCreds(creds, salt=None):
+    def hashCreds(creds, salt=None, dklen=None):
         """
-        Hash credentials using pbkdf2_hmac with sha512 algo
+        Hash credentials using pbkdf2_hmac with sha512 algorithm
 
         :param creds:   byte string to hash
         :type creds:    bytes|str
         :param salt:    salt to hash creds with (hex encoded byte string or string)
         :type salt:     bytes|str
+        :param dklen:   the derived key length to return as hash
+        :type dklen:    int
         :return:        hash+salt as hex encoded byte string
         :rtype:         bytes
         """
@@ -68,7 +67,7 @@ class Credentials():
         elif isinstance(creds, str):
             creds = creds.encode('utf-8')
         else:
-            raise ValueError('credentials must be a string or byte string')
+            raise ValueError('credentials must be a string or hex encoded byte string')
         if len(creds) > Credentials.CREDS_MAX_LEN:
             raise ValueError('credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
 
@@ -79,12 +78,17 @@ class Credentials():
         elif isinstance(salt, bytes):
             salt = binascii.unhexlify(salt)
         else:
-            raise ValueError('salt must be a string or byte string')
+            raise ValueError('salt must be a string or hex encoded byte string')
         if len(salt) != Credentials.SALT_LEN:
-            raise ValueError('Salt must be {} bytes long'.format(str(Credentials.SALT_LEN)))
+            raise ValueError('salt must be {} bytes long'.format(str(Credentials.SALT_LEN)))
 
-        hash = hashlib.pbkdf2_hmac('sha512', creds, salt, Credentials.HASH_ITERATIONS, dklen=Credentials.DK_LEN)
-        return binascii.hexlify(hash)+binascii.hexlify(salt)
+        if dklen is None:
+            dklen = Credentials.DK_LEN_DEFAULT
+        elif not isinstance(dklen, int):
+            raise ValueError('dklen must be an integer')
+
+        hash = hashlib.pbkdf2_hmac('sha512', creds, salt, iterations=Credentials.HASH_ITERATIONS, dklen=dklen)
+        return binascii.hexlify(hash + salt)
 
     @staticmethod
     def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b'', rootdb_creds=b''):

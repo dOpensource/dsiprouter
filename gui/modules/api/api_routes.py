@@ -65,35 +65,6 @@ def getKamailioStats():
         return showApiError(ex)
 
 
-@api.route("/api/v1/kamailio/health", methods=['GET'])
-def getSystemHealth():
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'data': []}
-    health_data = {}
-    http_status = None
-
-    try:
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        jsonrpc_payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
-        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
-        if r:
-            # health_data.['version'] = "5.3.4."
-            http_status = r.status_code
-            if http_status >= 400:
-                response_payload['msg'] = 'Server is down'
-            else:
-                response_payload['msg'] = 'Server is up'
-
-        return jsonify(response_payload), http_status
-
-    except Exception as ex:
-        http_status = "400"
-        response_payload['msg'] = 'Server is down'
-        return jsonify(response_payload), http_status
-
-
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
 @api_security
 def reloadKamailio():

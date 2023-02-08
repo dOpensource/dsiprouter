@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-9a63bef919a823d1ebde95ee84ec76246e6b54f7
+c56f694abcf05a36ba5058d0b0f48312c35aa0dd
+2f31989a6b34be6d213a891c3725dde6c168f2fb
 a787ec5760bf147c755950116a9e440d181a2e9d
 35b4d7233eeda44587c59f0593f5599f82898f65
 1fc9ae71deb1b5191c68a3171bf9b5269e198b80
@@ -2082,10 +2083,30 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 9a63bef919a823d1ebde95ee84ec76246e6b54f7)
+[//]: # (START_SECTION c56f694abcf05a36ba5058d0b0f48312c35aa0dd)
+### Cleanup Branch / Final Fixes
+
+> Commit: [c56f694abcf05a36ba5058d0b0f48312c35aa0dd](https://github.com/dOpensource/dsiprouter/commit/c56f694abcf05a36ba5058d0b0f48312c35aa0dd)  
+> Date: Wed, 8 Feb 2023 11:56:33 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix hashing functions in `dsip_lib.sh`
+- fix `homer-id` format (based on machine-id)
+- fix outbound clearip default hostname
+- add WIP PBKDF2 bash-native implementation
+- cleanup branch for merging
+
+
+---
+
+[//]: # (END_SECTION c56f694abcf05a36ba5058d0b0f48312c35aa0dd)
+[//]: # (START_SECTION 2f31989a6b34be6d213a891c3725dde6c168f2fb)
 ### Add Licensing Manager
 
-> Commit: [9a63bef919a823d1ebde95ee84ec76246e6b54f7](https://github.com/dOpensource/dsiprouter/commit/9a63bef919a823d1ebde95ee84ec76246e6b54f7)  
+> Commit: [2f31989a6b34be6d213a891c3725dde6c168f2fb](https://github.com/dOpensource/dsiprouter/commit/2f31989a6b34be6d213a891c3725dde6c168f2fb)  
 > Date: Wed, 1 Feb 2023 15:41:03 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2114,7 +2135,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 9a63bef919a823d1ebde95ee84ec76246e6b54f7)
+[//]: # (END_SECTION 2f31989a6b34be6d213a891c3725dde6c168f2fb)
 [//]: # (START_SECTION a787ec5760bf147c755950116a9e440d181a2e9d)
 ### Removed Rabbit MQ logic
 
