@@ -1,7 +1,8 @@
--- constants defined here (should be overwritten by calling script)
--- defining here allows us to keep syntax highlighting in our IDEs for the rest of the file
-SET @HASHED_CREDS_ENCODED_MAX_LEN = $HASHED_CREDS_ENCODED_MAX_LEN;
-SET @AESCTR_CREDS_ENCODED_MAX_LEN = $AESCTR_CREDS_ENCODED_MAX_LEN;
+-- constant values must be added when pre-processing the file (by calling script)
+-- using user-defined variables allows us to keep syntax highlighting in our IDEs, but note they won't work without replacement
+-- the following strings are expected to be replaced by the pre-processing script (INCLUDE THE PRECEDING @ SYMBOL!):
+-- HASHED_CREDS_ENCODED_MAX_LEN
+-- AESCTR_CREDS_ENCODED_MAX_LEN
 
 -- DB representation of settings.py with non-db backed settings left out
 DROP TABLE IF EXISTS dsip_settings;

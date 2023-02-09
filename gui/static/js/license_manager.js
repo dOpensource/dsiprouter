@@ -141,11 +141,11 @@
 
   function createDeleteButton() {
     return '' +
-      '<p data-placement="top" data-toggle="tooltip" title="Delete">' +
+      '<div class="dt-resize-height">' +
       '  <button class="open-Delete btn btn-danger btn-xs" data-title="Deactivate" data-toggle="modal" data-target="#delete" onclick="updateDeleteModal(this)">' +
       '    <span class="glyphicon glyphicon-trash"></span>' +
       '  </button>' +
-      '</p>';
+      '</div>';
   }
 
   function createLicenseKeyField(data, type, row, meta) {
@@ -155,6 +155,13 @@
       '<div class="wrapper-fieldicon-right dt-resize-height">' +
       '  <input id="' + unique_key_id + '" class="key" type="password" name="key" value="' + data + '" readonly>' +
       '  <span class="field-icon toggle-password glyphicon glyphicon-eye-close" data-toggle="#' + unique_key_id + '" onclick="togglePasswordHidden(this)"></span>' +
+      '</div>';
+  }
+
+  function createReadonlyInputField(data, type, row, meta) {
+    return '' +
+      '<div class="dt-resize-height">' +
+      '  <input type="text" value="' + data + '" readonly>' +
       '</div>';
   }
 
@@ -183,11 +190,11 @@
         "type": "GET",
       },
       "columns": [
-        {"data": "type"},
+        {"data": "type", "render": createReadonlyInputField},
         {"data": "license_key", "render": createLicenseKeyField},
-        {"data": "active"},
-        {"data": "valid"},
-        {"data": "expires"},
+        {"data": "active", "render": createReadonlyInputField},
+        {"data": "valid", "render": createReadonlyInputField},
+        {"data": "expires", "render": createReadonlyInputField},
         {"data": null, "render": createDeleteButton, "searchable": false, "orderable": false},
       ],
       "order": [[0, 'asc']],

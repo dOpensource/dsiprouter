@@ -103,7 +103,7 @@ function hextoint() {
 		printf '%d' "0x$(</dev/stdin)" 2>/dev/null
 	fi
 }
-rxport -f hextoint
+export -f hextoint
 
 ######################################
 # Traceback / Debug helper functions #

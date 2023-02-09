@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-c56f694abcf05a36ba5058d0b0f48312c35aa0dd
+3b13f0265d17beb187ad899b7dd198da7644eac6
+98270d267c77f991b3aecf572d38c097fecac68b
 2f31989a6b34be6d213a891c3725dde6c168f2fb
 a787ec5760bf147c755950116a9e440d181a2e9d
 35b4d7233eeda44587c59f0593f5599f82898f65
@@ -2083,10 +2084,35 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION c56f694abcf05a36ba5058d0b0f48312c35aa0dd)
+[//]: # (START_SECTION 3b13f0265d17beb187ad899b7dd198da7644eac6)
+### Integration Fixes
+
+> Commit: [3b13f0265d17beb187ad899b7dd198da7644eac6](https://github.com/dOpensource/dsiprouter/commit/3b13f0265d17beb187ad899b7dd198da7644eac6)  
+> Date: Thu, 9 Feb 2023 11:25:05 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- updated license manager UI table rows to scale properly
+- fix span and button resizing in license manager UI
+- fix redirection links to license manager UI
+- fix typos in domain route
+- fix `dsip_settings.sql` syntax highlighting
+- add deprecation notices where missing
+- fix typoes in `dsiprouter.sh`
+- update default character length in `security.py` to match `dsip_lib.sh`
+- fix typo in `dsip_lib.sh`
+- deprecate dsiprouter module compilation in debian, rhel, and amzn
+
+
+---
+
+[//]: # (END_SECTION 3b13f0265d17beb187ad899b7dd198da7644eac6)
+[//]: # (START_SECTION 98270d267c77f991b3aecf572d38c097fecac68b)
 ### Cleanup Branch / Final Fixes
 
-> Commit: [c56f694abcf05a36ba5058d0b0f48312c35aa0dd](https://github.com/dOpensource/dsiprouter/commit/c56f694abcf05a36ba5058d0b0f48312c35aa0dd)  
+> Commit: [98270d267c77f991b3aecf572d38c097fecac68b](https://github.com/dOpensource/dsiprouter/commit/98270d267c77f991b3aecf572d38c097fecac68b)  
 > Date: Wed, 8 Feb 2023 11:56:33 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2102,7 +2128,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION c56f694abcf05a36ba5058d0b0f48312c35aa0dd)
+[//]: # (END_SECTION 98270d267c77f991b3aecf572d38c097fecac68b)
 [//]: # (START_SECTION 2f31989a6b34be6d213a891c3725dde6c168f2fb)
 ### Add Licensing Manager
 

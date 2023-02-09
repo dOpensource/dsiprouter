@@ -182,7 +182,7 @@
           <select class="authtype form-control" name="authtype">
             <option value="">Select Domain Type</option>
             <option value="passthru">Pass Thru to PBX</option>
-            {% if hc == False %}(Subscription Required)
+            {% if hc == False %}
               <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
             {% else %}
               <option value="msteams">Microsoft Teams Direct Routing</option>

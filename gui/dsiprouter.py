@@ -872,7 +872,7 @@ def displayCDRS():
         return showError(type=error)
 
 
-@app.route('/licensemanager')
+@app.route('/licensing')
 def displayLicenseManager():
     """
     Display License Manager page

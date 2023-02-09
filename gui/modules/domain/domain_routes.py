@@ -159,7 +159,7 @@ def configureMSTeams(id):
             return render_template('license_required.html', msg=None)
 
         settings_lc = WoocommerceLicense(key_combo=settings.DSIP_MSTEAMS_LICENSE, decrypt=True)
-        if not settings_lc.validate():
+        if not settings_lc.active:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
         lc = WoocommerceLicense(settings_lc.license_key)
@@ -247,7 +247,7 @@ def displayDomains():
             return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 
         settings_lc = WoocommerceLicense(key_combo=settings.DSIP_MSTEAMS_LICENSE, decrypt=True)
-        if not settings_lc.validate():
+        if not settings_lc.active:
             return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 
         lc = WoocommerceLicense(settings_lc.license_key)

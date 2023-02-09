@@ -7,11 +7,9 @@ import os, hashlib, binascii, string, ssl, OpenSSL, secrets
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
-from sqlalchemy import exc as sql_exceptions
-from sqlalchemy.sql import text
 from shared import updateConfig, StatusCodes
 from functools import wraps
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import jsonify, render_template, request, session
 import settings, globals
 
 #
@@ -23,7 +21,7 @@ import settings, globals
 # if credentials need to be stored/accessed in a python module, they need encoded/decoded
 #
 
-def urandomChars(length=64):
+def urandomChars(length=32):
     """
     Return printable characters from urandom
 

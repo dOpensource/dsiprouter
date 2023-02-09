@@ -4,6 +4,14 @@
 
 {% block custom_css %}
   <style>
+    #licensing tr > th {
+      height: 2rem;
+    }
+
+    #licensing tr > td {
+      height: 4rem;
+    }
+
     #licensing > tbody > tr:hover {
       background-color: #acbad4;
     }
@@ -30,8 +38,8 @@
 
     #licensing > tbody > tr > td > .dt-resize-height span.toggle-password {
       position: absolute;
-      top: 1em;
-      right: 1em;
+      top: 1rem;
+      right: 1rem;
       left: inherit;
       bottom: inherit;
       cursor: pointer;
@@ -45,12 +53,15 @@
       padding: 0;
     }
 
-    /* TODO: sick of trying to fix this, will come back to this */
     #licensing > tbody > tr > td > .dt-resize-height input:focus,
     #licensing > tbody > tr > td > .dt-resize-height input:focus-visible {
       outline: none;
       -webkit-box-shadow: none;
       box-shadow: none;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height button {
+      margin: 1rem 2rem;
     }
   </style>
 {% endblock %}

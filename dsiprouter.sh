@@ -77,7 +77,7 @@ function setStaticScriptSettings() {
     export PROJECT_DSIP_DEFAULTS_DIR="${DSIP_PROJECT_DIR}/kamailio/defaults"
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
-    # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
+    # DEPRECATED v0.72: uuid replaced by DSIP_ID as unique identifier, marked for removal
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
@@ -194,12 +194,12 @@ function setDynamicScriptSettings() {
     # set the email used to obtain LetsEncrypt Certificates
     export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
 
-	export DSIP_ID=$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
+	export DSIP_ID=$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})
 	if [[ "$DSIP_ID" == "None" ]] || [[ -z "$DSIP_ID" ]]; then
 		export DSIP_ID=$(cat /etc/machine-id | hashCreds)
 	fi
 
-	export HOMER_ID=$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
+	export HOMER_ID=$(getConfigAttrib 'HOMER_ID' ${DSIP_CONFIG_FILE})
 	if [[ "$HOMER_ID" == "None" ]] || [[ -z "$HOMER_ID" ]]; then
 		export HOMER_ID=$(cat /etc/machine-id | hashCreds -l 4 | dd if=/dev/stdin of=/dev/stdout bs=1 count=8 2>/dev/null | hextoint)
 	fi
@@ -1018,7 +1018,9 @@ function configureKamailioDB() {
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_cdrinfo.sql
 
     # Install schema for dsip_settings
-    envsubst < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_settings.sql |
+    perl -e "\$hlen='$HASHED_CREDS_ENCODED_MAX_LEN'; \$clen='$AESCTR_CREDS_ENCODED_MAX_LEN';" \
+    	-pe 's%\@HASHED_CREDS_ENCODED_MAX_LEN%$hlen%g; s%\@AESCTR_CREDS_ENCODED_MAX_LEN%$clen%g;' \
+    	${PROJECT_DSIP_DEFAULTS_DIR}/dsip_settings.sql |
         mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"
 
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
