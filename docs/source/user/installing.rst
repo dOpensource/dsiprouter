@@ -4,7 +4,7 @@
 Installing dSIPRouter
 =====================
 
-Install dSIPRouter takes approximately 4-9 minutes to install.  The following video shows you the install process:
+Install dSIPRouter takes approximately 9-12 minutes to install.  The following video shows you the install process:
 
 .. raw:: html
 
@@ -39,10 +39,8 @@ Install Options
 OS Support
 ^^^^^^^^^^
 
-- **Debian 11 (Bullseye) (BETA)**
-- **Debian 10 (Buster) (tested on 10.9)**
-- **Debian 9 (Stretch) (tested on 9.6)**
-- **Debian 8 (Jessie)**
+- **Debian 11 (Bullseye)**
+- **Debian 10 (Buster)**
 - **CentOS 8**
 - **CentOS 7**
 - **Amazon Linux 2**
@@ -50,11 +48,11 @@ OS Support
 
 
 Kamailio will be automatically installed along with dSIPRouter.
-Must be installed on a fresh install of Debian Stretch, Debian Buster or CentOS 7.
-You will not be prompted for any information.  It will take anywhere from 4-9 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
-Links to the installation documentation are below:
+Must be installed on a fresh install of Debian Stretch, Debian Buster or CentOS.
+You will not be prompted for any information.  It will take anywhere from  9-12 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 
-- :ref:`debian9-install`
+We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:
+
 - :ref:`debian10-install`
 - :ref:`centos7_install`
 
