@@ -74,7 +74,8 @@ function install {
     # TODO: move mysql dev headers install to mysql dir for easier version management
     apt-get install -y default-libmysqlclient-dev ||
         apt-get install -y libmysqlclient-dev
-    apt-get install -y libmariadbclient-dev
+    apt-get install -y libmariadbclient-dev-compat ||
+    	apt-get install -y libmariadbclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
     apt-get install -y cmake
@@ -144,6 +145,7 @@ function install {
         fi &&
         dpkg-buildpackage -us -uc -sa &&
         cd .. &&
+        systemctl mask ngcp-rtpengine-daemon.service &&
         apt-get install -y ./ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
             ./ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
 #            ./ngcp-rtpengine-recording-daemon_*${RTPENGINE_VER}*.deb
@@ -160,9 +162,6 @@ function install {
         printerr "Problem installing RTPEngine kernel module"
         exit 1
     fi
-
-    # stop the demaon so we can configure it properly
-    systemctl stop ngcp-rtpengine-daemon
 
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
@@ -206,9 +205,8 @@ function install {
             cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
             ;;
     esac
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
-    chmod +x /usr/sbin/rtpengine*
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
+    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post}
 
     # Reload systemd configs
     systemctl daemon-reload
