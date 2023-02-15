@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-bcf6e1c68d818f39143dd7c61accf35ea99b4c6c
+04b832cedb6d19be637d4ee63eafbe2d37bbb842
+bb58600d9294fbb5ce39c2e273155602d7981638
 681c2c432b735a3f67d6732264f50638b47b1552
 92d323dc7d6d82645ae7c25a4134679009dba4a6
 0b3ed50bbf81577558e79b77dd8b2c65f61ad034
@@ -2079,10 +2080,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION bcf6e1c68d818f39143dd7c61accf35ea99b4c6c)
+[//]: # (START_SECTION 04b832cedb6d19be637d4ee63eafbe2d37bbb842)
+### Add PR Template
+
+> Commit: [04b832cedb6d19be637d4ee63eafbe2d37bbb842](https://github.com/dOpensource/dsiprouter/commit/04b832cedb6d19be637d4ee63eafbe2d37bbb842)  
+> Date: Wed, 15 Feb 2023 11:32:46 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 04b832cedb6d19be637d4ee63eafbe2d37bbb842)
+[//]: # (START_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
 ### Require Issue Template Usage
 
-> Commit: [bcf6e1c68d818f39143dd7c61accf35ea99b4c6c](https://github.com/dOpensource/dsiprouter/commit/bcf6e1c68d818f39143dd7c61accf35ea99b4c6c)  
+> Commit: [bb58600d9294fbb5ce39c2e273155602d7981638](https://github.com/dOpensource/dsiprouter/commit/bb58600d9294fbb5ce39c2e273155602d7981638)  
 > Date: Wed, 15 Feb 2023 09:50:31 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2093,7 +2109,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION bcf6e1c68d818f39143dd7c61accf35ea99b4c6c)
+[//]: # (END_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
 [//]: # (START_SECTION 681c2c432b735a3f67d6732264f50638b47b1552)
 ### Update issue templates
 
