@@ -32,3 +32,4 @@
 - TheGolg
 - TuxPowered
 - Tyler Moore
+- VOICE1
