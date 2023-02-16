@@ -25,4 +25,4 @@ sphinxcontrib-httpdomain
 sphinx-rtd-theme
 SQLAlchemy==1.4.46
 twilio
-Werkzeug==2.0.2
+Werkzeug==2.2.3
