@@ -39,12 +39,19 @@ Install Options
 OS Support
 ^^^^^^^^^^
 
-- **Debian 11 (Bullseye)**
-- **Debian 10 (Buster)**
-- **CentOS 8**
-- **CentOS 7**
-- **Amazon Linux 2**
-- **Ubuntu 16.04 (Xenial)**
+===================================     ================
+OS / Distro                             Current Support
+===================================     ================
+Debian 11 (bullseye)                    STABLE
+Debian 10 (buster)                      STABLE
+Debian 9 (stretch)                      STABLE
+RedHat Linux 8                          ALPHA
+Alma Linux 8                            ALPHA
+Rocky Linux 8                           ALPHA
+Amazon Linux 2                          STABLE
+Ubuntu 22.04 (jammy)                    ALPHA
+Ubuntu 20.04 (focal)                    ALPHA
+===================================     ================
 
 
 Kamailio will be automatically installed along with dSIPRouter.
@@ -53,8 +60,8 @@ You will not be prompted for any information.  It will take anywhere from  9-12 
 
 We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:
 
-- :ref:`debian10-install`
-- :ref:`centos7_install`
+- :ref:`debian_install`
+- :ref:`rhel_install`
 
 Amazon AMI's
 ^^^^^^^^^^^^
