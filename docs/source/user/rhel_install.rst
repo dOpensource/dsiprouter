@@ -1,30 +1,19 @@
-.. _debian_install:
+.. _rhel_install:
 
-Installing on a Debian-based Distro
-===================================
+Installing on a RHEL-based Distro
+=================================
 
 Note that this only covers one configuration with RTP traffic proxied.
 Contributions of additional configurations are welcome if you have tested them!
 
 For a specific version of dSIPRouter add "-b <version number>" to the end of the `git clone` command.
 
-Make sure to **set the hostmane to a fully qualified domain name (FQDN)** that has DNS records pointed at the server (like sbc.yourdomain.com) prior to installation.
-The average install time is between 9-12 minutes depending on the resources on your vm/server and the options your specify.
-
-Set the Hostname 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. code-block:: bash
-  
-  hostnamectl set-hostname <hostname>
-  
-
 Install (Don't Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-  apt-get update -y
-  apt-get install -y git
+  yum install -y git
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
@@ -35,8 +24,10 @@ One Line Version:
 
 .. code-block:: bash
 
-  apt-get update -y && apt-get install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install
+   yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -kam -dsip
 
+
+Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
 
 Install (Proxy audio (RTP) traffic)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -46,8 +37,7 @@ If you need to proxy RTP traffic then use -all install option. The command to in
 
 .. code-block:: bash
 
-  apt-get update -y
-  apt-get install -y git
+  yum install -y git
   cd /opt
   git clone https://github.com/dOpensource/dsiprouter.git
   cd dsiprouter
@@ -58,7 +48,7 @@ One Line Version:
 
 .. code-block:: bash
 
-  apt-get update -y && apt-get install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -all
+  yum install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git && cd dsiprouter && ./dsiprouter.sh install -all
 
 The install script will automatically determine if the server is behind NAT.
 Once the install is complete, dSIPRouter will automatically start MySQL, Kamailio and the UI.
