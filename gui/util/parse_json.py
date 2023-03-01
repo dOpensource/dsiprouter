@@ -1,8 +1,8 @@
-import inspect, uuid
+import inspect, uuid, dataclasses
 from datetime import datetime, date, time
 from decimal import Decimal
 from types import MethodType
-from flask.json import JSONEncoder, dataclasses
+from flask.json import JSONEncoder
 from sqlalchemy.ext.declarative import DeclarativeMeta
 
 

@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
 
 # make sure the generated source files are imported instead of the template ones
-import socket
 import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
 import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern
-from functools import wraps
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, jsonify, flash, session, url_for, send_from_directory, Blueprint
-from flask_script import Manager, Server
+from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy import func, exc as sql_exceptions
@@ -24,10 +21,9 @@ from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
-    ipToHost, hostToIP
+    ipToHost
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
-    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, dSIPMaintModes, \
-    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, dSIPUser
+    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -36,7 +32,7 @@ from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
 from modules.api.licensemanager.functions import validateLicense
 from modules.api.auth.routes import user
-from util.security import Credentials, AES_CTR, urandomChars
+from util.security import Credentials, urandomChars
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
 import globals, settings
