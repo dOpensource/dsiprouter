@@ -862,9 +862,13 @@ def getEndpointGroup(gwgroupid):
             dispatcher = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid)
             if dispatcher:
                 weightList = {}
-                for item in dispatcher:
-                    weight = item.attrs.split('=')[1]
-                    weightList[item.destination[4:]] = weight
+                try:
+                    for item in dispatcher:
+                        weight = item.attrs.split('=')[1]
+                        dst_host = item.destination.split(':', maxsplit=1)[1]
+                        weightList[dst_host] = weight
+                except IndexError:
+                    pass
 
             for endpoint in endpoints:
                 ep = {}
@@ -872,9 +876,9 @@ def getEndpointGroup(gwgroupid):
                 ep['hostname'] = endpoint.address
                 ep['description'] = strFieldsToDict(endpoint.description)['name']
                 if dispatcher:
-                    ep['weight'] = weightList[endpoint.address] if endpoint.address in weightList else ''
+                    ep['weight'] = weightList[endpoint.address] if endpoint.address in weightList else '0'
                 else:
-                    ep['weight'] = ""
+                    ep['weight'] = '0'
                 ep['maintmode'] = ""
 
                 gwgroup_data['endpoints'].append(ep)
@@ -1216,14 +1220,14 @@ def updateEndpointGroups(gwgroupid=None):
 
 
                 # Create dispatcher group with the set id being the gateway group id
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
                 if int(fusionpbxenabled) > 0:
                     sip_addr_external  = safeUriToHost(hostname, default_port=5080)
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                    dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                    dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
                     db.add(dispatcher)
 
 
@@ -1275,14 +1279,14 @@ def updateEndpointGroups(gwgroupid=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
             # Create dispatcher group with the set id being the gateway group id
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
             if int(fusionpbxenabled) > 0:
                 sip_addr_external  = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
 
                 db.add(dispatcher)
 
@@ -1358,9 +1362,9 @@ def updateEndpointGroups(gwgroupid=None):
             if DispatcherEntry is not None:
                 db.query(Dispatcher).filter(
                     (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update(
-                    {"attrs": "weight={}".format(weight)}, synchronize_session=False)
+                    {"attrs": "weight={};".format(weight)}, synchronize_session=False)
             else:
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),
                                         description=name)
                 db.add(dispatcher)
 
@@ -1373,10 +1377,10 @@ def updateEndpointGroups(gwgroupid=None):
                         db.delete(DispatcherEntry)
                 elif weight:
                     if DispatcherEntry is not None:
-                        db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).update({"attrs":"weight={}".format(weight)},synchronize_session=False)
+                        db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).update({"attrs":"weight={};".format(weight)},synchronize_session=False)
                     else:
                         #sip_addr_external  = safeUriToHost(hostname, default_port=5080)
-                        #dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                        #dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
                         #db.add(dispatcher)
                         pass
 
@@ -1728,10 +1732,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         for endpoint in endpoints:
             hostname = endpoint['hostname'] if 'hostname' in endpoint else ''
             name = endpoint['description'] if 'description' in endpoint else ''
-            weight = endpoint['weight'] if 'weight' in endpoint else ''
-            # TODO: More complicated logic is needed to ensure the weight is set properly for each endpoint
-            if not weight:
-                weight = str(100 / len(endpoints))
+            weight = endpoint['weight'] if 'weight' in endpoint else '0'
             if len(hostname) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
@@ -1760,14 +1761,14 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
 
             # Create dispatcher group with the set id being the gateway group id
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={}".format(weight),description=name)
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
             if fusionpbxenabled:
                 sip_addr_external  = safeUriToHost(hostname, default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={}".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
 
                 db.add(dispatcher)
 

@@ -5,7 +5,18 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-f479b3139e108d9222232ee56314c2b91dcbad26
+8c51d279b3212e880be5e74360ed38a7795709aa
+a1174d1e922ffd85eb767b7047fb84e3e3e0745e
+da72adbd503e5fce324c8a801d90c1e0b38ca054
+cc8a46218083c85894e090228f3cd55eb5a238c7
+799d68b0365eeda8c2d17811575b925a0023ae2a
+9a82a5efab8b2d6a3bed6c0611888b0a191119c5
+92d323dc7d6d82645ae7c25a4134679009dba4a6
+0b3ed50bbf81577558e79b77dd8b2c65f61ad034
+203f8ea5953044b05b047a5565c36c23155cff43
+d2144a88b8ccba4dba32265d69782e65635b4997
+af39173450198616f9e1f959f233f980a65a4d47
+581d8ed65958db142c9c64e3d6f973327a626fcc
 3b02dc02eeaee8d4e8ca13741489c2e6f72de230
 a787ec5760bf147c755950116a9e440d181a2e9d
 35b4d7233eeda44587c59f0593f5599f82898f65
@@ -2083,10 +2094,187 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION f479b3139e108d9222232ee56314c2b91dcbad26)
+[//]: # (START_SECTION 8c51d279b3212e880be5e74360ed38a7795709aa)
+### Fix Default Dispatcher Attributes
+
+> Commit: [8c51d279b3212e880be5e74360ed38a7795709aa](https://github.com/dOpensource/dsiprouter/commit/8c51d279b3212e880be5e74360ed38a7795709aa)  
+> Date: Wed, 1 Mar 2023 14:22:23 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#468](https://github.com/dOpensource/dsiprouter/issues/468)
+
+
+---
+
+[//]: # (END_SECTION 8c51d279b3212e880be5e74360ed38a7795709aa)
+[//]: # (START_SECTION a1174d1e922ffd85eb767b7047fb84e3e3e0745e)
+### Update Installation Documentation
+
+> Commit: [a1174d1e922ffd85eb767b7047fb84e3e3e0745e](https://github.com/dOpensource/dsiprouter/commit/a1174d1e922ffd85eb767b7047fb84e3e3e0745e)  
+> Date: Wed, 1 Mar 2023 11:59:41 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#470](https://github.com/dOpensource/dsiprouter/issues/470)
+
+
+---
+
+[//]: # (END_SECTION a1174d1e922ffd85eb767b7047fb84e3e3e0745e)
+[//]: # (START_SECTION da72adbd503e5fce324c8a801d90c1e0b38ca054)
+### Require Issue Template Usage
+
+> Commit: [da72adbd503e5fce324c8a801d90c1e0b38ca054](https://github.com/dOpensource/dsiprouter/commit/da72adbd503e5fce324c8a801d90c1e0b38ca054)  
+> Date: Wed, 15 Feb 2023 09:50:31 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION da72adbd503e5fce324c8a801d90c1e0b38ca054)
+[//]: # (START_SECTION cc8a46218083c85894e090228f3cd55eb5a238c7)
+### Update issue templates (#481)
+
+> Commit: [cc8a46218083c85894e090228f3cd55eb5a238c7](https://github.com/dOpensource/dsiprouter/commit/cc8a46218083c85894e090228f3cd55eb5a238c7)  
+> Date: Wed, 15 Feb 2023 09:27:23 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Merging
+
+
+---
+
+[//]: # (END_SECTION cc8a46218083c85894e090228f3cd55eb5a238c7)
+[//]: # (START_SECTION 799d68b0365eeda8c2d17811575b925a0023ae2a)
+### Merge PR435
+
+> Commit: [799d68b0365eeda8c2d17811575b925a0023ae2a](https://github.com/dOpensource/dsiprouter/commit/799d68b0365eeda8c2d17811575b925a0023ae2a)  
+> Date: Tue, 14 Feb 2023 11:36:04 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- resolves #435
+
+
+---
+
+[//]: # (END_SECTION 799d68b0365eeda8c2d17811575b925a0023ae2a)
+[//]: # (START_SECTION 9a82a5efab8b2d6a3bed6c0611888b0a191119c5)
+### Correction of CDR fields (#465)
+
+> Commit: [9a82a5efab8b2d6a3bed6c0611888b0a191119c5](https://github.com/dOpensource/dsiprouter/commit/9a82a5efab8b2d6a3bed6c0611888b0a191119c5)  
+> Date: Tue, 14 Feb 2023 07:53:03 -0800  
+> Author: VOICE1 (voice1me@gmail.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- * Update cdrs.sql
+
+- Adjusted field types to address bug [#464](https://github.com/dOpensource/dsiprouter/issues/464)
+
+- ---------
+
+- Co-authored-by: Tyler Moore <tmoore@goflyball.com>
+
+
+---
+
+[//]: # (END_SECTION 9a82a5efab8b2d6a3bed6c0611888b0a191119c5)
+[//]: # (START_SECTION 92d323dc7d6d82645ae7c25a4134679009dba4a6)
+### Update installing.rst
+
+> Commit: [92d323dc7d6d82645ae7c25a4134679009dba4a6](https://github.com/dOpensource/dsiprouter/commit/92d323dc7d6d82645ae7c25a4134679009dba4a6)  
+> Date: Sun, 5 Feb 2023 14:16:38 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 92d323dc7d6d82645ae7c25a4134679009dba4a6)
+[//]: # (START_SECTION 0b3ed50bbf81577558e79b77dd8b2c65f61ad034)
+### Update installing.rst
+
+> Commit: [0b3ed50bbf81577558e79b77dd8b2c65f61ad034](https://github.com/dOpensource/dsiprouter/commit/0b3ed50bbf81577558e79b77dd8b2c65f61ad034)  
+> Date: Sun, 5 Feb 2023 14:10:11 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0b3ed50bbf81577558e79b77dd8b2c65f61ad034)
+[//]: # (START_SECTION 203f8ea5953044b05b047a5565c36c23155cff43)
+### Update installing.rst
+
+> Commit: [203f8ea5953044b05b047a5565c36c23155cff43](https://github.com/dOpensource/dsiprouter/commit/203f8ea5953044b05b047a5565c36c23155cff43)  
+> Date: Sun, 5 Feb 2023 14:09:09 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 203f8ea5953044b05b047a5565c36c23155cff43)
+[//]: # (START_SECTION d2144a88b8ccba4dba32265d69782e65635b4997)
+### Update debian_install.rst
+
+> Commit: [d2144a88b8ccba4dba32265d69782e65635b4997](https://github.com/dOpensource/dsiprouter/commit/d2144a88b8ccba4dba32265d69782e65635b4997)  
+> Date: Sun, 5 Feb 2023 14:04:35 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Removing documentation about Debian 9 and combining the install documentation for Deb 10 and Deb 11
+
+
+---
+
+[//]: # (END_SECTION d2144a88b8ccba4dba32265d69782e65635b4997)
+[//]: # (START_SECTION af39173450198616f9e1f959f233f980a65a4d47)
+### Pinned the version of SQLAlchemy and Requests to 1.4.46 and 2.28.1, respectively
+
+> Commit: [af39173450198616f9e1f959f233f980a65a4d47](https://github.com/dOpensource/dsiprouter/commit/af39173450198616f9e1f959f233f980a65a4d47)  
+> Date: Sun, 5 Feb 2023 18:33:40 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION af39173450198616f9e1f959f233f980a65a4d47)
+[//]: # (START_SECTION 581d8ed65958db142c9c64e3d6f973327a626fcc)
 ### Fix Missing Kamailio Config Subst
 
-> Commit: [f479b3139e108d9222232ee56314c2b91dcbad26](https://github.com/dOpensource/dsiprouter/commit/f479b3139e108d9222232ee56314c2b91dcbad26)  
+> Commit: [581d8ed65958db142c9c64e3d6f973327a626fcc](https://github.com/dOpensource/dsiprouter/commit/581d8ed65958db142c9c64e3d6f973327a626fcc)  
 > Date: Sat, 10 Dec 2022 13:17:06 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2098,7 +2286,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION f479b3139e108d9222232ee56314c2b91dcbad26)
+[//]: # (END_SECTION 581d8ed65958db142c9c64e3d6f973327a626fcc)
 [//]: # (START_SECTION 3b02dc02eeaee8d4e8ca13741489c2e6f72de230)
 ### Increase CDR Field Sizes
 
