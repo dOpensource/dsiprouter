@@ -5,7 +5,7 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-04b832cedb6d19be637d4ee63eafbe2d37bbb842
+d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5
 bb58600d9294fbb5ce39c2e273155602d7981638
 681c2c432b735a3f67d6732264f50638b47b1552
 92d323dc7d6d82645ae7c25a4134679009dba4a6
@@ -2080,21 +2080,22 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 04b832cedb6d19be637d4ee63eafbe2d37bbb842)
-### Add PR Template
+[//]: # (START_SECTION d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5)
+### Update Installation Documentation
 
-> Commit: [04b832cedb6d19be637d4ee63eafbe2d37bbb842](https://github.com/dOpensource/dsiprouter/commit/04b832cedb6d19be637d4ee63eafbe2d37bbb842)  
-> Date: Wed, 15 Feb 2023 11:32:46 -0500  
+> Commit: [d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5](https://github.com/dOpensource/dsiprouter/commit/d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5)  
+> Date: Wed, 1 Mar 2023 11:59:41 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
 > Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
 
 
+- Resolves [#470](https://github.com/dOpensource/dsiprouter/issues/470)
 
 
 ---
 
-[//]: # (END_SECTION 04b832cedb6d19be637d4ee63eafbe2d37bbb842)
+[//]: # (END_SECTION d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5)
 [//]: # (START_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
 ### Require Issue Template Usage
 
