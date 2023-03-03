@@ -3,6 +3,9 @@
 # make sure the generated source files are imported instead of the template ones
 import socket
 import sys
+
+from util.pyasync import proc
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
@@ -2204,14 +2207,16 @@ def start_upgrade():
         #     # Disconnect from the child process
         #     os.waitpid(pid, 0)
 
+        # UpdateUtils.start_upgrade()
+        # start_upgrade_subprocess()
+
         process = subprocess.Popen(["/usr/local/bin/python3", "/opt/dsiprouter/resources/upgrade/0.71/upgrade.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output, error = process.communicate()
         # decode the output to string
         output_str = output.decode("utf-8")
         logging.info("Upgrade output: {}".format(output_str))
 
-        flash("Upgrade started. Please wait for the upgrade to complete. You will be redirected to the login page.",
-              "success")
+
         return displayUpgrade()
 
     except http_exceptions.HTTPException as ex:
@@ -2249,6 +2254,13 @@ def getUpgradeLog(msg=None):
         debugException(ex)
         error = "server"
         return showError(type=error)
+
+
+@proc
+def start_upgrade_subprocess():
+    logging.info("Starting upgrade process")
+    process = subprocess.Popen(["/usr/local/bin/python3", "/opt/dsiprouter/resources/upgrade/0.71/upgrade.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = process.communicate()
 
 
 # custom jinja filters

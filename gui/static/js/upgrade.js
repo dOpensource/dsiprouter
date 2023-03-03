@@ -1,20 +1,19 @@
 ;
 
-function getUpgradeInfo() {
-
-    $('#upgrade_form').hide();
-    $('#upgrade_output_row').show();
-
-    $.get("/upgrade/log", function (response) {
-        $("#upgrade_output").text(response);
-        $('#page_bottom')[0].scrollIntoView();
-        // $(document).scrollTop($(document).height());
-    });
-}
-
-
 (function (window, document) {
     'use strict';
+
+    function getUpgradeInfo() {
+
+        $('#upgrade_form').hide();
+        $('#upgrade_output_row').show();
+
+        $.get("/upgrade/log", function (response) {
+            $("#upgrade_output").text(response);
+            $('#page_bottom')[0].scrollIntoView();
+            // $(document).scrollTop($(document).height());
+        });
+    }
 
 
     $(document).ready(function () {

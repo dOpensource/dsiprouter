@@ -30,6 +30,10 @@ def start_upgrade():
         upgrade_database()
         upgrade_dsiprouter()
         logging.info("Upgrade complete.")
+
+        #TODO: Add git status diff checking
+
+
         sys.exit(0)
     else:
         logging.error("Version Check Failed. Please verify the version of the upgrade script and the version of the current installation")
