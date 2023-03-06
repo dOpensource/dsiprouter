@@ -27,9 +27,7 @@
 # - naming convention for system vs dsip config files is very confusing (make more explicit)
 # - cleanup dependency installs/checks, many of these could be condensed
 # - allow overwriting caller id per gwgroup / gw (setup in gui & kamcfg)
-# - DSIP_ID needs to be known before during install instead of resolved in dsiprouter.py startup
-#   our logic for adding a node to an existing cluster depended on this and DSIP_ID=None in settings.py
-#   this was changed to DSIP_ID=1 as the default due to the install script relying on this value
+# - update MAIL_DEFAULT_SENDER with system hostname on install
 #
 #============== Detailed Debugging Information =============#
 # - splits stdout, stderr, and trace streams into 3 files
@@ -62,8 +60,6 @@ export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 
 # settings used by script that are user configurable
 function setStaticScriptSettings() {
-    #================== STATIC_CONFIG_SETTINGS ===================#
-
     # Define some defaults and environment variables
     FLT_CARRIER=8
     FLT_PBX=9
@@ -81,6 +77,7 @@ function setStaticScriptSettings() {
     export PROJECT_DSIP_DEFAULTS_DIR="${DSIP_PROJECT_DIR}/kamailio/defaults"
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
+    # DEPRECATED v0.72: uuid replaced by DSIP_ID as unique identifier, marked for removal
     DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
@@ -194,15 +191,18 @@ function setDynamicScriptSettings() {
     export KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
     export KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE} 2>/dev/null)}
 
-    # grab credential max lengths from python files for later use
-    # we use perl bcuz python may not be installed when this is run
-    export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'HASHED_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
-        perl -pe 's%.*HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
-    export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 'AESCTR_CREDS_ENCODED_MAX_LEN' ${DSIP_PROJECT_DIR}/gui/util/security.py |
-        perl -pe 's%.*AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+([0-9]+).*%\1%')
-
     # set the email used to obtain LetsEncrypt Certificates
     export DSIP_SSL_EMAIL="admin@${EXTERNAL_FQDN}"
+
+	export DSIP_ID=$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})
+	if [[ "$DSIP_ID" == "None" ]] || [[ -z "$DSIP_ID" ]]; then
+		export DSIP_ID=$(cat /etc/machine-id | hashCreds)
+	fi
+
+	export HOMER_ID=$(getConfigAttrib 'HOMER_ID' ${DSIP_CONFIG_FILE})
+	if [[ "$HOMER_ID" == "None" ]] || [[ -z "$HOMER_ID" ]]; then
+		export HOMER_ID=$(cat /etc/machine-id | hashCreds -l 4 | dd if=/dev/stdin of=/dev/stdout bs=1 count=8 2>/dev/null | hextoint)
+	fi
 }
 
 # Check if we are on a VPS Cloud Instance
@@ -531,6 +531,8 @@ export -f reconfigureMysqlSystemdService
 
 # generate dynamic python config based on install settings
 function configurePythonSettings() {
+	setConfigAttrib 'DSIP_ID' "$DSIP_ID" ${DSIP_CONFIG_FILE} -qb
+	setConfigAttrib 'HOMER_ID' "$HOMER_ID" ${DSIP_CONFIG_FILE}
     setConfigAttrib 'KAM_KAMCMD_PATH' "$(type -p kamcmd)" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'KAM_CFG_PATH' "$SYSTEM_KAMAILIO_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'RTP_CFG_PATH' "$SYSTEM_RTPENGINE_CONFIG_FILE" ${DSIP_CONFIG_FILE} -q
@@ -559,10 +561,8 @@ function configurePythonSettings() {
 function updatePythonRuntimeSettings() {
     if (( ${DEBUG} == 1 )); then
         setConfigAttrib 'DEBUG' 'True' ${DSIP_CONFIG_FILE}
-        setConfigAttrib 'SQLALCHEMY_SQL_DEBUG' 'True' ${DSIP_CONFIG_FILE}
     else
         setConfigAttrib 'DEBUG' 'False' ${DSIP_CONFIG_FILE}
-        setConfigAttrib 'SQLALCHEMY_SQL_DEBUG' 'True' ${DSIP_CONFIG_FILE}
     fi
 }
 
@@ -640,10 +640,11 @@ function configureSSL() {
 # should be run after changing settings.py or change in network configurations
 # TODO: support configuring separate asterisk realtime db conns / clusters (would need separate setting in settings.py)
 function updateKamailioConfig() {
-    local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
-    local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+    #local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
+    #local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
     local DSIP_CLUSTER_SYNC=${DSIP_CLUSTER_SYNC:-$([[ "$(getConfigAttrib 'DSIP_CLUSTER_SYNC' ${DSIP_CONFIG_FILE})" == "True" ]] && echo '1' || echo '0')}
     local DSIP_VERSION=${DSIP_VERSION:-$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})}
+    local HOMER_ID=${HOMER_ID:-$(getConfigAttrib 'HOMER_ID' ${DSIP_CONFIG_FILE})}
     local DSIP_API_BASEURL="$(getConfigAttrib 'DSIP_API_PROTO' ${DSIP_CONFIG_FILE})://127.0.0.1:$(getConfigAttrib 'DSIP_API_PORT' ${DSIP_CONFIG_FILE})"
     local DSIP_API_TOKEN=${DSIP_API_TOKEN:-$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE} 2>/dev/null)}
     local DEBUG=${DEBUG:-$([[ "$(getConfigAttrib 'DEBUG' ${DSIP_CONFIG_FILE})" == "True" ]] && echo '1' || echo '0')}
@@ -702,6 +703,7 @@ function updateKamailioConfig() {
     setKamailioConfigSubst 'DSIP_ID' "${DSIP_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'HOMER_ID' "${HOMER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP6_ADDR' "${INTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -805,7 +807,7 @@ function updateKamailioStartup {
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig() {
     local INTERFACE=""
-    local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
+    local HOMER_ID=${HOMER_ID:-$(getConfigAttrib 'HOMER_ID' ${DSIP_CONFIG_FILE})}
     local RTP_PORT_MIN=${RTP_PORT_MIN:-$(getRtpengineConfigAttrib 'RTP_PORT_MIN' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
     local RTP_PORT_MAX=${RTP_PORT_MAX:-$(getRtpengineConfigAttrib 'RTP_PORT_MAX' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
 
@@ -826,8 +828,8 @@ function updateRtpengineConfig() {
     else
         INTERFACE="ipv4/${INTERNAL_IP}"
     fi
-    setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
+    setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     setRtpengineConfigAttrib 'port-min' "$RTP_PORT_MIN" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     setRtpengineConfigAttrib 'port-max' "$RTP_PORT_MAX" ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
@@ -836,7 +838,7 @@ function updateRtpengineConfig() {
         enableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         enableRtpengineConfigAttrib 'homer-id' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         setRtpengineConfigAttrib 'homer' "$HOMER_HEP_HOST" ${SYSTEM_RTPENGINE_CONFIG_FILE}
-        setRtpengineConfigAttrib 'homer-id' "$DSIP_ID" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        setRtpengineConfigAttrib 'homer-id' "$HOMER_ID" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     else
         disableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         disableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
@@ -1016,7 +1018,9 @@ function configureKamailioDB() {
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_cdrinfo.sql
 
     # Install schema for dsip_settings
-    envsubst < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_settings.sql |
+    perl -e "\$hlen='$HASHED_CREDS_ENCODED_MAX_LEN'; \$clen='$AESCTR_CREDS_ENCODED_MAX_LEN';" \
+    	-pe 's%\@HASHED_CREDS_ENCODED_MAX_LEN%$hlen%g; s%\@AESCTR_CREDS_ENCODED_MAX_LEN%$clen%g;' \
+    	${PROJECT_DSIP_DEFAULTS_DIR}/dsip_settings.sql |
         mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}"
 
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
@@ -1104,9 +1108,9 @@ function installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -y &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl python3
     elif cmdExists 'yum'; then
-        yum install -y curl wget gawk perl sed git bind-utils openssl
+        yum install -y curl wget gawk perl sed git bind-utils openssl python3
     fi
 
     # used by openssl rnd generator
@@ -1417,6 +1421,7 @@ function installDsiprouter() {
         ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
 
+    # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
     # Generate UUID unique to this dsiprouter instance
     uuidgen > ${DSIP_UUID_FILE}
 
@@ -2017,17 +2022,17 @@ function start() {
             updatePermissions
             # start the reverse proxy first
             systemctl start nginx
-            # keep dSIPRouter in the foreground, only used for debugging issues
+            # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
-            # Make sure process is still running
-            PID=$!
-            if ! ps -p ${PID} &>/dev/null; then
-                printerr "Unable to start dSIPRouter"
-                cleanupAndExit 1
-            else
-                pprint "dSIPRouter was started under pid ${PID}"
-                echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
-            fi
+#            # Make sure process is still running
+#            PID=$!
+#            if ! ps -p ${PID} &>/dev/null; then
+#                printerr "Unable to start dSIPRouter"
+#                cleanupAndExit 1
+#            else
+#                pprint "dSIPRouter was started under pid ${PID}"
+#                echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
+#            fi
         else
             # normal startup, fork dSIPRouter as background process
             systemctl start dsiprouter
@@ -2884,7 +2889,7 @@ function clusterInstall() { (
         chmod 0400 ${DSIP_PRIV_KEY}
 
         # run script command
-        DSIP_ID=$((i+1)) ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+        ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
 EOSSH
         if (( $? != 0 )); then
             printerr "Remote install on ${SSH_HOSTS[$i]} failed"
@@ -2953,6 +2958,7 @@ function updatePermissions() {
         # dsiprouter gui files readable and writable only by dsiprouter
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
+        # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
         # uuid file should only be readable by dsiprouter and kamailio
         chown dsiprouter:kamailio ${DSIP_UUID_FILE}
         chmod 440 ${DSIP_UUID_FILE}
@@ -4152,7 +4158,7 @@ function processCMD() {
     # 2. rtpengine
     for RUN_COMMAND in "${RUN_COMMANDS[@]}"; do
         $RUN_COMMAND
-        RETVAL+=$?
+        RETVAL=$((RETVAL + $?))
     done
     cleanupAndExit $RETVAL
 } #end of processCMD

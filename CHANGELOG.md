@@ -5,17 +5,21 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-8c51d279b3212e880be5e74360ed38a7795709aa
+2bba54fc6e7061893b205149d7c9172c97239cbf
+50348be3339f4d3f9be532dcd4164964992bdf17
 a1174d1e922ffd85eb767b7047fb84e3e3e0745e
 da72adbd503e5fce324c8a801d90c1e0b38ca054
 cc8a46218083c85894e090228f3cd55eb5a238c7
 799d68b0365eeda8c2d17811575b925a0023ae2a
 9a82a5efab8b2d6a3bed6c0611888b0a191119c5
+e354fbeb2467854770650aec659d98b27dc8d464
+98270d267c77f991b3aecf572d38c097fecac68b
 92d323dc7d6d82645ae7c25a4134679009dba4a6
 0b3ed50bbf81577558e79b77dd8b2c65f61ad034
 203f8ea5953044b05b047a5565c36c23155cff43
 d2144a88b8ccba4dba32265d69782e65635b4997
 af39173450198616f9e1f959f233f980a65a4d47
+2f31989a6b34be6d213a891c3725dde6c168f2fb
 581d8ed65958db142c9c64e3d6f973327a626fcc
 3b02dc02eeaee8d4e8ca13741489c2e6f72de230
 a787ec5760bf147c755950116a9e440d181a2e9d
@@ -2094,10 +2098,28 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 8c51d279b3212e880be5e74360ed38a7795709aa)
+[//]: # (START_SECTION 2bba54fc6e7061893b205149d7c9172c97239cbf)
+### Security Updates For WSGI Dependencies
+
+> Commit: [2bba54fc6e7061893b205149d7c9172c97239cbf](https://github.com/dOpensource/dsiprouter/commit/2bba54fc6e7061893b205149d7c9172c97239cbf)  
+> Date: Wed, 1 Mar 2023 14:31:56 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#484](https://github.com/dOpensource/dsiprouter/pull/484)
+- remove unused imports
+- update WSGI and Flask dependencies
+
+
+---
+
+[//]: # (END_SECTION 2bba54fc6e7061893b205149d7c9172c97239cbf)
+[//]: # (START_SECTION 50348be3339f4d3f9be532dcd4164964992bdf17)
 ### Fix Default Dispatcher Attributes
 
-> Commit: [8c51d279b3212e880be5e74360ed38a7795709aa](https://github.com/dOpensource/dsiprouter/commit/8c51d279b3212e880be5e74360ed38a7795709aa)  
+> Commit: [50348be3339f4d3f9be532dcd4164964992bdf17](https://github.com/dOpensource/dsiprouter/commit/50348be3339f4d3f9be532dcd4164964992bdf17)  
 > Date: Wed, 1 Mar 2023 14:22:23 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2109,7 +2131,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 8c51d279b3212e880be5e74360ed38a7795709aa)
+[//]: # (END_SECTION 50348be3339f4d3f9be532dcd4164964992bdf17)
 [//]: # (START_SECTION a1174d1e922ffd85eb767b7047fb84e3e3e0745e)
 ### Update Installation Documentation
 
@@ -2195,6 +2217,51 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 9a82a5efab8b2d6a3bed6c0611888b0a191119c5)
+[//]: # (START_SECTION e354fbeb2467854770650aec659d98b27dc8d464)
+### Integration Fixes
+
+> Commit: [e354fbeb2467854770650aec659d98b27dc8d464](https://github.com/dOpensource/dsiprouter/commit/e354fbeb2467854770650aec659d98b27dc8d464)  
+> Date: Thu, 9 Feb 2023 11:25:05 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- updated license manager UI table rows to scale properly
+- fix span and button resizing in license manager UI
+- fix redirection links to license manager UI
+- fix typos in domain route
+- fix `dsip_settings.sql` syntax highlighting
+- add deprecation notices where missing
+- fix typoes in `dsiprouter.sh`
+- update default character length in `security.py` to match `dsip_lib.sh`
+- fix typo in `dsip_lib.sh`
+- deprecate dsiprouter module compilation in debian, rhel, and amzn
+
+
+---
+
+[//]: # (END_SECTION e354fbeb2467854770650aec659d98b27dc8d464)
+[//]: # (START_SECTION 98270d267c77f991b3aecf572d38c097fecac68b)
+### Cleanup Branch / Final Fixes
+
+> Commit: [98270d267c77f991b3aecf572d38c097fecac68b](https://github.com/dOpensource/dsiprouter/commit/98270d267c77f991b3aecf572d38c097fecac68b)  
+> Date: Wed, 8 Feb 2023 11:56:33 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix hashing functions in `dsip_lib.sh`
+- fix `homer-id` format (based on machine-id)
+- fix outbound clearip default hostname
+- add WIP PBKDF2 bash-native implementation
+- cleanup branch for merging
+
+
+---
+
+[//]: # (END_SECTION 98270d267c77f991b3aecf572d38c097fecac68b)
 [//]: # (START_SECTION 92d323dc7d6d82645ae7c25a4134679009dba4a6)
 ### Update installing.rst
 
@@ -2271,6 +2338,39 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION af39173450198616f9e1f959f233f980a65a4d47)
+[//]: # (START_SECTION 2f31989a6b34be6d213a891c3725dde6c168f2fb)
+### Add Licensing Manager
+
+> Commit: [2f31989a6b34be6d213a891c3725dde6c168f2fb](https://github.com/dOpensource/dsiprouter/commit/2f31989a6b34be6d213a891c3725dde6c168f2fb)  
+> Date: Wed, 1 Feb 2023 15:41:03 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add license management REST api
+- add license management GUI routes
+- update sqlalchemy to version 2.0.0
+- update license checking logic to use new api
+- fix slow reload in systemd services
+- remove deprecated sqlalchemy settings
+- update credential hashing to use standard salt lengths
+- fix edge cases where credential hashing failed
+- add native openssl hashing in bash scripts
+- update all raw sql queries to be parameterized
+- update secrets checking to combat padding attacks
+- add various utility functions
+- update exceptions to show full stack trace by default
+- improve request data handling to handle edge cases
+- update `DSIP_ID` to be machine specific
+- add useful debug output to signal handlers
+- add safeguards against improper app teardown
+- fix missing port and charset in DB connection URI
+
+
+---
+
+[//]: # (END_SECTION 2f31989a6b34be6d213a891c3725dde6c168f2fb)
 [//]: # (START_SECTION 581d8ed65958db142c9c64e3d6f973327a626fcc)
 ### Fix Missing Kamailio Config Subst
 

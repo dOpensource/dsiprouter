@@ -1,18 +1,18 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import os
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, String
-from sqlalchemy.orm import mapper, sessionmaker, scoped_session
-from sqlalchemy import exc as sql_exceptions
+from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions
+from sqlalchemy.orm import registry, sessionmaker, scoped_session
+from sqlalchemy.sql import text
 import settings
 from shared import IO, debugException, dictToStrFields
 from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
-
 
 if settings.KAM_DB_TYPE == "mysql":
     try:
@@ -29,6 +29,7 @@ if settings.KAM_DB_TYPE == "mysql":
                 if settings.DEBUG:
                     debugException(ex)
                 raise
+
 
 class Gateways(object):
     """
@@ -54,6 +55,7 @@ class Gateways(object):
 
     pass
 
+
 class GatewayGroups(object):
     """
     Schema for dr_gw_lists table\n
@@ -65,6 +67,7 @@ class GatewayGroups(object):
         self.gwlist = ",".join(str(gw) for gw in gwlist)
 
     pass
+
 
 class Address(object):
     """
@@ -87,6 +90,7 @@ class Address(object):
 
     pass
 
+
 class InboundMapping(object):
     """
     Partial Schema for modified version of dr_rules table\n
@@ -105,6 +109,7 @@ class InboundMapping(object):
 
     pass
 
+
 class OutboundRoutes(object):
     """
     Schema for dr_rules table\n
@@ -122,6 +127,7 @@ class OutboundRoutes(object):
 
     pass
 
+
 class CustomRouting(object):
     """
     Schema for dr_custom_rules table\n
@@ -133,6 +139,7 @@ class CustomRouting(object):
         self.description = description
 
     pass
+
 
 class dSIPLCR(object):
     """
@@ -151,6 +158,7 @@ class dSIPLCR(object):
 
     pass
 
+
 class dSIPMultiDomainMapping(object):
     """
     Schema for Multi-Tenant PBX\n
@@ -165,7 +173,6 @@ class dSIPMultiDomainMapping(object):
         TYPE_FUSIONPBX_CLUSTER = 2
         TYPE_FREEPBX = 3
 
-
     def __init__(self, pbx_id, db_host, db_username, db_password, domain_list=None, attr_list=None, type=0, enabled=1):
         self.pbx_id = pbx_id
         self.db_host = db_host
@@ -177,6 +184,7 @@ class dSIPMultiDomainMapping(object):
         self.enabled = enabled
 
     pass
+
 
 class dSIPDomainMapping(object):
     """
@@ -206,6 +214,7 @@ class dSIPDomainMapping(object):
 
     pass
 
+
 class Subscribers(object):
     """
     Schema for subscriber table\n
@@ -223,6 +232,7 @@ class Subscribers(object):
 
     pass
 
+
 class dSIPLeases(object):
     """
     Schema for dsip_endpoint_leases table\n
@@ -236,6 +246,7 @@ class dSIPLeases(object):
         self.expiration = t.strftime('%Y-%m-%d %H:%M:%S')
 
     pass
+
 
 class dSIPMaintModes(object):
     """
@@ -251,6 +262,7 @@ class dSIPMaintModes(object):
 
     pass
 
+
 class dSIPCallLimits(object):
     """
     Schema for dsip_calllimit table\n
@@ -263,6 +275,7 @@ class dSIPCallLimits(object):
         self.createdate = datetime.now()
 
     pass
+
 
 class dSIPNotification(object):
     """
@@ -285,6 +298,7 @@ class dSIPNotification(object):
 
     pass
 
+
 class dSIPHardFwd(object):
     """
     Schema for dsip_hardfwd table\n
@@ -296,6 +310,7 @@ class dSIPHardFwd(object):
         self.dr_groupid = dr_groupid
 
     pass
+
 
 class dSIPCDRInfo(object):
     """
@@ -310,6 +325,7 @@ class dSIPCDRInfo(object):
 
     pass
 
+
 class dSIPFailFwd(object):
     """
     Schema for dsip_failfwd table\n
@@ -322,13 +338,13 @@ class dSIPFailFwd(object):
 
     pass
 
+
 class dSIPCertificates(object):
     """
     Schema for dsip_certificates table\n
     """
 
     def __init__(self, domain, type, email, cert, key):
-
         self.domain = domain
         self.type = type
         self.email = email
@@ -336,6 +352,7 @@ class dSIPCertificates(object):
         self.key = key
 
     pass
+
 
 class dSIPDNIDEnrichment(object):
     """
@@ -352,6 +369,7 @@ class dSIPDNIDEnrichment(object):
 
     pass
 
+
 class UAC(object):
     """
     Schema for uacreg table\n
@@ -366,7 +384,7 @@ class UAC(object):
         REG_IN_PROGRESS_AUTH = 8
         REG_INITIALIZED = 16
 
-    def __init__(self, uuid, username="", password="", realm="", auth_username="",auth_proxy="", local_domain="", remote_domain="", flags=0):
+    def __init__(self, uuid, username="", password="", realm="", auth_username="", auth_proxy="", local_domain="", remote_domain="", flags=0):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
@@ -389,6 +407,7 @@ class UAC(object):
 
     pass
 
+
 class Domain(object):
     """
     Schema for domain table\n
@@ -403,6 +422,7 @@ class Domain(object):
         self.last_modified = last_modified
 
     pass
+
 
 class DomainAttrs(object):
     """
@@ -424,6 +444,7 @@ class DomainAttrs(object):
 
     pass
 
+
 class Dispatcher(object):
     """
     Schema for dispatcher table\n
@@ -440,12 +461,14 @@ class Dispatcher(object):
 
     pass
 
+
 # TODO: create class for dsip_settings table
 
 class dSIPUser(object):
     """
     Schema for the dSIPROuter User table
     """
+
     def __init__(self, firstname, lastname, username, password, roles, domains, token, token_expiration):
         self.firstname = firstname
         self.lastname = lastname
@@ -455,10 +478,11 @@ class dSIPUser(object):
         self.domains = domains
         self.token = token
         self.token_expiration = token_expiration
+
     pass
 
 
-def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_host=None, db_port=None, db_name=None):
+def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_host=None, db_port=None, db_name=None, db_charset='utf8mb4'):
     """
     Get any and all DB Connection URI's
     Facilitates HA DB Server connections through multiple host's defined in settings
@@ -485,26 +509,26 @@ def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_hos
     if db_name is None:
         db_name = os.getenv('KAM_DB_NAME', settings.KAM_DB_NAME) if settings.DEBUG else settings.KAM_DB_NAME
 
-    if db_type != "":
-        # need to decrypt password
-        if isinstance(db_pass, bytes):
-            db_pass = AES_CTR.decrypt(db_pass).decode('utf-8')
-        # formatting for driver
-        if len(db_driver) > 0:
-            db_driver = '+{}'.format(db_driver)
-        # string template
-        db_uri_str = db_type + db_driver + "://" + db_user + ":" + db_pass + "@" + "{host}" + "/" + db_name
-        # for cluster of DB add all hosts
-        if isinstance(db_host, list):
-            for host in db_host:
-                uri_list.append(db_uri_str.format(host=host))
-        else:
-            uri_list.append(db_uri_str.format(host=db_host))
+    # need to decrypt password
+    if isinstance(db_pass, bytes):
+        db_pass = AES_CTR.decrypt(db_pass).decode('utf-8')
+    # formatting for driver
+    if len(db_driver) > 0:
+        db_driver = '+{}'.format(db_driver)
+    # string template
+    db_uri_str = db_type + db_driver + "://" + db_user + ":" + db_pass + "@" + "{host}" + ":" + db_port + "/" + db_name + "?" + db_charset
+    # for cluster of DB add all hosts
+    if isinstance(db_host, list):
+        for host in db_host:
+            uri_list.append(db_uri_str.format(host=host))
+    else:
+        uri_list.append(db_uri_str.format(host=db_host))
 
     if settings.DEBUG:
         IO.printdbg('createDBURI() returned: [{}]'.format(','.join('"{0}"'.format(uri) for uri in uri_list)))
 
     return uri_list
+
 
 def createValidEngine(uri_list):
     """
@@ -524,8 +548,8 @@ def createValidEngine(uri_list):
     for conn_uri in uri_list:
         try:
             db_engine = create_engine(conn_uri,
-                echo=settings.SQLALCHEMY_SQL_DEBUG,
-                echo_pool=settings.SQLALCHEMY_SQL_DEBUG,
+                echo=settings.DEBUG,
+                echo_pool=settings.DEBUG,
                 pool_recycle=300,
                 pool_size=10,
                 isolation_level="READ UNCOMMITTED",
@@ -547,6 +571,7 @@ def createValidEngine(uri_list):
     except:
         raise Exception(errors)
 
+
 def createSessionMaker():
     """
     This method uses a singleton pattern and returns SessionLoader if created
@@ -560,33 +585,33 @@ def createSessionMaker():
     else:
         db_engine = globals()['db_engine']
 
-    metadata = MetaData(db_engine)
+    mapper = registry(metadata=MetaData(schema=db_engine.url.database))
 
-    dr_gateways = Table('dr_gateways', metadata, autoload=True)
-    address = Table('address', metadata, autoload=True)
-    outboundroutes = Table('dr_rules', metadata, autoload=True)
-    inboundmapping = Table('dr_rules', metadata, autoload=True)
-    subscriber = Table('subscriber', metadata, autoload=True)
-    dsip_domain_mapping = Table('dsip_domain_mapping', metadata, autoload=True)
-    dsip_multidomain_mapping = Table('dsip_multidomain_mapping', metadata, autoload=True)
-    # fusionpbx_mappings = Table('dsip_fusionpbx_mappings', metadata, autoload=True)
-    dsip_lcr = Table('dsip_lcr', metadata, autoload=True)
-    uacreg = Table('uacreg', metadata, autoload=True)
-    dr_gw_lists = Table('dr_gw_lists', metadata, autoload=True)
-    # dr_groups = Table('dr_groups', metadata, autoload=True)
-    domain = Table('domain', metadata, autoload=True)
-    domain_attrs = Table('domain_attrs', metadata, autoload=True)
-    dispatcher = Table('dispatcher', metadata, autoload=True)
-    dsip_endpoint_lease = Table('dsip_endpoint_lease', metadata, autoload=True)
-    dsip_maintmode = Table('dsip_maintmode', metadata, autoload=True)
-    dsip_calllimit = Table('dsip_calllimit', metadata, autoload=True)
-    dsip_notification = Table('dsip_notification', metadata, autoload=True)
-    dsip_hardfwd = Table('dsip_hardfwd', metadata, autoload=True)
-    dsip_failfwd = Table('dsip_failfwd', metadata, autoload=True)
-    dsip_cdrinfo = Table('dsip_cdrinfo', metadata, autoload=True)
-    dsip_certificates = Table('dsip_certificates', metadata, autoload=True)
-    dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', metadata, autoload=True)
-    dsip_user = Table('dsip_user', metadata, autoload=True)
+    dr_gateways = Table('dr_gateways', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    address = Table('address', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    outboundroutes = Table('dr_rules', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    inboundmapping = Table('dr_rules', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    subscriber = Table('subscriber', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_domain_mapping = Table('dsip_domain_mapping', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_multidomain_mapping = Table('dsip_multidomain_mapping', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    # fusionpbx_mappings = Table('dsip_fusionpbx_mappings', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_lcr = Table('dsip_lcr', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    uacreg = Table('uacreg', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dr_gw_lists = Table('dr_gw_lists', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    # dr_groups = Table('dr_groups', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    domain = Table('domain', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    domain_attrs = Table('domain_attrs', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dispatcher = Table('dispatcher', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_endpoint_lease = Table('dsip_endpoint_lease', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_maintmode = Table('dsip_maintmode', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_calllimit = Table('dsip_calllimit', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_notification = Table('dsip_notification', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_hardfwd = Table('dsip_hardfwd', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_failfwd = Table('dsip_failfwd', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_cdrinfo = Table('dsip_cdrinfo', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_certificates = Table('dsip_certificates', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_user = Table('dsip_user', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -597,38 +622,39 @@ def createSessionMaker():
     #                dr_gw_lists_alias.c.drlist_id == dr_groups.c.id,
     #                dr_gw_lists_alias.c.drlist_description == dr_groups.c.description)
 
-    mapper(Gateways, dr_gateways)
-    mapper(Address, address)
-    mapper(InboundMapping, inboundmapping)
-    mapper(OutboundRoutes, outboundroutes)
-    mapper(dSIPDomainMapping, dsip_domain_mapping)
-    mapper(dSIPMultiDomainMapping, dsip_multidomain_mapping)
-    mapper(Subscribers, subscriber)
-    # mapper(CustomRouting, customrouting)
-    mapper(dSIPLCR, dsip_lcr)
-    mapper(UAC, uacreg)
-    mapper(GatewayGroups, dr_gw_lists)
-    mapper(Domain, domain)
-    mapper(DomainAttrs, domain_attrs)
-    mapper(Dispatcher, dispatcher)
-    mapper(dSIPLeases, dsip_endpoint_lease)
-    mapper(dSIPMaintModes, dsip_maintmode)
-    mapper(dSIPCallLimits, dsip_calllimit)
-    mapper(dSIPNotification, dsip_notification)
-    mapper(dSIPHardFwd, dsip_hardfwd)
-    mapper(dSIPFailFwd, dsip_failfwd)
-    mapper(dSIPCDRInfo, dsip_cdrinfo)
-    mapper(dSIPCertificates, dsip_certificates)
-    mapper(dSIPDNIDEnrichment, dsip_dnid_enrichment)
-    mapper(dSIPUser, dsip_user)
+    mapper.map_imperatively(Gateways, dr_gateways)
+    mapper.map_imperatively(Address, address)
+    mapper.map_imperatively(InboundMapping, inboundmapping)
+    mapper.map_imperatively(OutboundRoutes, outboundroutes)
+    mapper.map_imperatively(dSIPDomainMapping, dsip_domain_mapping)
+    mapper.map_imperatively(dSIPMultiDomainMapping, dsip_multidomain_mapping)
+    mapper.map_imperatively(Subscribers, subscriber)
+    # mapper.map_imperatively(CustomRouting, customrouting)
+    mapper.map_imperatively(dSIPLCR, dsip_lcr)
+    mapper.map_imperatively(UAC, uacreg)
+    mapper.map_imperatively(GatewayGroups, dr_gw_lists)
+    mapper.map_imperatively(Domain, domain)
+    mapper.map_imperatively(DomainAttrs, domain_attrs)
+    mapper.map_imperatively(Dispatcher, dispatcher)
+    mapper.map_imperatively(dSIPLeases, dsip_endpoint_lease)
+    mapper.map_imperatively(dSIPMaintModes, dsip_maintmode)
+    mapper.map_imperatively(dSIPCallLimits, dsip_calllimit)
+    mapper.map_imperatively(dSIPNotification, dsip_notification)
+    mapper.map_imperatively(dSIPHardFwd, dsip_hardfwd)
+    mapper.map_imperatively(dSIPFailFwd, dsip_failfwd)
+    mapper.map_imperatively(dSIPCDRInfo, dsip_cdrinfo)
+    mapper.map_imperatively(dSIPCertificates, dsip_certificates)
+    mapper.map_imperatively(dSIPDNIDEnrichment, dsip_dnid_enrichment)
+    mapper.map_imperatively(dSIPUser, dsip_user)
 
-    # mapper(GatewayGroups, gw_join, properties={
+    # mapper.map_imperatively(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],
     #     'description': [dr_groups.c.description, dr_gw_lists_alias.c.drlist_description],
     # })
 
     loadSession = scoped_session(sessionmaker(bind=db_engine))
     return loadSession
+
 
 class DummySession():
     """
@@ -638,66 +664,120 @@ class DummySession():
     """
 
     @staticmethod
-    def noop(*args, **kwargs):
-        return None
     def __contains__(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def __iter__(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def add(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def add_all(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def begin(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def begin_nested(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def close(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def commit(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def connection(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def delete(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def execute(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def expire(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def expire_all(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def expunge(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def expunge_all(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def flush(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def get_bind(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def is_modified(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def bulk_save_objects(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def bulk_insert_mappings(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def bulk_update_mappings(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def merge(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def query(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def refresh(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def rollback(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def scalar(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def remove(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def configure(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
     def query_property(self, *args, **kwargs):
-        DummySession.noop(*args, **kwargs)
+        pass
+
+
+def updateDsipSettingsTable(fields):
+    """
+    Update the dsip_settings table using our stored procedure
+
+    :param fields:  columns/values to update
+    :type fields:   dict
+    :return:        None
+    :rtype:         None
+    :raises:        sql_exceptions.SQLAlchemyError
+    """
+
+    db = DummySession()
+    try:
+        field_mapping = ', '.join(['{}=:{}'.format(x, x) for x in fields.keys()])
+        db = SessionLoader()
+        db.execute(
+            text('UPDATE dsip_settings SET {} WHERE DSIP_ID=:dsip_id'.format(field_mapping)),
+            dict(fields, dsip_id=settings.DSIP_ID)
+        )
+        db.commit()
+    except sql_exceptions.SQLAlchemyError:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
 
 # TODO: we should be creating a queue of the valid db_engines
 # from there we can perform round robin connections and more advanced clustering

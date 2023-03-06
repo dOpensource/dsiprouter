@@ -27,6 +27,14 @@ export DSIP_SYSTEM_CONFIG_DIR=${DSIP_SYSTEM_CONFIG_DIR:-"/etc/dsiprouter"}
 DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
+# reuse credential settings from python files (exported for later usage)
+SALT_LEN=$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+DK_LEN_DEFAULT=$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+CREDS_MAX_LEN=$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+HASH_ITERATIONS=$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
 
@@ -87,6 +95,15 @@ function toupper() {
     fi
 }
 export -f toupper
+
+function hextoint() {
+	if [[ -t 0 ]]; then
+		printf '%d' "0x$1" 2>/dev/null
+	else
+		printf '%d' "0x$(</dev/stdin)" 2>/dev/null
+	fi
+}
+export -f hextoint
 
 ######################################
 # Traceback / Debug helper functions #
@@ -152,6 +169,7 @@ function getConfigAttrib() {
 }
 export -f getConfigAttrib
 
+# TODO: openssl native version
 # $1 == attribute name
 # $2 == python config file
 # output: attribute value decrypted
@@ -171,6 +189,7 @@ function decryptConfigAttrib() {
 }
 export -f decryptConfigAttrib
 
+# TODO: openssl native version
 # $1 == attribute name
 # $2 == kamailio config file
 function enableKamailioConfigAttrib() {
@@ -1107,8 +1126,31 @@ export -f parseDBConnURI
 # $1 == number of characters to get
 # output: string of random printable characters
 function urandomChars() {
-    local LEN="$1"
-    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w ${LEN} 2>/dev/null | head -n 1
+	local LEN=32 FILTER="a-zA-Z0-9"
+
+    while (( $# > 0 )); do
+    	# last arg is length
+        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
+			LEN="$1"
+			shift
+            break
+        fi
+
+        case "$1" in
+        	# user defined salt
+            -f)
+                shift
+                FILTER="$1"
+                shift
+                ;;
+			# not valid option skip
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    tr -dc "$FILTER" </dev/urandom | dd if=/dev/stdin of=/dev/stdout bs=1 count="$LEN" 2>/dev/null
 }
 export -f urandomChars
 
@@ -1149,3 +1191,55 @@ function sendKamCmd() {
     curl -s -m 3 -X GET -d '{"method": "'"${CMD}"'", "jsonrpc": "2.0", "id": 1, "params": '"${PARAMS}"'}' ${KAM_API_URL}
 }
 export -f sendKamCmd
+
+# TODO: input validation
+# TODO: swap with bash native version?
+function hashCreds() {
+	local CREDS SALT DK_LEN
+	local PYTHON=${PYTHON_CMD:-python3}
+
+	# grab credentials from stdin if provided
+	if [[ ! -t 0 ]]; then
+		CREDS=$(</dev/stdin)
+	fi
+
+    while (( $# > 0 )); do
+    	# last arg is credentials
+        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
+			CREDS="$1"
+			shift
+            break
+        fi
+
+        case "$1" in
+        	# user defined salt
+            -s)
+                shift
+                SALT="$1"
+                shift
+                ;;
+        	# user defined derived key length
+            -l)
+                shift
+                DK_LEN="$1"
+                shift
+                ;;
+			# not valid option skip
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    # defaults if not set by args
+    SALT=${SALT:-$(urandomChars -f 'a-fA-F0-9' $SALT_LEN)}
+    DK_LEN=${DK_LEN:-$DK_LEN_DEFAULT}
+
+	# python native version
+	# no external dependencies other than vanilla python3
+	${PYTHON} -c "import hashlib,binascii; print(binascii.hexlify(hashlib.pbkdf2_hmac('sha512', '$CREDS'.encode('utf-8'), '$SALT'.encode('utf-8'), iterations=$HASH_ITERATIONS, dklen=$DK_LEN)).decode('utf-8'));"
+	# bash native version
+	# currently too slow for production usage
+	#${DSIP_PROJECT_DIR}/dsiprouter/pbkdf2.sh 'sha512' "$CREDS" "$SALT" "$HASH_ITERATIONS" 4
+}
+export -f hashCreds

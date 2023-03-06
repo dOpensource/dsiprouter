@@ -1,0 +1,46 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}License Required{% endblock %}
+
+{% block custom_css %}
+{% endblock %}
+
+{% block body %}
+
+  {% set dopensource_url = 'https://dopensource.com' %}
+  {% set dsiprouter_licenses_url = dopensource_url + "/product-category/dsiprouter/" %}
+
+  <div class="wrapper-vertical centered">
+    <div class="alert alert-danger container">
+      <h2>Acesss Denied: License Required</h2>
+    </div>
+
+    {% if msg is not none %}
+      <div class="alert alert-info container" style="padding: 10px 10px">
+        <p>Detailed Information: <b>{{ msg }}</b></p>
+      </div>
+    {% endif %}
+
+    <br>
+
+    <div class="alert container">
+      <p>A license is required to access this resource.</p>
+      <p>You can purchase licenses at <a href="{{ dsiprouter_licenses_url }}">dopensource.com</a>.</p>
+      <p>Once purchased, activate the license key using the dSIPRouter <a href="/licensing">license manager</a>.</p>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block custom_js %}
+  <script type="application/javascript">
+    /* fix section padding */
+    $('.wrap .content .content-inner').css({
+      'padding': 0
+    });
+    /* fix alert text color */
+    $('.alert > *').css({
+      'color': '#000000'
+    });
+  </script>
+{% endblock %}
