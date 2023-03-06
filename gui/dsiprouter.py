@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, requests
+import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
@@ -14,7 +14,7 @@ from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
-from sqlalchemy.sql import text, bindparam
+from sqlalchemy.sql import text
 from sqlalchemy.orm.session import close_all_sessions
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
