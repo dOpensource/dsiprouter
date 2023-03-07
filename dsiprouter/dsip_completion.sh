@@ -19,7 +19,9 @@ _dsiprouter() {
         start
         stop
         restart
+        chown
         configurekam
+        configuredsip
         renewsslcert
 	    configuresslcert
         installmodules
@@ -34,14 +36,16 @@ _dsiprouter() {
     )
     # available long options (with value) for each cmd
     declare -A llopts=(
-        [install]='--database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev='
+        [install]='--database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev= --dmz= --network-mode='
         [uninstall]=''
         [clusterinstall]=''
         [upgrade]='--dsip-clusterid= --release='
         [start]=''
         [stop]=''
         [restart]=''
+        [chown]=''
         [configurekam]=''
+        [configuredsip]=''
         [renewsslcert]=''
         [configuresslcert]=''
         [installmodules]=''
@@ -63,7 +67,9 @@ _dsiprouter() {
         [start]='--all --kamailio --dsiprouter --rtpengine'
         [stop]='--all --kamailio --dsiprouter --rtpengine'
         [restart]='--all --kamailio --dsiprouter --rtpengine'
+        [chown]=''
         [configurekam]=''
+        [configuredsip]=''
         [renewsslcert]=''
         [configuresslcert]='--force'
         [installmodules]=''
@@ -76,16 +82,18 @@ _dsiprouter() {
         [-v]=''
         [--version]=''
     )
-    # available short options (without value) for each cmd
+    # available short options (with or without value) for each cmd
     declare -A sopts=(
-        [install]='-debug -all -kam -dsip -rtp -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev'
+        [install]='-debug -all -kam -dsip -rtp -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev -dmz -netm -homer'
         [uninstall]='-debug -all -kam -dsip -rtp'
         [clusterinstall]='-debug'
         [upgrade]='-debug'
         [start]='-debug -all -kam -dsip -rtp'
         [stop]='-debug -all -kam -dsip -rtp'
         [restart]='-debug -all -kam -dsip -rtp'
+        [chown]='-debug -certs -dnsmasq -nginx -kamailio -dsiprouter -rtpengine'
         [configurekam]='-debug'
+        [configuredsip]='-debug'
         [renewsslcert]='-debug'
         [configuresslcert]='-debug -f'
         [installmodules]='-debug'

@@ -66,14 +66,18 @@ CREATE TABLE dsip_settings
   HOMER_ID                INT                                                       NOT NULL,
   HOMER_HEP_HOST          VARCHAR(255)                                              NOT NULL DEFAULT '',
   HOMER_HEP_PORT          INT                                                       NOT NULL DEFAULT 9060,
+  NETWORK_MODE            INT                                                       NOT NULL DEFAULT 0,
   IPV6_ENABLED            TINYINT(1)                                                NOT NULL DEFAULT 0,
   INTERNAL_IP_ADDR        VARCHAR(255)                                              NOT NULL DEFAULT '',
   INTERNAL_IP_NET         VARCHAR(255)                                              NOT NULL DEFAULT '',
   INTERNAL_IP6_ADDR       VARCHAR(255)                                              NOT NULL DEFAULT '',
   INTERNAL_IP6_NET        VARCHAR(255)                                              NOT NULL DEFAULT '',
+  INTERNAL_FQDN           VARCHAR(255)                                              NOT NULL DEFAULT '',
   EXTERNAL_IP_ADDR        VARCHAR(255)                                              NOT NULL DEFAULT '',
   EXTERNAL_IP6_ADDR       VARCHAR(255)                                              NOT NULL DEFAULT '',
   EXTERNAL_FQDN           VARCHAR(255)                                              NOT NULL DEFAULT '',
+  PUBLIC_IFACE            VARCHAR(255)                                              NOT NULL DEFAULT '',
+  PRIVATE_IFACE           VARCHAR(255)                                              NOT NULL DEFAULT '',
   UPLOAD_FOLDER           VARCHAR(255)                                              NOT NULL DEFAULT '/tmp',
   MAIL_SERVER             VARCHAR(255)                                              NOT NULL DEFAULT 'smtp.gmail.com',
   MAIL_PORT               INT                                                       NOT NULL DEFAULT 587,
@@ -100,14 +104,18 @@ CREATE TABLE dsip_settings
 -- DSIP_CLUSTER_ID is unchanged
 -- DSIP_CLUSTER_SYNC is unchanged
 -- HOMER_ID is unchanged, it is associated to a single node
+-- NETWORK_MODE is unchanged
 -- IPV6_ENABLED is unchanged
 -- INTERNAL_IP_ADDR is unchanged
 -- INTERNAL_IP_NET is unchanged
 -- INTERNAL_IP6_ADDR is unchanged
 -- INTERNAL_IP6_NET is unchanged
+-- INTERNAL_FQDN is unchanged
 -- EXTERNAL_IP_ADDR is unchanged
 -- EXTERNAL_IP6_ADDR is unchanged
 -- EXTERNAL_FQDN is unchanged
+-- PUBLIC_IFACE is unchanged
+-- PRIVATE_IFACE is unchanged
 -- DSIP_CORE_LICENSE is unchanged, it is associated to a single node
 -- DSIP_STIRSHAKEN_LICENSE is unchanged, it is associated to a single node
 -- DSIP_MSTEAMS_LICENSE is unchanged, it is associated to a single node
@@ -170,14 +178,18 @@ CREATE PROCEDURE update_dsip_settings(
   IN NEW_HOMER_ID INT,
   IN NEW_HOMER_HEP_HOST VARCHAR(255),
   IN NEW_HOMER_HEP_PORT INT,
+  IN NEW_NETWORK_MODE INT,
   IN NEW_IPV6_ENABLED TINYINT(1),
   IN NEW_INTERNAL_IP_ADDR VARCHAR(255),
   IN NEW_INTERNAL_IP_NET VARCHAR(255),
   IN NEW_INTERNAL_IP6_ADDR VARCHAR(255),
   IN NEW_INTERNAL_IP6_NET VARCHAR(255),
+  IN NEW_INTERNAL_FQDN VARCHAR(255),
   IN NEW_EXTERNAL_IP_ADDR VARCHAR(255),
   IN NEW_EXTERNAL_IP6_ADDR VARCHAR(255),
   IN NEW_EXTERNAL_FQDN VARCHAR(255),
+  IN NEW_PUBLIC_IFACE VARCHAR(255),
+  IN NEW_PRIVATE_IFACE VARCHAR(255),
   IN NEW_UPLOAD_FOLDER VARCHAR(255),
   IN NEW_MAIL_SERVER VARCHAR(255),
   IN NEW_MAIL_PORT INT,
@@ -252,14 +264,18 @@ BEGIN
           NEW_HOMER_ID,
           NEW_HOMER_HEP_HOST,
           NEW_HOMER_HEP_PORT,
+          NEW_NETWORK_MODE,
           NEW_IPV6_ENABLED,
           NEW_INTERNAL_IP_ADDR,
           NEW_INTERNAL_IP_NET,
           NEW_INTERNAL_IP6_ADDR,
           NEW_INTERNAL_IP6_NET,
+          NEW_INTERNAL_FQDN,
           NEW_EXTERNAL_IP_ADDR,
           NEW_EXTERNAL_IP6_ADDR,
           NEW_EXTERNAL_FQDN,
+          NEW_PUBLIC_IFACE,
+          NEW_PRIVATE_IFACE,
           NEW_UPLOAD_FOLDER,
           NEW_MAIL_SERVER,
           NEW_MAIL_PORT,

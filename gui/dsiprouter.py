@@ -2287,38 +2287,58 @@ def injectReloadRequired():
 def injectSettings():
     return dict(settings=settings)
 
+# DEPRECATED: now done by dsiprouter.sh (CLI commands run by dsip-init.service), marked for removal in v0.80
+# def getDynamicNetworkSettings():
+#     """
+#     Get the network settings depending on the state of NETWORK_MODE when called
+#
+#     :return:    network settings or empty dict
+#     :rtype:     dict
+#     """
+#
+#     if settings.NETWORK_MODE == 1:
+#         return {}
+#     elif settings.NETWORK_MODE == 2:
+#         raise NotImplementedError()
+#
+#     int_ip = getInternalIP('4')
+#     int_ip6 = getInternalIP('6')
+#     int_net = getInternalCIDR('4')
+#     int_net6 = getInternalCIDR('6')
+#     int_fqdn = socket.getfqdn()
+#     ext_ip = getExternalIP('4')
+#     ext_ip6 = getExternalIP('6')
+#     ext_fqdn = ipToHost(ext_ip)
+#     if os.path.exists('/proc/net/if_inet6'):
+#         try:
+#             with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
+#                 s.connect((int_ip6, 0))
+#             ipv6_enabled = True
+#         except:
+#             ipv6_enabled = False
+#     else:
+#         ipv6_enabled = False
+#
+#     return {
+#         'IPV6_ENABLED': ipv6_enabled,
+#         'INTERNAL_IP_ADDR': int_ip if int_ip is not None else '',
+#         'INTERNAL_IP_NET': int_net if int_net is not None else '',
+#         'INTERNAL_IP6_ADDR': int_ip6 if int_ip6 is not None else '',
+#         'INTERNAL_IP6_NET': int_net6 if int_net6 is not None else '',
+#         'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip if int_ip is not None else '',
+#         'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6 if int_ip6 is not None else '',
+#         'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn if int_fqdn is not None else ''
+#     }
 
-# TODO: deprecated, using bjoern for WSGI server
-# class CustomServer(Server):
-#     """ Customize the Flask server with our settings """
-#
-#     def __init__(self):
-#         super().__init__(
-#             host=settings.DSIP_HOST,
-#             port=settings.DSIP_PORT
-#         )
-#
-#         if len(settings.DSIP_SSL_CERT) > 0 and len(settings.DSIP_SSL_KEY) > 0:
-#            self.ssl_crt = settings.DSIP_SSL_CERT
-#            self.ssl_key = settings.DSIP_SSL_KEY
-#
-#         if settings.DEBUG == True:
-#             self.use_debugger = True
-#             self.use_reloader = True
-#         else:
-#             self.use_debugger = None
-#             self.use_reloader = None
-#             self.threaded = True
-#             self.processes = 1
-
+# DEPRECATED: updating network settings portion of this function has moved to the CLI
+#             marked for refactoring in v0.80 as shown below
+#               def syncSettings(new_fields={}):
 def syncSettings(new_fields={}, update_net=False):
     """
     Synchronize settings.py with shared mem / db
 
     :param new_fields:      fields to override when syncing
     :type new_fields:       dict
-    :param update_net:      if the network settings should be updated
-    :type update_net:       bool
     :return:                None
     :rtype:                 None
     """
@@ -2328,43 +2348,10 @@ def syncSettings(new_fields={}, update_net=False):
     try:
         db = SessionLoader()
 
-        # TODO: updating the dsiprouter settings file/dsip_settings table should be done by dsiprouter.sh (CLI commands run by dsip-init.service) instead
-        #       we need to start enforcing the concept on least privileges for our services and the system users running them
-        # update network settings dynamically
-        if update_net:
-            int_ip = getInternalIP('4')
-            int_ip6 = getInternalIP('6')
-            int_net = getInternalCIDR('4')
-            int_net6 = getInternalCIDR('6')
-            int_fqdn = socket.getfqdn()
-            ext_ip = getExternalIP('4')
-            ext_ip6 = getExternalIP('6')
-            ext_fqdn = ipToHost(ext_ip)
-            if os.path.exists('/proc/net/if_inet6'):
-                try:
-                    with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
-                        s.connect((int_ip6, 0))
-                    ipv6_enabled = True
-                except:
-                    ipv6_enabled = False
-            else:
-                ipv6_enabled = False
-
-            net_dict = {
-                'IPV6_ENABLED': ipv6_enabled,
-                'INTERNAL_IP_ADDR': int_ip if int_ip is not None else '',
-                'INTERNAL_IP_NET': int_net if int_net is not None else '',
-                'INTERNAL_IP6_ADDR': int_ip6 if int_ip6 is not None else '',
-                'INTERNAL_IP6_NET': int_net6 if int_net6 is not None else '',
-                'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip if int_ip is not None else '',
-                'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6 if int_ip6 is not None else '',
-                'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn if int_fqdn is not None else ''
-            }
-        else:
-            net_dict = {}
-
-        # need to grab any changes on disk b4 merging
-        reload(settings)
+        # sync settings from settings.py
+        if settings.LOAD_SETTINGS_FROM == 'file' or settings.DSIP_ID is None:
+            # need to grab any changes on disk b4 merging
+            reload(settings)
 
         # if DSIP_ID is not set, generate it
         if settings.DSIP_ID is None:
@@ -2436,14 +2423,18 @@ def syncSettings(new_fields={}, update_net=False):
                 ('HOMER_ID', settings.HOMER_ID),
                 ('HOMER_HEP_HOST', settings.HOMER_HEP_HOST),
                 ('HOMER_HEP_PORT', settings.HOMER_HEP_PORT),
+                ('NETWORK_MODE', settings.NETWORK_MODE),
                 ('IPV6_ENABLED', settings.IPV6_ENABLED),
                 ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
                 ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET),
                 ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR),
                 ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET),
+                ('INTERNAL_FQDN', settings.INTERNAL_FQDN),
                 ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
                 ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR),
                 ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
+                ('PUBLIC_IFACE', settings.PUBLIC_IFACE),
+                ('PRIVATE_IFACE', settings.PRIVATE_IFACE),
                 ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER),
                 ('MAIL_SERVER', settings.MAIL_SERVER),
                 ('MAIL_PORT', settings.MAIL_PORT),
@@ -2460,7 +2451,6 @@ def syncSettings(new_fields={}, update_net=False):
             ])
 
             fields.update(new_fields)
-            fields.update(net_dict)
 
             # convert db specific fields
             orig_kam_db_host = fields['KAM_DB_HOST']
@@ -2481,12 +2471,11 @@ def syncSettings(new_fields={}, update_net=False):
                 ).first().items()
             )
             fields.update(new_fields)
-            fields.update(net_dict)
 
             if ',' in fields['KAM_DB_HOST']:
                 fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
 
-        # no other sync scenarios
+        # no configured storage device to sync settings to/from
         else:
             raise ValueError('invalid value for LOAD_SETTINGS_FROM, acceptable values: "file" or "db"')
 
@@ -2581,7 +2570,7 @@ def initApp(flask_app):
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
 
     # Dynamically update settings
-    syncSettings(update_net=True)
+    syncSettings()
 
     # Reload Kamailio with the settings from dSIPRouter settings config
     reloadKamailio()

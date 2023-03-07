@@ -469,23 +469,22 @@ function getInternalIP() {
     esac
 	    
     if (( ${IPV6_ENABLED} == 1 )); then
-	INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
     else
-	INTERFACE=$(ip -4 route show default | awk '{print $5}')
+		INTERFACE=$(ip -4 route show default | awk '{print $5}')
     fi
 
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-	
         # Marked for removal because it depends on DNS
-	#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
         # Marked for removal because it depends on DNS
         #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$INTERNAL_IP"
@@ -494,12 +493,9 @@ export -f getInternalIP
 
 # $1 == [-4|-6] to force specific IP version
 # $2 == network interface 
-# output: the internal IP for this system
+# output: the IP for the given interface
 # notes: prints ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
-# TODO: currently we only check for the internal IP associated with the default interface/default route
-#       this will fail if the internal IP is not assigned to the default interface/default route
-#       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
 function getIP() {
     local IP=""
 
@@ -523,25 +519,23 @@ function getIP() {
 	    INTERFACE=$2
     else
 	    if (( ${IPV6_ENABLED} == 1 )); then
-		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+			INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
 	    else
 	    	INTERFACE=$(ip -4 route show default | awk '{print $5}')
 	    fi
     fi
 
-   
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-	
         # Marked for removal because it depends on DNS
-	#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
         # Marked for removal because it depends on DNS
         #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$IP"
@@ -678,12 +672,12 @@ function getInternalCIDR() {
     if (( ${IPV4_ENABLED} == 1 )); then
         INTERNAL_IP=$(getIP -4 "$INTERFACE")
         if [[ -n "$INTERNAL_IP" ]]; then
-		if [[ -n "$INTERFACE" ]]; then
-			DEF_IFACE=$INTERFACE
-		else
-            		DEF_IFACE=$(ip -4 route list scope global  2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-            	fi
-		PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+			if [[ -n "$INTERFACE" ]]; then
+				DEF_IFACE=$INTERFACE
+			else
+				DEF_IFACE=$(ip -4 route list scope global  2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+			fi
+			PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
         fi
     fi
 
@@ -1137,7 +1131,7 @@ function urandomChars() {
         fi
 
         case "$1" in
-        	# user defined salt
+        	# user defined filter
             -f)
                 shift
                 FILTER="$1"
