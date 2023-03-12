@@ -229,16 +229,16 @@ def displayDomains():
         res2 = db.execute(sql2)
 
         pbx_lookup = {}
-        for row in res2:
-            notes = strFieldsToDict(row['description'])['notes'] or ''
-            if row['creator'] is not None:
-                name = strFieldsToDict(row['creator'])['name'] or ''
+        for row in res2.mappings():
+            notes = strFieldsToDict(row["description"])["notes"] or ''
+            if row["creator"] is not None:
+                name = strFieldsToDict(row["creator"])["name"] or ''
             else:
                 name = "Manually Created"
 
-            pbx_lookup[row['did']] = {
-                'pbx_list': str(row['pbx_list']).strip('[]').replace("'", "").replace(",", ", "),
-                'domain_auth': row['domain_auth'],
+            pbx_lookup[row["did"]] = {
+                'pbx_list': str(row["pbx_list"].strip('[]')).replace("'", "").replace(",", ", "),
+                'domain_auth': row["domain_auth"],
                 'name': name,
                 'notes': notes
             }
