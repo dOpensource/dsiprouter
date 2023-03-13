@@ -2234,7 +2234,6 @@ def addUpdateStirShaken():
         return showError(type=error)
 
 
-
 @app.route('/upgrade')
 def displayUpgrade(msg=None):
     """
@@ -2248,23 +2247,29 @@ def displayUpgrade(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        current_version = float(settings.VERSION)
-        latest_version = float(UpdateUtils.get_latest_version())
+        if len(settings.DSIP_CORE_LICENSE) == 0:
+            return render_template('license_required.html', msg=None)
 
-        upgrade_available = 0
-        if latest_version > current_version:
-            upgrade_available = 1
+        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_CORE_LICENSE, decrypt=True)
+        if not settings_lc.active:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        upgrade_settings = {}
-        upgrade_settings["current_version"] = settings.VERSION
-        upgrade_settings["latest_version"] = UpdateUtils.get_latest_version()
-        # TODO: check if upgrade is allowed
-        upgrade_settings["upgrade_allowed"] = 1
-        upgrade_settings["upgrade_available"] = 1 #upgrade_available
+        lc = WoocommerceLicense(settings_lc.license_key)
+        if lc != settings_lc:
+            return render_template('license_required.html',
+                msg='license is associated with another machine, re-associate it with this machine first')
 
+        latest = UpdateUtils.get_latest_version()
 
+        upgrade_settings = {
+            "current_version": settings.VERSION,
+            "latest_version": latest['tag_name'],
+            "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
+        }
         return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
 
+    except WoocommerceError as ex:
+        return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
         error = "http"
@@ -2286,29 +2291,11 @@ def start_upgrade():
 
         logging.info("Starting upgrade")
 
-        # log_file_name = "/var/log/dsiprouter_upgrade.log"
-        # os.remove(log_file_name)
+        with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
+            run_info = subprocess.run("dsiprouter upgrade", stdout=f, stderr=subprocess.STDOUT)
+            run_info.check_returncode()
 
-        # # Fork a child process
-        # pid = os.fork()
-        # # Check if we are in the child process
-        # if pid == 0:
-        #     # Run the child script
-        #     logging.info("Running the upgrade script")
-        #     os.execlp('python3', 'python3', '/opt/dsiprouter/resources/upgrade/0.71/upgrade.py')
-        # else:
-        #     # Disconnect from the child process
-        #     os.waitpid(pid, 0)
-
-        # UpdateUtils.start_upgrade()
-        # start_upgrade_subprocess()
-
-        process = subprocess.Popen(["/usr/local/bin/python3", "/opt/dsiprouter/resources/upgrade/0.71/upgrade.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, error = process.communicate()
-        # decode the output to string
-        output_str = output.decode("utf-8")
-        logging.info("Upgrade output: {}".format(output_str))
-
+        logging.info("Upgrade complete")
 
         return displayUpgrade()
 
@@ -2316,7 +2303,6 @@ def start_upgrade():
         debugException(ex)
         error = "http"
         return showError(type=error)
-
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2342,18 +2328,10 @@ def getUpgradeLog(msg=None):
         debugException(ex)
         error = "http"
         return showError(type=error)
-
     except Exception as ex:
         debugException(ex)
         error = "server"
         return showError(type=error)
-
-
-@proc
-def start_upgrade_subprocess():
-    logging.info("Starting upgrade process")
-    process = subprocess.Popen(["/usr/local/bin/python3", "/opt/dsiprouter/resources/upgrade/0.71/upgrade.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output, error = process.communicate()
 
 
 # custom jinja filters

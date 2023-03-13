@@ -1,53 +1,50 @@
-;
+;(function(window, document) {
+  'use strict';
 
-(function (window, document) {
-    'use strict';
+  function getUpgradeInfo() {
 
-    function getUpgradeInfo() {
+    $('#upgrade_form').hide();
+    $('#upgrade_output_row').show();
 
-        $('#upgrade_form').hide();
-        $('#upgrade_output_row').show();
+    $.get("/upgrade/log", function(response) {
+      $("#upgrade_output").text(response);
+      $('#page_bottom')[0].scrollIntoView();
+      // $(document).scrollTop($(document).height());
+    });
+  }
 
-        $.get("/upgrade/log", function (response) {
-            $("#upgrade_output").text(response);
-            $('#page_bottom')[0].scrollIntoView();
-            // $(document).scrollTop($(document).height());
-        });
-    }
+  $(document).ready(function() {
 
+    $('#btnShowLog').click(function() {
+      getUpgradeInfo()
+    });
 
-    $(document).ready(function () {
+    $("#upgrade_form").submit(function(e) {
 
-        $('#btnShowLog').click(function () {
-            getUpgradeInfo()
-        });
+      var theInterval = setInterval(getUpgradeInfo, 1000);
 
-        $("#upgrade_form").submit(function (e) {
+      e.preventDefault();
+      var formData = $(this).serialize();
 
-            var theInterval = setInterval(getUpgradeInfo, 1000);
+      $.ajax({
+        type: "POST",
+        url: "/upgrade/start",
+        async: true,
+        data: formData,
+        success: function(response) {
+          console.info(response);
+          clearInterval(theInterval);
+          getUpgradeInfo();
+        },
+        error: function(error) {
+          console.error(error);
+          clearInterval(theInterval);
+        }
+      });
 
-            e.preventDefault();
-            var formData = $(this).serialize();
-
-            $.ajax({
-                type: "POST",
-                url: "/upgrade/start",
-                async: true,
-                data: formData,
-                success: function (response) {
-                    console.info(response);
-                    clearInterval(theInterval);
-                    getUpgradeInfo();
-                },
-                error: function (error) {
-                    console.error(error);
-                    clearInterval(theInterval);
-                }
-            });
-
-
-        });
 
     });
+
+  });
 
 })(window, document);

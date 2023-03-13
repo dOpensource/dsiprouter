@@ -1338,9 +1338,9 @@ function installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -y &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl python3
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl python3 jq
     elif cmdExists 'yum'; then
-        yum install -y curl wget gawk perl sed git bind-utils openssl python3
+        yum install -y curl wget gawk perl sed git bind-utils openssl python3 jq
     fi
 
     # used by openssl rnd generator
@@ -2794,7 +2794,20 @@ function removeInitService() {
     printdbg "dsip-init service removed"
 }
 
-# TODO: not finished, not vetted, needs more work
+# TODO: not finished, @maurice, please take the below upgrade functions as your starting point for the logic
+#       here is some quick pseudocode to code you:
+#       1. if upgrade version not set, find latest by tag
+#       2. if upgrade version <= current version then print error and exit
+#       3. read previous settings from /etc/dsiprouter/gui/settings.py
+#       4. update any set via cli
+#       5. backup configs in /etc/dsiprouter and /opt/dsiprouter and /var/lib/mysql
+#       6. full uninstall
+#       7. download new version of repo
+#       8. replace /opt/dsiprouter
+#       9. full install (make sure to check which settings were used for 1st install and reapply)
+#       10. merge old settings (this is the hard part, we need to structure the data so it can be merged)
+#       11. restart services
+#       12. validate everything went well, otherwise revert all changes
 function upgrade() {
     KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
     KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
