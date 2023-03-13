@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: dSIPRouter Community Slack
+    url: https://dsiproutercommunity.slack.com/
+    about: Community hangout where questions can be asked and answered.
+  - name: dOpenSource Official Support
+    url: https://dopensource.com/shop/
+    about: Official support and addons can be purchased here.

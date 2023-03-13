@@ -1162,8 +1162,6 @@ CREATE TABLE `dsip_settings` (
   `KAM_KAMCMD_PATH` varchar(255) NOT NULL DEFAULT '/usr/sbin/kamcmd',
   `KAM_CFG_PATH` varchar(255) NOT NULL DEFAULT '/etc/kamailio/kamailio.cfg',
   `RTP_CFG_PATH` varchar(255) NOT NULL DEFAULT '/etc/kamailio/kamailio.cfg',
-  `SQLALCHEMY_TRACK_MODIFICATIONS` tinyint(1) NOT NULL DEFAULT '0',
-  `SQLALCHEMY_SQL_DEBUG` tinyint(1) NOT NULL DEFAULT '0',
   `FLT_CARRIER` int(11) NOT NULL DEFAULT '8',
   `FLT_PBX` int(11) NOT NULL DEFAULT '9',
   `FLT_OUTBOUND` int(11) NOT NULL DEFAULT '8000',

@@ -25,22 +25,22 @@ DROP TABLE IF EXISTS `acc`;
 CREATE TABLE `acc` (
   `id`            int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `method`        varchar(16)      NOT NULL DEFAULT '',
-  `from_tag`      varchar(64)      NOT NULL DEFAULT '',
-  `to_tag`        varchar(64)      NOT NULL DEFAULT '',
-  `callid`        varchar(128)     NOT NULL DEFAULT '',
+  `from_tag`      varchar(128)      NOT NULL DEFAULT '',
+  `to_tag`        varchar(128)      NOT NULL DEFAULT '',
+  `callid`        varchar(255)     NOT NULL DEFAULT '',
   `sip_code`      char(3)          NOT NULL DEFAULT '',
-  `sip_reason`    varchar(32)      NOT NULL DEFAULT '',
-  `time`          datetime         NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `sip_reason`    varchar(255)      NOT NULL DEFAULT '',
+  `time`          datetime         NOT NULL DEFAULT NOW(),
   `src_ip`        varchar(64)      NOT NULL DEFAULT '',
-  `dst_ouser`     varchar(64)      NOT NULL DEFAULT '',
-  `dst_user`      varchar(64)      NOT NULL DEFAULT '',
-  `dst_domain`    varchar(128)     NOT NULL DEFAULT '',
-  `src_user`      varchar(64)      NOT NULL DEFAULT '',
-  `src_domain`    varchar(128)     NOT NULL DEFAULT '',
+  `dst_ouser`     varchar(128)      NOT NULL DEFAULT '',
+  `dst_user`      varchar(128)      NOT NULL DEFAULT '',
+  `dst_domain`    varchar(255)     NOT NULL DEFAULT '',
+  `src_user`      varchar(128)      NOT NULL DEFAULT '',
+  `src_domain`    varchar(255)     NOT NULL DEFAULT '',
   `cdr_id`        int(10) UNSIGNED NOT NULL DEFAULT '0',
   `calltype`      varchar(20)               DEFAULT NULL,
-  `src_gwgroupid` int(10) UNSIGNED NOT NULL DEFAULT '0',
-  `dst_gwgroupid` int(10) UNSIGNED NOT NULL DEFAULT '0',
+  `src_gwgroupid` varchar(10)      NOT NULL DEFAULT '',
+  `dst_gwgroupid` varchar(10)      NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `acc_callid` (`callid`)
   );
@@ -54,25 +54,25 @@ DROP TABLE IF EXISTS `cdrs`;
 /*!40101 SET @saved_cs_client = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `cdrs` (
-  `cdr_id`          bigint(20)       NOT NULL AUTO_INCREMENT,
-  `src_username`    varchar(64)      NOT NULL DEFAULT '',
-  `src_domain`      varchar(128)     NOT NULL DEFAULT '',
-  `dst_username`    varchar(64)      NOT NULL DEFAULT '',
-  `dst_domain`      varchar(128)     NOT NULL DEFAULT '',
-  `dst_ousername`   varchar(64)      NOT NULL DEFAULT '',
-  `call_start_time` datetime         NOT NULL DEFAULT '2000-01-01 00:00:00',
+  `cdr_id`          bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `src_username`    varchar(128)      NOT NULL DEFAULT '',
+  `src_domain`      varchar(255)     NOT NULL DEFAULT '',
+  `dst_username`    varchar(128)      NOT NULL DEFAULT '',
+  `dst_domain`      varchar(255)     NOT NULL DEFAULT '',
+  `dst_ousername`   varchar(128)      NOT NULL DEFAULT '',
+  `call_start_time` datetime         NOT NULL,
   `duration`        int(10) UNSIGNED NOT NULL DEFAULT '0',
-  `sip_call_id`     varchar(128)     NOT NULL DEFAULT '',
+  `sip_call_id`     varchar(255)     NOT NULL DEFAULT '',
   `sip_from_tag`    varchar(128)     NOT NULL DEFAULT '',
   `sip_to_tag`      varchar(128)     NOT NULL DEFAULT '',
   `src_ip`          varchar(64)      NOT NULL DEFAULT '',
   `cost`            int(11)          NOT NULL DEFAULT '0',
   `rated`           int(11)          NOT NULL DEFAULT '0',
-  `created`         datetime         NOT NULL,
+  `created`         datetime         NOT NULL DEFAULT NOW(),
   `calltype`        varchar(20)               DEFAULT NULL,
   `fraud`           bool             NOT NULL DEFAULT '0',
-  `src_gwgroupid`   int(10) UNSIGNED NOT NULL DEFAULT '0',
-  `dst_gwgroupid`   int(10) UNSIGNED NOT NULL DEFAULT '0',
+  `src_gwgroupid`   varchar(10)      NOT NULL DEFAULT '',
+  `dst_gwgroupid`   varchar(10)      NOT NULL DEFAULT '',
   PRIMARY KEY (`cdr_id`)
   );
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -95,7 +95,7 @@ BEGIN
   DECLARE done int DEFAULT 0;
   DECLARE bye_record int DEFAULT 0;
   DECLARE v_src_user,v_src_domain,v_dst_user,v_dst_domain,v_callid,v_from_tag,
-    v_to_tag,v_src_ip,v_calltype varchar(64);
+    v_to_tag,v_src_ip,v_calltype varchar(255);
   DECLARE v_src_gwgroupid, v_dst_gwgroupid int(11);
   DECLARE v_inv_time, v_bye_time datetime;
   DECLARE inv_cursor CURSOR FOR
@@ -171,7 +171,7 @@ BEGIN
   DECLARE done, rate_record, vx_cost int DEFAULT 0;
   DECLARE v_cdr_id bigint DEFAULT 0;
   DECLARE v_duration, v_rate_unit, v_time_unit int DEFAULT 0;
-  DECLARE v_dst_username varchar(64);
+  DECLARE v_dst_username varchar(255);
   DECLARE cdrs_cursor CURSOR FOR SELECT cdr_id, dst_username, duration
                                  FROM cdrs
                                  WHERE rated = 0;

@@ -1,14 +1,17 @@
-from flask import Blueprint, session, render_template
-from flask import Flask, render_template, request, redirect, abort, flash, session, url_for, send_from_directory
-from sqlalchemy import case, func, exc as sql_exceptions
-from werkzeug import exceptions as http_exceptions
-from database import SessionLoader, DummySession, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, Gateways, Address
-from modules.api.api_routes import addEndpointGroups
-from shared import *
-import settings
-import globals
-import re
+import sys
 
+sys.path.insert(0, '/etc/dsiprouter/gui')
+
+import re
+from flask import request, Blueprint, render_template, redirect, session, url_for
+from sqlalchemy import exc as sql_exceptions
+from sqlalchemy.sql import text
+from werkzeug import exceptions as http_exceptions
+from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
+from database import SessionLoader, DummySession, Domain, DomainAttrs, Dispatcher, Gateways, Address
+from modules.api.api_routes import addEndpointGroups
+from shared import debugException, debugEndpoint, showError, strFieldsToDict, stripDictVals
+import settings, globals
 
 domains = Blueprint('domains', __name__)
 
@@ -19,6 +22,7 @@ def gatewayIdToIP(pbx_id, db):
     if gw is not None:
         return gw.address
 
+
 def addDomain(domain, authtype, pbxs, notes, db):
     # Create the domain because we need the domain id
     PBXDomain = Domain(domain=domain, did=domain)
@@ -27,15 +31,15 @@ def addDomain(domain, authtype, pbxs, notes, db):
 
     # Check if list of PBX's
     if pbxs:
-        pbx_list = re.split(' |,',pbxs)
+        pbx_list = re.split(' |,', pbxs)
     else:
         pbx_list = []
 
     # If list is found
     if len(pbx_list) > 1 and authtype == "passthru":
-        pbx_id=pbx_list[0]
+        pbx_id = pbx_list[0]
     else:
-        #Else Single value was submitted
+        # Else Single value was submitted
         pbx_id = pbxs
 
     # Implement Passthru authentication to the first PBX on the list.
@@ -58,8 +62,8 @@ def addDomain(domain, authtype, pbxs, notes, db):
     # MSTeams Support
     elif authtype == "msteams":
         # Set of MS Teams Proxies
-        msteams_dns_endpoints=settings.MSTEAMS_DNS_ENDPOINTS
-        msteams_ip_endpoints=settings.MSTEAMS_IP_ENDPOINTS
+        msteams_dns_endpoints = settings.MSTEAMS_DNS_ENDPOINTS
+        msteams_ip_endpoints = settings.MSTEAMS_IP_ENDPOINTS
 
         # Attributes to specify that the domain was created manually
         PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value="{}".format(",".join(msteams_dns_endpoints)))
@@ -83,7 +87,9 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 else:
                     socket_addr = settings.EXTERNAL_IP_ADDR
 
-                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint, attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr,domain),description='msteam_endpoint:{}'.format(endpoint))
+                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint,
+                    attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),
+                    description='msteam_endpoint:{}'.format(endpoint))
                 db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
@@ -95,7 +101,6 @@ def addDomain(domain, authtype, pbxs, notes, db):
         db.add(PBXDomainAttr7)
         db.add(PBXDomainAttr8)
 
-
         # Check if the MSTeams IP(s) that send us OPTION messages is in the the address table
         for endpoint_ip in msteams_ip_endpoints:
             address_query = db.query(Address).filter(Address.ip_addr == endpoint_ip).first()
@@ -103,15 +108,14 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS, gwgroup=0)
                 db.add(Addr)
 
-
         # Add Endpoint group to enable Inbound Mapping
-        endpointGroup = {"name":domain,"endpoints":None}
+        endpointGroup = {"name": domain, "endpoints": None}
         endpoints = []
         for hostname in msteams_dns_endpoints:
-            endpoints.append({"hostname":hostname,"description":"msteams_endpoint","maintmode":False});
+            endpoints.append({"hostname": hostname, "description": "msteams_endpoint", "maintmode": False})
 
         endpointGroup['endpoints'] = endpoints
-        addEndpointGroups(endpointGroup,"msteams",domain)
+        addEndpointGroups(endpointGroup, "msteams", domain)
 
     # Implement external authentiction to either Realtime DB or Local Subscriber table
     else:
@@ -139,26 +143,39 @@ def addDomain(domain, authtype, pbxs, notes, db):
         db.add(PBXDomainAttr7)
         db.add(PBXDomainAttr8)
 
+
 @domains.route("/domains/msteams/<int:id>", methods=['GET'])
 def configureMSTeams(id):
-
     db = DummySession()
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        if len(settings.DSIP_MSTEAMS_LICENSE) == 0:
+            return render_template('license_required.html', msg=None)
 
-        if not session.get('logged_in'):
-            return render_template('index.html')
+        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_MSTEAMS_LICENSE, decrypt=True)
+        if not settings_lc.active:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
+
+        lc = WoocommerceLicense(settings_lc.license_key)
+        if lc != settings_lc:
+            return render_template('license_required.html',
+                msg='license is associated with another machine, re-associate it with this machine first')
+
+        db = SessionLoader()
 
         domain_query = db.query(Domain).filter(Domain.id == id)
         domain = domain_query.first()
 
-
         return render_template('msteams.html', domainid=id, domain=domain)
 
+    except WoocommerceError as ex:
+        return render_template('license_required.html', msg=str(ex))
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
         error = "db"
@@ -180,9 +197,9 @@ def configureMSTeams(id):
     finally:
         db.close()
 
+
 @domains.route("/domains", methods=['GET'])
 def displayDomains():
-
     db = DummySession()
 
     try:
@@ -195,37 +212,49 @@ def displayDomains():
             return render_template('index.html', version=settings.VERSION)
 
         # sql1 = "select domain.id,domain.domain,dsip_domain_mapping.type,dsip_domain_mapping.pbx_id,dr_gateways.description from domain left join dsip_domain_mapping on domain.id = dsip_domain_mapping.domain_id left join dr_gateways on dsip_domain_mapping.pbx_id = dr_gateways.gwid;"
-        sql1 = "select distinct domain.did as domain, domain.id, value as type from domain_attrs join domain on domain.did = domain_attrs.did where name='pbx_type';"
+        sql1 = text("SELECT DISTINCT domain.did AS domain, domain.id, value as type FROM domain_attrs JOIN domain on domain.did = domain_attrs.did WHERE name='pbx_type'")
         res = db.execute(sql1)
 
-        sql2 = """select distinct domain_attrs.did, pbx_list, domain_auth, creator, description from domain_attrs join
-            ( select did,value as pbx_list from domain_attrs where name='pbx_list' ) t1
-            on t1.did=domain_attrs.did join
-            ( select did,value as description from domain_attrs where name='description' ) t2
-            on t2.did=domain_attrs.did join
-            ( select did,value as domain_auth from domain_attrs where name='domain_auth' ) t3
-            on t3.did=domain_attrs.did join
-            ( select did,description as creator from domain_attrs left join dr_gw_lists on domain_attrs.value = dr_gw_lists.id where name='created_by') t4
-            on t4.did=domain_attrs.did;"""
-
+        sql2 = text("""
+            SELECT distinct domain_attrs.did, pbx_list, domain_auth, creator, description FROM domain_attrs JOIN
+            ( SELECT did,value AS pbx_list FROM domain_attrs WHERE name='pbx_list' ) t1
+            ON t1.did=domain_attrs.did JOIN
+            ( SELECT did,value AS description FROM domain_attrs WHERE name='description' ) t2
+            ON t2.did=domain_attrs.did JOIN
+            ( SELECT did,value AS domain_auth FROM domain_attrs WHERE name='domain_auth' ) t3
+            ON t3.did=domain_attrs.did JOIN
+            ( SELECT did,description AS creator FROM domain_attrs LEFT JOIN dr_gw_lists ON domain_attrs.value = dr_gw_lists.id WHERE name='created_by') t4
+            ON t4.did=domain_attrs.did
+            """)
         res2 = db.execute(sql2)
+
         pbx_lookup = {}
-        for row in res2:
-            notes = strFieldsToDict(row['description'])['notes'] or ''
-            if row['creator'] is not None:
-                name = strFieldsToDict(row['creator'])['name'] or ''
+        for row in res2.mappings():
+            notes = strFieldsToDict(row["description"])["notes"] or ''
+            if row["creator"] is not None:
+                name = strFieldsToDict(row["creator"])["name"] or ''
             else:
                 name = "Manually Created"
 
-            pbx_lookup[row['did']] = {
-                'pbx_list': str(row['pbx_list']).strip('[]').replace("'","").replace(",",", "),
-                'domain_auth': row['domain_auth'],
+            pbx_lookup[row["did"]] = {
+                'pbx_list': str(row["pbx_list"].strip('[]')).replace("'", "").replace(",", ", "),
+                'domain_auth': row["domain_auth"],
                 'name': name,
                 'notes': notes
             }
 
+        if len(settings.DSIP_MSTEAMS_LICENSE) == 0:
+            return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 
-        return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=healthCheck())
+        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_MSTEAMS_LICENSE, decrypt=True)
+        if not settings_lc.active:
+            return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
+
+        lc = WoocommerceLicense(settings_lc.license_key)
+        if lc != settings_lc:
+            return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
+
+        return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=True)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -248,9 +277,9 @@ def displayDomains():
     finally:
         db.close()
 
+
 @domains.route("/domains", methods=['POST'])
 def addUpdateDomain():
-
     db = DummySession()
 
     try:
@@ -318,9 +347,9 @@ def addUpdateDomain():
     finally:
         db.close()
 
+
 @domains.route("/domainsdelete", methods=['POST'])
 def deleteDomain():
-
     db = DummySession()
 
     try:

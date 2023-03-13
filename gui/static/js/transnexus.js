@@ -2,9 +2,10 @@
   'use strict';
 
   $(document).ready(function() {
-    /* listener for TransNexus toggle */
-    $('#toggleTransnexus').change(function () {
-      if ($(this).is(":checked") || $(this).prop("checked")) {
+    var toggle = $('#toggleTransnexus');
+
+    function updateToggle() {
+      if (toggle.is(":checked") || toggle.prop("checked")) {
         $('#transnexusOptions').removeClass("hidden");
         $(this).val("1");
         $(this).bootstrapToggle('on');
@@ -14,7 +15,12 @@
         $(this).val("0");
         $(this).bootstrapToggle('off');
       }
-    });
+    }
+
+    /* update toggle on page load */
+    updateToggle();
+    /* listener for toggle changes */
+    toggle.change(updateToggle);
   });
 
 })(window, document);

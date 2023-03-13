@@ -2,9 +2,10 @@
   'use strict';
 
   $(document).ready(function() {
-    /* listener for stir chaken toggle */
-    $('#toggleStirShaken').change(function () {
-      if ($(this).is(":checked") || $(this).prop("checked")) {
+    var toggle = $('#toggleStirShaken');
+
+    function updateToggle() {
+      if (toggle.is(":checked") || toggle.prop("checked")) {
         $('#stirShakenOptions').removeClass("hidden");
         $(this).val("1");
         $(this).bootstrapToggle('on');
@@ -14,7 +15,12 @@
         $(this).val("0");
         $(this).bootstrapToggle('off');
       }
-    });
+    }
+
+    /* update toggle on page load */
+    updateToggle();
+    /* listener for toggle changes */
+    toggle.change(updateToggle);
   });
 
 })(window, document);

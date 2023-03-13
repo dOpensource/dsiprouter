@@ -9,10 +9,7 @@
 
 def initialize():
     global reload_required
-    global licensed
-    globals()['licensed'] = False
     globals()['reload_required'] = False
 
 # allow references in code before initialize is called
 reload_required = globals()['reload_required'] if 'reload_required' in globals() else False
-licensed =  globals()['licensed'] if 'licensed' in globals() else False

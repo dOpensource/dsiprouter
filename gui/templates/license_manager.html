@@ -1,0 +1,169 @@
+{% extends 'table_layout.html' %}
+
+{% block title %}License Manager{% endblock %}
+
+{% block custom_css %}
+  <style>
+    #licensing tr > th {
+      height: 2rem;
+    }
+
+    #licensing tr > td {
+      height: 4rem;
+    }
+
+    #licensing > tbody > tr:hover {
+      background-color: #acbad4;
+    }
+
+    #licensing > tbody > tr > td:has(.dt-resize-height) {
+      padding: 0;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+      flex-direction: column;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height > * {
+      -webkit-box-flex: 1;
+      -ms-flex-positive: 1;
+      flex-grow: 1;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height span.toggle-password {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      left: inherit;
+      bottom: inherit;
+      cursor: pointer;
+      line-height: inherit;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height input {
+      background-color: rgba(0, 0, 0, 0);
+      border: 0;
+      text-align: center;
+      padding: 0;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height input:focus,
+    #licensing > tbody > tr > td > .dt-resize-height input:focus-visible {
+      outline: none;
+      -webkit-box-shadow: none;
+      box-shadow: none;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height button {
+      margin: 1rem 2rem;
+    }
+  </style>
+{% endblock %}
+
+{% block table_headers %}
+  <div>
+    <h3>List of Licenses for this Node</h3>
+  </div>
+
+  <div class="tableAddButton">
+    <div class="btn-group mr-2">
+      <button id='open-LicenseAdd' class='btn btn-success btn-md' data-title="Activate" data-toggle="modal"
+              data-target="#add">
+        Add
+      </button>
+    </div>
+  </div>
+{% endblock %}
+
+
+{% block table %}
+  <table id="licensing" class="table table-striped table-centered">
+    <thead>
+    <tr class='element-row'>
+      <th data-field="type">License Type</th>
+      <th data-field="key">License Key</th>
+      <th data-field="active">Active</th>
+      <th data-field="active">Valid</th>
+      <th data-field="expires">Expiration Date</th>
+      <th class="hidden"></th>
+    </tr>
+    </thead>
+  </table>
+{% endblock %}
+
+
+{% block edit_modal %}
+
+{% endblock %}
+
+
+{% block add_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Activate License</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/licensing" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="form-group wrapper-fieldicon-right">
+        <input id="add-key" class="form-control key" type="password" name="key"
+               placeholder="License Key" autofocus="autofocus">
+        <span class="field-icon toggle-password glyphicon glyphicon-eye-close" data-toggle="#add-key"></span>
+      </div>
+
+      <div class="modal-footer">
+        <button type="submit" id="addButton" class="btn btn-success btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Add
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block delete_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Deactivate License</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/licensing" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input class="key" type="hidden" name="key">
+
+      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span>
+        Are you sure you want to deactivate this License?
+      </div>
+
+      <div class="modal-footer ">
+        <button id="deleteButton" type="button" class="btn btn-success"><span
+            class="glyphicon glyphicon-ok-sign" autofocus="autofocus"></span> Yes
+        </button>
+        <button type="button" class="btn btn-default" data-dismiss="modal"><span
+            class="glyphicon glyphicon-remove"></span> No
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('jquery.tabledit') }}
+  {{ script_tag('license_manager') }}
+{% endblock %}
+

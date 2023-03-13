@@ -1,6 +1,6 @@
-# ExecStop sends SIGSTOP (graceful stop) to the main process
-# If, after 5s nginx is still running, sends SIGQUIT to main process
-# If, after 10s nginx is still running, sends SIGTERM to all processes
+# ExecStop sends SIGQUIT to the main process
+# If, after 3s nginx is still running, sends SIGTERM to main process
+# If, after 6s nginx is still running, sends SIGKILL to all processes
 [Unit]
 Description=A high performance web server and a reverse proxy server
 Documentation=man:nginx(8)
@@ -17,8 +17,8 @@ ExecStartPre=/bin/chown -R nginx:nginx ${RUNDIR}
 ExecStartPre=/usr/sbin/nginx -t
 ExecStart=/usr/sbin/nginx
 ExecReload=/usr/sbin/nginx -s reload
-ExecStop=/usr/sbin/nginx-stop ${MAINPID} ${RUNDIR}/nginx.pid
-TimeoutStopSec=0
+ExecStop=/bin/kill -s SIGQUIT ${MAINPID}
+TimeoutStopSec=3
 KillMode=mixed
 Restart=on-failure
 
