@@ -191,8 +191,11 @@ DSIP_DOCS_DIR = '/opt/dsiprouter/docs/build/html'
 DID_PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
 
 # micosoft teams settings
+# pick one of the
 MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
-MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
+#MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.dod.teams.microsoft.us","sip.pstnhub.gov.teams.microsoft.us"]
+MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70","52.114.32.169"]
+#MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]
 
 # root DB credentials
 ROOT_DB_USER = 'root'
