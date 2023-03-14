@@ -1061,6 +1061,7 @@ def displayInboundMapping():
         endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
+
         res = db.execute(
             text("""
 SELECT * from (
@@ -1073,11 +1074,7 @@ SELECT * from (
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, g.id AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_groupid = r.groupid LEFT JOIN dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') WHERE ff.dr_groupid <> :flt_outbound
     UNION ALL
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, NULL AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_ruleid = r.ruleid WHERE ff.dr_groupid = :flt_outbound
-) AS t3 ON t1.ruleid = t3.ff_ruleid
-            """),
-            flt_inbound=settings.FLT_INBOUND,
-            flt_outbound=settings.FLT_OUTBOUND
-        )
+) AS t3 ON t1.ruleid = t3.ff_ruleid"""),{"flt_inbound":settings.FLT_INBOUND,"flt_outbound":settings.FLT_OUTBOUND})
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
         gwgroups = db.query(GatewayGroups).filter(
@@ -1201,7 +1198,7 @@ def addUpdateInboundMapping():
             # find last rule in dr_rules
             res = db.execute(
                 text("SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=:db_name AND TABLE_NAME='dr_rules'"),
-                db_name=settings.KAM_DB_NAME
+                {"db_name":settings.KAM_DB_NAME}
             ).first()
             ruleid = int(res[0])
 
