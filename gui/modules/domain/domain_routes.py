@@ -112,6 +112,10 @@ def addDomain(domain, authtype, pbxs, notes, db):
         endpointGroup = {"name": domain, "endpoints": None}
         endpoints = []
         for hostname in msteams_dns_endpoints:
+            address_query = db.query(Address).filter(Address.ip_addr == hostname).first()
+            if address_query is None:
+                Addr = Address("msteams-sbc", hostname, 32, settings.FLT_MSTEAMS, gwgroup=0)
+                db.add(Addr)
             endpoints.append({"hostname": hostname, "description": "msteams_endpoint", "maintmode": False})
 
         endpointGroup['endpoints'] = endpoints
