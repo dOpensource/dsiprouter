@@ -40,6 +40,8 @@ class WoocommerceLicense(object):
     # constant salt used for equality checks
     # should not be used for generating a hash that is stored
     CMP_SALT = 'A' * Credentials.SALT_LEN
+    # generated woocommerce license length
+    KEY_LEN = 32
 
     def __init__(self, license_key=None, key_combo=None, decrypt=False):
         if license_key is not None:
@@ -78,8 +80,9 @@ class WoocommerceLicense(object):
                 raise ValueError('key_combo must be a string or byte string')
 
             try:
-                license_key, machine_id = key_combo.split('-', maxsplit=1)
-            except ValueError:
+                license_key = key_combo[:WoocommerceLicense.KEY_LEN]
+                machine_id = key_combo[WoocommerceLicense.KEY_LEN:]
+            except IndexError:
                 raise ValueError('key_combo is invalid')
         else:
             raise ValueError('one of license_key or key_combo is required')
@@ -202,9 +205,9 @@ class WoocommerceLicense(object):
         return r_json.get('success', False)
 
     def hash(self, salt=None):
-        return Credentials.hashCreds('{}-{}'.format(self._license_key, self.__machine_id), salt)
+        return Credentials.hashCreds('{}{}'.format(self._license_key, self.__machine_id), salt)
 
     # need original key for queries to woocommerce
     # format: license_key-machine_id
     def encrypt(self):
-        return AES_CTR.encrypt('{}-{}'.format(self._license_key, self.__machine_id))
+        return AES_CTR.encrypt('{}{}'.format(self._license_key, self.__machine_id))
