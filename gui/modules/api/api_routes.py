@@ -743,21 +743,22 @@ def deleteEndpointGroup(gwgroupid):
             # Get list of all domains managed by the endpoint group
             did_list = db.execute(
                 text("SELECT DISTINCT did FROM domain_attrs WHERE name = 'created_by' AND value=:gwgroupid"),
-                gwgroupid=gwgroupid
+                {'gwgroupid':gwgroupid}
             ).all()
 
             # Delete all domains
             db.execute(
                 text("DELETE FROM domain WHERE did IN (SELECT did FROM domain_attrs WHERE name='created_by' AND value=:gwgroupid)"),
-                gwgroupid=gwgroupid
+                {'gwgroupid':gwgroupid}
             )
 
             # Delete all domains_attrs
             if len(did_list) > 0:
-                db.execute(
-                    text("DELETE FROM domain_attrs WHERE did IN (:dids)"),
-                    dids=did_list
-                )
+                for did in did_list:
+                    db.execute(
+                        text("DELETE FROM domain_attrs WHERE did IN (:dids)"),
+                        {'dids':str(did[0])}
+                        )
 
             # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
