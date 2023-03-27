@@ -793,6 +793,13 @@ function updateDsiprouterStartup {
 }
 
 function renewSSLCert() {
+    # Don't try to renew if using wildcard certs
+    openssl x509 -in ${DSIP_SSL_CERT} -noout -subject | grep "CN\s\?=\s\?*." &>/dev/null
+    if (( $? == 0 )); then
+	printwarn "Wildcard certifcates are being used! LetsEncrypt certifcates can't automatically renew wildcard certificates"    
+   	return
+    fi
+
     # Don't renew if a default cert was uploaded
     local DEFAULT_CERT_UPLOADED=$(mysql -sN --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
         -e "select count(*) from dsip_certificates where domain='default'" 2> /dev/null)
