@@ -77,8 +77,6 @@ function setStaticScriptSettings() {
     export PROJECT_DSIP_DEFAULTS_DIR="${DSIP_PROJECT_DIR}/kamailio/defaults"
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
-    # DEPRECATED v0.72: uuid replaced by DSIP_ID as unique identifier, marked for removal
-    DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
@@ -1663,10 +1661,6 @@ function installDsiprouter() {
         ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
 
-    # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
-    # Generate UUID unique to this dsiprouter instance
-    uuidgen > ${DSIP_UUID_FILE}
-
     # Set credentials for our services, will either use credentials from CLI or generate them
     if [[ -z "$SET_DSIP_GUI_PASS" ]]; then
         if (( ${IMAGE_BUILD} == 1 || ${RESET_FORCE_INSTANCE_ID:-0} == 1 )); then
@@ -1983,7 +1977,7 @@ function uninstallSipsak() {
 # used by kamailio dmq replication
 # TODO: need to integrate with cloud-init or dhclient/network-managaer/systemd-resolvd for resolv.conf config
 #       currently the dnsmasq configurations are being clobbered by other services
-# TODO: move DNSmasq install to its own directory
+# TODO: move DNSmasq install to its own directory, marked for v0.80
 function installDnsmasq() {
     local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS
 
@@ -2086,8 +2080,7 @@ Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-/bin/mkdir -p ${RUN_DIR}
-ExecStartPre=!-/bin/chown -R dnsmasq:dnsmasq ${RUN_DIR}
+ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 # We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
 # wrapper picking up extra configuration files and then execs dnsmasq
@@ -2119,8 +2112,7 @@ Type=simple
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-/bin/mkdir -p ${RUN_DIR}
-ExecStartPre=!-/bin/chown -R dnsmasq:dnsmasq ${RUN_DIR}
+ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2149,8 +2141,7 @@ PermissionsStartOnly=true
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=/bin/mkdir -p $RUN_DIR
-ExecStartPre=/bin/chown -R dnsmasq:dnsmasq $RUN_DIR
+ExecStartPre=${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2252,12 +2243,14 @@ function start() {
 
     # Start dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
+        # update runtime settings from CLI args
+        updateDsiprouterConfigRuntimeSettings
+
         if (( $DEBUG == 1 )); then
-            # perform pre-startup commands systemd would normally do
-            updateDsiprouterConfigRuntimeSettings
-            updatePermissions
             # start the reverse proxy first
             systemctl start nginx
+            # perform pre-startup commands systemd would normally do in dsiprouter.service
+            updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
 #            # Make sure process is still running
@@ -3191,10 +3184,6 @@ function updatePermissions() {
         # dsiprouter gui files readable and writable only by dsiprouter
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
-        # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
-        # uuid file should only be readable by dsiprouter and kamailio
-        chown dsiprouter:kamailio ${DSIP_UUID_FILE}
-        chmod 440 ${DSIP_UUID_FILE}
     }
     # set permissions for files/dirs used by rtpengine
     setRtpenginePerms() {

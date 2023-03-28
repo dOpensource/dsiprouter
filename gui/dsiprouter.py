@@ -2575,8 +2575,6 @@ def initApp(flask_app):
     # configs depending on updated settings go here
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
-    # DEPRECATED: we don't use Flask-SQLalchemy anymore. The event system is only available in that version of sqlalchemy
-    # flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
     # Set flask JSON encoder
     flask_app.json_encoder = CreateEncoder()

@@ -5,6 +5,7 @@
 Description=A high performance web server and a reverse proxy server
 Documentation=man:nginx(8)
 Requires=basic.target network.target
+Wants=nginx-watcher.path
 After=network.target network-online.target basic.target nss-lookup.target remote-fs.target
 DefaultDependencies=no
 
@@ -12,8 +13,7 @@ DefaultDependencies=no
 Type=forking
 Environment='RUNDIR=/run/nginx'
 PIDFile=/run/nginx/nginx.pid
-ExecStartPre=/bin/mkdir -p ${RUNDIR}
-ExecStartPre=/bin/chown -R nginx:nginx ${RUNDIR}
+ExecStartPre=${DSIP_PROJECT_DIR}/dsiprouter.sh chown -certs -nginx
 ExecStartPre=/usr/sbin/nginx -t
 ExecStart=/usr/sbin/nginx
 ExecReload=/usr/sbin/nginx -s reload
