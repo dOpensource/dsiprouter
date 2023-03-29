@@ -41,7 +41,7 @@ I'd like to say thank you to Nicole D., John O. and Courtney G. for their time i
 Support
 =======
 
-Free support is available via our `group <https://groups.google.com/forum/#!forum/dsiprouter/>`_
+Free support is available via our `group <https://groups.google.com/forum/#!forum/dsiprouter/>`_ and _`Slack <https://join.slack.com/t/dsiproutercommunity/shared_invite/zt-1dtqvpyck-H9k~DYgJJ2XIFgh_rWqdPA/>`_
 
 Paid support is available `here <https://dopensource.com/product/dsiprouter-core/>`_
 
