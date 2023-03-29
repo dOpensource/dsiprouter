@@ -2514,7 +2514,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             )
             query = "(" + query + ")" + " UNION " + "(" + query2 + ")"
 
-        rows = db.execute(text(query), gwgroupid=gwgroupid, dtfilter=dtfilter)
+        rows = db.execute(text(query), {"gwgroupid":gwgroupid,"dtfilter":dtfilter})
         cdrs = []
         dataFields = ['cdr_id', 'call_start_time', 'call_duration', 'call_direction', 'src_gwgroupid',
                       'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname', 'src_username',
