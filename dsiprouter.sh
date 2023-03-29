@@ -1224,6 +1224,18 @@ function configureKamailioDB() {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gateways.sql
 
+    # Update schema for dr_gw_lists table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gw_lists.sql
+
+    # Update schema for dr_rules table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_rules.sql
+
+    # Update schema for dispatcher table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dispatcher.sql
+
     # Update schema for address table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/address.sql
