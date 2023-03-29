@@ -14,6 +14,8 @@ dSIPRouter allows you to quickly turn `Kamailio <http://www.kamailio.org/>`_ int
 
 - **Hosted PBX services:** Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make is really easy and scalable!
 
+- **Microsoft Teams Direct Routing:** We can provide SBC functionality that allows dSIPRouter to interconnect your existing voice infrastructure or VoIP carrier to your Microsoft Teams environment.
+
 
 Demo System
 ===========
@@ -21,8 +23,7 @@ Demo System
 You can checkout our demo system by clicking the link below and enter the listed username and password:
 
 
-
-http://demo.dsiprouter.org:5000
+http://demo.dsiprouter.net:5000
 
 
 username: admin 
@@ -42,7 +43,7 @@ Support
 
 Free support is available via our `group <https://groups.google.com/forum/#!forum/dsiprouter/>`_
 
-Paid support is available `here <https://dOpensource.com/shop/>`_
+Paid support is available `here <https://dopensource.com/product/dsiprouter-core/>`_
 
 Installing dSIPRouter
 ^^^^^^^^^^^^^^^^^^^^^
