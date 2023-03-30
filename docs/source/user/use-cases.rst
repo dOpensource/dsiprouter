@@ -462,9 +462,9 @@ Steps to Implement
 .. image:: images/freepbx-pt-setup-softphone.png
           :align: center
 
-==============================
-Microsoft Teams Direct Routing
-==============================
+======================================================
+Microsoft Teams Direct Routing (SUBSCRIPTION REQUIRED)
+======================================================
 
 dSIPRouter can act as an intermediary Session Border Controller between Microsoft Teams Direct Routing and your SIP provider or SIP servers.
 
