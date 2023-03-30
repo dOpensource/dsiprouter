@@ -1,5 +1,6 @@
 import sys
-import os, re
+import os
+import re
 import json
 import datetime
 import subprocess
@@ -54,15 +55,17 @@ def backup_system():
     logging.info("Backup destination: " + backup_destination)
 
     # MySQL database credentials
-    mysql_user = AES_CTR.decrypt(settings.KAM_DB_USER).decode('utf-8')  # upgrade_settings['database_credentials']['user']
+    mysql_user = settings.KAM_DB_USER  # upgrade_settings['database_credentials']['user']
     mysql_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')  # upgrade_settings['database_credentials']['password']
-    mysql_host = AES_CTR.decrypt(settings.KAM_DB_HOST).decode('utf-8')  # upgrade_settings['database_credentials']['host']
-    mysql_db = AES_CTR.decrypt(settings.KAM_DB_NAME).decode('utf-8')  # upgrade_settings['database_credentials']['name']
+    mysql_host = settings.KAM_DB_HOST  # upgrade_settings['database_credentials']['host']
+    mysql_db = settings.KAM_DB_NAME  # upgrade_settings['database_credentials']['name']
+    # logging.info(" mysql_user [" + mysql_user + "]  mysql_password  [" + mysql_password + "]  mysql_host  [" + mysql_host + "]  mysql_db  [" + mysql_db + "]")
 
     # create a backup of the mysql database
     logging.info("Backing up MySQL database")
     try:
-        mysql_dump_cmd = f"mysqldump  --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges   -u {mysql_user} -p{mysql_password} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
+        mysql_dump_cmd = f"mysqldump  --single-transaction --opt --events --routines --triggers --add-drop-database --flush-privileges   -u {mysql_user} -p{mysql_password} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
+        # logging.info("Command is " + mysql_dump_cmd)
         output = subprocess.check_output(mysql_dump_cmd, shell=True)
         logging.info(output.decode("utf-8"))
         logging.info("MySQL database backup complete")
@@ -126,40 +129,30 @@ def upgrade_database():
     logging.info("Starting DB Upgrade process")
     global upgrade_settings
     # MySQL database credentials
-    mysql_user = upgrade_settings['database_credentials']['user']
-    mysql_password = upgrade_settings['database_credentials']['password']
-    mysql_host = upgrade_settings['database_credentials']['host']
-    mysql_db = upgrade_settings['database_credentials']['name']
+    mysql_user = settings.KAM_DB_USER  # upgrade_settings['database_credentials']['user']
+    mysql_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')  # upgrade_settings['database_credentials']['password']
+    mysql_host = settings.KAM_DB_HOST  # upgrade_settings['database_credentials']['host']
+    mysql_db = settings.KAM_DB_NAME  # upgrade_settings['database_credentials']['name']
+    # logging.info(" mysql_user [" + mysql_user + "]  mysql_password  [" + mysql_password + "]  mysql_host  [" + mysql_host + "]  mysql_db  [" + mysql_db + "]")
 
     migration_scripts = upgrade_settings['database_migrations']
 
     try:
-        # connect to the MySQL database
-        logging.info("Connecting to MySQL database")
-        cnx = mysql.connector.connect(user=mysql_user, password=mysql_password, host=mysql_host, database=mysql_db)
-        logging.info("Connected Successfully")
-        cursor = cnx.cursor()
-
         current_dir = os.path.dirname(os.path.realpath(__file__))
         scripts_directory = os.path.join(current_dir, 'scripts')
+
+        logging.info("Running scripts from " + scripts_directory)
 
         # execute the SQL queries one by one
         for db_script in migration_scripts:
             logging.info("Executing Migration: " + db_script)
-            migration_command = f"mysql  -u {mysql_user} -p{mysql_password} {mysql_db} < {scripts_directory}/{db_script}"
+            migration_command = f"mysql  -h {mysql_host} -u {mysql_user} -p{mysql_password} {mysql_db} < {scripts_directory}/{db_script}"
             output = subprocess.check_output(migration_command, shell=True)
             logging.info(output.decode("utf-8"))
-            logging.info("MySQL database backup complete")
-
-            cursor.execute(db_script)
-            if db_script.strip().upper().startswith("SELECT"):
-                print(cursor.fetchall())
             logging.info("Migration completed successfully")
 
-        logging.info("Closing DB Connection")
-        # close the cursor and connection
-        cursor.close()
-        cnx.close()
+        logging.info("DB Migrations completed successfully")
+
 
     except mysql.connector.Error as err:
         logging.error("An error occurred: {}".format(err))
@@ -246,4 +239,5 @@ logging.basicConfig(filename=log_file_name,
                     format='%(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p'
                     )
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 start_upgrade()
