@@ -2289,7 +2289,9 @@ def start_upgrade():
         logging.info("Starting upgrade")
 
         form = stripDictVals(request.form.to_dict())
-        cmd = "dsiprouter upgrade --release='{}'".format(form['latest_version'])
+        upgrade_resources_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
+        current_resources_dir = os.path.join(upgrade_resources_dir, form['latest_version'])
+        cmd = "python3 {} {}".format(current_resources_dir, form['latest_version'])
 
         with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
             run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
