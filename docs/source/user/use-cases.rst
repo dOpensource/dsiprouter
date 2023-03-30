@@ -561,7 +561,14 @@ dSIPRouter enables an organization to start signing calls by enabling the STIR/S
 2. Purchase a license from the `dSIPRouter Marketplace <https://dopensource.com/product-category/dsiprouter/>`_
 3. Click System Settings -> License Manager
 4. Add the license to the system
-5. Connect to the terminal and run this command
+
+5. If testing, connect to the terminal, run the command below and enter the requested information to create a self-signed certificate
+
+.. code-block:: bash
+	
+	/opt/dsiprouter/resources/stirshaken/generate_self_signed_cert.sh
+
+
 6. Click System Settings -> STIR/SHAKEN
 7. Slide the Enabled button
 8. Enter the Certificate URL
