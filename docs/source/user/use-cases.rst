@@ -568,7 +568,7 @@ dSIPRouter enables an organization to start signing calls by enabling the STIR/S
 	
 	/opt/dsiprouter/resources/stirshaken/generate_self_signed_cert.sh
 	
-If not testing, obtain a valid STIR/SHAKEN certificate 
+If not testing, obtain a valid STIR/SHAKEN certificate and place them in the /etc/dsiprouter/certs/stirshaken/ directory.  For the purpose of these instructions, please name the certificate sp-cert.pem and name the key sp-key.pem  
 
 6. Check that the certificate can be accessed via https.  Open a web browser and enter the following into the URL.  This will be used by other VoIP servers to validate the signature of the the call.  
 
