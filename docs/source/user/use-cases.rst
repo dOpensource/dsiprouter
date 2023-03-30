@@ -555,20 +555,20 @@ Note: Log out by typing Disconnect-MicrosoftTeams
 =============================================
 Configure STIR/SHAKEN (SUBSCRIPTION REQUIRED)
 =============================================
-dSIPRouter enables an organization to start signing calls by enabling the STIR/SHAKEN module.  This module will sign outbound calls and validate that inbound calls are signed.  It also have the ability to add a prefix to the callerid if calls have an attestion of an A, B or C.  You can also specify a callerid if callers aren't validated.  Lastly, you have the option to block invalidated callers. 
+dSIPRouter enables an organization to start signing calls by enabling the STIR/SHAKEN module.  This module will sign outbound calls and validate that inbound calls are signed.  It also have the ability to add a prefix to the callerid if calls have an attestion of an A, B or C.  You can also specify a callerid prefix if callers aren't validated.  Lastly, you have the option to block invalidated callers. 
 
 1. Login to dSIPRouter
 2. Purchase a license from the `dSIPRouter Marketplace <https://dopensource.com/product-category/dsiprouter/>`_
 3. Click System Settings -> License Manager
 4. Add the license to the system
 
-5. If testing, connect to the terminal, run the command below and enter the requested information to create a self-signed certificate
+5. If testing, connect to your dSIPRouter instance using ssh, run the command below and enter the requested information to create a self-signed certificate
 
 .. code-block:: bash
 	
 	/opt/dsiprouter/resources/stirshaken/generate_self_signed_cert.sh
 	
-   If not testing, obtain a valid STIR/SHAKEN certificate 
+If not testing, obtain a valid STIR/SHAKEN certificate 
 
 6. Check that the certificate can be accessed via https.  Open a web browser and enter the following into the URL.  This will be used by other VoIP servers to validate the signature of the the call.
 
