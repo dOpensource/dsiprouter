@@ -13,7 +13,7 @@ DefaultDependencies=no
 Type=forking
 Environment='RUNDIR=/run/nginx'
 PIDFile=/run/nginx/nginx.pid
-ExecStartPre=${DSIP_PROJECT_DIR}/dsiprouter.sh chown -certs -nginx
+ExecStartPre=/usr/bin/dsiprouter chown -certs -nginx
 ExecStartPre=/usr/sbin/nginx -t
 ExecStart=/usr/sbin/nginx
 ExecReload=/usr/sbin/nginx -s reload

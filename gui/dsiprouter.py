@@ -81,7 +81,7 @@ def before_request():
         app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
-
+# DEPRECATED: overridden by csrf.exempt(api), need to revist this, marked for review in v0.80
 @api.before_request
 def api_before_request():
     # for ua to api w/ api token disable csrf
@@ -2573,9 +2573,12 @@ def initApp(flask_app):
     reloadKamailio()
 
     # configs depending on updated settings go here
+    # DEPRECATED: flask_app.env is deprecated and only flask_app.debug will be used in the future, marked for removal in v0.80
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
 
+    # DEPRECATED: class interface changed and will be removed in Flask 2.3, marked for review in v0.80
+    #             customize 'app.json_provider_class' or 'app.json' instead
     # Set flask JSON encoder
     flask_app.json_encoder = CreateEncoder()
 

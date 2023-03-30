@@ -22,7 +22,7 @@ Environment='DSIP_SYSTEM_CONFIG_DIR=/etc/dsiprouter'
 # PIDFile requires an absolute path
 PIDFile=/run/dsiprouter/dsiprouter.pid
 # ExecStart* requires an absolute path for the program
-ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dsiprouter
+ExecStartPre=!-/usr/bin/dsiprouter chown -dsiprouter
 ExecStart=/usr/bin/python3 $DSIP_PROJECT_DIR/gui/dsiprouter.py
 TimeoutStopSec=3
 KillMode=mixed

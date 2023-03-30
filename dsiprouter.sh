@@ -1420,7 +1420,8 @@ function configureSystemRepos() {
         printerr 'Could not configure system repositories'
         cleanupAndExit 1
     elif (( $? >= 100 )); then
-        printwarn 'Some issues occurred configuring system repositories'
+        printwarn 'Some issues occurred configuring system repositories, attempting to continue...'
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
     else
         printdbg 'System repositories configured successfully'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
@@ -1433,7 +1434,7 @@ function removeDsipSystemConfig() {
         case "$DISTRO" in
             debian|ubuntu)
                 mv -f ${APT_OFFICIAL_SOURCES_BAK} ${APT_OFFICIAL_SOURCES}
-                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS}
+                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS} 2>/dev/null
                 apt-get update -y
             ;;
         esac
@@ -1610,6 +1611,46 @@ function uninstallRTPEngine() {
     printdbg "RTPEngine was uninstalled"
 }
 
+function installDsiprouterCli() {
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
+        printwarn "dSIPRouter CLI is already installed"
+        return
+    else
+        printdbg "Installing dSIPRouter CLI"
+    fi
+
+    # add dsiprouter CLI command to the path
+    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+    # enable bash command line completion if not already
+    if [[ -f /etc/bash.bashrc ]]; then
+        perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+    fi
+    # add command line completion for dsiprouter CLI
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+    # TODO: has no effect when executing script, user has to log out and log in for changes to take effect
+    #. /etc/bash_completion
+
+    touch "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
+    printdbg "dSIPRouter CLI installed"
+}
+
+function uninstallDsiprouterCli() {
+    if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
+        printwarn "dSIPRouter CLI is not installed, skipping..."
+        return
+    else
+        printdbg "Uninstalling dSIPRouter CLI"
+    fi
+
+    # remove dsiprouter and dsiprouterd commands from the path
+    rm -f /usr/bin/dsiprouter
+    # remove command line completion for dsiprouter.sh
+    rm -f /etc/bash_completion.d/dsiprouter
+
+    rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
+    printdbg "dSIPRouter CLI uninstalled"
+}
+
 # TODO: allow password changes on cloud instances (remove password reset after image creation)
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions
@@ -1647,15 +1688,6 @@ function installDsiprouter() {
     # configure dsiprouter modules
     installModules
 
-    # add dsiprouter CLI command to the path
-    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-    # enable bash command line completion if not already
-    if [[ -f /etc/bash.bashrc ]]; then
-        perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
-    fi
-    # add command line completion for dsiprouter CLI
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-    . /etc/bash_completion
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
     ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
@@ -1758,9 +1790,6 @@ EOF
     # TODO: we should move generated docs to /etc/dsiprouter to keep clean repo
     ( cd ${DSIP_PROJECT_DIR}/docs; make html >/dev/null 2>&1; )
 
-    # install documentation for the CLI
-    installManPage
-
     # Restart dSIPRouter / nginx / Kamailio with new configurations
     if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled ]]; then
         systemctl restart nginx
@@ -1811,14 +1840,6 @@ function uninstallDsiprouter() {
 
     # revert to previous MOTD ssh login banner
     revertBanner
-
-    # remove dsiprouter and dsiprouterd commands from the path
-    rm -f /usr/bin/dsiprouter
-    # remove command line completion for dsiprouter.sh
-    rm -f /etc/bash_completion.d/dsiprouter
-
-    # remove CLI documentation
-    uninstallManPage
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -2092,7 +2113,7 @@ Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 # We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
 # wrapper picking up extra configuration files and then execs dnsmasq
@@ -2124,7 +2145,7 @@ Type=simple
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2153,7 +2174,7 @@ PermissionsStartOnly=true
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
+ExecStartPre=/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2192,6 +2213,9 @@ function uninstallDnsmasq() {
 
     # stop the process
     systemctl stop dnsmasq
+    # remove dnsmasq systemd service
+    rm -f /etc/systemd/system/dnsmasq.service
+    systemctl daemon-reload
 
     # uninstall dnsmasq
     if cmdExists 'apt-get'; then
@@ -2215,8 +2239,8 @@ function uninstallDnsmasq() {
     cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # if systemd dns resolver installed re-enable it
-    systemctl enable systemd-resolved 2>/dev/null
-    systemctl start systemd-resolved 2>/dev/null
+    #systemctl enable systemd-resolved 2>/dev/null
+    #systemctl start systemd-resolved 2>/dev/null
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
@@ -2775,7 +2799,7 @@ Before=
 
 [Service]
 Type=oneshot
-ExecStart=${DSIP_PROJECT_DIR}/dsiprouter.sh chown
+ExecStart=/usr/bin/true
 RemainAfterExit=true
 TimeoutSec=0
 
@@ -3389,7 +3413,7 @@ function processCMD() {
     # use options to add commands in any order needed
     # 1 == defaults on, 0 == defaults off
     local DISPLAY_LOGIN_INFO=0
-    # for install / uninstall default to kamailio and dsiprouter services
+    # for install / uninstall, if no selections are chosen use some sane defaults
     local DEFAULT_SERVICES=1
 
     # process all options before running commands
@@ -3398,7 +3422,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installDsiprouterCli installManPage)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -3663,7 +3687,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallManPage uninstallDsiprouterCli removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
