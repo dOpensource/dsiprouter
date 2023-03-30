@@ -567,12 +567,25 @@ dSIPRouter enables an organization to start signing calls by enabling the STIR/S
 .. code-block:: bash
 	
 	/opt/dsiprouter/resources/stirshaken/generate_self_signed_cert.sh
+	
+   If not testing, obtain a valid STIR/SHAKEN certificate 
 
+6. Check that the certificate can be accessed via https.  Open a web browser and enter the following into the URL.  This will be used by other VoIP servers to validate the signature of the the call.
+
+.. code-block:: bash
+
+	https://<replace with ip or hostname>:5000/stirshaken_certs/sp-cert.pem
 
 6. Click System Settings -> STIR/SHAKEN
 7. Slide the Enabled button
 8. Enter the Certificate URL
 9. Enter the Key Path
 10. Click Save
+
+The STIR/SHAKEN page should look like this:
+
+.. image:: images/stir_shaken_settings.png
+          :align: center
+
 
 
