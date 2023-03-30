@@ -15,7 +15,10 @@ sys.path.insert(0, '/opt/dsiprouter/gui')
 from util.security import AES_CTR
 
 upgrade_settings = {}
-upgrade_resource_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
+upgrade_resources_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
+upgrade_version = sys.argv[1]
+current_resources_dir = os.path.join(upgrade_resources_dir, upgrade_version)
+current_scripts_dir = os.path.join(current_resources_dir, upgrade_version)
 
 
 # compare the version code from the settings file with the current version code
@@ -196,20 +199,17 @@ def merge_settings():
     new_file_name = '/etc/dsiprouter/gui/settings.py'
 
     # Read new file
-    old_file_dict = None
-    new_file_dict = None
-
     with open(old_file_name, 'r') as f:
         file_contents = f.read()
         old_file_dict = ast.literal_eval(file_contents)
-
     with open(new_file_name, 'r') as f:
         file_contents = f.read()
         new_file_dict = ast.literal_eval(file_contents)
 
     # Merge keys from new file into old file
     for key, value in old_file_dict.items():
-        new_file_dict[key] = value
+        if key in new_file_dict:
+            new_file_dict[key] = value
 
     # Output the merged dictionary
     print(old_file_dict)
@@ -233,7 +233,7 @@ def merge_settings():
         logging.info('Problem updating the {0} configuration file'.format(config_file))
 
 
-os.chdir("/opt/dsiprouter/resources/upgrade/0.72")
+os.chdir(os.path.join(upgrade_resources_dir, upgrade_version))
 
 # clear the contents of the log file
 log_file_name = '/var/log/dsiprouter_upgrade.log'
