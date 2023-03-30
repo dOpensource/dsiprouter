@@ -550,3 +550,22 @@ Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -Enterpr
    code
 
 Note: Log out by typing Disconnect-MicrosoftTeams
+
+
+=============================================
+Configure STIR/SHAKEN (SUBSCRIPTION REQUIRED)
+=============================================
+dSIPRouter enables an organization to start signing calls by enabling the STIR/SHAKEN module.  This module will sign outbound calls and validate that inbound calls are signed.  It also have the ability to add a prefix to the callerid if calls have an attestion of an A, B or C.  You can also specify a callerid if callers aren't validated.  Lastly, you have the option to block invalidated callers. 
+
+1. Login to dSIPRouter
+2. Purchase a license from the `dSIPRouter Marketplace <https://dopensource.com/product-category/dsiprouter/>`_
+3. Click System Settings -> License Manager
+4. Add the license to the system
+5. Connect to the terminal and run this command
+6. Click System Settings -> STIR/SHAKEN
+7. Slide the Enabled button
+8. Enter the Certificate URL
+9. Enter the Key Path
+10. Click Save
+
+
