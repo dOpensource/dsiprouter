@@ -2,10 +2,6 @@
 
 Installing on a RHEL-based Distro
 =================================
-
-Note that this only covers one configuration with RTP traffic proxied.
-Contributions of additional configurations are welcome if you have tested them!
-
 For a specific version of dSIPRouter add "-b <version number>" to the end of the `git clone` command.
 
 Install (Don't Proxy audio (RTP) traffic)
