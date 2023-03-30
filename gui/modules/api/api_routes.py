@@ -743,21 +743,22 @@ def deleteEndpointGroup(gwgroupid):
             # Get list of all domains managed by the endpoint group
             did_list = db.execute(
                 text("SELECT DISTINCT did FROM domain_attrs WHERE name = 'created_by' AND value=:gwgroupid"),
-                gwgroupid=gwgroupid
+                {'gwgroupid':gwgroupid}
             ).all()
 
             # Delete all domains
             db.execute(
                 text("DELETE FROM domain WHERE did IN (SELECT did FROM domain_attrs WHERE name='created_by' AND value=:gwgroupid)"),
-                gwgroupid=gwgroupid
+                {'gwgroupid':gwgroupid}
             )
 
             # Delete all domains_attrs
             if len(did_list) > 0:
-                db.execute(
-                    text("DELETE FROM domain_attrs WHERE did IN (:dids)"),
-                    dids=did_list
-                )
+                for did in did_list:
+                    db.execute(
+                        text("DELETE FROM domain_attrs WHERE did IN (:dids)"),
+                        {'dids':str(did[0])}
+                        )
 
             # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
@@ -2513,7 +2514,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             )
             query = "(" + query + ")" + " UNION " + "(" + query2 + ")"
 
-        rows = db.execute(text(query), gwgroupid=gwgroupid, dtfilter=dtfilter)
+        rows = db.execute(text(query), {"gwgroupid":gwgroupid,"dtfilter":dtfilter})
         cdrs = []
         dataFields = ['cdr_id', 'call_start_time', 'call_duration', 'call_direction', 'src_gwgroupid',
                       'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname', 'src_username',

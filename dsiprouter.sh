@@ -64,7 +64,7 @@ function setStaticScriptSettings() {
     # do not change these settings without knowing exactly how it effects normal operation
     FLT_CARRIER=8
     FLT_PBX=9
-    FLT_MSTEAMS=22
+    FLT_MSTEAMS=17
     FLT_OUTBOUND=8000
     FLT_INBOUND=9000
     FLT_LCR_MIN=10000
@@ -77,8 +77,6 @@ function setStaticScriptSettings() {
     export PROJECT_DSIP_DEFAULTS_DIR="${DSIP_PROJECT_DIR}/kamailio/defaults"
     export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
     DSIP_PRIV_KEY="${DSIP_SYSTEM_CONFIG_DIR}/privkey"
-    # DEPRECATED v0.72: uuid replaced by DSIP_ID as unique identifier, marked for removal
-    DSIP_UUID_FILE="${DSIP_SYSTEM_CONFIG_DIR}/uuid.txt"
     export DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
     export DSIP_KAMAILIO_TLS_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/tls.cfg"
     export DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
@@ -173,24 +171,24 @@ function setDynamicScriptSettings() {
 
     # grab the network settings dynamically
     if (( $NETWORK_MODE == 0 )); then
-        export INTERNAL_IP=$(getInternalIP -4)
-        export INTERNAL_NET=$(getInternalCIDR -4)
-        export INTERNAL_IP6=$(getInternalIP -6)
-        export INTERNAL_NET6=$(getInternalCIDR -6)
+        export INTERNAL_IP_ADDR=$(getInternalIP -4)
+        export INTERNAL_IP_NET=$(getInternalCIDR -4)
+        export INTERNAL_IP6_ADDR=$(getInternalIP -6)
+        export INTERNAL_IP_NET6=$(getInternalCIDR -6)
 
         # if external ip address is not found then this box is on an internal subnet
-        EXTERNAL_IP=$(getExternalIP -4)
-        export EXTERNAL_IP=${EXTERNAL_IP:-$INTERNAL_IP}
-        EXTERNAL_IP6=$(getExternalIP -6)
-        export EXTERNAL_IP6=${EXTERNAL_IP6:-$INTERNAL_IP6}
+        EXTERNAL_IP_ADDR=$(getExternalIP -4)
+        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
+        EXTERNAL_IP6_ADDR=$(getExternalIP -6)
+        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
 
         # determine whether ipv6 is enabled
         # /proc/net/if_inet6 tells us if the kernel has ipv6 enabled
-#		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6" ]]; then
+#		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6_ADDR" ]]; then
 #			# sanity check, is the ipv6 address routable?
 #			# if not we can not use this address (interface is not configured properly)
-#			if ! checkConn "$INTERNAL_IP6"; then
-#				printerr "IPV6 enabled but address [$INTERNAL_IP6] is not routable"
+#			if ! checkConn "$INTERNAL_IP6_ADDR"; then
+#				printerr "IPV6 enabled but address [$INTERNAL_IP6_ADDR] is not routable"
 #				cleanupAndExit 1
 #			fi
 #			export IPV6_ENABLED=1
@@ -206,13 +204,13 @@ function setDynamicScriptSettings() {
         fi
     # network settings pulled from env variables or from config file
     elif (( $NETWORK_MODE == 1 )); then
-        export INTERNAL_IP=${INTERNAL_IP:-$(getConfigAttrib 'INTERNAL_IP' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_NET=${INTERNAL_NET:-$(getConfigAttrib 'INTERNAL_NET' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP6=${INTERNAL_IP6:-$(getConfigAttrib 'INTERNAL_IP6' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_NET6=${INTERNAL_NET6:-$(getConfigAttrib 'INTERNAL_NET6' ${DSIP_CONFIG_FILE})}
+        export INTERNAL_IP_ADDR=${INTERNAL_IP_ADDR:-$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
+        export INTERNAL_IP_NET=${INTERNAL_IP_NET:-$(getConfigAttrib 'INTERNAL_IP_NET' ${DSIP_CONFIG_FILE})}
+        export INTERNAL_IP6_ADDR=${INTERNAL_IP6_ADDR:-$(getConfigAttrib 'INTERNAL_IP6_ADDR' ${DSIP_CONFIG_FILE})}
+        export INTERNAL_IP_NET6=${INTERNAL_IP_NET6:-$(getConfigAttrib 'INTERNAL_IP_NET6' ${DSIP_CONFIG_FILE})}
 
-        export EXTERNAL_IP=${EXTERNAL_IP:-$(getConfigAttrib 'EXTERNAL_IP' ${DSIP_CONFIG_FILE})}
-        export EXTERNAL_IP6=${EXTERNAL_IP6:-$(getConfigAttrib 'EXTERNAL_IP6' ${DSIP_CONFIG_FILE})}
+        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$(getConfigAttrib 'EXTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
+        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$(getConfigAttrib 'EXTERNAL_IP6_ADDR' ${DSIP_CONFIG_FILE})}
 
 #		if [[ -n "$IPV6_ENABLED" ]]; then
 #			export IPV6_ENABLED
@@ -229,21 +227,21 @@ function setDynamicScriptSettings() {
         PUBLIC_IFACE=${PUBLIC_IFACE:-$(getConfigAttrib 'PUBLIC_IFACE' ${DSIP_CONFIG_FILE})}
         PRIVATE_IFACE=${PRIVATE_IFACE:-$(getConfigAttrib 'PRIVATE_IFACE' ${DSIP_CONFIG_FILE})}
 
-        export INTERNAL_IP=$(getIP -4 "$PRIVATE_IFACE")
+        export INTERNAL_IP_ADDR=$(getIP -4 "$PRIVATE_IFACE")
         export INTERNAL_IP_NET=$(getInternalCIDR -4 "$PRIVATE_IFACE")
-        export INTERNAL_IP6=$(getIP -6 "$PRIVATE_IFACE")
-        export INTERNAL_NET6=$(getInternalCIDR -6 "$PRIVATE_IFACE")
+        export INTERNAL_IP6_ADDR=$(getIP -6 "$PRIVATE_IFACE")
+        export INTERNAL_IP_NET6=$(getInternalCIDR -6 "$PRIVATE_IFACE")
 
-        EXTERNAL_IP=$(getIP -4 "$PUBLIC_IFACE")
-        export EXTERNAL_IP=${EXTERNAL_IP:-$INTERNAL_IP}
-        EXTERNAL_IP6=$(getIP -6 "$PUBLIC_IFACE")
-        export EXTERNAL_IP6=${EXTERNAL_IP6:-$INTERNAL_IP6}
+        EXTERNAL_IP_ADDR=$(getIP -4 "$PUBLIC_IFACE")
+        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
+        EXTERNAL_IP6_ADDR=$(getIP -6 "$PUBLIC_IFACE")
+        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
 
-#		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6" ]]; then
+#		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6_ADDR" ]]; then
 #			# sanity check, is the ipv6 address routable?
 #			# if not we can not use this address (interface is not configured properly)
-#			if ! checkConn "$INTERNAL_IP6"; then
-#				printerr "IPV6 enabled but address [$INTERNAL_IP6] is not routable"
+#			if ! checkConn "$INTERNAL_IP6_ADDR"; then
+#				printerr "IPV6 enabled but address [$INTERNAL_IP6_ADDR] is not routable"
 #				cleanupAndExit 1
 #			fi
 #			export IPV6_ENABLED=1
@@ -262,13 +260,13 @@ function setDynamicScriptSettings() {
     fi
 
     # if the public ip address is not the same as the internal address then enable serverside NAT
-    if [[ "$EXTERNAL_IP" != "$INTERNAL_IP" ]]; then
+    if [[ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ]]; then
         export SERVERNAT=1
     else
         export SERVERNAT=0
     fi
     # same as above but for ipv6, note that NAT is rarely used on ipv6 networks
-    if (( ${IPV6_ENABLED} == 1 )) && [[ "$EXTERNAL_IP6" != "$INTERNAL_IP6" ]]; then
+    if (( ${IPV6_ENABLED} == 1 )) && [[ "$EXTERNAL_IP6_ADDR" != "$INTERNAL_IP6_ADDR" ]]; then
         export SERVERNAT6=1
     else
         export SERVERNAT6=0
@@ -598,7 +596,7 @@ function reconfigureMysqlSystemdService() {
 
     case "$KAMDB_HOST" in
         # in this case mysql server is running on this node
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP}"|"${EXTERNAL_IP}"|"${INTERNAL_IP6}"|"${EXTERNAL_IP6}"|"$(hostname 2>/dev/null)"|"$(hostname -f 2>/dev/null)")
+        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP_ADDR}"|"${EXTERNAL_IP_ADDR}"|"${INTERNAL_IP6_ADDR}"|"${EXTERNAL_IP6_ADDR}"|"$(hostname 2>/dev/null)"|"$(hostname -f 2>/dev/null)")
             # if previously was remote and now local re-generate service files
             if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
                 systemctl disable mariadb
@@ -793,6 +791,13 @@ function updateDsiprouterStartup {
 }
 
 function renewSSLCert() {
+    # Don't try to renew if using wildcard certs
+    openssl x509 -in ${DSIP_SSL_CERT} -noout -subject | grep "CN\s\?=\s\?*." &>/dev/null
+    if (( $? == 0 )); then
+	printwarn "Wildcard certifcates are being used! LetsEncrypt certifcates can't automatically renew wildcard certificates"    
+   	return
+    fi
+
     # Don't renew if a default cert was uploaded
     local DEFAULT_CERT_UPLOADED=$(mysql -sN --user="$KAM_DB_USER" --password="$KAM_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" $KAM_DB_NAME \
         -e "select count(*) from dsip_certificates where domain='default'" 2> /dev/null)
@@ -934,12 +939,12 @@ function updateKamailioConfig() {
     fi
     setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'INTERNAL_IP6_ADDR' "${INTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'INTERNAL_IP_NET' "${INTERNAL_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'INTERNAL_IP6_NET' "${INTERNAL_NET6}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP}" ${DSIP_KAMAILIO_CONFIG_FILE}
-    setKamailioConfigSubst 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP6_ADDR' "${INTERNAL_IP6_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP_NET' "${INTERNAL_IP_NET}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'INTERNAL_IP6_NET' "${INTERNAL_IP_NET6}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'EXTERNAL_IP_ADDR' "${EXTERNAL_IP_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_FQDN' "${INTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1000,8 +1005,8 @@ function updateKamailioConfig() {
 
     # update kamailio TLS config file
 #    if (( ${IPV6_ENABLED} == 1 )); then
-#        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}'; "'$ipv6_config=
-#            "[server:['"${EXTERNAL_IP6}"']:'"${KAM_WSS_PORT}"']\n" .
+#        perl -e "\$external_ip='${EXTERNAL_IP_ADDR}'; \$wss_port='${KAM_WSS_PORT}'; "'$ipv6_config=
+#            "[server:['"${EXTERNAL_IP6_ADDR}"']:'"${KAM_WSS_PORT}"']\n" .
 #            "method = TLSv1.2+\n" .
 #            "verify_certificate = no\n" .
 #            "require_certificate = no\n" .
@@ -1013,7 +1018,7 @@ function updateKamailioConfig() {
 #            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1${ipv6_config}\2%s;' \
 #            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 #    else
-#        perl -e "\$external_ip='${EXTERNAL_IP}'; \$wss_port='${KAM_WSS_PORT}';" -0777 -i \
+#        perl -e "\$external_ip='${EXTERNAL_IP_ADDR}'; \$wss_port='${KAM_WSS_PORT}';" -0777 -i \
 #            -pe 's%(#========== webrtc_ipv4_start ==========#.*?\[server:).*?:.*?(\].*#========== webrtc_ipv4_stop ==========#)%\1${external_ip}:${wss_port}\2%s;
 #            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1\2%s;' \
 #            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
@@ -1043,18 +1048,18 @@ function updateRtpengineConfig() {
 
     if (( ${NETWORK_MODE} == 2 )); then
         # TODO: ipv6 support broken here
-        INTERFACE="public/${EXTERNAL_IP}; private/${INTERNAL_IP}"
+        INTERFACE="public/${EXTERNAL_IP_ADDR}; private/${INTERNAL_IP_ADDR}"
     else
         if (( ${SERVERNAT} == 1 )); then
-            INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
+            INTERFACE="ipv4/${INTERNAL_IP_ADDR}!${EXTERNAL_IP_ADDR}"
         else
-            INTERFACE="ipv4/${INTERNAL_IP}"
+            INTERFACE="ipv4/${INTERNAL_IP_ADDR}"
         fi
         if (( ${IPV6_ENABLED} == 1 )); then
             if (( ${SERVERNAT6} == 1 )); then
-                INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
+                INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6_ADDR}!${EXTERNAL_IP6_ADDR}"
             else
-                INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
+                INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6_ADDR}"
             fi
         fi
     fi
@@ -1124,7 +1129,7 @@ function updateDnsConfig() {
         done
     # otherwise make sure local node is resolvable when querying cluster
     else
-        DNS_CONFIG+="${INTERNAL_IP} local.cluster\n"
+        DNS_CONFIG+="${INTERNAL_IP_ADDR} local.cluster\n"
     fi
 
     # update hosts file
@@ -1217,11 +1222,27 @@ function configureKamailioDB() {
 
     # Update schema for dr_gateways table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e 'ALTER TABLE dr_gateways MODIFY pri_prefix varchar(64) NOT NULL DEFAULT "", MODIFY attrs varchar(255) NOT NULL DEFAULT "";'
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gateways.sql
+
+    # Update schema for dr_gw_lists table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gw_lists.sql
+
+    # Update schema for dr_rules table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_rules.sql
+
+    # Update schema for dispatcher table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dispatcher.sql
+
+    # Update schema for address table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/address.sql
 
     # Update schema for subscribers table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e 'ALTER TABLE subscriber ADD email_address varchar(128) NOT NULL DEFAULT "", ADD rpid varchar(128) NOT NULL DEFAULT "";'
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/subscribers.sql
 
     # Install schema for custom LCR logic
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
@@ -1256,10 +1277,6 @@ function configureKamailioDB() {
     # Install schema for dsip_hardfwd and dsip_failfwd and dsip_prefix_mapping
     sed -e "s|FLT_INBOUND_REPLACE|${FLT_INBOUND}|g" ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_forwarding.sql |
         mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
-
-    # Install schema for custom dr_gateways logic
-    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gateways.sql
 
     # TODO: we need to test and re-implement this.
 #    # required if tables exist and we are updating
@@ -1403,7 +1420,8 @@ function configureSystemRepos() {
         printerr 'Could not configure system repositories'
         cleanupAndExit 1
     elif (( $? >= 100 )); then
-        printwarn 'Some issues occurred configuring system repositories'
+        printwarn 'Some issues occurred configuring system repositories, attempting to continue...'
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
     else
         printdbg 'System repositories configured successfully'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
@@ -1416,7 +1434,7 @@ function removeDsipSystemConfig() {
         case "$DISTRO" in
             debian|ubuntu)
                 mv -f ${APT_OFFICIAL_SOURCES_BAK} ${APT_OFFICIAL_SOURCES}
-                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS}
+                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS} 2>/dev/null
                 apt-get update -y
             ;;
         esac
@@ -1593,6 +1611,46 @@ function uninstallRTPEngine() {
     printdbg "RTPEngine was uninstalled"
 }
 
+function installDsiprouterCli() {
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
+        printwarn "dSIPRouter CLI is already installed"
+        return
+    else
+        printdbg "Installing dSIPRouter CLI"
+    fi
+
+    # add dsiprouter CLI command to the path
+    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+    # enable bash command line completion if not already
+    if [[ -f /etc/bash.bashrc ]]; then
+        perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+    fi
+    # add command line completion for dsiprouter CLI
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+    # TODO: has no effect when executing script, user has to log out and log in for changes to take effect
+    #. /etc/bash_completion
+
+    touch "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
+    printdbg "dSIPRouter CLI installed"
+}
+
+function uninstallDsiprouterCli() {
+    if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
+        printwarn "dSIPRouter CLI is not installed, skipping..."
+        return
+    else
+        printdbg "Uninstalling dSIPRouter CLI"
+    fi
+
+    # remove dsiprouter and dsiprouterd commands from the path
+    rm -f /usr/bin/dsiprouter
+    # remove command line completion for dsiprouter.sh
+    rm -f /etc/bash_completion.d/dsiprouter
+
+    rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
+    printdbg "dSIPRouter CLI uninstalled"
+}
+
 # TODO: allow password changes on cloud instances (remove password reset after image creation)
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions
@@ -1630,15 +1688,6 @@ function installDsiprouter() {
     # configure dsiprouter modules
     installModules
 
-    # add dsiprouter CLI command to the path
-    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-    # enable bash command line completion if not already
-    if [[ -f /etc/bash.bashrc ]]; then
-        perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
-    fi
-    # add command line completion for dsiprouter CLI
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-    . /etc/bash_completion
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
     ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
@@ -1655,10 +1704,6 @@ function installDsiprouter() {
     else
         ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
-
-    # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
-    # Generate UUID unique to this dsiprouter instance
-    uuidgen > ${DSIP_UUID_FILE}
 
     # Set credentials for our services, will either use credentials from CLI or generate them
     if [[ -z "$SET_DSIP_GUI_PASS" ]]; then
@@ -1745,9 +1790,6 @@ EOF
     # TODO: we should move generated docs to /etc/dsiprouter to keep clean repo
     ( cd ${DSIP_PROJECT_DIR}/docs; make html >/dev/null 2>&1; )
 
-    # install documentation for the CLI
-    installManPage
-
     # Restart dSIPRouter / nginx / Kamailio with new configurations
     if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled ]]; then
         systemctl restart nginx
@@ -1798,14 +1840,6 @@ function uninstallDsiprouter() {
 
     # revert to previous MOTD ssh login banner
     revertBanner
-
-    # remove dsiprouter and dsiprouterd commands from the path
-    rm -f /usr/bin/dsiprouter
-    # remove command line completion for dsiprouter.sh
-    rm -f /etc/bash_completion.d/dsiprouter
-
-    # remove CLI documentation
-    uninstallManPage
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -1976,7 +2010,7 @@ function uninstallSipsak() {
 # used by kamailio dmq replication
 # TODO: need to integrate with cloud-init or dhclient/network-managaer/systemd-resolvd for resolv.conf config
 #       currently the dnsmasq configurations are being clobbered by other services
-# TODO: move DNSmasq install to its own directory
+# TODO: move DNSmasq install to its own directory, marked for v0.80
 function installDnsmasq() {
     local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS
 
@@ -2052,13 +2086,13 @@ EOF
     # setup hosts in cluster node is resolvable
     # cron and kam service will configure these dynamically
     if grep -q 'DSIP_CONFIG_START' /etc/hosts 2>/dev/null; then
-        perl -e "\$int_ip='${INTERNAL_IP}'; \$ext_ip='${EXTERNAL_IP}'; \$int_fqdn='${INTERNAL_FQDN}'; \$ext_fqdn='${EXTERNAL_FQDN}';" \
+        perl -e "\$int_ip='${INTERNAL_IP_ADDR}'; \$ext_ip='${EXTERNAL_IP_ADDR}'; \$int_fqdn='${INTERNAL_FQDN}'; \$ext_fqdn='${EXTERNAL_FQDN}';" \
             -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${int_ip} ${int_fqdn} local.cluster\n${ext_ip} ${ext_fqdn} local.cluster\n\2|gms' /etc/hosts
     else
         printf '\n%s\n%s\n%s\n%s\n' \
             '#####DSIP_CONFIG_START' \
-            "${INTERNAL_IP} ${INTERNAL_FQDN} local.cluster" \
-            "${EXTERNAL_IP} ${EXTERNAL_FQDN} local.cluster" \
+            "${INTERNAL_IP_ADDR} ${INTERNAL_FQDN} local.cluster" \
+            "${EXTERNAL_IP_ADDR} ${EXTERNAL_FQDN} local.cluster" \
             '#####DSIP_CONFIG_END' >> /etc/hosts
     fi
 
@@ -2079,8 +2113,7 @@ Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-/bin/mkdir -p ${RUN_DIR}
-ExecStartPre=!-/bin/chown -R dnsmasq:dnsmasq ${RUN_DIR}
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 # We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
 # wrapper picking up extra configuration files and then execs dnsmasq
@@ -2112,8 +2145,7 @@ Type=simple
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-/bin/mkdir -p ${RUN_DIR}
-ExecStartPre=!-/bin/chown -R dnsmasq:dnsmasq ${RUN_DIR}
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2142,8 +2174,7 @@ PermissionsStartOnly=true
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=/bin/mkdir -p $RUN_DIR
-ExecStartPre=/bin/chown -R dnsmasq:dnsmasq $RUN_DIR
+ExecStartPre=/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2182,6 +2213,9 @@ function uninstallDnsmasq() {
 
     # stop the process
     systemctl stop dnsmasq
+    # remove dnsmasq systemd service
+    rm -f /etc/systemd/system/dnsmasq.service
+    systemctl daemon-reload
 
     # uninstall dnsmasq
     if cmdExists 'apt-get'; then
@@ -2205,8 +2239,8 @@ function uninstallDnsmasq() {
     cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # if systemd dns resolver installed re-enable it
-    systemctl enable systemd-resolved 2>/dev/null
-    systemctl start systemd-resolved 2>/dev/null
+    #systemctl enable systemd-resolved 2>/dev/null
+    #systemctl start systemd-resolved 2>/dev/null
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
@@ -2245,12 +2279,14 @@ function start() {
 
     # Start dSIPRouter if told to and installed
     if (( $START_DSIPROUTER == 1 )) && [ -e ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled ]; then
+        # update runtime settings from CLI args
+        updateDsiprouterConfigRuntimeSettings
+
         if (( $DEBUG == 1 )); then
-            # perform pre-startup commands systemd would normally do
-            updateDsiprouterConfigRuntimeSettings
-            updatePermissions
             # start the reverse proxy first
             systemctl start nginx
+            # perform pre-startup commands systemd would normally do in dsiprouter.service
+            updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
 #            # Make sure process is still running
@@ -2349,16 +2385,16 @@ function displayLoginInfo() {
     echo -ne '\n'
 
     printdbg "You can access the dSIPRouter WEB GUI here"
-    pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
-    if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-        pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
+    pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
+    if [ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ];then
+        pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP_ADDR}:${DSIP_PORT}"
     fi
     echo -ne '\n'
 
     printdbg "You can access the dSIPRouter REST API here"
-    pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP}:${DSIP_PORT}"
-    if [ "$EXTERNAL_IP" != "$INTERNAL_IP" ];then
-        pprint "Internal IP: ${DSIP_API_PROTO}://${INTERNAL_IP}:${DSIP_PORT}"
+    pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
+    if [ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ];then
+        pprint "Internal IP: ${DSIP_API_PROTO}://${INTERNAL_IP_ADDR}:${DSIP_PORT}"
     fi
     echo -ne '\n'
 
@@ -2641,10 +2677,10 @@ $(declare -f getInternalIP)
 $(declare -f getExternalIP)
 
 # updated variables on login
-INTERNAL_IP=\$(getInternalIP)
-EXTERNAL_IP=\$(getExternalIP)
-if [[ -z "\$EXTERNAL_IP" ]]; then
-    EXTERNAL_IP="\$INTERNAL_IP"
+INTERNAL_IP_ADDR=\$(getInternalIP)
+EXTERNAL_IP_ADDR=\$(getExternalIP)
+if [[ -z "\$EXTERNAL_IP_ADDR" ]]; then
+    EXTERNAL_IP_ADDR="\$INTERNAL_IP_ADDR"
 fi
 DSIP_PORT=\$(getConfigAttrib 'DSIP_PORT' ${DSIP_CONFIG_FILE})
 DSIP_GUI_PROTOCOL=\$(getConfigAttrib 'DSIP_PROTO' ${DSIP_CONFIG_FILE})
@@ -2656,9 +2692,9 @@ displayLogo
 printdbg "Version: \$VERSION"
 printf '\n'
 printdbg "You can access the dSIPRouter GUI by going to:"
-printdbg "External IP: \${DSIP_GUI_PROTOCOL}://\${EXTERNAL_IP}:\${DSIP_PORT}"
-if [ "\$EXTERNAL_IP" != "\$INTERNAL_IP" ];then
-    printdbg "Internal IP: \${DSIP_GUI_PROTOCOL}://\${INTERNAL_IP}:\${DSIP_PORT}"
+printdbg "External IP: \${DSIP_GUI_PROTOCOL}://\${EXTERNAL_IP_ADDR}:\${DSIP_PORT}"
+if [ "\$EXTERNAL_IP_ADDR" != "\$INTERNAL_IP_ADDR" ];then
+    printdbg "Internal IP: \${DSIP_GUI_PROTOCOL}://\${INTERNAL_IP_ADDR}:\${DSIP_PORT}"
 fi
 printf '\n'
 
@@ -2763,7 +2799,7 @@ Before=
 
 [Service]
 Type=oneshot
-ExecStart=${DSIP_PROJECT_DIR}/dsiprouter.sh chown
+ExecStart=/usr/bin/true
 RemainAfterExit=true
 TimeoutSec=0
 
@@ -3193,10 +3229,6 @@ function updatePermissions() {
         # dsiprouter gui files readable and writable only by dsiprouter
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
-        # DEPRECATED: uuid replaced by DSIP_ID as unique identifier, marked for removal in v0.72
-        # uuid file should only be readable by dsiprouter and kamailio
-        chown dsiprouter:kamailio ${DSIP_UUID_FILE}
-        chmod 440 ${DSIP_UUID_FILE}
     }
     # set permissions for files/dirs used by rtpengine
     setRtpenginePerms() {
@@ -3390,7 +3422,7 @@ function processCMD() {
     # use options to add commands in any order needed
     # 1 == defaults on, 0 == defaults off
     local DISPLAY_LOGIN_INFO=0
-    # for install / uninstall default to kamailio and dsiprouter services
+    # for install / uninstall, if no selections are chosen use some sane defaults
     local DEFAULT_SERVICES=1
 
     # process all options before running commands
@@ -3399,7 +3431,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installDsiprouterCli installManPage)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -3664,7 +3696,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallManPage uninstallDsiprouterCli removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option

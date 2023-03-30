@@ -85,7 +85,7 @@ def before_request():
         app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
-
+# DEPRECATED: overridden by csrf.exempt(api), need to revist this, marked for review in v0.80
 @api.before_request
 def api_before_request():
     # for ua to api w/ api token disable csrf
@@ -1065,6 +1065,7 @@ def displayInboundMapping():
         endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
+
         res = db.execute(
             text("""
 SELECT * from (
@@ -1077,11 +1078,7 @@ SELECT * from (
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, g.id AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_groupid = r.groupid LEFT JOIN dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') WHERE ff.dr_groupid <> :flt_outbound
     UNION ALL
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, NULL AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_ruleid = r.ruleid WHERE ff.dr_groupid = :flt_outbound
-) AS t3 ON t1.ruleid = t3.ff_ruleid
-            """),
-            flt_inbound=settings.FLT_INBOUND,
-            flt_outbound=settings.FLT_OUTBOUND
-        )
+) AS t3 ON t1.ruleid = t3.ff_ruleid"""),{"flt_inbound":settings.FLT_INBOUND,"flt_outbound":settings.FLT_OUTBOUND})
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
         gwgroups = db.query(GatewayGroups).filter(
@@ -1205,7 +1202,7 @@ def addUpdateInboundMapping():
             # find last rule in dr_rules
             res = db.execute(
                 text("SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=:db_name AND TABLE_NAME='dr_rules'"),
-                db_name=settings.KAM_DB_NAME
+                {"db_name":settings.KAM_DB_NAME}
             ).first()
             ruleid = int(res[0])
 
@@ -2680,11 +2677,12 @@ def initApp(flask_app):
     reloadKamailio()
 
     # configs depending on updated settings go here
+    # DEPRECATED: flask_app.env is deprecated and only flask_app.debug will be used in the future, marked for removal in v0.80
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
-    # DEPRECATED: we don't use Flask-SQLalchemy anymore. The event system is only available in that version of sqlalchemy
-    # flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
+    # DEPRECATED: class interface changed and will be removed in Flask 2.3, marked for review in v0.80
+    #             customize 'app.json_provider_class' or 'app.json' instead
     # Set flask JSON encoder
     flask_app.json_encoder = CreateEncoder()
 
