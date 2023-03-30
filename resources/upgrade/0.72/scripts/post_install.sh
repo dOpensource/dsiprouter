@@ -1,18 +1,28 @@
 #!/usr/bin/env bash
 
-# pull in dsiprouter dependencies
-source /opt/dsiprouter/dsiprouter.sh
+# set project dir (where src files are located)
+DSIP_PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
+# Import dsip_lib utility / shared functions
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
+
+
 
 # generate docs
 (
-  cd ${DSIP_PROJECT_DIR}/docs
-  make html >/dev/null 2>&1
+    cd ${DSIP_PROJECT_DIR}/docs
+    make html >/dev/null 2>&1
 )
 
 # install documentation for the CLI
-installManPage
+cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_PROGS_DIR}/
+gzip -f ${MAN_PROGS_DIR}/dsiprouter.1
+mandb
 
 # generate settings.py
+
+
 # generate systemd services
 createInitService
 

@@ -2,7 +2,6 @@
   'use strict';
 
   function getUpgradeInfo() {
-
     $('#upgrade_form').hide();
     $('#upgrade_output_row').show();
 
@@ -14,13 +13,11 @@
   }
 
   $(document).ready(function() {
-
     $('#btnShowLog').click(function() {
       getUpgradeInfo()
     });
 
     $("#upgrade_form").submit(function(e) {
-
       var theInterval = setInterval(getUpgradeInfo, 1000);
 
       e.preventDefault();
@@ -41,10 +38,7 @@
           clearInterval(theInterval);
         }
       });
-
-
     });
-
   });
 
 })(window, document);

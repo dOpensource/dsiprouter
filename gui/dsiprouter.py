@@ -2276,7 +2276,7 @@ def displayUpgrade(msg=None):
         error = "server"
         return showError(type=error)
 
-
+# TODO: not secured, can be called without license check if user is logged in
 @app.route('/upgrade/start', methods=['POST'])
 def start_upgrade():
     try:
@@ -2288,8 +2288,11 @@ def start_upgrade():
 
         logging.info("Starting upgrade")
 
+        form = stripDictVals(request.form.to_dict())
+        cmd = "dsiprouter upgrade --release='{}'".format(form['latest_version'])
+
         with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
-            run_info = subprocess.run("dsiprouter upgrade", stdout=f, stderr=subprocess.STDOUT)
+            run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
             run_info.check_returncode()
 
         logging.info("Upgrade complete")

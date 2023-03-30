@@ -461,6 +461,7 @@ function validateOSInfo() {
     export KAM_VERSION
 }
 
+# TODO: add documentation generation to supported CLI commands
 # install dsiprouter manpage
 function installManPage() {
     local MAN_PROGS_DIR="/usr/share/man/man1"
@@ -1651,6 +1652,7 @@ function uninstallDsiprouterCli() {
     printdbg "dSIPRouter CLI uninstalled"
 }
 
+# TODO: move documentation generation into its own separate function
 # TODO: allow password changes on cloud instances (remove password reset after image creation)
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions

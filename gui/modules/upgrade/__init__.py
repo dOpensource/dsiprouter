@@ -1,10 +1,4 @@
 import re, requests
-import subprocess
-import sys
-import logging
-
-sys.path.append('../../')
-from util.pyasync import proc
 
 
 class UpdateUtils():

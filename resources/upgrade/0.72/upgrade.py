@@ -4,21 +4,17 @@ import json
 import datetime
 import subprocess
 import mysql.connector
-import daemon
-import lockfile
-import signal
 import logging
 import ast
 
-sys.path.append("/etc/dsiprouter/gui")
 sys.path.insert(0, '/etc/dsiprouter/gui')
 import settings
 
 sys.path.insert(0, '/opt/dsiprouter/gui')
 from util.security import AES_CTR
-import shared
 
 upgrade_settings = {}
+upgrade_resource_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
 
 
 # compare the version code from the settings file with the current version code
@@ -221,17 +217,17 @@ def merge_settings():
         logging.info('Problem updating the {0} configuration file'.format(config_file))
 
 
-context = daemon.DaemonContext(
-    working_directory='/opt/dsiprouter/resources/upgrade/0.71',
-    # umask=0o002,
-    pidfile=lockfile.FileLock('/var/run/dsip_upgrade.pid'),
-)
-
-context.signal_map = {
-    signal.SIGTERM: 'terminate',
-    signal.SIGHUP: 'terminate',
-}
-
+# context = daemon.DaemonContext(
+#     working_directory='/opt/dsiprouter/resources/upgrade/0.71',
+#     # umask=0o002,
+#     pidfile=lockfile.FileLock('/var/run/dsip_upgrade.pid'),
+# )
+#
+# context.signal_map = {
+#     signal.SIGTERM: 'terminate',
+#     signal.SIGHUP: 'terminate',
+# }
+#
 # with context:
 
 os.chdir("/opt/dsiprouter/resources/upgrade/0.71")
@@ -241,9 +237,9 @@ log_file_name = '/var/log/dsiprouter_upgrade.log'
 open(log_file_name, 'w').close()
 
 logging.basicConfig(filename=log_file_name,
-                    level=logging.DEBUG,
-                    encoding='utf-8',
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p'
-                    )
+    level=logging.DEBUG,
+    encoding='utf-8',
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p'
+)
 start_upgrade()
