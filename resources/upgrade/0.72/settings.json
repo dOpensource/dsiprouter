@@ -3,7 +3,7 @@
   "depends": "0.70",
   "install_location": "/opt/dsiprouter",
   "database_migrations": [
-    "migrations-072.sql"
+    "migrate.sql"
   ],
   "dsiprouter": [
     "post_install.sh"

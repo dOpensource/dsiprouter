@@ -4,22 +4,18 @@ import re
 import json
 import datetime
 import subprocess
-import mysql.connector
-import daemon
-import lockfile
-import signal
 import logging
 import ast
+import shutil
 
-sys.path.append("/etc/dsiprouter/gui")
 sys.path.insert(0, '/etc/dsiprouter/gui')
 import settings
 
 sys.path.insert(0, '/opt/dsiprouter/gui')
 from util.security import AES_CTR
-import shared
 
 upgrade_settings = {}
+upgrade_resource_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
 
 
 # compare the version code from the settings file with the current version code
@@ -107,6 +103,16 @@ def backup_system():
         logging.error("Error backing up dSIP project directory")
         # logging.error(e.output.decode("utf-8"))
 
+    try:
+        logging.info("Backing up the config file")
+        new_file_name = '/etc/dsiprouter/gui/settings.py.bak'
+        old_file_name = '/etc/dsiprouter/gui/settings.py'
+        shutil.copyfile(old_file_name, new_file_name)
+
+    except Exception as e:
+        logging.error("An unexpected error occurred when backing up the config file. {}".format(e))
+        sys.exit(1)
+
     logging.info("Backup complete")
 
 
@@ -149,14 +155,10 @@ def upgrade_database():
             migration_command = f"mysql  -h {mysql_host} -u {mysql_user} -p{mysql_password} {mysql_db} < {scripts_directory}/{db_script}"
             output = subprocess.check_output(migration_command, shell=True)
             logging.info(output.decode("utf-8"))
-            logging.info("Migration completed successfully")
+            logging.info("Migration " + db_script + "completed successfully")
 
-        logging.info("DB Migrations completed successfully")
+        logging.info("All DB Migrations completed successfully")
 
-
-    except mysql.connector.Error as err:
-        logging.error("An error occurred: {}".format(err))
-        sys.exit(1)
     except Exception as e:
         logging.error("An unexpected error occurred {}".format(e))
         sys.exit(1)
@@ -166,8 +168,25 @@ def upgrade_dsiprouter():
     logging.info("Starting dSIPRouter Upgrade process")
     global upgrade_settings
 
-    for command in upgrade_settings['dsiprouter']:
-        os.system(command)
+    try:
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        scripts_directory = os.path.join(current_dir, 'scripts')
+
+        logging.info("Running scripts from " + scripts_directory)
+
+        # execute the SQL queries one by one
+        for script in upgrade_settings['dsiprouter']:
+            script_command = f"/bin/bash {scripts_directory}/{script}"
+            logging.info("Executing Script: " + script_command)
+            output = subprocess.check_output(script_command, shell=True)
+            logging.info(output.decode("utf-8"))
+            logging.info("Script " + script + "completed successfully")
+
+        logging.info("All Scripts completed successfully")
+
+    except Exception as e:
+        logging.error("An unexpected error occurred {}".format(e))
+        sys.exit(1)
 
 
 def merge_settings():
@@ -214,30 +233,19 @@ def merge_settings():
         logging.info('Problem updating the {0} configuration file'.format(config_file))
 
 
-context = daemon.DaemonContext(
-    working_directory='/opt/dsiprouter/resources/upgrade/0.71',
-    # umask=0o002,
-    pidfile=lockfile.FileLock('/var/run/dsip_upgrade.pid'),
-)
-
-context.signal_map = {
-    signal.SIGTERM: 'terminate',
-    signal.SIGHUP: 'terminate',
-}
-
-# with context:
-
-os.chdir("/opt/dsiprouter/resources/upgrade/0.71")
+os.chdir("/opt/dsiprouter/resources/upgrade/0.72")
 
 # clear the contents of the log file
 log_file_name = '/var/log/dsiprouter_upgrade.log'
 open(log_file_name, 'w').close()
 
-logging.basicConfig(filename=log_file_name,
-                    level=logging.DEBUG,
-                    encoding='utf-8',
-                    format='%(asctime)s - %(levelname)s - %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p'
-                    )
+logging.basicConfig(
+    filename=log_file_name,
+    level=logging.DEBUG,
+    encoding='utf-8',
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p'
+)
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
 start_upgrade()

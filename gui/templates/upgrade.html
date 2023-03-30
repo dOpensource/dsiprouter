@@ -38,6 +38,8 @@
 
     <form action="/upgrade" method="POST" role="form" id="upgrade_form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="current_version" value="{{ upgrade_settings["current_version"] }}"/>
+      <input type="hidden" name="latest_version" value="{{ upgrade_settings["latest_version"] }}"/>
 
       {% if upgrade_settings["upgrade_available"] == 1 %}
         <div class="row">
@@ -70,9 +72,7 @@
           </div>
         </div>
       {% endif %}
-
     </form>
-
 
     <div id="upgrade_output_row" class="row" style="display: none">
       <div class="col-sm-12" style="height: auto;">
