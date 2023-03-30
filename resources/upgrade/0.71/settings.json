@@ -1,20 +1,11 @@
 {
-  "version": "0.71",
-  "depends": "0.71",
+  "version": "0.72",
+  "depends": "0.70",
   "install_location": "/opt/dsiprouter",
-  "database_credentials": {
-    "type": "mysql",
-    "host": "localhost",
-    "port": 3306,
-    "name": "kamailio",
-    "user": "kamailio",
-    "password": "pbIxCCIuXjzdFSxreeqz5Qm4kOYA4qle7PLUld0Y4dFo780X1GAQOPOh6ZC4ynre"
-  },
   "database_migrations": [
-    "select 1;",
-    "select 2;",
-    "select 3;"
+    "migrations-072.sql"
   ],
   "dsiprouter": [
+    "post_install.sh"
   ]
 }

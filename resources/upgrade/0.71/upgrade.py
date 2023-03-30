@@ -1,5 +1,5 @@
 import sys
-import os
+import os, re
 import json
 import datetime
 import subprocess
@@ -8,10 +8,15 @@ import daemon
 import lockfile
 import signal
 import logging
+import ast
 
-# sys.path.append("/etc/dsiprouter/gui/settings.py")
+sys.path.append("/etc/dsiprouter/gui")
 sys.path.insert(0, '/etc/dsiprouter/gui')
 import settings
+
+sys.path.insert(0, '/opt/dsiprouter/gui')
+from util.security import AES_CTR
+import shared
 
 upgrade_settings = {}
 
@@ -29,10 +34,10 @@ def start_upgrade():
         backup_system()
         upgrade_database()
         upgrade_dsiprouter()
+        merge_settings()
         logging.info("Upgrade complete.")
 
-        #TODO: Add git status diff checking
-
+        # TODO: Add git status diff checking
 
         sys.exit(0)
     else:
@@ -49,22 +54,21 @@ def backup_system():
     logging.info("Backup destination: " + backup_destination)
 
     # MySQL database credentials
-    mysql_user = upgrade_settings['database_credentials']['user']
-    mysql_password = upgrade_settings['database_credentials']['password']
-    mysql_host = upgrade_settings['database_credentials']['host']
-    mysql_db = upgrade_settings['database_credentials']['name']
+    mysql_user = AES_CTR.decrypt(settings.KAM_DB_USER).decode('utf-8')  # upgrade_settings['database_credentials']['user']
+    mysql_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')  # upgrade_settings['database_credentials']['password']
+    mysql_host = AES_CTR.decrypt(settings.KAM_DB_HOST).decode('utf-8')  # upgrade_settings['database_credentials']['host']
+    mysql_db = AES_CTR.decrypt(settings.KAM_DB_NAME).decode('utf-8')  # upgrade_settings['database_credentials']['name']
 
     # create a backup of the mysql database
     logging.info("Backing up MySQL database")
     try:
-        mysql_dump_cmd = f"mysqldump    -u {mysql_user} -p{mysql_password} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
+        mysql_dump_cmd = f"mysqldump  --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges   -u {mysql_user} -p{mysql_password} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
         output = subprocess.check_output(mysql_dump_cmd, shell=True)
         logging.info(output.decode("utf-8"))
         logging.info("MySQL database backup complete")
     except subprocess.CalledProcessError as e:
         logging.error("Error backing up MySQL database")
         logging.error(e.output.decode("utf-8"))
-
 
     # directory to archive
     dsip_project_dir = settings.DSIP_PROJECT_DIR
@@ -127,7 +131,7 @@ def upgrade_database():
     mysql_host = upgrade_settings['database_credentials']['host']
     mysql_db = upgrade_settings['database_credentials']['name']
 
-    queries = upgrade_settings['database_migrations']
+    migration_scripts = upgrade_settings['database_migrations']
 
     try:
         # connect to the MySQL database
@@ -136,11 +140,19 @@ def upgrade_database():
         logging.info("Connected Successfully")
         cursor = cnx.cursor()
 
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        scripts_directory = os.path.join(current_dir, 'scripts')
+
         # execute the SQL queries one by one
-        for query in queries:
-            logging.info("Executing Migration: " + query)
-            cursor.execute(query)
-            if query.strip().upper().startswith("SELECT"):
+        for db_script in migration_scripts:
+            logging.info("Executing Migration: " + db_script)
+            migration_command = f"mysql  -u {mysql_user} -p{mysql_password} {mysql_db} < {scripts_directory}/{db_script}"
+            output = subprocess.check_output(migration_command, shell=True)
+            logging.info(output.decode("utf-8"))
+            logging.info("MySQL database backup complete")
+
+            cursor.execute(db_script)
+            if db_script.strip().upper().startswith("SELECT"):
                 print(cursor.fetchall())
             logging.info("Migration completed successfully")
 
@@ -157,13 +169,56 @@ def upgrade_database():
         sys.exit(1)
 
 
-
 def upgrade_dsiprouter():
     logging.info("Starting dSIPRouter Upgrade process")
     global upgrade_settings
 
     for command in upgrade_settings['dsiprouter']:
         os.system(command)
+
+
+def merge_settings():
+    logging.info("Upgrading the settings file")
+
+    old_file_name = '/etc/dsiprouter/gui/settings.py.old'
+    new_file_name = '/etc/dsiprouter/gui/settings.py'
+
+    # Read new file
+    old_file_dict = None
+    new_file_dict = None
+
+    with open(old_file_name, 'r') as f:
+        file_contents = f.read()
+        old_file_dict = ast.literal_eval(file_contents)
+
+    with open(new_file_name, 'r') as f:
+        file_contents = f.read()
+        new_file_dict = ast.literal_eval(file_contents)
+
+    # Merge keys from new file into old file
+    for key, value in old_file_dict.items():
+        new_file_dict[key] = value
+
+    # Output the merged dictionary
+    print(old_file_dict)
+
+    try:
+        config_file = new_file_name
+
+        with open(config_file, 'r+') as config:
+            config_str = config.read()
+            for key, val in old_file_dict.items():
+                regex = r"^(?!#)(?:" + re.escape(key) + \
+                        r")[ \t]*=[ \t]*(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?\"\"\".*\"\"\"[ \t]*$|b?'''.*'''[ \v]*$|b?\".*\"[ \t]*$|b?'.*')"
+                replace_str = "{} = {}".format(key, repr(val))
+                config_str = re.sub(regex, replace_str, config_str, flags=re.MULTILINE)
+
+            config.seek(0)
+            config.write(config_str)
+            config.truncate()
+            logging.info('Successfully updated the configuration file')
+    except:
+        logging.info('Problem updating the {0} configuration file'.format(config_file))
 
 
 context = daemon.DaemonContext(
