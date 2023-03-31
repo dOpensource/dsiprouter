@@ -79,8 +79,7 @@ Executing Kamailio stats API
 
 .. code-block:: bash
 
-  curl -H "Authorization: Bearer $DSIP_TOKEN"
-  -X GET http://demo.dsiprouter.org:5000/api/v1/kamailio/stats
+  curl -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://demo.dsiprouter.org:5000/api/v1/kamailio/stats
 
 
 One Line Version:
@@ -97,8 +96,7 @@ Getting the endlease
 
 .. code-block:: bash
 
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json"
- -X GET "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
 
 
 One Line Version:
@@ -111,8 +109,7 @@ Revoking and replacing with your own lease ID
 
 .. code-block:: bash
 
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json"
- -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/1/revoke"
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/1/revoke"
 
 
 One Line Version:
