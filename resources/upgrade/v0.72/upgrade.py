@@ -54,15 +54,16 @@ def backup_system():
     logging.info("Backup destination: " + backup_destination)
 
     # MySQL database credentials
-    mysql_user = settings.ROOT_DB_USER
-    mysql_password = AES_CTR.decrypt(settings.ROOT_DB_PASS).decode('utf-8')
-    mysql_host = settings.KAM_DB_HOST
-    mysql_db = settings.KAM_DB_NAME
+    db_user = settings.ROOT_DB_USER
+    db_pass = AES_CTR.decrypt(settings.ROOT_DB_PASS).decode('utf-8') if isinstance(settings.ROOT_DB_PASS, bytes) else settings.ROOT_DB_PASS
+    db_host = settings.KAM_DB_HOST
+    db_port = settings.KAM_DB_PORT
+    db_name = settings.KAM_DB_NAME
 
     # create a backup of the mysql database
     logging.info("Backing up MySQL database")
     try:
-        mysql_dump_cmd = f"mysqldump --single-transaction --opt --events --routines --triggers --add-drop-database --flush-privileges   -u {mysql_user} -p{mysql_password} -h {mysql_host} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
+        mysql_dump_cmd = f'mysqldump --single-transaction --opt --events --routines --triggers --add-drop-database --flush-privileges --user="{db_user}" --password="{db_pass}" --host="{db_host}" --port="{db_port}" {db_name} >{backup_destination}/{db_name}_{timestamp}.sql'
         # logging.info("Command is " + mysql_dump_cmd)
         output = subprocess.check_output(mysql_dump_cmd, shell=True)
         logging.info(output.decode("utf-8"))
@@ -136,11 +137,6 @@ def read_settings():
 def upgrade_database():
     logging.info("Starting DB Upgrade process")
     global upgrade_settings
-    # MySQL database credentials
-    mysql_user = settings.ROOT_DB_USER
-    mysql_password = AES_CTR.decrypt(settings.ROOT_DB_PASS).decode('utf-8')
-    mysql_host = settings.KAM_DB_HOST
-    mysql_db = settings.KAM_DB_NAME
 
     migration_scripts = upgrade_settings['database_migrations']
 
@@ -150,13 +146,13 @@ def upgrade_database():
 
         logging.info("Running scripts from " + scripts_directory)
 
-        # execute the SQL queries one by one
-        for db_script in migration_scripts:
-            logging.info("Executing Migration: " + db_script)
-            migration_command = f"mysql  -h {mysql_host} -u {mysql_user} -p{mysql_password} {mysql_db} < {scripts_directory}/{db_script}"
-            output = subprocess.check_output(migration_command, shell=True)
+        # execute the cmds one by one
+        for script in migration_scripts:
+            script_command = f"/bin/bash {scripts_directory}/{script}"
+            logging.info("Executing Script: " + script_command)
+            output = subprocess.check_output(script_command, shell=True)
             logging.info(output.decode("utf-8"))
-            logging.info("Migration " + db_script + "completed successfully")
+            logging.info("Script " + script + "completed successfully")
 
         logging.info("All DB Migrations completed successfully")
 

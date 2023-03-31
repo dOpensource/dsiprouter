@@ -189,7 +189,6 @@ function decryptConfigAttrib() {
 }
 export -f decryptConfigAttrib
 
-# TODO: openssl native version
 # $1 == attribute name
 # $2 == kamailio config file
 function enableKamailioConfigAttrib() {
@@ -1237,3 +1236,9 @@ function hashCreds() {
 	#${DSIP_PROJECT_DIR}/dsiprouter/pbkdf2.sh 'sha512' "$CREDS" "$SALT" "$HASH_ITERATIONS" 4
 }
 export -f hashCreds
+
+# TODO: openssl native version
+#function encryptCreds() {
+#    ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+#}
+#export -f encryptCreds

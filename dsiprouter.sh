@@ -2845,8 +2845,8 @@ function upgrade() {
         return $?
     fi
 
-    # TODO: remove dependencies on python from here
-    ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/upgrade.py ${UPGRADE_RELEASE}
+    ${DSIP_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
+    return $?
 }
 
 # TODO: deprecated code requiring review, marked for review in v0.80
