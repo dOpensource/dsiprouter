@@ -5,8 +5,10 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-4f677742bc7c208c4604eaca65069f39d5918175
+a1a55ec01f46433fb7ac64eae58089cc8e506a19
+5a34993875502fc1cd9f21dec686a3035a8dcb92
 8cac48d464f70bd5da4c8227abfc7025a23a82a0
+63ac499d92fac90f8bb1c3fabc7c03136abd505f
 2bba54fc6e7061893b205149d7c9172c97239cbf
 50348be3339f4d3f9be532dcd4164964992bdf17
 a1174d1e922ffd85eb767b7047fb84e3e3e0745e
@@ -16,6 +18,8 @@ cc8a46218083c85894e090228f3cd55eb5a238c7
 9a82a5efab8b2d6a3bed6c0611888b0a191119c5
 e354fbeb2467854770650aec659d98b27dc8d464
 98270d267c77f991b3aecf572d38c097fecac68b
+16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35
+4082e01348c3279f71685ff9eeaccaee25a6e53d
 92d323dc7d6d82645ae7c25a4134679009dba4a6
 0b3ed50bbf81577558e79b77dd8b2c65f61ad034
 203f8ea5953044b05b047a5565c36c23155cff43
@@ -24,6 +28,7 @@ af39173450198616f9e1f959f233f980a65a4d47
 2f31989a6b34be6d213a891c3725dde6c168f2fb
 581d8ed65958db142c9c64e3d6f973327a626fcc
 3b02dc02eeaee8d4e8ca13741489c2e6f72de230
+63dfa5ae605542cb998a8b03155bdddb75bb1472
 a787ec5760bf147c755950116a9e440d181a2e9d
 35b4d7233eeda44587c59f0593f5599f82898f65
 1fc9ae71deb1b5191c68a3171bf9b5269e198b80
@@ -2100,10 +2105,25 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 4f677742bc7c208c4604eaca65069f39d5918175)
+[//]: # (START_SECTION a1a55ec01f46433fb7ac64eae58089cc8e506a19)
+### Updated the database logic to use the new SQLAlchemy 2.0 result-object
+
+> Commit: [a1a55ec01f46433fb7ac64eae58089cc8e506a19](https://github.com/dOpensource/dsiprouter/commit/a1a55ec01f46433fb7ac64eae58089cc8e506a19)  
+> Date: Sun, 12 Mar 2023 00:44:26 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a1a55ec01f46433fb7ac64eae58089cc8e506a19)
+[//]: # (START_SECTION 5a34993875502fc1cd9f21dec686a3035a8dcb92)
 ### Allow Static Networking
 
-> Commit: [4f677742bc7c208c4604eaca65069f39d5918175](https://github.com/dOpensource/dsiprouter/commit/4f677742bc7c208c4604eaca65069f39d5918175)  
+> Commit: [5a34993875502fc1cd9f21dec686a3035a8dcb92](https://github.com/dOpensource/dsiprouter/commit/5a34993875502fc1cd9f21dec686a3035a8dcb92)  
 > Date: Tue, 7 Mar 2023 15:39:52 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2115,7 +2135,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 4f677742bc7c208c4604eaca65069f39d5918175)
+[//]: # (END_SECTION 5a34993875502fc1cd9f21dec686a3035a8dcb92)
 [//]: # (START_SECTION 8cac48d464f70bd5da4c8227abfc7025a23a82a0)
 ### Resolve Merge Conflicts
 
@@ -2131,6 +2151,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 8cac48d464f70bd5da4c8227abfc7025a23a82a0)
+[//]: # (START_SECTION 63ac499d92fac90f8bb1c3fabc7c03136abd505f)
+### Process Updates
+
+> Commit: [63ac499d92fac90f8bb1c3fabc7c03136abd505f](https://github.com/dOpensource/dsiprouter/commit/63ac499d92fac90f8bb1c3fabc7c03136abd505f)  
+> Date: Fri, 3 Mar 2023 08:24:03 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 63ac499d92fac90f8bb1c3fabc7c03136abd505f)
 [//]: # (START_SECTION 2bba54fc6e7061893b205149d7c9172c97239cbf)
 ### Security Updates For WSGI Dependencies
 
@@ -2295,6 +2330,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 98270d267c77f991b3aecf572d38c097fecac68b)
+[//]: # (START_SECTION 16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35)
+### API Updates
+
+> Commit: [16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35](https://github.com/dOpensource/dsiprouter/commit/16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35)  
+> Date: Tue, 7 Feb 2023 13:52:19 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35)
+[//]: # (START_SECTION 4082e01348c3279f71685ff9eeaccaee25a6e53d)
+### Upgrade Checkpoint
+
+> Commit: [4082e01348c3279f71685ff9eeaccaee25a6e53d](https://github.com/dOpensource/dsiprouter/commit/4082e01348c3279f71685ff9eeaccaee25a6e53d)  
+> Date: Tue, 7 Feb 2023 13:06:59 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4082e01348c3279f71685ff9eeaccaee25a6e53d)
 [//]: # (START_SECTION 92d323dc7d6d82645ae7c25a4134679009dba4a6)
 ### Update installing.rst
 
@@ -2437,6 +2502,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 3b02dc02eeaee8d4e8ca13741489c2e6f72de230)
+[//]: # (START_SECTION 63dfa5ae605542cb998a8b03155bdddb75bb1472)
+### Added teh script to generate the self signed cert
+
+> Commit: [63dfa5ae605542cb998a8b03155bdddb75bb1472](https://github.com/dOpensource/dsiprouter/commit/63dfa5ae605542cb998a8b03155bdddb75bb1472)  
+> Date: Thu, 8 Dec 2022 11:53:58 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 63dfa5ae605542cb998a8b03155bdddb75bb1472)
 [//]: # (START_SECTION a787ec5760bf147c755950116a9e440d181a2e9d)
 ### Removed Rabbit MQ logic
 

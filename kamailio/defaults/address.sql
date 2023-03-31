@@ -1,3 +1,3 @@
 -- update address schema
-ALTER TABLE dr_gateways
+ALTER TABLE address
   MODIFY tag varchar(255) NOT NULL DEFAULT '';

@@ -28,12 +28,12 @@ DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
 # reuse credential settings from python files (exported for later usage)
-SALT_LEN=$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-DK_LEN_DEFAULT=$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-CREDS_MAX_LEN=$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-HASH_ITERATIONS=$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+SALT_LEN=${SALT_LEN:-$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+DK_LEN_DEFAULT=${DK_LEN_DEFAULT:-$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+CREDS_MAX_LEN=${CREDS_MAX_LEN:-$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+HASH_ITERATIONS=${HASH_ITERATIONS:-$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export HASHED_CREDS_ENCODED_MAX_LEN=${HASHED_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export AESCTR_CREDS_ENCODED_MAX_LEN=${AESCTR_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1

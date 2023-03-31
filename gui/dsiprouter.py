@@ -2,14 +2,17 @@
 
 # make sure the generated source files are imported instead of the template ones
 import sys
+
+from util.pyasync import proc
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets
+import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint
+from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint, Response
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy import func, exc as sql_exceptions
@@ -38,6 +41,7 @@ from modules.api.auth.routes import user
 from util.security import Credentials, urandomChars
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
+from modules.upgrade import UpdateUtils
 import globals, settings
 
 # TODO: unit testing per component
@@ -2217,6 +2221,111 @@ def addUpdateStirShaken():
 
     except WoocommerceError as ex:
         return render_template('license_required.html', msg=str(ex))
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/upgrade')
+def displayUpgrade(msg=None):
+    """
+    Display Upgrade settings in view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        if len(settings.DSIP_CORE_LICENSE) == 0:
+            return render_template('license_required.html', msg=None)
+
+        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_CORE_LICENSE, decrypt=True)
+        if not settings_lc.active:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
+
+        lc = WoocommerceLicense(settings_lc.license_key)
+        if lc != settings_lc:
+            return render_template('license_required.html',
+                msg='license is associated with another machine, re-associate it with this machine first')
+
+        latest = UpdateUtils.get_latest_version()
+
+        upgrade_settings = {
+            "current_version": settings.VERSION,
+            "latest_version": latest['tag_name'],
+            "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
+        }
+        return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
+
+    except WoocommerceError as ex:
+        return render_template('license_required.html', msg=str(ex))
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+# TODO: not secured, can be called without license check if user is logged in
+@app.route('/upgrade/start', methods=['POST'])
+def start_upgrade():
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        logging.info("Starting upgrade")
+
+        form = stripDictVals(request.form.to_dict())
+        upgrade_resources_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
+        current_resources_dir = os.path.join(upgrade_resources_dir, form['latest_version'])
+        cmd = "python3 {} {}".format(current_resources_dir, form['latest_version'])
+
+        with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
+            run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+            run_info.check_returncode()
+
+        logging.info("Upgrade complete")
+
+        return displayUpgrade()
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/upgrade/log')
+def getUpgradeLog(msg=None):
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        filename = "/var/log/dsiprouter_upgrade.log"
+        with open(filename, 'r') as file:
+            content = file.read()
+            return Response(content, content_type='text/plain')
+    except FileNotFoundError:
+        return 'File not found', 404
     except http_exceptions.HTTPException as ex:
         debugException(ex)
         error = "http"
