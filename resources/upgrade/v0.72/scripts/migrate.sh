@@ -585,7 +585,7 @@ else
 fi
 
 printdbg 'installing python dependencies for the GUI'
-python3 -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
+python3 -m pip install --force-reinstall -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
 
 printdbg 'generating dynamic config files for the GUI'
 dsiprouter configuredsip &&
