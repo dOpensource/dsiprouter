@@ -126,7 +126,7 @@ encryptCreds() { (
     else
         cd ${DSIP_PROJECT_DIR}/gui
     fi
-    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'));"
+    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1'));"
 ) }
 
 # TODO: does not support multiple rows in dsip_settings table (cluster upgrade not supported yet)
