@@ -498,8 +498,10 @@ Note: For multi-tenant use, authorizing the root subdomain or domain (if you use
   
 
 Login Note: If your using multi-factor authentication (MFA/2FA), log in by typing Connect-MicrosoftTeams
-Debian 10 Note: If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
-**Replace sbc.example.com, user@example.com and +13137175555** with your SBC's FQDN, the user's email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)
+
+.. code-block:: console
+	Debian 10 Note: If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
+	**Replace sbc.example.com, user@example.com and +13137175555** with your SBC's FQDN, the user's email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)
 
 .. code-block:: bash
 
