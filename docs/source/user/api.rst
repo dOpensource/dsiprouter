@@ -20,17 +20,9 @@ Your token was provided to you after you installed dSIPRouter.  You can reset yo
 Executing Kamailio stats API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 .. code-block:: bash
 
   curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOSTNAME:5000/api/v1/kamailio/stats
-
-
-One Line Version:
-
-.. code-block:: bash
-
-  curl -k -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://$DSIP_HOSTNAME:5000/api/v1/kamailio/stats
 
 
 Executing Lease Point API
@@ -43,23 +35,11 @@ Getting the endlease
  curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
 
 
-One Line Version:
-
-.. code-block:: bash
-
- curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "https:$DSIP_HOSTNAME:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
-
 Revoking and replacing with your own lease ID
 
 .. code-block:: bash
 
  curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease/1/revoke"
 
-
-One Line Version:
-
-.. code-block:: bash
-
- curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease/1/revoke"
 
 
