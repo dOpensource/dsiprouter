@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
 # set project dir (where src files are located)
-DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
+export DSIP_PROJECT_DIR=/opt/dsiprouter
 # import dsip_lib utility / shared functions
 if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
@@ -11,14 +10,8 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
         . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
     fi
 fi
-# shadow dsiprouter command if bootstrapping
-if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
-    function dsiprouter() {
-        /tmp/dsiprouter/dsiprouter.sh "$@"
-    }
-fi
 
-# backup everything just in case
+printdbg 'backing up configs just in case the upgrade fails'
 BACKUP_DIR="/var/backups"
 CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
 mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine}
@@ -30,7 +23,7 @@ cp -rf /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
 cp -f ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
 # TODO: backup current systemd service files
 
-# get current dsiprouter settings
+printdbg 'retrieving current settings'
 export DSIP_ID=$(cat /etc/machine-id | hashCreds)
 export DSIP_CLUSTER_ID=$(getConfigAttrib "DSIP_CLUSTER_ID" "/etc/dsiprouter/gui/settings.py")
 export DSIP_CLUSTER_SYNC=$(getConfigAttrib "DSIP_CLUSTER_SYNC" "/etc/dsiprouter/gui/settings.py")
@@ -127,16 +120,17 @@ getCredentials() {
 }
 getCredentials
 
-#encryptCreds() { (
-#    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
-#        cd /tmp/dsiprouter/gui
-#    else
-#        cd ${DSIP_PROJECT_DIR}/gui
-#    fi
-#    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'));"
-#) }
+encryptCreds() { (
+    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
+        cd /tmp/dsiprouter/gui
+    else
+        cd ${DSIP_PROJECT_DIR}/gui
+    fi
+    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'));"
+) }
 
 # TODO: does not support multiple rows in dsip_settings table (cluster upgrade not supported yet)
+printdbg 'migrating database schema'
 (
 cat <<'EOF'
 ALTER TABLE address
@@ -190,7 +184,12 @@ EOF
 
 cat <<EOF
 UPDATE dsip_settings
-  SET DSIP_ID='$DSIP_ID';
+  SET DSIP_ID='$DSIP_ID',
+  SET DSIP_PASSWORD='$(encryptCreds $DSIP_PASSWORD)',
+  SET DSIP_IPC_PASS='$(encryptCreds $DSIP_IPC_PASS)',
+  SET DSIP_API_TOKEN='$(encryptCreds $DSIP_API_TOKEN)',
+  SET KAM_DB_PASS='$(encryptCreds $KAM_DB_PASS)',
+  SET MAIL_PASSWORD='$(encryptCreds $MAIL_PASSWORD)';
 EOF
 
 cat <<'EOF'
@@ -571,40 +570,63 @@ if (( $? != 0 )); then
     exit 1
 fi
 
-# configure dsiprouter GUI
-(
-    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
-        DSIP_PROJECT_DIR=/tmp/dsiprouter
-    fi
+printdbg 'configuring dsiprouter GUI'
+if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
+    # a few stragglers that need copied over
+    cp -f /opt/dsiprouter/gui/modules/fusionpbx/certs/cert.key /tmp/dsiprouter/gui/modules/fusionpbx/certs/cert.key
+    cp -f /opt/dsiprouter/gui/modules/fusionpbx/certs/cert_combined.crt /tmp/dsiprouter/gui/modules/fusionpbx/certs/cert.key
+    # use the bootstrap repo instead cloning again
+    rm -rf /opt/dsiprouter
+    mv -f /tmp/dsiprouter /opt/dsiprouter
+else
+    # fresh repo coming up
+    rm -rf /opt/dsiprouter
+    git clone --depth 1 -b v0.72 https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter
+fi
+
+printdbg 'installing python dependencies for the GUI'
+python3 -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
+
+printdbg 'generating dynamic config files for the GUI'
 dsiprouter configuredsip &&
-dsiprouter setcredentials \
-    -dc "$DSIP_USERNAME:$DSIP_PASSWORD" \
-    -ac "$DSIP_API_TOKEN" \
-    -kc "$KAM_DB_USER:$KAM_DB_PASS@$KAM_DB_HOST:$KAM_DB_PORT/$KAM_DB_NAME" \
-    -mc "$MAIL_USERNAME:$MAIL_PASSWORD" \
-    -ic "$DSIP_IPC_PASS" \
-    -dac "$ROOT_DB_USER:$ROOT_DB_PASS/$ROOT_DB_NAME" &&
-    exit $?
-) &&
+setConfigAttrib 'DSIP_USERNAME' "$DSIP_USERNAME" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'DSIP_PASSWORD' "$DSIP_PASSWORD" ${DSIP_CONFIG_FILE} -qb &&
+setConfigAttrib 'DSIP_API_TOKEN' "$DSIP_API_TOKEN" ${DSIP_CONFIG_FILE} -qb &&
+setConfigAttrib 'KAM_DB_USER' "$KAM_DB_USER" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'KAM_DB_PASS' "$KAM_DB_PASS" ${DSIP_CONFIG_FILE} -qb &&
+setConfigAttrib 'KAM_DB_HOST' "$KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'KAM_DB_PORT' "$KAM_DB_PORT" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'KAM_DB_NAME' "$KAM_DB_NAME" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'MAIL_USERNAME' "$MAIL_USERNAME" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'MAIL_PASSWORD' "$MAIL_PASSWORD" ${DSIP_CONFIG_FILE} -qb &&
+setConfigAttrib 'ROOT_DB_USER' "$ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q &&
+{
+    if ! grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')" <<<"$ROOT_DB_PASS"; then
+        setConfigAttrib 'ROOT_DB_PASS' "$ROOT_DB_PASS" ${DSIP_CONFIG_FILE} -q
+    else
+        setConfigAttrib 'ROOT_DB_PASS' "$ROOT_DB_PASS" ${DSIP_CONFIG_FILE} -qb
+    fi
+} &&
+setConfigAttrib 'ROOT_DB_NAME' "$ROOT_DB_NAME" ${DSIP_CONFIG_FILE} -q &&
 printdbg 'successfully generated new settings file' ||
 {
     printerr 'failed generating new settings file'
     exit 1
 }
 
-# generate docs for the GUI
+printdbg 'generating documentation for the GUI'
 (
     cd ${DSIP_PROJECT_DIR}/docs
     make html >/dev/null 2>&1
 )
 
-# install documentation for the CLI
+printdbg 'generating documentation for the CLI'
 cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 /usr/share/man/man1/
 gzip -f /usr/share/man/man1/dsiprouter.1
 mandb
 cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
 
-# re-generate systemd services we changed
+printdbg 'upgrading systemd service configurations'
 export DISTRO=$(getDistroName)
 export DISTRO_VER=$(getDistroVer)
 export DISTRO_MAJOR_VER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
@@ -707,14 +729,20 @@ EOF
             ;;
     esac
 
-for SERVICE in kamailio nginx dsiprouter rtpengine; do
-    if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.${SERVICE}installed" ]]; then
-    SVC_FILE=$(grep -oP "$SERVICE-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/$SERVICE/${DISTRO}/${DISTRO_MAJOR_VER}.sh)
-    cp -f ${DSIP_PROJECT_DIR}/$SERVICE/systemd/$SVC_FILE /etc/systemd/system/$SERVICE.service
+for SERVICE in kamailio nginx dsiprouter; do
+    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.${SERVICE}installed" ]]; then
+        SVC_FILE=$(grep -oP "$SERVICE-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/$SERVICE/${DISTRO}/${DISTRO_MAJOR_VER}.sh)
+        cp -f ${DSIP_PROJECT_DIR}/$SERVICE/systemd/$SVC_FILE /etc/systemd/system/$SERVICE.service
+    fi
 done
 
-export DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
-export DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+    SVC_FILE=$(grep -m 1 -oP "rtpengine-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh)
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/$SVC_FILE /etc/systemd/system/rtpengine.service
+fi
+
+DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
+DSIP_CERTS_DIR="${DSIP_SYSTEM_CONFIG_DIR}/certs"
 cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.service /etc/systemd/system/nginx-watcher.service
 perl -p \
     -e "s%PathChanged\=.*%PathChanged=${DSIP_CERTS_DIR}/%;" \
@@ -724,29 +752,26 @@ chmod 644 /etc/systemd/system/nginx-watcher.path
 
 systemctl daemon-reload
 
-# install GUI requirements
-python3 -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
-
-# generate kamailio config
-dsiprouter configurekam
-
-# generate mysql systemd
+# generate mysql service if needed
 reconfigureMysqlSystemdService
 
-# update rtpengine configs
+printdbg 'upgrading kamailio configs'
+dsiprouter configurekam
+
+printdbg 'upgrading rtpengine configs'
 dsiprouter updatertpconfig
 
-# update dnsmasq configs
+printdbg 'upgrading dnsmasq configs'
 dsiprouter updatednsconfig
 
-# update permissions
+printdbg 'updating file permissions'
 dsiprouter chown
 
-# restart services
-#systemctl restart dnsmasq
-#systemctl restart kamailio
-#systemctl restart nginx
-#systemctl restart dsiprouter
-#systemctl restart rtpengine
+printdbg 'restarting services'
+systemctl restart dnsmasq
+systemctl restart kamailio
+systemctl restart nginx
+systemctl restart dsiprouter
+systemctl restart rtpengine
 
 exit 0
