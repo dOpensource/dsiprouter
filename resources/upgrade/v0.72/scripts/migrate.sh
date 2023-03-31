@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# pull in dsiprouter dependencies
-#source /opt/dsiprouter/dsiprouter.sh
-
 # set project dir (where src files are located)
-DSIP_PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh

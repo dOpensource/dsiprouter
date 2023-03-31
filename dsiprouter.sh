@@ -51,7 +51,7 @@
 
 
 # set project dir (where src files are located)
-DSIP_PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 # Import dsip_lib utility / shared functions
 if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
@@ -2835,8 +2835,17 @@ function removeInitService() {
     printdbg "dsip-init service removed"
 }
 
-# TODO: remove dependencies on python from here
 function upgrade() {
+    local BS_SCRIPT_URL="https://github.com/dOpensource/dsiprouter/tree/${UPGRADE_RELEASE}/resources/upgrade/${UPGRADE_RELEASE}/scripts/bootstrap.sh"
+    local BOOTSTRAPPING_UPGRADE=${BOOTSTRAPPING_UPGRADE:-0}
+
+    # check if the new function definitions need bootstrapped prior to upgrade
+    if (( $BOOTSTRAPPING_UPGRADE == 0 )) && curl -sf -I "$BS_SCRIPT_URL" -o /dev/null; then
+        curl -s "$BS_SCRIPT_URL" | bash -s upgrade -rel ${UPGRADE_RELEASE}
+        return $?
+    fi
+
+    # TODO: remove dependencies on python from here
     ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/upgrade.py ${UPGRADE_RELEASE}
 }
 

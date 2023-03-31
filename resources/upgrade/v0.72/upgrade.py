@@ -54,16 +54,15 @@ def backup_system():
     logging.info("Backup destination: " + backup_destination)
 
     # MySQL database credentials
-    mysql_user = settings.KAM_DB_USER  # upgrade_settings['database_credentials']['user']
-    mysql_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')  # upgrade_settings['database_credentials']['password']
-    mysql_host = settings.KAM_DB_HOST  # upgrade_settings['database_credentials']['host']
-    mysql_db = settings.KAM_DB_NAME  # upgrade_settings['database_credentials']['name']
-    # logging.info(" mysql_user [" + mysql_user + "]  mysql_password  [" + mysql_password + "]  mysql_host  [" + mysql_host + "]  mysql_db  [" + mysql_db + "]")
+    mysql_user = settings.ROOT_DB_USER
+    mysql_password = AES_CTR.decrypt(settings.ROOT_DB_PASS).decode('utf-8')
+    mysql_host = settings.KAM_DB_HOST
+    mysql_db = settings.KAM_DB_NAME
 
     # create a backup of the mysql database
     logging.info("Backing up MySQL database")
     try:
-        mysql_dump_cmd = f"mysqldump  --single-transaction --opt --events --routines --triggers --add-drop-database --flush-privileges   -u {mysql_user} -p{mysql_password} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
+        mysql_dump_cmd = f"mysqldump --single-transaction --opt --events --routines --triggers --add-drop-database --flush-privileges   -u {mysql_user} -p{mysql_password} -h {mysql_host} {mysql_db} > {backup_destination}/{mysql_db}_{timestamp}.sql"
         # logging.info("Command is " + mysql_dump_cmd)
         output = subprocess.check_output(mysql_dump_cmd, shell=True)
         logging.info(output.decode("utf-8"))
@@ -138,11 +137,10 @@ def upgrade_database():
     logging.info("Starting DB Upgrade process")
     global upgrade_settings
     # MySQL database credentials
-    mysql_user = settings.KAM_DB_USER  # upgrade_settings['database_credentials']['user']
-    mysql_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')  # upgrade_settings['database_credentials']['password']
-    mysql_host = settings.KAM_DB_HOST  # upgrade_settings['database_credentials']['host']
-    mysql_db = settings.KAM_DB_NAME  # upgrade_settings['database_credentials']['name']
-    # logging.info(" mysql_user [" + mysql_user + "]  mysql_password  [" + mysql_password + "]  mysql_host  [" + mysql_host + "]  mysql_db  [" + mysql_db + "]")
+    mysql_user = settings.ROOT_DB_USER
+    mysql_password = AES_CTR.decrypt(settings.ROOT_DB_PASS).decode('utf-8')
+    mysql_host = settings.KAM_DB_HOST
+    mysql_db = settings.KAM_DB_NAME
 
     migration_scripts = upgrade_settings['database_migrations']
 

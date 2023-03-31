@@ -6,6 +6,6 @@
     "migrate.sql"
   ],
   "dsiprouter": [
-    "post_install.sh"
+    "migrate.sh"
   ]
 }
