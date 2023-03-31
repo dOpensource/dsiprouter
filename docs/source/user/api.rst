@@ -69,7 +69,8 @@ Your token was provided to you after you installed dSIPRouter.  You can reset yo
 
 .. code-block:: bash
 
-  dsiprouter setcredentials -ac <your token>
+  DSIP_TOKEN=<your token>
+  dsiprouter setcredentials -ac $DSIP_TOKEN
 
 
 Executing Kamailio stats API
