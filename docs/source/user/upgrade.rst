@@ -23,6 +23,11 @@ You can upgrade from 0.70 by doing the following
 
 Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.This will provide you with support hours so that we can help with the upgrade.
 
+Upgrade 0.644 to 0.72
+^^^^^^^^^^^^^^^^^^^^^
+There is no automated upgrade available from 0.644 to 0.72.  Support is available via a dSIPRouter Core Subscription which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.This will provide you with support hours so that we can help with the upgrade.
+
+
 Upgrade 0.621 to 0.63
 ^^^^^^^^^^^^^^^^^^^^^
    .. toctree::
