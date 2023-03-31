@@ -27,7 +27,7 @@ Executing Kamailio stats API
 
 Executing Lease Point API
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Getting the endlease
+Create a new endpoint lease
 
 
 .. code-block:: bash
