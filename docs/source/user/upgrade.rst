@@ -3,7 +3,7 @@ Upgrading dSIPRouter
 
 Auto Upgrade Feature (Released 0.72)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The dSIPRouter auto upgrade feature was released in 0.72.  It allows you to upgrade dSIPRouter from the User Interface(UI) and the command line.  If you are upgrading from 0.70 you will need to use the command line option since the 0.70 doesn't have the upgrade freature built into the UI. Upgrading from 0.70 doesn't require a license because this is the first release of the upgrade framework.  However, future releases of dSIPRouter will require a Core Subscription license, which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_
+The dSIPRouter auto upgrade feature was released in 0.72.  It allows you to upgrade dSIPRouter from the User Interface(UI) and the command line.  If you are upgrading from 0.70 you will need to use the command line option since the 0.70 doesn't have the upgrade freature built into the UI. Upgrading from 0.70 doesn't require a dSIPRouter Core Subscription license because this is the first release of the upgrade framework.  However, future releases of dSIPRouter will require a Core Subscription License, which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.  
 
 .. image:: images/upgrade_up_to_date.png
         :align: center
@@ -19,9 +19,9 @@ You can upgrade from 0.70 by doing the following
 
    curl -s https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.72/resources/upgrade/v0.72/scripts/bootstrap.sh | bash -s upgrade -rel v0.72
 
-3. Login to the dSIPRouter UI
+3. Login to the dSIPRouter UI to validate that the upgrade was successful.  
 
-Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_
+Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.This will provide you with support hours so that we can help with the upgrade.
 
 Upgrade 0.621 to 0.63
 ^^^^^^^^^^^^^^^^^^^^^
