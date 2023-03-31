@@ -3,8 +3,7 @@ API
 
 The complete API is defined as a public Postman Workspace, which can be found `here <https://www.postman.com/dopensource/workspace/dsiprouter/collection/4319695-9c09dea3-0b4b-4a20-a615-fb8fc16811af?action=share&creator=4319695>`_ 
 
-The steps to obtain the API Token key and an example of using API via curl is below, but we highly recommend you use Postman for testing the API.
-
+The steps to obtain the API Token key and examples of using the API via curl are below, but we highly recommend using Postman for testing the API.
 
 Getting Your Token
 ^^^^^^^^^^^^^^^^^^
