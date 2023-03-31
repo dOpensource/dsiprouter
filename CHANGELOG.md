@@ -20,11 +20,6 @@ e354fbeb2467854770650aec659d98b27dc8d464
 98270d267c77f991b3aecf572d38c097fecac68b
 16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35
 4082e01348c3279f71685ff9eeaccaee25a6e53d
-92d323dc7d6d82645ae7c25a4134679009dba4a6
-0b3ed50bbf81577558e79b77dd8b2c65f61ad034
-203f8ea5953044b05b047a5565c36c23155cff43
-d2144a88b8ccba4dba32265d69782e65635b4997
-af39173450198616f9e1f959f233f980a65a4d47
 2f31989a6b34be6d213a891c3725dde6c168f2fb
 581d8ed65958db142c9c64e3d6f973327a626fcc
 3b02dc02eeaee8d4e8ca13741489c2e6f72de230
@@ -2105,6 +2100,7 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
+<<<<<<< HEAD
 [//]: # (START_SECTION a1a55ec01f46433fb7ac64eae58089cc8e506a19)
 ### Updated the database logic to use the new SQLAlchemy 2.0 result-object
 
@@ -2204,6 +2200,12 @@ END_SECTION COMMITS)
 ### Update Installation Documentation
 
 > Commit: [a1174d1e922ffd85eb767b7047fb84e3e3e0745e](https://github.com/dOpensource/dsiprouter/commit/a1174d1e922ffd85eb767b7047fb84e3e3e0745e)  
+=======
+[//]: # (START_SECTION d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5)
+### Update Installation Documentation
+
+> Commit: [d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5](https://github.com/dOpensource/dsiprouter/commit/d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5)  
+>>>>>>> master
 > Date: Wed, 1 Mar 2023 11:59:41 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2215,11 +2217,19 @@ END_SECTION COMMITS)
 
 ---
 
+<<<<<<< HEAD
 [//]: # (END_SECTION a1174d1e922ffd85eb767b7047fb84e3e3e0745e)
 [//]: # (START_SECTION da72adbd503e5fce324c8a801d90c1e0b38ca054)
 ### Require Issue Template Usage
 
 > Commit: [da72adbd503e5fce324c8a801d90c1e0b38ca054](https://github.com/dOpensource/dsiprouter/commit/da72adbd503e5fce324c8a801d90c1e0b38ca054)  
+=======
+[//]: # (END_SECTION d3b3b573eb0ec8a02e4eaf5cf1a918d6418a32a5)
+[//]: # (START_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
+### Require Issue Template Usage
+
+> Commit: [bb58600d9294fbb5ce39c2e273155602d7981638](https://github.com/dOpensource/dsiprouter/commit/bb58600d9294fbb5ce39c2e273155602d7981638)  
+>>>>>>> master
 > Date: Wed, 15 Feb 2023 09:50:31 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2230,22 +2240,35 @@ END_SECTION COMMITS)
 
 ---
 
+<<<<<<< HEAD
 [//]: # (END_SECTION da72adbd503e5fce324c8a801d90c1e0b38ca054)
 [//]: # (START_SECTION cc8a46218083c85894e090228f3cd55eb5a238c7)
 ### Update issue templates (#481)
 
 > Commit: [cc8a46218083c85894e090228f3cd55eb5a238c7](https://github.com/dOpensource/dsiprouter/commit/cc8a46218083c85894e090228f3cd55eb5a238c7)  
 > Date: Wed, 15 Feb 2023 09:27:23 -0500  
+=======
+[//]: # (END_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
+[//]: # (START_SECTION 681c2c432b735a3f67d6732264f50638b47b1552)
+### Update issue templates
+
+> Commit: [681c2c432b735a3f67d6732264f50638b47b1552](https://github.com/dOpensource/dsiprouter/commit/681c2c432b735a3f67d6732264f50638b47b1552)  
+> Date: Wed, 15 Feb 2023 09:26:05 -0500  
+>>>>>>> master
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: GitHub (noreply@github.com)  
 > Signed:   
 
 
+<<<<<<< HEAD
 - Merging
+=======
+>>>>>>> master
 
 
 ---
 
+<<<<<<< HEAD
 [//]: # (END_SECTION cc8a46218083c85894e090228f3cd55eb5a238c7)
 [//]: # (START_SECTION 799d68b0365eeda8c2d17811575b925a0023ae2a)
 ### Merge PR435
@@ -2360,6 +2383,9 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 4082e01348c3279f71685ff9eeaccaee25a6e53d)
+=======
+[//]: # (END_SECTION 681c2c432b735a3f67d6732264f50638b47b1552)
+>>>>>>> master
 [//]: # (START_SECTION 92d323dc7d6d82645ae7c25a4134679009dba4a6)
 ### Update installing.rst
 
@@ -2436,6 +2462,7 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION af39173450198616f9e1f959f233f980a65a4d47)
+<<<<<<< HEAD
 [//]: # (START_SECTION 2f31989a6b34be6d213a891c3725dde6c168f2fb)
 ### Add Licensing Manager
 
@@ -2652,6 +2679,8 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION b26b91e04a541685d0d5a78277c4ab7bf564669d)
+=======
+>>>>>>> master
 [//]: # (START_SECTION f321abf3809cc8b6696be3b6423a073a76f81365)
 ### Updated Pass-Thru Authentication - Added support to handle pass-thru when the hostname of the media server is used as the endpoint.
 
