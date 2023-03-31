@@ -3,7 +3,7 @@ Upgrading dSIPRouter
 
 Auto Upgrade Feature (Released 0.72)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The dSIPRouter auto upgrade feature was released in 0.72.  It allows you to upgrade dSIPRouter from the User Interface(UI) and the command line.  If you are upgrading from 0.70 you will need to use the command line option since the 0.70 doesn't have the upgrade freature built into the UI. Upgrading from 0.70 doesn't require a dSIPRouter Core Subscription license because this is the first release of the upgrade framework.  However, future releases of dSIPRouter will require a Core Subscription License, which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.  
+The dSIPRouter auto upgrade feature was released in 0.72.  It allows you to upgrade dSIPRouter from the User Interface(UI) and the command line.  If you are upgrading from 0.70 you will need to use the command line option since the 0.70 version doesn't have the upgrade feature builtin. Upgrading from 0.70 doesn't require a dSIPRouter Core Subscription license because this is the first release of the upgrade framework unless you need support during the upgrade process.  However, future releases of dSIPRouter will require a Core Subscription License, which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.  
 
 .. image:: images/upgrade_up_to_date.png
         :align: center
