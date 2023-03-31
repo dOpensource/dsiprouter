@@ -54,7 +54,9 @@
 DSIP_PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 # Import dsip_lib utility / shared functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 
 # settings used by script that are user configurable
@@ -165,6 +167,7 @@ function setDynamicScriptSettings() {
 
     # network settings determined by mode
     NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
+    NETWORK_MODE=${NETWORK_MODE:-0}
 
     # TODO: ipv6 intentionally disabled here
     export IPV6_ENABLED=0
@@ -3810,7 +3813,7 @@ function processCMD() {
                         fi
 
                         if [[ -z "$UPGRADE_RELEASE" ]]; then
-                            printerr "Please specify a release tag (ie v0.64)"
+                            printerr "Invalid upgrade release specified"
                             usageOptions
                             cleanupAndExit 1
                         fi
@@ -3823,6 +3826,15 @@ function processCMD() {
                         ;;
                 esac
             done
+
+            # use latest release if none specified
+            if [[ -z "$UPGRADE_RELEASE" ]]; then
+                TMP=$(curl -s "https://api.github.com/repos/dOpensource/dsiprouter/releases/latest") &&
+                    UPGRADE_RELEASE=$(jq -r '.tag_name' <<<"$TMP") || {
+                        printerr "Could not retrieve latest release candidate"
+                        cleanupAndExit 1
+                    }
+            fi
             ;;
         start)
             # start installed services
