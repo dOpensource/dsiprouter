@@ -1,4 +1,4 @@
-Upgrading dSIPRouter (SUBSCRIPTION REQUIRED)
+Upgrading dSIPRouter 
 ============================================
 
 Auto Upgrade Feature (Released 0.72)
