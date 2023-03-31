@@ -490,12 +490,12 @@ Note: For multi-tenant use, authorizing the root subdomain or domain (if you use
 
 .. code-block:: bash
 
-Install-Module -Name MicrosoftTeams
-Import-Module MicrosoftTeams
-$userCredential = Get-Credential
-Connect-MicrosoftTeams -Credential $userCredential
+	Install-Module -Name MicrosoftTeams
+	Import-Module MicrosoftTeams
+	$userCredential = Get-Credential
+	Connect-MicrosoftTeams -Credential $userCredential
 
-   code
+  
 
 Login Note: If your using multi-factor authentication (MFA/2FA), log in by typing Connect-MicrosoftTeams
 Debian 10 Note: If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
@@ -503,23 +503,22 @@ Debian 10 Note: If you run into `this OpenSSL issue <https://github.com/PowerShe
 
 .. code-block:: bash
 
-Set-CsOnlinePstnUsage -Identity Global -Usage @{Add="US and Canada"}
-Set-CsOnlineVoiceRoute -Identity "LocalRoute" -NumberPattern ".*" -OnlinePstnGatewayList sbc.example.com
-New-CsOnlineVoiceRoutingPolicy "US Only" -OnlinePstnUsages "US and Canada"
+	Set-CsOnlinePstnUsage -Identity Global -Usage @{Add="US and Canada"}
+	Set-CsOnlineVoiceRoute -Identity "LocalRoute" -NumberPattern ".*" -OnlinePstnGatewayList sbc.example.com
+	New-CsOnlineVoiceRoutingPolicy "US Only" -OnlinePstnUsages "US and Canada"
 
-# This is suppose to stop MSTeams from using the Microsoft Dialing Plan and using the routing policies that was defined above
-Set-CsTenantHybridConfiguration -UseOnPremDialPlan $False
+	# This is suppose to stop MSTeams from using the Microsoft Dialing Plan and using the routing policies that was defined above
+	Set-CsTenantHybridConfiguration -UseOnPremDialPlan $False
 
-# Apply and the US Only Voice Routing Policy to the user
-Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
+	# Apply and the US Only Voice Routing Policy to the user
+	Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
 
-# If it doesn’t return a value of US Only, then wait 15 minutes and try it again.  It sometime takes a while for the policy to be ready.
-Get-CsOnlineUser “user@example.com" | select OnlineVoiceRoutingPolicy
+	# If it doesn’t return a value of US Only, then wait 15 minutes and try it again.  It sometime takes a while for the policy to be ready.
+	Get-CsOnlineUser “user@example.com" | select OnlineVoiceRoutingPolicy
 
-# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
-Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
+	# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
+	Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
 
-   code
 
 Note: Log out by typing Disconnect-MicrosoftTeams
 
@@ -534,18 +533,17 @@ If you have an existing dSIPRouter SBC configured in Teams and have added a DID 
 
 .. code-block:: bash
 
-# Get Credentials, if using MFA/2FA just run Connect-MicrosoftTeams
-$userCredential = Get-Credential
-Connect-MicrosoftTeams -Credential $userCredential
+	# Get Credentials, if using MFA/2FA just run Connect-MicrosoftTeams
+	$userCredential = Get-Credential
+	Connect-MicrosoftTeams -Credential $userCredential
 
-# Apply and the US Only Voice Routing Policy to the user
-Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
+	# Apply and the US Only Voice Routing Policy to the user
+	Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
 
-# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
-Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
+	# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
+	Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
 
-   code
-
+   
 Note: Log out by typing Disconnect-MicrosoftTeams
 
 
