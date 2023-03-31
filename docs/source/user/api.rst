@@ -69,6 +69,7 @@ Your token was provided to you after you installed dSIPRouter.  You can reset yo
 
 .. code-block:: bash
 
+  DSIP_HOSTNAME=<your ip or hostname>
   DSIP_TOKEN=<your token>
   dsiprouter setcredentials -ac $DSIP_TOKEN
 
@@ -79,14 +80,14 @@ Executing Kamailio stats API
 
 .. code-block:: bash
 
-  curl -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://demo.dsiprouter.org:5000/api/v1/kamailio/stats
+  curl -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://$DSIP_HOSTNAME:5000/api/v1/kamailio/stats
 
 
 One Line Version:
 
 .. code-block:: bash
 
-  curl -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://<addressOfYourInstance>:5000/api/v1/kamailio/stats
+  curl -H "Authorization: Bearer $DSIP_TOKEN" -X GET http://$DSIP_HOSTNAME:5000/api/v1/kamailio/stats
 
 
 Executing Lease Point API
@@ -96,27 +97,27 @@ Getting the endlease
 
 .. code-block:: bash
 
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
 
 
 One Line Version:
 
 .. code-block:: bash
 
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "https:$DSIP_HOSTNAME:5000/api/v1/endpoint/lease?ttl=15&email=mack@dsiprouter.org"
 
 Revoking and replacing with your own lease ID
 
 .. code-block:: bash
 
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/1/revoke"
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease/1/revoke"
 
 
 One Line Version:
 
 .. code-block:: bash
 
- curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "http://demo.dsiprouter.org:5000/api/v1/endpoint/lease/1/revoke"
+ curl -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X PUT "https://$DSIP_HOSTNAME:5000/api/v1/endpoint/lease/1/revoke"
 
 
 Inbound Mapping Valid commands
@@ -128,9 +129,9 @@ GET /api/v1/inboundmapping
 
 .. code-block:: bash
 
-    curl -X GET -H "Authorization: Bearer ${token}" "http://demo.dsiprouter.org:5000/api/v1/inboundmapping"
-    curl -X GET -H "Authorization: Bearer ${token}" "http://demo.dsiprouter.org:5000/api/v1/inboundmapping?ruleid=3"
-    curl -X GET -H "Authorization: Bearer ${token}" "http://demo.dsiprouter.org:5000/api/v1/inboundmapping?did=1313"
+    curl -X GET -H "Authorization: Bearer ${token}" "https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping"
+    curl -X GET -H "Authorization: Bearer ${token}" "https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping?ruleid=3"
+    curl -X GET -H "Authorization: Bearer ${token}" "https://$DSIP_HOSTNAME:5000/api/v1/inboundmapping?did=1313"
 
 ---------------------------
 POST /api/v1/inboundmapping
