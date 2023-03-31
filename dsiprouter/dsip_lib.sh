@@ -27,6 +27,14 @@ export DSIP_SYSTEM_CONFIG_DIR=${DSIP_SYSTEM_CONFIG_DIR:-"/etc/dsiprouter"}
 DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
+# reuse credential settings from python files (exported for later usage)
+SALT_LEN=${SALT_LEN:-$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+DK_LEN_DEFAULT=${DK_LEN_DEFAULT:-$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+CREDS_MAX_LEN=${CREDS_MAX_LEN:-$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+HASH_ITERATIONS=${HASH_ITERATIONS:-$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export HASHED_CREDS_ENCODED_MAX_LEN=${HASHED_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export AESCTR_CREDS_ENCODED_MAX_LEN=${AESCTR_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
 
@@ -87,6 +95,15 @@ function toupper() {
     fi
 }
 export -f toupper
+
+function hextoint() {
+	if [[ -t 0 ]]; then
+		printf '%d' "0x$1" 2>/dev/null
+	else
+		printf '%d' "0x$(</dev/stdin)" 2>/dev/null
+	fi
+}
+export -f hextoint
 
 ######################################
 # Traceback / Debug helper functions #
@@ -152,6 +169,7 @@ function getConfigAttrib() {
 }
 export -f getConfigAttrib
 
+# TODO: openssl native version
 # $1 == attribute name
 # $2 == python config file
 # output: attribute value decrypted
@@ -423,6 +441,7 @@ function ipv6Test() {
 }
 export -f ipv6Test
 
+
 # $1 == [-4|-6] to force specific IP version
 # output: the internal IP for this system
 # notes: prints internal ip, or empty string if not available
@@ -447,18 +466,80 @@ function getInternalIP() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
+	    
+    if (( ${IPV6_ENABLED} == 1 )); then
+		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+    else
+		INTERFACE=$(ip -4 route show default | awk '{print $5}')
+    fi
 
+    # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-        INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+        # Marked for removal because it depends on DNS
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
-        INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+        # Marked for removal because it depends on DNS
+        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$INTERNAL_IP"
 }
 export -f getInternalIP
+
+# $1 == [-4|-6] to force specific IP version
+# $2 == network interface 
+# output: the IP for the given interface
+# notes: prints ip, or empty string if not available
+# notes: tries ipv4 first then ipv6
+function getIP() {
+    local IP=""
+
+    case "$1" in
+        -4)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=0
+            ;;
+        -6)
+            local IPV4_ENABLED=0
+            local IPV6_ENABLED=1
+            ;;
+        *)
+            local IPV4_ENABLED=1
+            local IPV6_ENABLED=${IPV6_ENABLED:-0}
+            ;;
+    esac
+
+    # Use the provided interface or get the first interface - other then lo
+    if ! [ -z $2 ]; then
+	    INTERFACE=$2
+    else
+	    if (( ${IPV6_ENABLED} == 1 )); then
+			INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+	    else
+	    	INTERFACE=$(ip -4 route show default | awk '{print $5}')
+	    fi
+    fi
+
+    # Get the ip address without depending on DNS
+    if (( ${IPV4_ENABLED} == 1 )); then
+        # Marked for removal because it depends on DNS
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    fi
+
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
+        # Marked for removal because it depends on DNS
+        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    fi
+
+    printf '%s' "$IP"
+}
+export -f getIP
 
 # TODO: run requests in parallel and grab first good one (start ipv4 first)
 #       this is what we are already doing in gui/util/networking.py
@@ -560,12 +641,13 @@ function getExternalFQDN() {
 export -f getExternalFQDN
 
 # $1 == [-4|-6] to force specific IP version
+# $2 == interface
 # output: the internal IP CIDR for this system
 # notes: prints internal CIDR address, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalCIDR() {
     local PREFIX_LEN="" DEF_IFACE="" INTERNAL_IP=""
-    local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    #local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 
     case "$1" in
         -4)
@@ -581,12 +663,20 @@ function getInternalCIDR() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
+    
+    if ! [ -z $2 ]; then
+	    INTERFACE=$2
+    fi
 
     if (( ${IPV4_ENABLED} == 1 )); then
-        INTERNAL_IP=$(getInternalIP -4)
+        INTERNAL_IP=$(getIP -4 "$INTERFACE")
         if [[ -n "$INTERNAL_IP" ]]; then
-            DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-            PREFIX_LEN=$(ip -4 route list | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+			if [[ -n "$INTERFACE" ]]; then
+				DEF_IFACE=$INTERFACE
+			else
+				DEF_IFACE=$(ip -4 route list scope global  2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+			fi
+			PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
         fi
     fi
 
@@ -600,7 +690,7 @@ function getInternalCIDR() {
 
     # make sure output is empty if error occurred
     if [[ -n "$INTERNAL_IP" && -n "$PREFIX_LEN" ]]; then
-        printf '%s/%s' "$IP" "$PREFIX_LEN"
+        printf '%s/%s' "$INTERNAL_IP" "$PREFIX_LEN"
     fi
 }
 export -f getInternalCIDR
@@ -1029,8 +1119,31 @@ export -f parseDBConnURI
 # $1 == number of characters to get
 # output: string of random printable characters
 function urandomChars() {
-    local LEN="$1"
-    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w ${LEN} 2>/dev/null | head -n 1
+	local LEN=32 FILTER="a-zA-Z0-9"
+
+    while (( $# > 0 )); do
+    	# last arg is length
+        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
+			LEN="$1"
+			shift
+            break
+        fi
+
+        case "$1" in
+        	# user defined filter
+            -f)
+                shift
+                FILTER="$1"
+                shift
+                ;;
+			# not valid option skip
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    tr -dc "$FILTER" </dev/urandom | dd if=/dev/stdin of=/dev/stdout bs=1 count="$LEN" 2>/dev/null
 }
 export -f urandomChars
 
@@ -1071,3 +1184,61 @@ function sendKamCmd() {
     curl -s -m 3 -X GET -d '{"method": "'"${CMD}"'", "jsonrpc": "2.0", "id": 1, "params": '"${PARAMS}"'}' ${KAM_API_URL}
 }
 export -f sendKamCmd
+
+# TODO: input validation
+# TODO: swap with bash native version?
+function hashCreds() {
+	local CREDS SALT DK_LEN
+	local PYTHON=${PYTHON_CMD:-python3}
+
+	# grab credentials from stdin if provided
+	if [[ ! -t 0 ]]; then
+		CREDS=$(</dev/stdin)
+	fi
+
+    while (( $# > 0 )); do
+    	# last arg is credentials
+        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
+			CREDS="$1"
+			shift
+            break
+        fi
+
+        case "$1" in
+        	# user defined salt
+            -s)
+                shift
+                SALT="$1"
+                shift
+                ;;
+        	# user defined derived key length
+            -l)
+                shift
+                DK_LEN="$1"
+                shift
+                ;;
+			# not valid option skip
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    # defaults if not set by args
+    SALT=${SALT:-$(urandomChars -f 'a-fA-F0-9' $SALT_LEN)}
+    DK_LEN=${DK_LEN:-$DK_LEN_DEFAULT}
+
+	# python native version
+	# no external dependencies other than vanilla python3
+	${PYTHON} -c "import hashlib,binascii; print(binascii.hexlify(hashlib.pbkdf2_hmac('sha512', '$CREDS'.encode('utf-8'), '$SALT'.encode('utf-8'), iterations=$HASH_ITERATIONS, dklen=$DK_LEN)).decode('utf-8'));"
+	# bash native version
+	# currently too slow for production usage
+	#${DSIP_PROJECT_DIR}/dsiprouter/pbkdf2.sh 'sha512' "$CREDS" "$SALT" "$HASH_ITERATIONS" 4
+}
+export -f hashCreds
+
+# TODO: openssl native version
+#function encryptCreds() {
+#    ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+#}
+#export -f encryptCreds

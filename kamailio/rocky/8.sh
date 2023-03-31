@@ -160,14 +160,6 @@ EOF
     ln -s /etc/ssl/certs/ca-bundle.crt ${DSIP_SSL_CA}
     updateCACertsDir
 
-    # Setup dSIPRouter Module
-    rm -rf /tmp/kamailio 2>/dev/null
-    git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio 2>/dev/null &&
-    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ /tmp/kamailio/src/modules/ &&
-    ( cd /tmp/kamailio/src/modules/dsiprouter; make; exit $?; ) &&
-    cp -f /tmp/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR} ||
-    return 1
-
     return 0
 }
 

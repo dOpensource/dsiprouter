@@ -35,6 +35,12 @@ The following command will create a new instance of dSIPRouter based on the mast
 terraform apply -var branch=master -var dsiprouter_prefix=demo -var image=debian-11-x64
 ```
 
+If you want to create a demo instance of dSIPRouter in your Digitalocean environment with a DNS record use this.  Note, you will need to change the dns_demo_domain variable to a domain that you have hosted with DigitalOcean.
+
+```
+terraform apply -var branch=master -var image=debian-11-x64 -var dsiprouter_prefix=demo -var additional_commands='dsiprouter setcredentials -dc admin:ZmIwMTdmY2I5NjE4' -var dns_demo_enabled=1 -var dns_demo_domain=dsiprouter.org -var dns_demo_hostname=demo
+```
+
 7. Destroy your instance if you are done with it by using the terraform destory command
 
 ```

@@ -5,7 +5,7 @@
 # dSIPRouter will need to be restarted for any changes to take effect - except settings that can be hot reloaded
 # for more information on hot reloading and shared memory via IPC see shared.updateConfig() and dsiprouter.syncSettings()
 
-DSIP_ID = 1
+DSIP_ID = None
 DSIP_CLUSTER_ID = 1
 DSIP_CLUSTER_SYNC = False
 DSIP_PROTO = 'https'
@@ -20,6 +20,7 @@ DSIP_PID_FILE = '/run/dsiprouter/dsiprouter.pid'
 DSIP_UNIX_SOCK = '/run/dsiprouter/dsiprouter.sock'
 DSIP_IPC_SOCK = '/run/dsiprouter/ipc.sock'
 DSIP_IPC_PASS = 'admin'
+
 # dsiprouter logging settings
 # syslog level and facility values based on:
 # <http://www.nightmare.com/squirl/python-ext/misc/syslog.py>
@@ -38,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.70'
+VERSION = '0.72'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -67,11 +68,6 @@ KAM_CFG_PATH = '/etc/kamailio/kamailio.cfg'
 KAM_TLSCFG_PATH = '/etc/kamailio/tls.cfg'
 RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
-# SQLAlchemy Settings
-# TODO: deprecated, marked for removal (replace with value of DEBUG)
-SQLALCHEMY_TRACK_MODIFICATIONS = False
-SQLALCHEMY_SQL_DEBUG = False
-
 # These constants shouldn't be modified
 # FLT_CARRIER/FLT_PBX:          type in dr_gateway table
 # FLT_OUTBOUND/FLT_INBOUND:     groupid in dr_rules table
@@ -95,23 +91,43 @@ TELEBLOCK_MEDIA_IP = ''
 TELEBLOCK_MEDIA_PORT = ''
 
 # Flowroute API Settings
+# TODO: encrypt/decrypt these creds instead of storing in plaintext
 FLOWROUTE_ACCESS_KEY = ''
 FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # Homer settings
+HOMER_ID = None
 HOMER_HEP_HOST = ''
 HOMER_HEP_PORT = 9060
 
-# updated dynamically! These values will be overwritten
+# Network Settings
+# possible network modes:
+# 0:    (full-auto)     dynamically update all network settings, updated on startup
+# 1:    (manual)        user sets all network settings manually, interfaces are ignored
+# 2:    (dmz)           internal/external IP/subnet resolved from public/private interfaces, all other settings as in mode 0
+NETWORK_MODE = 0
 IPV6_ENABLED = False
-INTERNAL_IP_ADDR = '192.168.0.1'
-INTERNAL_IP_NET = '192.168.0.1/24'
-INTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'
-INTERNAL_IP6_NET = '2604:a880:400:d0::2048:3001/64'
-EXTERNAL_IP_ADDR = '1.1.1.1'
-EXTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'
-EXTERNAL_FQDN = 'sip.dsiprouter.org'
+# example: 192.168.0.1
+INTERNAL_IP_ADDR = ''
+# example: 192.168.0.1/24
+INTERNAL_IP_NET = ''
+# example: 2604:a880:400:d0::2048:3001
+INTERNAL_IP6_ADDR = ''
+# example: 2604:a880:400:d0::2048:3001/64
+INTERNAL_IP6_NET = ''
+# example: sip.dsiprouter.org
+INTERNAL_FQDN = ''
+# example: 1.1.1.1
+EXTERNAL_IP_ADDR = ''
+# example: 2604:a880:400:d0::2048:3001
+EXTERNAL_IP6_ADDR = ''
+# example: sip.dsiprouter.org
+EXTERNAL_FQDN = ''
+# example: eth0
+PUBLIC_IFACE = ''
+# example: eth1
+PRIVATE_IFACE = ''
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -123,8 +139,14 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'dSIPRouter sip.dsiprouter.org <>'
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
+
+# dSIPRouter licensing
+DSIP_CORE_LICENSE = ''
+DSIP_STIRSHAKEN_LICENSE = ''
+DSIP_TRANSNEXUS_LICENSE = ''
+DSIP_MSTEAMS_LICENSE = ''
 
 ################# End DB-Backed Settings #################
 
@@ -145,7 +167,6 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 # TODO: marked for review, these settings should be synced across cluster in the DB
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
 TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
-TRANSNEXUS_LICENSE_KEY = ''
 TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
 TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
 
@@ -170,8 +191,11 @@ DSIP_DOCS_DIR = '/opt/dsiprouter/docs/build/html'
 DID_PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
 
 # micosoft teams settings
+# pick one of the
 MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
-MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
+#MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.dod.teams.microsoft.us","sip.pstnhub.gov.teams.microsoft.us"]
+MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70","52.114.32.169"]
+#MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]
 
 # root DB credentials
 ROOT_DB_USER = 'root'

@@ -10,6 +10,21 @@ variable "dsiprouter_prefix" {
 	default=""
 }
 
+variable "dns_demo_domain" {
+	type=string
+	default=""
+}
+
+variable  "dns_demo_enabled" {
+	type=number
+	default=0
+}
+
+variable "dns_demo_hostname" {
+	type=string
+	default="demo"
+}
+
 variable "number_of_environments" {
 	type=number
 	default="1"

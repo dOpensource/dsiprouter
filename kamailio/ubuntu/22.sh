@@ -177,10 +177,6 @@ EOF
     else
         git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
-    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ ${SRC_DIR}/kamailio/src/modules/ &&
-    ( cd ${SRC_DIR}/kamailio/src/modules/dsiprouter && make; exit $?; ) &&
-    cp -f ${SRC_DIR}/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR}/ ||
-    { printerr 'Failed to compile and install dSIPRouter module'; return 1; }
 
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt

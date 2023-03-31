@@ -1,3 +1,7 @@
+# Utilzing Type=simple while main process is still single threaded
+# Main process is managed via signals from systemd (stop/reload data/etc..)
+# When stopping the service a SIGTERM is sent immediately, to the main process
+# If, after 3s dsiprouter is still running, sends SIGKILL to all process
 [Unit]
 Description=dSIPRouter Service
 DefaultDependencies=no
@@ -18,9 +22,10 @@ Environment='DSIP_SYSTEM_CONFIG_DIR=/etc/dsiprouter'
 # PIDFile requires an absolute path
 PIDFile=/run/dsiprouter/dsiprouter.pid
 # ExecStart* requires an absolute path for the program
-ExecStartPre=/bin/mkdir -p $DSIP_RUN_DIR
-ExecStartPre=/bin/chown -R dsiprouter:dsiprouter $DSIP_RUN_DIR
+ExecStartPre=!-/usr/bin/dsiprouter chown -dsiprouter
 ExecStart=/usr/bin/python3 $DSIP_PROJECT_DIR/gui/dsiprouter.py
+TimeoutStopSec=3
+KillMode=mixed
 Restart=on-failure
 
 [Install]

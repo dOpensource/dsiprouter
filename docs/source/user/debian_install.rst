@@ -3,9 +3,6 @@
 Installing on a Debian-based Distro
 ===================================
 
-Note that this only covers one configuration with RTP traffic proxied.
-Contributions of additional configurations are welcome if you have tested them!
-
 For a specific version of dSIPRouter add "-b <version number>" to the end of the `git clone` command.
 
 Make sure to **set the hostmane to a fully qualified domain name (FQDN)** that has DNS records pointed at the server (like sbc.yourdomain.com) prior to installation.

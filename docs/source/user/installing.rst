@@ -8,15 +8,10 @@ Install dSIPRouter takes approximately 9-12 minutes to install.  The following v
 
 .. raw:: html
 
-        <object width="560" height="315"><param name="movie"
-        value="https://www.youtube.com/embed/Iu4BQkL1wGc"></param><param
-        name="allowFullScreen" value="true"></param><param
-        name="allowscriptaccess" value="always"></param><embed
-        src="https://www.youtube.com/embed/Iu4BQkL1wGc"
-        type="application/x-shockwave-flash" allowscriptaccess="always"
-        allowfullscreen="true" width=""
-        height="385"></embed></object>
-
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+                <iframe src="https://www.youtube.com/embed/Iu4BQkL1wGc" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 315px;"></iframe>
+        </div>
+     
 
 
 Prerequisites:
@@ -33,7 +28,6 @@ Install Options
 ^^^^^^^^^^^^^^^^
 
 - Proxy SIP Traffic Only (Don't Proxy audio (RTP) traffic)
-- Proxy SIP Traffic and Audio when it detects a SIP Agent is behind NAT
 - Proxy SIP Traffic, Audio and it configures the system to work properly when the PBX's and dSIPRouter are behind a NAT.
 
 OS Support
@@ -55,7 +49,7 @@ Ubuntu 20.04 (focal)                    ALPHA
 
 
 Kamailio will be automatically installed along with dSIPRouter.
-Must be installed on a fresh install of Debian Stretch, Debian Buster or CentOS.
+Must be installed on a fresh install of one of the supported operating systems.
 You will not be prompted for any information.  It will take anywhere from  9-12 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
 
 We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:

@@ -1,0 +1,10 @@
+[Unit]
+Description=Nginx Service Reloader
+PartOf=nginx.service
+
+[Path]
+Unit=nginx-watcher.service
+PathChanged=/etc/dsiprouter/certs/
+
+[Install]
+WantedBy=multi-user.target
