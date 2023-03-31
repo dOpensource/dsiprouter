@@ -65,9 +65,11 @@ Note: Make sure to to login to your instance via ssh.
 Getting Your Token
 ^^^^^^^^^^^^^^^^^^
 
+Your token was provided to you after you installed dSIPRouter.  You can reset your token if you didn't write it down, by executing the following command
+
 .. code-block:: bash
 
-  DSIP_TOKEN=$(grep 'API_TOKEN' /etc/dsiprouter/gui/settings.py | cut -d "'" -f 2)
+  dsiprouter setcredentials -ac <your token>
 
 
 Executing Kamailio stats API
