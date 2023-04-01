@@ -62,4 +62,4 @@ cp $TMP_CERT_DIR/sp-key.pem  $DSIP_CERT_DIR
 chown -R dsiprouter:kamailio $DSIP_CERT_DIR
 
 #Change permissions
-chmod -R 744 $DSIP_CERT_DIR
+chmod -R 755 $DSIP_CERT_DIR
