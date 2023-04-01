@@ -3,9 +3,12 @@
 
 apt -y install openssl coreutils
 
+TMP_CERT_DIR=/tmp/stir-shaken-ca
+DSIP_CERT_DIR=/etc/dsiprouter/certs/stirshaken
+
 # Generate Root Certificate Private Key
-mkdir /tmp/stir-shaken-ca
-cd /tmp/stir-shaken-ca
+mkdir $TMP_CERT_DIR
+cd $TMP_CERT_DIR
 openssl ecparam -noout -name prime256v1 -genkey -out ca-key.pem
 
 
@@ -50,3 +53,7 @@ openssl x509 -req -in sp-csr.pem -CA ../stir-shaken-ca/ca-cert.pem -CAkey ../sti
 
 #  verify that the SP certificate contains the TNAuthList extension
 openssl x509 -in sp-cert.pem -text -noout
+
+# Copy Key and Certificate to /opt/dsiprouter
+cp $TMP_CERT_DIR/sp-cert.pem $DSIP_CERT_DIR
+cp $TMP_CERT_DIR/sp-key.pem  $DSIP_CERT_DIR
