@@ -57,3 +57,9 @@ openssl x509 -in sp-cert.pem -text -noout
 # Copy Key and Certificate to /opt/dsiprouter
 cp $TMP_CERT_DIR/sp-cert.pem $DSIP_CERT_DIR
 cp $TMP_CERT_DIR/sp-key.pem  $DSIP_CERT_DIR
+
+#Change the ownership of the certificates and key
+chown -R dsiprouter:kamailio $DSIP_CERT_DIR
+
+#Change permissions
+chmod -R 744 $DSIP_CERT_DIR
