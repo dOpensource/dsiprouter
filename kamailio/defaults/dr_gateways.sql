@@ -1,7 +1,8 @@
 -- update dr_gateways schema
 ALTER TABLE dr_gateways
-  MODIFY pri_prefix varchar(64) NOT NULL DEFAULT "",
-  MODIFY attrs varchar(255) NOT NULL DEFAULT "";
+  MODIFY pri_prefix varchar(64) NOT NULL DEFAULT '',
+  MODIFY attrs varchar(255) NOT NULL DEFAULT '',
+  MODIFY description varchar(255) NOT NULL DEFAULT '';
 
 -- update dr_gateways attrs column when entry created
 DROP TRIGGER IF EXISTS insert_dr_gateways;

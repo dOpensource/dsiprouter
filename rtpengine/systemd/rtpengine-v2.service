@@ -15,7 +15,7 @@ EnvironmentFile=-$RUNDIR/daemon.conf
 # PIDFile requires an absolute path
 PIDFile=/run/rtpengine/rtpengine.pid
 # ExecStart* requires an absolute path for the program
-ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -rtpengine
+ExecStartPre=!-/usr/bin/dsiprouter chown -rtpengine
 ExecStartPre=/usr/sbin/rtpengine-start-pre $CFGFILE
 ExecStart=/usr/sbin/rtpengine -f $OPTIONS
 ExecStopPost=/usr/sbin/rtpengine-stop-post $CFGFILE

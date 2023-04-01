@@ -51,10 +51,12 @@
 
 
 # set project dir (where src files are located)
-DSIP_PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 # Import dsip_lib utility / shared functions
-. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+fi
 
 
 # settings used by script that are user configurable
@@ -165,6 +167,7 @@ function setDynamicScriptSettings() {
 
     # network settings determined by mode
     NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
+    NETWORK_MODE=${NETWORK_MODE:-0}
 
     # TODO: ipv6 intentionally disabled here
     export IPV6_ENABLED=0
@@ -461,6 +464,7 @@ function validateOSInfo() {
     export KAM_VERSION
 }
 
+# TODO: add documentation generation to supported CLI commands
 # install dsiprouter manpage
 function installManPage() {
     local MAN_PROGS_DIR="/usr/share/man/man1"
@@ -1224,6 +1228,18 @@ function configureKamailioDB() {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gateways.sql
 
+    # Update schema for dr_gw_lists table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_gw_lists.sql
+
+    # Update schema for dr_rules table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dr_rules.sql
+
+    # Update schema for dispatcher table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dispatcher.sql
+
     # Update schema for address table
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/address.sql
@@ -1343,9 +1359,9 @@ function installScriptRequirements() {
     printdbg 'Installing one-time script requirements'
     if cmdExists 'apt-get'; then
         DEBIAN_FRONTEND=noninteractive apt-get update -y &&
-        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl python3
+        DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gawk perl sed git dnsutils openssl python3 jq
     elif cmdExists 'yum'; then
-        yum install -y curl wget gawk perl sed git bind-utils openssl python3
+        yum install -y curl wget gawk perl sed git bind-utils openssl python3 jq
     fi
 
     # used by openssl rnd generator
@@ -1408,7 +1424,8 @@ function configureSystemRepos() {
         printerr 'Could not configure system repositories'
         cleanupAndExit 1
     elif (( $? >= 100 )); then
-        printwarn 'Some issues occurred configuring system repositories'
+        printwarn 'Some issues occurred configuring system repositories, attempting to continue...'
+        touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
     else
         printdbg 'System repositories configured successfully'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
@@ -1421,7 +1438,7 @@ function removeDsipSystemConfig() {
         case "$DISTRO" in
             debian|ubuntu)
                 mv -f ${APT_OFFICIAL_SOURCES_BAK} ${APT_OFFICIAL_SOURCES}
-                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS}
+                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS} 2>/dev/null
                 apt-get update -y
             ;;
         esac
@@ -1598,6 +1615,47 @@ function uninstallRTPEngine() {
     printdbg "RTPEngine was uninstalled"
 }
 
+function installDsiprouterCli() {
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
+        printwarn "dSIPRouter CLI is already installed"
+        return
+    else
+        printdbg "Installing dSIPRouter CLI"
+    fi
+
+    # add dsiprouter CLI command to the path
+    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+    # enable bash command line completion if not already
+    if [[ -f /etc/bash.bashrc ]]; then
+        perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+    fi
+    # add command line completion for dsiprouter CLI
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+    # TODO: has no effect when executing script, user has to log out and log in for changes to take effect
+    #. /etc/bash_completion
+
+    touch "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
+    printdbg "dSIPRouter CLI installed"
+}
+
+function uninstallDsiprouterCli() {
+    if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
+        printwarn "dSIPRouter CLI is not installed, skipping..."
+        return
+    else
+        printdbg "Uninstalling dSIPRouter CLI"
+    fi
+
+    # remove dsiprouter and dsiprouterd commands from the path
+    rm -f /usr/bin/dsiprouter
+    # remove command line completion for dsiprouter.sh
+    rm -f /etc/bash_completion.d/dsiprouter
+
+    rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
+    printdbg "dSIPRouter CLI uninstalled"
+}
+
+# TODO: move documentation generation into its own separate function
 # TODO: allow password changes on cloud instances (remove password reset after image creation)
 # we should be starting the web server as root and dropping root privilege after
 # this is standard practice, but we would have to consider file permissions
@@ -1635,15 +1693,6 @@ function installDsiprouter() {
     # configure dsiprouter modules
     installModules
 
-    # add dsiprouter CLI command to the path
-    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-    # enable bash command line completion if not already
-    if [[ -f /etc/bash.bashrc ]]; then
-        perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
-    fi
-    # add command line completion for dsiprouter CLI
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-    . /etc/bash_completion
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
     ln -sf ${PYTHON_CMD} "/usr/local/bin/python${REQ_PYTHON_MAJOR_VER}"
@@ -1746,9 +1795,6 @@ EOF
     # TODO: we should move generated docs to /etc/dsiprouter to keep clean repo
     ( cd ${DSIP_PROJECT_DIR}/docs; make html >/dev/null 2>&1; )
 
-    # install documentation for the CLI
-    installManPage
-
     # Restart dSIPRouter / nginx / Kamailio with new configurations
     if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled ]]; then
         systemctl restart nginx
@@ -1799,14 +1845,6 @@ function uninstallDsiprouter() {
 
     # revert to previous MOTD ssh login banner
     revertBanner
-
-    # remove dsiprouter and dsiprouterd commands from the path
-    rm -f /usr/bin/dsiprouter
-    # remove command line completion for dsiprouter.sh
-    rm -f /etc/bash_completion.d/dsiprouter
-
-    # remove CLI documentation
-    uninstallManPage
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
@@ -2080,7 +2118,7 @@ Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 # We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
 # wrapper picking up extra configuration files and then execs dnsmasq
@@ -2112,7 +2150,7 @@ Type=simple
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=!-${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2141,7 +2179,7 @@ PermissionsStartOnly=true
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
 # make sure everything is setup correctly before starting
-ExecStartPre=${DSIP_PROJECT_DIR}/dsiprouter.sh chown -dnsmasq
+ExecStartPre=/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/usr/sbin/dnsmasq -k
 ExecReload=/bin/kill -HUP $MAINPID
@@ -2180,6 +2218,9 @@ function uninstallDnsmasq() {
 
     # stop the process
     systemctl stop dnsmasq
+    # remove dnsmasq systemd service
+    rm -f /etc/systemd/system/dnsmasq.service
+    systemctl daemon-reload
 
     # uninstall dnsmasq
     if cmdExists 'apt-get'; then
@@ -2203,8 +2244,8 @@ function uninstallDnsmasq() {
     cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
 
     # if systemd dns resolver installed re-enable it
-    systemctl enable systemd-resolved 2>/dev/null
-    systemctl start systemd-resolved 2>/dev/null
+    #systemctl enable systemd-resolved 2>/dev/null
+    #systemctl start systemd-resolved 2>/dev/null
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
@@ -2763,7 +2804,7 @@ Before=
 
 [Service]
 Type=oneshot
-ExecStart=${DSIP_PROJECT_DIR}/dsiprouter.sh chown
+ExecStart=/usr/bin/true
 RemainAfterExit=true
 TimeoutSec=0
 
@@ -2794,121 +2835,128 @@ function removeInitService() {
     printdbg "dsip-init service removed"
 }
 
-# TODO: not finished, not vetted, needs more work
 function upgrade() {
-    KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
-    KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
-    KAM_DB_NAME=${KAM_DB_NAME:-$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})}
-    KAM_DB_USER=${KAM_DB_USER:-$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})}
-    KAM_DB_PASS=${KAM_DB_PASS:-$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})}
-    DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+    local BS_SCRIPT_URL="https://github.com/dOpensource/dsiprouter/tree/${UPGRADE_RELEASE}/resources/upgrade/${UPGRADE_RELEASE}/scripts/bootstrap.sh"
+    local BOOTSTRAPPING_UPGRADE=${BOOTSTRAPPING_UPGRADE:-0}
 
-    CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
-
-    # Check if already upgraded
-    #rel = $((`echo "$CURRENT_RELEASE" == "$UPGRADE_RELEASE" | bc`))
-    #if [ $rel -eq 1 ]; then
-
-
-    #    pprint "dSIPRouter is already updated to $UPGRADE_RELEASE!"
-    #    return
-
-    #fi
-
-    # Return an error if the release doesn't exist
-   if ! git branch -a --format='%(refname:short)' | grep -qE "^${UPGRADE_RELEASE}\$" 2>/dev/null; then
-        printdbg "The $UPGRADE_RELEASE release doesn't exist. Please select another release"
-        return 1
-   fi
-
-    BACKUP_DIR="/var/backups"
-    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
-    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
-    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
-
-    cp -r ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
-    cp -r ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
-
-    #Stash any changes so that GUI will allow us to pull down a new release
-    #git stash
-    #git checkout $UPGRADE_RELEASE
-    #git stash apply
-
-    generateKamailioConfig
-    updateKamailioConfig
-    updateKamailioStartup
-
-    if (( $? == 0 )); then
-        # Upgrade the version
-       setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE} -q
-
-        # Restart Kamailio
-        systemctl restart kamailio
-        systemctl restart dsiprouter
+    # check if the new function definitions need bootstrapped prior to upgrade
+    if (( $BOOTSTRAPPING_UPGRADE == 0 )) && curl -sf -I "$BS_SCRIPT_URL" -o /dev/null; then
+        curl -s "$BS_SCRIPT_URL" | bash -s upgrade -rel ${UPGRADE_RELEASE}
+        return $?
     fi
+
+    ${DSIP_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
+    return $?
 }
+
+# TODO: deprecated code requiring review, marked for review in v0.80
+#    DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+#
+#    CURRENT_RELEASE=$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})
+#
+#    # Check if already upgraded
+#    #rel = $((`echo "$CURRENT_RELEASE" == "$UPGRADE_RELEASE" | bc`))
+#    #if [ $rel -eq 1 ]; then
+#
+#
+#    #    pprint "dSIPRouter is already updated to $UPGRADE_RELEASE!"
+#    #    return
+#
+#    #fi
+#
+#    # Return an error if the release doesn't exist
+#   if ! git branch -a --format='%(refname:short)' | grep -qE "^${UPGRADE_RELEASE}\$" 2>/dev/null; then
+#        printdbg "The $UPGRADE_RELEASE release doesn't exist. Please select another release"
+#        return 1
+#   fi
+#
+#    BACKUP_DIR="/var/backups"
+#    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
+#    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
+#    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
+#
+#    cp -r ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
+#    cp -r ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
+#
+#    #Stash any changes so that GUI will allow us to pull down a new release
+#    #git stash
+#    #git checkout $UPGRADE_RELEASE
+#    #git stash apply
+#
+#    generateKamailioConfig
+#    updateKamailioConfig
+#    updateKamailioStartup
+#
+#    if (( $? == 0 )); then
+#        # Upgrade the version
+#       setConfigAttrib 'VERSION' "$UPGRADE_RELEASE" ${DSIP_CONFIG_FILE} -q
+#
+#        # Restart Kamailio
+#        systemctl restart kamailio
+#        systemctl restart dsiprouter
+#    fi
 
 # TODO: this is unfinished
-function upgradeOld {
-    # TODO: set / handle parsed args
-    UPGRADE_RELEASE="v0.51"
-
-    BACKUP_DIR="/var/backups"
-    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
-    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
-    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
-
-    # TODO: more cross platform / cloud RDBMS friendly dump, such as the following:
-#    VIEWS=$(mysql --skip-column-names --batch -D information_schema -e 'select table_name from tables where table_schema="kamailio" and table_type="VIEW"' | perl -0777 -pe 's/\n(?!\Z)/|/g')
-#    mysqldump -B kamailio --routines --triggers --hex-blob | sed -e 's|DEFINER=`[a-z0-9A-Z]*`@`[a-z0-9A-Z]*`||g' | perl -0777 -pe 's|(CREATE TABLE `?(?:'"${VIEWS}"')`?.*?)ENGINE=\w+|\1|sgm' > kamdump.sql
-
-    mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
-        --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" > ${CURR_BACKUP_DIR}/mysql_full.sql
-    mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
-        --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} \
-        | perl -0777 -pi -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs' \
-        > ${CURR_BACKUP_DIR}/kamdb_merge.sql
-
-    systemctl stop rtpengine
-    systemctl stop kamailio
-    systemctl stop dsiprouter
-    systemctl stop mariadb
-
-    mv -f ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
-    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
-    # in case mysqldumps failed silently, backup mysql binary data
-    mv -f /var/lib/mysql ${CURR_BACKUP_DIR}/var/lib/
-    cp -f /etc/my.cnf* ${CURR_BACKUP_DIR}/etc/
-    cp -rf /etc/my.cnf* ${CURR_BACKUP_DIR}/etc/
-    cp -rf /etc/mysql ${CURR_BACKUP_DIR}/etc/
-    cp -f ${HOME}/.my.cnf* ${CURR_BACKUP_DIR}/${HOME}/
-
-    iptables-save > ${CURR_BACKUP_DIR}/iptables.dump
-    ip6tables-save > ${CURR_BACKUP_DIR}/ip6tables.dump
-
-    git clone https://github.com/dOpensource/dsiprouter.git --branch="$UPGRADE_RELEASE" ${DSIP_PROJECT_DIR}
-    cd ${DSIP_PROJECT_DIR}
-
-    # TODO: figure out what settings they installed with previously
-    # or we can simply store them in a text file (./installed)
-    # after a succesfull install completes
-    ./dsiprouter.sh uninstall
-    ./dsiprouter.sh install
-
-    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} < ${CURR_BACKUP_DIR}/kamdb_merge.sql
-
-    # TODO: fix any conflicts that would arise from our new modules / tables in KAMDB
-
-    # TODO: print backup location info to user
-
-    # TODO: transfer / merge backup configs to new configs
-    # kam configs
-    # dsip configs
-    # iptables configs
-    # mysql configs
-
-    # TODO: restart services, check for good startup
-}
+#function upgradeOld {
+#    # TODO: set / handle parsed args
+#    UPGRADE_RELEASE="v0.51"
+#
+#    BACKUP_DIR="/var/backups"
+#    CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
+#    mkdir -p ${BACKUP_DIR} ${CURR_BACKUP_DIR}
+#    mkdir -p ${CURR_BACKUP_DIR}/{etc,var/lib,${HOME},$(dirname "$DSIP_PROJECT_DIR")}
+#
+#    # TODO: more cross platform / cloud RDBMS friendly dump, such as the following:
+##    VIEWS=$(mysql --skip-column-names --batch -D information_schema -e 'select table_name from tables where table_schema="kamailio" and table_type="VIEW"' | perl -0777 -pe 's/\n(?!\Z)/|/g')
+##    mysqldump -B kamailio --routines --triggers --hex-blob | sed -e 's|DEFINER=`[a-z0-9A-Z]*`@`[a-z0-9A-Z]*`||g' | perl -0777 -pe 's|(CREATE TABLE `?(?:'"${VIEWS}"')`?.*?)ENGINE=\w+|\1|sgm' > kamdump.sql
+#
+#    mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges \
+#        --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" > ${CURR_BACKUP_DIR}/mysql_full.sql
+#    mysqldump --single-transaction --skip-triggers --skip-add-drop-table --insert-ignore \
+#        --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} \
+#        | perl -0777 -pi -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs' \
+#        > ${CURR_BACKUP_DIR}/kamdb_merge.sql
+#
+#    systemctl stop rtpengine
+#    systemctl stop kamailio
+#    systemctl stop dsiprouter
+#    systemctl stop mariadb
+#
+#    mv -f ${DSIP_PROJECT_DIR} ${CURR_BACKUP_DIR}/${DSIP_PROJECT_DIR}
+#    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${CURR_BACKUP_DIR}/${SYSTEM_KAMAILIO_CONFIG_DIR}
+#    # in case mysqldumps failed silently, backup mysql binary data
+#    mv -f /var/lib/mysql ${CURR_BACKUP_DIR}/var/lib/
+#    cp -f /etc/my.cnf* ${CURR_BACKUP_DIR}/etc/
+#    cp -rf /etc/my.cnf* ${CURR_BACKUP_DIR}/etc/
+#    cp -rf /etc/mysql ${CURR_BACKUP_DIR}/etc/
+#    cp -f ${HOME}/.my.cnf* ${CURR_BACKUP_DIR}/${HOME}/
+#
+#    iptables-save > ${CURR_BACKUP_DIR}/iptables.dump
+#    ip6tables-save > ${CURR_BACKUP_DIR}/ip6tables.dump
+#
+#    git clone https://github.com/dOpensource/dsiprouter.git --branch="$UPGRADE_RELEASE" ${DSIP_PROJECT_DIR}
+#    cd ${DSIP_PROJECT_DIR}
+#
+#    # TODO: figure out what settings they installed with previously
+#    # or we can simply store them in a text file (./installed)
+#    # after a succesfull install completes
+#    ./dsiprouter.sh uninstall
+#    ./dsiprouter.sh install
+#
+#    mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} < ${CURR_BACKUP_DIR}/kamdb_merge.sql
+#
+#    # TODO: fix any conflicts that would arise from our new modules / tables in KAMDB
+#
+#    # TODO: print backup location info to user
+#
+#    # TODO: transfer / merge backup configs to new configs
+#    # kam configs
+#    # dsip configs
+#    # iptables configs
+#    # mysql configs
+#
+#    # TODO: restart services, check for good startup
+#}
 
 # TODO: add bash cmd completion for new options provided by gitwrapper.sh
 # TODO: move installing of testing dependencies here
@@ -3377,7 +3425,7 @@ function processCMD() {
     # use options to add commands in any order needed
     # 1 == defaults on, 0 == defaults off
     local DISPLAY_LOGIN_INFO=0
-    # for install / uninstall default to kamailio and dsiprouter services
+    # for install / uninstall, if no selections are chosen use some sane defaults
     local DEFAULT_SERVICES=1
 
     # process all options before running commands
@@ -3386,7 +3434,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installDsiprouterCli installManPage)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -3651,7 +3699,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallManPage uninstallDsiprouterCli removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -3774,7 +3822,7 @@ function processCMD() {
                         fi
 
                         if [[ -z "$UPGRADE_RELEASE" ]]; then
-                            printerr "Please specify a release tag (ie v0.64)"
+                            printerr "Invalid upgrade release specified"
                             usageOptions
                             cleanupAndExit 1
                         fi
@@ -3787,6 +3835,15 @@ function processCMD() {
                         ;;
                 esac
             done
+
+            # use latest release if none specified
+            if [[ -z "$UPGRADE_RELEASE" ]]; then
+                TMP=$(curl -s "https://api.github.com/repos/dOpensource/dsiprouter/releases/latest") &&
+                    UPGRADE_RELEASE=$(jq -r '.tag_name' <<<"$TMP") || {
+                        printerr "Could not retrieve latest release candidate"
+                        cleanupAndExit 1
+                    }
+            fi
             ;;
         start)
             # start installed services

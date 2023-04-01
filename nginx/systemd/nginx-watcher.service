@@ -5,7 +5,7 @@ StartLimitBurst=3
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/systemctl restart nginx.service
+ExecStart=/usr/sbin/nginx -s reload
 
 [Install]
 WantedBy=multi-user.target

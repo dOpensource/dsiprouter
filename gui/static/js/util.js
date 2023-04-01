@@ -209,13 +209,20 @@
   /**
    * Show notification in top notification bar
    * @param {String} msg      message to display
-   * @param {Boolean} error   whether its an error
+   * @param {Boolean} error   whether the notification is an error
    */
   window.showNotification = function(msg, error = false) {
     var top_bar = $('.top-bar');
     var msg_bar = $('.message-bar');
     var visible_modals = $('.modal').filter(':not(:hidden)');
 
+    // hide modals if shown
+    visible_modals.modal('hide');
+
+    // stop the animation if already running
+    top_bar.stop(true, true);
+
+    // change the notification accordingly
     if (error === true) {
       msg_bar.removeClass("alert-success");
       msg_bar.addClass("alert alert-danger");
@@ -227,7 +234,7 @@
       msg_bar.html("<strong>Success!</strong> " + msg);
     }
 
-    visible_modals.modal('hide');
+    // start the animation showing the notification
     top_bar.show();
     top_bar.slideUp(10000, function() {
       top_bar.hide();

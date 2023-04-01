@@ -32,7 +32,7 @@ CREATE TABLE dsip_settings
   DSIP_SSL_CA             VARCHAR(255)                                              NOT NULL DEFAULT '/etc/dsiprouter/certs/ca-list.pem',
   DSIP_SSL_EMAIL          VARCHAR(255)                                              NOT NULL DEFAULT '',
   DSIP_CERTS_DIR          VARCHAR(255)                                              NOT NULL DEFAULT '/etc/dsiprouter/certs',
-  VERSION                 VARCHAR(32)                                               NOT NULL DEFAULT '0.61',
+  VERSION                 VARCHAR(32)                                               NOT NULL,
   DEBUG                   TINYINT(1)                                                NOT NULL DEFAULT 0,
   `ROLE`                  VARCHAR(32)                                               NOT NULL DEFAULT '',
   GUI_INACTIVE_TIMEOUT    INT UNSIGNED                                              NOT NULL DEFAULT 20,
