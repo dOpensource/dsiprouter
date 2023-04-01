@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, time, random, subprocess, requests, csv, base64, codecs, re
+import os, time, random, subprocess, requests, csv, base64, codecs, re, socket
 from contextlib import closing
 from datetime import datetime
 from flask import Blueprint, jsonify, request, send_file
@@ -3000,6 +3000,8 @@ def createCertificate():
 
         # Process Request
         domain = request_payload['domain']
+        if domain == "default":
+            domain = socket.gethostname()
         ip = request_payload['ip'] if 'ip' in request_payload else settings.EXTERNAL_IP_ADDR
         port = request_payload['port'] if 'port' in request_payload else 5061
         server_name_mode = request_payload['server_name_mode'] \
