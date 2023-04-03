@@ -2841,7 +2841,7 @@ function upgrade() {
 
     # check if the new function definitions need bootstrapped prior to upgrade
     if (( $BOOTSTRAPPING_UPGRADE == 0 )) && curl -sf -I "$BS_SCRIPT_URL" -o /dev/null; then
-        curl -s "$BS_SCRIPT_URL" | bash -s upgrade -rel ${UPGRADE_RELEASE}
+        curl -s "$BS_SCRIPT_URL" | bash
         return $?
     fi
 

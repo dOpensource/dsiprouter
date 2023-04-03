@@ -1,14 +1,10 @@
 #!/usr/bin/env bash
 
 # set project dir (where src files are located)
-export DSIP_PROJECT_DIR=/opt/dsiprouter
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
 # import dsip_lib utility / shared functions
 if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
-    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
-        . /tmp/dsiprouter/dsiprouter/dsip_lib.sh
-    else
-        . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
-    fi
+    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
 printdbg 'backing up configs just in case the upgrade fails'
@@ -126,10 +122,15 @@ encryptCreds() { (
     else
         cd ${DSIP_PROJECT_DIR}/gui
     fi
-    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'));"
+    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'), end='');"
 ) }
+DSIP_PASSWORD_HASH=$(hashCreds "$DSIP_PASSWORD")
+DSIP_API_TOKEN_CIPHERTEXT=$(encryptCreds "$DSIP_API_TOKEN")
+DSIP_IPC_PASS_CIPHERTEXT=$(encryptCreds "$DSIP_IPC_PASS")
+KAM_DB_PASS_CIPHERTEXT=$(encryptCreds "$KAM_DB_PASS")
+MAIL_PASSWORD_CIPHERTEXT=$(encryptCreds "$MAIL_PASSWORD")
+ROOT_DB_PASS_CIPHERTEXT=$(encryptCreds "$ROOT_DB_PASS")
 
-# TODO: does not support multiple rows in dsip_settings table (cluster upgrade not supported yet)
 printdbg 'migrating database schema'
 (
 cat <<'EOF'
@@ -152,287 +153,6 @@ ALTER TABLE dr_rules
 
 ALTER TABLE dsip_cdrinfo
   MODIFY email VARCHAR(255) NOT NULL DEFAULT '';
-
-UPDATE dsip_settings
-  SET DSIP_ID='',
-  SET DSIP_PASSWORD='',
-  SET DSIP_IPC_PASS='',
-  SET DSIP_API_TOKEN='',
-  SET KAM_DB_PASS='',
-  SET MAIL_PASSWORD='';
-
-ALTER TABLE dsip_settings
-  MODIFY DSIP_ID VARBINARY(128) COLLATE 'binary' NOT NULL,
-  MODIFY DSIP_PASSWORD VARBINARY(128) COLLATE 'binary' NOT NULL,
-  MODIFY DSIP_IPC_PASS VARBINARY(160) COLLATE 'binary' NOT NULL,
-  MODIFY DSIP_API_TOKEN VARBINARY(160) COLLATE 'binary' NOT NULL,
-  DROP IF EXISTS SQLALCHEMY_TRACK_MODIFICATIONS,
-  DROP IF EXISTS SQLALCHEMY_SQL_DEBUG,
-  MODIFY VERSION VARCHAR(32) NOT NULL,
-  MODIFY KAM_DB_PASS VARBINARY(160) COLLATE 'binary' NOT NULL,
-  MODIFY MAIL_PASSWORD VARBINARY (160) COLLATE 'binary' NOT NULL,
-  ADD IF NOT EXISTS HOMER_ID INT NOT NULL AFTER FLOWROUTE_API_ROOT_URL,
-  ADD IF NOT EXISTS NETWORK_MODE INT NOT NULL DEFAULT 0 AFTER HOMER_HEP_PORT,
-  ADD IF NOT EXISTS INTERNAL_FQDN VARCHAR (255) NOT NULL DEFAULT '' AFTER INTERNAL_IP6_NET,
-  ADD IF NOT EXISTS PUBLIC_IFACE VARCHAR (255) NOT NULL DEFAULT '' AFTER EXTERNAL_FQDN,
-  ADD IF NOT EXISTS PRIVATE_IFACE VARCHAR (255) NOT NULL DEFAULT '' AFTER PUBLIC_IFACE,
-  ADD IF NOT EXISTS DSIP_CORE_LICENSE VARBINARY (160) COLLATE 'binary' NOT NULL,
-  ADD IF NOT EXISTS DSIP_STIRSHAKEN_LICENSE VARBINARY (160) COLLATE 'binary' NOT NULL,
-  ADD IF NOT EXISTS DSIP_TRANSNEXUS_LICENSE VARBINARY (160) COLLATE 'binary' NOT NULL,
-  ADD IF NOT EXISTS DSIP_MSTEAMS_LICENSE VARBINARY (160) COLLATE 'binary' NOT NULL;
-EOF
-
-cat <<EOF
-UPDATE dsip_settings
-  SET DSIP_ID='$DSIP_ID',
-  SET DSIP_PASSWORD='$(encryptCreds $DSIP_PASSWORD)',
-  SET DSIP_IPC_PASS='$(encryptCreds $DSIP_IPC_PASS)',
-  SET DSIP_API_TOKEN='$(encryptCreds $DSIP_API_TOKEN)',
-  SET KAM_DB_PASS='$(encryptCreds $KAM_DB_PASS)',
-  SET MAIL_PASSWORD='$(encryptCreds $MAIL_PASSWORD)';
-EOF
-
-cat <<'EOF'
-DROP PROCEDURE IF EXISTS update_dsip_settings;
-DELIMITER //
-CREATE PROCEDURE update_dsip_settings(
-  IN NEW_DSIP_ID VARBINARY(128),
-  IN NEW_DSIP_CLUSTER_ID INT UNSIGNED,
-  IN NEW_DSIP_CLUSTER_SYNC TINYINT(1),
-  IN NEW_DSIP_PROTO VARCHAR(16),
-  IN NEW_DSIP_PORT INT, IN NEW_DSIP_USERNAME VARCHAR(255),
-  IN NEW_DSIP_PASSWORD VARBINARY(128),
-  IN NEW_DSIP_IPC_PASS VARBINARY(160),
-  IN NEW_DSIP_API_PROTO VARCHAR(16),
-  IN NEW_DSIP_API_PORT INT,
-  IN NEW_DSIP_PRIV_KEY VARCHAR(255),
-  IN NEW_DSIP_PID_FILE VARCHAR(255),
-  IN NEW_DSIP_UNIX_SOCK VARCHAR(255),
-  IN NEW_DSIP_IPC_SOCK VARCHAR(255),
-  IN NEW_DSIP_API_TOKEN VARBINARY(160),
-  IN NEW_DSIP_LOG_LEVEL INT,
-  IN NEW_DSIP_LOG_FACILITY INT,
-  IN NEW_DSIP_SSL_KEY VARCHAR(255),
-  IN NEW_DSIP_SSL_CERT VARCHAR(255),
-  IN NEW_DSIP_SSL_CA VARCHAR(255),
-  IN NEW_DSIP_SSL_EMAIL VARCHAR(255),
-  IN NEW_DSIP_CERTS_DIR VARCHAR(255),
-  IN NEW_VERSION VARCHAR(32),
-  IN NEW_DEBUG TINYINT(1),
-  IN NEW_ROLE VARCHAR(32),
-  IN NEW_GUI_INACTIVE_TIMEOUT INT UNSIGNED,
-  IN NEW_KAM_DB_HOST VARCHAR(255),
-  IN NEW_KAM_DB_DRIVER VARCHAR(255),
-  IN NEW_KAM_DB_TYPE VARCHAR(255),
-  IN NEW_KAM_DB_PORT VARCHAR(255),
-  IN NEW_KAM_DB_NAME VARCHAR(255),
-  IN NEW_KAM_DB_USER VARCHAR(255),
-  IN NEW_KAM_DB_PASS VARBINARY(160),
-  IN NEW_KAM_KAMCMD_PATH VARCHAR(255),
-  IN NEW_KAM_CFG_PATH VARCHAR(255),
-  IN NEW_KAM_TLSCFG_PATH VARCHAR(255),
-  IN NEW_RTP_CFG_PATH VARCHAR(255),
-  IN NEW_FLT_CARRIER INT,
-  IN NEW_FLT_PBX INT,
-  IN NEW_FLT_MSTEAMS INT,
-  IN NEW_FLT_OUTBOUND INT,
-  IN NEW_FLT_INBOUND INT,
-  IN NEW_FLT_LCR_MIN INT,
-  IN NEW_FLT_FWD_MIN INT,
-  IN NEW_DEFAULT_AUTH_DOMAIN VARCHAR(255),
-  IN NEW_TELEBLOCK_GW_ENABLED TINYINT(1),
-  IN NEW_TELEBLOCK_GW_IP VARCHAR(255),
-  IN NEW_TELEBLOCK_GW_PORT VARCHAR(255),
-  IN NEW_TELEBLOCK_MEDIA_IP VARCHAR(255),
-  IN NEW_TELEBLOCK_MEDIA_PORT VARCHAR(255),
-  IN NEW_FLOWROUTE_ACCESS_KEY VARCHAR(255),
-  IN NEW_FLOWROUTE_SECRET_KEY VARCHAR(255),
-  IN NEW_FLOWROUTE_API_ROOT_URL VARCHAR(255),
-  IN NEW_HOMER_ID INT,
-  IN NEW_HOMER_HEP_HOST VARCHAR(255),
-  IN NEW_HOMER_HEP_PORT INT,
-  IN NEW_NETWORK_MODE INT,
-  IN NEW_IPV6_ENABLED TINYINT(1),
-  IN NEW_INTERNAL_IP_ADDR VARCHAR(255),
-  IN NEW_INTERNAL_IP_NET VARCHAR(255),
-  IN NEW_INTERNAL_IP6_ADDR VARCHAR(255),
-  IN NEW_INTERNAL_IP6_NET VARCHAR(255),
-  IN NEW_INTERNAL_FQDN VARCHAR(255),
-  IN NEW_EXTERNAL_IP_ADDR VARCHAR(255),
-  IN NEW_EXTERNAL_IP6_ADDR VARCHAR(255),
-  IN NEW_EXTERNAL_FQDN VARCHAR(255),
-  IN NEW_PUBLIC_IFACE VARCHAR(255),
-  IN NEW_PRIVATE_IFACE VARCHAR(255),
-  IN NEW_UPLOAD_FOLDER VARCHAR(255),
-  IN NEW_MAIL_SERVER VARCHAR(255),
-  IN NEW_MAIL_PORT INT,
-  IN NEW_MAIL_USE_TLS TINYINT(1),
-  IN NEW_MAIL_USERNAME VARCHAR(255),
-  IN NEW_MAIL_PASSWORD VARBINARY(160),
-  IN NEW_MAIL_ASCII_ATTACHMENTS TINYINT(1),
-  IN NEW_MAIL_DEFAULT_SENDER VARCHAR(255),
-  IN NEW_MAIL_DEFAULT_SUBJECT VARCHAR(255),
-  IN NEW_DSIP_CORE_LICENSE VARBINARY(128),
-  IN NEW_DSIP_STIRSHAKEN_LICENSE VARBINARY(128),
-  IN NEW_DSIP_TRANSNEXUS_LICENSE VARBINARY(128),
-  IN NEW_DSIP_MSTEAMS_LICENSE VARBINARY(128)
-)
-BEGIN
-  START TRANSACTION;
-
-  REPLACE INTO dsip_settings
-  VALUES (NEW_DSIP_ID,
-          NEW_DSIP_CLUSTER_ID,
-          NEW_DSIP_CLUSTER_SYNC,
-          NEW_DSIP_PROTO,
-          NEW_DSIP_PORT,
-          NEW_DSIP_USERNAME,
-          NEW_DSIP_PASSWORD,
-          NEW_DSIP_IPC_PASS,
-          NEW_DSIP_API_PROTO,
-          NEW_DSIP_API_PORT,
-          NEW_DSIP_PRIV_KEY,
-          NEW_DSIP_PID_FILE,
-          NEW_DSIP_UNIX_SOCK,
-          NEW_DSIP_IPC_SOCK,
-          NEW_DSIP_API_TOKEN,
-          NEW_DSIP_LOG_LEVEL,
-          NEW_DSIP_LOG_FACILITY,
-          NEW_DSIP_SSL_KEY,
-          NEW_DSIP_SSL_CERT,
-          NEW_DSIP_SSL_CA,
-          NEW_DSIP_SSL_EMAIL,
-          NEW_DSIP_CERTS_DIR,
-          NEW_VERSION,
-          NEW_DEBUG,
-          NEW_ROLE,
-          NEW_GUI_INACTIVE_TIMEOUT,
-          NEW_KAM_DB_HOST,
-          NEW_KAM_DB_DRIVER,
-          NEW_KAM_DB_TYPE,
-          NEW_KAM_DB_PORT,
-          NEW_KAM_DB_NAME,
-          NEW_KAM_DB_USER,
-          NEW_KAM_DB_PASS,
-          NEW_KAM_KAMCMD_PATH,
-          NEW_KAM_CFG_PATH,
-          NEW_KAM_TLSCFG_PATH,
-          NEW_RTP_CFG_PATH,
-          NEW_FLT_CARRIER,
-          NEW_FLT_PBX,
-          NEW_FLT_MSTEAMS,
-          NEW_FLT_OUTBOUND,
-          NEW_FLT_INBOUND,
-          NEW_FLT_LCR_MIN,
-          NEW_FLT_FWD_MIN,
-          NEW_DEFAULT_AUTH_DOMAIN,
-          NEW_TELEBLOCK_GW_ENABLED,
-          NEW_TELEBLOCK_GW_IP,
-          NEW_TELEBLOCK_GW_PORT,
-          NEW_TELEBLOCK_MEDIA_IP,
-          NEW_TELEBLOCK_MEDIA_PORT,
-          NEW_FLOWROUTE_ACCESS_KEY,
-          NEW_FLOWROUTE_SECRET_KEY,
-          NEW_FLOWROUTE_API_ROOT_URL,
-          NEW_HOMER_ID,
-          NEW_HOMER_HEP_HOST,
-          NEW_HOMER_HEP_PORT,
-          NEW_NETWORK_MODE,
-          NEW_IPV6_ENABLED,
-          NEW_INTERNAL_IP_ADDR,
-          NEW_INTERNAL_IP_NET,
-          NEW_INTERNAL_IP6_ADDR,
-          NEW_INTERNAL_IP6_NET,
-          NEW_INTERNAL_FQDN,
-          NEW_EXTERNAL_IP_ADDR,
-          NEW_EXTERNAL_IP6_ADDR,
-          NEW_EXTERNAL_FQDN,
-          NEW_PUBLIC_IFACE,
-          NEW_PRIVATE_IFACE,
-          NEW_UPLOAD_FOLDER,
-          NEW_MAIL_SERVER,
-          NEW_MAIL_PORT,
-          NEW_MAIL_USE_TLS,
-          NEW_MAIL_USERNAME,
-          NEW_MAIL_PASSWORD,
-          NEW_MAIL_ASCII_ATTACHMENTS,
-          NEW_MAIL_DEFAULT_SENDER,
-          NEW_MAIL_DEFAULT_SUBJECT,
-          NEW_DSIP_CORE_LICENSE,
-          NEW_DSIP_STIRSHAKEN_LICENSE,
-          NEW_DSIP_TRANSNEXUS_LICENSE,
-          NEW_DSIP_MSTEAMS_LICENSE);
-
-  IF NEW_DSIP_CLUSTER_SYNC = 1 THEN
-    UPDATE dsip_settings
-    SET DSIP_PROTO             = NEW_DSIP_PROTO,
-        DSIP_PORT              = NEW_DSIP_PORT,
-        DSIP_USERNAME          = NEW_DSIP_USERNAME,
-        DSIP_PASSWORD          = NEW_DSIP_PASSWORD,
-        DSIP_IPC_PASS          = NEW_DSIP_IPC_PASS,
-        DSIP_API_PROTO         = NEW_DSIP_API_PROTO,
-        DSIP_API_PORT          = NEW_DSIP_API_PORT,
-        DSIP_PRIV_KEY          = NEW_DSIP_PRIV_KEY,
-        DSIP_PID_FILE          = NEW_DSIP_PID_FILE,
-        DSIP_UNIX_SOCK         = NEW_DSIP_UNIX_SOCK,
-        DSIP_IPC_SOCK          = NEW_DSIP_IPC_SOCK,
-        DSIP_API_TOKEN         = NEW_DSIP_API_TOKEN,
-        DSIP_LOG_LEVEL         = NEW_DSIP_LOG_LEVEL,
-        DSIP_LOG_FACILITY      = NEW_DSIP_LOG_FACILITY,
-        DSIP_SSL_KEY           = NEW_DSIP_SSL_KEY,
-        DSIP_SSL_CERT          = NEW_DSIP_SSL_CERT,
-        DSIP_SSL_CA            = NEW_DSIP_SSL_CA,
-        DSIP_SSL_EMAIL         = NEW_DSIP_SSL_EMAIL,
-        DSIP_CERTS_DIR         = NEW_DSIP_CERTS_DIR,
-        VERSION                = NEW_VERSION,
-        DEBUG                  = NEW_DEBUG,
-        `ROLE`                 = NEW_ROLE,
-        GUI_INACTIVE_TIMEOUT   = NEW_GUI_INACTIVE_TIMEOUT,
-        KAM_DB_HOST            = NEW_KAM_DB_HOST,
-        KAM_DB_DRIVER          = NEW_KAM_DB_DRIVER,
-        KAM_DB_TYPE            = NEW_KAM_DB_TYPE,
-        KAM_DB_PORT            = NEW_KAM_DB_PORT,
-        KAM_DB_NAME            = NEW_KAM_DB_NAME,
-        KAM_DB_USER            = NEW_KAM_DB_USER,
-        KAM_DB_PASS            = NEW_KAM_DB_PASS,
-        KAM_KAMCMD_PATH        = NEW_KAM_KAMCMD_PATH,
-        KAM_CFG_PATH           = NEW_KAM_CFG_PATH,
-        KAM_TLSCFG_PATH        = NEW_KAM_TLSCFG_PATH,
-        RTP_CFG_PATH           = NEW_RTP_CFG_PATH,
-        FLT_CARRIER            = NEW_FLT_CARRIER,
-        FLT_PBX                = NEW_FLT_PBX,
-        FLT_MSTEAMS            = NEW_FLT_MSTEAMS,
-        FLT_OUTBOUND           = NEW_FLT_OUTBOUND,
-        FLT_INBOUND            = NEW_FLT_INBOUND,
-        FLT_LCR_MIN            = NEW_FLT_LCR_MIN,
-        FLT_FWD_MIN            = NEW_FLT_FWD_MIN,
-        DEFAULT_AUTH_DOMAIN    = NEW_DEFAULT_AUTH_DOMAIN,
-        TELEBLOCK_GW_ENABLED   = NEW_TELEBLOCK_GW_ENABLED,
-        TELEBLOCK_GW_IP        = NEW_TELEBLOCK_GW_IP,
-        TELEBLOCK_GW_PORT      = NEW_TELEBLOCK_GW_PORT,
-        TELEBLOCK_MEDIA_IP     = NEW_TELEBLOCK_MEDIA_IP,
-        TELEBLOCK_MEDIA_PORT   = NEW_TELEBLOCK_MEDIA_PORT,
-        FLOWROUTE_ACCESS_KEY   = NEW_FLOWROUTE_ACCESS_KEY,
-        FLOWROUTE_SECRET_KEY   = NEW_FLOWROUTE_SECRET_KEY,
-        FLOWROUTE_API_ROOT_URL = NEW_FLOWROUTE_API_ROOT_URL,
-        HOMER_HEP_HOST         = NEW_HOMER_HEP_HOST,
-        HOMER_HEP_PORT         = NEW_HOMER_HEP_PORT,
-        UPLOAD_FOLDER          = NEW_UPLOAD_FOLDER,
-        MAIL_SERVER            = NEW_MAIL_SERVER,
-        MAIL_PORT              = NEW_MAIL_PORT,
-        MAIL_USE_TLS           = NEW_MAIL_USE_TLS,
-        MAIL_USERNAME          = NEW_MAIL_USERNAME,
-        MAIL_PASSWORD          = NEW_MAIL_PASSWORD,
-        MAIL_ASCII_ATTACHMENTS = NEW_MAIL_ASCII_ATTACHMENTS,
-        MAIL_DEFAULT_SENDER    = NEW_MAIL_DEFAULT_SENDER,
-        MAIL_DEFAULT_SUBJECT   = NEW_MAIL_DEFAULT_SUBJECT
-    WHERE DSIP_CLUSTER_ID = NEW_DSIP_CLUSTER_ID
-      AND DSIP_CLUSTER_SYNC = 1
-      AND DSIP_ID != NEW_DSIP_ID;
-  END IF;
-  COMMIT;
-END //
-DELIMITER ;
 
 ALTER TABLE subscriber
   ADD IF NOT EXISTS  email_address VARCHAR(128) NOT NULL DEFAULT '',
@@ -570,6 +290,21 @@ if (( $? != 0 )); then
     exit 1
 fi
 
+if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
+    PROJECT_DSIP_DEFAULTS_DIR='/tmp/dsiprouter/kamailio/defaults'
+else
+    PROJECT_DSIP_DEFAULTS_DIR='/opt/dsiprouter/kamailio/defaults'
+fi
+perl -e "\$hlen='$HASHED_CREDS_ENCODED_MAX_LEN'; \$clen='$AESCTR_CREDS_ENCODED_MAX_LEN';" \
+    -pe 's%\@HASHED_CREDS_ENCODED_MAX_LEN%$hlen%g; s%\@AESCTR_CREDS_ENCODED_MAX_LEN%$clen%g;' \
+    ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_settings.sql |
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" "$KAM_DB_NAME"
+
+if (( $? != 0 )); then
+    printerr 'Failed merging DB schema'
+    exit 1
+fi
+
 printdbg 'configuring dsiprouter GUI'
 if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
     # a few stragglers that need copied over
@@ -583,36 +318,52 @@ else
     rm -rf /opt/dsiprouter
     git clone --depth 1 -b v0.72-rel https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter
 fi
+export DSIP_PROJECT_DIR=/opt/dsiprouter
 
 printdbg 'installing python dependencies for the GUI'
 python3 -m pip install -U Flask~=2.0 psycopg2_binary requests SQLAlchemy~=2.0 Werkzeug~=2.0
 
 printdbg 'generating dynamic config files for the GUI'
 dsiprouter configuredsip &&
-setConfigAttrib 'DSIP_USERNAME' "$DSIP_USERNAME" ${DSIP_CONFIG_FILE} -q &&
-setConfigAttrib 'DSIP_PASSWORD' "$DSIP_PASSWORD" ${DSIP_CONFIG_FILE} -qb &&
-setConfigAttrib 'DSIP_API_TOKEN' "$DSIP_API_TOKEN" ${DSIP_CONFIG_FILE} -qb &&
-setConfigAttrib 'KAM_DB_USER' "$KAM_DB_USER" ${DSIP_CONFIG_FILE} -q &&
-setConfigAttrib 'KAM_DB_PASS' "$KAM_DB_PASS" ${DSIP_CONFIG_FILE} -qb &&
-setConfigAttrib 'KAM_DB_HOST' "$KAM_DB_HOST" ${DSIP_CONFIG_FILE} -q &&
-setConfigAttrib 'KAM_DB_PORT' "$KAM_DB_PORT" ${DSIP_CONFIG_FILE} -q &&
-setConfigAttrib 'KAM_DB_NAME' "$KAM_DB_NAME" ${DSIP_CONFIG_FILE} -q &&
-setConfigAttrib 'MAIL_USERNAME' "$MAIL_USERNAME" ${DSIP_CONFIG_FILE} -q &&
-setConfigAttrib 'MAIL_PASSWORD' "$MAIL_PASSWORD" ${DSIP_CONFIG_FILE} -qb &&
-setConfigAttrib 'ROOT_DB_USER' "$ROOT_DB_USER" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'DSIP_USERNAME' "$DSIP_USERNAME" /etc/dsiprouter/gui/settings.py -q &&
+setConfigAttrib 'DSIP_PASSWORD' "$DSIP_PASSWORD_HASH" /etc/dsiprouter/gui/settings.py -qb &&
+setConfigAttrib 'DSIP_API_TOKEN' "$DSIP_API_TOKEN_CIPHERTEXT" /etc/dsiprouter/gui/settings.py -qb &&
+setConfigAttrib 'DSIP_IPC_PASS' "$DSIP_IPC_PASS_CIPHERTEXT" /etc/dsiprouter/gui/settings.py -qb &&
+setConfigAttrib 'KAM_DB_USER' "$KAM_DB_USER" /etc/dsiprouter/gui/settings.py -q &&
+setConfigAttrib 'KAM_DB_PASS' "$KAM_DB_PASS_CIPHERTEXT" /etc/dsiprouter/gui/settings.py -qb &&
+setConfigAttrib 'KAM_DB_HOST' "$KAM_DB_HOST" /etc/dsiprouter/gui/settings.py -q &&
+setConfigAttrib 'KAM_DB_PORT' "$KAM_DB_PORT" /etc/dsiprouter/gui/settings.py -q &&
+setConfigAttrib 'KAM_DB_NAME' "$KAM_DB_NAME" /etc/dsiprouter/gui/settings.py -q &&
+setConfigAttrib 'MAIL_USERNAME' "$MAIL_USERNAME" /etc/dsiprouter/gui/settings.py -q &&
+setConfigAttrib 'MAIL_PASSWORD' "$MAIL_PASSWORD_CIPHERTEXT" /etc/dsiprouter/gui/settings.py -qb &&
+setConfigAttrib 'ROOT_DB_USER' "$ROOT_DB_USER" /etc/dsiprouter/gui/settings.py -q &&
 {
     if ! grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')" <<<"$ROOT_DB_PASS"; then
-        setConfigAttrib 'ROOT_DB_PASS' "$ROOT_DB_PASS" ${DSIP_CONFIG_FILE} -q
+        setConfigAttrib 'ROOT_DB_PASS' "$ROOT_DB_PASS" /etc/dsiprouter/gui/settings.py -q
     else
-        setConfigAttrib 'ROOT_DB_PASS' "$ROOT_DB_PASS" ${DSIP_CONFIG_FILE} -qb
+        setConfigAttrib 'ROOT_DB_PASS' "$ROOT_DB_PASS_CIPHERTEXT" /etc/dsiprouter/gui/settings.py -qb
     fi
 } &&
-setConfigAttrib 'ROOT_DB_NAME' "$ROOT_DB_NAME" ${DSIP_CONFIG_FILE} -q &&
+setConfigAttrib 'ROOT_DB_NAME' "$ROOT_DB_NAME" /etc/dsiprouter/gui/settings.py -q &&
 printdbg 'successfully generated new settings file' ||
 {
     printerr 'failed generating new settings file'
     exit 1
 }
+
+if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
+    printdbg 'updating dsip_settings table, the GUI will be restarted multiple times...'
+    setConfigAttrib 'LOAD_SETTINGS_FROM' 'file' /etc/dsiprouter/gui/settings.py &&
+    systemctl restart dsiprouter &&
+    setConfigAttrib 'LOAD_SETTINGS_FROM' 'db' /etc/dsiprouter/gui/settings.py &&
+    systemctl restart dsiprouter ||
+    {
+        printerr 'failed updating dsip_settings DB table'
+        exit 1
+    }
+else
+    printdbg 'the dsip_settings table will be updated when the GUI service is restarted..'
+fi
 
 printdbg 'generating documentation for the GUI'
 (
