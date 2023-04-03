@@ -55,7 +55,7 @@ createMDCommentSection() {
     local NAME="$1"
     local CONTENT="$2"
 
-    printf '%s\n' "[//]: # (START_SECTION ${NAME}"
+    printf '%s\n' "[//]: # (START_SECTION ${NAME})"
     printf '%s' "$CONTENT" | sed -e '$a\'
     printf '%s\n' "END_SECTION ${NAME})"
 }
@@ -153,7 +153,7 @@ createChangelog() {
     # otherwise we create new changelog from scratch
     NEW_COMMIT_HASHES=$(git --no-pager log --no-merges --format='%H')
     if [[ -e "$CHANGELOG_FILE" ]]; then
-        OLD_COMMIT_HASHES=$(getMDCommentSection 'COMMITS')
+        OLD_COMMIT_HASHES=$(cat "$CHANGELOG_FILE" | getMDCommentSection 'COMMITS')
         if [[ -n "$OLD_COMMIT_HASHES" ]]; then
             NEW_CHANGELOG=0
 

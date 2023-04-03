@@ -17,7 +17,7 @@ You can upgrade from 0.70 by doing the following
 
 .. code-block:: bash
 
-   curl -s https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.72/resources/upgrade/v0.72/scripts/bootstrap.sh | bash -s upgrade -rel v0.72
+   curl -s https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.72/resources/upgrade/v0.72/scripts/bootstrap.sh | bash
 
 3. Login to the dSIPRouter UI to validate that the upgrade was successful.  
 
