@@ -13,7 +13,7 @@ fi
 
 printdbg 'backing up configs just in case the upgrade fails'
 BACKUP_DIR="/var/backups"
-CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%Y-%m-%d')"
+CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%s')"
 mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine}
 cp -rf /opt/dsiprouter/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
 cp -rf /etc/kamailio/. ${CURR_BACKUP_DIR}/etc/kamailio/
@@ -581,12 +581,11 @@ if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
 else
     # fresh repo coming up
     rm -rf /opt/dsiprouter
-    git clone --depth 1 -b v0.72 https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter
+    git clone --depth 1 -b v0.72-rel https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter
 fi
 
 printdbg 'installing python dependencies for the GUI'
-python3 -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
-python3 -m pip install --force-reinstall Werkzeug
+python3 -m pip install -U Flask~=2.0 psycopg2_binary requests SQLAlchemy~=2.0 Werkzeug~=2.0
 
 printdbg 'generating dynamic config files for the GUI'
 dsiprouter configuredsip &&

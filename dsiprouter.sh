@@ -2837,7 +2837,7 @@ function removeInitService() {
 
 function upgrade() {
     local BS_SCRIPT_URL="https://github.com/dOpensource/dsiprouter/tree/${UPGRADE_RELEASE}/resources/upgrade/${UPGRADE_RELEASE}/scripts/bootstrap.sh"
-    local BOOTSTRAPPING_UPGRADE=${BOOTSTRAPPING_UPGRADE:-0}
+    export BOOTSTRAPPING_UPGRADE=${BOOTSTRAPPING_UPGRADE:-0}
 
     # check if the new function definitions need bootstrapped prior to upgrade
     if (( $BOOTSTRAPPING_UPGRADE == 0 )) && curl -sf -I "$BS_SCRIPT_URL" -o /dev/null; then
