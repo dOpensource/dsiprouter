@@ -5,6 +5,11 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
+0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25
+28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28
+e0bbbfa860e57f9549736149142c9df8be72433b
+a659fedb44ef2a844282d3de0d5503c567837948
+baa6415f1d630b695cd28de742ed609eb65f1399
 bc560f0fd419cbe271e22c0801e64e92a9469397
 0209c81fa9302517ac674725cefc1f4799d70d28
 c850b78988eed29591fcacbc01d4c26f2f49c22a
@@ -2172,6 +2177,115 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
+[//]: # (START_SECTION 0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)
+### Update Documentation for v0.72
+
+> Commit: [0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25](https://github.com/dOpensource/dsiprouter/commit/0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)  
+> Date: Mon, 3 Apr 2023 15:52:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update boostrap command
+- update changelog
+
+
+---
+
+[//]: # (END_SECTION 0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)
+[//]: # (START_SECTION 28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)
+### v0.72 Release Bug Fix
+
+> Commit: [28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28](https://github.com/dOpensource/dsiprouter/commit/28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)  
+> Date: Mon, 3 Apr 2023 14:09:23 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix bad hash algorithm implementation in the CLI functions
+- fix schema migration issues on `dsip_settings` table
+- fix edge cases where bootstrapping failed
+- # Please enter the commit message for your changes. Lines starting
+- # with '#' will be ignored, and an empty message aborts the commit.
+- #
+- # On branch v0.72
+- # Your branch is up to date with 'origin/v0.72'.
+- #
+- # Changes to be committed:
+- #	modified:   dsiprouter/dsip_lib.sh
+- #	modified:   resources/upgrade/v0.72/scripts/bootstrap.sh
+- #	modified:   resources/upgrade/v0.72/scripts/migrate.sh
+- #
+
+
+---
+
+[//]: # (END_SECTION 28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)
+[//]: # (START_SECTION e0bbbfa860e57f9549736149142c9df8be72433b)
+### Bootstrap Fixes
+
+> Commit: [e0bbbfa860e57f9549736149142c9df8be72433b](https://github.com/dOpensource/dsiprouter/commit/e0bbbfa860e57f9549736149142c9df8be72433b)  
+> Date: Mon, 3 Apr 2023 10:32:08 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- change bootstrap to use tag instead of branch
+- fix python versioning
+- fix boostrap variable scoping
+- # Please enter the commit message for your changes. Lines starting
+- # with '#' will be ignored, and an empty message aborts the commit.
+- #
+- # Date:      Mon Apr 3 10:32:08 2023 -0400
+- #
+- # On branch v0.72
+- # Your branch is up to date with 'origin/v0.72'.
+- #
+- # Changes to be committed:
+- #	modified:   dsiprouter.sh
+- #	modified:   resources/upgrade/v0.72/scripts/bootstrap.sh
+- #	modified:   resources/upgrade/v0.72/scripts/migrate.sh
+- #
+
+
+---
+
+[//]: # (END_SECTION e0bbbfa860e57f9549736149142c9df8be72433b)
+[//]: # (START_SECTION a659fedb44ef2a844282d3de0d5503c567837948)
+### Merge Changes From Master (#500)
+
+> Commit: [a659fedb44ef2a844282d3de0d5503c567837948](https://github.com/dOpensource/dsiprouter/commit/a659fedb44ef2a844282d3de0d5503c567837948)  
+> Date: Mon, 3 Apr 2023 10:10:11 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Co-authored-by: Mack Hendricks <mack@dopensource.com>
+
+
+---
+
+[//]: # (END_SECTION a659fedb44ef2a844282d3de0d5503c567837948)
+[//]: # (START_SECTION baa6415f1d630b695cd28de742ed609eb65f1399)
+### Update The Changelog
+
+> Commit: [baa6415f1d630b695cd28de742ed609eb65f1399](https://github.com/dOpensource/dsiprouter/commit/baa6415f1d630b695cd28de742ed609eb65f1399)  
+> Date: Mon, 3 Apr 2023 09:12:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update `CHANGELOG.md`
+
+
+---
+
+[//]: # (END_SECTION baa6415f1d630b695cd28de742ed609eb65f1399)
 [//]: # (START_SECTION bc560f0fd419cbe271e22c0801e64e92a9469397)
 ### Fixed permissions again
 
