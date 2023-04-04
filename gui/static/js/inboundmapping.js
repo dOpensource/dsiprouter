@@ -103,7 +103,9 @@
       var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
       var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
       var gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+      var gwgroupname = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
       var rulename = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+      var gwlistid = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
       var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
       var hf_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
       var hf_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
@@ -156,6 +158,20 @@
       else {
         modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
       }
+
+
+      if (gwgroupname === 'Load Balancing Group'){
+
+        var selectedGateway = gw_mapping.find((the_gw) => {
+          return the_gw.id === parseInt(gwlistid);
+        });
+
+        modal_body.find("select.gwgroupid option").filter(function(){
+            return this.value === selectedGateway.option_value;
+        }).prop("selected", true);
+      }
+
+
     });
 
     $('#inboundmapping').on('click', '#open-Delete', function() {
