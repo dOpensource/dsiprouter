@@ -2294,15 +2294,7 @@ function start() {
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
-#            # Make sure process is still running
-#            PID=$!
-#            if ! ps -p ${PID} &>/dev/null; then
-#                printerr "Unable to start dSIPRouter"
-#                cleanupAndExit 1
-#            else
-#                pprint "dSIPRouter was started under pid ${PID}"
-#                echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
-#            fi
+            cleanupAndExit $?
         else
             # normal startup, fork dSIPRouter as background process
             systemctl start dsiprouter
@@ -2351,8 +2343,8 @@ function stop() {
         systemctl stop nginx
         # if started in debug mode we have to manually kill the process
         if ! systemctl is-active --quiet dsiprouter; then
-            pkill -SIGTERM -f dsiprouter
-            if pgrep -f 'nginx|dsiprouter' &>/dev/null; then
+            pkill -SIGTERM -f dsiprouter.py
+            if pgrep -f 'nginx|dsiprouter.py' &>/dev/null; then
                 printerr "Unable to stop dSIPRouter"
                 cleanupAndExit 1
             else

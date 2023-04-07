@@ -58,6 +58,7 @@
           status.toString() + "&msg=" + error_msg;
     }
   }
+  window.requestErrorHandler = requestErrorHandler;
 
   // override ajax defaults
   $.ajaxSetup({

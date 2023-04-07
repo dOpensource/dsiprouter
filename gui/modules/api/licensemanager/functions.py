@@ -5,9 +5,9 @@ sys.path.insert(0, '/etc/dsiprouter/gui')
 import requests, functools, secrets, datetime
 from util.security import Credentials, AES_CTR
 
-class WoocommerceError(Exception):
-    def __init__(self, msg):
-        super().__init__(msg)
+class WoocommerceError(requests.HTTPError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 def wcApiPropagateHttpError(method):
     @functools.wraps(method)
@@ -15,9 +15,8 @@ def wcApiPropagateHttpError(method):
         try:
             return method(self, *args, **kwargs)
         except requests.HTTPError as ex:
-            raise WoocommerceError(
-                ex.response.json()['message'].replace(self._license_key, '<redacted>')
-            )
+            ex.response._content = ex.response.content.replace(self._license_key.encode('utf-8'), b'<redacted>')
+            raise WoocommerceError(response=ex.response)
     return wrapper
 
 class WoocommerceLicense(object):
@@ -40,8 +39,9 @@ class WoocommerceLicense(object):
     # constant salt used for equality checks
     # should not be used for generating a hash that is stored
     CMP_SALT = 'A' * Credentials.SALT_LEN
-    # generated woocommerce license length
-    KEY_LEN = 32
+    # the woocommerce license length may change due to application specific requirements
+    # therefore we parse it out based on the length of the machine id, which will not change
+    MACHINE_ID_LEN = 32
 
     def __init__(self, license_key=None, key_combo=None, decrypt=False):
         if license_key is not None:
@@ -65,6 +65,8 @@ class WoocommerceLicense(object):
 
             with open('/etc/machine-id', 'r') as f:
                 machine_id = f.read().rstrip()
+                if len(machine_id) != WoocommerceLicense.MACHINE_ID_LEN:
+                    raise Exception("machine_id must be {} characters long".format(WoocommerceLicense.MACHINE_ID_LEN))
         elif key_combo is not None:
             if isinstance(key_combo, str):
                 if len(key_combo) == 0:
@@ -80,8 +82,8 @@ class WoocommerceLicense(object):
                 raise ValueError('key_combo must be a string or byte string')
 
             try:
-                license_key = key_combo[:WoocommerceLicense.KEY_LEN]
-                machine_id = key_combo[WoocommerceLicense.KEY_LEN:]
+                license_key = key_combo[:-WoocommerceLicense.MACHINE_ID_LEN]
+                machine_id = key_combo[-WoocommerceLicense.MACHINE_ID_LEN:]
             except IndexError:
                 raise ValueError('key_combo is invalid')
         else:
