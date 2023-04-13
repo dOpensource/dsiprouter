@@ -1750,7 +1750,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
             fields = strFieldsToDict(gwgroup.description)
-            fields['lb'] = gwgroupid
+            # Don't add a load balancing group if the domain is a MSTeams domain
+            if endpointGroupType != "msteams":
+                fields['lb'] = gwgroupid
             if fusionpbxenabled:
                 fields['lb_ext'] = gwgroupid + 1000
 
