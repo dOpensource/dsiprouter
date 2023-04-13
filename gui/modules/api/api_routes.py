@@ -1725,8 +1725,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
 
             # Create dispatcher group with the set id being the gateway group id
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
-            db.add(dispatcher)
+            # Don't create a dispatcher set for endpoint groups that was created for MSTeams domains
+            if endpointGroupType != "msteams":
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
+                db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
             if fusionpbxenabled:
