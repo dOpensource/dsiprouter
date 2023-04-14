@@ -18,7 +18,13 @@ function install() {
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     yum install -y psmisc curl wget sed gawk vim perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog certbot
+    yum install -y logrotate rsyslog python3
+
+    yum remove -y *certbot*
+    python3 -m venv /opt/certbot/
+    /opt/certbot/bin/pip install --upgrade pip
+    /opt/certbot/bin/pip install certbot
+    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
@@ -67,17 +73,7 @@ EOF
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
     # create kamailio defaults config
-    (cat << 'EOF'
- RUN_KAMAILIO=yes
- USER=kamailio
- GROUP=kamailio
- SHM_MEMORY=64
- PKG_MEMORY=8
- PIDFILE=/var/run/kamailio/kamailio.pid
- CFGFILE=/etc/kamailio/kamailio.cfg
- #DUMP_CORE=yes
-EOF
-    ) > /etc/default/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}

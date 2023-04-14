@@ -8,7 +8,7 @@ from util.pyasync import proc
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess
 from copy import copy
 from collections import OrderedDict
 from importlib import reload
@@ -25,8 +25,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
-from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
-    ipToHost
+from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
 from modules import flowroute

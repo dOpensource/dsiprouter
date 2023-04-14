@@ -12,7 +12,7 @@ User=kamailio
 Group=kamailio
 PermissionsStartOnly=true
 Environment='RUNDIR=/run/kamailio'
-EnvironmentFile=/etc/default/kamailio
+EnvironmentFile=/etc/default/kamailio.conf
 # PIDFile requires a full absolute path
 PIDFile=/run/kamailio/kamailio.pid
 # Exec* requires a full absolute path

@@ -845,7 +845,8 @@ function configureSSL() {
 
     # Try to create cert using LetsEncrypt's first
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
-    certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
+    certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL} \
+        --server https://acme-v02.api.letsencrypt.org/directory --force-renewal --preferred-chain "ISRG Root X1"
     if (( $? == 0 )); then
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}

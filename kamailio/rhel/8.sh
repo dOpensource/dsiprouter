@@ -15,8 +15,15 @@ function install() {
     # Install Dependencies
     dnf groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${DISTRO_MAJOR_VER}.noarch.rpm
-    dnf install -y psmisc curl wget sed gawk perl firewalld openssl-devel logrotate rsyslog certbot libuuid-devel \
+    dnf install -y psmisc curl wget sed gawk perl firewalld openssl-devel logrotate rsyslog python3 libuuid-devel \
         libtool jansson-devel libcurl-devel libatomic
+
+    # we need a newer version of certbot than the distro repos offer
+    dnf remove -y *certbot*
+    python3 -m venv /opt/certbot/
+    /opt/certbot/bin/pip install --upgrade pip
+    /opt/certbot/bin/pip install certbot
+    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
@@ -64,17 +71,7 @@ EOF
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # create kamailio defaults config
-    (cat << 'EOF'
-RUN_KAMAILIO=yes
-USER=kamailio
-GROUP=kamailio
-SHM_MEMORY=128
-PKG_MEMORY=16
-PIDFILE=/var/run/kamailio/kamailio.pid
-CFGFILE=/etc/kamailio/kamailio.cfg
-#DUMP_CORE=yes
-EOF
-    ) > /etc/default/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
     # create kamailio tmp files
     echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 

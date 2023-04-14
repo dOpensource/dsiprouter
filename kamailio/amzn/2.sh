@@ -15,8 +15,15 @@ function install() {
     # Install Dependencies
     amazon-linux-extras install -y epel >/dev/null
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim perl firewalld logrotate rsyslog certbot cmake3 gcc10
+    yum install -y psmisc curl wget sed gawk vim perl firewalld logrotate rsyslog python3 cmake3 gcc10
     yum install -y uuid-devel openssl-devel libtool jansson-devel libuuid-devel libcurl-devel
+
+    # we need a newer version of certbot than the distro repos offer
+    yum remove -y *certbot*
+    python3 -m venv /opt/certbot/
+    /opt/certbot/bin/pip install --upgrade pip
+    /opt/certbot/bin/pip install certbot
+    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
 
     # link latest version of cmake
     ln -sf /bin/cmake3 /usr/local/bin/cmake
@@ -59,17 +66,7 @@ EOF
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # create kamailio defaults config
-    (cat << 'EOF'
-RUN_KAMAILIO=yes
-USER=kamailio
-GROUP=kamailio
-SHM_MEMORY=128
-PKG_MEMORY=16
-PIDFILE=/run/kamailio/kamailio.pid
-CFGFILE=/etc/kamailio/kamailio.cfg
-#DUMP_CORE=yes
-EOF
-    ) > /etc/default/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
     # create kamailio tmp files
     echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 
