@@ -2495,7 +2495,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                     response_payload['type'] = 'email'
                     return jsonify(response_payload)
 
-            return send_file(csv_file, attachment_filename=filename, as_attachment=True), StatusCodes.HTTP_OK
+            return send_file(csv_file, as_attachment=True), StatusCodes.HTTP_OK
         else:
             return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -2629,7 +2629,7 @@ def createBackup():
         # attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
         # headers={"Content-disposition":attachment}
         # return Response(lines, mimetype="text/plain",headers=headers)
-        return send_file(backup_path, attachment_filename=backup_name, as_attachment=True), StatusCodes.HTTP_OK
+        return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)

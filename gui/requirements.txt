@@ -1,5 +1,5 @@
+acme
 bjoern
-#certbot
 cron_descriptor
 cryptography
 dnspython
@@ -9,6 +9,7 @@ Flask~=2.0
 Flask_WTF
 itsdangerous==2.0.1
 Jinja2==3.0.3
+josepy
 mysqlclient
 pem
 psycopg2
