@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.72'
+VERSION = '0.721'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -166,7 +166,7 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 # TransNexus Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
-TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
+TRANSNEXUS_AUTHSERVICE_HOST = 'outbound.sip.clearip.com:5060'
 TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
 TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
 
