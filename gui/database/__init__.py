@@ -765,11 +765,11 @@ def updateDsipSettingsTable(fields):
 
     db = DummySession()
     try:
-        field_mapping = ', '.join(['{}=:{}'.format(x, x) for x in fields.keys()])
+        field_mapping = ', '.join([':{}'.format(x, x) for x in fields.keys()])
         db = SessionLoader()
         db.execute(
-            text('UPDATE dsip_settings SET {} WHERE DSIP_ID=:dsip_id'.format(field_mapping)),
-            dict(fields, dsip_id=settings.DSIP_ID)
+            text('CALL update_dsip_settings({})'.format(field_mapping)),
+            fields
         )
         db.commit()
     except sql_exceptions.SQLAlchemyError:

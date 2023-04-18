@@ -19,7 +19,7 @@ function install() {
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
-        libcurl4-openssl-dev libjansson-dev cmake firewalld python3
+        libcurl4-openssl-dev libjansson-dev cmake firewalld python3 python3-venv
 
     # we need a newer version of certbot than the distro repos offer
     apt-get remove -y *certbot*

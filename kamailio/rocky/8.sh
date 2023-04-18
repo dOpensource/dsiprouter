@@ -18,7 +18,7 @@ function install() {
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     yum install -y psmisc curl wget sed gawk vim perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog python3
+    yum install -y logrotate rsyslog python3 python3-virtualenv
 
     yum remove -y *certbot*
     python3 -m venv /opt/certbot/

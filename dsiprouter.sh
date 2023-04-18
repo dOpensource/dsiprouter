@@ -3275,6 +3275,7 @@ function updatePermissions() {
 
     return 0
 }
+export -f updatePermissions
 
 function usageOptions() {
     linebreak() {
