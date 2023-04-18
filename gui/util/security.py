@@ -147,8 +147,10 @@ class Credentials():
             # update file settings including local fields
             updateConfig(settings, dict(fields, **local_fields))
             # update db settings
-            from database import updateDsipSettingsTable
-            updateDsipSettingsTable(fields)
+            from database import updateDsipSettingsTable, settingsToTableFormat
+            db_fields = settingsToTableFormat(settings)
+            db_fields.update(fields)
+            updateDsipSettingsTable(db_fields)
 
 
 class AES_CTR():

@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import os
+from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions
@@ -751,6 +752,97 @@ class DummySession():
     def query_property(self, *args, **kwargs):
         pass
 
+
+def settingsToTableFormat(settings):
+    # convert db specific fields
+    if isinstance(settings.KAM_DB_HOST, (list, tuple)):
+        kam_db_host = ','.join(settings.KAM_DB_HOST)
+    else:
+        kam_db_host = settings.KAM_DB_HOST
+
+    return OrderedDict([
+        ('DSIP_ID', settings.DSIP_ID),
+        ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID),
+        ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
+        ('DSIP_PROTO', settings.DSIP_PROTO),
+        ('DSIP_PORT', settings.DSIP_PORT),
+        ('DSIP_USERNAME', settings.DSIP_USERNAME),
+        ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
+        ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS),
+        ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
+        ('DSIP_API_PORT', settings.DSIP_API_PORT),
+        ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY),
+        ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
+        ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK),
+        ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK),
+        ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN),
+        ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
+        ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY),
+        ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
+        ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT),
+        ('DSIP_SSL_CA', settings.DSIP_SSL_CA),
+        ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL),
+        ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
+        ('VERSION', settings.VERSION),
+        ('DEBUG', settings.DEBUG),
+        ('ROLE', settings.ROLE),
+        ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
+        ('KAM_DB_HOST', kam_db_host),
+        ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER),
+        ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
+        ('KAM_DB_PORT', settings.KAM_DB_PORT),
+        ('KAM_DB_NAME', settings.KAM_DB_NAME),
+        ('KAM_DB_USER', settings.KAM_DB_USER),
+        ('KAM_DB_PASS', settings.KAM_DB_PASS),
+        ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH),
+        ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
+        ('KAM_TLSCFG_PATH', settings.KAM_TLSCFG_PATH),
+        ('RTP_CFG_PATH', settings.RTP_CFG_PATH),
+        ('FLT_CARRIER', settings.FLT_CARRIER),
+        ('FLT_PBX', settings.FLT_PBX),
+        ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
+        ('FLT_OUTBOUND', settings.FLT_OUTBOUND),
+        ('FLT_INBOUND', settings.FLT_INBOUND),
+        ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
+        ('FLT_FWD_MIN', settings.FLT_FWD_MIN),
+        ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN),
+        ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
+        ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP),
+        ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
+        ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP),
+        ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
+        ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY),
+        ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
+        ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL),
+        ('HOMER_ID', settings.HOMER_ID),
+        ('HOMER_HEP_HOST', settings.HOMER_HEP_HOST),
+        ('HOMER_HEP_PORT', settings.HOMER_HEP_PORT),
+        ('NETWORK_MODE', settings.NETWORK_MODE),
+        ('IPV6_ENABLED', settings.IPV6_ENABLED),
+        ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
+        ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET),
+        ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR),
+        ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET),
+        ('INTERNAL_FQDN', settings.INTERNAL_FQDN),
+        ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
+        ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR),
+        ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
+        ('PUBLIC_IFACE', settings.PUBLIC_IFACE),
+        ('PRIVATE_IFACE', settings.PRIVATE_IFACE),
+        ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER),
+        ('MAIL_SERVER', settings.MAIL_SERVER),
+        ('MAIL_PORT', settings.MAIL_PORT),
+        ('MAIL_USE_TLS', settings.MAIL_USE_TLS),
+        ('MAIL_USERNAME', settings.MAIL_USERNAME),
+        ('MAIL_PASSWORD', settings.MAIL_PASSWORD),
+        ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
+        ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER),
+        ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT),
+        ('DSIP_CORE_LICENSE', settings.DSIP_CORE_LICENSE),
+        ('DSIP_STIRSHAKEN_LICENSE', settings.DSIP_STIRSHAKEN_LICENSE),
+        ('DSIP_TRANSNEXUS_LICENSE', settings.DSIP_TRANSNEXUS_LICENSE),
+        ('DSIP_MSTEAMS_LICENSE', settings.DSIP_MSTEAMS_LICENSE),
+    ])
 
 def updateDsipSettingsTable(fields):
     """
