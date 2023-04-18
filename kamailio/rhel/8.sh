@@ -16,7 +16,7 @@ function install() {
     dnf groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${DISTRO_MAJOR_VER}.noarch.rpm
     dnf install -y psmisc curl wget sed gawk perl firewalld openssl-devel logrotate rsyslog python3 libuuid-devel \
-        libtool jansson-devel libcurl-devel libatomic
+        libtool jansson-devel libcurl-devel libatomic python3-virtualenv
 
     # we need a newer version of certbot than the distro repos offer
     dnf remove -y *certbot*

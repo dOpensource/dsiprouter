@@ -16,7 +16,7 @@ function install() {
     amazon-linux-extras install -y epel >/dev/null
     yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     yum install -y psmisc curl wget sed gawk vim perl firewalld logrotate rsyslog python3 cmake3 gcc10
-    yum install -y uuid-devel openssl-devel libtool jansson-devel libuuid-devel libcurl-devel
+    yum install -y uuid-devel openssl-devel libtool jansson-devel libuuid-devel libcurl-devel python3-virtualenv
 
     # we need a newer version of certbot than the distro repos offer
     yum remove -y *certbot*
