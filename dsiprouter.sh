@@ -2428,6 +2428,8 @@ function setCredentials() {
     local SET_ROOT_DB_NAME="${SET_ROOT_DB_NAME}"
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
+    local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+    local DSIP_CLUSTER_SYNC=${DSIP_CLUSTER_SYNC:-$(getConfigAttrib 'DSIP_CLUSTER_SYNC' ${DSIP_CONFIG_FILE})}
     # the commands to execute for these updates
     local SHELL_CMDS=() SQL_STATEMENTS=() DEFERRED_SQL_STATEMENTS=()
     # how settings will be propagated to live systems
@@ -2462,11 +2464,13 @@ function setCredentials() {
 
     # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
-        SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_ID='$DSIP_ID';")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         SHELL_CMDS+=("setConfigAttrib 'DSIP_USERNAME' '$SET_DSIP_GUI_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_MAIL_USER}" ]]; then
-        SQL_STATEMENTS+=("update kamailio.dsip_settings set MAIL_USERNAME='${SET_DSIP_MAIL_USER}' where DSIP_ID=${DSIP_ID};")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_ID='$DSIP_ID';")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         SHELL_CMDS+=("'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_API_TOKEN}" ]]; then
@@ -2510,7 +2514,8 @@ function setCredentials() {
             DEFERRED_SQL_STATEMENTS+=("CREATE USER '$SET_KAM_DB_USER'@'%' IDENTIFIED BY '${SET_KAM_DB_PASS:-$KAM_DB_PASS}';")
             DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'%';")
         fi
-        SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='${SET_KAM_DB_USER}' WHERE DSIP_ID=${DSIP_ID};")
+        SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='$SET_KAM_DB_USER' WHERE DSIP_ID='$DSIP_ID';")
+        SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='$SET_KAM_DB_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         SHELL_CMDS+=("setConfigAttrib 'KAM_DB_USER' '$SET_KAM_DB_USER' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
