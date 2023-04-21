@@ -2366,10 +2366,16 @@ def attrFilter(list, field):
 def domainTypeFilter(list):
     if list is None:
         return "Unknown"
-    if list == "0":
+    elif list == "0":
         return "Static"
-    else:
+    elif list == "1":
         return "Dynamic"
+    elif list == "2":
+        return "Static using Dispatcher"
+    elif list == "3":
+        return "MSTeams"
+    else:
+        return "Other"
 
 
 def imgFilter(name):

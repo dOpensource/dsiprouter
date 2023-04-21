@@ -67,7 +67,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
 
         # Attributes to specify that the domain was created manually
         PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value="{}".format(",".join(msteams_dns_endpoints)))
-        PBXDomainAttr2 = DomainAttrs(did=domain, name='pbx_type', value="1")
+        PBXDomainAttr2 = DomainAttrs(did=domain, name='pbx_type', value="3")
         PBXDomainAttr3 = DomainAttrs(did=domain, name='created_by', value="0")
         PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
         PBXDomainAttr5 = DomainAttrs(did=domain, name='description', value="notes:{}".format(notes))
