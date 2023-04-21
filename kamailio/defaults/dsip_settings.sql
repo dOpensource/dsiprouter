@@ -63,7 +63,7 @@ CREATE TABLE dsip_settings
   FLOWROUTE_ACCESS_KEY    VARCHAR(255)                                              NOT NULL DEFAULT '',
   FLOWROUTE_SECRET_KEY    VARCHAR(255)                                              NOT NULL DEFAULT '',
   FLOWROUTE_API_ROOT_URL  VARCHAR(255)                                              NOT NULL DEFAULT 'https://api.flowroute.com/v2',
-  HOMER_ID                INT                                                       NOT NULL,
+  HOMER_ID                BIGINT                                                    NOT NULL,
   HOMER_HEP_HOST          VARCHAR(255)                                              NOT NULL DEFAULT '',
   HOMER_HEP_PORT          INT                                                       NOT NULL DEFAULT 9060,
   NETWORK_MODE            INT                                                       NOT NULL DEFAULT 0,
