@@ -674,7 +674,7 @@ function getInternalCIDR() {
 			if [[ -n "$INTERFACE" ]]; then
 				DEF_IFACE=$INTERFACE
 			else
-				DEF_IFACE=$(ip -4 route list scope global  2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+				DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
 			fi
 			PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
         fi
