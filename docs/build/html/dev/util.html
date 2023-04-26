@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>8. util &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="2. The dSIPRouter Project" href="../routes/index.html" />
+    <link rel="prev" title="7. sysloginit" href="sysloginit.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html"> Developer Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The dSIPRouter Project</a></li>
+      <li class="breadcrumb-item active"><span class="section-number">8. </span>util</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dev/util.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="util">
+<h1><span class="section-number">8. </span>util<a class="headerlink" href="#util" title="Permalink to this heading"></a></h1>
+<div class="section" id="module-util.conversions">
+<span id="util-conversions"></span><h2><span class="section-number">8.1. </span>util.conversions<a class="headerlink" href="#module-util.conversions" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.conversions.expand_prefix">
+<span class="sig-prename descclassname"><span class="pre">util.conversions.</span></span><span class="sig-name descname"><span class="pre">expand_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suffix_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/conversions.html#expand_prefix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.conversions.expand_prefix" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.conversions.expand_prefixs">
+<span class="sig-prename descclassname"><span class="pre">util.conversions.</span></span><span class="sig-name descname"><span class="pre">expand_prefixs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefixs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/conversions.html#expand_prefixs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.conversions.expand_prefixs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-util.cron">
+<span id="util-cron"></span><h2><span class="section-number">8.2. </span>util.cron<a class="headerlink" href="#module-util.cron" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.cron.addTaggedCronjob">
+<span class="sig-prename descclassname"><span class="pre">util.cron.</span></span><span class="sig-name descname"><span class="pre">addTaggedCronjob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/cron.html#addTaggedCronjob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.cron.addTaggedCronjob" title="Permalink to this definition"></a></dt>
+<dd><p>Adds a tagged cronjob to current user’s crontab</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – tag for new entry</p></li>
+<li><p><strong>interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – crontab interval</p></li>
+<li><p><strong>cmd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – crontab cmd to run</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether it succeeded</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.cron.cronIntervalToDescription">
+<span class="sig-prename descclassname"><span class="pre">util.cron.</span></span><span class="sig-name descname"><span class="pre">cronIntervalToDescription</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interval</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/cron.html#cronIntervalToDescription"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.cron.cronIntervalToDescription" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a crontab interval to a human readable format</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – crontab interval</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>readable format or None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a>|None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.cron.deleteTaggedCronjob">
+<span class="sig-prename descclassname"><span class="pre">util.cron.</span></span><span class="sig-name descname"><span class="pre">deleteTaggedCronjob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/cron.html#deleteTaggedCronjob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.cron.deleteTaggedCronjob" title="Permalink to this definition"></a></dt>
+<dd><p>Delete a tagged cronjob from the existing user’s crontab</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – tag of existing entry</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether it succeeded</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.cron.getTaggedCronjob">
+<span class="sig-prename descclassname"><span class="pre">util.cron.</span></span><span class="sig-name descname"><span class="pre">getTaggedCronjob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/cron.html#getTaggedCronjob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.cron.getTaggedCronjob" title="Permalink to this definition"></a></dt>
+<dd><p>Get a cronjob from current user’s crontab by its tag</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – tag specified when creating</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>cronjob entry or None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>CronTab|None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.cron.updateTaggedCronjob">
+<span class="sig-prename descclassname"><span class="pre">util.cron.</span></span><span class="sig-name descname"><span class="pre">updateTaggedCronjob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/cron.html#updateTaggedCronjob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.cron.updateTaggedCronjob" title="Permalink to this definition"></a></dt>
+<dd><p>Update a tagged cronjob in the current user’s crontab</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – tag of existing entry</p></li>
+<li><p><strong>interval</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – new crontab interval</p></li>
+<li><p><strong>cmd</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – new crontab cmd to run</p></li>
+<li><p><strong>new_tag</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – new tag for entry</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether it succeeded</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="util-decorator">
+<h2><span class="section-number">8.3. </span>util.decorator<a class="headerlink" href="#util-decorator" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="module-util.file_handling">
+<span id="util-file-handling"></span><h2><span class="section-number">8.4. </span>util.file_handling<a class="headerlink" href="#module-util.file_handling" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.file_handling.change_owner">
+<span class="sig-prename descclassname"><span class="pre">util.file_handling.</span></span><span class="sig-name descname"><span class="pre">change_owner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/file_handling.html#change_owner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.file_handling.change_owner" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.file_handling.change_permissions_recursive">
+<span class="sig-prename descclassname"><span class="pre">util.file_handling.</span></span><span class="sig-name descname"><span class="pre">change_permissions_recursive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/file_handling.html#change_permissions_recursive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.file_handling.change_permissions_recursive" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.file_handling.isValidFile">
+<span class="sig-prename descclassname"><span class="pre">util.file_handling.</span></span><span class="sig-name descname"><span class="pre">isValidFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filetype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'any'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/file_handling.html#isValidFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.file_handling.isValidFile" title="Permalink to this definition"></a></dt>
+<dd><p>Verifies file type based on extension and type to verify against
+Returns true if extension is valid for filetype, false otherwise
+Throws ValueError when filetype can not be handled
+Filetypes currently supported are: [image | video | audio | doc | log | any]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.file_handling.saveUpload">
+<span class="sig-prename descclassname"><span class="pre">util.file_handling.</span></span><span class="sig-name descname"><span class="pre">saveUpload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savedir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filetype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/file_handling.html#saveUpload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.file_handling.saveUpload" title="Permalink to this definition"></a></dt>
+<dd><p>Saves file from current request context to provided savedir
+Flashes message indicating success or fail
+Returns a Dict {status=[error|warning|success], message=[None|&lt;message&gt;], file=[None|&lt;filename&gt;]}</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-util.ipc">
+<span id="util-ipc"></span><h2><span class="section-number">8.5. </span>util.ipc<a class="headerlink" href="#module-util.ipc" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">util.ipc.</span></span><span class="sig-name descname"><span class="pre">DummySettingsManager</span></span><a class="reference internal" href="../_modules/util/ipc.html#DummySettingsManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.DummySettingsManager" title="Permalink to this definition"></a></dt>
+<dd><p>Sole purpose is to allow the settings manager to be defined globally and lazy loaded on startup</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'util.ipc',</span> <span class="pre">'__doc__':</span> <span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">Sole</span> <span class="pre">purpose</span> <span class="pre">is</span> <span class="pre">to</span> <span class="pre">allow</span> <span class="pre">the</span> <span class="pre">settings</span> <span class="pre">manager</span> <span class="pre">to</span> <span class="pre">be</span> <span class="pre">defined</span> <span class="pre">globally</span> <span class="pre">and</span> <span class="pre">lazy</span> <span class="pre">loaded</span> <span class="pre">on</span> <span class="pre">startup\n</span>&#160;&#160;&#160; <span class="pre">',</span> <span class="pre">'noop':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'getSettings':</span> <span class="pre">&lt;function</span> <span class="pre">DummySettingsManager.getSettings&gt;,</span> <span class="pre">'start':</span> <span class="pre">&lt;function</span> <span class="pre">DummySettingsManager.start&gt;,</span> <span class="pre">'shutdown':</span> <span class="pre">&lt;function</span> <span class="pre">DummySettingsManager.shutdown&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'DummySettingsManager'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'DummySettingsManager'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#util.ipc.DummySettingsManager.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'util.ipc'</span></em><a class="headerlink" href="#util.ipc.DummySettingsManager.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#util.ipc.DummySettingsManager.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.getSettings">
+<span class="sig-name descname"><span class="pre">getSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#DummySettingsManager.getSettings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.DummySettingsManager.getSettings" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.noop">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">noop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#DummySettingsManager.noop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.DummySettingsManager.noop" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.shutdown">
+<span class="sig-name descname"><span class="pre">shutdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#DummySettingsManager.shutdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.DummySettingsManager.shutdown" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.ipc.DummySettingsManager.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#DummySettingsManager.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.DummySettingsManager.start" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.ipc.createSettingsManager">
+<span class="sig-prename descclassname"><span class="pre">util.ipc.</span></span><span class="sig-name descname"><span class="pre">createSettingsManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shared_settings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/run/dsiprouter/ipc.sock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authkey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#createSettingsManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.createSettingsManager" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.ipc.sendSyncSettingsSignal">
+<span class="sig-prename descclassname"><span class="pre">util.ipc.</span></span><span class="sig-name descname"><span class="pre">sendSyncSettingsSignal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pid_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/run/dsiprouter/dsiprouter.pid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_shared_settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#sendSyncSettingsSignal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.sendSyncSettingsSignal" title="Permalink to this definition"></a></dt>
+<dd><p>Send signals to GUI process to synchronize settings from disk or shared memory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pid_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – path to PID file for process to send to</p></li>
+<li><p><strong>load_shared_settings</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – whether to load settings from shared memory or not</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Except</dt>
+<dd class="field-even"><p>OSError ProcessLookupError ValueError</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.ipc.setSharedSettings">
+<span class="sig-prename descclassname"><span class="pre">util.ipc.</span></span><span class="sig-name descname"><span class="pre">setSharedSettings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/run/dsiprouter/ipc.sock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authkey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/ipc.html#setSharedSettings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.ipc.setSharedSettings" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-util.kamtls">
+<span id="util-kamtls"></span><h2><span class="section-number">8.6. </span>util.kamtls<a class="headerlink" href="#module-util.kamtls" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.kamtls.addCustomTLSConfig">
+<span class="sig-prename descclassname"><span class="pre">util.kamtls.</span></span><span class="sig-name descname"><span class="pre">addCustomTLSConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5061</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server_name_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/kamtls.html#addCustomTLSConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.kamtls.addCustomTLSConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Add an additional domain to kamailio TLS configs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – domain profile to create</p></li>
+<li><p><strong>ip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – ip kamailio will match for profile</p></li>
+<li><p><strong>port</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – port kamailio will match for profile</p></li>
+<li><p><strong>server_name_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – server name matching mode</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether addition succeeded</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.kamtls.createCustomTLSConfig">
+<span class="sig-prename descclassname"><span class="pre">util.kamtls.</span></span><span class="sig-name descname"><span class="pre">createCustomTLSConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server_name_mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/kamtls.html#createCustomTLSConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.kamtls.createCustomTLSConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Create a Domain TLS Profile string for the Kamailio TLS Config</p>
+<p>Reference: <a class="reference external" href="https://kamailio.org/docs/modules/5.5.x/modules/tls.html">https://kamailio.org/docs/modules/5.5.x/modules/tls.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – domain profile to create</p></li>
+<li><p><strong>ip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – ip kamailio will match for profile</p></li>
+<li><p><strong>port</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – port kamailio will match for profile</p></li>
+<li><p><strong>server_name_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – server name matching mode</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>tls config for a custom domain</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.kamtls.deleteCustomTLSConfig">
+<span class="sig-prename descclassname"><span class="pre">util.kamtls.</span></span><span class="sig-name descname"><span class="pre">deleteCustomTLSConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/kamtls.html#deleteCustomTLSConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.kamtls.deleteCustomTLSConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Delete an additional domain in kamailio TLS configs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – domain profile to delete</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether delete succeeded</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.kamtls.getCustomTLSConfigs">
+<span class="sig-prename descclassname"><span class="pre">util.kamtls.</span></span><span class="sig-name descname"><span class="pre">getCustomTLSConfigs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/kamtls.html#getCustomTLSConfigs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.kamtls.getCustomTLSConfigs" title="Permalink to this definition"></a></dt>
+<dd><p>Get kamailio TLS configs for additional domains</p>
+<p>Server and client domain/ip/port are assumed to be the same</p>
+<p>The optional domain filter returns domains &amp; subdomains that match</p>
+<p>Returned Data Format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;&lt;domain&gt;&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;ip&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;str&gt;&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="s1">&#39;&lt;int&gt;&#39;</span>
+        <span class="s1">&#39;server&#39;</span><span class="p">:</span> <span class="p">{</span><span class="o">&lt;</span><span class="n">server</span> <span class="n">params</span><span class="o">&gt;</span><span class="p">},</span>
+        <span class="s1">&#39;client&#39;</span><span class="p">:</span> <span class="p">{</span><span class="o">&lt;</span><span class="n">client</span> <span class="n">params</span><span class="o">&gt;</span><span class="p">}</span>
+    <span class="p">},</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>domain_filter</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – filter on this domain / subdomains</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>TLS configs for custom domain profiles</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a>|None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.kamtls.updateCustomTLSConfig">
+<span class="sig-prename descclassname"><span class="pre">util.kamtls.</span></span><span class="sig-name descname"><span class="pre">updateCustomTLSConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server_name_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/kamtls.html#updateCustomTLSConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.kamtls.updateCustomTLSConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Add an additional domain to kamailio TLS configs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – domain profile to update</p></li>
+<li><p><strong>ip</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – ip kamailio will match for profile</p></li>
+<li><p><strong>port</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – port kamailio will match for profile</p></li>
+<li><p><strong>server_name_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – server name matching mode</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>whether update succeeded</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-util.letsencrypt">
+<span id="util-letsencrypt"></span><h2><span class="section-number">8.7. </span>util.letsencrypt<a class="headerlink" href="#module-util.letsencrypt" title="Permalink to this heading"></a></h2>
+<p>The workflow consists of:
+(Account creation)
+- Create account key
+- Register account and accept TOS
+(Certificate actions)
+- Select HTTP-01 within offered challenges by the CA server
+- Set up http challenge resource
+- Set up standalone web server
+- Create domain private key and CSR
+- Issue certificate</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.letsencrypt.challenge_server">
+<span class="sig-prename descclassname"><span class="pre">util.letsencrypt.</span></span><span class="sig-name descname"><span class="pre">challenge_server</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">http_01_resources</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/letsencrypt.html#challenge_server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.letsencrypt.challenge_server" title="Permalink to this definition"></a></dt>
+<dd><p>Manage standalone server set up and shutdown.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.letsencrypt.deleteCertificate">
+<span class="sig-prename descclassname"><span class="pre">util.letsencrypt.</span></span><span class="sig-name descname"><span class="pre">deleteCertificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://acme-v02.api.letsencrypt.org/directory'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cert_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/letsencrypt.html#deleteCertificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.letsencrypt.deleteCertificate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.letsencrypt.generateCertificate">
+<span class="sig-prename descclassname"><span class="pre">util.letsencrypt.</span></span><span class="sig-name descname"><span class="pre">generateCertificate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notification_email</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'https://acme-v02.api.letsencrypt.org/directory'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cert_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/letsencrypt.html#generateCertificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.letsencrypt.generateCertificate" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.letsencrypt.new_csr">
+<span class="sig-prename descclassname"><span class="pre">util.letsencrypt.</span></span><span class="sig-name descname"><span class="pre">new_csr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pkey_pem</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/letsencrypt.html#new_csr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.letsencrypt.new_csr" title="Permalink to this definition"></a></dt>
+<dd><p>Create certificate signing request.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.letsencrypt.perform_http01">
+<span class="sig-prename descclassname"><span class="pre">util.letsencrypt.</span></span><span class="sig-name descname"><span class="pre">perform_http01</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_acme</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">challb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orderr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/letsencrypt.html#perform_http01"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.letsencrypt.perform_http01" title="Permalink to this definition"></a></dt>
+<dd><p>Set up standalone webserver and perform HTTP-01 challenge.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.letsencrypt.select_http01_chall">
+<span class="sig-prename descclassname"><span class="pre">util.letsencrypt.</span></span><span class="sig-name descname"><span class="pre">select_http01_chall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">orderr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/letsencrypt.html#select_http01_chall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.letsencrypt.select_http01_chall" title="Permalink to this definition"></a></dt>
+<dd><p>Look for and select <cite>http-01</cite> from the challenges offered by the server.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-util.notifications">
+<span id="util-notifications"></span><h2><span class="section-number">8.8. </span>util.notifications<a class="headerlink" href="#module-util.notifications" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.notifications.sendEmail">
+<span class="sig-prename descclassname"><span class="pre">util.notifications.</span></span><span class="sig-name descname"><span class="pre">sendEmail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_body</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_body</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dSIPRouter</span> <span class="pre">System</span> <span class="pre">Notification'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sender</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dSIPRouter</span> <span class="pre">sip.dsiprouter.org</span> <span class="pre">&lt;&gt;'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attachments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/notifications.html#sendEmail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.notifications.sendEmail" title="Permalink to this definition"></a></dt>
+<dd><p>Send an Email asynchronously to recipients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>recipients</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a>) – email addresses we are sending to</p></li>
+<li><p><strong>text_body</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – email plain text message to send</p></li>
+<li><p><strong>html_body</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – email html message to send</p></li>
+<li><p><strong>subject</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – subject of the email</p></li>
+<li><p><strong>sender</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – email address we are sending from</p></li>
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)"><em>dict</em></a>) – key, value pairs to add to message</p></li>
+<li><p><strong>attachments</strong> (<em>files to attach to email</em>) – list|tuple</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>no return value</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-util.parse_json">
+<span id="util-parse-json"></span><h2><span class="section-number">8.9. </span>util.parse_json<a class="headerlink" href="#module-util.parse_json" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.parse_json.CreateEncoder">
+<span class="sig-prename descclassname"><span class="pre">util.parse_json.</span></span><span class="sig-name descname"><span class="pre">CreateEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">revisit_self</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields_to_expand</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fields_to_remove</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/parse_json.html#CreateEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.parse_json.CreateEncoder" title="Permalink to this definition"></a></dt>
+<dd><p>Wrapper method for creating Custom JSON Encoders</p>
+<p>Allows dynamic class definition for use in json.dumps(cls=&lt;encoder&gt;)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>revisit_self</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – True | False</p></li>
+<li><p><strong>fields_to_expand</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a>) – ORM Model Fields to expand</p></li>
+<li><p><strong>fields_to_remove</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a>) – ORM Model Fields to remove</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Voodoo Alchemy Encoder class</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>VoodooAlchemyEncoder</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-util.security">
+<span id="util-security"></span><h2><span class="section-number">8.10. </span>util.security<a class="headerlink" href="#module-util.security" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="util.security.AES_CTR">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">AES_CTR</span></span><a class="reference internal" href="../_modules/util/security.html#AES_CTR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.AES_CTR" title="Permalink to this definition"></a></dt>
+<dd><p>Wrapper class for pycrypto’s AES256 functions in AES_CTR mode</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.AES_CTR.BLOCK_SIZE">
+<span class="sig-name descname"><span class="pre">BLOCK_SIZE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">16</span></em><a class="headerlink" href="#util.security.AES_CTR.BLOCK_SIZE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.AES_CTR.KEY_SIZE">
+<span class="sig-name descname"><span class="pre">KEY_SIZE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">32</span></em><a class="headerlink" href="#util.security.AES_CTR.KEY_SIZE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.AES_CTR.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'util.security',</span> <span class="pre">'__doc__':</span> <span class="pre">&quot;\n</span>&#160;&#160;&#160; <span class="pre">Wrapper</span> <span class="pre">class</span> <span class="pre">for</span> <span class="pre">pycrypto's</span> <span class="pre">AES256</span> <span class="pre">functions</span> <span class="pre">in</span> <span class="pre">AES_CTR</span> <span class="pre">mode\n</span>&#160;&#160;&#160; <span class="pre">&quot;,</span> <span class="pre">'BLOCK_SIZE':</span> <span class="pre">16,</span> <span class="pre">'KEY_SIZE':</span> <span class="pre">32,</span> <span class="pre">'genKey':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'encrypt':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'decrypt':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'AES_CTR'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'AES_CTR'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#util.security.AES_CTR.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.AES_CTR.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'util.security'</span></em><a class="headerlink" href="#util.security.AES_CTR.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.AES_CTR.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#util.security.AES_CTR.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.AES_CTR.decrypt">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">decrypt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">byte_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/etc/dsiprouter/privkey'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#AES_CTR.decrypt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.AES_CTR.decrypt" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.AES_CTR.encrypt">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">encrypt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">byte_string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/etc/dsiprouter/privkey'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#AES_CTR.encrypt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.AES_CTR.encrypt" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.AES_CTR.genKey">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">genKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keyfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/etc/dsiprouter/privkey'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#AES_CTR.genKey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.AES_CTR.genKey" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="util.security.APIToken">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">APIToken</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#APIToken"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.APIToken" title="Permalink to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.APIToken.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'util.security',</span> <span class="pre">'token':</span> <span class="pre">None,</span> <span class="pre">'__init__':</span> <span class="pre">&lt;function</span> <span class="pre">APIToken.__init__&gt;,</span> <span class="pre">'isValid':</span> <span class="pre">&lt;function</span> <span class="pre">APIToken.isValid&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'APIToken'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'APIToken'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__doc__':</span> <span class="pre">None,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#util.security.APIToken.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.APIToken.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#APIToken.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.APIToken.__init__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.APIToken.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'util.security'</span></em><a class="headerlink" href="#util.security.APIToken.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.APIToken.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#util.security.APIToken.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.APIToken.isValid">
+<span class="sig-name descname"><span class="pre">isValid</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#APIToken.isValid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.APIToken.isValid" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.APIToken.token">
+<span class="sig-name descname"><span class="pre">token</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#util.security.APIToken.token" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="util.security.Credentials">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">Credentials</span></span><a class="reference internal" href="../_modules/util/security.html#Credentials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.Credentials" title="Permalink to this definition"></a></dt>
+<dd><p>Wrapper class for credential management functions</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.AESCTR_CREDS_ENCODED_MAX_LEN">
+<span class="sig-name descname"><span class="pre">AESCTR_CREDS_ENCODED_MAX_LEN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">160</span></em><a class="headerlink" href="#util.security.Credentials.AESCTR_CREDS_ENCODED_MAX_LEN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.CREDS_MAX_LEN">
+<span class="sig-name descname"><span class="pre">CREDS_MAX_LEN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">64</span></em><a class="headerlink" href="#util.security.Credentials.CREDS_MAX_LEN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.DK_LEN_DEFAULT">
+<span class="sig-name descname"><span class="pre">DK_LEN_DEFAULT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">48</span></em><a class="headerlink" href="#util.security.Credentials.DK_LEN_DEFAULT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.HASHED_CREDS_ENCODED_MAX_LEN">
+<span class="sig-name descname"><span class="pre">HASHED_CREDS_ENCODED_MAX_LEN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></em><a class="headerlink" href="#util.security.Credentials.HASHED_CREDS_ENCODED_MAX_LEN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.HASH_ITERATIONS">
+<span class="sig-name descname"><span class="pre">HASH_ITERATIONS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10000</span></em><a class="headerlink" href="#util.security.Credentials.HASH_ITERATIONS" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.SALT_LEN">
+<span class="sig-name descname"><span class="pre">SALT_LEN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">16</span></em><a class="headerlink" href="#util.security.Credentials.SALT_LEN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'util.security',</span> <span class="pre">'__doc__':</span> <span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">Wrapper</span> <span class="pre">class</span> <span class="pre">for</span> <span class="pre">credential</span> <span class="pre">management</span> <span class="pre">functions\n</span>&#160;&#160;&#160; <span class="pre">',</span> <span class="pre">'SALT_LEN':</span> <span class="pre">16,</span> <span class="pre">'CREDS_MAX_LEN':</span> <span class="pre">64,</span> <span class="pre">'DK_LEN_DEFAULT':</span> <span class="pre">48,</span> <span class="pre">'HASHED_CREDS_ENCODED_MAX_LEN':</span> <span class="pre">128,</span> <span class="pre">'AESCTR_CREDS_ENCODED_MAX_LEN':</span> <span class="pre">160,</span> <span class="pre">'HASH_ITERATIONS':</span> <span class="pre">10000,</span> <span class="pre">'hashCreds':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'setCreds':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'Credentials'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'Credentials'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#util.security.Credentials.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'util.security'</span></em><a class="headerlink" href="#util.security.Credentials.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.Credentials.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#util.security.Credentials.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.Credentials.hashCreds">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hashCreds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">creds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">salt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dklen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#Credentials.hashCreds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.Credentials.hashCreds" title="Permalink to this definition"></a></dt>
+<dd><p>Hash credentials using pbkdf2_hmac with sha512 algorithm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – byte string to hash</p></li>
+<li><p><strong>salt</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – salt to hash creds with (hex encoded byte string or string)</p></li>
+<li><p><strong>dklen</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – the derived key length to return as hash</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hash+salt as hex encoded byte string</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)">bytes</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.Credentials.setCreds">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setCreds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dsip_creds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_creds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kam_creds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mail_creds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ipc_creds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rootdb_creds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">b''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#Credentials.setCreds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.Credentials.setCreds" title="Permalink to this definition"></a></dt>
+<dd><p>Set secure credentials, either by hashing or encrypting</p>
+<p>Values must be within size limit and empty values are ignored</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dsip_creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – dsiprouter admin password as byte string</p></li>
+<li><p><strong>api_creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – dsiprouter api token as byte string</p></li>
+<li><p><strong>kam_creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – kamailio db password as byte string</p></li>
+<li><p><strong>mail_creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – dsiprouter mail password as byte string</p></li>
+<li><p><strong>ipc_creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – dsiprouter ipc connection password as byte string</p></li>
+<li><p><strong>rootdb_creds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – root db user’s password as byte string</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="util.security.CryptoLibInfo">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">CryptoLibInfo</span></span><a class="reference internal" href="../_modules/util/security.html#CryptoLibInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.CryptoLibInfo" title="Permalink to this definition"></a></dt>
+<dd><p>Wrapper class to standardize and simplify gathering info about the system crypto libraries</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.CryptoLibInfo.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'util.security',</span> <span class="pre">'__doc__':</span> <span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">Wrapper</span> <span class="pre">class</span> <span class="pre">to</span> <span class="pre">standardize</span> <span class="pre">and</span> <span class="pre">simplify</span> <span class="pre">gathering</span> <span class="pre">info</span> <span class="pre">about</span> <span class="pre">the</span> <span class="pre">system</span> <span class="pre">crypto</span> <span class="pre">libraries\n</span>&#160;&#160;&#160; <span class="pre">',</span> <span class="pre">'getOpenSSLVer':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'getSupportedSSLProtocols':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'CryptoLibInfo'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'CryptoLibInfo'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#util.security.CryptoLibInfo.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.CryptoLibInfo.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'util.security'</span></em><a class="headerlink" href="#util.security.CryptoLibInfo.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.CryptoLibInfo.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#util.security.CryptoLibInfo.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.CryptoLibInfo.getOpenSSLVer">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getOpenSSLVer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#CryptoLibInfo.getOpenSSLVer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.CryptoLibInfo.getOpenSSLVer" title="Permalink to this definition"></a></dt>
+<dd><p>Get major, minor, patch release numbers as one int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>openssl release version</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.CryptoLibInfo.getSupportedSSLProtocols">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getSupportedSSLProtocols</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#CryptoLibInfo.getSupportedSSLProtocols"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.CryptoLibInfo.getSupportedSSLProtocols" title="Permalink to this definition"></a></dt>
+<dd><p>Get the support SSL/TLS protocols we serve</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>all support protocols</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="util.security.KeyCertPair">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">KeyCertPair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair" title="Permalink to this definition"></a></dt>
+<dd><p>Represents a private key and cert(s) pair</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.X509_DER_FILESIG">
+<span class="sig-name descname"><span class="pre">X509_DER_FILESIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'0\x82'</span></em><a class="headerlink" href="#util.security.KeyCertPair.X509_DER_FILESIG" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.X509_PEM_CERT_BEGIN">
+<span class="sig-name descname"><span class="pre">X509_PEM_CERT_BEGIN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'-----BEGIN</span> <span class="pre">CERTIFICATE-----'</span></em><a class="headerlink" href="#util.security.KeyCertPair.X509_PEM_CERT_BEGIN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.X509_PEM_CERT_END">
+<span class="sig-name descname"><span class="pre">X509_PEM_CERT_END</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'-----END</span> <span class="pre">CERTIFICATE-----'</span></em><a class="headerlink" href="#util.security.KeyCertPair.X509_PEM_CERT_END" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.X509_PEM_FILESIG">
+<span class="sig-name descname"><span class="pre">X509_PEM_FILESIG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">b'-----BEGIN</span> <span class="pre">CERTIFICATE-----'</span></em><a class="headerlink" href="#util.security.KeyCertPair.X509_PEM_FILESIG" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'util.security',</span> <span class="pre">'__doc__':</span> <span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">Represents</span> <span class="pre">a</span> <span class="pre">private</span> <span class="pre">key</span> <span class="pre">and</span> <span class="pre">cert(s)</span> <span class="pre">pair\n</span>&#160;&#160;&#160; <span class="pre">',</span> <span class="pre">'X509_DER_FILESIG':</span> <span class="pre">b'0\x82',</span> <span class="pre">'X509_PEM_FILESIG':</span> <span class="pre">b'-----BEGIN</span> <span class="pre">CERTIFICATE-----',</span> <span class="pre">'X509_PEM_CERT_BEGIN':</span> <span class="pre">b'-----BEGIN</span> <span class="pre">CERTIFICATE-----',</span> <span class="pre">'X509_PEM_CERT_END':</span> <span class="pre">b'-----END</span> <span class="pre">CERTIFICATE-----',</span> <span class="pre">'__init__':</span> <span class="pre">&lt;function</span> <span class="pre">KeyCertPair.__init__&gt;,</span> <span class="pre">'readFile':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'convertPKCS7CertToX509List':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'convertKeyBuffToPkey':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'convertCertBuffToX509List':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'getCertSubjectPrintable':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'validateKeyCertPair':</span> <span class="pre">&lt;function</span> <span class="pre">KeyCertPair.validateKeyCertPair&gt;,</span> <span class="pre">'dumpPkey':</span> <span class="pre">&lt;function</span> <span class="pre">KeyCertPair.dumpPkey&gt;,</span> <span class="pre">'dumpCerts':</span> <span class="pre">&lt;function</span> <span class="pre">KeyCertPair.dumpCerts&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'KeyCertPair'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'KeyCertPair'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#util.security.KeyCertPair.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Files to extract key/cert pair from</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>files</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference internal" href="shared.html#shared.IO" title="shared.IO"><em>IO</em></a><em>]</em><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.11)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a><em>|</em><a class="reference internal" href="shared.html#shared.IO" title="shared.IO"><em>IO</em></a><em>]</em>) – A list of filepaths or objects implementing the read method</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'util.security'</span></em><a class="headerlink" href="#util.security.KeyCertPair.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#util.security.KeyCertPair.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.convertCertBuffToX509List">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convertCertBuffToX509List</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.convertCertBuffToX509List"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.convertCertBuffToX509List" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a one or more certificates of any format to X509</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>buff</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a>) – certificate(s) buffer of unknown format</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>certificate(s) in OpenSSL usable format</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[OpenSSL.crypto.X509]</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if the data can not be converted</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.convertKeyBuffToPkey">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convertKeyBuffToPkey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buff</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.convertKeyBuffToPkey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.convertKeyBuffToPkey" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a single private key of any format to PKey</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>buff</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#bytes" title="(in Python v3.11)"><em>bytes</em></a>) – private key buffer of unknown format</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>private key in OpenSSL usable format, type of</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>OpenSSL.crypto.PKey</p>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p>ValueError if the data can not be converted</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.convertPKCS7CertToX509List">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convertPKCS7CertToX509List</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pkcs7_cert</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.convertPKCS7CertToX509List"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.convertPKCS7CertToX509List" title="Permalink to this definition"></a></dt>
+<dd><p>Modified version of: <a class="reference external" href="https://github.com/pyca/pyopenssl/pull/367/files#r67300900">https://github.com/pyca/pyopenssl/pull/367/files#r67300900</a></p>
+<p>Returns all certificates for the PKCS7 structure, if present</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pkcs7_cert</strong> (<em>OpenSSL.crypto.PKCS7</em>) – the PKCS cert object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The certificates in PEM format</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.11)">list</a>[OpenSSL.crypto.X509]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.dumpCerts">
+<span class="sig-name descname"><span class="pre">dumpCerts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.dumpCerts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.dumpCerts" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.dumpPkey">
+<span class="sig-name descname"><span class="pre">dumpPkey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.dumpPkey"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.dumpPkey" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.getCertSubjectPrintable">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getCertSubjectPrintable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cert</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.getCertSubjectPrintable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.getCertSubjectPrintable" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.readFile">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">readFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.readFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.readFile" title="Permalink to this definition"></a></dt>
+<dd><p>Read a file via filepath or using the object’s read method</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="util.security.KeyCertPair.validateKeyCertPair">
+<span class="sig-name descname"><span class="pre">validateKeyCertPair</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#KeyCertPair.validateKeyCertPair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.KeyCertPair.validateKeyCertPair" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the key/cert pair is valid</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises</dt>
+<dd class="field-odd"><p>ValueError when invalid</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.security.api_security">
+<span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">api_security</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#api_security"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.api_security" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.security.urandomChars">
+<span class="sig-prename descclassname"><span class="pre">util.security.</span></span><span class="sig-name descname"><span class="pre">urandomChars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/security.html#urandomChars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.security.urandomChars" title="Permalink to this definition"></a></dt>
+<dd><p>Return printable characters from urandom</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>length</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a>) – number of bytes to return</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>random characters</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-util.time_funcs">
+<span id="util-time-funcs"></span><h2><span class="section-number">8.11. </span>util.time_funcs<a class="headerlink" href="#module-util.time_funcs" title="Permalink to this heading"></a></h2>
+<p>&#64;summary: Provides methods for working with datetimes, timestamps, etc..
+&#64;author: devopsec</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="util.time_funcs.convert_ts">
+<span class="sig-prename descclassname"><span class="pre">util.time_funcs.</span></span><span class="sig-name descname"><span class="pre">convert_ts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">millis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_utc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/time_funcs.html#convert_ts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.time_funcs.convert_ts" title="Permalink to this definition"></a></dt>
+<dd><p>convert timestamp to human readable format
+optionally keep up to microsecond precision
+if timestamp is utc format pass param is_utc=True</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="util.time_funcs.utcnow">
+<span class="sig-prename descclassname"><span class="pre">util.time_funcs.</span></span><span class="sig-name descname"><span class="pre">utcnow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ts'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/util/time_funcs.html#utcnow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#util.time_funcs.utcnow" title="Permalink to this definition"></a></dt>
+<dd><p>returns time-aware utc datetime object or timestamp of current time/date
+&#64;Param: format  -  defaults to timestamp, provide “dt” for datetime obj</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="sysloginit.html" class="btn btn-neutral float-left" title="7. sysloginit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../routes/index.html" class="btn btn-neutral float-right" title="2. The dSIPRouter Project" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

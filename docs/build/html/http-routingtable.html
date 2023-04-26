@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTTP Routing Table &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+ 
+
+    <script>
+      DOCUMENTATION_OPTIONS.COLLAPSE_INDEX = true;
+    </script>
+
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">HTTP Routing Table</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+
+   <h1>HTTP Routing Table</h1>
+
+   <div class="modindex-jumpbox">
+   <a href="#cap-/api"><strong>/api</strong></a> | 
+   <a href="#cap-/carrierdelete"><strong>/carrierdelete</strong></a> | 
+   <a href="#cap-/carriergroupdelete"><strong>/carriergroupdelete</strong></a> | 
+   <a href="#cap-/carriergroups"><strong>/carriergroups</strong></a> | 
+   <a href="#cap-/carriers"><strong>/carriers</strong></a> | 
+   <a href="#cap-/cdrs"><strong>/cdrs</strong></a> | 
+   <a href="#cap-/docs"><strong>/docs</strong></a> | 
+   <a href="#cap-/endpointgroups"><strong>/endpointgroups</strong></a> | 
+   <a href="#cap-/inboundmapping"><strong>/inboundmapping</strong></a> | 
+   <a href="#cap-/inboundmappingdelete"><strong>/inboundmappingdelete</strong></a> | 
+   <a href="#cap-/licensing"><strong>/licensing</strong></a> | 
+   <a href="#cap-/numberenrichment"><strong>/numberenrichment</strong></a> | 
+   <a href="#cap-/outboundroutes"><strong>/outboundroutes</strong></a> | 
+   <a href="#cap-/outboundroutesdelete"><strong>/outboundroutesdelete</strong></a> | 
+   <a href="#cap-/pbxdelete"><strong>/pbxdelete</strong></a> | 
+   <a href="#cap-/stirshaken"><strong>/stirshaken</strong></a> | 
+   <a href="#cap-/teleblock"><strong>/teleblock</strong></a> | 
+   <a href="#cap-/transnexus"><strong>/transnexus</strong></a> | 
+   <a href="#cap-/upgrade"><strong>/upgrade</strong></a>
+   </div>
+
+   <table class="indextable modindextable">
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/api"><td></td><td>
+       <strong>/api</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-backupandrestore-backup"><code class="xref">GET /api/v1/backupandrestore/backup</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-carriergroups"><code class="xref">GET /api/v1/carriergroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-carriergroups-(string-id)"><code class="xref">GET /api/v1/carriergroups/(string:id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-carriergroups-plugin-(string-plugin_name)-config"><code class="xref">GET /api/v1/carriergroups/plugin/(string:plugin_name)/config</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-cdrs-endpoint-(int-gwid)"><code class="xref">GET /api/v1/cdrs/endpoint/(int:gwid)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-cdrs-endpointgroups-(int-gwgroupid)"><code class="xref">GET /api/v1/cdrs/endpointgroups/(int:gwgroupid)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-inboundmapping"><code class="xref">GET /api/v1/inboundmapping</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-licensing-list"><code class="xref">GET /api/v1/licensing/list</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-licensing-retrieve"><code class="xref">GET /api/v1/licensing/retrieve</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-licensing-validate"><code class="xref">GET /api/v1/licensing/validate</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-mediaserver-domain-"><code class="xref">GET /api/v1/mediaserver/domain/</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-mediaserver-domain-(string-config_id)"><code class="xref">GET /api/v1/mediaserver/domain/(string:config_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-mediaserver-domain-(string-config_id)-(string-domain_id)"><code class="xref">GET /api/v1/mediaserver/domain/(string:config_id)/(string:domain_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-mediaserver-extension-(string-config_id)-(string-domain_id)"><code class="xref">GET /api/v1/mediaserver/extension/(string:config_id)/(string:domain_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-mediaserver-extension-(string-config_id)-(string-domain_id)-(string-extension_id)"><code class="xref">GET /api/v1/mediaserver/extension/(string:config_id)/(string:domain_id)/(string:extension_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-numberenrichment"><code class="xref">GET /api/v1/numberenrichment</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-numberenrichment-(int-rule_id)"><code class="xref">GET /api/v1/numberenrichment/(int:rule_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--api-v1-sys-generatepassword"><code class="xref">GET /api/v1/sys/generatepassword</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-backupandrestore-restore"><code class="xref">POST /api/v1/backupandrestore/restore</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-carriergroups"><code class="xref">POST /api/v1/carriergroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-certificates"><code class="xref">POST /api/v1/certificates</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-endpointgroups"><code class="xref">POST /api/v1/endpointgroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-inboundmapping"><code class="xref">POST /api/v1/inboundmapping</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-notification-gwgroup"><code class="xref">POST /api/v1/notification/gwgroup</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-numberenrichment"><code class="xref">POST /api/v1/numberenrichment</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--api-v1-numberenrichment-fetch"><code class="xref">POST /api/v1/numberenrichment/fetch</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-carriergroups"><code class="xref">PUT /api/v1/carriergroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-carriergroups-(string-id)"><code class="xref">PUT /api/v1/carriergroups/(string:id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-certificates"><code class="xref">PUT /api/v1/certificates</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-endpointgroups"><code class="xref">PUT /api/v1/endpointgroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-endpointgroups-(int-gwgroupid)"><code class="xref">PUT /api/v1/endpointgroups/(int:gwgroupid)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-inboundmapping"><code class="xref">PUT /api/v1/inboundmapping</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-licensing-activate"><code class="xref">PUT /api/v1/licensing/activate</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-licensing-deactivate"><code class="xref">PUT /api/v1/licensing/deactivate</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-numberenrichment"><code class="xref">PUT /api/v1/numberenrichment</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#put--api-v1-numberenrichment-(int-rule_id)"><code class="xref">PUT /api/v1/numberenrichment/(int:rule_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#delete--api-v1-carriergroups-(string-id)"><code class="xref">DELETE /api/v1/carriergroups/(string:id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#delete--api-v1-inboundmapping"><code class="xref">DELETE /api/v1/inboundmapping</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#delete--api-v1-numberenrichment"><code class="xref">DELETE /api/v1/numberenrichment</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#delete--api-v1-numberenrichment-(int-rule_id)"><code class="xref">DELETE /api/v1/numberenrichment/(int:rule_id)</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/carrierdelete"><td></td><td>
+       <strong>/carrierdelete</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--carrierdelete"><code class="xref">POST /carrierdelete</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/carriergroupdelete"><td></td><td>
+       <strong>/carriergroupdelete</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--carriergroupdelete"><code class="xref">POST /carriergroupdelete</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/carriergroups"><td></td><td>
+       <strong>/carriergroups</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--carriergroups"><code class="xref">GET /carriergroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--carriergroups-(int-gwgroup)"><code class="xref">GET /carriergroups/(int:gwgroup)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--carriergroups"><code class="xref">POST /carriergroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/carriers"><td></td><td>
+       <strong>/carriers</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--carriers"><code class="xref">GET /carriers</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--carriers-(int-gwid)"><code class="xref">GET /carriers/(int:gwid)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--carriers-group-(int-gwgroup)"><code class="xref">GET /carriers/group/(int:gwgroup)</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--carriers"><code class="xref">POST /carriers</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/cdrs"><td></td><td>
+       <strong>/cdrs</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--cdrs"><code class="xref">GET /cdrs</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/docs"><td></td><td>
+       <strong>/docs</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--docs-(path-filename)"><code class="xref">GET /docs/(path:filename)</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/endpointgroups"><td></td><td>
+       <strong>/endpointgroups</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--endpointgroups"><code class="xref">GET /endpointgroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--endpointgroups"><code class="xref">POST /endpointgroups</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/inboundmapping"><td></td><td>
+       <strong>/inboundmapping</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--inboundmapping"><code class="xref">GET /inboundmapping</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--inboundmapping"><code class="xref">POST /inboundmapping</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/inboundmappingdelete"><td></td><td>
+       <strong>/inboundmappingdelete</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--inboundmappingdelete"><code class="xref">POST /inboundmappingdelete</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/licensing"><td></td><td>
+       <strong>/licensing</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--licensing"><code class="xref">GET /licensing</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/numberenrichment"><td></td><td>
+       <strong>/numberenrichment</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--numberenrichment"><code class="xref">GET /numberenrichment</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/outboundroutes"><td></td><td>
+       <strong>/outboundroutes</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--outboundroutes"><code class="xref">GET /outboundroutes</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--outboundroutes"><code class="xref">POST /outboundroutes</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/outboundroutesdelete"><td></td><td>
+       <strong>/outboundroutesdelete</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--outboundroutesdelete"><code class="xref">POST /outboundroutesdelete</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/pbxdelete"><td></td><td>
+       <strong>/pbxdelete</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--pbxdelete"><code class="xref">POST /pbxdelete</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/stirshaken"><td></td><td>
+       <strong>/stirshaken</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--stirshaken"><code class="xref">GET /stirshaken</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--stirshaken"><code class="xref">POST /stirshaken</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/teleblock"><td></td><td>
+       <strong>/teleblock</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--teleblock"><code class="xref">GET /teleblock</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--teleblock"><code class="xref">POST /teleblock</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/transnexus"><td></td><td>
+       <strong>/transnexus</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--transnexus"><code class="xref">GET /transnexus</code></a></td><td>
+       <em></em></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#post--transnexus"><code class="xref">POST /transnexus</code></a></td><td>
+       <em></em></td></tr>
+     <tr class="pcap"><td></td><td>&#160;</td><td></td></tr>
+     <tr class="cap" id="cap-/upgrade"><td></td><td>
+       <strong>/upgrade</strong></td><td></td></tr>
+     <tr>
+       <td></td>
+       <td>
+       <a href="routes/routes.html#get--upgrade"><code class="xref">GET /upgrade</code></a></td><td>
+       <em></em></td></tr>
+   </table>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

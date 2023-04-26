@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>modules.flowroute &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">modules.flowroute</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for modules.flowroute</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+
+<span class="c1"># TODO: automate route setup and ip auth config in flowroute</span>
+
+<div class="viewcode-block" id="Numbers"><a class="viewcode-back" href="../../dev/modules.html#modules.flowroute.Numbers">[docs]</a><span class="k">class</span> <span class="nc">Numbers</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains methods for accessing the flowroute Numbers api</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Numbers.__init__"><a class="viewcode-back" href="../../dev/modules.html#modules.flowroute.Numbers.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">FLOWROUTE_ACCESS_KEY</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLOWROUTE_SECRET_KEY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLOWROUTE_API_ROOT_URL</span> <span class="o">+</span> <span class="s2">&quot;/numbers&quot;</span></div>
+
+<div class="viewcode-block" id="Numbers.__del__"><a class="viewcode-back" href="../../dev/modules.html#modules.flowroute.Numbers.__del__">[docs]</a>    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">api_url</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="Numbers.getNumbers"><a class="viewcode-back" href="../../dev/modules.html#modules.flowroute.Numbers.getNumbers">[docs]</a>    <span class="k">def</span> <span class="nf">getNumbers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">starts_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">contains</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ends_with</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1000000</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get flowroute DID&#39;s associated with accnt</span>
+
+<span class="sd">        .. seealso:: `flowroute list numbers &lt;https://developer.flowroute.com/api/numbers/v2.0/list-account-phone-numbers/&gt;`_</span>
+<span class="sd">        :param starts_with: match numbers starting with..</span>
+<span class="sd">        :param contains:    match numbers containing..</span>
+<span class="sd">        :param ends_with:   match numbers ending with..</span>
+<span class="sd">        :param limit:       limit of matched numbers</span>
+<span class="sd">        :param offset:      offsets list of numbers returned</span>
+<span class="sd">        :return:            list(*str)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;starts_with&#39;</span><span class="p">:</span> <span class="n">starts_with</span><span class="p">,</span>
+            <span class="s1">&#39;contains&#39;</span><span class="p">:</span> <span class="n">contains</span><span class="p">,</span>
+            <span class="s1">&#39;ends_with&#39;</span><span class="p">:</span> <span class="n">ends_with</span><span class="p">,</span>
+            <span class="s1">&#39;limit&#39;</span><span class="p">:</span> <span class="n">limit</span><span class="p">,</span>
+            <span class="s1">&#39;offset&#39;</span><span class="p">:</span> <span class="n">offset</span>
+        <span class="p">}</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_url</span><span class="p">,</span> <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auth</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">payload</span><span class="p">)</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">num</span><span class="p">[</span><span class="s1">&#39;attributes&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">num</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;data&#39;</span><span class="p">]]</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

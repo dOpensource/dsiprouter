@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1.6.1. Use Cases &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1.7.1. Resources" href="resources.html" />
+    <link rel="prev" title="1.5.1. API" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">1.  User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">1.5.1. API</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html"><span class="section-number">1. </span>The dSIPRouter Project</a></li>
+      <li class="breadcrumb-item active"><span class="section-number">1.6.1. </span>Use Cases</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/use-cases.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="use-cases">
+<h1><span class="section-number">1.6.1. </span>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this heading"></a></h1>
+<p>This section contains a list of the common use cases that are implemented using dSIPRouter</p>
+<div class="section" id="sip-trunking-using-ip-authentication">
+<h2><span class="section-number">1.6.1.1. </span>SIP Trunking Using IP Authentication<a class="headerlink" href="#sip-trunking-using-ip-authentication" title="Permalink to this heading"></a></h2>
+<p>dSIPRouter enables an organization to start supporting SIP Trunking within minutes.
+Here are the steps to set it up using IP Authentication:</p>
+<ol class="arabic simple">
+<li><p>Login to dSIPRouter</p></li>
+<li><p>Validate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in <a href="#id1"><span class="problematic" id="id2">:ref:`carrier_groups`_</span></a> and/or <a href="#id3"><span class="problematic" id="id4">:ref:`global_outbound_routes`_</span></a> documentation.</p></li>
+<li><p>Click on PBX’s and Endpoints</p></li>
+<li><p>Click “Add”</p></li>
+<li><p>Select <strong>IP Authentication</strong> and fill in the fields specified below:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Friendly Name</p></li>
+<li><p>IP Address of the PBX or Endpoint Device</p></li>
+</ul>
+<img alt="../_images/sip_trunking_ip_auth.png" class="align-center" src="../_images/sip_trunking_ip_auth.png" />
+<ol class="arabic simple" start="6">
+<li><p>Click “Add”</p></li>
+<li><p>Click “Reload” to make the change active.</p></li>
+</ol>
+</div>
+<div class="section" id="sip-trunking-using-username-password-authentication">
+<h2><span class="section-number">1.6.1.2. </span>SIP Trunking Using Username/Password Authentication<a class="headerlink" href="#sip-trunking-using-username-password-authentication" title="Permalink to this heading"></a></h2>
+<p>Here are the steps to set it up using Username/Password Authentication:</p>
+<ol class="arabic simple">
+<li><p>Login to dSIPRouter</p></li>
+<li><p>Valiate that your carrier is defined and specified in the Global Outbound Routes.  If not, please follow the steps in <a class="reference external" href="carrier_groups.rst">carrier_groups.rst</a> and/or <a class="reference external" href="global_outbound_routes">global_outbound_routes</a> documentation.</p></li>
+<li><p>Click on PBX’s and Endpoints</p></li>
+<li><p>Click “Add”</p></li>
+<li><p>Select  <strong>Username/Password Authentication</strong> and fill in the fields specified below:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Friendly Name</p></li>
+<li><p>Click the “Username/Password Auth” radio button</p></li>
+<li><p>Enter a username</p></li>
+<li><p>Enter a domain. Note, you can make up the domain name.  If you don’t specify one then the default domain will be used, which is sip.dsiprouter.org by default.</p></li>
+<li><p>Enter a password</p></li>
+</ul>
+<img alt="../_images/sip_trunking_credentials_auth.png" class="align-center" src="../_images/sip_trunking_credentials_auth.png" />
+<ol class="arabic simple" start="6">
+<li><p>Click “Add”</p></li>
+<li><p>Click “Reload” to make the change active.</p></li>
+</ol>
+</div>
+<div class="section" id="using-pjsip-trunking-freepbx-example">
+<h2><span class="section-number">1.6.1.3. </span>Using PJSIP Trunking  - FreePBX Example<a class="headerlink" href="#using-pjsip-trunking-freepbx-example" title="Permalink to this heading"></a></h2>
+<p>The following screenshot(s) shows how to configure a PJSIP trunk within FreePBX for Username/Password Authentication.</p>
+<p>The first screenshot shows the General tab of the  “pjsip settings” page:</p>
+<img alt="../_images/sip_trunking_freepbx_pjsip_1.png" class="align-center" src="../_images/sip_trunking_freepbx_pjsip_1.png" />
+<p>The following fields needs to be entered</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 72%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Username</p></td>
+<td><p>Username from dSIPRouter PBX Setup</p></td>
+</tr>
+<tr class="row-odd"><td><p>Secret</p></td>
+<td><p>Password from dSIPRouter PBX Setup</p></td>
+</tr>
+<tr class="row-even"><td><p>Authentication</p></td>
+<td><p>Outbound</p></td>
+</tr>
+<tr class="row-odd"><td><p>Registration</p></td>
+<td><p>Send</p></td>
+</tr>
+<tr class="row-even"><td><p>SIP Server</p></td>
+<td><p>Domain name defined in the dSIPRouter PBX Setup</p></td>
+</tr>
+<tr class="row-odd"><td><p>SIP Server</p></td>
+<td><p>SIP port, which is 5060 in dSIPRouter</p></td>
+</tr>
+</tbody>
+</table>
+<img alt="../_images/sip_trunking_freepbx_pjsip_2.png" class="align-center" src="../_images/sip_trunking_freepbx_pjsip_2.png" />
+<p>The following fields needs to be entered</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 77%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Outbound Proxy</p></td>
+<td><p>IP address of dSIPRouter - must include the “;lr” at the end</p></td>
+</tr>
+<tr class="row-odd"><td><p>From Domain</p></td>
+<td><p>The name of the domain defined in the dSIPRouter PBX Setup</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="using-chansip-trunking-freepbx-example">
+<h2><span class="section-number">1.6.1.4. </span>Using chanSIP Trunking  - FreePBX Example<a class="headerlink" href="#using-chansip-trunking-freepbx-example" title="Permalink to this heading"></a></h2>
+<p>The following screenshot(s) shows how to configure a chanSIP trunk within FreePBX for Username/Password Authentication.</p>
+<ol class="arabic simple">
+<li><p>Log into FreePBX server</p></li>
+<li><p>Click Connectivity→Trunks</p></li>
+<li><p>Select Add SIP (chan_sip) Trunk</p></li>
+<li><p>Under General tab enter</p></li>
+</ol>
+<blockquote>
+<div><p>The following fields needs to be entered</p>
+</div></blockquote>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 79%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Trunk Name</p></td>
+<td><p>Labeled in dsiprouter</p></td>
+</tr>
+<tr class="row-odd"><td><p>Outbound Caller ID</p></td>
+<td><p>Phone# that you want to appear during a outbound call (if applicable)</p></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<div><img alt="../_images/sipchan_general.png" class="align-center" src="../_images/sipchan_general.png" />
+</div></blockquote>
+<p>5. Next you will enter the configurations under the SIP Settings. Here you will enter the SIP settings for outgoing calls by selecting the <strong>Outbound</strong> tab. You will need the following information:
+The following fields needs to be entered</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Host</p></td>
+<td><p>&lt;host name or IP address of dsiprouter&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>Username</p></td>
+<td><p>&lt;Specified in <a class="reference external" href="mailto:dsiprouter&#37;&#52;&#48;domainname">dsiprouter<span>&#64;</span>domainname</a>&gt;</p></td>
+</tr>
+<tr class="row-even"><td><p>Secret</p></td>
+<td><p>&lt;Specified in dsiprouter&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>Type</p></td>
+<td><p>peer</p></td>
+</tr>
+<tr class="row-even"><td><p>Context</p></td>
+<td><p>from-trunk</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>The domain name has to be included and correct.</strong></p>
+<img alt="../_images/chansip_outgoing.png" class="align-center" src="../_images/chansip_outgoing.png" />
+<p>NOTE:** Type &lt;context=from-trunk&gt; underneath the &lt;type=peer&gt; in the Peer Details box if it does not appear.</p>
+<ol class="arabic simple" start="6">
+<li><p>Next you will enter the configurations for incoming by selecting the <strong>Incoming</strong> tab in the SIP Settings. Here you will enter the SIP settings for inbound calls. You will need:</p></li>
+</ol>
+<p>User Context: This is most often the account name or number your provider expects. In this example we named it “inbound”.
+The following User Details needs to be entered:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 68%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Host</p></td>
+<td><p>&lt;host name or IP address of dsiprouter&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>Insecure</p></td>
+<td><p>port,invite</p></td>
+</tr>
+<tr class="row-even"><td><p>Type</p></td>
+<td><p>peer</p></td>
+</tr>
+<tr class="row-odd"><td><p>Context</p></td>
+<td><p>from-trunk</p></td>
+</tr>
+</tbody>
+</table>
+<img alt="../_images/chansip_incoming.png" class="align-center" src="../_images/chansip_incoming.png" />
+<p>In the <strong>Register String</strong> enter: &lt;<a class="reference external" href="mailto:username&#37;&#52;&#48;domainname">username<span>&#64;</span>domainname</a>&gt;:&lt;password&gt;&#64;&lt;ip address <strong>or</strong> hostname&gt;. In this example it would be <a class="reference external" href="mailto:sipchantest&#37;&#52;&#48;sip&#46;dsiprouter&#46;org">sipchantest<span>&#64;</span>sip<span>&#46;</span>dsiprouter<span>&#46;</span>org</a>:<a class="reference external" href="mailto:HFmx9u9N&#37;&#52;&#48;demo&#46;dsiprouter&#46;org">HFmx9u9N<span>&#64;</span>demo<span>&#46;</span>dsiprouter<span>&#46;</span>org</a>. <strong>The domain name has to be included and correct.</strong></p>
+<img alt="../_images/register_string.png" class="align-center" src="../_images/register_string.png" />
+<ol class="arabic simple" start="7">
+<li><p>Click Submit</p></li>
+<li><p>Be sure to click the <strong>Apply Config</strong> button after submitting to confirm.</p></li>
+</ol>
+<img alt="../_images/apply_config_button.png" class="align-center" src="../_images/apply_config_button.png" />
+<p>You will now be able to see the new chanSIP added in the truck.</p>
+<img alt="../_images/add_trunk.png" class="align-center" src="../_images/add_trunk.png" />
+<ol class="arabic simple" start="9">
+<li><p>Next you will need to setup an outbound route. Select Connectivity→ Outbound Routes. Click the “+” sign to add a outbound route. In this tab you will need to enter:</p></li>
+</ol>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 54%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Route Name</p></td>
+<td><p>Type desired name</p></td>
+</tr>
+<tr class="row-odd"><td><p>Route CID</p></td>
+<td><p>Number you want to appear on caller ID</p></td>
+</tr>
+<tr class="row-even"><td><p>Trunk Sequence for Matched Routes</p></td>
+<td><p>Trunk name (select from drop down box)</p></td>
+</tr>
+</tbody>
+</table>
+<img alt="../_images/outbound_routes_chansip.png" class="align-center" src="../_images/outbound_routes_chansip.png" />
+<p>10. Click the Dial Patterns tab to set the dial patterns.
+If you are familiar with dial patterns, you can enter the dial patterns manually or you can click the Dial Patterans Wizard to auto create dial patterns if you like. You can choose 7, 10 or 11 digit patterns. Click Generate Routes.</p>
+<img alt="../_images/chansip_dial_wizard.png" class="align-center" src="../_images/chansip_dial_wizard.png" />
+<p>Dial pattern is set to your preference. Prefixes are optional, not required.</p>
+<img alt="../_images/chansip_dial_pattern.png" class="align-center" src="../_images/chansip_dial_pattern.png" />
+<ol class="arabic simple" start="11">
+<li><p>Click Submit and Apply Config button.</p></li>
+</ol>
+<p>Assuming you already have an extention created in your FreePBX, you can validate incoming/outgoing calls by configuring a softphone or a hard phone. Below is an example of the information you would enter if you use a softphone: In this example we are using Zoiper. Once you’ve downloaded Zoiper application on your PC or smart device you would enter the following to configure the soft phone:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 72%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Username</p></td>
+<td><p>&lt;extension&gt;&#64;&lt;siptrunkipaddress&gt;</p></td>
+</tr>
+<tr class="row-odd"><td><p>secret</p></td>
+<td><p>&lt;Password of that extension&gt;</p></td>
+</tr>
+<tr class="row-even"><td><p>Hostname</p></td>
+<td><p>&lt;IP address of your FreePBX&gt; (should autofill)</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note</strong> Skip Authenication and Outbound Proxy</p>
+<img alt="../_images/chansip_zoiper.png" class="align-center" src="../_images/chansip_zoiper.png" />
+<p>You should now be able to make a inbound and outbound call successfully!</p>
+</div>
+<div class="section" id="using-sip-trunking-fusionpbx-ip-authenication">
+<h2><span class="section-number">1.6.1.5. </span>Using SIP Trunking - FusionPBX IP Authenication<a class="headerlink" href="#using-sip-trunking-fusionpbx-ip-authenication" title="Permalink to this heading"></a></h2>
+<p>The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for IP Authenication.</p>
+<ol class="arabic simple">
+<li><p>Log into your FusionPBX.</p></li>
+<li><p>Click Accounts –&gt; Gateways–&gt;Click the + sign to add a gateway/SIP Trunk. The only fields you will need to fill here are:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Gateway= Name of the SIP Trunk</p></li>
+<li><p>Proxy= IP address of the SIP trunk</p></li>
+<li><p>Register= Change to False because you are using IP authenication.</p></li>
+</ul>
+<img alt="../_images/sip_trunking_fusionpbx.png" class="align-center" src="../_images/sip_trunking_fusionpbx.png" />
+<img alt="../_images/sip_trunking_fusionpbx_2.png" class="align-center" src="../_images/sip_trunking_fusionpbx_2.png" />
+<ol class="arabic simple" start="3">
+<li><p>Click Save</p></li>
+<li><p>Click DialPlan–&gt;Outboung Routes–&gt;Click the + sign to add a outbound route. Here you will enter in the following fields:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Gateway= Name of the SIP Trunk</p></li>
+<li><p>Alternate gateways (if applicable)</p></li>
+<li><p>DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says “Shortcut to create the outbound dialplan entries for this Gateway.”</p></li>
+<li><p>Description= (if desired)</p></li>
+</ul>
+<ol class="arabic simple" start="5">
+<li><p>Click Save</p></li>
+</ol>
+<img alt="../_images/outbound-routes_fusionpbx.png" class="align-center" src="../_images/outbound-routes_fusionpbx.png" />
+<img alt="../_images/outbound-routes_fusionpbx_2.png" class="align-center" src="../_images/outbound-routes_fusionpbx_2.png" />
+<p><strong>NOTE</strong> To make these changes global for ALL domains for this SIP Trunk: reopen outbound routes and change the Domain to Global and the Context to ${domain_name} as shown below.</p>
+<img alt="../_images/fusionpbx_global_dialplan.png" class="align-center" src="../_images/fusionpbx_global_dialplan.png" />
+</div>
+<div class="section" id="using-sip-trunking-fusionpbx-username-password-authenication">
+<h2><span class="section-number">1.6.1.6. </span>Using SIP Trunking - FusionPBX Username/Password Authenication<a class="headerlink" href="#using-sip-trunking-fusionpbx-username-password-authenication" title="Permalink to this heading"></a></h2>
+<p>The following screenshot(s) shows how to configure a SIP trunk within FusionPBX for Username/Password Authenication with IP Authenication off.</p>
+<ol class="arabic simple">
+<li><p>Log into your FusionPBX.</p></li>
+<li><p>Click Accounts –&gt; Gateways–&gt;Click the + sign to add a gateway/SIP Trunk. The following fields you will need to fill here are:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Gateway= Name of the SIP Trunk</p></li>
+<li><p>Username= specified by dSIPRouter provider</p></li>
+<li><p>Password= specified by dSIPRouter provider</p></li>
+<li><p>From Domain= Specified or set by default</p></li>
+<li><p>Proxy= IP address of the SIP trunk</p></li>
+<li><p>Register= set to True because you are using Username/Password authenication.</p></li>
+</ul>
+<img alt="../_images/sip_trunking_fusionpbx_3.png" class="align-center" src="../_images/sip_trunking_fusionpbx_3.png" />
+<img alt="../_images/sip_trunking_fusionpbx_4.png" class="align-center" src="../_images/sip_trunking_fusionpbx_4.png" />
+<ol class="arabic simple" start="3">
+<li><p>Click Save.</p></li>
+<li><p>Click DialPlan–&gt;Outboung Routes–&gt;Click the + sign to add a outbound route. Here you will enter in the following fields:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Gateway= Name of the SIP Trunk</p></li>
+<li><p>Alternate gateways (if applicable)</p></li>
+<li><p>DialPlan Expression= 11d (standard setup in FusionPBX). To change the dialplan expression click on the dropdown box where it says “Shortcut to create the outbound dialplan entries for this Gateway.”</p></li>
+<li><p>Description= (if desired)</p></li>
+</ul>
+<img alt="../_images/outbound-routes_fusionpbx.png" class="align-center" src="../_images/outbound-routes_fusionpbx.png" />
+<img alt="../_images/outbound-routes_fusionpbx_2.png" class="align-center" src="../_images/outbound-routes_fusionpbx_2.png" />
+<ol class="arabic simple" start="5">
+<li><p>Click Save</p></li>
+</ol>
+</div>
+<div class="section" id="fusionpbx-hosting">
+<h2><span class="section-number">1.6.1.7. </span>FusionPBX Hosting<a class="headerlink" href="#fusionpbx-hosting" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>Here we will demostrate how to setup dSIPRouter to enable hosting FusionPBX. We have built-in support for FusionPBX that allows domains to be dynamically pulled from FusionPBX.</p>
+</div></blockquote>
+<ol class="arabic simple">
+<li><p>Login to dSIPRouter</p></li>
+<li><p>Click PBX(s) and EndPoints</p></li>
+<li><p>Click ADD; enter the following fields</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Friendly Name (opional)</p></li>
+<li><p>IP address</p></li>
+<li><p>IP Auth</p></li>
+<li><p>Click to enable FusionPBX Domain Support</p></li>
+<li><p>FusionPBX Database IP or Hostname</p></li>
+</ul>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>Click ADD</p></li>
+</ol>
+<blockquote>
+<div><img alt="../_images/fusionpbx_hosting.png" class="align-center" src="../_images/fusionpbx_hosting.png" />
+</div></blockquote>
+<ol class="arabic simple" start="5">
+<li><p>Click Reload Kamailio. (when changes are made reload button will change to orange)</p></li>
+</ol>
+<img alt="../_images/reload_button.png" class="align-center" src="../_images/reload_button.png" />
+<ol class="arabic simple" start="6">
+<li><p>Access your FusionPBX database via ssh.</p></li>
+</ol>
+<p>7.Run the command as illustrated in the “Edit your PBX Detail” window as root on the FusionPBX server. Replace &lt;ip address&gt; (not including the brackets) with the IP address of the dSIPRouter server you’re adding. Command line will look simulair to the following picture.
+<strong>NOTE</strong> After you have entered the first two lines of commands you will not see a form of reply. If command is entered correctly it will return back to your root line. If the command line is incorrect you will receive a “command not found” error message. Recheck the command line and IP address.</p>
+<blockquote>
+<div><img alt="../_images/fusionpbx_domain_support.png" class="align-center" src="../_images/fusionpbx_domain_support.png" />
+</div></blockquote>
+<p>After the command is run you should now be able to see the domains of that PBX in dSIPRouter.</p>
+<img alt="../_images/list_of_domain.png" class="align-center" src="../_images/list_of_domain.png" />
+<p>You can test PBX Hosting is valid by configuring a softphone or a hard phone. Below is an example using a softphone:</p>
+<p>Now that domains have been synced in dSIPRouter you are able to register a softphone. In this example we are using Zoiper.
+Once you’ve downloaded Zopier appliaction on your PC or smart device you would add:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>username (<a class="reference external" href="mailto:extension&#37;&#52;&#48;domainname">extension<span>&#64;</span>domainname</a>)</p></li>
+<li><p>password (password of that extension)</p></li>
+<li><p>outbound proxy (IP address of the dSIPRouter)</p></li>
+</ul>
+<img alt="../_images/zoiper_screenshot.png" class="align-center" src="../_images/zoiper_screenshot.png" />
+</div></blockquote>
+</div>
+<div class="section" id="provisioning-and-registering-a-polycom-vvx-phone">
+<h2><span class="section-number">1.6.1.8. </span>Provisioning and Registering a Polycom VVX Phone<a class="headerlink" href="#provisioning-and-registering-a-polycom-vvx-phone" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>Now that domains have been synced in dSIPRouter you are able to register a endpoint/hard-phone. In this example we are using a Polycom VVX410 desk phone.</p>
+</div></blockquote>
+<ol class="arabic simple">
+<li><p>Log into your FusionPBX box</p></li>
+</ol>
+<blockquote>
+<div><blockquote>
+<div><ol class="loweralpha simple">
+<li><p>Update the “outboundProxy.address” of the template with the IP address or hostname of the dSIPRouter in the provisioning editor.</p></li>
+</ol>
+</div></blockquote>
+<img alt="../_images/outbound_proxy.png" class="align-center" src="../_images/outbound_proxy.png" />
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li><p>Assign the phone to a template.</p></li>
+</ol>
+<blockquote>
+<div><img alt="../_images/assign_template.png" class="align-center" src="../_images/assign_template.png" />
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>Configuring the Provisioning Server section of the phone. Enter the appropriate information into the fields.</p></li>
+</ol>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li><p>Server Type (dSIPRouter uses HTTP by default)</p></li>
+<li><p>Server Address</p></li>
+<li><p>Server Username (device provisioning server name)</p></li>
+<li><p>Server Password</p></li>
+</ol>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>Click Save</p></li>
+</ol>
+<blockquote>
+<div><img alt="../_images/provisioning_server.png" class="align-center" src="../_images/provisioning_server.png" />
+</div></blockquote>
+<ol class="arabic simple" start="5">
+<li><p>Reboot the phone</p></li>
+</ol>
+</div>
+<div class="section" id="freepbx-hosting-pass-thru-authentication">
+<h2><span class="section-number">1.6.1.9. </span>FreePBX Hosting - Pass Thru Authentication<a class="headerlink" href="#freepbx-hosting-pass-thru-authentication" title="Permalink to this heading"></a></h2>
+<p>Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using Pass Thru Authentication. FreePBX is designed to be a single tenant system or in other words, it was built to handle one SIP Domain.  So, we use dSIPRouter to define a SIP Domain and we pass thru Registration info to the FreePBX server so that you don’t have to change how authentication is done.  However, this will only work for one FreePBX server.  If you have a cluster of FreePBX servers then use “Local Subscriber Table” authentication.  The value of having dSIPRouter in front of FreePBX is to provide you with flexibility.  After setting this up you will have the ability upgrade or migrate users from one FreePBX instance to another without having to take an outage.  The following video shows how to configure this.  The steps to implement this is below the video.</p>
+.. raw:: html
+
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe src="https://www.youtube.com/embed/OgTZLYYx1u8" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 385px;"></iframe>
+</div><div class="section" id="steps-to-implement">
+<h3><span class="section-number">1.6.1.9.1. </span>Steps to Implement<a class="headerlink" href="#steps-to-implement" title="Permalink to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Click PBX and Endpoints</p></li>
+<li><p>Click Add</p></li>
+</ol>
+<img alt="../_images/freepbx-pt-add-pbx.png" class="align-center" src="../_images/freepbx-pt-add-pbx.png" />
+<ol class="arabic simple" start="3">
+<li><p>Reload Kamailio</p></li>
+<li><p>Click Domains</p></li>
+<li><p>Click Add</p></li>
+</ol>
+<img alt="../_images/freepbx-pt-add-domain.png" class="align-center" src="../_images/freepbx-pt-add-domain.png" />
+<ol class="arabic simple" start="6">
+<li><p>Reload Kamailio</p></li>
+<li><p>Register a phone via dSIPRouter - notice that we used the hostname of dSIPRouter as the Outbound Proxy.  This forces the registration thru the proxy.</p></li>
+</ol>
+<img alt="../_images/freepbx-pt-setup-softphone.png" class="align-center" src="../_images/freepbx-pt-setup-softphone.png" />
+</div>
+</div>
+<div class="section" id="microsoft-teams-direct-routing-subscription-required">
+<h2><span class="section-number">1.6.1.10. </span>Microsoft Teams Direct Routing (SUBSCRIPTION REQUIRED)<a class="headerlink" href="#microsoft-teams-direct-routing-subscription-required" title="Permalink to this heading"></a></h2>
+<p>dSIPRouter can act as an intermediary Session Border Controller between Microsoft Teams Direct Routing and your SIP provider or SIP servers.</p>
+<p>An instance of dSIPRouter can either be a single tenant configuration (like sbc.example.com) or multi-tenant under a single wildcard subdomain (like <a href="#id5"><span class="problematic" id="id6">*</span></a>.sbc.example.com where * is the tenant’s name).</p>
+<img alt="../_images/direct-routing-sbcs.png" class="align-center" src="../_images/direct-routing-sbcs.png" />
+<div class="section" id="id7">
+<h3><span class="section-number">1.6.1.10.1. </span>Steps to Implement<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://dopensource.com/dsiprouter-annual-subscriptions/">Buy a license</a>  and follow the license installation instructions that are emailed to you.</p></li>
+<li><p>Add any carriers you need for inbound and outbound routing, define appropriate routes.</p></li>
+</ol>
+<p>3. Authorize your SBC’s domain with Microsoft 365 by adding a TXT record starting with ms= per <a class="reference external" href="https://docs.microsoft.com/en-us/microsoft-365/admin/setup/add-domain?view=o365-worldwide">Microsoft’s documentation</a>.
+Note: For multi-tenant use, authorizing the root subdomain or domain (if you use <a href="#id8"><span class="problematic" id="id9">*</span></a>.sbc.example.com, you would authorize sbc.example.com) should avoid the need to authorize each subdomain below this (like clientname.example.com)</p>
+<ol class="arabic simple" start="4">
+<li><p>Create a global admin user with proper Teams licensing associated with the domain (or for multi-tenant both the root subdomain (eg: sbc.example.com) and client’s domain (eg: client.sbc.example.com))</p></li>
+<li><p>Add the Teams session border controller in <a class="reference external" href="https://admin.teams.microsoft.com/direct-routing/v2">Teams Admin Center</a>. Ensure the SIP port is correct (usually 5061) and the SBC is enabled!</p></li>
+<li><p><a class="reference external" href="https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux">Install PowerShell</a> type pwsh then:</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Install-Module<span class="w"> </span>-Name<span class="w"> </span>MicrosoftTeams
+Import-Module<span class="w"> </span>MicrosoftTeams
+<span class="nv">$userCredential</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>Get-Credential
+Connect-MicrosoftTeams<span class="w"> </span>-Credential<span class="w"> </span><span class="nv">$userCredential</span>
+</pre></div>
+</div>
+<p>Login Note: If your using multi-factor authentication (MFA/2FA), log in by typing Connect-MicrosoftTeams</p>
+<dl class="simple">
+<dt>Debian 10 Note:</dt><dd><p>If you run into <a class="reference external" href="https://github.com/PowerShell/PowerShell/issues/12202">this OpenSSL issue</a> , here is <a class="reference external" href="https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212">a workaround</a>!
+<strong>Replace sbc.example.com, user&#64;example.com and +13137175555</strong> with your SBC’s FQDN, the user’s email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)</p>
+</dd>
+</dl>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>Set-CsOnlinePstnUsage<span class="w"> </span>-Identity<span class="w"> </span>Global<span class="w"> </span>-Usage<span class="w"> </span>@<span class="o">{</span><span class="nv">Add</span><span class="o">=</span><span class="s2">&quot;US and Canada&quot;</span><span class="o">}</span>
+Set-CsOnlineVoiceRoute<span class="w"> </span>-Identity<span class="w"> </span><span class="s2">&quot;LocalRoute&quot;</span><span class="w"> </span>-NumberPattern<span class="w"> </span><span class="s2">&quot;.*&quot;</span><span class="w"> </span>-OnlinePstnGatewayList<span class="w"> </span>sbc.example.com
+New-CsOnlineVoiceRoutingPolicy<span class="w"> </span><span class="s2">&quot;US Only&quot;</span><span class="w"> </span>-OnlinePstnUsages<span class="w"> </span><span class="s2">&quot;US and Canada&quot;</span>
+
+<span class="c1"># This is suppose to stop MSTeams from using the Microsoft Dialing Plan and using the routing policies that was defined above</span>
+Set-CsTenantHybridConfiguration<span class="w"> </span>-UseOnPremDialPlan<span class="w"> </span><span class="nv">$False</span>
+
+<span class="c1"># Apply and the US Only Voice Routing Policy to the user</span>
+Grant-CsOnlineVoiceRoutingPolicy<span class="w"> </span>-Identity<span class="w"> </span>“user@example.com“<span class="w"> </span>-PolicyName<span class="w"> </span><span class="s2">&quot;US Only&quot;</span>
+
+<span class="c1"># If it doesn’t return a value of US Only, then wait 15 minutes and try it again.  It sometime takes a while for the policy to be ready.</span>
+Get-CsOnlineUser<span class="w"> </span>“user@example.com<span class="s2">&quot; | select OnlineVoiceRoutingPolicy</span>
+
+<span class="s2"># Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail</span>
+<span class="s2">Set-CsUser -Identity &quot;</span>user@example.com<span class="s2">&quot; -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled </span><span class="nv">$true</span><span class="s2"> -HostedVoiceMail </span><span class="nv">$true</span>
+</pre></div>
+</div>
+<p>Note: Log out by typing Disconnect-MicrosoftTeams</p>
+<p>Credits to Mack at dSIPRouter for the SkypeForBusiness script and <a class="reference external" href="https://seanmcavinue.net/2021/04/20/configure-teams-direct-routing-simple-deployment-via-powershell/">this blog post</a> for helping me update these commands for the new MicrosoftTeams PowerShell module.</p>
+</div>
+<div class="section" id="add-a-single-teams-user">
+<h3><span class="section-number">1.6.1.10.2. </span>Add a single Teams User<a class="headerlink" href="#add-a-single-teams-user" title="Permalink to this heading"></a></h3>
+<p>If you have an existing dSIPRouter SBC configured in Teams and have added a DID as an inbound route already, then run the commands below in PowerShell to add an additional user.</p>
+<p><strong>Replace user&#64;example.com and +13137175555</strong> with your SBC’s FQDN, the user’s email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get Credentials, if using MFA/2FA just run Connect-MicrosoftTeams</span>
+<span class="nv">$userCredential</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>Get-Credential
+Connect-MicrosoftTeams<span class="w"> </span>-Credential<span class="w"> </span><span class="nv">$userCredential</span>
+
+<span class="c1"># Apply and the US Only Voice Routing Policy to the user</span>
+Grant-CsOnlineVoiceRoutingPolicy<span class="w"> </span>-Identity<span class="w"> </span>“user@example.com“<span class="w"> </span>-PolicyName<span class="w"> </span><span class="s2">&quot;US Only&quot;</span>
+
+<span class="c1"># Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail</span>
+Set-CsUser<span class="w"> </span>-Identity<span class="w"> </span><span class="s2">&quot;user@example.com&quot;</span><span class="w"> </span>-OnPremLineURI<span class="w"> </span>tel:+13137175555<span class="w"> </span>-EnterpriseVoiceEnabled<span class="w"> </span><span class="nv">$true</span><span class="w"> </span>-HostedVoiceMail<span class="w"> </span><span class="nv">$true</span>
+</pre></div>
+</div>
+<p>Note: Log out by typing Disconnect-MicrosoftTeams</p>
+</div>
+</div>
+<div class="section" id="configure-stir-shaken-subscription-required">
+<h2><span class="section-number">1.6.1.11. </span>Configure STIR/SHAKEN (SUBSCRIPTION REQUIRED)<a class="headerlink" href="#configure-stir-shaken-subscription-required" title="Permalink to this heading"></a></h2>
+<p>dSIPRouter enables an organization to start signing calls by enabling the STIR/SHAKEN module.  This module will sign outbound calls and validate that inbound calls are signed.  It also have the ability to add a prefix to the callerid if calls have an attestion of an A, B or C.  You can also specify a callerid prefix if callers aren’t validated.  Lastly, you have the option to block invalidated callers.</p>
+<ol class="arabic simple">
+<li><p>Login to dSIPRouter</p></li>
+<li><p>Purchase a license from the <a class="reference external" href="https://dopensource.com/product-category/dsiprouter/">dSIPRouter Marketplace</a></p></li>
+<li><p>Click System Settings -&gt; License Manager</p></li>
+<li><p>Add the license to the system</p></li>
+<li><p>If testing, connect to your dSIPRouter instance using ssh, run the command below and enter the requested information to create a self-signed certificate</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/opt/dsiprouter/resources/stirshaken/generate_self_signed_cert.sh
+</pre></div>
+</div>
+<p>If not testing, obtain a valid STIR/SHAKEN certificate and place them in the /etc/dsiprouter/certs/stirshaken/ directory.  For the purpose of these instructions, please name the certificate sp-cert.pem and name the key sp-key.pem</p>
+<ol class="arabic simple" start="6">
+<li><p>Check that the certificate can be accessed via https.  Open a web browser and enter the following into the URL.  This will be used by other VoIP servers to validate the signature of the the call.</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>https://&lt;replace<span class="w"> </span>with<span class="w"> </span>ip<span class="w"> </span>or<span class="w"> </span>hostname&gt;:5000/stirshaken_certs/sp-cert.pem
+</pre></div>
+</div>
+<ol class="arabic simple" start="7">
+<li><p>Click System Settings -&gt; STIR/SHAKEN</p></li>
+<li><p>Slide the Disabled toggle to Enabled</p></li>
+<li><p>Enter the Certificate URL from Step 6</p></li>
+<li><p>Enter the Key Path, which by default will be</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/etc/dsiprouter/certs/stirshaken/sp-key.pem
+</pre></div>
+</div>
+<ol class="arabic simple" start="11">
+<li><p>Click Save</p></li>
+</ol>
+<p>The STIR/SHAKEN page should look like this:</p>
+<img alt="../_images/stir_shaken_settings.png" class="align-center" src="../_images/stir_shaken_settings.png" />
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="1.5.1. API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="resources.html" class="btn btn-neutral float-right" title="1.7.1. Resources" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

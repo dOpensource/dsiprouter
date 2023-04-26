@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>6. shared &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="7. sysloginit" href="sysloginit.html" />
+    <link rel="prev" title="5. settings" href="settings.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html"> Developer Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html">5.  settings</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The dSIPRouter Project</a></li>
+      <li class="breadcrumb-item active"><span class="section-number">6. </span>shared</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dev/shared.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-shared">
+<span id="shared"></span><h1><span class="section-number">6. </span>shared<a class="headerlink" href="#module-shared" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="shared.IO">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">IO</span></span><a class="reference internal" href="../_modules/shared.html#IO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO" title="Permalink to this definition"></a></dt>
+<dd><p>Contains static methods for handling i/o operations</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.IO.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'shared',</span> <span class="pre">'__doc__':</span> <span class="pre">'</span> <span class="pre">Contains</span> <span class="pre">static</span> <span class="pre">methods</span> <span class="pre">for</span> <span class="pre">handling</span> <span class="pre">i/o</span> <span class="pre">operations</span> <span class="pre">',</span> <span class="pre">'printerr':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'printinfo':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'printwarn':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'printdbg':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'printbold':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'logcrit':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'logerr':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'loginfo':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'logwarn':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'logdbg':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'lognolvl':</span> <span class="pre">&lt;staticmethod</span> <span class="pre">object&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'IO'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'IO'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#shared.IO.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.IO.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'shared'</span></em><a class="headerlink" href="#shared.IO.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.IO.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#shared.IO.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.logcrit">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logcrit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.logcrit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.logcrit" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.logdbg">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logdbg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.logdbg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.logdbg" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.logerr">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logerr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.logerr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.logerr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.loginfo">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loginfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.loginfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.loginfo" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.lognolvl">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lognolvl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.lognolvl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.lognolvl" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.logwarn">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logwarn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.logwarn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.logwarn" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.printbold">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printbold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.printbold"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.printbold" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.printdbg">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printdbg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.printdbg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.printdbg" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.printerr">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printerr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.printerr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.printerr" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.printinfo">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printinfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.printinfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.printinfo" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="shared.IO.printwarn">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printwarn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#IO.printwarn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.IO.printwarn" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="shared.StatusCodes">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">StatusCodes</span></span><a class="reference internal" href="../_modules/shared.html#StatusCodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.StatusCodes" title="Permalink to this definition"></a></dt>
+<dd><p>Namespace for descriptive status codes, for code readability</p>
+<p>– HTTP Status Codes –
+Original Idea From: <a class="reference external" href="https://www.flaskapi.org/">flask_api</a>
+:ref RFC2616: <a class="reference external" href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html">http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html</a>
+:ref RFC6585: <a class="reference external" href="http://tools.ietf.org/html/rfc6585">http://tools.ietf.org/html/rfc6585</a></p>
+<p>… examples of possible future sections …
+– MYSQL Error Codes –
+– SERVER Status Codes –
+– KAMAILIO Error Codes –
+– RTPENGINE Error Codes –</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_ACCEPTED">
+<span class="sig-name descname"><span class="pre">HTTP_ACCEPTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">202</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_ACCEPTED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_BAD_GATEWAY">
+<span class="sig-name descname"><span class="pre">HTTP_BAD_GATEWAY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">502</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_BAD_GATEWAY" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_BAD_REQUEST">
+<span class="sig-name descname"><span class="pre">HTTP_BAD_REQUEST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">400</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_BAD_REQUEST" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_CONFLICT">
+<span class="sig-name descname"><span class="pre">HTTP_CONFLICT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">409</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_CONFLICT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE">
+<span class="sig-name descname"><span class="pre">HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">444</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_CONTINUE">
+<span class="sig-name descname"><span class="pre">HTTP_CONTINUE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_CONTINUE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_CREATED">
+<span class="sig-name descname"><span class="pre">HTTP_CREATED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">201</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_CREATED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_EXPECTATION_FAILED">
+<span class="sig-name descname"><span class="pre">HTTP_EXPECTATION_FAILED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">417</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_EXPECTATION_FAILED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_FORBIDDEN">
+<span class="sig-name descname"><span class="pre">HTTP_FORBIDDEN</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">403</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_FORBIDDEN" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_FOUND">
+<span class="sig-name descname"><span class="pre">HTTP_FOUND</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">302</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_FOUND" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_GATEWAY_TIMEOUT">
+<span class="sig-name descname"><span class="pre">HTTP_GATEWAY_TIMEOUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">504</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_GATEWAY_TIMEOUT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_GONE">
+<span class="sig-name descname"><span class="pre">HTTP_GONE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">410</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_GONE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_HTTP_VERSION_NOT_SUPPORTED">
+<span class="sig-name descname"><span class="pre">HTTP_HTTP_VERSION_NOT_SUPPORTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">505</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_HTTP_VERSION_NOT_SUPPORTED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_INTERNAL_SERVER_ERROR">
+<span class="sig-name descname"><span class="pre">HTTP_INTERNAL_SERVER_ERROR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">500</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_INTERNAL_SERVER_ERROR" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_LENGTH_REQUIRED">
+<span class="sig-name descname"><span class="pre">HTTP_LENGTH_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">411</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_LENGTH_REQUIRED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_LOOP_DETECTED">
+<span class="sig-name descname"><span class="pre">HTTP_LOOP_DETECTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">508</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_LOOP_DETECTED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_METHOD_NOT_ALLOWED">
+<span class="sig-name descname"><span class="pre">HTTP_METHOD_NOT_ALLOWED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">405</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_METHOD_NOT_ALLOWED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_MOVED_PERMANENTLY">
+<span class="sig-name descname"><span class="pre">HTTP_MOVED_PERMANENTLY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">301</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_MOVED_PERMANENTLY" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_MULTIPLE_CHOICES">
+<span class="sig-name descname"><span class="pre">HTTP_MULTIPLE_CHOICES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">300</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_MULTIPLE_CHOICES" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_MULTI_STATUS">
+<span class="sig-name descname"><span class="pre">HTTP_MULTI_STATUS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">207</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_MULTI_STATUS" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NETWORK_AUTHENTICATION_REQUIRED">
+<span class="sig-name descname"><span class="pre">HTTP_NETWORK_AUTHENTICATION_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">511</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NETWORK_AUTHENTICATION_REQUIRED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NON_AUTHORITATIVE_INFORMATION">
+<span class="sig-name descname"><span class="pre">HTTP_NON_AUTHORITATIVE_INFORMATION</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">203</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NON_AUTHORITATIVE_INFORMATION" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NOT_ACCEPTABLE">
+<span class="sig-name descname"><span class="pre">HTTP_NOT_ACCEPTABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">406</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NOT_ACCEPTABLE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NOT_EXTENDED">
+<span class="sig-name descname"><span class="pre">HTTP_NOT_EXTENDED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">510</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NOT_EXTENDED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NOT_FOUND">
+<span class="sig-name descname"><span class="pre">HTTP_NOT_FOUND</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">404</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NOT_FOUND" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NOT_IMPLEMENTED">
+<span class="sig-name descname"><span class="pre">HTTP_NOT_IMPLEMENTED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">501</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NOT_IMPLEMENTED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NOT_MODIFIED">
+<span class="sig-name descname"><span class="pre">HTTP_NOT_MODIFIED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">304</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NOT_MODIFIED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_NO_CONTENT">
+<span class="sig-name descname"><span class="pre">HTTP_NO_CONTENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">204</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_NO_CONTENT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_OK">
+<span class="sig-name descname"><span class="pre">HTTP_OK</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">200</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_OK" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_PARTIAL_CONTENT">
+<span class="sig-name descname"><span class="pre">HTTP_PARTIAL_CONTENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">206</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_PARTIAL_CONTENT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_PAYMENT_REQUIRED">
+<span class="sig-name descname"><span class="pre">HTTP_PAYMENT_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">402</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_PAYMENT_REQUIRED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_PERMANENT_REDIRECT">
+<span class="sig-name descname"><span class="pre">HTTP_PERMANENT_REDIRECT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">308</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_PERMANENT_REDIRECT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_PRECONDITION_FAILED">
+<span class="sig-name descname"><span class="pre">HTTP_PRECONDITION_FAILED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">412</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_PRECONDITION_FAILED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_PRECONDITION_REQUIRED">
+<span class="sig-name descname"><span class="pre">HTTP_PRECONDITION_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">428</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_PRECONDITION_REQUIRED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_PROXY_AUTHENTICATION_REQUIRED">
+<span class="sig-name descname"><span class="pre">HTTP_PROXY_AUTHENTICATION_REQUIRED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">407</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_PROXY_AUTHENTICATION_REQUIRED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_REQUESTED_RANGE_NOT_SATISFIABLE">
+<span class="sig-name descname"><span class="pre">HTTP_REQUESTED_RANGE_NOT_SATISFIABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">416</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_REQUESTED_RANGE_NOT_SATISFIABLE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_REQUEST_ENTITY_TOO_LARGE">
+<span class="sig-name descname"><span class="pre">HTTP_REQUEST_ENTITY_TOO_LARGE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">413</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_REQUEST_ENTITY_TOO_LARGE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE">
+<span class="sig-name descname"><span class="pre">HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">431</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_REQUEST_TIMEOUT">
+<span class="sig-name descname"><span class="pre">HTTP_REQUEST_TIMEOUT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">408</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_REQUEST_TIMEOUT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_REQUEST_URI_TOO_LONG">
+<span class="sig-name descname"><span class="pre">HTTP_REQUEST_URI_TOO_LONG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">414</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_REQUEST_URI_TOO_LONG" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_RESERVED">
+<span class="sig-name descname"><span class="pre">HTTP_RESERVED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">306</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_RESERVED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_RESET_CONTENT">
+<span class="sig-name descname"><span class="pre">HTTP_RESET_CONTENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">205</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_RESET_CONTENT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_SEE_OTHER">
+<span class="sig-name descname"><span class="pre">HTTP_SEE_OTHER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">303</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_SEE_OTHER" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_SERVICE_UNAVAILABLE">
+<span class="sig-name descname"><span class="pre">HTTP_SERVICE_UNAVAILABLE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">503</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_SERVICE_UNAVAILABLE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_SWITCHING_PROTOCOLS">
+<span class="sig-name descname"><span class="pre">HTTP_SWITCHING_PROTOCOLS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">101</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_SWITCHING_PROTOCOLS" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_TEMPORARY_REDIRECT">
+<span class="sig-name descname"><span class="pre">HTTP_TEMPORARY_REDIRECT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">307</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_TEMPORARY_REDIRECT" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_TOO_MANY_REQUESTS">
+<span class="sig-name descname"><span class="pre">HTTP_TOO_MANY_REQUESTS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">429</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_TOO_MANY_REQUESTS" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_UNAUTHORIZED">
+<span class="sig-name descname"><span class="pre">HTTP_UNAUTHORIZED</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">401</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_UNAUTHORIZED" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_UNSUPPORTED_MEDIA_TYPE">
+<span class="sig-name descname"><span class="pre">HTTP_UNSUPPORTED_MEDIA_TYPE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">415</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_UNSUPPORTED_MEDIA_TYPE" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.HTTP_USE_PROXY">
+<span class="sig-name descname"><span class="pre">HTTP_USE_PROXY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">305</span></em><a class="headerlink" href="#shared.StatusCodes.HTTP_USE_PROXY" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'shared',</span> <span class="pre">'__doc__':</span> <span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">Namespace</span> <span class="pre">for</span> <span class="pre">descriptive</span> <span class="pre">status</span> <span class="pre">codes,</span> <span class="pre">for</span> <span class="pre">code</span> <span class="pre">readability\n\n</span>&#160;&#160;&#160; <span class="pre">--</span> <span class="pre">HTTP</span> <span class="pre">Status</span> <span class="pre">Codes</span> <span class="pre">--\n</span>&#160;&#160;&#160; <span class="pre">Original</span> <span class="pre">Idea</span> <span class="pre">From:</span> <span class="pre">`flask_api</span> <span class="pre">&lt;https://www.flaskapi.org/&gt;`_\n</span>&#160;&#160;&#160; <span class="pre">:ref</span> <span class="pre">RFC2616:</span> <span class="pre">http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html\n</span>&#160;&#160;&#160; <span class="pre">:ref</span> <span class="pre">RFC6585:</span> <span class="pre">http://tools.ietf.org/html/rfc6585\n\n</span>&#160;&#160;&#160; <span class="pre">...</span> <span class="pre">examples</span> <span class="pre">of</span> <span class="pre">possible</span> <span class="pre">future</span> <span class="pre">sections</span> <span class="pre">...\n</span>&#160;&#160;&#160; <span class="pre">--</span> <span class="pre">MYSQL</span> <span class="pre">Error</span> <span class="pre">Codes</span> <span class="pre">--\n</span>&#160;&#160;&#160; <span class="pre">--</span> <span class="pre">SERVER</span> <span class="pre">Status</span> <span class="pre">Codes</span> <span class="pre">--\n</span>&#160;&#160;&#160; <span class="pre">--</span> <span class="pre">KAMAILIO</span> <span class="pre">Error</span> <span class="pre">Codes</span> <span class="pre">--\n</span>&#160;&#160;&#160; <span class="pre">--</span> <span class="pre">RTPENGINE</span> <span class="pre">Error</span> <span class="pre">Codes</span> <span class="pre">--\n</span>&#160;&#160;&#160; <span class="pre">',</span> <span class="pre">'HTTP_CONTINUE':</span> <span class="pre">100,</span> <span class="pre">'HTTP_SWITCHING_PROTOCOLS':</span> <span class="pre">101,</span> <span class="pre">'HTTP_OK':</span> <span class="pre">200,</span> <span class="pre">'HTTP_CREATED':</span> <span class="pre">201,</span> <span class="pre">'HTTP_ACCEPTED':</span> <span class="pre">202,</span> <span class="pre">'HTTP_NON_AUTHORITATIVE_INFORMATION':</span> <span class="pre">203,</span> <span class="pre">'HTTP_NO_CONTENT':</span> <span class="pre">204,</span> <span class="pre">'HTTP_RESET_CONTENT':</span> <span class="pre">205,</span> <span class="pre">'HTTP_PARTIAL_CONTENT':</span> <span class="pre">206,</span> <span class="pre">'HTTP_MULTI_STATUS':</span> <span class="pre">207,</span> <span class="pre">'HTTP_MULTIPLE_CHOICES':</span> <span class="pre">300,</span> <span class="pre">'HTTP_MOVED_PERMANENTLY':</span> <span class="pre">301,</span> <span class="pre">'HTTP_FOUND':</span> <span class="pre">302,</span> <span class="pre">'HTTP_SEE_OTHER':</span> <span class="pre">303,</span> <span class="pre">'HTTP_NOT_MODIFIED':</span> <span class="pre">304,</span> <span class="pre">'HTTP_USE_PROXY':</span> <span class="pre">305,</span> <span class="pre">'HTTP_RESERVED':</span> <span class="pre">306,</span> <span class="pre">'HTTP_TEMPORARY_REDIRECT':</span> <span class="pre">307,</span> <span class="pre">'HTTP_PERMANENT_REDIRECT':</span> <span class="pre">308,</span> <span class="pre">'HTTP_BAD_REQUEST':</span> <span class="pre">400,</span> <span class="pre">'HTTP_UNAUTHORIZED':</span> <span class="pre">401,</span> <span class="pre">'HTTP_PAYMENT_REQUIRED':</span> <span class="pre">402,</span> <span class="pre">'HTTP_FORBIDDEN':</span> <span class="pre">403,</span> <span class="pre">'HTTP_NOT_FOUND':</span> <span class="pre">404,</span> <span class="pre">'HTTP_METHOD_NOT_ALLOWED':</span> <span class="pre">405,</span> <span class="pre">'HTTP_NOT_ACCEPTABLE':</span> <span class="pre">406,</span> <span class="pre">'HTTP_PROXY_AUTHENTICATION_REQUIRED':</span> <span class="pre">407,</span> <span class="pre">'HTTP_REQUEST_TIMEOUT':</span> <span class="pre">408,</span> <span class="pre">'HTTP_CONFLICT':</span> <span class="pre">409,</span> <span class="pre">'HTTP_GONE':</span> <span class="pre">410,</span> <span class="pre">'HTTP_LENGTH_REQUIRED':</span> <span class="pre">411,</span> <span class="pre">'HTTP_PRECONDITION_FAILED':</span> <span class="pre">412,</span> <span class="pre">'HTTP_REQUEST_ENTITY_TOO_LARGE':</span> <span class="pre">413,</span> <span class="pre">'HTTP_REQUEST_URI_TOO_LONG':</span> <span class="pre">414,</span> <span class="pre">'HTTP_UNSUPPORTED_MEDIA_TYPE':</span> <span class="pre">415,</span> <span class="pre">'HTTP_REQUESTED_RANGE_NOT_SATISFIABLE':</span> <span class="pre">416,</span> <span class="pre">'HTTP_EXPECTATION_FAILED':</span> <span class="pre">417,</span> <span class="pre">'HTTP_PRECONDITION_REQUIRED':</span> <span class="pre">428,</span> <span class="pre">'HTTP_TOO_MANY_REQUESTS':</span> <span class="pre">429,</span> <span class="pre">'HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE':</span> <span class="pre">431,</span> <span class="pre">'HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE':</span> <span class="pre">444,</span> <span class="pre">'HTTP_INTERNAL_SERVER_ERROR':</span> <span class="pre">500,</span> <span class="pre">'HTTP_NOT_IMPLEMENTED':</span> <span class="pre">501,</span> <span class="pre">'HTTP_BAD_GATEWAY':</span> <span class="pre">502,</span> <span class="pre">'HTTP_SERVICE_UNAVAILABLE':</span> <span class="pre">503,</span> <span class="pre">'HTTP_GATEWAY_TIMEOUT':</span> <span class="pre">504,</span> <span class="pre">'HTTP_HTTP_VERSION_NOT_SUPPORTED':</span> <span class="pre">505,</span> <span class="pre">'HTTP_LOOP_DETECTED':</span> <span class="pre">508,</span> <span class="pre">'HTTP_NOT_EXTENDED':</span> <span class="pre">510,</span> <span class="pre">'HTTP_NETWORK_AUTHENTICATION_REQUIRED':</span> <span class="pre">511,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'StatusCodes'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'StatusCodes'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#shared.StatusCodes.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'shared'</span></em><a class="headerlink" href="#shared.StatusCodes.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="shared.StatusCodes.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#shared.StatusCodes.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.allowed_file">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">allowed_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ALLOWED_EXTENSIONS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'csv',</span> <span class="pre">'gif',</span> <span class="pre">'jpeg',</span> <span class="pre">'jpg',</span> <span class="pre">'pdf',</span> <span class="pre">'png',</span> <span class="pre">'txt'}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#allowed_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.allowed_file" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.debugEndpoint">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">debugEndpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#debugEndpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.debugEndpoint" title="Permalink to this definition"></a></dt>
+<dd><p>Debug an endpoint</p>
+<p>Must be run within request context</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log_out</strong> – True | False</p></li>
+<li><p><strong>print_out</strong> – True | False</p></li>
+<li><p><strong>kwargs</strong> – Any args to print / log (&lt;key=value&gt; key word pairs)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.debugException">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">debugException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_ex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_ex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showstack</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#debugException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.debugException" title="Permalink to this definition"></a></dt>
+<dd><p>Debugging of an exception: print and/or log frame and/or stacktrace
+:param ex:          The exception object
+:param log_ex:      True | False
+:param print_ex:    True | False
+:param showstack:   True | False</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.dictToStrFields">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">dictToStrFields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#dictToStrFields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.dictToStrFields" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.getCustomRoutes">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">getCustomRoutes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#getCustomRoutes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.getCustomRoutes" title="Permalink to this definition"></a></dt>
+<dd><p>Return custom kamailio routes from config file</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.getRequestData">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">getRequestData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#getRequestData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.getRequestData" title="Permalink to this definition"></a></dt>
+<dd><p>Get data from request formatted as dict</p>
+<p>Must be run within request context</p>
+<hr class="docutils" />
+<p>The following data formats are supported:</p>
+<ul class="simple">
+<li><p>multipart forms</p></li>
+<li><p>url encoded forms</p></li>
+<li><p>JSON body</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>request data</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.11)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.isCertValid">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">isCertValid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hostname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">externalip</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5061</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#isCertValid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.isCertValid" title="Permalink to this definition"></a></dt>
+<dd><p>Returns true if the hostname has a valid cert</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.monthdelta">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">monthdelta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#monthdelta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.monthdelta" title="Permalink to this definition"></a></dt>
+<dd><p>Return dt with a delta month change (neg or pos)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.objToDict">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">objToDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#objToDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.objToDict" title="Permalink to this definition"></a></dt>
+<dd><p>converts an arbitrary object to dict</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.redirectCustom">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">redirectCustom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">location</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">render_args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">302</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_cb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_redirect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#redirectCustom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.redirectCustom" title="Permalink to this definition"></a></dt>
+<dd><div class="section" id="summary">
+<h2><span class="section-number">6. </span>Summary<a class="headerlink" href="#summary" title="Permalink to this heading"></a></h2>
+<p>Combines functionality of <code class="xref py py-func docutils literal notranslate"><span class="pre">werkzeug.utils.redirect()</span></code> with <code class="xref py py-func docutils literal notranslate"><span class="pre">flask.templating.render_template()</span></code>
+to allow for virtual redirection to an endpoint with any HTTP status code.</p>
+</div>
+<div class="section" id="use-cases">
+<h2><span class="section-number">6. </span>Use Cases<a class="headerlink" href="#use-cases" title="Permalink to this heading"></a></h2>
+<ol class="arabic">
+<li><p>render template at a custom url (doesn’t have to be an endpoint)</p>
+<blockquote>
+<div><dl class="simple">
+<dt>def index():</dt><dd><p>return redirectCustom(‘<a class="reference external" href="http://localhost:5000/notfound">http://localhost:5000/notfound</a>’, render_template(‘not_found.html’), code=404)</p>
+</dd>
+<dt>def index():</dt><dd><p>html = ‘&lt;h1&gt;Are you lost {{ username }}?&lt;/h1&gt;’
+return redirectCustom(url_for(‘notfound’), render_template_string(html), username=’john’, code=404)</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>customizing the response before sending to the client</p>
+<blockquote>
+<div><dl>
+<dt>def index():</dt><dd><dl class="simple">
+<dt>def addAuthHeaders(response):</dt><dd><p>response.headers[‘Access-Control-Allow-Origin’ = ‘*’
+response.headers[‘Access-Control-Allow-Headers’] = ‘origin, x-requested-with, content-type’
+response.headers[‘Access-Control-Allow-Methods’] = ‘PUT, GET, POST, DELETE, OPTIONS’</p>
+</dd>
+</dl>
+<p>return redirectCustom(url_for(‘login’), render_template(‘login_custom.html’), code=403, response_cb=addAuthHeaders)</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>redirecting with a custom HTTP status code (normally restricted to 300’s)</p>
+<blockquote>
+<div><dl class="simple">
+<dt>def index():</dt><dd><p>return redirectCustom(url_for(‘<a class="reference external" href="http://localhost:5000/error">http://localhost:5000/error</a>’), showError())</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p>forcing redirection when client normally would ignore location header</p>
+<blockquote>
+<div><dl class="simple">
+<dt>def index():</dt><dd><p>return redirectCustom(url_for(showError), showError(), code=500, force_redirect=True)</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">note</dt>
+<dd class="field-odd"><p>the endpoint logic is only executed when a the view function is passed in render_args</p>
+</dd>
+<dt class="field-even">param location</dt>
+<dd class="field-even"><p>the location the response should virtually redirect to</p>
+</dd>
+<dt class="field-odd">param render_args</dt>
+<dd class="field-odd"><p>the return value from a view / template rendering function</p>
+</dd>
+<dt class="field-even">param code</dt>
+<dd class="field-even"><p>the return HTTP status code, defaults to 302 like a normal redirect</p>
+</dd>
+<dt class="field-odd">param response_cb</dt>
+<dd class="field-odd"><p>callback function taking <code class="xref py py-class docutils literal notranslate"><span class="pre">werkzeug.wrappers.Response</span></code> object as arg and returning edited response</p>
+</dd>
+<dt class="field-even">param force_redirect</dt>
+<dd class="field-even"><p>whether to force redirection on client, only needed when client ignores location header</p>
+</dd>
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>client viewable <code class="xref py py-class docutils literal notranslate"><span class="pre">werkzeug.wrappers.Response</span></code> object</p>
+</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.rowToDict">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">rowToDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#rowToDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.rowToDict" title="Permalink to this definition"></a></dt>
+<dd><p>converts sqlalchemy row object to python dict
+does not recurse through relationships
+tries table data, then _asdict() method, then objToDict()</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.showApiError">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">showApiError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#showApiError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.showApiError" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.showError">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">showError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">code</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#showError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.showError" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.strFieldsToDict">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">strFieldsToDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields_str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#strFieldsToDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.strFieldsToDict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.stripDictVals">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">stripDictVals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#stripDictVals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.stripDictVals" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.supportsColor">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">supportsColor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stream</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#supportsColor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.supportsColor" title="Permalink to this definition"></a></dt>
+<dd><p>Return True if terminal supports ASCII color codes</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="shared.updateConfig">
+<span class="sig-prename descclassname"><span class="pre">shared.</span></span><span class="sig-name descname"><span class="pre">updateConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hot_reload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/shared.html#updateConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#shared.updateConfig" title="Permalink to this definition"></a></dt>
+<dd><p>Update a python config module
+:param config_obj:
+:param field_dict:
+:return:</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="settings.html" class="btn btn-neutral float-left" title="5. settings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sysloginit.html" class="btn btn-neutral float-right" title="7. sysloginit" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

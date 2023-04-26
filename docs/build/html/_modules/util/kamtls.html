@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>util.kamtls &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">util.kamtls</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for util.kamtls</h1><div class="highlight"><pre>
+<span></span><span class="c1"># make sure the generated source files are imported instead of the template ones</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;/etc/dsiprouter/gui&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+<span class="kn">from</span> <span class="nn">util.networking</span> <span class="kn">import</span> <span class="n">ipv6Test</span><span class="p">,</span> <span class="n">hostToIP</span>
+
+<span class="c1"># Server name matching options</span>
+<span class="n">KAM_TLS_SNI_DOMAIN</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">KAM_TLS_SNI_ALL</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">KAM_TLS_SNI_SUBDOMAINS</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="c1"># header formats per domain profile</span>
+<span class="n">DOMAIN_START_HEADER</span> <span class="o">=</span> <span class="s1">&#39;#========== </span><span class="si">{domain}</span><span class="s1">_start ==========#&#39;</span>
+<span class="n">DOMAIN_END_HEADER</span> <span class="o">=</span> <span class="s1">&#39;#========== </span><span class="si">{domain}</span><span class="s1">_end ==========#&#39;</span>
+
+
+<div class="viewcode-block" id="createCustomTLSConfig"><a class="viewcode-back" href="../../dev/util.html#util.kamtls.createCustomTLSConfig">[docs]</a><span class="k">def</span> <span class="nf">createCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">server_name_mode</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a Domain TLS Profile string for the Kamailio TLS Config\n</span>
+<span class="sd">    Reference: https://kamailio.org/docs/modules/5.5.x/modules/tls.html</span>
+
+<span class="sd">    :param domain:              domain profile to create</span>
+<span class="sd">    :type domain:               str</span>
+<span class="sd">    :param ip:                  ip kamailio will match for profile</span>
+<span class="sd">    :type ip:                   str</span>
+<span class="sd">    :param port:                port kamailio will match for profile</span>
+<span class="sd">    :type port:                 int|str</span>
+<span class="sd">    :param server_name_mode:    server name matching mode</span>
+<span class="sd">    :type server_name_mode:     int|str</span>
+<span class="sd">    :return:                    tls config for a custom domain</span>
+<span class="sd">    :rtype:                     str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">port</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">)</span>
+    <span class="n">server_name_mode</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">server_name_mode</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">DOMAIN_START_HEADER</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="s1">&#39;[server:</span><span class="si">{ip}</span><span class="s1">:</span><span class="si">{port}</span><span class="s1">]</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;method = TLSv1.2+</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;verify_certificate = yes</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;require_certificate = yes</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;private_key = </span><span class="si">{certs_dir}</span><span class="s1">/</span><span class="si">{domain}</span><span class="s1">/dsiprouter-key.pem</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;certificate = </span><span class="si">{certs_dir}</span><span class="s1">/</span><span class="si">{domain}</span><span class="s1">/dsiprouter-cert.pem</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;ca_list = </span><span class="si">{certs_dir}</span><span class="s1">/ca-list.pem</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;server_name = </span><span class="si">{domain}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;server_name_mode = </span><span class="si">{name_mode}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;[client:</span><span class="si">{ip}</span><span class="s1">:</span><span class="si">{port}</span><span class="s1">]</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;method = TLSv1.2+</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;verify_certificate = yes</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;require_certificate = yes</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;private_key = </span><span class="si">{certs_dir}</span><span class="s1">/</span><span class="si">{domain}</span><span class="s1">/dsiprouter-key.pem</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;certificate = </span><span class="si">{certs_dir}</span><span class="s1">/</span><span class="si">{domain}</span><span class="s1">/dsiprouter-cert.pem</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;ca_list = </span><span class="si">{certs_dir}</span><span class="s1">/ca-list.pem</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;server_name = </span><span class="si">{domain}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;server_name_mode = </span><span class="si">{name_mode}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="s1">&#39;server_id = </span><span class="si">{domain}</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="n">DOMAIN_END_HEADER</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ip</span><span class="o">=</span><span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">certs_dir</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CERTS_DIR</span><span class="p">,</span> <span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">,</span> <span class="n">name_mode</span><span class="o">=</span><span class="n">server_name_mode</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="getCustomTLSConfigs"><a class="viewcode-back" href="../../dev/util.html#util.kamtls.getCustomTLSConfigs">[docs]</a><span class="k">def</span> <span class="nf">getCustomTLSConfigs</span><span class="p">(</span><span class="n">domain_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get kamailio TLS configs for additional domains\n</span>
+<span class="sd">    Server and client domain/ip/port are assumed to be the same\n</span>
+<span class="sd">    The optional domain filter returns domains &amp; subdomains that match</span>
+
+<span class="sd">    Returned Data Format:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        {</span>
+<span class="sd">            &#39;&lt;domain&gt;&#39;: {</span>
+<span class="sd">                &#39;ip&#39;: &#39;&lt;str&gt;&#39;,</span>
+<span class="sd">                &#39;port&#39;: &#39;&lt;int&gt;&#39;</span>
+<span class="sd">                &#39;server&#39;: {&lt;server params&gt;},</span>
+<span class="sd">                &#39;client&#39;: {&lt;client params&gt;}</span>
+<span class="sd">            },</span>
+<span class="sd">            ...</span>
+<span class="sd">        }</span>
+
+<span class="sd">    :param domain_filter:   filter on this domain / subdomains</span>
+<span class="sd">    :type domain_filter:    str</span>
+<span class="sd">    :return:                TLS configs for custom domain profiles</span>
+<span class="sd">    :rtype:                 dict|None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">custom_configs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">KAM_TLSCFG_PATH</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">kamtlscfg_file</span><span class="p">:</span>
+            <span class="n">kamtlscfg_bytes</span> <span class="o">=</span> <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">domain_filter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="n">DOMAIN_START_HEADER</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;(?P&lt;domain&gt;.*?)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="o">+</span> \
+<span class="w">                        </span><span class="sa">rb</span><span class="sd">&#39;&#39;&#39;\n(?:\[server\:(?!default)\[?(?P&lt;server_ip&gt;.*?)\]?\:(?P&lt;server_port&gt;[0-9]+)\])\n(?P&lt;server_params&gt;.*?)\n(?=\[|#)\n*&#39;&#39;&#39;</span> <span class="o">+</span> \
+<span class="w">                        </span><span class="sa">rb</span><span class="sd">&#39;&#39;&#39;(?:\[client\:(?!default)\[?(?P&lt;client_ip&gt;.*?)\]?\:(?P&lt;client_port&gt;[0-9]+)\])\n(?P&lt;client_params&gt;.*?)(?=\[|#)&#39;&#39;&#39;</span> <span class="o">+</span> \
+                        <span class="n">DOMAIN_END_HEADER</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;(?P=domain)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="n">DOMAIN_START_HEADER</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;(?P&lt;domain&gt;(?:.*?\.)*</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain_filter</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="o">+</span> \
+<span class="w">                        </span><span class="sa">rb</span><span class="sd">&#39;&#39;&#39;\n(?:\[server\:(?!default)\[?(?P&lt;server_ip&gt;.*?)\]?\:(?P&lt;server_port&gt;[0-9]+)\])\n(?P&lt;server_params&gt;.*?)\n(?=\[|#)\n*&#39;&#39;&#39;</span> <span class="o">+</span> \
+<span class="w">                        </span><span class="sa">rb</span><span class="sd">&#39;&#39;&#39;(?:\[client\:(?!default)\[?(?P&lt;client_ip&gt;.*?)\]?\:(?P&lt;client_port&gt;[0-9]+)\])\n(?P&lt;client_params&gt;.*?)(?=\[|#)&#39;&#39;&#39;</span> <span class="o">+</span> \
+                        <span class="n">DOMAIN_END_HEADER</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;(?P=domain)&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">kamtlscfg_bytes</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)]</span>
+
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+                <span class="n">domain</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="s1">&#39;domain&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="n">ip</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="s1">&#39;server_ip&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="n">server_config_strs</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="s1">&#39;server_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">client_config_strs</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="s1">&#39;client_params&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="n">custom_configs</span><span class="p">[</span><span class="n">domain</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;ip&#39;</span><span class="p">:</span> <span class="n">ip</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">ipv6Test</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="n">ip</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;port&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">[</span><span class="s1">&#39;server_port&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)),</span>
+                    <span class="s1">&#39;server&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; = &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; = &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">server_config_strs</span><span class="p">},</span>
+                    <span class="s1">&#39;client&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; = &#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; = &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">client_config_strs</span><span class="p">}</span>
+                <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">custom_configs</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="addCustomTLSConfig"><a class="viewcode-back" href="../../dev/util.html#util.kamtls.addCustomTLSConfig">[docs]</a><span class="k">def</span> <span class="nf">addCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">ip</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5061</span><span class="p">,</span> <span class="n">server_name_mode</span><span class="o">=</span><span class="n">KAM_TLS_SNI_DOMAIN</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add an additional domain to kamailio TLS configs</span>
+
+<span class="sd">    :param domain:              domain profile to create</span>
+<span class="sd">    :type domain:               str</span>
+<span class="sd">    :param ip:                  ip kamailio will match for profile</span>
+<span class="sd">    :type ip:                   str</span>
+<span class="sd">    :param port:                port kamailio will match for profile</span>
+<span class="sd">    :type port:                 int|str</span>
+<span class="sd">    :param server_name_mode:    server name matching mode</span>
+<span class="sd">    :type server_name_mode:     int|str</span>
+<span class="sd">    :return:                    whether addition succeeded</span>
+<span class="sd">    :rtype:                     bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># TLS config does not accept hostnames, resolve IP if needed</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">hostToIP</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+        <span class="c1"># IPv6 addresses require square brackets</span>
+        <span class="k">elif</span> <span class="n">ipv6Test</span><span class="p">(</span><span class="n">ip</span><span class="p">):</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="s1">&#39;[&#39;</span> <span class="o">+</span> <span class="n">ip</span> <span class="o">+</span> <span class="s1">&#39;]&#39;</span>
+        <span class="n">domain_config_bytes</span> <span class="o">=</span> <span class="n">createCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">server_name_mode</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">KAM_TLSCFG_PATH</span><span class="p">,</span> <span class="s1">&#39;r+b&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">kamtlscfg_file</span><span class="p">:</span>
+            <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">domain_config_bytes</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="updateCustomTLSConfig"><a class="viewcode-back" href="../../dev/util.html#util.kamtls.updateCustomTLSConfig">[docs]</a><span class="k">def</span> <span class="nf">updateCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">ip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">server_name_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add an additional domain to kamailio TLS configs</span>
+
+<span class="sd">    :param domain:              domain profile to update</span>
+<span class="sd">    :type domain:               str</span>
+<span class="sd">    :param ip:                  ip kamailio will match for profile</span>
+<span class="sd">    :type ip:                   str</span>
+<span class="sd">    :param port:                port kamailio will match for profile</span>
+<span class="sd">    :type port:                 int|str</span>
+<span class="sd">    :param server_name_mode:    server name matching mode</span>
+<span class="sd">    :type server_name_mode:     int|str</span>
+<span class="sd">    :return:                    whether update succeeded</span>
+<span class="sd">    :rtype:                     bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">domain_configs</span> <span class="o">=</span> <span class="n">getCustomTLSConfigs</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">domain_configs</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">domain_data</span> <span class="o">=</span> <span class="n">domain_configs</span><span class="p">[</span><span class="n">domain</span><span class="p">]</span>
+
+        <span class="n">ip</span> <span class="o">=</span> <span class="n">ip</span> <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;ip&#39;</span><span class="p">]</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="n">port</span> <span class="k">if</span> <span class="n">port</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;port&#39;</span><span class="p">]</span>
+        <span class="n">server_name_mode</span> <span class="o">=</span> <span class="n">server_name_mode</span> <span class="k">if</span> <span class="n">server_name_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+            <span class="k">else</span> <span class="n">domain_data</span><span class="p">[</span><span class="s1">&#39;server&#39;</span><span class="p">][</span><span class="s1">&#39;server_name_mode&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">deleteCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">addCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">server_name_mode</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="deleteCustomTLSConfig"><a class="viewcode-back" href="../../dev/util.html#util.kamtls.deleteCustomTLSConfig">[docs]</a><span class="k">def</span> <span class="nf">deleteCustomTLSConfig</span><span class="p">(</span><span class="n">domain</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Delete an additional domain in kamailio TLS configs</span>
+
+<span class="sd">    :param domain:          domain profile to delete</span>
+<span class="sd">    :type domain:           str</span>
+<span class="sd">    :return:                whether delete succeeded</span>
+<span class="sd">    :rtype:                 bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">KAM_TLSCFG_PATH</span><span class="p">,</span> <span class="s1">&#39;r+b&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">kamtlscfg_file</span><span class="p">:</span>
+            <span class="n">kamtlscfg_bytes</span> <span class="o">=</span> <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+            <span class="n">regex</span> <span class="o">=</span> <span class="n">DOMAIN_START_HEADER</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span> <span class="o">+</span> <span class="sa">rb</span><span class="s1">&#39;.*?&#39;</span> <span class="o">+</span> \
+                    <span class="n">DOMAIN_END_HEADER</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">domain</span><span class="o">=</span><span class="n">domain</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span> <span class="o">+</span> <span class="sa">rb</span><span class="s1">&#39;\n*&#39;</span>
+            <span class="n">custom_tls_bytes</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">kamtlscfg_bytes</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+            <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">truncate</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">kamtlscfg_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">custom_tls_bytes</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

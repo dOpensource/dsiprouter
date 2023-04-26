@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1. The dSIPRouter Project &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1.2.1. Installing dSIPRouter" href="installing.html" />
+    <link rel="prev" title="The dSIPRouter Project" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><span class="section-number">1. </span>The dSIPRouter Project</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="the-dsiprouter-project">
+<h1><span class="section-number">1. </span>The dSIPRouter Project<a class="headerlink" href="#the-dsiprouter-project" title="Permalink to this heading"></a></h1>
+<div class="section" id="intro-to-dsiprouter">
+<h2><span class="section-number">1.1. </span>Intro to dSIPRouter<a class="headerlink" href="#intro-to-dsiprouter" title="Permalink to this heading"></a></h2>
+<p>dSIPRouter allows you to quickly turn <a class="reference external" href="http://www.kamailio.org/">Kamailio</a> into an easy to use SIP Service Provider platform, which enables the following two basic use cases:</p>
+<ul class="simple">
+<li><p><strong>SIP Trunking services:</strong> Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.  We have support for IP and credential based authentication.</p></li>
+<li><p><strong>Hosted PBX services:</strong> Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX. We have an integration with FusionPBX that make is really easy and scalable!</p></li>
+<li><p><strong>Microsoft Teams Direct Routing:</strong> We can provide SBC functionality that allows dSIPRouter to interconnect your existing voice infrastructure or VoIP carrier to your Microsoft Teams environment.</p></li>
+</ul>
+<div class="section" id="demo-system">
+<h3><span class="section-number">1.1.1. </span>Demo System<a class="headerlink" href="#demo-system" title="Permalink to this heading"></a></h3>
+<p>You can checkout our demo system by clicking the link below and enter the listed username and password:</p>
+<p><a class="reference external" href="http://demo.dsiprouter.net:5000">http://demo.dsiprouter.net:5000</a></p>
+<p>username: admin</p>
+<p>password: ZmIwMTdmY2I5NjE4</p>
+<p>API Token: 9lyrny3HOtwgjR6JIMwRaMej9LijIS835zhVbD8ywHDzXT07Xm6vem1sgfvWkFz3</p>
+</div>
+<div class="section" id="credits">
+<h3><span class="section-number">1.1.2. </span>Credits<a class="headerlink" href="#credits" title="Permalink to this heading"></a></h3>
+<p>I’d like to say thank you to Nicole D., John O. and Courtney G. for their time in fulfilling this document. I’d also like to give a hardy thank you to dOpensource for their monetary support in funding this document.</p>
+</div>
+<div class="section" id="support">
+<h3><span class="section-number">1.1.3. </span>Support<a class="headerlink" href="#support" title="Permalink to this heading"></a></h3>
+<p>Free support is available via our <a class="reference external" href="https://groups.google.com/forum/#!forum/dsiprouter/">group</a> and <a class="reference external" href="https://join.slack.com/t/dsiproutercommunity/shared_invite/zt-1dtqvpyck-H9k~DYgJJ2XIFgh_rWqdPA/">Slack</a></p>
+<p>Paid support is available <a class="reference external" href="https://dopensource.com/product/dsiprouter-core/">here</a></p>
+</div>
+</div>
+<div class="section" id="installing-dsiprouter">
+<h2><span class="section-number">1.2. </span>Installing dSIPRouter<a class="headerlink" href="#installing-dsiprouter" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">1.2.1. Installing dSIPRouter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#prerequisites">1.2.1.1. Prerequisites:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#install-options">1.2.1.2. Install Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#os-support">1.2.1.3. OS Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installing.html#amazon-ami-s">1.2.1.4. Amazon AMI’s</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="command-line-options">
+<h2><span class="section-number">1.3. </span>Command Line Options<a class="headerlink" href="#command-line-options" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="command_line_options.html">1.3.1. Command Line Options</a></li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="configuring-dsiprouter">
+<h2><span class="section-number">1.4. </span>Configuring dSIPRouter<a class="headerlink" href="#configuring-dsiprouter" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l2"><a class="reference internal" href="carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="api">
+<h2><span class="section-number">1.5. </span>API<a class="headerlink" href="#api" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">1.5.1. API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#getting-your-token">1.5.1.1. Getting Your Token</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#executing-kamailio-stats-api">1.5.1.2. Executing Kamailio stats API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#executing-lease-point-api">1.5.1.3. Executing Lease Point API</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="implementing-use-cases">
+<h2><span class="section-number">1.6. </span>Implementing Use Cases<a class="headerlink" href="#implementing-use-cases" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="use-cases.html">1.6.1. Use Cases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#sip-trunking-using-ip-authentication">1.6.1.1. SIP Trunking Using IP Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#sip-trunking-using-username-password-authentication">1.6.1.2. SIP Trunking Using Username/Password Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#using-pjsip-trunking-freepbx-example">1.6.1.3. Using PJSIP Trunking  - FreePBX Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#using-chansip-trunking-freepbx-example">1.6.1.4. Using chanSIP Trunking  - FreePBX Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#using-sip-trunking-fusionpbx-ip-authenication">1.6.1.5. Using SIP Trunking - FusionPBX IP Authenication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#using-sip-trunking-fusionpbx-username-password-authenication">1.6.1.6. Using SIP Trunking - FusionPBX Username/Password Authenication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#fusionpbx-hosting">1.6.1.7. FusionPBX Hosting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#provisioning-and-registering-a-polycom-vvx-phone">1.6.1.8. Provisioning and Registering a Polycom VVX Phone</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#freepbx-hosting-pass-thru-authentication">1.6.1.9. FreePBX Hosting - Pass Thru Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#microsoft-teams-direct-routing-subscription-required">1.6.1.10. Microsoft Teams Direct Routing (SUBSCRIPTION REQUIRED)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html#configure-stir-shaken-subscription-required">1.6.1.11. Configure STIR/SHAKEN (SUBSCRIPTION REQUIRED)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="resources">
+<h2><span class="section-number">1.7. </span>Resources<a class="headerlink" href="#resources" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="resources.html">1.7.1. Resources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="resources.html#proxy-fusionpbx-ui">1.7.1.1. Proxy FusionPBX UI</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="supported-configurations">
+<h2><span class="section-number">1.8. </span>Supported Configurations<a class="headerlink" href="#supported-configurations" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="supported_configurations.html">1.8.1. Supported Configurations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="supported_configurations.html#pass-thru-to-pbx-authentication-supported-configurations">1.8.1.1. Pass Thru to PBX Authentication Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="supported_configurations.html#enabling-the-path-header-for-asterisk-chan-sip">1.8.1.2. Enabling the Path Header for Asterisk chan_sip</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="troubleshooting">
+<h2><span class="section-number">1.9. </span>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">1.9.1. Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#kamailio-logging">1.9.1.1. <strong>Kamailio Logging</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#rtpengine-logging">1.9.1.2. <strong>rtpengine Logging</strong></a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#dsiprouter-logging">1.9.1.3. <strong>dSIPRouter Logging</strong></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="upgrade">
+<h2><span class="section-number">1.10. </span>Upgrade<a class="headerlink" href="#upgrade" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html#auto-upgrade-feature-released-0-72">1.10.1.1. Auto Upgrade Feature (Released 0.72)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html#upgrade-0-70-to-0-72">1.10.1.2. Upgrade 0.70 to 0.72</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html#upgrade-0-644-to-0-72">1.10.1.3. Upgrade 0.644 to 0.72</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html#upgrade-0-621-to-0-63">1.10.1.4. Upgrade 0.621 to 0.63</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html#upgrade-0-522-to-0-523">1.10.1.5. Upgrade 0.522 to 0.523</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html#upgrade-0-50-to-0-51">1.10.1.6. Upgrade 0.50 to 0.51</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="The dSIPRouter Project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installing.html" class="btn btn-neutral float-right" title="1.2.1. Installing dSIPRouter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

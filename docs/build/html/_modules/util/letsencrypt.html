@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>util.letsencrypt &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">util.letsencrypt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for util.letsencrypt</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The workflow consists of:</span>
+<span class="sd">(Account creation)</span>
+<span class="sd">- Create account key</span>
+<span class="sd">- Register account and accept TOS</span>
+<span class="sd">(Certificate actions)</span>
+<span class="sd">- Select HTTP-01 within offered challenges by the CA server</span>
+<span class="sd">- Set up http challenge resource</span>
+<span class="sd">- Set up standalone web server</span>
+<span class="sd">- Create domain private key and CSR</span>
+<span class="sd">- Issue certificate</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># make sure the generated source files are imported instead of the template ones</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;/etc/dsiprouter/gui&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">shutil</span><span class="o">,</span> <span class="nn">OpenSSL</span>
+<span class="kn">import</span> <span class="nn">josepy</span> <span class="k">as</span> <span class="nn">jose</span>
+<span class="kn">from</span> <span class="nn">util.file_handling</span> <span class="kn">import</span> <span class="n">change_owner</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.backends</span> <span class="kn">import</span> <span class="n">default_backend</span>
+<span class="kn">from</span> <span class="nn">cryptography.hazmat.primitives.asymmetric</span> <span class="kn">import</span> <span class="n">rsa</span>
+<span class="kn">from</span> <span class="nn">acme</span> <span class="kn">import</span> <span class="n">challenges</span><span class="p">,</span> <span class="n">client</span><span class="p">,</span> <span class="n">crypto_util</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">standalone</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+
+<span class="c1"># This is the ACME Directory URL for `step-ca`</span>
+<span class="n">DIRECTORY_URL_STAGING</span> <span class="o">=</span> <span class="s1">&#39;https://acme-staging-v02.api.letsencrypt.org/directory&#39;</span>
+<span class="n">DIRECTORY_URL_PROD</span> <span class="o">=</span> <span class="s1">&#39;https://acme-v02.api.letsencrypt.org/directory&#39;</span>
+
+<span class="c1"># User Agent</span>
+<span class="n">USER_AGENT</span> <span class="o">=</span> <span class="s2">&quot;dsiprouter&quot;</span>
+
+<span class="c1"># Account key size</span>
+<span class="n">ACC_KEY_BITS</span> <span class="o">=</span> <span class="mi">4096</span>
+
+<span class="c1"># Certificate private key size</span>
+<span class="n">CERT_PKEY_BITS</span> <span class="o">=</span> <span class="mi">4096</span>
+
+<span class="c1"># Port to listen on for `http-01` challenge</span>
+<span class="n">ACME_PORT</span> <span class="o">=</span> <span class="mi">80</span>
+
+
+<div class="viewcode-block" id="new_csr"><a class="viewcode-back" href="../../dev/util.html#util.letsencrypt.new_csr">[docs]</a><span class="k">def</span> <span class="nf">new_csr</span><span class="p">(</span><span class="n">domain_name</span><span class="p">,</span> <span class="n">pkey_pem</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create certificate signing request.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pkey_pem</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pkey</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">PKey</span><span class="p">()</span>
+        <span class="n">pkey</span><span class="o">.</span><span class="n">generate_key</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">TYPE_RSA</span><span class="p">,</span> <span class="n">CERT_PKEY_BITS</span><span class="p">)</span>
+        <span class="n">pkey_pem</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">dump_privatekey</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_PEM</span><span class="p">,</span> <span class="n">pkey</span><span class="p">)</span>
+    <span class="n">csr_pem</span> <span class="o">=</span> <span class="n">crypto_util</span><span class="o">.</span><span class="n">make_csr</span><span class="p">(</span><span class="n">pkey_pem</span><span class="p">,</span> <span class="p">[</span><span class="n">domain_name</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">pkey_pem</span><span class="p">,</span> <span class="n">csr_pem</span></div>
+
+
+<div class="viewcode-block" id="select_http01_chall"><a class="viewcode-back" href="../../dev/util.html#util.letsencrypt.select_http01_chall">[docs]</a><span class="k">def</span> <span class="nf">select_http01_chall</span><span class="p">(</span><span class="n">orderr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Look for and select `http-01` from the challenges offered by the server.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">authz</span> <span class="ow">in</span> <span class="n">orderr</span><span class="o">.</span><span class="n">authorizations</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">authz</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">challenges</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">chall</span><span class="p">,</span> <span class="n">challenges</span><span class="o">.</span><span class="n">HTTP01</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">i</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;HTTP-01 challenge was not offered by the CA server.&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="challenge_server"><a class="viewcode-back" href="../../dev/util.html#util.letsencrypt.challenge_server">[docs]</a><span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">challenge_server</span><span class="p">(</span><span class="n">http_01_resources</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manage standalone server set up and shutdown.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Setting up a server that binds at PORT and any address.</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ACME_PORT</span><span class="p">)</span>
+    <span class="n">servers</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">servers</span> <span class="o">=</span> <span class="n">standalone</span><span class="o">.</span><span class="n">HTTP01DualNetworkedServers</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">http_01_resources</span><span class="p">)</span>
+        <span class="n">servers</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+        <span class="k">yield</span> <span class="n">servers</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">servers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">servers</span><span class="o">.</span><span class="n">shutdown_and_server_close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="perform_http01"><a class="viewcode-back" href="../../dev/util.html#util.letsencrypt.perform_http01">[docs]</a><span class="k">def</span> <span class="nf">perform_http01</span><span class="p">(</span><span class="n">client_acme</span><span class="p">,</span> <span class="n">challb</span><span class="p">,</span> <span class="n">orderr</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set up standalone webserver and perform HTTP-01 challenge.&quot;&quot;&quot;</span>
+
+    <span class="n">response</span><span class="p">,</span> <span class="n">validation</span> <span class="o">=</span> <span class="n">challb</span><span class="o">.</span><span class="n">response_and_validation</span><span class="p">(</span><span class="n">client_acme</span><span class="o">.</span><span class="n">net</span><span class="o">.</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="n">resource</span> <span class="o">=</span> <span class="n">standalone</span><span class="o">.</span><span class="n">HTTP01RequestHandler</span><span class="o">.</span><span class="n">HTTP01Resource</span><span class="p">(</span>
+        <span class="n">chall</span><span class="o">=</span><span class="n">challb</span><span class="o">.</span><span class="n">chall</span><span class="p">,</span> <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="p">,</span> <span class="n">validation</span><span class="o">=</span><span class="n">validation</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">challenge_server</span><span class="p">({</span><span class="n">resource</span><span class="p">}):</span>
+        <span class="c1"># Let the CA server know that we are ready for the challenge.</span>
+        <span class="n">client_acme</span><span class="o">.</span><span class="n">answer_challenge</span><span class="p">(</span><span class="n">challb</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+
+        <span class="c1"># Wait for challenge status and then issue a certificate.</span>
+        <span class="c1"># It is possible to set a deadline time.</span>
+        <span class="n">finalized_orderr</span> <span class="o">=</span> <span class="n">client_acme</span><span class="o">.</span><span class="n">poll_and_finalize</span><span class="p">(</span><span class="n">orderr</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">finalized_orderr</span><span class="o">.</span><span class="n">fullchain_pem</span></div>
+
+
+<div class="viewcode-block" id="generateCertificate"><a class="viewcode-back" href="../../dev/util.html#util.letsencrypt.generateCertificate">[docs]</a><span class="k">def</span> <span class="nf">generateCertificate</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">notification_email</span><span class="p">,</span> <span class="n">directory_url</span><span class="o">=</span><span class="n">DIRECTORY_URL_PROD</span><span class="p">,</span> <span class="n">cert_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># Create account key</span>
+    <span class="n">acc_key</span> <span class="o">=</span> <span class="n">jose</span><span class="o">.</span><span class="n">JWKRSA</span><span class="p">(</span>
+        <span class="n">key</span><span class="o">=</span><span class="n">rsa</span><span class="o">.</span><span class="n">generate_private_key</span><span class="p">(</span><span class="n">public_exponent</span><span class="o">=</span><span class="mi">65537</span><span class="p">,</span>
+                                     <span class="n">key_size</span><span class="o">=</span><span class="n">ACC_KEY_BITS</span><span class="p">,</span>
+                                     <span class="n">backend</span><span class="o">=</span><span class="n">default_backend</span><span class="p">()))</span>
+
+    <span class="c1"># Create client configured to use our ACME server and trust our root cert</span>
+    <span class="n">net</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ClientNetwork</span><span class="p">(</span><span class="n">acc_key</span><span class="p">,</span> <span class="n">user_agent</span><span class="o">=</span><span class="n">USER_AGENT</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">debug</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">directory_url</span> <span class="o">=</span> <span class="n">DIRECTORY_URL_STAGING</span>
+    <span class="n">directory</span> <span class="o">=</span> <span class="n">messages</span><span class="o">.</span><span class="n">Directory</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">net</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">directory_url</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
+    <span class="n">client_acme</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">ClientV2</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">net</span><span class="o">=</span><span class="n">net</span><span class="p">)</span>
+
+    <span class="c1"># Register account and accept TOS</span>
+    <span class="n">regr</span> <span class="o">=</span> <span class="n">client_acme</span><span class="o">.</span><span class="n">new_account</span><span class="p">(</span>
+        <span class="n">messages</span><span class="o">.</span><span class="n">NewRegistration</span><span class="o">.</span><span class="n">from_data</span><span class="p">(</span>
+            <span class="n">email</span><span class="o">=</span><span class="n">notification_email</span><span class="p">,</span> <span class="n">terms_of_service_agreed</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+    <span class="c1"># Create domain private key and CSR</span>
+    <span class="n">pkey_pem</span><span class="p">,</span> <span class="n">csr_pem</span> <span class="o">=</span> <span class="n">new_csr</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+
+    <span class="c1"># Issue certificate</span>
+    <span class="n">orderr</span> <span class="o">=</span> <span class="n">client_acme</span><span class="o">.</span><span class="n">new_order</span><span class="p">(</span><span class="n">csr_pem</span><span class="p">)</span>
+
+    <span class="c1"># Select HTTP-01 within offered challenges by the CA server</span>
+    <span class="n">challb</span> <span class="o">=</span> <span class="n">select_http01_chall</span><span class="p">(</span><span class="n">orderr</span><span class="p">)</span>
+
+    <span class="c1"># The certificate is ready to be used in the variable &quot;fullchain_pem&quot;.</span>
+    <span class="n">fullchain_pem</span> <span class="o">=</span> <span class="n">perform_http01</span><span class="p">(</span><span class="n">client_acme</span><span class="p">,</span> <span class="n">challb</span><span class="p">,</span> <span class="n">orderr</span><span class="p">)</span>
+
+    <span class="c1"># Store the certificates</span>
+    <span class="k">if</span> <span class="n">cert_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cert_dir</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CERTS_DIR</span>
+
+    <span class="k">if</span> <span class="n">default</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">cert_domain_dir</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CERTS_DIR</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cert_domain_dir</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cert_dir</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cert_domain_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">cert_domain_dir</span><span class="p">)</span>
+
+    <span class="n">key_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cert_domain_dir</span><span class="p">,</span> <span class="s1">&#39;dsiprouter-key.pem&#39;</span><span class="p">)</span>
+    <span class="n">cert_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cert_domain_dir</span><span class="p">,</span> <span class="s1">&#39;dsiprouter-cert.pem&#39;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">key_file</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_CREAT</span><span class="p">,</span> <span class="mo">0o640</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">keyfile</span><span class="p">:</span>
+        <span class="n">keyfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">pkey_pem</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+    <span class="k">with</span> <span class="n">os</span><span class="o">.</span><span class="n">fdopen</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">cert_file</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">O_WRONLY</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">O_CREAT</span><span class="p">,</span> <span class="mo">0o640</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">certfile</span><span class="p">:</span>
+        <span class="n">certfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">fullchain_pem</span><span class="p">)</span>
+
+    <span class="c1"># Change owner to root:kamailio so that Kamailio can load the configurations</span>
+    <span class="n">change_owner</span><span class="p">(</span><span class="n">cert_domain_dir</span><span class="p">,</span> <span class="s2">&quot;dsiprouter&quot;</span><span class="p">,</span> <span class="s2">&quot;kamailio&quot;</span><span class="p">)</span>
+    <span class="n">change_owner</span><span class="p">(</span><span class="n">key_file</span><span class="p">,</span> <span class="s2">&quot;dsiprouter&quot;</span><span class="p">,</span> <span class="s2">&quot;kamailio&quot;</span><span class="p">)</span>
+    <span class="n">change_owner</span><span class="p">(</span><span class="n">cert_file</span><span class="p">,</span> <span class="s2">&quot;dsiprouter&quot;</span><span class="p">,</span> <span class="s2">&quot;kamailio&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pkey_pem</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">),</span> <span class="n">fullchain_pem</span></div>
+
+
+<div class="viewcode-block" id="deleteCertificate"><a class="viewcode-back" href="../../dev/util.html#util.letsencrypt.deleteCertificate">[docs]</a><span class="k">def</span> <span class="nf">deleteCertificate</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">directory_url</span><span class="o">=</span><span class="n">DIRECTORY_URL_PROD</span><span class="p">,</span> <span class="n">cert_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># Location of certificates</span>
+    <span class="k">if</span> <span class="n">cert_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cert_dir</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CERTS_DIR</span>
+
+    <span class="c1"># Location of the certificates</span>
+    <span class="n">cert_domain_dir</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cert_dir</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+
+    <span class="c1"># Remove directory that contains the cert and key for the domain</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">cert_domain_dir</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+    <span class="c1"># TODO: Potential send a unregister command to Let&#39;s Encrypt</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">directory_url</span> <span class="o">=</span> <span class="n">DIRECTORY_URL_STAGING</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="s2">&quot;mack.dsiprouter.net&quot;</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="s2">&quot;mack@dopensource.com&quot;</span>
+
+    <span class="n">key</span><span class="p">,</span> <span class="n">cert</span> <span class="o">=</span> <span class="n">generateCertificate</span><span class="p">(</span><span class="n">domain</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">directory_url</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Key:</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">Cert:</span><span class="se">\n</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cert</span><span class="p">))</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

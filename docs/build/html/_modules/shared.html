@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>shared &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">shared</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for shared</h1><div class="highlight"><pre>
+<span></span><span class="c1"># make sure the generated source files are imported instead of the template ones</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;/etc/dsiprouter/gui&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">traceback</span><span class="o">,</span> <span class="nn">inspect</span><span class="o">,</span> <span class="nn">ssl</span>
+<span class="kn">from</span> <span class="nn">calendar</span> <span class="kn">import</span> <span class="n">monthrange</span>
+<span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">reload</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">request</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">make_response</span><span class="p">,</span> <span class="n">jsonify</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">exc</span> <span class="k">as</span> <span class="n">sql_exceptions</span>
+<span class="kn">from</span> <span class="nn">werkzeug</span> <span class="kn">import</span> <span class="n">exceptions</span> <span class="k">as</span> <span class="n">http_exceptions</span>
+<span class="kn">from</span> <span class="nn">werkzeug.utils</span> <span class="kn">import</span> <span class="n">escape</span>
+<span class="kn">from</span> <span class="nn">werkzeug.urls</span> <span class="kn">import</span> <span class="n">iri_to_uri</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+
+
+<div class="viewcode-block" id="isCertValid"><a class="viewcode-back" href="../dev/shared.html#shared.isCertValid">[docs]</a><span class="k">def</span> <span class="nf">isCertValid</span><span class="p">(</span><span class="n">hostname</span><span class="p">,</span> <span class="n">externalip</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5061</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Returns true if the hostname has a valid cert&quot;&quot;&quot;</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tls_cert_valid&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;tls_cert_details&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;tls_error&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">create_default_context</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">Purpose</span><span class="o">.</span><span class="n">SERVER_AUTH</span><span class="p">,</span> <span class="n">cafile</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_CA</span><span class="p">)</span>
+        <span class="n">context</span><span class="o">.</span><span class="n">load_cert_chain</span><span class="p">(</span><span class="n">certfile</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_CERT</span><span class="p">,</span> <span class="n">keyfile</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_KEY</span><span class="p">)</span>
+
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">),</span> <span class="n">server_hostname</span><span class="o">=</span><span class="n">hostname</span><span class="p">)</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">connect</span><span class="p">((</span><span class="n">externalip</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+        <span class="c1"># print(&quot;SSL established. Peer: {}&quot;.format(conn.getpeercert()))</span>
+        <span class="n">cert</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">getpeercert</span><span class="p">()</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;tls_cert_details&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cert</span>
+        <span class="c1">#ssl.match_hostname(cert, hostname)</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;tls_cert_valid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;tls_error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        <span class="c1"># Return valid even if the cert can&#39;t be validated.  We just want to validate</span>
+        <span class="c1"># the ability to connect using the cert.</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="objToDict"><a class="viewcode-back" href="../dev/shared.html#shared.objToDict">[docs]</a><span class="k">def</span> <span class="nf">objToDict</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    converts an arbitrary object to dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">if</span>
+                <span class="ow">not</span> <span class="n">attr</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">attr</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="rowToDict"><a class="viewcode-back" href="../dev/shared.html#shared.rowToDict">[docs]</a><span class="k">def</span> <span class="nf">rowToDict</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    converts sqlalchemy row object to python dict</span>
+<span class="sd">    does not recurse through relationships</span>
+<span class="sd">    tries table data, then _asdict() method, then objToDict()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">&#39;__table__&#39;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">row</span><span class="o">.</span><span class="n">__table__</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">column</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">&#39;_asdict&#39;</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">_asdict</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="s1">&#39;__dict__&#39;</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="vm">__dict__</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;_sa_instance_state&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">objToDict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">d</span></div>
+
+<div class="viewcode-block" id="strFieldsToDict"><a class="viewcode-back" href="../dev/shared.html#shared.strFieldsToDict">[docs]</a><span class="k">def</span> <span class="nf">strFieldsToDict</span><span class="p">(</span><span class="n">fields_str</span><span class="p">):</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">field</span><span class="p">:</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">fields</span><span class="p">[</span><span class="n">tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">fields</span></div>
+
+<div class="viewcode-block" id="dictToStrFields"><a class="viewcode-back" href="../dev/shared.html#shared.dictToStrFields">[docs]</a><span class="k">def</span> <span class="nf">dictToStrFields</span><span class="p">(</span><span class="n">fields_dict</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields_dict</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="updateConfig"><a class="viewcode-back" href="../dev/shared.html#shared.updateConfig">[docs]</a><span class="k">def</span> <span class="nf">updateConfig</span><span class="p">(</span><span class="n">config_obj</span><span class="p">,</span> <span class="n">field_dict</span><span class="p">,</span> <span class="n">hot_reload</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update a python config module</span>
+<span class="sd">    :param config_obj:</span>
+<span class="sd">    :param field_dict:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">config_file</span> <span class="o">=</span> <span class="s2">&quot;&lt;no filepath available&gt;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">config_obj</span><span class="o">.</span><span class="vm">__file__</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="s1">&#39;r+&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">config</span><span class="p">:</span>
+            <span class="n">config_str</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">field_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^(?!#)(?:&quot;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> \
+                        <span class="sa">r</span><span class="s2">&quot;)[ \t]*=[ \t]*(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?</span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">.*</span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">[ \t]*$|b?&#39;&#39;&#39;.*&#39;&#39;&#39;[ \v]*$|b?</span><span class="se">\&quot;</span><span class="s2">.*</span><span class="se">\&quot;</span><span class="s2">[ \t]*$|b?&#39;.*&#39;)&quot;</span>
+                <span class="n">replace_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+                <span class="n">config_str</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">replace_str</span><span class="p">,</span> <span class="n">config_str</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+
+            <span class="n">config</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">config_str</span><span class="p">)</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">truncate</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">hot_reload</span><span class="p">:</span>
+            <span class="nb">globals</span><span class="p">()[</span><span class="n">config_obj</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">reload</span><span class="p">(</span><span class="n">config_obj</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">IO</span><span class="o">.</span><span class="n">logerr</span><span class="p">(</span><span class="s1">&#39;Problem updating the </span><span class="si">{0}</span><span class="s1"> configuration file&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">config_file</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="stripDictVals"><a class="viewcode-back" href="../dev/shared.html#shared.stripDictVals">[docs]</a><span class="k">def</span> <span class="nf">stripDictVals</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">d</span></div>
+
+<div class="viewcode-block" id="getCustomRoutes"><a class="viewcode-back" href="../dev/shared.html#shared.getCustomRoutes">[docs]</a><span class="k">def</span> <span class="nf">getCustomRoutes</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return custom kamailio routes from config file &quot;&quot;&quot;</span>
+    <span class="n">custom_routes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">KAM_CFG_PATH</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">kamcfg_file</span><span class="p">:</span>
+        <span class="n">kamcfg_bytes</span> <span class="o">=</span> <span class="n">kamcfg_file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="n">regex</span> <span class="o">=</span> <span class="sa">rb</span><span class="s1">&#39;&#39;&#39;CUSTOM_ROUTING_START.*CUSTOM_ROUTING_END&#39;&#39;&#39;</span>
+        <span class="n">custom_routes_bytes</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">kamcfg_bytes</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">regex</span> <span class="o">=</span> <span class="sa">rb</span><span class="s1">&#39;&#39;&#39;^route\[(\w+)\]&#39;&#39;&#39;</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">regex</span><span class="p">,</span> <span class="n">custom_routes_bytes</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">MULTILINE</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">matchnum</span><span class="p">,</span> <span class="n">match</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matches</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">custom_routes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">custom_routes</span></div>
+
+<div class="viewcode-block" id="monthdelta"><a class="viewcode-back" href="../dev/shared.html#shared.monthdelta">[docs]</a><span class="k">def</span> <span class="nf">monthdelta</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">delta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return dt with a delta month change (neg or pos) &quot;&quot;&quot;</span>
+    <span class="n">m</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span> <span class="o">+</span> <span class="n">delta</span><span class="p">)</span> <span class="o">%</span> <span class="mi">12</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">year</span> <span class="o">+</span> <span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span> <span class="o">+</span> <span class="n">delta</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="mi">12</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dt</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="n">monthrange</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">m</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">day</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">month</span><span class="o">=</span><span class="n">m</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="n">y</span><span class="p">)</span></div>
+
+<span class="c1"># modified method from Python cookbook, #475186</span>
+<div class="viewcode-block" id="supportsColor"><a class="viewcode-back" href="../dev/shared.html#shared.supportsColor">[docs]</a><span class="k">def</span> <span class="nf">supportsColor</span><span class="p">(</span><span class="n">stream</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Return True if terminal supports ASCII color codes  &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="s2">&quot;isatty&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">stream</span><span class="o">.</span><span class="n">isatty</span><span class="p">():</span>
+        <span class="c1"># auto color only on TTYs</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">curses</span>
+        <span class="n">curses</span><span class="o">.</span><span class="n">setupterm</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">curses</span><span class="o">.</span><span class="n">tigetnum</span><span class="p">(</span><span class="s2">&quot;colors&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># guess false in case of error</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="IO"><a class="viewcode-back" href="../dev/shared.html#shared.IO">[docs]</a><span class="k">class</span> <span class="nc">IO</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Contains static methods for handling i/o operations &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">supportsColor</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">):</span>
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printerr</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;31m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printinfo</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;32m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printwarn</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;33m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printdbg</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;34m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printbold</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;37m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logcrit</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;31m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logerr</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;31m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">loginfo</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;32m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logwarn</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;33m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logdbg</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;34m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">lognolvl</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[1;37m&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\x1b</span><span class="s1">[0m&#39;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+<div class="viewcode-block" id="IO.printerr"><a class="viewcode-back" href="../dev/shared.html#shared.IO.printerr">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printerr</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.printinfo"><a class="viewcode-back" href="../dev/shared.html#shared.IO.printinfo">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printinfo</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.printwarn"><a class="viewcode-back" href="../dev/shared.html#shared.IO.printwarn">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printwarn</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.printdbg"><a class="viewcode-back" href="../dev/shared.html#shared.IO.printdbg">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printdbg</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.printbold"><a class="viewcode-back" href="../dev/shared.html#shared.IO.printbold">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">printbold</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.logcrit"><a class="viewcode-back" href="../dev/shared.html#shared.IO.logcrit">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logcrit</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.logerr"><a class="viewcode-back" href="../dev/shared.html#shared.IO.logerr">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logerr</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.loginfo"><a class="viewcode-back" href="../dev/shared.html#shared.IO.loginfo">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">loginfo</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.logwarn"><a class="viewcode-back" href="../dev/shared.html#shared.IO.logwarn">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logwarn</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.logdbg"><a class="viewcode-back" href="../dev/shared.html#shared.IO.logdbg">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">logdbg</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="IO.lognolvl"><a class="viewcode-back" href="../dev/shared.html#shared.IO.lognolvl">[docs]</a>        <span class="nd">@staticmethod</span>
+        <span class="k">def</span> <span class="nf">lognolvl</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span></div></div>
+
+<div class="viewcode-block" id="debugException"><a class="viewcode-back" href="../dev/shared.html#shared.debugException">[docs]</a><span class="k">def</span> <span class="nf">debugException</span><span class="p">(</span><span class="n">ex</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">print_ex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">showstack</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Debugging of an exception: print and/or log frame and/or stacktrace</span>
+<span class="sd">    :param ex:          The exception object</span>
+<span class="sd">    :param log_ex:      True | False</span>
+<span class="sd">    :param print_ex:    True | False</span>
+<span class="sd">    :param showstack:   True | False</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># get basic info and the stack</span>
+    <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">exc_tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;((( EXCEPTION )))</span><span class="se">\n</span><span class="s2">[CLASS]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">[VALUE]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">)</span>
+    <span class="c1"># get detailed exception info</span>
+    <span class="k">if</span> <span class="n">ex</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">ex</span> <span class="o">=</span> <span class="n">exc_value</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="s2">&quot;[</span><span class="si">{}</span><span class="s2">]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+
+    <span class="c1"># determine how far we trace it back</span>
+    <span class="n">tb_list</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">showstack</span><span class="p">:</span>
+        <span class="n">tb_list</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_tb</span><span class="p">(</span><span class="n">exc_tb</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tb_list</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_tb</span><span class="p">(</span><span class="n">exc_tb</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># ensure a backtrace exists first</span>
+    <span class="k">if</span> <span class="n">tb_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">tb_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="s2">&quot;((( BACKTRACE )))</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="k">for</span> <span class="n">tb_info</span> <span class="ow">in</span> <span class="n">tb_list</span><span class="p">:</span>
+            <span class="n">filename</span><span class="p">,</span> <span class="n">linenum</span><span class="p">,</span> <span class="n">funcname</span><span class="p">,</span> <span class="n">source</span> <span class="o">=</span> <span class="n">tb_info</span>
+
+            <span class="k">if</span> <span class="n">funcname</span> <span class="o">!=</span> <span class="s1">&#39;&lt;module&gt;&#39;</span><span class="p">:</span>
+                <span class="n">funcname</span> <span class="o">=</span> <span class="n">funcname</span> <span class="o">+</span> <span class="s1">&#39;()&#39;</span>
+            <span class="n">text</span> <span class="o">+=</span> <span class="s2">&quot;[FILE]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">[LINE NUM]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">[FUNCTION]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">[SOURCE]: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">linenum</span><span class="p">,</span> <span class="n">funcname</span><span class="p">,</span>
+                <span class="n">source</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">log_ex</span><span class="p">:</span>
+        <span class="n">IO</span><span class="o">.</span><span class="n">logerr</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">print_ex</span><span class="p">:</span>
+        <span class="n">IO</span><span class="o">.</span><span class="n">printerr</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="debugEndpoint"><a class="viewcode-back" href="../dev/shared.html#shared.debugEndpoint">[docs]</a><span class="k">def</span> <span class="nf">debugEndpoint</span><span class="p">(</span><span class="n">log_out</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">print_out</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Debug an endpoint\n</span>
+<span class="sd">    Must be run within request context</span>
+
+<span class="sd">    :param log_out:       True | False</span>
+<span class="sd">    :param print_out:     True | False</span>
+<span class="sd">    :param kwargs:        Any args to print / log (&lt;key=value&gt; key word pairs)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">calling_chain</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">frame</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span> <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">()</span>
+    <span class="c1"># parent module</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">f_code</span><span class="p">,</span> <span class="s1">&#39;co_filename&#39;</span><span class="p">):</span>
+        <span class="n">calling_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_filename</span><span class="p">))</span>
+    <span class="c1"># parent class</span>
+    <span class="k">if</span> <span class="s1">&#39;self&#39;</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="p">:</span>
+        <span class="n">calling_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_globals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+                <span class="n">calling_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+                <span class="k">break</span>
+    <span class="c1"># parent func</span>
+    <span class="k">if</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span> <span class="o">!=</span> <span class="s1">&#39;&lt;module&gt;&#39;</span><span class="p">:</span>
+        <span class="n">calling_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">f_code</span><span class="o">.</span><span class="n">co_name</span><span class="p">)</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;((( [DEBUG ENDPOINT]: </span><span class="si">{}</span><span class="s2"> )))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39; -&gt; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">calling_chain</span><span class="p">))</span>
+    <span class="n">text</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;accept_charsets&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">accept_charsets</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;accept_encodings&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">accept_encodings</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;accept_languages&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">accept_languages</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;accept_mimetypes&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">accept_mimetypes</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;access_control_request_headers&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">access_control_request_headers</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;access_control_request_method&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">access_control_request_method</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;access_route&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">access_route</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;args&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;authorization&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">authorization</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;base_url&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">base_url</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;blueprint&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">blueprint</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cache_control&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">cache_control</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;charset&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">charset</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;content_encoding&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">content_encoding</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;content_length&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">content_length</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;content_md5&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">content_md5</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;content_type&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">content_type</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;cookies&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;files&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;form&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;headers&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;method&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">method</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;query_string&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">query_string</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;referrer&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">referrer</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;remote_addr&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">remote_addr</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;remote_user&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">remote_user</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;url&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;user_agent&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user_agent</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;values&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;view_args&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">view_args</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
+    <span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">log_out</span><span class="p">:</span>
+        <span class="n">IO</span><span class="o">.</span><span class="n">logdbg</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">print_out</span><span class="p">:</span>
+        <span class="n">IO</span><span class="o">.</span><span class="n">printdbg</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="allowed_file"><a class="viewcode-back" href="../dev/shared.html#shared.allowed_file">[docs]</a><span class="k">def</span> <span class="nf">allowed_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">ALLOWED_EXTENSIONS</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;csv&#39;</span><span class="p">,</span> <span class="s1">&#39;txt&#39;</span><span class="p">,</span> <span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="s1">&#39;jpg&#39;</span><span class="p">,</span> <span class="s1">&#39;jpeg&#39;</span><span class="p">,</span> <span class="s1">&#39;gif&#39;</span><span class="p">}):</span>
+    <span class="k">return</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">filename</span> <span class="ow">and</span> <span class="n">filename</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ALLOWED_EXTENSIONS</span></div>
+
+<div class="viewcode-block" id="showError"><a class="viewcode-back" href="../dev/shared.html#shared.showError">[docs]</a><span class="k">def</span> <span class="nf">showError</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="k">if</span> <span class="n">code</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">StatusCodes</span><span class="o">.</span><span class="n">HTTP_INTERNAL_SERVER_ERROR</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;error.html&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="n">msg</span><span class="p">),</span> <span class="n">code</span></div>
+
+<div class="viewcode-block" id="showApiError"><a class="viewcode-back" href="../dev/shared.html#shared.showApiError">[docs]</a><span class="k">def</span> <span class="nf">showApiError</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">payload</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="n">debugException</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">sql_exceptions</span><span class="o">.</span><span class="n">SQLAlchemyError</span><span class="p">):</span>
+        <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;db&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Unknown DB Error Occurred&quot;</span>
+        <span class="n">status_code</span> <span class="o">=</span> <span class="n">StatusCodes</span><span class="o">.</span><span class="n">HTTP_INTERNAL_SERVER_ERROR</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ex</span><span class="p">,</span> <span class="n">http_exceptions</span><span class="o">.</span><span class="n">HTTPException</span><span class="p">):</span>
+        <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;http&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">description</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">description</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Unknown HTTP Error Occurred&quot;</span>
+        <span class="n">status_code</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">code</span> <span class="ow">or</span> <span class="n">StatusCodes</span><span class="o">.</span><span class="n">HTTP_INTERNAL_SERVER_ERROR</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;server&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Unknown Error Occurred&quot;</span>
+        <span class="n">status_code</span> <span class="o">=</span> <span class="n">StatusCodes</span><span class="o">.</span><span class="n">HTTP_INTERNAL_SERVER_ERROR</span>
+
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">status_code</span></div>
+
+<div class="viewcode-block" id="redirectCustom"><a class="viewcode-back" href="../dev/shared.html#shared.redirectCustom">[docs]</a><span class="k">def</span> <span class="nf">redirectCustom</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="o">*</span><span class="n">render_args</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="mi">302</span><span class="p">,</span> <span class="n">response_cb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">force_redirect</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    =======</span>
+<span class="sd">    Summary</span>
+<span class="sd">    =======</span>
+
+<span class="sd">    Combines functionality of :func:`werkzeug.utils.redirect` with :func:`flask.templating.render_template`</span>
+<span class="sd">    to allow for virtual redirection to an endpoint with any HTTP status code.\n</span>
+
+<span class="sd">    =========</span>
+<span class="sd">    Use Cases</span>
+<span class="sd">    =========</span>
+
+<span class="sd">    1. render template at a custom url (doesn&#39;t have to be an endpoint)</span>
+
+<span class="sd">        def index():</span>
+<span class="sd">            return redirectCustom(&#39;http://localhost:5000/notfound&#39;, render_template(&#39;not_found.html&#39;), code=404)</span>
+
+<span class="sd">        def index():</span>
+<span class="sd">            html = &#39;&lt;h1&gt;Are you lost {{ username }}?&lt;/h1&gt;&#39;</span>
+<span class="sd">            return redirectCustom(url_for(&#39;notfound&#39;), render_template_string(html), username=&#39;john&#39;, code=404)</span>
+
+<span class="sd">    2. customizing the response before sending to the client</span>
+
+<span class="sd">        def index():</span>
+<span class="sd">            def addAuthHeaders(response):</span>
+<span class="sd">                response.headers[&#39;Access-Control-Allow-Origin&#39; = &#39;*&#39;</span>
+<span class="sd">                response.headers[&#39;Access-Control-Allow-Headers&#39;] = &#39;origin, x-requested-with, content-type&#39;</span>
+<span class="sd">                response.headers[&#39;Access-Control-Allow-Methods&#39;] = &#39;PUT, GET, POST, DELETE, OPTIONS&#39;</span>
+<span class="sd">            return redirectCustom(url_for(&#39;login&#39;), render_template(&#39;login_custom.html&#39;), code=403, response_cb=addAuthHeaders)</span>
+
+<span class="sd">    3. redirecting with a custom HTTP status code (normally restricted to 300&#39;s)</span>
+
+<span class="sd">        def index():</span>
+<span class="sd">            return redirectCustom(url_for(&#39;http://localhost:5000/error&#39;), showError())</span>
+
+<span class="sd">    4. forcing redirection when client normally would ignore location header</span>
+
+<span class="sd">        def index():</span>
+<span class="sd">            return redirectCustom(url_for(showError), showError(), code=500, force_redirect=True)</span>
+
+
+<span class="sd">    :note: the endpoint logic is only executed when a the view function is passed in render_args</span>
+<span class="sd">    :param location: the location the response should virtually redirect to</span>
+<span class="sd">    :param render_args: the return value from a view / template rendering function</span>
+<span class="sd">    :param code: the return HTTP status code, defaults to 302 like a normal redirect</span>
+<span class="sd">    :param response_cb: callback function taking :class:`werkzeug.wrappers.Response` object as arg and returning edited response</span>
+<span class="sd">    :param force_redirect: whether to force redirection on client, only needed when client ignores location header</span>
+<span class="sd">    :return: client viewable :class:`werkzeug.wrappers.Response` object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">display_location</span> <span class="o">=</span> <span class="n">escape</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># Safe conversion as stated in :func:`werkzeug.utils.redirect`</span>
+        <span class="n">location</span> <span class="o">=</span> <span class="n">iri_to_uri</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">safe_conversion</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># create a response object, from rendered data (accepts None)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">make_response</span><span class="p">(</span><span class="o">*</span><span class="n">render_args</span><span class="p">)</span>
+
+    <span class="c1"># if no render_args given fill response with default redirect html</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">render_args</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">response</span> <span class="o">=</span> <span class="s1">&#39;&lt;!DOCTYPE HTML&quot;&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+                            <span class="s1">&#39;&lt;html&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta http-equiv=&quot;refresh&quot; content=&quot;0; URL=</span><span class="si">{location}</span><span class="s1">&quot;&gt;&#39;</span> \
+                            <span class="s1">&#39;&lt;title&gt;Redirecting&lt;/title&gt;&lt;/head&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+                            <span class="s1">&#39;&lt;body&gt;&lt;script type=&quot;text/javascript&quot;&gt;window.location.href=</span><span class="si">{location}</span><span class="s1">;&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;&#39;</span> <span class="k">if</span> <span class="n">force_redirect</span> <span class="k">else</span> \
+            <span class="s1">&#39;&lt;body&gt;&lt;h1&gt;Redirecting...&lt;/h1&gt;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+            <span class="s1">&#39;&lt;p&gt;You should be redirected automatically to target URL: &#39;</span> \
+            <span class="s1">&#39;&lt;a href=&quot;</span><span class="si">{location}</span><span class="s1">&quot;&gt;</span><span class="si">{display_location}</span><span class="s1">&lt;/a&gt;.  If not click the link.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;&#39;</span> \
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">escape</span><span class="p">(</span><span class="n">location</span><span class="p">),</span> <span class="n">display_location</span><span class="o">=</span><span class="n">display_location</span><span class="p">)</span>
+
+        <span class="n">response</span><span class="o">.</span><span class="n">mimetype</span> <span class="o">=</span> <span class="s1">&#39;text/html&#39;</span>
+
+    <span class="c1"># customize response if needed</span>
+    <span class="k">if</span> <span class="n">response_cb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">response_cb</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+    <span class="c1"># override return code if set from render args</span>
+    <span class="c1"># if len(render_args) == 3:</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">code</span>
+
+    <span class="c1"># change response location</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s1">&#39;Location&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">location</span>
+
+    <span class="k">return</span> <span class="n">response</span></div>
+
+<div class="viewcode-block" id="getRequestData"><a class="viewcode-back" href="../dev/shared.html#shared.getRequestData">[docs]</a><span class="k">def</span> <span class="nf">getRequestData</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get data from request formatted as dict\n</span>
+<span class="sd">    Must be run within request context</span>
+
+<span class="sd">    -----</span>
+
+<span class="sd">    The following data formats are supported:</span>
+
+<span class="sd">    - multipart forms</span>
+<span class="sd">    - url encoded forms</span>
+<span class="sd">    - JSON body</span>
+
+<span class="sd">    :return:        request data</span>
+<span class="sd">    :rtype:         dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">content_type</span> <span class="o">=</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-Type&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="s1">&#39;multipart/form-data&#39;</span> <span class="ow">in</span> <span class="n">content_type</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;application/x-www-form-urlencoded&#39;</span> <span class="ow">in</span> <span class="n">content_type</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">flat</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;application/json&#39;</span> <span class="ow">in</span> <span class="n">content_type</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get_json</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># fix data if client is sloppy (http_async_client)</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;User-Agent&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;http_async_client&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">data</span></div>
+
+<div class="viewcode-block" id="StatusCodes"><a class="viewcode-back" href="../dev/shared.html#shared.StatusCodes">[docs]</a><span class="k">class</span> <span class="nc">StatusCodes</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Namespace for descriptive status codes, for code readability</span>
+
+<span class="sd">    -- HTTP Status Codes --</span>
+<span class="sd">    Original Idea From: `flask_api &lt;https://www.flaskapi.org/&gt;`_</span>
+<span class="sd">    :ref RFC2616: http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html</span>
+<span class="sd">    :ref RFC6585: http://tools.ietf.org/html/rfc6585</span>
+
+<span class="sd">    ... examples of possible future sections ...</span>
+<span class="sd">    -- MYSQL Error Codes --</span>
+<span class="sd">    -- SERVER Status Codes --</span>
+<span class="sd">    -- KAMAILIO Error Codes --</span>
+<span class="sd">    -- RTPENGINE Error Codes --</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">HTTP_CONTINUE</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">HTTP_SWITCHING_PROTOCOLS</span> <span class="o">=</span> <span class="mi">101</span>
+    <span class="n">HTTP_OK</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">HTTP_CREATED</span> <span class="o">=</span> <span class="mi">201</span>
+    <span class="n">HTTP_ACCEPTED</span> <span class="o">=</span> <span class="mi">202</span>
+    <span class="n">HTTP_NON_AUTHORITATIVE_INFORMATION</span> <span class="o">=</span> <span class="mi">203</span>
+    <span class="n">HTTP_NO_CONTENT</span> <span class="o">=</span> <span class="mi">204</span>
+    <span class="n">HTTP_RESET_CONTENT</span> <span class="o">=</span> <span class="mi">205</span>
+    <span class="n">HTTP_PARTIAL_CONTENT</span> <span class="o">=</span> <span class="mi">206</span>
+    <span class="n">HTTP_MULTI_STATUS</span> <span class="o">=</span> <span class="mi">207</span>
+    <span class="n">HTTP_MULTIPLE_CHOICES</span> <span class="o">=</span> <span class="mi">300</span>
+    <span class="n">HTTP_MOVED_PERMANENTLY</span> <span class="o">=</span> <span class="mi">301</span>
+    <span class="n">HTTP_FOUND</span> <span class="o">=</span> <span class="mi">302</span>
+    <span class="n">HTTP_SEE_OTHER</span> <span class="o">=</span> <span class="mi">303</span>
+    <span class="n">HTTP_NOT_MODIFIED</span> <span class="o">=</span> <span class="mi">304</span>
+    <span class="n">HTTP_USE_PROXY</span> <span class="o">=</span> <span class="mi">305</span>
+    <span class="n">HTTP_RESERVED</span> <span class="o">=</span> <span class="mi">306</span>
+    <span class="n">HTTP_TEMPORARY_REDIRECT</span> <span class="o">=</span> <span class="mi">307</span>
+    <span class="n">HTTP_PERMANENT_REDIRECT</span> <span class="o">=</span> <span class="mi">308</span>
+    <span class="n">HTTP_BAD_REQUEST</span> <span class="o">=</span> <span class="mi">400</span>
+    <span class="n">HTTP_UNAUTHORIZED</span> <span class="o">=</span> <span class="mi">401</span>
+    <span class="n">HTTP_PAYMENT_REQUIRED</span> <span class="o">=</span> <span class="mi">402</span>
+    <span class="n">HTTP_FORBIDDEN</span> <span class="o">=</span> <span class="mi">403</span>
+    <span class="n">HTTP_NOT_FOUND</span> <span class="o">=</span> <span class="mi">404</span>
+    <span class="n">HTTP_METHOD_NOT_ALLOWED</span> <span class="o">=</span> <span class="mi">405</span>
+    <span class="n">HTTP_NOT_ACCEPTABLE</span> <span class="o">=</span> <span class="mi">406</span>
+    <span class="n">HTTP_PROXY_AUTHENTICATION_REQUIRED</span> <span class="o">=</span> <span class="mi">407</span>
+    <span class="n">HTTP_REQUEST_TIMEOUT</span> <span class="o">=</span> <span class="mi">408</span>
+    <span class="n">HTTP_CONFLICT</span> <span class="o">=</span> <span class="mi">409</span>
+    <span class="n">HTTP_GONE</span> <span class="o">=</span> <span class="mi">410</span>
+    <span class="n">HTTP_LENGTH_REQUIRED</span> <span class="o">=</span> <span class="mi">411</span>
+    <span class="n">HTTP_PRECONDITION_FAILED</span> <span class="o">=</span> <span class="mi">412</span>
+    <span class="n">HTTP_REQUEST_ENTITY_TOO_LARGE</span> <span class="o">=</span> <span class="mi">413</span>
+    <span class="n">HTTP_REQUEST_URI_TOO_LONG</span> <span class="o">=</span> <span class="mi">414</span>
+    <span class="n">HTTP_UNSUPPORTED_MEDIA_TYPE</span> <span class="o">=</span> <span class="mi">415</span>
+    <span class="n">HTTP_REQUESTED_RANGE_NOT_SATISFIABLE</span> <span class="o">=</span> <span class="mi">416</span>
+    <span class="n">HTTP_EXPECTATION_FAILED</span> <span class="o">=</span> <span class="mi">417</span>
+    <span class="n">HTTP_PRECONDITION_REQUIRED</span> <span class="o">=</span> <span class="mi">428</span>
+    <span class="n">HTTP_TOO_MANY_REQUESTS</span> <span class="o">=</span> <span class="mi">429</span>
+    <span class="n">HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE</span> <span class="o">=</span> <span class="mi">431</span>
+    <span class="n">HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE</span> <span class="o">=</span> <span class="mi">444</span>
+    <span class="n">HTTP_INTERNAL_SERVER_ERROR</span> <span class="o">=</span> <span class="mi">500</span>
+    <span class="n">HTTP_NOT_IMPLEMENTED</span> <span class="o">=</span> <span class="mi">501</span>
+    <span class="n">HTTP_BAD_GATEWAY</span> <span class="o">=</span> <span class="mi">502</span>
+    <span class="n">HTTP_SERVICE_UNAVAILABLE</span> <span class="o">=</span> <span class="mi">503</span>
+    <span class="n">HTTP_GATEWAY_TIMEOUT</span> <span class="o">=</span> <span class="mi">504</span>
+    <span class="n">HTTP_HTTP_VERSION_NOT_SUPPORTED</span> <span class="o">=</span> <span class="mi">505</span>
+    <span class="n">HTTP_LOOP_DETECTED</span> <span class="o">=</span> <span class="mi">508</span>
+    <span class="n">HTTP_NOT_EXTENDED</span> <span class="o">=</span> <span class="mi">510</span>
+    <span class="n">HTTP_NETWORK_AUTHENTICATION_REQUIRED</span> <span class="o">=</span> <span class="mi">511</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Index</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#_"><strong>_</strong></a>
+ | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#Q"><strong>Q</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#X"><strong>X</strong></a>
+ | <a href="#Y"><strong>Y</strong></a>
+ 
+</div>
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.DummySession.__contains__">__contains__() (database.DummySession static method)</a>
+</li>
+      <li><a href="dev/modules.html#modules.flowroute.Numbers.__del__">__del__() (modules.flowroute.Numbers method)</a>
+</li>
+      <li><a href="dev/database.html#database.Address.__dict__">__dict__ (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.CustomRouting.__dict__">(database.CustomRouting attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Dispatcher.__dict__">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.__dict__">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.__dict__">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits.__dict__">(database.dSIPCallLimits attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.__dict__">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.__dict__">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.__dict__">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.__dict__">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.__dict__">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.__dict__">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.__dict__">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.__dict__">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.__dict__">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.__dict__">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.__dict__">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.__dict__">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DummySession.__dict__">(database.DummySession attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.__dict__">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.__dict__">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.__dict__">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.__dict__">(database.OutboundRoutes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.__dict__">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.__dict__">(database.UAC attribute)</a>
+</li>
+        <li><a href="dev/modules.html#modules.flowroute.Numbers.__dict__">(modules.flowroute.Numbers attribute)</a>
+</li>
+        <li><a href="dev/shared.html#shared.IO.__dict__">(shared.IO attribute)</a>
+</li>
+        <li><a href="dev/shared.html#shared.StatusCodes.__dict__">(shared.StatusCodes attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.ipc.DummySettingsManager.__dict__">(util.ipc.DummySettingsManager attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.AES_CTR.__dict__">(util.security.AES_CTR attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.APIToken.__dict__">(util.security.APIToken attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.Credentials.__dict__">(util.security.Credentials attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.CryptoLibInfo.__dict__">(util.security.CryptoLibInfo attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.KeyCertPair.__dict__">(util.security.KeyCertPair attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Address.__init__">__init__() (database.Address method)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.CustomRouting.__init__">(database.CustomRouting method)</a>
+</li>
+        <li><a href="dev/database.html#database.Dispatcher.__init__">(database.Dispatcher method)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.__init__">(database.Domain method)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.__init__">(database.DomainAttrs method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits.__init__">(database.dSIPCallLimits method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.__init__">(database.dSIPCDRInfo method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.__init__">(database.dSIPCertificates method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.__init__">(database.dSIPDNIDEnrichment method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.__init__">(database.dSIPDomainMapping method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.__init__">(database.dSIPFailFwd method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.__init__">(database.dSIPHardFwd method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.__init__">(database.dSIPLCR method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.__init__">(database.dSIPLeases method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.__init__">(database.dSIPMaintModes method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.__init__">(database.dSIPMultiDomainMapping method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.__init__">(database.dSIPNotification method)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.__init__">(database.dSIPUser method)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.__init__">(database.GatewayGroups method)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.__init__">(database.Gateways method)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.__init__">(database.InboundMapping method)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.__init__">(database.OutboundRoutes method)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.__init__">(database.Subscribers method)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.__init__">(database.UAC method)</a>
+</li>
+        <li><a href="dev/modules.html#modules.flowroute.Numbers.__init__">(modules.flowroute.Numbers method)</a>
+</li>
+        <li><a href="dev/util.html#util.security.APIToken.__init__">(util.security.APIToken method)</a>
+</li>
+        <li><a href="dev/util.html#util.security.KeyCertPair.__init__">(util.security.KeyCertPair method)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.DummySession.__iter__">__iter__() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.Address.__mapper__">__mapper__ (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Dispatcher.__mapper__">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.__mapper__">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.__mapper__">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits.__mapper__">(database.dSIPCallLimits attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.__mapper__">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.__mapper__">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.__mapper__">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.__mapper__">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.__mapper__">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.__mapper__">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.__mapper__">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.__mapper__">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.__mapper__">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.__mapper__">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.__mapper__">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.__mapper__">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.__mapper__">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.__mapper__">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.__mapper__">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.__mapper__">(database.OutboundRoutes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.__mapper__">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.__mapper__">(database.UAC attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Address.__module__">__module__ (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.CustomRouting.__module__">(database.CustomRouting attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Dispatcher.__module__">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.__module__">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.__module__">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.FLAGS.__module__">(database.DomainAttrs.FLAGS attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits.__module__">(database.dSIPCallLimits attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.__module__">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.__module__">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.__module__">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.__module__">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.__module__">(database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.__module__">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.__module__">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.__module__">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.__module__">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.__module__">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.__module__">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.__module__">(database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.__module__">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.FLAGS.__module__">(database.dSIPNotification.FLAGS attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.__module__">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DummySession.__module__">(database.DummySession attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.__module__">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.__module__">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.__module__">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.__module__">(database.OutboundRoutes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.__module__">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.__module__">(database.UAC attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.FLAGS.__module__">(database.UAC.FLAGS attribute)</a>
+</li>
+        <li><a href="dev/modules.html#modules.flowroute.Numbers.__module__">(modules.flowroute.Numbers attribute)</a>
+</li>
+        <li><a href="dev/shared.html#shared.IO.__module__">(shared.IO attribute)</a>
+</li>
+        <li><a href="dev/shared.html#shared.StatusCodes.__module__">(shared.StatusCodes attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.ipc.DummySettingsManager.__module__">(util.ipc.DummySettingsManager attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.AES_CTR.__module__">(util.security.AES_CTR attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.APIToken.__module__">(util.security.APIToken attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.Credentials.__module__">(util.security.Credentials attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.CryptoLibInfo.__module__">(util.security.CryptoLibInfo attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.KeyCertPair.__module__">(util.security.KeyCertPair attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.Address.__table__">__table__ (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Dispatcher.__table__">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.__table__">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.__table__">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits.__table__">(database.dSIPCallLimits attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.__table__">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.__table__">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.__table__">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.__table__">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.__table__">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.__table__">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.__table__">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.__table__">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.__table__">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.__table__">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.__table__">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.__table__">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.__table__">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.__table__">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.__table__">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.__table__">(database.OutboundRoutes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.__table__">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.__table__">(database.UAC attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Address.__weakref__">__weakref__ (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.CustomRouting.__weakref__">(database.CustomRouting attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Dispatcher.__weakref__">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.__weakref__">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.__weakref__">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits.__weakref__">(database.dSIPCallLimits attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.__weakref__">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.__weakref__">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.__weakref__">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.__weakref__">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.__weakref__">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.__weakref__">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.__weakref__">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.__weakref__">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.__weakref__">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.__weakref__">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.__weakref__">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.__weakref__">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DummySession.__weakref__">(database.DummySession attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.__weakref__">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.__weakref__">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.__weakref__">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.__weakref__">(database.OutboundRoutes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.__weakref__">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.__weakref__">(database.UAC attribute)</a>
+</li>
+        <li><a href="dev/modules.html#modules.flowroute.Numbers.__weakref__">(modules.flowroute.Numbers attribute)</a>
+</li>
+        <li><a href="dev/shared.html#shared.IO.__weakref__">(shared.IO attribute)</a>
+</li>
+        <li><a href="dev/shared.html#shared.StatusCodes.__weakref__">(shared.StatusCodes attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.ipc.DummySettingsManager.__weakref__">(util.ipc.DummySettingsManager attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.AES_CTR.__weakref__">(util.security.AES_CTR attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.APIToken.__weakref__">(util.security.APIToken attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.Credentials.__weakref__">(util.security.Credentials attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.CryptoLibInfo.__weakref__">(util.security.CryptoLibInfo attribute)</a>
+</li>
+        <li><a href="dev/util.html#util.security.KeyCertPair.__weakref__">(util.security.KeyCertPair attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Address._sa_class_manager">_sa_class_manager (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Dispatcher._sa_class_manager">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain._sa_class_manager">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs._sa_class_manager">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCallLimits._sa_class_manager">(database.dSIPCallLimits attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCDRInfo._sa_class_manager">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates._sa_class_manager">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment._sa_class_manager">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping._sa_class_manager">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd._sa_class_manager">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd._sa_class_manager">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR._sa_class_manager">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases._sa_class_manager">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes._sa_class_manager">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping._sa_class_manager">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification._sa_class_manager">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser._sa_class_manager">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups._sa_class_manager">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways._sa_class_manager">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping._sa_class_manager">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes._sa_class_manager">(database.OutboundRoutes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers._sa_class_manager">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC._sa_class_manager">(database.UAC attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.DummySession.add">add() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.add_all">add_all() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/util.html#util.kamtls.addCustomTLSConfig">addCustomTLSConfig() (in module util.kamtls)</a>
+</li>
+      <li><a href="dev/modules.html#modules.domain.domain_routes.addDomain">addDomain() (in module modules.domain.domain_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.addEndpointGroups">addEndpointGroups() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.addNumberEnrichment">addNumberEnrichment() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.Address">Address (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.Gateways.address">address (database.Gateways attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.cron.addTaggedCronjob">addTaggedCronjob() (in module util.cron)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpateOutboundRoutes">addUpateOutboundRoutes() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateCarrierGroups">addUpdateCarrierGroups() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateCarriers">addUpdateCarriers() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/modules.html#modules.domain.domain_routes.addUpdateDomain">addUpdateDomain() (in module modules.domain.domain_routes)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateEndpointGroups">addUpdateEndpointGroups() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateInboundMapping">addUpdateInboundMapping() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateStirShaken">addUpdateStirShaken() (in module dsiprouter)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateTeleBlock">addUpdateTeleBlock() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.addUpdateTransNexus">addUpdateTransNexus() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.security.AES_CTR">AES_CTR (class in util.security)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.AESCTR_CREDS_ENCODED_MAX_LEN">AESCTR_CREDS_ENCODED_MAX_LEN (util.security.Credentials attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.allowed_file">allowed_file() (in module shared)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.api_before_request">api_before_request() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.security.api_security">api_security() (in module util.security)</a>
+</li>
+      <li><a href="dev/util.html#util.security.APIToken">APIToken (class in util.security)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.attr_list">attr_list (database.dSIPDomainMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.attr_list">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.attrFilter">attrFilter() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.Dispatcher.attrs">attrs (database.Dispatcher attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Gateways.attrs">(database.Gateways attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.UAC.auth_ha1">auth_ha1 (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.auth_password">auth_password (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.auth_proxy">auth_proxy (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.auth_username">auth_username (database.UAC attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.backupandrestore">backupandrestore() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.before_first_request">before_first_request() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.before_request">before_request() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.begin">begin() (database.DummySession method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.DummySession.begin_nested">begin_nested() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.AES_CTR.BLOCK_SIZE">BLOCK_SIZE (util.security.AES_CTR attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.bulk_insert_mappings">bulk_insert_mappings() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.bulk_save_objects">bulk_save_objects() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.bulk_update_mappings">bulk_update_mappings() (database.DummySession method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPCertificates.cert">cert (database.dSIPCertificates attribute)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.certificates">certificates() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.letsencrypt.challenge_server">challenge_server() (in module util.letsencrypt)</a>
+</li>
+      <li><a href="dev/util.html#util.file_handling.change_owner">change_owner() (in module util.file_handling)</a>
+</li>
+      <li><a href="dev/util.html#util.file_handling.change_permissions_recursive">change_permissions_recursive() (in module util.file_handling)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.cron_functions.cleanupLeases">cleanupLeases() (in module modules.api.cron_functions)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.close">close() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.commit">commit() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.configure">configure() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/modules.html#modules.domain.domain_routes.configureMSTeams">configureMSTeams() (in module modules.domain.domain_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.connection">connection() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.contact_addr">contact_addr (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.time_funcs.convert_ts">convert_ts() (in module util.time_funcs)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.convertCertBuffToX509List">convertCertBuffToX509List() (util.security.KeyCertPair static method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.convertKeyBuffToPkey">convertKeyBuffToPkey() (util.security.KeyCertPair static method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.convertPKCS7CertToX509List">convertPKCS7CertToX509List() (util.security.KeyCertPair static method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPLCR.cost">cost (database.dSIPLCR attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDNIDEnrichment.country_code">country_code (database.dSIPDNIDEnrichment attribute)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.createBackup">createBackup() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.createCertificate">createCertificate() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.kamtls.createCustomTLSConfig">createCustomTLSConfig() (in module util.kamtls)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.createdate">createdate (database.dSIPNotification attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.createDBURI">createDBURI() (in module database)</a>
+</li>
+      <li><a href="dev/util.html#util.parse_json.CreateEncoder">CreateEncoder() (in module util.parse_json)</a>
+</li>
+      <li><a href="dev/database.html#database.createSessionMaker">createSessionMaker() (in module database)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.createSettingsManager">createSettingsManager() (in module util.ipc)</a>
+</li>
+      <li><a href="dev/database.html#database.createValidEngine">createValidEngine() (in module database)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials">Credentials (class in util.security)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.CREDS_MAX_LEN">CREDS_MAX_LEN (util.security.Credentials attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.cron.cronIntervalToDescription">cronIntervalToDescription() (in module util.cron)</a>
+</li>
+      <li><a href="dev/util.html#util.security.CryptoLibInfo">CryptoLibInfo (class in util.security)</a>
+</li>
+      <li><a href="dev/database.html#database.CustomRouting">CustomRouting (class in database)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    database
+
+      <ul>
+        <li><a href="dev/database.html#module-database">module</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.db_host">db_host (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.db_password">db_password (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.db_username">db_username (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.debugEndpoint">debugEndpoint() (in module shared)</a>
+</li>
+      <li><a href="dev/shared.html#shared.debugException">debugException() (in module shared)</a>
+</li>
+      <li><a href="dev/util.html#util.security.AES_CTR.decrypt">decrypt() (util.security.AES_CTR static method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.delete">delete() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.deleteCarrierGroups">deleteCarrierGroups() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.deleteCarriers">deleteCarriers() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.letsencrypt.deleteCertificate">deleteCertificate() (in module util.letsencrypt)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.deleteCertificates">deleteCertificates() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.kamtls.deleteCustomTLSConfig">deleteCustomTLSConfig() (in module util.kamtls)</a>
+</li>
+      <li><a href="dev/modules.html#modules.domain.domain_routes.deleteDomain">deleteDomain() (in module modules.domain.domain_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.deleteEndpointGroup">deleteEndpointGroup() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.deleteInboundMapping">deleteInboundMapping() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.deleteNumberEnrichment">deleteNumberEnrichment() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.deleteOutboundRoute">deleteOutboundRoute() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.deletePBX">deletePBX() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.cron.deleteTaggedCronjob">deleteTaggedCronjob() (in module util.cron)</a>
+</li>
+      <li><a href="dev/database.html#database.Dispatcher.description">description (database.Dispatcher attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.description">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.description">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.description">(database.Gateways attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.InboundMapping.description">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.description">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Dispatcher.destination">destination (database.Dispatcher attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.dictToStrFields">dictToStrFields() (in module shared)</a>
+</li>
+      <li><a href="dev/database.html#database.Domain.did">did (database.Domain attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.DomainAttrs.did">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPFailFwd.did">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.did">(database.dSIPHardFwd attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Dispatcher">Dispatcher (class in database)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayCarrierGroups">displayCarrierGroups() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayCarriers">displayCarriers() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayCDRS">displayCDRS() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/modules.html#modules.domain.domain_routes.displayDomains">displayDomains() (in module modules.domain.domain_routes)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayEndpointGroups">displayEndpointGroups() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayError">displayError() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayInboundMapping">displayInboundMapping() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayLicenseManager">displayLicenseManager() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayNumberEnrichment">displayNumberEnrichment() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayOutboundRoutes">displayOutboundRoutes() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayStirShaken">displayStirShaken() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayTeleBlock">displayTeleBlock() (in module dsiprouter)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayTransNexus">displayTransNexus() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.displayUpgrade">displayUpgrade() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.DK_LEN_DEFAULT">DK_LEN_DEFAULT (util.security.Credentials attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDNIDEnrichment.dnid">dnid (database.dSIPDNIDEnrichment attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.Domain">Domain (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.Domain.domain">domain (database.Domain attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPCertificates.domain">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.domain">(database.Subscribers attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.DOMAIN_DISABLED">DOMAIN_DISABLED (database.dSIPDomainMapping.FLAGS attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.DOMAIN_DISABLED">(database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.DOMAIN_ENABLED">DOMAIN_ENABLED (database.dSIPDomainMapping.FLAGS attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.DOMAIN_ENABLED">(database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.domain_id">domain_id (database.dSIPDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.domain_list">domain_list (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.domain_list_hash">domain_list_hash (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DomainAttrs">DomainAttrs (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.DomainAttrs.FLAGS">DomainAttrs.FLAGS (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPUser.domains">domains (database.dSIPUser attribute)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.domainTypeFilter">domainTypeFilter() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPFailFwd.dr_groupid">dr_groupid (database.dSIPFailFwd attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPHardFwd.dr_groupid">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.dr_groupid">(database.dSIPLCR attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPFailFwd.dr_ruleid">dr_ruleid (database.dSIPFailFwd attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPHardFwd.dr_ruleid">(database.dSIPHardFwd attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.drop_fusionpbx_domains">drop_fusionpbx_domains() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCallLimits">dSIPCallLimits (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCDRInfo">dSIPCDRInfo (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCertificates">dSIPCertificates (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDNIDEnrichment">dSIPDNIDEnrichment (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping">dSIPDomainMapping (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS">dSIPDomainMapping.FLAGS (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPFailFwd">dSIPFailFwd (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPHardFwd">dSIPHardFwd (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPLCR">dSIPLCR (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPLeases">dSIPLeases (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMaintModes">dSIPMaintModes (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping">dSIPMultiDomainMapping (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS">dSIPMultiDomainMapping.FLAGS (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification">dSIPNotification (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.FLAGS">dSIPNotification.FLAGS (class in database)</a>
+</li>
+      <li>
+    dsiprouter
+
+      <ul>
+        <li><a href="dev/dsiprouter.html#module-dsiprouter">module</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPUser">dSIPUser (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession">DummySession (class in database)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.DummySettingsManager">DummySettingsManager (class in util.ipc)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.dumpCerts">dumpCerts() (util.security.KeyCertPair method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.dumpPkey">dumpPkey() (util.security.KeyCertPair method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPCDRInfo.email">email (database.dSIPCDRInfo attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPCertificates.email">(database.dSIPCertificates attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Subscribers.email_address">email_address (database.Subscribers attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.enabled">enabled (database.dSIPDomainMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.enabled">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/util.html#util.security.AES_CTR.encrypt">encrypt() (util.security.AES_CTR static method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.execute">execute() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/util.html#util.conversions.expand_prefix">expand_prefix() (in module util.conversions)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/util.html#util.conversions.expand_prefixs">expand_prefixs() (in module util.conversions)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPLeases.expiration">expiration (database.dSIPLeases attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.expire">expire() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.expire_all">expire_all() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPLCR.expires">expires (database.dSIPLCR attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.UAC.expires">(database.UAC attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.DummySession.expunge">expunge() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.expunge_all">expunge_all() (database.DummySession method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.favicon">favicon() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.fetchNumberEnrichment">fetchNumberEnrichment() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPUser.firstname">firstname (database.dSIPUser attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.Dispatcher.flags">flags (database.Dispatcher attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.UAC.flags">(database.UAC attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.DummySession.flush">flush() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPLCR.from_prefix">from_prefix (database.dSIPLCR attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.GatewayGroups">GatewayGroups (class in database)</a>
+</li>
+      <li><a href="dev/modules.html#modules.domain.domain_routes.gatewayIdToIP">gatewayIdToIP() (in module modules.domain.domain_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.Gateways">Gateways (class in database)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.generateCDRS">generateCDRS() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.letsencrypt.generateCertificate">generateCertificate() (in module util.letsencrypt)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.generatePassword">generatePassword() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.security.AES_CTR.genKey">genKey() (util.security.AES_CTR static method)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.get_bind">get_bind() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.get_sources">get_sources() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getCertificates">getCertificates() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.getCertSubjectPrintable">getCertSubjectPrintable() (util.security.KeyCertPair static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.getCustomRoutes">getCustomRoutes() (in module shared)</a>
+</li>
+      <li><a href="dev/util.html#util.kamtls.getCustomTLSConfigs">getCustomTLSConfigs() (in module util.kamtls)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getEndpointGroup">getEndpointGroup() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getEndpointLease">getEndpointLease() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getGatewayCDRS">getGatewayCDRS() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getGatewayGroupCDRS">getGatewayGroupCDRS() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getKamailioStats">getKamailioStats() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.getNumberEnrichment">getNumberEnrichment() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.flowroute.Numbers.getNumbers">getNumbers() (modules.flowroute.Numbers method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.CryptoLibInfo.getOpenSSLVer">getOpenSSLVer() (util.security.CryptoLibInfo static method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/modules.html#modules.api.api_routes.getOptionMessageStatus">getOptionMessageStatus() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/shared.html#shared.getRequestData">getRequestData() (in module shared)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.DummySettingsManager.getSettings">getSettings() (util.ipc.DummySettingsManager method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.CryptoLibInfo.getSupportedSSLProtocols">getSupportedSSLProtocols() (util.security.CryptoLibInfo static method)</a>
+</li>
+      <li><a href="dev/util.html#util.cron.getTaggedCronjob">getTaggedCronjob() (in module util.cron)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.getUpgradeLog">getUpgradeLog() (in module dsiprouter)</a>
+</li>
+      <li>
+    globals
+
+      <ul>
+        <li><a href="dev/globals.html#module-globals">module</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.InboundMapping.groupid">groupid (database.InboundMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.OutboundRoutes.groupid">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.Address.grp">grp (database.Address attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCallLimits.gwgroupid">gwgroupid (database.dSIPCallLimits attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPCDRInfo.gwgroupid">(database.dSIPCDRInfo attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.gwgroupid">(database.dSIPNotification attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPLeases.gwid">gwid (database.dSIPLeases attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMaintModes.gwid">(database.dSIPMaintModes attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.gwid">(database.Gateways attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.GatewayGroups.gwlist">gwlist (database.GatewayGroups attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.InboundMapping.gwlist">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.gwlist">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.InboundMapping.gwname">gwname (database.InboundMapping attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.Subscribers.ha1">ha1 (database.Subscribers attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.Subscribers.ha1b">ha1b (database.Subscribers attribute)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.handleInboundMapping">handleInboundMapping() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.handleNotificationRequest">handleNotificationRequest() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.HASH_ITERATIONS">HASH_ITERATIONS (util.security.Credentials attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.hashCreds">hashCreds() (util.security.Credentials static method)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.HASHED_CREDS_ENCODED_MAX_LEN">HASHED_CREDS_ENCODED_MAX_LEN (util.security.Credentials attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_ACCEPTED">HTTP_ACCEPTED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_BAD_GATEWAY">HTTP_BAD_GATEWAY (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_BAD_REQUEST">HTTP_BAD_REQUEST (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_CONFLICT">HTTP_CONFLICT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE">HTTP_CONNECTION_CLOSED_WITHOUT_RESPONSE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_CONTINUE">HTTP_CONTINUE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_CREATED">HTTP_CREATED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_EXPECTATION_FAILED">HTTP_EXPECTATION_FAILED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_FORBIDDEN">HTTP_FORBIDDEN (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_FOUND">HTTP_FOUND (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_GATEWAY_TIMEOUT">HTTP_GATEWAY_TIMEOUT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_GONE">HTTP_GONE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_HTTP_VERSION_NOT_SUPPORTED">HTTP_HTTP_VERSION_NOT_SUPPORTED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_INTERNAL_SERVER_ERROR">HTTP_INTERNAL_SERVER_ERROR (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_LENGTH_REQUIRED">HTTP_LENGTH_REQUIRED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_LOOP_DETECTED">HTTP_LOOP_DETECTED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_METHOD_NOT_ALLOWED">HTTP_METHOD_NOT_ALLOWED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_MOVED_PERMANENTLY">HTTP_MOVED_PERMANENTLY (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_MULTI_STATUS">HTTP_MULTI_STATUS (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_MULTIPLE_CHOICES">HTTP_MULTIPLE_CHOICES (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NETWORK_AUTHENTICATION_REQUIRED">HTTP_NETWORK_AUTHENTICATION_REQUIRED (shared.StatusCodes attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NO_CONTENT">HTTP_NO_CONTENT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NON_AUTHORITATIVE_INFORMATION">HTTP_NON_AUTHORITATIVE_INFORMATION (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NOT_ACCEPTABLE">HTTP_NOT_ACCEPTABLE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NOT_EXTENDED">HTTP_NOT_EXTENDED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NOT_FOUND">HTTP_NOT_FOUND (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NOT_IMPLEMENTED">HTTP_NOT_IMPLEMENTED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_NOT_MODIFIED">HTTP_NOT_MODIFIED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_OK">HTTP_OK (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_PARTIAL_CONTENT">HTTP_PARTIAL_CONTENT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_PAYMENT_REQUIRED">HTTP_PAYMENT_REQUIRED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_PERMANENT_REDIRECT">HTTP_PERMANENT_REDIRECT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_PRECONDITION_FAILED">HTTP_PRECONDITION_FAILED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_PRECONDITION_REQUIRED">HTTP_PRECONDITION_REQUIRED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_PROXY_AUTHENTICATION_REQUIRED">HTTP_PROXY_AUTHENTICATION_REQUIRED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_REQUEST_ENTITY_TOO_LARGE">HTTP_REQUEST_ENTITY_TOO_LARGE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE">HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_REQUEST_TIMEOUT">HTTP_REQUEST_TIMEOUT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_REQUEST_URI_TOO_LONG">HTTP_REQUEST_URI_TOO_LONG (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_REQUESTED_RANGE_NOT_SATISFIABLE">HTTP_REQUESTED_RANGE_NOT_SATISFIABLE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_RESERVED">HTTP_RESERVED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_RESET_CONTENT">HTTP_RESET_CONTENT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_SEE_OTHER">HTTP_SEE_OTHER (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_SERVICE_UNAVAILABLE">HTTP_SERVICE_UNAVAILABLE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_SWITCHING_PROTOCOLS">HTTP_SWITCHING_PROTOCOLS (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_TEMPORARY_REDIRECT">HTTP_TEMPORARY_REDIRECT (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_TOO_MANY_REQUESTS">HTTP_TOO_MANY_REQUESTS (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_UNAUTHORIZED">HTTP_UNAUTHORIZED (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_UNSUPPORTED_MEDIA_TYPE">HTTP_UNSUPPORTED_MEDIA_TYPE (shared.StatusCodes attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.StatusCodes.HTTP_USE_PROXY">HTTP_USE_PROXY (shared.StatusCodes attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.Address.id">id (database.Address attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Dispatcher.id">(database.Dispatcher attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Domain.id">(database.Domain attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.DomainAttrs.id">(database.DomainAttrs attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPCertificates.id">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDNIDEnrichment.id">(database.dSIPDNIDEnrichment attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.id">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLeases.id">(database.dSIPLeases attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.id">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPUser.id">(database.dSIPUser attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.GatewayGroups.id">(database.GatewayGroups attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Subscribers.id">(database.Subscribers attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.UAC.id">(database.UAC attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.imgFilter">imgFilter() (in module dsiprouter)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.importInboundMapping">importInboundMapping() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.InboundMapping">InboundMapping (class in database)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.index">index() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.initApp">initApp() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/globals.html#globals.initialize">initialize() (in module globals)</a>
+</li>
+      <li><a href="dev/sysloginit.html#sysloginit.initSyslogLogger">initSyslogLogger() (in module sysloginit)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.injectReloadRequired">injectReloadRequired() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.injectSettings">injectSettings() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO">IO (class in shared)</a>
+</li>
+      <li><a href="dev/database.html#database.Address.ip_addr">ip_addr (database.Address attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMaintModes.ipaddr">ipaddr (database.dSIPMaintModes attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.is_modified">is_modified() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.isCertValid">isCertValid() (in module shared)</a>
+</li>
+      <li><a href="dev/util.html#util.security.APIToken.isValid">isValid() (util.security.APIToken method)</a>
+</li>
+      <li><a href="dev/util.html#util.file_handling.isValidFile">isValidFile() (in module util.file_handling)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPCertificates.key">key (database.dSIPCertificates attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.security.AES_CTR.KEY_SIZE">KEY_SIZE (util.security.AES_CTR attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCallLimits.key_type">key_type (database.dSIPCallLimits attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPFailFwd.key_type">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.key_type">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.key_type">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.key_type">(database.dSIPMaintModes attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/util.html#util.security.KeyCertPair">KeyCertPair (class in util.security)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.UAC.l_domain">l_domain (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.l_username">l_username (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.l_uuid">l_uuid (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.Domain.last_modified">last_modified (database.Domain attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.DomainAttrs.last_modified">(database.DomainAttrs attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPCDRInfo.last_sent">last_sent (database.dSIPCDRInfo attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPUser.lastname">lastname (database.dSIPUser attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.lastsync">lastsync (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCallLimits.limit">limit (database.dSIPCallLimits attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/modules.html#modules.api.api_routes.listEndpointGroups">listEndpointGroups() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.logcrit">logcrit() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.logdbg">logdbg() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.logerr">logerr() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.login">login() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.loginfo">loginfo() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.lognolvl">lognolvl() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.logout">logout() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.logwarn">logwarn() (shared.IO static method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.main">main() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.Address.mask">mask (database.Address attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.merge">merge() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.method">method (database.dSIPNotification attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.FLAGS.METHOD_EMAIL">METHOD_EMAIL (database.dSIPNotification.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.FLAGS.METHOD_SLACK">METHOD_SLACK (database.dSIPNotification.FLAGS attribute)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="dev/database.html#module-database">database</a>
+</li>
+        <li><a href="dev/dsiprouter.html#module-dsiprouter">dsiprouter</a>
+</li>
+        <li><a href="dev/globals.html#module-globals">globals</a>
+</li>
+        <li><a href="dev/modules.html#module-modules.api.api_routes">modules.api.api_routes</a>
+</li>
+        <li><a href="dev/modules.html#module-modules.api.cron_functions">modules.api.cron_functions</a>
+</li>
+        <li><a href="dev/modules.html#module-modules.cdr.cron_functions">modules.cdr.cron_functions</a>
+</li>
+        <li><a href="dev/modules.html#module-modules.domain.domain_routes">modules.domain.domain_routes</a>
+</li>
+        <li><a href="dev/modules.html#module-modules.flowroute">modules.flowroute</a>
+</li>
+        <li><a href="dev/modules.html#module-modules.fusionpbx.fusionpbx_sync_functions">modules.fusionpbx.fusionpbx_sync_functions</a>
+</li>
+        <li><a href="dev/settings.html#module-settings">settings</a>
+</li>
+        <li><a href="dev/shared.html#module-shared">shared</a>
+</li>
+        <li><a href="dev/sysloginit.html#module-sysloginit">sysloginit</a>
+</li>
+        <li><a href="dev/util.html#module-util.conversions">util.conversions</a>
+</li>
+        <li><a href="dev/util.html#module-util.cron">util.cron</a>
+</li>
+        <li><a href="dev/util.html#module-util.file_handling">util.file_handling</a>
+</li>
+        <li><a href="dev/util.html#module-util.ipc">util.ipc</a>
+</li>
+        <li><a href="dev/util.html#module-util.kamtls">util.kamtls</a>
+</li>
+        <li><a href="dev/util.html#module-util.letsencrypt">util.letsencrypt</a>
+</li>
+        <li><a href="dev/util.html#module-util.notifications">util.notifications</a>
+</li>
+        <li><a href="dev/util.html#module-util.parse_json">util.parse_json</a>
+</li>
+        <li><a href="dev/util.html#module-util.security">util.security</a>
+</li>
+        <li><a href="dev/util.html#module-util.time_funcs">util.time_funcs</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    modules.api.api_routes
+
+      <ul>
+        <li><a href="dev/modules.html#module-modules.api.api_routes">module</a>
+</li>
+      </ul></li>
+      <li>
+    modules.api.cron_functions
+
+      <ul>
+        <li><a href="dev/modules.html#module-modules.api.cron_functions">module</a>
+</li>
+      </ul></li>
+      <li>
+    modules.cdr.cron_functions
+
+      <ul>
+        <li><a href="dev/modules.html#module-modules.cdr.cron_functions">module</a>
+</li>
+      </ul></li>
+      <li>
+    modules.domain.domain_routes
+
+      <ul>
+        <li><a href="dev/modules.html#module-modules.domain.domain_routes">module</a>
+</li>
+      </ul></li>
+      <li>
+    modules.flowroute
+
+      <ul>
+        <li><a href="dev/modules.html#module-modules.flowroute">module</a>
+</li>
+      </ul></li>
+      <li>
+    modules.fusionpbx.fusionpbx_sync_functions
+
+      <ul>
+        <li><a href="dev/modules.html#module-modules.fusionpbx.fusionpbx_sync_functions">module</a>
+</li>
+      </ul></li>
+      <li><a href="dev/shared.html#shared.monthdelta">monthdelta() (in module shared)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.DomainAttrs.name">name (database.DomainAttrs attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.letsencrypt.new_csr">new_csr() (in module util.letsencrypt)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.noneFilter">noneFilter() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.DummySettingsManager.noop">noop() (util.ipc.DummySettingsManager static method)</a>
+</li>
+      <li><a href="dev/modules.html#modules.flowroute.Numbers">Numbers (class in modules.flowroute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/shared.html#shared.objToDict">objToDict() (in module shared)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.OutboundRoutes">OutboundRoutes (class in database)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPUser.password">password (database.dSIPUser attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Subscribers.password">(database.Subscribers attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPLCR.pattern">pattern (database.dSIPLCR attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.pbx_id">pbx_id (database.dSIPDomainMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.pbx_id">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/util.html#util.letsencrypt.perform_http01">perform_http01() (in module util.letsencrypt)</a>
+</li>
+      <li><a href="dev/database.html#database.Address.port">port (database.Address attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.InboundMapping.prefix">prefix (database.InboundMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.OutboundRoutes.prefix">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.Gateways.pri_prefix">pri_prefix (database.Gateways attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.printbold">printbold() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.printdbg">printdbg() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.printerr">printerr() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.printinfo">printinfo() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/shared.html#shared.IO.printwarn">printwarn() (shared.IO static method)</a>
+</li>
+      <li><a href="dev/database.html#database.Dispatcher.priority">priority (database.Dispatcher attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.InboundMapping.priority">(database.InboundMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.OutboundRoutes.priority">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.processInboundMappingImport">processInboundMappingImport() (in module dsiprouter)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Q">Q</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.DummySession.query">query() (database.DummySession method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.DummySession.query_property">query_property() (database.DummySession method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.UAC.r_domain">r_domain (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.r_username">r_username (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.readFile">readFile() (util.security.KeyCertPair static method)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.realm">realm (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.redirectCustom">redirectCustom() (in module shared)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.refresh">refresh() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.reg_delay">reg_delay (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS.REG_DISABLED">REG_DISABLED (database.UAC.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS.REG_ENABLED">REG_ENABLED (database.UAC.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS.REG_IN_PROGRESS">REG_IN_PROGRESS (database.UAC.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS.REG_IN_PROGRESS_AUTH">REG_IN_PROGRESS_AUTH (database.UAC.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS.REG_INITIALIZED">REG_INITIALIZED (database.UAC.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS.REG_SUCCEEDED">REG_SUCCEEDED (database.UAC.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.reloadkam">reloadkam() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/modules.html#modules.api.api_routes.reloadKamailioRoute">reloadKamailioRoute() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.remove">remove() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.replaceAppLoggers">replaceAppLoggers() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.restoreBackup">restoreBackup() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.revokeEndpointLease">revokeEndpointLease() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPUser.roles">roles (database.dSIPUser attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.rollback">rollback() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/database.html#database.InboundMapping.routeid">routeid (database.InboundMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.OutboundRoutes.routeid">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPDNIDEnrichment.routing_number">routing_number (database.dSIPDNIDEnrichment attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.rowToDict">rowToDict() (in module shared)</a>
+</li>
+      <li><a href="dev/database.html#database.Subscribers.rpid">rpid (database.Subscribers attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.InboundMapping.ruleid">ruleid (database.InboundMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.OutboundRoutes.ruleid">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.run_sync">run_sync() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/util.html#util.security.Credentials.SALT_LEN">SALT_LEN (util.security.Credentials attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.file_handling.saveUpload">saveUpload() (in module util.file_handling)</a>
+</li>
+      <li><a href="dev/database.html#database.DummySession.scalar">scalar() (database.DummySession method)</a>
+</li>
+      <li><a href="dev/util.html#util.letsencrypt.select_http01_chall">select_http01_chall() (in module util.letsencrypt)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCDRInfo.send_interval">send_interval (database.dSIPCDRInfo attribute)</a>
+</li>
+      <li><a href="dev/modules.html#modules.cdr.cron_functions.sendCdrReport">sendCdrReport() (in module modules.cdr.cron_functions)</a>
+</li>
+      <li><a href="dev/util.html#util.notifications.sendEmail">sendEmail() (in module util.notifications)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.sendSyncSettingsSignal">sendSyncSettingsSignal() (in module util.ipc)</a>
+</li>
+      <li><a href="dev/util.html#util.security.Credentials.setCreds">setCreds() (util.security.Credentials static method)</a>
+</li>
+      <li><a href="dev/database.html#database.Dispatcher.setid">setid (database.Dispatcher attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.setSharedSettings">setSharedSettings() (in module util.ipc)</a>
+</li>
+      <li>
+    settings
+
+      <ul>
+        <li><a href="dev/settings.html#module-settings">module</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.settingsToTableFormat">settingsToTableFormat() (in module database)</a>
+</li>
+      <li>
+    shared
+
+      <ul>
+        <li><a href="dev/shared.html#module-shared">module</a>
+</li>
+      </ul></li>
+      <li><a href="dev/shared.html#shared.showApiError">showApiError() (in module shared)</a>
+</li>
+      <li><a href="dev/shared.html#shared.showError">showError() (in module shared)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.DummySettingsManager.shutdown">shutdown() (util.ipc.DummySettingsManager method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPLeases.sid">sid (database.dSIPLeases attribute)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.sigHandler">sigHandler() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.socket">socket (database.UAC attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.ipc.DummySettingsManager.start">start() (util.ipc.DummySettingsManager method)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.start_upgrade">start_upgrade() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPCallLimits.status">status (database.dSIPCallLimits attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMaintModes.status">(database.dSIPMaintModes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/shared.html#shared.StatusCodes">StatusCodes (class in shared)</a>
+</li>
+      <li><a href="dev/shared.html#shared.strFieldsToDict">strFieldsToDict() (in module shared)</a>
+</li>
+      <li><a href="dev/database.html#database.Gateways.strip">strip (database.Gateways attribute)</a>
+</li>
+      <li><a href="dev/shared.html#shared.stripDictVals">stripDictVals() (in module shared)</a>
+</li>
+      <li><a href="dev/database.html#database.Subscribers">Subscribers (class in database)</a>
+</li>
+      <li><a href="dev/shared.html#shared.supportsColor">supportsColor() (in module shared)</a>
+</li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.sync_db">sync_db() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.sync_needed">sync_needed() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.syncerror">syncerror (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.syncSettings">syncSettings() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.syncstatus">syncstatus (database.dSIPMultiDomainMapping attribute)</a>
+</li>
+      <li>
+    sysloginit
+
+      <ul>
+        <li><a href="dev/sysloginit.html#module-sysloginit">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.Address.tag">tag (database.Address attribute)</a>
+</li>
+      <li><a href="dev/dsiprouter.html#dsiprouter.teardown">teardown() (in module dsiprouter)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.testConnectivity">testConnectivity() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/database.html#database.InboundMapping.timerec">timerec (database.InboundMapping attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.OutboundRoutes.timerec">(database.OutboundRoutes attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPUser.token">token (database.dSIPUser attribute)</a>
+
+      <ul>
+        <li><a href="dev/util.html#util.security.APIToken.token">(util.security.APIToken attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPUser.token_expiration">token_expiration (database.dSIPUser attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DomainAttrs.type">type (database.DomainAttrs attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPCertificates.type">(database.dSIPCertificates attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPDomainMapping.type">(database.dSIPDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.type">(database.dSIPMultiDomainMapping attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPNotification.type">(database.dSIPNotification attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.Gateways.type">(database.Gateways attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_3CX">TYPE_3CX (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_ASTERISK">TYPE_ASTERISK (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_ELASTIX">TYPE_ELASTIX (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_FREEPBX">TYPE_FREEPBX (database.dSIPDomainMapping.FLAGS attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.TYPE_FREEPBX">(database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_FREESWITCH">TYPE_FREESWITCH (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX">TYPE_FUSIONPBX (database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX_CLUSTER">TYPE_FUSIONPBX_CLUSTER (database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.FLAGS.TYPE_GWFAILURE">TYPE_GWFAILURE (database.dSIPNotification.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DomainAttrs.FLAGS.TYPE_INTEGER">TYPE_INTEGER (database.DomainAttrs.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_OPENPBX">TYPE_OPENPBX (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPNotification.FLAGS.TYPE_OVERLIMIT">TYPE_OVERLIMIT (database.dSIPNotification.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_PBXINAFLASH">TYPE_PBXINAFLASH (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_SIPFOUNDRY">TYPE_SIPFOUNDRY (database.dSIPDomainMapping.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.DomainAttrs.FLAGS.TYPE_STRING">TYPE_STRING (database.DomainAttrs.FLAGS attribute)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPDomainMapping.FLAGS.TYPE_UNKNOWN">TYPE_UNKNOWN (database.dSIPDomainMapping.FLAGS attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPMultiDomainMapping.FLAGS.TYPE_UNKNOWN">(database.dSIPMultiDomainMapping.FLAGS attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/database.html#database.UAC">UAC (class in database)</a>
+</li>
+      <li><a href="dev/database.html#database.UAC.FLAGS">UAC.FLAGS (class in database)</a>
+</li>
+      <li><a href="dev/modules.html#modules.fusionpbx.fusionpbx_sync_functions.update_nginx">update_nginx() (in module modules.fusionpbx.fusionpbx_sync_functions)</a>
+</li>
+      <li><a href="dev/shared.html#shared.updateConfig">updateConfig() (in module shared)</a>
+</li>
+      <li><a href="dev/util.html#util.kamtls.updateCustomTLSConfig">updateCustomTLSConfig() (in module util.kamtls)</a>
+</li>
+      <li><a href="dev/database.html#database.updateDsipSettingsTable">updateDsipSettingsTable() (in module database)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.updateEndpoint">updateEndpoint() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.updateEndpointGroups">updateEndpointGroups() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.updateNumberEnrichment">updateNumberEnrichment() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.cron.updateTaggedCronjob">updateTaggedCronjob() (in module util.cron)</a>
+</li>
+      <li><a href="dev/modules.html#modules.api.api_routes.uploadCertificates">uploadCertificates() (in module modules.api.api_routes)</a>
+</li>
+      <li><a href="dev/util.html#util.security.urandomChars">urandomChars() (in module util.security)</a>
+</li>
+      <li><a href="dev/database.html#database.dSIPUser.username">username (database.dSIPUser attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.Subscribers.username">(database.Subscribers attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/util.html#util.time_funcs.utcnow">utcnow() (in module util.time_funcs)</a>
+</li>
+      <li>
+    util.conversions
+
+      <ul>
+        <li><a href="dev/util.html#module-util.conversions">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    util.cron
+
+      <ul>
+        <li><a href="dev/util.html#module-util.cron">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.file_handling
+
+      <ul>
+        <li><a href="dev/util.html#module-util.file_handling">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.ipc
+
+      <ul>
+        <li><a href="dev/util.html#module-util.ipc">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.kamtls
+
+      <ul>
+        <li><a href="dev/util.html#module-util.kamtls">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.letsencrypt
+
+      <ul>
+        <li><a href="dev/util.html#module-util.letsencrypt">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.notifications
+
+      <ul>
+        <li><a href="dev/util.html#module-util.notifications">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.parse_json
+
+      <ul>
+        <li><a href="dev/util.html#module-util.parse_json">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.security
+
+      <ul>
+        <li><a href="dev/util.html#module-util.security">module</a>
+</li>
+      </ul></li>
+      <li>
+    util.time_funcs
+
+      <ul>
+        <li><a href="dev/util.html#module-util.time_funcs">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/util.html#util.security.KeyCertPair.validateKeyCertPair">validateKeyCertPair() (util.security.KeyCertPair method)</a>
+</li>
+      <li><a href="dev/database.html#database.DomainAttrs.value">value (database.DomainAttrs attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPNotification.value">(database.dSIPNotification attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="dev/database.html#database.dSIPCallLimits.value_type">value_type (database.dSIPCallLimits attribute)</a>
+
+      <ul>
+        <li><a href="dev/database.html#database.dSIPFailFwd.value_type">(database.dSIPFailFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPHardFwd.value_type">(database.dSIPHardFwd attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPLCR.value_type">(database.dSIPLCR attribute)</a>
+</li>
+        <li><a href="dev/database.html#database.dSIPMaintModes.value_type">(database.dSIPMaintModes attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="X">X</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/util.html#util.security.KeyCertPair.X509_DER_FILESIG">X509_DER_FILESIG (util.security.KeyCertPair attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.X509_PEM_CERT_BEGIN">X509_PEM_CERT_BEGIN (util.security.KeyCertPair attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/util.html#util.security.KeyCertPair.X509_PEM_CERT_END">X509_PEM_CERT_END (util.security.KeyCertPair attribute)</a>
+</li>
+      <li><a href="dev/util.html#util.security.KeyCertPair.X509_PEM_FILESIG">X509_PEM_FILESIG (util.security.KeyCertPair attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="Y">Y</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dev/dsiprouter.html#dsiprouter.yesOrNoFilter">yesOrNoFilter() (in module dsiprouter)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

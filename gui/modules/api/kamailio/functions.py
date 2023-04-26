@@ -100,7 +100,7 @@ def reloadKamailio():
                     msg = r.reason
                 ex = http_exceptions.HTTPException(msg)
                 ex.code = r.status_code
-                raise ex
+                #raise ex
 
         IO.printinfo("[---- Reloaded Kamailio with dSIPRouter Settings ----]")
     except Exception as ex:

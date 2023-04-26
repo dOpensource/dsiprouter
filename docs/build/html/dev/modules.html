@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4. modules &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="5. settings" href="settings.html" />
+    <link rel="prev" title="3. globals" href="globals.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html"> Developer Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="globals.html">3.  globals</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">The dSIPRouter Project</a></li>
+      <li class="breadcrumb-item active"><span class="section-number">4. </span>modules</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dev/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="modules">
+<h1><span class="section-number">4. </span>modules<a class="headerlink" href="#modules" title="Permalink to this heading"></a></h1>
+<div class="section" id="module-modules.api.api_routes">
+<span id="modules-api-api-routes"></span><h2><span class="section-number">4.1. </span>modules.api.api_routes<a class="headerlink" href="#module-modules.api.api_routes" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.addEndpointGroups">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">addEndpointGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endpointGroupType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#addEndpointGroups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.addEndpointGroups" title="Permalink to this definition"></a></dt>
+<dd><p>Add a single Endpoint Group</p>
+<div class="section" id="request-payload">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#request-payload" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    name: &lt;string&gt;,
+    calllimit: &lt;int&gt;,
+    auth: {
+        type: &quot;ip&quot;|&quot;userpwd&quot;,
+        user: &lt;string&gt;
+        pass: &lt;string&gt;
+        domain: &lt;string&gt;
+    },
+    endpoints [
+        {
+            hostname:&lt;string&gt;,
+            description:&lt;string&gt;
+            weight:&lt;string&gt;
+        },
+        ...
+    ],
+    strip: &lt;int&gt;,
+    prefix: &lt;string&gt;,
+    notifications: {
+        overmaxcalllimit: &lt;string&gt;,
+        endpointfailure: &lt;string&gt;
+    },
+    cdr: {
+        cdr_email: &lt;string&gt;,
+        cdr_send_interval: &lt;string&gt;
+    }
+    fusionpbx: {
+        enabled: &lt;bool&gt;,
+        dbhost: &lt;string&gt;,
+        dbuser: &lt;string&gt;,
+        dbpass: &lt;string&gt;
+    }
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="response-payload">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#response-payload" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;string&gt;,
+    msg: &lt;string&gt;,
+    kamreload: &lt;bool&gt;,
+    data: [
+        {
+            gwgroupid: &lt;int&gt;,
+            endpoints: [
+                &lt;int&gt;,
+                ...
+            ]
+        }
+    ]
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.addNumberEnrichment">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">addNumberEnrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#addNumberEnrichment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.addNumberEnrichment" title="Permalink to this definition"></a></dt>
+<dd><p>Add a one or multiple enrichment rules</p>
+<div class="section" id="id1">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    data: [
+        {
+            dnid: &lt;str&gt;,
+            country_code: &lt;str&gt;,
+            routing_number: &lt;str&gt;,
+            rule_name: &lt;str&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;str&gt;,
+    msg: &lt;str&gt;,
+    kamreload: &lt;bool&gt;,
+    data: [
+        {
+            rule_id: &lt;int&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.createBackup">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">createBackup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#createBackup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.createBackup" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a backup of the database</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.createCertificate">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">createCertificate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#createCertificate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.createCertificate" title="Permalink to this definition"></a></dt>
+<dd><p>Create TLS cert for a domain</p>
+<div class="section" id="id3">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<dl class="simple">
+<dt>{</dt><dd><p>domain: &lt;string&gt;,
+ip: &lt;int&gt;,
+port: &lt;int&gt;
+server_name_mode: &lt;int&gt;</p>
+</dd>
+</dl>
+<p>}</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.deleteCertificates">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">deleteCertificates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#deleteCertificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.deleteCertificates" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.deleteEndpointGroup">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">deleteEndpointGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwgroupid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#deleteEndpointGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.deleteEndpointGroup" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.deleteNumberEnrichment">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">deleteNumberEnrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#deleteNumberEnrichment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.deleteNumberEnrichment" title="Permalink to this definition"></a></dt>
+<dd><p>Delete one or multiple enrichment rules</p>
+<p>The rule_id can be provided in url path or payload</p>
+<div class="section" id="id4">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    data: [
+        {
+            rule_id: &lt;int&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;str&gt;,
+    msg: &lt;str&gt;,
+    kamreload: &lt;bool&gt;,
+    data: []
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.fetchNumberEnrichment">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">fetchNumberEnrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#fetchNumberEnrichment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.fetchNumberEnrichment" title="Permalink to this definition"></a></dt>
+<dd><p>Fetch a CSV to import from an external server</p>
+<p>Updates and adds rules by default</p>
+<p>If replace_rules is True then current rules are replaced</p>
+<div class="section" id="id6">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    data: [
+        {
+            url: &lt;str&gt;
+        },
+        ...
+    ],
+    replace_rules: &lt;bool&gt;
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id7">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;str&gt;,
+    msg: &lt;str&gt;,
+    kamreload: &lt;bool&gt;,
+    data: [
+        {
+            rule_id: &lt;int&gt;,
+            dnid: &lt;str&gt;,
+            country_code: &lt;str&gt;,
+            routing_number: &lt;str&gt;,
+            rule_name: &lt;str&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.generateCDRS">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">generateCDRS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwgroupid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">email</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtfilter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.datetime(1,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cdrfilter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonCompletedCalls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#generateCDRS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.generateCDRS" title="Permalink to this definition"></a></dt>
+<dd><p>Generate CDRs Report for a gwgroup</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gwgroupid</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.11)"><em>int</em></a><em>|</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – gwgroup to generate cdr’s for</p></li>
+<li><p><strong>type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – type of report (json|csv)</p></li>
+<li><p><strong>email</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.11)"><em>bool</em></a>) – whether the report should be emailed</p></li>
+<li><p><strong>dtfilter</strong> (<em>datetime</em>) – time before which cdr’s are not returned</p></li>
+<li><p><strong>cdrfilter</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.11)"><em>str</em></a>) – comma seperated cdr id’s to include</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>returns a json response or file</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>flask.Response</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.generatePassword">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">generatePassword</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#generatePassword"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.generatePassword" title="Permalink to this definition"></a></dt>
+<dd><p>Generate a random password</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getCertificates">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getCertificates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getCertificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getCertificates" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getEndpointGroup">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getEndpointGroup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwgroupid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getEndpointGroup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getEndpointGroup" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getEndpointLease">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getEndpointLease</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getEndpointLease"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getEndpointLease" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getGatewayCDRS">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getGatewayCDRS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getGatewayCDRS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getGatewayCDRS" title="Permalink to this definition"></a></dt>
+<dd><p>Purpose</p>
+<p>Getting the cdrs for a gateway thats part of a gateway group</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getGatewayGroupCDRS">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getGatewayGroupCDRS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwgroupid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">email</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtfilter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonCompletedCalls</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getGatewayGroupCDRS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getGatewayGroupCDRS" title="Permalink to this definition"></a></dt>
+<dd><p>Purpose</p>
+<p>Getting the cdrs for a gatewaygroup</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getKamailioStats">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getKamailioStats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getKamailioStats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getKamailioStats" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getNumberEnrichment">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getNumberEnrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getNumberEnrichment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getNumberEnrichment" title="Permalink to this definition"></a></dt>
+<dd><p>Get one or multiple number enrichment rules</p>
+<div class="section" id="id8">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#id8" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;str&gt;,
+    msg: &lt;str&gt;,
+    kamreload: &lt;bool&gt;,
+    data: [
+        {
+            rule_id: &lt;int&gt;,
+            dnid: &lt;str&gt;,
+            country_code: &lt;str&gt;,
+            routing_number: &lt;str&gt;,
+            rule_name: &lt;str&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.getOptionMessageStatus">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">getOptionMessageStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#getOptionMessageStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.getOptionMessageStatus" title="Permalink to this definition"></a></dt>
+<dd><p>Check if Domain is receiving replies from OPTION Messages
+:param domain:  domain to check
+:type domain:   str
+:return:        whether domain handled OPTION message correctly
+:rtype:         bool</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.handleInboundMapping">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">handleInboundMapping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#handleInboundMapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.handleInboundMapping" title="Permalink to this definition"></a></dt>
+<dd><p>Endpoint for Inbound DID Rule Mapping</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.handleNotificationRequest">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">handleNotificationRequest</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#handleNotificationRequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.handleNotificationRequest" title="Permalink to this definition"></a></dt>
+<dd><p>Endpoint for Sending Notifications</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.listEndpointGroups">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">listEndpointGroups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#listEndpointGroups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.listEndpointGroups" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.reloadKamailioRoute">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">reloadKamailioRoute</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#reloadKamailioRoute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.reloadKamailioRoute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.restoreBackup">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">restoreBackup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#restoreBackup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.restoreBackup" title="Permalink to this definition"></a></dt>
+<dd><p>Restore backup of the database</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.revokeEndpointLease">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">revokeEndpointLease</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">leaseid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#revokeEndpointLease"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.revokeEndpointLease" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.testConnectivity">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">testConnectivity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#testConnectivity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.testConnectivity" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.updateEndpoint">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">updateEndpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#updateEndpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.updateEndpoint" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.updateEndpointGroups">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">updateEndpointGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwgroupid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#updateEndpointGroups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.updateEndpointGroups" title="Permalink to this definition"></a></dt>
+<dd><p>Update a single Endpoint Group</p>
+<p>The gwgroupid can be provided in url path or payload</p>
+<div class="section" id="id9">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#id9" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    name: &lt;string&gt;,
+    calllimit: &lt;int&gt;,
+    auth: {
+        type: &quot;ip&quot;|&quot;userpwd&quot;,
+        user: &lt;string&gt;
+        pass: &lt;string&gt;
+        domain: &lt;string&gt;
+    },
+    endpoints [
+        {
+            gwid:&lt;int&gt;,
+            hostname:&lt;string&gt;,
+            description:&lt;string&gt;
+            weight:&lt;string&gt;
+        },
+        ...
+    ],
+    strip: &lt;int&gt;,
+    prefix: &lt;string&gt;,
+    notifications: {
+        overmaxcalllimit: &lt;string&gt;,
+        endpointfailure: &lt;string&gt;
+    },
+    cdr: {
+        cdr_email: &lt;string&gt;,
+        cdr_send_interval: &lt;string&gt;
+    }
+    fusionpbx: {
+        enabled: &lt;bool&gt;,
+        dbhost: &lt;string&gt;,
+        dbuser: &lt;string&gt;,
+        dbpass: &lt;string&gt;
+    }
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id10">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#id10" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;string&gt;,
+    msg: &lt;string&gt;,
+    kamreload: &lt;bool&gt;,
+    data: [
+        {
+            gwgroupid: &lt;int&gt;,
+            endpoints: [
+                &lt;int&gt;,
+                ...
+            ]
+        }
+    ]
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.updateNumberEnrichment">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">updateNumberEnrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_payload</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#updateNumberEnrichment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.updateNumberEnrichment" title="Permalink to this definition"></a></dt>
+<dd><p>Update one or multiple enrichment rules</p>
+<p>The rule_id can be provided in url path or payload</p>
+<div class="section" id="id11">
+<h3><span class="section-number">4. </span>Request Payload<a class="headerlink" href="#id11" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    data: [
+        {
+            rule_id: &lt;int&gt;
+            dnid: &lt;str&gt;,
+            country_code: &lt;str&gt;,
+            routing_number: &lt;str&gt;,
+            rule_name: &lt;str&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+<div class="section" id="id12">
+<h3><span class="section-number">4. </span>Response Payload<a class="headerlink" href="#id12" title="Permalink to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span>{
+    error: &lt;str&gt;,
+    msg: &lt;str&gt;,
+    kamreload: &lt;bool&gt;,
+    data: [
+        {
+            rule_id: &lt;int&gt;
+        },
+        ...
+    ]
+}
+</pre></div>
+</div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.api_routes.uploadCertificates">
+<span class="sig-prename descclassname"><span class="pre">modules.api.api_routes.</span></span><span class="sig-name descname"><span class="pre">uploadCertificates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/api_routes.html#uploadCertificates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.api_routes.uploadCertificates" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-modules.api.cron_functions">
+<span id="modules-api-cron-functions"></span><h2><span class="section-number">4.2. </span>modules.api.cron_functions<a class="headerlink" href="#module-modules.api.cron_functions" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.api.cron_functions.cleanupLeases">
+<span class="sig-prename descclassname"><span class="pre">modules.api.cron_functions.</span></span><span class="sig-name descname"><span class="pre">cleanupLeases</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/api/cron_functions.html#cleanupLeases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.api.cron_functions.cleanupLeases" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-modules.cdr.cron_functions">
+<span id="modules-cdr-cron-functions"></span><h2><span class="section-number">4.3. </span>modules.cdr.cron_functions<a class="headerlink" href="#module-modules.cdr.cron_functions" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.cdr.cron_functions.sendCdrReport">
+<span class="sig-prename descclassname"><span class="pre">modules.cdr.cron_functions.</span></span><span class="sig-name descname"><span class="pre">sendCdrReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gwgroupid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/cdr/cron_functions.html#sendCdrReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.cdr.cron_functions.sendCdrReport" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-modules.domain.domain_routes">
+<span id="modules-domain-domain-routes"></span><h2><span class="section-number">4.4. </span>modules.domain.domain_routes<a class="headerlink" href="#module-modules.domain.domain_routes" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.domain.domain_routes.addDomain">
+<span class="sig-prename descclassname"><span class="pre">modules.domain.domain_routes.</span></span><span class="sig-name descname"><span class="pre">addDomain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pbxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/domain/domain_routes.html#addDomain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.domain.domain_routes.addDomain" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.domain.domain_routes.addUpdateDomain">
+<span class="sig-prename descclassname"><span class="pre">modules.domain.domain_routes.</span></span><span class="sig-name descname"><span class="pre">addUpdateDomain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/domain/domain_routes.html#addUpdateDomain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.domain.domain_routes.addUpdateDomain" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.domain.domain_routes.configureMSTeams">
+<span class="sig-prename descclassname"><span class="pre">modules.domain.domain_routes.</span></span><span class="sig-name descname"><span class="pre">configureMSTeams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/domain/domain_routes.html#configureMSTeams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.domain.domain_routes.configureMSTeams" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.domain.domain_routes.deleteDomain">
+<span class="sig-prename descclassname"><span class="pre">modules.domain.domain_routes.</span></span><span class="sig-name descname"><span class="pre">deleteDomain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/domain/domain_routes.html#deleteDomain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.domain.domain_routes.deleteDomain" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.domain.domain_routes.displayDomains">
+<span class="sig-prename descclassname"><span class="pre">modules.domain.domain_routes.</span></span><span class="sig-name descname"><span class="pre">displayDomains</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/domain/domain_routes.html#displayDomains"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.domain.domain_routes.displayDomains" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.domain.domain_routes.gatewayIdToIP">
+<span class="sig-prename descclassname"><span class="pre">modules.domain.domain_routes.</span></span><span class="sig-name descname"><span class="pre">gatewayIdToIP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pbx_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/domain/domain_routes.html#gatewayIdToIP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.domain.domain_routes.gatewayIdToIP" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-modules.flowroute">
+<span id="modules-flowroute"></span><h2><span class="section-number">4.5. </span>modules.flowroute<a class="headerlink" href="#module-modules.flowroute" title="Permalink to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">modules.flowroute.</span></span><span class="sig-name descname"><span class="pre">Numbers</span></span><a class="reference internal" href="../_modules/modules/flowroute.html#Numbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.flowroute.Numbers" title="Permalink to this definition"></a></dt>
+<dd><p>Contains methods for accessing the flowroute Numbers api</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers.__del__">
+<span class="sig-name descname"><span class="pre">__del__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/flowroute.html#Numbers.__del__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.flowroute.Numbers.__del__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers.__dict__">
+<span class="sig-name descname"><span class="pre">__dict__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'__module__':</span> <span class="pre">'modules.flowroute',</span> <span class="pre">'__doc__':</span> <span class="pre">'\n</span>&#160;&#160;&#160; <span class="pre">Contains</span> <span class="pre">methods</span> <span class="pre">for</span> <span class="pre">accessing</span> <span class="pre">the</span> <span class="pre">flowroute</span> <span class="pre">Numbers</span> <span class="pre">api\n</span>&#160;&#160;&#160; <span class="pre">',</span> <span class="pre">'__init__':</span> <span class="pre">&lt;function</span> <span class="pre">Numbers.__init__&gt;,</span> <span class="pre">'__del__':</span> <span class="pre">&lt;function</span> <span class="pre">Numbers.__del__&gt;,</span> <span class="pre">'getNumbers':</span> <span class="pre">&lt;function</span> <span class="pre">Numbers.getNumbers&gt;,</span> <span class="pre">'__dict__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__dict__'</span> <span class="pre">of</span> <span class="pre">'Numbers'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__weakref__':</span> <span class="pre">&lt;attribute</span> <span class="pre">'__weakref__'</span> <span class="pre">of</span> <span class="pre">'Numbers'</span> <span class="pre">objects&gt;,</span> <span class="pre">'__annotations__':</span> <span class="pre">{}})</span></em><a class="headerlink" href="#modules.flowroute.Numbers.__dict__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/flowroute.html#Numbers.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.flowroute.Numbers.__init__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers.__module__">
+<span class="sig-name descname"><span class="pre">__module__</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'modules.flowroute'</span></em><a class="headerlink" href="#modules.flowroute.Numbers.__module__" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers.__weakref__">
+<span class="sig-name descname"><span class="pre">__weakref__</span></span><a class="headerlink" href="#modules.flowroute.Numbers.__weakref__" title="Permalink to this definition"></a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="modules.flowroute.Numbers.getNumbers">
+<span class="sig-name descname"><span class="pre">getNumbers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">starts_with</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ends_with</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/flowroute.html#Numbers.getNumbers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.flowroute.Numbers.getNumbers" title="Permalink to this definition"></a></dt>
+<dd><p>Get flowroute DID’s associated with accnt</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference external" href="https://developer.flowroute.com/api/numbers/v2.0/list-account-phone-numbers/">flowroute list numbers</a></p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>starts_with</strong> – match numbers starting with..</p></li>
+<li><p><strong>contains</strong> – match numbers containing..</p></li>
+<li><p><strong>ends_with</strong> – match numbers ending with..</p></li>
+<li><p><strong>limit</strong> – limit of matched numbers</p></li>
+<li><p><strong>offset</strong> – offsets list of numbers returned</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list(<a href="#id13"><span class="problematic" id="id14">*</span></a>str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="modules-frauddetection-fraud">
+<h2><span class="section-number">4.6. </span>modules.frauddetection.fraud<a class="headerlink" href="#modules-frauddetection-fraud" title="Permalink to this heading"></a></h2>
+</div>
+<div class="section" id="module-modules.fusionpbx.fusionpbx_sync_functions">
+<span id="modules-fusionpbx-fusionpbx-sync-functions"></span><h2><span class="section-number">4.7. </span>modules.fusionpbx.fusionpbx_sync_functions<a class="headerlink" href="#module-modules.fusionpbx.fusionpbx_sync_functions" title="Permalink to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.drop_fusionpbx_domains">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">drop_fusionpbx_domains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#drop_fusionpbx_domains"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.drop_fusionpbx_domains" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.get_sources">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">get_sources</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#get_sources"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.get_sources" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.reloadkam">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">reloadkam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kamcmd_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#reloadkam"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.reloadkam" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.run_sync">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">run_sync</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#run_sync"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.run_sync" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.sync_db">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">sync_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#sync_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.sync_db" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.sync_needed">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">sync_needed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#sync_needed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.sync_needed" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="modules.fusionpbx.fusionpbx_sync_functions.update_nginx">
+<span class="sig-prename descclassname"><span class="pre">modules.fusionpbx.fusionpbx_sync_functions.</span></span><span class="sig-name descname"><span class="pre">update_nginx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/modules/fusionpbx/fusionpbx_sync_functions.html#update_nginx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#modules.fusionpbx.fusionpbx_sync_functions.update_nginx" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="globals.html" class="btn btn-neutral float-left" title="3. globals" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="settings.html" class="btn btn-neutral float-right" title="5. settings" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

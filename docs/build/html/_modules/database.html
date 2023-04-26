@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>database &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">database</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for database</h1><div class="highlight"><pre>
+<span></span><span class="c1"># make sure the generated source files are imported instead of the template ones</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;/etc/dsiprouter/gui&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span><span class="p">,</span> <span class="n">MetaData</span><span class="p">,</span> <span class="n">Table</span><span class="p">,</span> <span class="n">Column</span><span class="p">,</span> <span class="n">String</span><span class="p">,</span> <span class="n">exc</span> <span class="k">as</span> <span class="n">sql_exceptions</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">registry</span><span class="p">,</span> <span class="n">sessionmaker</span><span class="p">,</span> <span class="n">scoped_session</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">text</span>
+<span class="kn">import</span> <span class="nn">settings</span>
+<span class="kn">from</span> <span class="nn">shared</span> <span class="kn">import</span> <span class="n">IO</span><span class="p">,</span> <span class="n">debugException</span><span class="p">,</span> <span class="n">dictToStrFields</span>
+<span class="kn">from</span> <span class="nn">util.networking</span> <span class="kn">import</span> <span class="n">safeUriToHost</span><span class="p">,</span> <span class="n">safeFormatSipUri</span>
+<span class="kn">from</span> <span class="nn">util.security</span> <span class="kn">import</span> <span class="n">AES_CTR</span>
+
+<span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_TYPE</span> <span class="o">==</span> <span class="s2">&quot;mysql&quot;</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">MySQLdb</span> <span class="k">as</span> <span class="nn">db_driver</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">_mysql</span> <span class="k">as</span> <span class="nn">db_driver</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">pymysql</span> <span class="k">as</span> <span class="nn">db_driver</span>
+            <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="n">debugException</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+                <span class="k">raise</span>
+
+
+<div class="viewcode-block" id="Gateways"><a class="viewcode-back" href="../dev/database.html#database.Gateways">[docs]</a><span class="k">class</span> <span class="nc">Gateways</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dr_gateways table\n</span>
+<span class="sd">    Documentation: `dr_gateways table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-gateways&gt;`_\n</span>
+<span class="sd">    Allowed address types: SIP URI, IP address or DNS domain name\n</span>
+<span class="sd">    The address field can be a full SIP URI, partial URI, or only host; where host portion is an IP or FQDN</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">strip</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">gwgroup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">addr_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">gwgroup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">description</span><span class="p">[</span><span class="s2">&quot;gwgroup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gwgroup</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">addr_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">description</span><span class="p">[</span><span class="s1">&#39;addr_id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">addr_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">address</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strip</span> <span class="o">=</span> <span class="n">strip</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pri_prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attrs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">dictToStrFields</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="GatewayGroups"><a class="viewcode-back" href="../dev/database.html#database.GatewayGroups">[docs]</a><span class="k">class</span> <span class="nc">GatewayGroups</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dr_gw_lists table\n</span>
+<span class="sd">    Documentation: `dr_gw_lists table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-gw-lists&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">gwlist</span><span class="o">=</span><span class="p">[],</span> <span class="nb">type</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">FLT_CARRIER</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;name:</span><span class="si">{}</span><span class="s2">,type:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwlist</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">gw</span><span class="p">)</span> <span class="k">for</span> <span class="n">gw</span> <span class="ow">in</span> <span class="n">gwlist</span><span class="p">)</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Address"><a class="viewcode-back" href="../dev/database.html#database.Address">[docs]</a><span class="k">class</span> <span class="nc">Address</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for address table\n</span>
+<span class="sd">    Documentation: `address table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-address&gt;`_\n</span>
+<span class="sd">    Allowed address types: exact IP address, subnet IP address or DNS domain name\n</span>
+<span class="sd">    The ip_addr field is either an IP address or DNS domain name; mask field is for subnet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ip_addr</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">gwgroup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">tag</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">gwgroup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tag</span><span class="p">[</span><span class="s2">&quot;gwgroup&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">gwgroup</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grp</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ip_addr</span> <span class="o">=</span> <span class="n">ip_addr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="n">dictToStrFields</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="InboundMapping"><a class="viewcode-back" href="../dev/database.html#database.InboundMapping">[docs]</a><span class="k">class</span> <span class="nc">InboundMapping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Partial Schema for modified version of dr_rules table\n</span>
+<span class="sd">    Documentation: `dr_rules table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-rules&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">gwname</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groupid</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">gwlist</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groupid</span> <span class="o">=</span> <span class="n">groupid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwlist</span> <span class="o">=</span> <span class="n">gwlist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timerec</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routeid</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="OutboundRoutes"><a class="viewcode-back" href="../dev/database.html#database.OutboundRoutes">[docs]</a><span class="k">class</span> <span class="nc">OutboundRoutes</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dr_rules table\n</span>
+<span class="sd">    Documentation: `dr_rules table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-rules&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groupid</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">timerec</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">routeid</span><span class="p">,</span> <span class="n">gwlist</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groupid</span> <span class="o">=</span> <span class="n">groupid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timerec</span> <span class="o">=</span> <span class="n">timerec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routeid</span> <span class="o">=</span> <span class="n">routeid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwlist</span> <span class="o">=</span> <span class="n">gwlist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="CustomRouting"><a class="viewcode-back" href="../dev/database.html#database.CustomRouting">[docs]</a><span class="k">class</span> <span class="nc">CustomRouting</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dr_custom_rules table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CustomRouting.__init__"><a class="viewcode-back" href="../dev/database.html#database.CustomRouting.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">locality</span><span class="p">,</span> <span class="n">ppm</span><span class="p">,</span> <span class="n">description</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locality</span> <span class="o">=</span> <span class="n">locality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ppm</span> <span class="o">=</span> <span class="n">ppm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span></div>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPLCR"><a class="viewcode-back" href="../dev/database.html#database.dSIPLCR">[docs]</a><span class="k">class</span> <span class="nc">dSIPLCR</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for LCR lookup\n</span>
+<span class="sd">    Mapped to db table: dsip_lcr</span>
+<span class="sd">    The pattern field contains a complex key that includes FROM XNPA and TO NPA\n</span>
+<span class="sd">    There the pattern field looks like this XNPA-NPA\n</span>
+<span class="sd">    The dr_groupid field contains a dynamic routing group that maps to a gateway</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">from_prefix</span><span class="p">,</span> <span class="n">dr_groupid</span><span class="p">,</span> <span class="n">cost</span><span class="o">=</span><span class="mf">0.00</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span> <span class="o">=</span> <span class="n">pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_prefix</span> <span class="o">=</span> <span class="n">from_prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_groupid</span> <span class="o">=</span> <span class="n">dr_groupid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">cost</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPMultiDomainMapping"><a class="viewcode-back" href="../dev/database.html#database.dSIPMultiDomainMapping">[docs]</a><span class="k">class</span> <span class="nc">dSIPMultiDomainMapping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for Multi-Tenant PBX\n</span>
+<span class="sd">    Mapped to db table: dsip_multidomain_mapping</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="dSIPMultiDomainMapping.FLAGS"><a class="viewcode-back" href="../dev/database.html#database.dSIPMultiDomainMapping.FLAGS">[docs]</a>    <span class="k">class</span> <span class="nc">FLAGS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">DOMAIN_DISABLED</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">DOMAIN_ENABLED</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TYPE_UNKNOWN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">TYPE_FUSIONPBX</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TYPE_FUSIONPBX_CLUSTER</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">TYPE_FREEPBX</span> <span class="o">=</span> <span class="mi">3</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbx_id</span><span class="p">,</span> <span class="n">db_host</span><span class="p">,</span> <span class="n">db_username</span><span class="p">,</span> <span class="n">db_password</span><span class="p">,</span> <span class="n">domain_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attr_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbx_id</span> <span class="o">=</span> <span class="n">pbx_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_host</span> <span class="o">=</span> <span class="n">db_host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_username</span> <span class="o">=</span> <span class="n">db_username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_password</span> <span class="o">=</span> <span class="n">db_password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_list</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">domain_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">domain_id</span> <span class="ow">in</span> <span class="n">domain_list</span><span class="p">)</span> <span class="k">if</span> <span class="n">domain_list</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_list</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">attr_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr_id</span> <span class="ow">in</span> <span class="n">attr_list</span><span class="p">)</span> <span class="k">if</span> <span class="n">attr_list</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="n">enabled</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPDomainMapping"><a class="viewcode-back" href="../dev/database.html#database.dSIPDomainMapping">[docs]</a><span class="k">class</span> <span class="nc">dSIPDomainMapping</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for Single-Tenant PBX domain mapping\n</span>
+<span class="sd">    Mapped to db table: dsip_domain_mapping</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="dSIPDomainMapping.FLAGS"><a class="viewcode-back" href="../dev/database.html#database.dSIPDomainMapping.FLAGS">[docs]</a>    <span class="k">class</span> <span class="nc">FLAGS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">DOMAIN_DISABLED</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">DOMAIN_ENABLED</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TYPE_UNKNOWN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">TYPE_ASTERISK</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TYPE_SIPFOUNDRY</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">TYPE_ELASTIX</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">TYPE_FREESWITCH</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">TYPE_OPENPBX</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">TYPE_FREEPBX</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">TYPE_PBXINAFLASH</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="n">TYPE_3CX</span> <span class="o">=</span> <span class="mi">8</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pbx_id</span><span class="p">,</span> <span class="n">domain_id</span><span class="p">,</span> <span class="n">attr_list</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbx_id</span> <span class="o">=</span> <span class="n">pbx_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_id</span> <span class="o">=</span> <span class="n">domain_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attr_list</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">attr_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr_id</span> <span class="ow">in</span> <span class="n">attr_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enabled</span> <span class="o">=</span> <span class="n">enabled</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Subscribers"><a class="viewcode-back" href="../dev/database.html#database.Subscribers">[docs]</a><span class="k">class</span> <span class="nc">Subscribers</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for subscriber table\n</span>
+<span class="sd">    Documentation: `subscriber table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-subscriber&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">gwid</span><span class="p">,</span> <span class="n">email_address</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha1</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ha1b</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rpid</span> <span class="o">=</span> <span class="n">gwid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">email_address</span> <span class="o">=</span> <span class="n">email_address</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPLeases"><a class="viewcode-back" href="../dev/database.html#database.dSIPLeases">[docs]</a><span class="k">class</span> <span class="nc">dSIPLeases</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_endpoint_leases table\n</span>
+<span class="sd">    maintains a list of active leases based on seconds</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gwid</span><span class="p">,</span> <span class="n">sid</span><span class="p">,</span> <span class="n">ttl</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwid</span> <span class="o">=</span> <span class="n">gwid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sid</span> <span class="o">=</span> <span class="n">sid</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">ttl</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expiration</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1"> %H:%M:%S&#39;</span><span class="p">)</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPMaintModes"><a class="viewcode-back" href="../dev/database.html#database.dSIPMaintModes">[docs]</a><span class="k">class</span> <span class="nc">dSIPMaintModes</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_maintmode table\n</span>
+<span class="sd">    maintains a list of endpoints and carriers that are in maintenance mode</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ipaddr</span><span class="p">,</span> <span class="n">gwid</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ipaddr</span> <span class="o">=</span> <span class="n">ipaddr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwid</span> <span class="o">=</span> <span class="n">gwid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">createdate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPCallLimits"><a class="viewcode-back" href="../dev/database.html#database.dSIPCallLimits">[docs]</a><span class="k">class</span> <span class="nc">dSIPCallLimits</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_calllimit table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gwgroupid</span><span class="p">,</span> <span class="n">limit</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwgroupid</span> <span class="o">=</span> <span class="n">gwgroupid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit</span> <span class="o">=</span> <span class="n">limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">createdate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPNotification"><a class="viewcode-back" href="../dev/database.html#database.dSIPNotification">[docs]</a><span class="k">class</span> <span class="nc">dSIPNotification</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_notification table\n</span>
+<span class="sd">    maintains the list of notifications</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="dSIPNotification.FLAGS"><a class="viewcode-back" href="../dev/database.html#database.dSIPNotification.FLAGS">[docs]</a>    <span class="k">class</span> <span class="nc">FLAGS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">METHOD_EMAIL</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">METHOD_SLACK</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TYPE_OVERLIMIT</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">TYPE_GWFAILURE</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gwgroupid</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwgroupid</span> <span class="o">=</span> <span class="n">gwgroupid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">createdate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPHardFwd"><a class="viewcode-back" href="../dev/database.html#database.dSIPHardFwd">[docs]</a><span class="k">class</span> <span class="nc">dSIPHardFwd</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_hardfwd table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dr_ruleid</span><span class="p">,</span> <span class="n">did</span><span class="p">,</span> <span class="n">dr_groupid</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_ruleid</span> <span class="o">=</span> <span class="n">dr_ruleid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">did</span> <span class="o">=</span> <span class="n">did</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_groupid</span> <span class="o">=</span> <span class="n">dr_groupid</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPCDRInfo"><a class="viewcode-back" href="../dev/database.html#database.dSIPCDRInfo">[docs]</a><span class="k">class</span> <span class="nc">dSIPCDRInfo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_cdrinfo table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gwgroupid</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">send_interval</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gwgroupid</span> <span class="o">=</span> <span class="n">gwgroupid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_interval</span> <span class="o">=</span> <span class="n">send_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_sent</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPFailFwd"><a class="viewcode-back" href="../dev/database.html#database.dSIPFailFwd">[docs]</a><span class="k">class</span> <span class="nc">dSIPFailFwd</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_failfwd table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dr_ruleid</span><span class="p">,</span> <span class="n">did</span><span class="p">,</span> <span class="n">dr_groupid</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_ruleid</span> <span class="o">=</span> <span class="n">dr_ruleid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">did</span> <span class="o">=</span> <span class="n">did</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dr_groupid</span> <span class="o">=</span> <span class="n">dr_groupid</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPCertificates"><a class="viewcode-back" href="../dev/database.html#database.dSIPCertificates">[docs]</a><span class="k">class</span> <span class="nc">dSIPCertificates</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_certificates table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">cert</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cert</span> <span class="o">=</span> <span class="n">cert</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="dSIPDNIDEnrichment"><a class="viewcode-back" href="../dev/database.html#database.dSIPDNIDEnrichment">[docs]</a><span class="k">class</span> <span class="nc">dSIPDNIDEnrichment</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dsip_dnid_enrich_lnp table\n</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dnid</span><span class="p">,</span> <span class="n">country_code</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">routing_number</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">rule_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">rule_name</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dnid</span> <span class="o">=</span> <span class="n">dnid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">country_code</span> <span class="o">=</span> <span class="n">country_code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routing_number</span> <span class="o">=</span> <span class="n">routing_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">dictToStrFields</span><span class="p">(</span><span class="n">description</span><span class="p">)</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="UAC"><a class="viewcode-back" href="../dev/database.html#database.UAC">[docs]</a><span class="k">class</span> <span class="nc">UAC</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for uacreg table\n</span>
+<span class="sd">    Documentation: `uacreg table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-uacreg&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="UAC.FLAGS"><a class="viewcode-back" href="../dev/database.html#database.UAC.FLAGS">[docs]</a>    <span class="k">class</span> <span class="nc">FLAGS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">REG_ENABLED</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">REG_DISABLED</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">REG_IN_PROGRESS</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">REG_SUCCEEDED</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">REG_IN_PROGRESS_AUTH</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">REG_INITIALIZED</span> <span class="o">=</span> <span class="mi">16</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">realm</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">auth_username</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">auth_proxy</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">local_domain</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">remote_domain</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l_uuid</span> <span class="o">=</span> <span class="n">uuid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l_username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l_domain</span> <span class="o">=</span> <span class="n">local_domain</span>
+        <span class="k">if</span> <span class="n">flags</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">FLAGS</span><span class="o">.</span><span class="n">REG_DISABLED</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">r_username</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auth_username</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">r_username</span> <span class="o">=</span> <span class="n">username</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auth_username</span> <span class="o">=</span> <span class="n">auth_username</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_domain</span> <span class="o">=</span> <span class="n">remote_domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">realm</span> <span class="o">=</span> <span class="n">realm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth_password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth_ha1</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auth_proxy</span> <span class="o">=</span> <span class="n">auth_proxy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expires</span> <span class="o">=</span> <span class="mi">60</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg_delay</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Domain"><a class="viewcode-back" href="../dev/database.html#database.Domain">[docs]</a><span class="k">class</span> <span class="nc">Domain</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for domain table\n</span>
+<span class="sd">    Documentation: `domain table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-domain&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">domain</span><span class="p">,</span> <span class="n">did</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_modified</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="k">if</span> <span class="n">did</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">did</span> <span class="o">=</span> <span class="n">domain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">did</span> <span class="o">=</span> <span class="n">did</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_modified</span> <span class="o">=</span> <span class="n">last_modified</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DomainAttrs"><a class="viewcode-back" href="../dev/database.html#database.DomainAttrs">[docs]</a><span class="k">class</span> <span class="nc">DomainAttrs</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for domain_attrs table\n</span>
+<span class="sd">    Documentation: `domain_attrs table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-domain-attrs&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DomainAttrs.FLAGS"><a class="viewcode-back" href="../dev/database.html#database.DomainAttrs.FLAGS">[docs]</a>    <span class="k">class</span> <span class="nc">FLAGS</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+        <span class="n">TYPE_INTEGER</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">TYPE_STRING</span> <span class="o">=</span> <span class="mi">2</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">did</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;pbx_ip&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_modified</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">did</span> <span class="o">=</span> <span class="n">did</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_modified</span> <span class="o">=</span> <span class="n">last_modified</span>
+        <span class="n">temp_value</span> <span class="o">=</span> <span class="n">value</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">safeUriToHost</span><span class="p">(</span><span class="n">did</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">temp_value</span> <span class="k">if</span> <span class="n">temp_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">did</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Dispatcher"><a class="viewcode-back" href="../dev/database.html#database.Dispatcher">[docs]</a><span class="k">class</span> <span class="nc">Dispatcher</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for dispatcher table\n</span>
+<span class="sd">    Documentation: `dispatcher table &lt;https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dispatcher&gt;`_</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setid</span><span class="p">,</span> <span class="n">destination</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setid</span> <span class="o">=</span> <span class="n">setid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">destination</span> <span class="o">=</span> <span class="n">safeFormatSipUri</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">priority</span> <span class="o">=</span> <span class="n">priority</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">attrs</span> <span class="o">=</span> <span class="n">attrs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">description</span>
+
+    <span class="k">pass</span></div>
+
+
+<span class="c1"># TODO: create class for dsip_settings table</span>
+
+<div class="viewcode-block" id="dSIPUser"><a class="viewcode-back" href="../dev/database.html#database.dSIPUser">[docs]</a><span class="k">class</span> <span class="nc">dSIPUser</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Schema for the dSIPROuter User table</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">firstname</span><span class="p">,</span> <span class="n">lastname</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">,</span> <span class="n">roles</span><span class="p">,</span> <span class="n">domains</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">token_expiration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">firstname</span> <span class="o">=</span> <span class="n">firstname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lastname</span> <span class="o">=</span> <span class="n">lastname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roles</span> <span class="o">=</span> <span class="n">roles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domains</span> <span class="o">=</span> <span class="n">domains</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">token_expiration</span> <span class="o">=</span> <span class="n">token_expiration</span>
+
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="createDBURI"><a class="viewcode-back" href="../dev/database.html#database.createDBURI">[docs]</a><span class="k">def</span> <span class="nf">createDBURI</span><span class="p">(</span><span class="n">db_driver</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_user</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_pass</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_charset</span><span class="o">=</span><span class="s1">&#39;utf8mb4&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get any and all DB Connection URI&#39;s</span>
+<span class="sd">    Facilitates HA DB Server connections through multiple host&#39;s defined in settings</span>
+<span class="sd">    :return:    list of DB URI connection strings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uri_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># URI is built from the following by order of precedence:</span>
+    <span class="c1"># 1: function arguments</span>
+    <span class="c1"># 2: environment variables (debug mode only)</span>
+    <span class="c1"># 3: settings file</span>
+    <span class="k">if</span> <span class="n">db_driver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_driver</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_DRIVER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_DRIVER</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_DRIVER</span>
+    <span class="k">if</span> <span class="n">db_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_type</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_TYPE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_TYPE</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_TYPE</span>
+    <span class="k">if</span> <span class="n">db_user</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_user</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_USER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_USER</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_USER</span>
+    <span class="k">if</span> <span class="n">db_pass</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_pass</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_PASS&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_PASS</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_PASS</span>
+    <span class="k">if</span> <span class="n">db_host</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_host</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_HOST&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_HOST</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_HOST</span>
+    <span class="k">if</span> <span class="n">db_port</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_port</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_PORT</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_PORT</span>
+    <span class="k">if</span> <span class="n">db_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">db_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;KAM_DB_NAME&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_NAME</span><span class="p">)</span> <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span> <span class="k">else</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_NAME</span>
+
+    <span class="c1"># need to decrypt password</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">db_pass</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="n">db_pass</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">db_pass</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="c1"># formatting for driver</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">db_driver</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">db_driver</span> <span class="o">=</span> <span class="s1">&#39;+</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">db_driver</span><span class="p">)</span>
+    <span class="c1"># string template</span>
+    <span class="n">db_uri_str</span> <span class="o">=</span> <span class="n">db_type</span> <span class="o">+</span> <span class="n">db_driver</span> <span class="o">+</span> <span class="s2">&quot;://&quot;</span> <span class="o">+</span> <span class="n">db_user</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">db_pass</span> <span class="o">+</span> <span class="s2">&quot;@&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="si">{host}</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">db_port</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">db_name</span> <span class="o">+</span> <span class="s2">&quot;?&quot;</span> <span class="o">+</span> <span class="n">db_charset</span>
+    <span class="c1"># for cluster of DB add all hosts</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">db_host</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">db_host</span><span class="p">:</span>
+            <span class="n">uri_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">db_uri_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">uri_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">db_uri_str</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">db_host</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+        <span class="n">IO</span><span class="o">.</span><span class="n">printdbg</span><span class="p">(</span><span class="s1">&#39;createDBURI() returned: [</span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;&quot;</span><span class="si">{0}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span> <span class="k">for</span> <span class="n">uri</span> <span class="ow">in</span> <span class="n">uri_list</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">uri_list</span></div>
+
+
+<div class="viewcode-block" id="createValidEngine"><a class="viewcode-back" href="../dev/database.html#database.createValidEngine">[docs]</a><span class="k">def</span> <span class="nf">createValidEngine</span><span class="p">(</span><span class="n">uri_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create DB engine if connection is valid</span>
+<span class="sd">    Attempts each uri in the list until a valid connection is made</span>
+<span class="sd">    This method uses a singleton pattern and returns db_engine if created</span>
+<span class="sd">    :param uri_list:    list of connection uri&#39;s</span>
+<span class="sd">    :return:            DB engine object</span>
+<span class="sd">    :raise:             SQLAlchemyError if all connections fail</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s1">&#39;db_engine&#39;</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;db_engine&#39;</span><span class="p">]</span>
+
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">conn_uri</span> <span class="ow">in</span> <span class="n">uri_list</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">db_engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">conn_uri</span><span class="p">,</span>
+                <span class="n">echo</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                <span class="n">echo_pool</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                <span class="n">pool_recycle</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+                <span class="n">pool_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                <span class="n">isolation_level</span><span class="o">=</span><span class="s2">&quot;READ UNCOMMITTED&quot;</span><span class="p">,</span>
+                <span class="n">connect_args</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;connect_timeout&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
+            <span class="c1"># test connection</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">db_engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="c1"># conn good return it</span>
+            <span class="k">return</span> <span class="n">db_engine</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+    <span class="c1"># we failed to return good connection raise exceptions</span>
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ex</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">:</span>
+            <span class="n">debugException</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">sql_exceptions</span><span class="o">.</span><span class="n">SQLAlchemyError</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="createSessionMaker"><a class="viewcode-back" href="../dev/database.html#database.createSessionMaker">[docs]</a><span class="k">def</span> <span class="nf">createSessionMaker</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This method uses a singleton pattern and returns SessionLoader if created</span>
+<span class="sd">    :return:    SessionMaker() object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s1">&#39;SessionLoader&#39;</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
+        <span class="k">return</span> <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;SessionLoader&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;db_engine&#39;</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>
+        <span class="n">db_engine</span> <span class="o">=</span> <span class="n">createValidEngine</span><span class="p">(</span><span class="n">createDBURI</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">db_engine</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()[</span><span class="s1">&#39;db_engine&#39;</span><span class="p">]</span>
+
+    <span class="n">mapper</span> <span class="o">=</span> <span class="n">registry</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="n">MetaData</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">db_engine</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">database</span><span class="p">))</span>
+
+    <span class="n">dr_gateways</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dr_gateways&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;address&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">outboundroutes</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dr_rules&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">inboundmapping</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dr_rules&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">subscriber</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;subscriber&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_domain_mapping</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_domain_mapping&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_multidomain_mapping</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_multidomain_mapping&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="c1"># fusionpbx_mappings = Table(&#39;dsip_fusionpbx_mappings&#39;, mapper.metadata, autoload_replace=True, autoload_with=db_engine)</span>
+    <span class="n">dsip_lcr</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_lcr&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">uacreg</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;uacreg&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dr_gw_lists</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dr_gw_lists&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="c1"># dr_groups = Table(&#39;dr_groups&#39;, mapper.metadata, autoload_replace=True, autoload_with=db_engine)</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;domain&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">domain_attrs</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;domain_attrs&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dispatcher</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dispatcher&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_endpoint_lease</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_endpoint_lease&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_maintmode</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_maintmode&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_calllimit</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_calllimit&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_notification</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_notification&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_hardfwd</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_hardfwd&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_failfwd</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_failfwd&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_cdrinfo</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_cdrinfo&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_certificates</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_certificates&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_dnid_enrichment</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_dnid_enrich_lnp&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+    <span class="n">dsip_user</span> <span class="o">=</span> <span class="n">Table</span><span class="p">(</span><span class="s1">&#39;dsip_user&#39;</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">metadata</span><span class="p">,</span> <span class="n">autoload_replace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoload_with</span><span class="o">=</span><span class="n">db_engine</span><span class="p">)</span>
+
+    <span class="c1"># dr_gw_lists_alias = select([</span>
+    <span class="c1">#     dr_gw_lists.c.id.label(&quot;drlist_id&quot;),</span>
+    <span class="c1">#     dr_gw_lists.c.gwlist,</span>
+    <span class="c1">#     dr_gw_lists.c.description.label(&quot;drlist_description&quot;),</span>
+    <span class="c1"># ]).correlate(None).alias()</span>
+    <span class="c1"># gw_join = join(dr_gw_lists_alias, dr_groups,</span>
+    <span class="c1">#                dr_gw_lists_alias.c.drlist_id == dr_groups.c.id,</span>
+    <span class="c1">#                dr_gw_lists_alias.c.drlist_description == dr_groups.c.description)</span>
+
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">Gateways</span><span class="p">,</span> <span class="n">dr_gateways</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">Address</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">InboundMapping</span><span class="p">,</span> <span class="n">inboundmapping</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">OutboundRoutes</span><span class="p">,</span> <span class="n">outboundroutes</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPDomainMapping</span><span class="p">,</span> <span class="n">dsip_domain_mapping</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPMultiDomainMapping</span><span class="p">,</span> <span class="n">dsip_multidomain_mapping</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">Subscribers</span><span class="p">,</span> <span class="n">subscriber</span><span class="p">)</span>
+    <span class="c1"># mapper.map_imperatively(CustomRouting, customrouting)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPLCR</span><span class="p">,</span> <span class="n">dsip_lcr</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">UAC</span><span class="p">,</span> <span class="n">uacreg</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">GatewayGroups</span><span class="p">,</span> <span class="n">dr_gw_lists</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">Domain</span><span class="p">,</span> <span class="n">domain</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">DomainAttrs</span><span class="p">,</span> <span class="n">domain_attrs</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">Dispatcher</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPLeases</span><span class="p">,</span> <span class="n">dsip_endpoint_lease</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPMaintModes</span><span class="p">,</span> <span class="n">dsip_maintmode</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPCallLimits</span><span class="p">,</span> <span class="n">dsip_calllimit</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPNotification</span><span class="p">,</span> <span class="n">dsip_notification</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPHardFwd</span><span class="p">,</span> <span class="n">dsip_hardfwd</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPFailFwd</span><span class="p">,</span> <span class="n">dsip_failfwd</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPCDRInfo</span><span class="p">,</span> <span class="n">dsip_cdrinfo</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPCertificates</span><span class="p">,</span> <span class="n">dsip_certificates</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPDNIDEnrichment</span><span class="p">,</span> <span class="n">dsip_dnid_enrichment</span><span class="p">)</span>
+    <span class="n">mapper</span><span class="o">.</span><span class="n">map_imperatively</span><span class="p">(</span><span class="n">dSIPUser</span><span class="p">,</span> <span class="n">dsip_user</span><span class="p">)</span>
+
+    <span class="c1"># mapper.map_imperatively(GatewayGroups, gw_join, properties={</span>
+    <span class="c1">#     &#39;id&#39;: [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],</span>
+    <span class="c1">#     &#39;description&#39;: [dr_groups.c.description, dr_gw_lists_alias.c.drlist_description],</span>
+    <span class="c1"># })</span>
+
+    <span class="n">loadSession</span> <span class="o">=</span> <span class="n">scoped_session</span><span class="p">(</span><span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="n">db_engine</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">loadSession</span></div>
+
+
+<div class="viewcode-block" id="DummySession"><a class="viewcode-back" href="../dev/database.html#database.DummySession">[docs]</a><span class="k">class</span> <span class="nc">DummySession</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sole purpose is to avoid exceptions when SessionLoader fails</span>
+<span class="sd">    This allows us to handle exceptions later in the try blocks</span>
+<span class="sd">    We also avoid exceptions in the except blocks by using dummy sesh</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DummySession.__contains__"><a class="viewcode-back" href="../dev/database.html#database.DummySession.__contains__">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.__iter__"><a class="viewcode-back" href="../dev/database.html#database.DummySession.__iter__">[docs]</a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.add"><a class="viewcode-back" href="../dev/database.html#database.DummySession.add">[docs]</a>    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.add_all"><a class="viewcode-back" href="../dev/database.html#database.DummySession.add_all">[docs]</a>    <span class="k">def</span> <span class="nf">add_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.begin"><a class="viewcode-back" href="../dev/database.html#database.DummySession.begin">[docs]</a>    <span class="k">def</span> <span class="nf">begin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.begin_nested"><a class="viewcode-back" href="../dev/database.html#database.DummySession.begin_nested">[docs]</a>    <span class="k">def</span> <span class="nf">begin_nested</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.close"><a class="viewcode-back" href="../dev/database.html#database.DummySession.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.commit"><a class="viewcode-back" href="../dev/database.html#database.DummySession.commit">[docs]</a>    <span class="k">def</span> <span class="nf">commit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.connection"><a class="viewcode-back" href="../dev/database.html#database.DummySession.connection">[docs]</a>    <span class="k">def</span> <span class="nf">connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.delete"><a class="viewcode-back" href="../dev/database.html#database.DummySession.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.execute"><a class="viewcode-back" href="../dev/database.html#database.DummySession.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.expire"><a class="viewcode-back" href="../dev/database.html#database.DummySession.expire">[docs]</a>    <span class="k">def</span> <span class="nf">expire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.expire_all"><a class="viewcode-back" href="../dev/database.html#database.DummySession.expire_all">[docs]</a>    <span class="k">def</span> <span class="nf">expire_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.expunge"><a class="viewcode-back" href="../dev/database.html#database.DummySession.expunge">[docs]</a>    <span class="k">def</span> <span class="nf">expunge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.expunge_all"><a class="viewcode-back" href="../dev/database.html#database.DummySession.expunge_all">[docs]</a>    <span class="k">def</span> <span class="nf">expunge_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.flush"><a class="viewcode-back" href="../dev/database.html#database.DummySession.flush">[docs]</a>    <span class="k">def</span> <span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.get_bind"><a class="viewcode-back" href="../dev/database.html#database.DummySession.get_bind">[docs]</a>    <span class="k">def</span> <span class="nf">get_bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.is_modified"><a class="viewcode-back" href="../dev/database.html#database.DummySession.is_modified">[docs]</a>    <span class="k">def</span> <span class="nf">is_modified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.bulk_save_objects"><a class="viewcode-back" href="../dev/database.html#database.DummySession.bulk_save_objects">[docs]</a>    <span class="k">def</span> <span class="nf">bulk_save_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.bulk_insert_mappings"><a class="viewcode-back" href="../dev/database.html#database.DummySession.bulk_insert_mappings">[docs]</a>    <span class="k">def</span> <span class="nf">bulk_insert_mappings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.bulk_update_mappings"><a class="viewcode-back" href="../dev/database.html#database.DummySession.bulk_update_mappings">[docs]</a>    <span class="k">def</span> <span class="nf">bulk_update_mappings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.merge"><a class="viewcode-back" href="../dev/database.html#database.DummySession.merge">[docs]</a>    <span class="k">def</span> <span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.query"><a class="viewcode-back" href="../dev/database.html#database.DummySession.query">[docs]</a>    <span class="k">def</span> <span class="nf">query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.refresh"><a class="viewcode-back" href="../dev/database.html#database.DummySession.refresh">[docs]</a>    <span class="k">def</span> <span class="nf">refresh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.rollback"><a class="viewcode-back" href="../dev/database.html#database.DummySession.rollback">[docs]</a>    <span class="k">def</span> <span class="nf">rollback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.scalar"><a class="viewcode-back" href="../dev/database.html#database.DummySession.scalar">[docs]</a>    <span class="k">def</span> <span class="nf">scalar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.remove"><a class="viewcode-back" href="../dev/database.html#database.DummySession.remove">[docs]</a>    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.configure"><a class="viewcode-back" href="../dev/database.html#database.DummySession.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DummySession.query_property"><a class="viewcode-back" href="../dev/database.html#database.DummySession.query_property">[docs]</a>    <span class="k">def</span> <span class="nf">query_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="settingsToTableFormat"><a class="viewcode-back" href="../dev/database.html#database.settingsToTableFormat">[docs]</a><span class="k">def</span> <span class="nf">settingsToTableFormat</span><span class="p">(</span><span class="n">settings</span><span class="p">):</span>
+    <span class="c1"># convert db specific fields</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_HOST</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">kam_db_host</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_HOST</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kam_db_host</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_HOST</span>
+
+    <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">([</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_ID&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_ID</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_CLUSTER_ID&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CLUSTER_ID</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_CLUSTER_SYNC&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CLUSTER_SYNC</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_PROTO&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PROTO</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_USERNAME&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_USERNAME</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_PASSWORD&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PASSWORD</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_IPC_PASS&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_IPC_PASS</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_API_PROTO&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_PROTO</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_API_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_PRIV_KEY&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PRIV_KEY</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_PID_FILE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PID_FILE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_IPC_SOCK&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_IPC_SOCK</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_UNIX_SOCK&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_UNIX_SOCK</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_API_TOKEN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_TOKEN</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_LOG_LEVEL&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_LOG_LEVEL</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_LOG_FACILITY&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_LOG_FACILITY</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_SSL_KEY&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_KEY</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_SSL_CERT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_CERT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_SSL_CA&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_CA</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_SSL_EMAIL&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_SSL_EMAIL</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_CERTS_DIR&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CERTS_DIR</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;VERSION&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">VERSION</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DEBUG&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;ROLE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">ROLE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;GUI_INACTIVE_TIMEOUT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">GUI_INACTIVE_TIMEOUT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_HOST&#39;</span><span class="p">,</span> <span class="n">kam_db_host</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_DRIVER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_DRIVER</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_TYPE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_TYPE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_NAME&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_NAME</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_USER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_USER</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_DB_PASS&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_DB_PASS</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_KAMCMD_PATH&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_KAMCMD_PATH</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_CFG_PATH&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_CFG_PATH</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;KAM_TLSCFG_PATH&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">KAM_TLSCFG_PATH</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;RTP_CFG_PATH&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">RTP_CFG_PATH</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_CARRIER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_CARRIER</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_PBX&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_PBX</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_MSTEAMS&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_MSTEAMS</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_OUTBOUND&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_OUTBOUND</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_INBOUND&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_INBOUND</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_LCR_MIN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_LCR_MIN</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLT_FWD_MIN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLT_FWD_MIN</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DEFAULT_AUTH_DOMAIN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEFAULT_AUTH_DOMAIN</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;TELEBLOCK_GW_ENABLED&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TELEBLOCK_GW_ENABLED</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;TELEBLOCK_GW_IP&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TELEBLOCK_GW_IP</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;TELEBLOCK_GW_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TELEBLOCK_GW_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;TELEBLOCK_MEDIA_IP&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TELEBLOCK_MEDIA_IP</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;TELEBLOCK_MEDIA_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">TELEBLOCK_MEDIA_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLOWROUTE_ACCESS_KEY&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLOWROUTE_ACCESS_KEY</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLOWROUTE_SECRET_KEY&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLOWROUTE_SECRET_KEY</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;FLOWROUTE_API_ROOT_URL&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">FLOWROUTE_API_ROOT_URL</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;HOMER_ID&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">HOMER_ID</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;HOMER_HEP_HOST&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">HOMER_HEP_HOST</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;HOMER_HEP_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">HOMER_HEP_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;NETWORK_MODE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">NETWORK_MODE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;IPV6_ENABLED&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">IPV6_ENABLED</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;INTERNAL_IP_ADDR&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">INTERNAL_IP_ADDR</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;INTERNAL_IP_NET&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">INTERNAL_IP_NET</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;INTERNAL_IP6_ADDR&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">INTERNAL_IP6_ADDR</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;INTERNAL_IP6_NET&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">INTERNAL_IP6_NET</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;INTERNAL_FQDN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">INTERNAL_FQDN</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;EXTERNAL_IP_ADDR&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EXTERNAL_IP_ADDR</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;EXTERNAL_IP6_ADDR&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EXTERNAL_IP6_ADDR</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;EXTERNAL_FQDN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">EXTERNAL_FQDN</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;PUBLIC_IFACE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">PUBLIC_IFACE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;PRIVATE_IFACE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">PRIVATE_IFACE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;UPLOAD_FOLDER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">UPLOAD_FOLDER</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_SERVER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_SERVER</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_PORT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_PORT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_USE_TLS&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_USE_TLS</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_USERNAME&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_USERNAME</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_PASSWORD&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_PASSWORD</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_ASCII_ATTACHMENTS&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_ASCII_ATTACHMENTS</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_DEFAULT_SENDER&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_DEFAULT_SENDER</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;MAIL_DEFAULT_SUBJECT&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">MAIL_DEFAULT_SUBJECT</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_CORE_LICENSE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_CORE_LICENSE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_STIRSHAKEN_LICENSE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_STIRSHAKEN_LICENSE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_TRANSNEXUS_LICENSE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_TRANSNEXUS_LICENSE</span><span class="p">),</span>
+        <span class="p">(</span><span class="s1">&#39;DSIP_MSTEAMS_LICENSE&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_MSTEAMS_LICENSE</span><span class="p">),</span>
+    <span class="p">])</span></div>
+
+<div class="viewcode-block" id="updateDsipSettingsTable"><a class="viewcode-back" href="../dev/database.html#database.updateDsipSettingsTable">[docs]</a><span class="k">def</span> <span class="nf">updateDsipSettingsTable</span><span class="p">(</span><span class="n">fields</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update the dsip_settings table using our stored procedure</span>
+
+<span class="sd">    :param fields:  columns/values to update</span>
+<span class="sd">    :type fields:   dict</span>
+<span class="sd">    :return:        None</span>
+<span class="sd">    :rtype:         None</span>
+<span class="sd">    :raises:        sql_exceptions.SQLAlchemyError</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">db</span> <span class="o">=</span> <span class="n">DummySession</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">field_mapping</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">SessionLoader</span><span class="p">()</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">text</span><span class="p">(</span><span class="s1">&#39;CALL update_dsip_settings(</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field_mapping</span><span class="p">)),</span>
+            <span class="n">fields</span>
+        <span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">except</span> <span class="n">sql_exceptions</span><span class="o">.</span><span class="n">SQLAlchemyError</span><span class="p">:</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+        <span class="k">raise</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<span class="c1"># TODO: we should be creating a queue of the valid db_engines</span>
+<span class="c1"># from there we can perform round robin connections and more advanced clustering</span>
+<span class="c1"># this does have the requirement of new session instancing per request</span>
+
+<span class="c1"># Make the engine and session maker global</span>
+<span class="n">db_engine</span> <span class="o">=</span> <span class="n">createValidEngine</span><span class="p">(</span><span class="n">createDBURI</span><span class="p">())</span>
+<span class="n">SessionLoader</span> <span class="o">=</span> <span class="n">createSessionMaker</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

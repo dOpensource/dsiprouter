@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1.2.1. Installing dSIPRouter &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1.3.1. Command Line Options" href="command_line_options.html" />
+    <link rel="prev" title="1. The dSIPRouter Project" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">1.  User Documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html"><span class="section-number">1. </span>The dSIPRouter Project</a></li>
+      <li class="breadcrumb-item active"><span class="section-number">1.2.1. </span>Installing dSIPRouter</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/installing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="installing-dsiprouter">
+<span id="id1"></span><h1><span class="section-number">1.2.1. </span>Installing dSIPRouter<a class="headerlink" href="#installing-dsiprouter" title="Permalink to this heading"></a></h1>
+<p>Install dSIPRouter takes approximately 9-12 minutes to install.  The following video shows you the install process:</p>
+<div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe src="https://www.youtube.com/embed/Iu4BQkL1wGc" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 315px;"></iframe>
+</div><div class="section" id="prerequisites">
+<h2><span class="section-number">1.2.1.1. </span>Prerequisites:<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Must run this as the root user (you can use sudo)</p></li>
+<li><p>git needs to be installed</p></li>
+<li><p>Hostname needs to be set to a FQDN (for certbot to get LetsEncrypt certificate)</p></li>
+<li><p>The installer will handle all other dependencies</p></li>
+</ul>
+</div>
+<div class="section" id="install-options">
+<h2><span class="section-number">1.2.1.2. </span>Install Options<a class="headerlink" href="#install-options" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Proxy SIP Traffic Only (Don’t Proxy audio (RTP) traffic)</p></li>
+<li><p>Proxy SIP Traffic, Audio and it configures the system to work properly when the PBX’s and dSIPRouter are behind a NAT.</p></li>
+</ul>
+</div>
+<div class="section" id="os-support">
+<h2><span class="section-number">1.2.1.3. </span>OS Support<a class="headerlink" href="#os-support" title="Permalink to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 69%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>OS / Distro</p></th>
+<th class="head"><p>Current Support</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Debian 11 (bullseye)</p></td>
+<td><p>STABLE</p></td>
+</tr>
+<tr class="row-odd"><td><p>Debian 10 (buster)</p></td>
+<td><p>STABLE</p></td>
+</tr>
+<tr class="row-even"><td><p>Debian 9 (stretch)</p></td>
+<td><p>STABLE</p></td>
+</tr>
+<tr class="row-odd"><td><p>RedHat Linux 8</p></td>
+<td><p>ALPHA</p></td>
+</tr>
+<tr class="row-even"><td><p>Alma Linux 8</p></td>
+<td><p>ALPHA</p></td>
+</tr>
+<tr class="row-odd"><td><p>Rocky Linux 8</p></td>
+<td><p>ALPHA</p></td>
+</tr>
+<tr class="row-even"><td><p>Amazon Linux 2</p></td>
+<td><p>STABLE</p></td>
+</tr>
+<tr class="row-odd"><td><p>Ubuntu 22.04 (jammy)</p></td>
+<td><p>ALPHA</p></td>
+</tr>
+<tr class="row-even"><td><p>Ubuntu 20.04 (focal)</p></td>
+<td><p>ALPHA</p></td>
+</tr>
+</tbody>
+</table>
+<p>Kamailio will be automatically installed along with dSIPRouter.
+Must be installed on a fresh install of one of the supported operating systems.
+You will not be prompted for any information.  It will take anywhere from  9-12 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.</p>
+<p>We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="debian_install.html#debian-install"><span class="std std-ref">Installing on a Debian-based Distro</span></a></p></li>
+<li><p><a class="reference internal" href="rhel_install.html#rhel-install"><span class="std std-ref">Installing on a RHEL-based Distro</span></a></p></li>
+</ul>
+</div>
+<div class="section" id="amazon-ami-s">
+<h2><span class="section-number">1.2.1.4. </span>Amazon AMI’s<a class="headerlink" href="#amazon-ami-s" title="Permalink to this heading"></a></h2>
+<p>We now provide Amazon AMI’s (pre-built images) which allows you to get up and going even faster.
+You can find a list of the images <a class="reference external" href="https://aws.amazon.com/marketplace/search/results?x=0&amp;y=0&amp;searchTerms=dsiprouter/">here</a>.
+The images are a nominal fee, which goes toward supporting the project.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="1. The dSIPRouter Project" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="command_line_options.html" class="btn btn-neutral float-right" title="1.3.1. Command Line Options" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>util.security &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">1.  User Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../user/installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../user/upgrade.html">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../user/upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">util.security</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for util.security</h1><div class="highlight"><pre>
+<span></span><span class="c1"># make sure the generated source files are imported instead of the template ones</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;/etc/dsiprouter/gui&#39;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">hashlib</span><span class="o">,</span> <span class="nn">binascii</span><span class="o">,</span> <span class="nn">string</span><span class="o">,</span> <span class="nn">ssl</span><span class="o">,</span> <span class="nn">OpenSSL</span><span class="o">,</span> <span class="nn">secrets</span><span class="o">,</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">Crypto.Cipher</span> <span class="kn">import</span> <span class="n">AES</span>
+<span class="kn">from</span> <span class="nn">Crypto.Util</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span> <span class="nn">Crypto.Random</span> <span class="kn">import</span> <span class="n">get_random_bytes</span>
+<span class="kn">from</span> <span class="nn">shared</span> <span class="kn">import</span> <span class="n">updateConfig</span><span class="p">,</span> <span class="n">StatusCodes</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">session</span>
+<span class="kn">import</span> <span class="nn">settings</span><span class="o">,</span> <span class="nn">globals</span>
+
+<span class="c1">#</span>
+<span class="c1"># Notes on storing credentials:</span>
+<span class="c1">#</span>
+<span class="c1"># best practice is to store hash and salt of the credentials</span>
+<span class="c1"># when plaintext access is mandatory we can use symmetric encryption</span>
+<span class="c1"># when sending encrypted data over the net asymmetric encryption is preferred</span>
+<span class="c1"># if credentials need to be stored/accessed in a python module, they need encoded/decoded</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="urandomChars"><a class="viewcode-back" href="../../dev/util.html#util.security.urandomChars">[docs]</a><span class="k">def</span> <span class="nf">urandomChars</span><span class="p">(</span><span class="n">length</span><span class="o">=</span><span class="mi">32</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return printable characters from urandom</span>
+
+<span class="sd">    :param length:  number of bytes to return</span>
+<span class="sd">    :type length:   int</span>
+<span class="sd">    :return:        random characters</span>
+<span class="sd">    :rtype:         str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">chars</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_lowercase</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span>
+    <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">chars</span><span class="p">[</span><span class="nb">ord</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">chars</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">)])</span></div>
+
+
+<div class="viewcode-block" id="Credentials"><a class="viewcode-back" href="../../dev/util.html#util.security.Credentials">[docs]</a><span class="k">class</span> <span class="nc">Credentials</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class for credential management functions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">SALT_LEN</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">CREDS_MAX_LEN</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">DK_LEN_DEFAULT</span> <span class="o">=</span> <span class="mi">48</span>
+    <span class="n">HASHED_CREDS_ENCODED_MAX_LEN</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">AESCTR_CREDS_ENCODED_MAX_LEN</span> <span class="o">=</span> <span class="mi">160</span>
+    <span class="n">HASH_ITERATIONS</span> <span class="o">=</span> <span class="mi">10000</span>
+
+<div class="viewcode-block" id="Credentials.hashCreds"><a class="viewcode-back" href="../../dev/util.html#util.security.Credentials.hashCreds">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">hashCreds</span><span class="p">(</span><span class="n">creds</span><span class="p">,</span> <span class="n">salt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dklen</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Hash credentials using pbkdf2_hmac with sha512 algorithm</span>
+
+<span class="sd">        :param creds:   byte string to hash</span>
+<span class="sd">        :type creds:    bytes|str</span>
+<span class="sd">        :param salt:    salt to hash creds with (hex encoded byte string or string)</span>
+<span class="sd">        :type salt:     bytes|str</span>
+<span class="sd">        :param dklen:   the derived key length to return as hash</span>
+<span class="sd">        :type dklen:    int</span>
+<span class="sd">        :return:        hash+salt as hex encoded byte string</span>
+<span class="sd">        :rtype:         bytes</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">creds</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">creds</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">creds</span> <span class="o">=</span> <span class="n">creds</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;credentials must be a string or hex encoded byte string&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;credentials must be </span><span class="si">{}</span><span class="s1"> bytes or less&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">salt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">salt</span> <span class="o">=</span> <span class="n">get_random_bytes</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">SALT_LEN</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">salt</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">salt</span> <span class="o">=</span> <span class="n">salt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">salt</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="n">salt</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">salt</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;salt must be a string or hex encoded byte string&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">salt</span><span class="p">)</span> <span class="o">!=</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">SALT_LEN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;salt must be </span><span class="si">{}</span><span class="s1"> bytes long&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">SALT_LEN</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">dklen</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dklen</span> <span class="o">=</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">DK_LEN_DEFAULT</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dklen</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;dklen must be an integer&#39;</span><span class="p">)</span>
+
+        <span class="nb">hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">pbkdf2_hmac</span><span class="p">(</span><span class="s1">&#39;sha512&#39;</span><span class="p">,</span> <span class="n">creds</span><span class="p">,</span> <span class="n">salt</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">Credentials</span><span class="o">.</span><span class="n">HASH_ITERATIONS</span><span class="p">,</span> <span class="n">dklen</span><span class="o">=</span><span class="n">dklen</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="nb">hash</span> <span class="o">+</span> <span class="n">salt</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Credentials.setCreds"><a class="viewcode-back" href="../../dev/util.html#util.security.Credentials.setCreds">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">setCreds</span><span class="p">(</span><span class="n">dsip_creds</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">api_creds</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">kam_creds</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mail_creds</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">ipc_creds</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">rootdb_creds</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set secure credentials, either by hashing or encrypting\n</span>
+<span class="sd">        Values must be within size limit and empty values are ignored\n</span>
+
+<span class="sd">        :param dsip_creds:      dsiprouter admin password as byte string</span>
+<span class="sd">        :type dsip_creds:       bytes|str</span>
+<span class="sd">        :param api_creds:       dsiprouter api token as byte string</span>
+<span class="sd">        :type api_creds:        bytes|str</span>
+<span class="sd">        :param kam_creds:       kamailio db password as byte string</span>
+<span class="sd">        :type kam_creds:        bytes|str</span>
+<span class="sd">        :param mail_creds:      dsiprouter mail password as byte string</span>
+<span class="sd">        :type mail_creds:       bytes|str</span>
+<span class="sd">        :param ipc_creds:       dsiprouter ipc connection password as byte string</span>
+<span class="sd">        :type ipc_creds:        bytes|str</span>
+<span class="sd">        :param rootdb_creds:    root db user&#39;s password as byte string</span>
+<span class="sd">        :type rootdb_creds:     bytes|str</span>
+<span class="sd">        :return:                None</span>
+<span class="sd">        :rtype:                 None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">local_fields</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dsip_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dsip_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;dsiprouter credentials must be </span><span class="si">{}</span><span class="s1"> bytes or less&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">)))</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;DSIP_PASSWORD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">hashCreds</span><span class="p">(</span><span class="n">dsip_creds</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">api_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">api_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;api credentials must be </span><span class="si">{}</span><span class="s1"> bytes or less&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">)))</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;DSIP_API_TOKEN&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">api_creds</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kam_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kam_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;kamailio credentials must be </span><span class="si">{}</span><span class="s1"> bytes or less&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">)))</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;KAM_DB_PASS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">kam_creds</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mail_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mail_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;mail credentials must be </span><span class="si">{}</span><span class="s1"> bytes or less&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">)))</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;MAIL_PASSWORD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">mail_creds</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ipc_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ipc_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;ipc credentials must be </span><span class="si">{}</span><span class="s1"> bytes or less&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Credentials</span><span class="o">.</span><span class="n">CREDS_MAX_LEN</span><span class="p">)))</span>
+            <span class="n">fields</span><span class="p">[</span><span class="s1">&#39;DSIP_IPC_PASS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">ipc_creds</span><span class="p">)</span>
+
+        <span class="c1"># some fields are not synced with DB</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rootdb_creds</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">local_fields</span><span class="p">[</span><span class="s1">&#39;ROOT_DB_PASS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">rootdb_creds</span><span class="p">)</span>
+
+        <span class="c1"># update settings based on where they are loaded from</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">local_fields</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># update file settings including local fields</span>
+            <span class="n">updateConfig</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="o">**</span><span class="n">local_fields</span><span class="p">))</span>
+            <span class="c1"># update db settings</span>
+            <span class="kn">from</span> <span class="nn">database</span> <span class="kn">import</span> <span class="n">updateDsipSettingsTable</span><span class="p">,</span> <span class="n">settingsToTableFormat</span>
+            <span class="n">db_fields</span> <span class="o">=</span> <span class="n">settingsToTableFormat</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+            <span class="n">db_fields</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+            <span class="n">updateDsipSettingsTable</span><span class="p">(</span><span class="n">db_fields</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="AES_CTR"><a class="viewcode-back" href="../../dev/util.html#util.security.AES_CTR">[docs]</a><span class="k">class</span> <span class="nc">AES_CTR</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class for pycrypto&#39;s AES256 functions in AES_CTR mode</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">BLOCK_SIZE</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">KEY_SIZE</span> <span class="o">=</span> <span class="mi">32</span>
+
+<div class="viewcode-block" id="AES_CTR.genKey"><a class="viewcode-back" href="../../dev/util.html#util.security.AES_CTR.genKey">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">genKey</span><span class="p">(</span><span class="n">keyfile</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PRIV_KEY</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">keyfile</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">get_random_bytes</span><span class="p">(</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">KEY_SIZE</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AES_CTR.encrypt"><a class="viewcode-back" href="../../dev/util.html#util.security.AES_CTR.encrypt">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">encrypt</span><span class="p">(</span><span class="n">byte_string</span><span class="p">,</span> <span class="n">key_file</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PRIV_KEY</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">byte_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">byte_string</span> <span class="o">=</span> <span class="n">byte_string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">key_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">KEY_SIZE</span><span class="p">)</span>
+
+        <span class="n">iv</span> <span class="o">=</span> <span class="n">get_random_bytes</span><span class="p">(</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">BLOCK_SIZE</span><span class="p">)</span>
+        <span class="n">ctr</span> <span class="o">=</span> <span class="n">Counter</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">BLOCK_SIZE</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">initial_value</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">iv</span><span class="p">),</span> <span class="mi">16</span><span class="p">))</span>
+        <span class="n">aes</span> <span class="o">=</span> <span class="n">AES</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="o">.</span><span class="n">MODE_CTR</span><span class="p">,</span> <span class="n">counter</span><span class="o">=</span><span class="n">ctr</span><span class="p">)</span>
+        <span class="n">cipher_bytes</span> <span class="o">=</span> <span class="n">iv</span> <span class="o">+</span> <span class="n">aes</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="n">byte_string</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">cipher_bytes</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="AES_CTR.decrypt"><a class="viewcode-back" href="../../dev/util.html#util.security.AES_CTR.decrypt">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">decrypt</span><span class="p">(</span><span class="n">byte_string</span><span class="p">,</span> <span class="n">key_file</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_PRIV_KEY</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">byte_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">byte_string</span> <span class="o">=</span> <span class="n">byte_string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="n">byte_string</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">unhexlify</span><span class="p">(</span><span class="n">byte_string</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">key_file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">KEY_SIZE</span><span class="p">)</span>
+
+        <span class="n">iv</span> <span class="o">=</span> <span class="n">byte_string</span><span class="p">[:</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">BLOCK_SIZE</span><span class="p">]</span>
+        <span class="n">ctr</span> <span class="o">=</span> <span class="n">Counter</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">BLOCK_SIZE</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">initial_value</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">iv</span><span class="p">),</span> <span class="mi">16</span><span class="p">))</span>
+        <span class="n">aes</span> <span class="o">=</span> <span class="n">AES</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">AES</span><span class="o">.</span><span class="n">MODE_CTR</span><span class="p">,</span> <span class="n">counter</span><span class="o">=</span><span class="n">ctr</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">aes</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">byte_string</span><span class="p">[</span><span class="n">AES_CTR</span><span class="o">.</span><span class="n">BLOCK_SIZE</span><span class="p">:])</span></div></div>
+
+
+<div class="viewcode-block" id="APIToken"><a class="viewcode-back" href="../../dev/util.html#util.security.APIToken">[docs]</a><span class="k">class</span> <span class="nc">APIToken</span><span class="p">:</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="APIToken.__init__"><a class="viewcode-back" href="../../dev/util.html#util.security.APIToken.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;Authorization&#39;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">auth_header</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">auth_header</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">header_values</span> <span class="o">=</span> <span class="n">auth_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">header_values</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">token</span> <span class="o">=</span> <span class="n">header_values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="APIToken.isValid"><a class="viewcode-back" href="../../dev/util.html#util.security.APIToken.isValid">[docs]</a>    <span class="k">def</span> <span class="nf">isValid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">:</span>
+                <span class="c1"># Get Environment Variables if in debug mode</span>
+                <span class="c1"># This is the only case we allow plain text token comparison</span>
+                <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+                    <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_TOKEN</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s1">&#39;DSIP_API_TOKEN&#39;</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_TOKEN</span><span class="p">)</span>
+
+                <span class="c1"># need to decrypt token</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_TOKEN</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                    <span class="n">tokencheck</span> <span class="o">=</span> <span class="n">AES_CTR</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_TOKEN</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tokencheck</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">DSIP_API_TOKEN</span>
+
+                <span class="k">return</span> <span class="n">secrets</span><span class="o">.</span><span class="n">compare_digest</span><span class="p">(</span><span class="n">tokencheck</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">token</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div></div>
+
+
+<div class="viewcode-block" id="api_security"><a class="viewcode-back" href="../../dev/util.html#util.security.api_security">[docs]</a><span class="k">def</span> <span class="nf">api_security</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">apiToken</span> <span class="o">=</span> <span class="n">APIToken</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;logged_in&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">apiToken</span><span class="o">.</span><span class="n">isValid</span><span class="p">():</span>
+            <span class="n">accept_header</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Accept&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="s1">&#39;text/html&#39;</span> <span class="ow">in</span> <span class="n">accept_header</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s1">&#39;index.html&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">settings</span><span class="o">.</span><span class="n">VERSION</span><span class="p">),</span> <span class="n">StatusCodes</span><span class="o">.</span><span class="n">HTTP_UNAUTHORIZED</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Unauthorized&#39;</span><span class="p">,</span> <span class="s1">&#39;kamreload&#39;</span><span class="p">:</span> <span class="nb">globals</span><span class="o">.</span><span class="n">reload_required</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">StatusCodes</span><span class="o">.</span><span class="n">HTTP_UNAUTHORIZED</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+<div class="viewcode-block" id="CryptoLibInfo"><a class="viewcode-back" href="../../dev/util.html#util.security.CryptoLibInfo">[docs]</a><span class="k">class</span> <span class="nc">CryptoLibInfo</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper class to standardize and simplify gathering info about the system crypto libraries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CryptoLibInfo.getOpenSSLVer"><a class="viewcode-back" href="../../dev/util.html#util.security.CryptoLibInfo.getOpenSSLVer">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getOpenSSLVer</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get major, minor, patch release numbers as one int</span>
+
+<span class="sd">        :return: openssl release version</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OPENSSL_VERSION_INFO</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">]]))</span></div>
+
+<div class="viewcode-block" id="CryptoLibInfo.getSupportedSSLProtocols"><a class="viewcode-back" href="../../dev/util.html#util.security.CryptoLibInfo.getSupportedSSLProtocols">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getSupportedSSLProtocols</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the support SSL/TLS protocols we serve</span>
+
+<span class="sd">        :return: all support protocols</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ssl_ver</span> <span class="o">=</span> <span class="n">CryptoLibInfo</span><span class="o">.</span><span class="n">getOpenSSLVer</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">ssl_ver</span> <span class="o">&lt;</span> <span class="mi">101</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">SSL</span><span class="o">.</span><span class="n">TLSv1_METHOD</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">ssl_ver</span> <span class="o">&lt;</span> <span class="mi">111</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">SSL</span><span class="o">.</span><span class="n">TLSv1_1_METHOD</span><span class="p">,</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">SSL</span><span class="o">.</span><span class="n">TLSv1_2_METHOD</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># TODO: pyOpenSSL does not expose TLSv1.3 support yet</span>
+            <span class="c1"># ref: https://github.com/pyca/pyopenssl/issues/860</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">SSL</span><span class="o">.</span><span class="n">TLSv1_2_METHOD</span><span class="p">]</span></div></div>
+
+
+<span class="c1"># TODO: move to the standard library implementation &quot;cryptography&quot; module</span>
+<div class="viewcode-block" id="KeyCertPair"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair">[docs]</a><span class="k">class</span> <span class="nc">KeyCertPair</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a private key and cert(s) pair</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">X509_DER_FILESIG</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;0</span><span class="se">\x82</span><span class="s1">&#39;</span>
+    <span class="n">X509_PEM_FILESIG</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;-----BEGIN CERTIFICATE-----&#39;</span>
+    <span class="n">X509_PEM_CERT_BEGIN</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;-----BEGIN CERTIFICATE-----&#39;</span>
+    <span class="n">X509_PEM_CERT_END</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;-----END CERTIFICATE-----&#39;</span>
+
+<div class="viewcode-block" id="KeyCertPair.__init__"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Files to extract key/cert pair from</span>
+
+<span class="sd">        :param files: A list of filepaths or objects implementing the read method</span>
+<span class="sd">        :type files: list[str|IO]|tuple[str|IO]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;files must be provided via a list or tuple&#39;</span><span class="p">)</span>
+
+        <span class="c1"># we can accept key/cert pairs in one file or two separate files</span>
+        <span class="n">num_files</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">num_files</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">buff</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">readFile</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pkey</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">convertKeyBuffToPkey</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">certs</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">convertCertBuffToX509List</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">num_files</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="n">buff</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">readFile</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+                <span class="c1"># we don&#39;t know which file is which so try each type one at a time</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pkey</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">convertKeyBuffToPkey</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">certs</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">convertCertBuffToX509List</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span>
+                    <span class="k">continue</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;key/cert pairs must be in a single file or two files&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.readFile"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.readFile">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">readFile</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read a file via filepath or using the object&#39;s read method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s1">&#39;read&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;files must contain filepaths or file pointers&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.convertPKCS7CertToX509List"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.convertPKCS7CertToX509List">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">convertPKCS7CertToX509List</span><span class="p">(</span><span class="n">pkcs7_cert</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Modified version of: https://github.com/pyca/pyopenssl/pull/367/files#r67300900 \n</span>
+<span class="sd">        Returns all certificates for the PKCS7 structure, if present</span>
+
+<span class="sd">        :param pkcs7_cert: the PKCS cert object</span>
+<span class="sd">        :type pkcs7_cert: OpenSSL.crypto.PKCS7</span>
+<span class="sd">        :return: The certificates in PEM format</span>
+<span class="sd">        :rtype: list[OpenSSL.crypto.X509]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pkcs7_cert</span><span class="p">,</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">PKCS7</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid PKCS7 formatted certificate&#39;</span><span class="p">)</span>
+
+        <span class="n">certs</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">_ffi</span><span class="o">.</span><span class="n">NULL</span>
+
+        <span class="k">if</span> <span class="n">pkcs7_cert</span><span class="o">.</span><span class="n">type_is_signed</span><span class="p">():</span>
+            <span class="n">certs</span> <span class="o">=</span> <span class="n">pkcs7_cert</span><span class="o">.</span><span class="n">_pkcs7</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">sign</span><span class="o">.</span><span class="n">cert</span>
+        <span class="k">elif</span> <span class="n">pkcs7_cert</span><span class="o">.</span><span class="n">type_is_signedAndEnveloped</span><span class="p">():</span>
+            <span class="n">certs</span> <span class="o">=</span> <span class="n">pkcs7_cert</span><span class="o">.</span><span class="n">_pkcs7</span><span class="o">.</span><span class="n">d</span><span class="o">.</span><span class="n">signed_and_enveloped</span><span class="o">.</span><span class="n">cert</span>
+
+        <span class="n">pycerts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">_lib</span><span class="o">.</span><span class="n">sk_X509_num</span><span class="p">(</span><span class="n">certs</span><span class="p">)):</span>
+            <span class="n">pycert</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">X509</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">X509</span><span class="p">)</span>
+            <span class="n">pycert</span><span class="o">.</span><span class="n">_x509</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">_lib</span><span class="o">.</span><span class="n">X509_dup</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">_lib</span><span class="o">.</span><span class="n">sk_X509_value</span><span class="p">(</span><span class="n">certs</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+            <span class="n">pycerts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pycert</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pycerts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid PKCS7 formatted certificate&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pycerts</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.convertKeyBuffToPkey"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.convertKeyBuffToPkey">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">convertKeyBuffToPkey</span><span class="p">(</span><span class="n">buff</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a single private key of any format to PKey</span>
+
+<span class="sd">        :param buff: private key buffer of unknown format</span>
+<span class="sd">        :type buff: bytes</span>
+<span class="sd">        :return: private key in OpenSSL usable format, type of</span>
+<span class="sd">        :rtype: OpenSSL.crypto.PKey</span>
+<span class="sd">        :raises: ValueError if the data can not be converted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;buffer must be bytes&#39;</span><span class="p">)</span>
+
+        <span class="c1"># try loading each type of file until we find the format that works</span>
+        <span class="c1"># PEM encoded private key</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_privatekey</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_PEM</span><span class="p">,</span> <span class="n">buff</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="c1"># ASN1/DER encoded private key</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_privatekey</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_ASN1</span><span class="p">,</span> <span class="n">buff</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="c1"># PKCS12 formatted file</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_pkcs12</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span><span class="o">.</span><span class="n">get_privatekey</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;could not convert private key to PKey&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.convertCertBuffToX509List"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.convertCertBuffToX509List">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">convertCertBuffToX509List</span><span class="p">(</span><span class="n">buff</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a one or more certificates of any format to X509</span>
+
+<span class="sd">        :param buff: certificate(s) buffer of unknown format</span>
+<span class="sd">        :type buff: bytes</span>
+<span class="sd">        :return: certificate(s) in OpenSSL usable format</span>
+<span class="sd">        :rtype: list[OpenSSL.crypto.X509]</span>
+<span class="sd">        :raises: ValueError if the data can not be converted</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;buffer must be bytes&#39;</span><span class="p">)</span>
+
+        <span class="c1"># try loading each type of file until we find the format that works</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># PEM encoded certificate(s)</span>
+            <span class="k">if</span> <span class="n">buff</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">KeyCertPair</span><span class="o">.</span><span class="n">X509_PEM_FILESIG</span><span class="p">)]</span> <span class="o">==</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">X509_PEM_FILESIG</span><span class="p">:</span>
+                <span class="n">cert_regex</span> <span class="o">=</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">X509_PEM_CERT_BEGIN</span> <span class="o">+</span> <span class="sa">rb</span><span class="s1">&#39;.*?&#39;</span> <span class="o">+</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">X509_PEM_CERT_END</span>
+                <span class="n">certs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">cert_bytes</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">cert_regex</span><span class="p">,</span> <span class="n">buff</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">):</span>
+                    <span class="n">certs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_certificate</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_PEM</span><span class="p">,</span> <span class="n">cert_bytes</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">certs</span>
+            <span class="c1"># ASN1/DER encoded certificate(s)</span>
+            <span class="k">if</span> <span class="n">buff</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">KeyCertPair</span><span class="o">.</span><span class="n">X509_DER_FILESIG</span><span class="p">)]</span> <span class="o">==</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">X509_DER_FILESIG</span><span class="p">:</span>
+                <span class="c1">#return [OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, buff)]</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;parsing DER encoded certificates is not supported, convert to PEM encoding and try again&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;could not convert certificate(s) to X509 list&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pkcs12_obj</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_pkcs12</span><span class="p">(</span><span class="n">buff</span><span class="p">)</span>
+            <span class="n">certs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pkcs12_obj</span><span class="o">.</span><span class="n">get_certificate</span><span class="p">()]</span>
+            <span class="n">certs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">pkcs12_obj</span><span class="o">.</span><span class="n">get_ca_certificates</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">certs</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pkcs7_cert</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_pkcs7_data</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_PEM</span><span class="p">,</span> <span class="n">buff</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">convertPKCS7CertToX509List</span><span class="p">(</span><span class="n">pkcs7_cert</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pkcs7_cert</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">load_pkcs7_data</span><span class="p">(</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_ASN1</span><span class="p">,</span> <span class="n">buff</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">KeyCertPair</span><span class="o">.</span><span class="n">convertPKCS7CertToX509List</span><span class="p">(</span><span class="n">pkcs7_cert</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;could not convert certificate(s) to X509 list&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.getCertSubjectPrintable"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.getCertSubjectPrintable">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">getCertSubjectPrintable</span><span class="p">(</span><span class="n">cert</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">cert</span><span class="o">.</span><span class="n">get_subject</span><span class="p">())[</span><span class="mi">18</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.validateKeyCertPair"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.validateKeyCertPair">[docs]</a>    <span class="k">def</span> <span class="nf">validateKeyCertPair</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if the key/cert pair is valid</span>
+
+<span class="sd">        :raises: ValueError when invalid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">certs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cert</span><span class="o">.</span><span class="n">has_expired</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;certificate with subject &quot;</span><span class="si">{}</span><span class="s1">&quot; is expired&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">KeyCertPair</span><span class="o">.</span><span class="n">getCertSubjectPrintable</span><span class="p">(</span><span class="n">cert</span><span class="p">)))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">SSL</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">CryptoLibInfo</span><span class="o">.</span><span class="n">getSupportedSSLProtocols</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">use_privatekey</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pkey</span><span class="p">)</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">use_certificate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">certs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">certs</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                <span class="n">ctx</span><span class="o">.</span><span class="n">add_extra_chain_cert</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">check_privatekey</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Private key does not match x509 certificates supplied&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.dumpPkey"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.dumpPkey">[docs]</a>    <span class="k">def</span> <span class="nf">dumpPkey</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_PEM</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">dump_privatekey</span><span class="p">(</span><span class="n">encoding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pkey</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="KeyCertPair.dumpCerts"><a class="viewcode-back" href="../../dev/util.html#util.security.KeyCertPair.dumpCerts">[docs]</a>    <span class="k">def</span> <span class="nf">dumpCerts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">FILETYPE_PEM</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">OpenSSL</span><span class="o">.</span><span class="n">crypto</span><span class="o">.</span><span class="n">dump_certificate</span><span class="p">(</span><span class="n">encoding</span><span class="p">,</span> <span class="n">cert</span><span class="p">)</span> <span class="k">for</span> <span class="n">cert</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">certs</span><span class="p">])</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

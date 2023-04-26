@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1.10.1. Upgrading dSIPRouter &mdash; dSIPRouter 0.721 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1.10.1.4.1. Upgrade dSIPRouter" href="upgrade_0.621_to_0.63.html" />
+    <link rel="prev" title="1.9.1. Troubleshooting" href="troubleshooting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            dSIPRouter
+          </a>
+              <div class="version">
+                0.721
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">1.  User Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="installing.html">1.2.1. Installing dSIPRouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="command_line_options.html">1.3.1. Command Line Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuring.html">1.4.1. Configuring dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html">1.4.1.1. Carrier Groups</a></li>
+<li class="toctree-l3"><a class="reference internal" href="carrier_groups.html#adding-a-carrier">1.4.1.2. Adding a Carrier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html">1.4.1.3. PBX(s) and Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pbxs_and_endpoints.html#inbound-did-mapping">1.4.1.4. Inbound DID Mapping</a></li>
+<li class="toctree-l3"><a class="reference internal" href="domains.html">1.4.1.5. Adding a Domain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="global_outbound_routes.html">1.4.1.6. Global Outbound Routes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="api.html">1.5.1. API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="use-cases.html">1.6.1. Use Cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resources.html">1.7.1. Resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="supported_configurations.html">1.8.1. Supported Configurations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html">1.9.1. Troubleshooting</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">1.10.1. Upgrading dSIPRouter</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html"> Developer Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../dev/database.html">1.  database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/dsiprouter.html">2.  dsiprouter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/globals.html">3.  globals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/modules.html">4.  modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/settings.html">5.  settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/shared.html">6.  shared</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/sysloginit.html">7.  sysloginit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../dev/util.html">8.  util</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../routes/index.html">2.  Routes Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../routes/routes.html">2.1.  routes</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">dSIPRouter</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html"><span class="section-number">1. </span>The dSIPRouter Project</a></li>
+      <li class="breadcrumb-item active"><span class="section-number">1.10.1. </span>Upgrading dSIPRouter</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/upgrade.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="upgrading-dsiprouter">
+<h1><span class="section-number">1.10.1. </span>Upgrading dSIPRouter<a class="headerlink" href="#upgrading-dsiprouter" title="Permalink to this heading"></a></h1>
+<div class="section" id="auto-upgrade-feature-released-0-72">
+<h2><span class="section-number">1.10.1.1. </span>Auto Upgrade Feature (Released 0.72)<a class="headerlink" href="#auto-upgrade-feature-released-0-72" title="Permalink to this heading"></a></h2>
+<p>The dSIPRouter auto upgrade feature was released in 0.72.  It allows you to upgrade dSIPRouter from the User Interface(UI) and the command line.  If you are upgrading from 0.70 you will need to use the command line option since the 0.70 version doesn’t have the upgrade feature builtin. Upgrading from 0.70 doesn’t require a dSIPRouter Core Subscription license because this is the first release of the upgrade framework unless you need support during the upgrade process.  However, future releases of dSIPRouter will require a Core Subscription License, which can be purchased from the <a class="reference external" href="https://dopensource.com/product/dsiprouter-core/">dSIPRouter Marketplace</a>.</p>
+<img alt="../_images/upgrade_up_to_date.png" class="align-center" src="../_images/upgrade_up_to_date.png" />
+</div>
+<div class="section" id="upgrade-0-70-to-0-72">
+<h2><span class="section-number">1.10.1.2. </span>Upgrade 0.70 to 0.72<a class="headerlink" href="#upgrade-0-70-to-0-72" title="Permalink to this heading"></a></h2>
+<p>You can upgrade from 0.70 by doing the following</p>
+<ol class="arabic simple">
+<li><p>SSH to your dSIPRouter Instance</p></li>
+<li><p>Run the following command</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-s<span class="w"> </span>https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.72/resources/upgrade/v0.72/scripts/bootstrap.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>bash
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Login to the dSIPRouter UI to validate that the upgrade was successful.</p></li>
+</ol>
+<p>Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription which can be purchased from the <a class="reference external" href="https://dopensource.com/product/dsiprouter-core/">dSIPRouter Marketplace</a>.This will provide you with support hours so that we can help with the upgrade.</p>
+</div>
+<div class="section" id="upgrade-0-644-to-0-72">
+<h2><span class="section-number">1.10.1.3. </span>Upgrade 0.644 to 0.72<a class="headerlink" href="#upgrade-0-644-to-0-72" title="Permalink to this heading"></a></h2>
+<p>There is no automated upgrade available from 0.644 to 0.72.  Support is available via a dSIPRouter Core Subscription which can be purchased from the <a class="reference external" href="https://dopensource.com/product/dsiprouter-core/">dSIPRouter Marketplace</a>.This will provide you with support hours so that we can help with the upgrade.</p>
+</div>
+<div class="section" id="upgrade-0-621-to-0-63">
+<h2><span class="section-number">1.10.1.4. </span>Upgrade 0.621 to 0.63<a class="headerlink" href="#upgrade-0-621-to-0-63" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade_0.621_to_0.63.html">1.10.1.4.1. Upgrade dSIPRouter</a></li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="upgrade-0-522-to-0-523">
+<h2><span class="section-number">1.10.1.5. </span>Upgrade 0.522 to 0.523<a class="headerlink" href="#upgrade-0-522-to-0-523" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade_0.522_to_0.523.html">1.10.1.5.1. Upgrade dSIPRouter</a></li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="upgrade-0-50-to-0-51">
+<h2><span class="section-number">1.10.1.6. </span>Upgrade 0.50 to 0.51<a class="headerlink" href="#upgrade-0-50-to-0-51" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="upgrade_0.50_to_0.51.html">1.10.1.6.1. Upgrade dSIPRouter</a></li>
+</ul>
+</div>
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="troubleshooting.html" class="btn btn-neutral float-left" title="1.9.1. Troubleshooting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="upgrade_0.621_to_0.63.html" class="btn btn-neutral float-right" title="1.10.1.4.1. Upgrade dSIPRouter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright dOpenSource.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
