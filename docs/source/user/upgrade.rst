@@ -8,6 +8,21 @@ The dSIPRouter auto upgrade feature was released in 0.72.  It allows you to upgr
 .. image:: images/upgrade_up_to_date.png
         :align: center
 
+Upgrade 0.70 to 0.721
+^^^^^^^^^^^^^^^^^^^^^
+You can upgrade from 0.70 by doing the following
+
+1. SSH to your dSIPRouter Instance
+2. Run the following command
+
+.. code-block:: bash
+
+   curl -s https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.721/resources/upgrade/v0.721/scripts/bootstrap.sh | bash
+
+3. Login to the dSIPRouter UI to validate that the upgrade was successful.  
+
+Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.This will provide you with support hours so that we can help with the upgrade.
+
 Upgrade 0.70 to 0.72
 ^^^^^^^^^^^^^^^^^^^^
 You can upgrade from 0.70 by doing the following

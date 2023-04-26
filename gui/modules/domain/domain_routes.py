@@ -62,11 +62,10 @@ def addDomain(domain, authtype, pbxs, notes, db):
     # MSTeams Support
     elif authtype == "msteams":
         # Set of MS Teams Proxies
-        msteams_dns_endpoints = settings.MSTEAMS_DNS_ENDPOINTS
-        msteams_ip_endpoints = settings.MSTEAMS_IP_ENDPOINTS
+        msteams_endpoint_uris = ['{}:5061;transport=tls'.format(endpoint) for endpoint in settings.MSTEAMS_DNS_ENDPOINTS]
 
         # Attributes to specify that the domain was created manually
-        PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value="{}".format(",".join(msteams_dns_endpoints)))
+        PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value="{}".format(",".join(msteams_endpoint_uris)))
         PBXDomainAttr2 = DomainAttrs(did=domain, name='pbx_type', value="3")
         PBXDomainAttr3 = DomainAttrs(did=domain, name='created_by', value="0")
         PBXDomainAttr4 = DomainAttrs(did=domain, name='domain_auth', value=authtype)
@@ -80,16 +79,15 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Use the default MS Teams SIP Proxy List if one isn't defined
         print("pbx list {}".format(pbx_list))
         if len(pbx_list) == 0 or pbx_list[0] == '':
-            for endpoint in msteams_dns_endpoints:
-                # Logic to handle when dSIPRouter is behind NAT (aka servernat is enabled)
-                if settings.EXTERNAL_IP_ADDR != settings.INTERNAL_IP_ADDR:
-                    socket_addr = settings.INTERNAL_IP_ADDR
-                else:
-                    socket_addr = settings.EXTERNAL_IP_ADDR
-
-                dispatcher = Dispatcher(setid=PBXDomain.id, destination=endpoint,
+            # Logic to handle when dSIPRouter is behind NAT (aka servernat is enabled)
+            if settings.EXTERNAL_IP_ADDR != settings.INTERNAL_IP_ADDR:
+                socket_addr = settings.INTERNAL_IP_ADDR
+            else:
+                socket_addr = settings.EXTERNAL_IP_ADDR
+            for hostname,sipuri in zip(settings.MSTEAMS_DNS_ENDPOINTS,msteams_endpoint_uris):
+                dispatcher = Dispatcher(setid=PBXDomain.id, destination=sipuri,
                     attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),
-                    description='msteam_endpoint:{}'.format(endpoint))
+                    description='msteam_endpoint:{}'.format(hostname))
                 db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
@@ -101,8 +99,8 @@ def addDomain(domain, authtype, pbxs, notes, db):
         db.add(PBXDomainAttr7)
         db.add(PBXDomainAttr8)
 
-        # Check if the MSTeams IP(s) that send us OPTION messages is in the the address table
-        for endpoint_ip in msteams_ip_endpoints:
+        # Check if the MSTeams IP(s) that send us OPTION messages is in the address table
+        for endpoint_ip in settings.MSTEAMS_IP_ENDPOINTS:
             address_query = db.query(Address).filter(Address.ip_addr == endpoint_ip).first()
             if address_query is None:
                 Addr = Address("msteams-sbc", endpoint_ip, 32, settings.FLT_MSTEAMS, gwgroup=0)
@@ -111,7 +109,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Add Endpoint group to enable Inbound Mapping
         endpointGroup = {"name": domain, "endpoints": None}
         endpoints = []
-        for hostname in msteams_dns_endpoints:
+        for hostname in settings.MSTEAMS_DNS_ENDPOINTS:
             address_query = db.query(Address).filter(Address.ip_addr == hostname).first()
             if address_query is None:
                 Addr = Address("msteams-sbc", hostname, 32, settings.FLT_MSTEAMS, gwgroup=0)

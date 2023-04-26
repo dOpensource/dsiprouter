@@ -2798,7 +2798,7 @@ def testConnectivity(domain):
             # Does the IP address of this server resolve to the domain
             import dns.resolver
 
-            # Get the IP address of the domain from Google  DNS
+            # Get the IP address of the domain from Google DNS
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']
             try:

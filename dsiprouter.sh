@@ -2118,6 +2118,7 @@ DefaultDependencies=no
 Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
+Environment='IGNORE_RESOLVCONF=yes'
 # make sure everything is setup correctly before starting
 ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
@@ -2383,16 +2384,21 @@ function displayLoginInfo() {
     echo -ne '\n'
 
     printdbg "You can access the dSIPRouter WEB GUI here"
-    pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
+    pprint "Domain Name: ${DSIP_PROTO}://${EXTERNAL_FQDN}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ];then
+        pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
         pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP_ADDR}:${DSIP_PORT}"
+    else
+        pprint "IP Address: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
     fi
     echo -ne '\n'
 
     printdbg "You can access the dSIPRouter REST API here"
-    pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ];then
+        pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
         pprint "Internal IP: ${DSIP_API_PROTO}://${INTERNAL_IP_ADDR}:${DSIP_PORT}"
+    else
+        pprint "IP Address: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
     fi
     echo -ne '\n'
 
@@ -2429,7 +2435,7 @@ function setCredentials() {
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
     local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
-    local DSIP_CLUSTER_SYNC=${DSIP_CLUSTER_SYNC:-$(getConfigAttrib 'DSIP_CLUSTER_SYNC' ${DSIP_CONFIG_FILE})}
+    local DSIP_CLUSTER_SYNC=${DSIP_CLUSTER_SYNC:-$([[ "$(getConfigAttrib 'DSIP_CLUSTER_SYNC' ${DSIP_CONFIG_FILE})" == "True" ]] && echo '1' || echo '0')}
     # the commands to execute for these updates
     local SHELL_CMDS=() SQL_STATEMENTS=() DEFERRED_SQL_STATEMENTS=()
     # how settings will be propagated to live systems
