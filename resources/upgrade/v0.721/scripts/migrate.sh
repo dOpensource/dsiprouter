@@ -430,12 +430,17 @@ ExecReload=/bin/kill -HUP $MAINPID
 [Install]
 WantedBy=multi-user.target
 EOF
-# we need a newer version of certbot than the distro repos offer
+    # we need a newer version of certbot than the distro repos offer
     apt-get remove -y *certbot*
     python3 -m venv /opt/certbot/
     /opt/certbot/bin/pip install --upgrade pip
     /opt/certbot/bin/pip install certbot
     ln -s /opt/certbot/bin/certbot /usr/bin/certbot
+
+    # copy Kamailio Startup Conf file to the correct name
+    cp /etc/default/kamailio /etc/default/kamailio.conf
+    # Update the Kamailio memory to 512mb
+    sed -i -r 's/SHM_MEMORY=.*/SHM_MEMORY=512/' /etc/default/kamailio.conf
             ;;
         almalinux|rocky)
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
