@@ -432,6 +432,7 @@ WantedBy=multi-user.target
 EOF
     # we need a newer version of certbot than the distro repos offer
     apt-get remove -y *certbot*
+    apt-get install -y python3-venv
     python3 -m venv /opt/certbot/
     /opt/certbot/bin/pip install --upgrade pip
     /opt/certbot/bin/pip install certbot
