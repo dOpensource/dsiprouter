@@ -90,13 +90,13 @@ def cmpDsipLicense(lc, payload=None):
     settings_lc_combo = getattr(settings, lc.type)
     if len(settings_lc_combo) == 0:
         payload['data'].append(False)
-        payload['msg'] = 'license has is not registered to this node'
+        payload['msg'] = 'license is not registered to this node'
         return payload
 
     settings_lc = WoocommerceLicense(key_combo=settings_lc_combo, decrypt=True)
     if lc != settings_lc:
         payload['data'].append(False)
-        payload['msg'] = 'license has is not registered to this node'
+        payload['msg'] = 'license is not registered to this node'
         return payload
 
     payload['data'].append(True)
@@ -159,7 +159,7 @@ def validateLicense():
             return jsonify(response_payload), StatusCodes.HTTP_OK
 
         # local dsip validation
-        # response_payload = cmpDsipLicense(lc, response_payload)
+        response_payload = cmpDsipLicense(lc, response_payload)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
