@@ -24,7 +24,7 @@ function install() {
     python3 -m venv /opt/certbot/
     /opt/certbot/bin/pip install --upgrade pip
     /opt/certbot/bin/pip install certbot
-    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
+    ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux

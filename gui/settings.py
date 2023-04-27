@@ -168,7 +168,7 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
 TRANSNEXUS_AUTHSERVICE_HOST = 'outbound.sip.clearip.com:5060'
 TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
-TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
+TRANSNEXUS_VERIFYSERVICE_HOST = 'inbound.sip.clearip.com:5060'
 
 # STIR/SHAKEN Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
