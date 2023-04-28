@@ -11,7 +11,7 @@ Type=forking
 User=kamailio
 Group=kamailio
 Environment='RUNDIR=/run/kamailio'
-EnvironmentFile=/etc/default/kamailio
+EnvironmentFile=/etc/default/kamailio.conf
 EnvironmentFile=-/etc/default/kamailio.d/*.conf
 # PIDFile requires a full absolute path
 PIDFile=/run/kamailio/kamailio.pid

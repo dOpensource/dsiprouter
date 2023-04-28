@@ -276,9 +276,9 @@ $("#domain").keyup(function () {
 	console.log(value);
 	if (value.includes("*")) {
 
-		var command = "certbot certonly --manual -d ";
-    command = command + value;
-    command = command + " --server https://acme-v02.api.letsencrypt.org/directory";
+		var command = "certbot certonly --manual -d " +
+      value + ' --server https://acme-v02.api.letsencrypt.org/directory' +
+      '--force-renewal --preferred-chain "ISRG Root X1"';
 		$("#terminalCommand").text(command);
 		$("#terminalDiv").removeClass("hide");
     $("#certtype_generated").prop('checked', true);
@@ -298,9 +298,9 @@ $("#domain2").keyup(function () {
 	console.log(value);
 	if (value.includes("*")) {
 
-		var command = "certbot certonly --manual -d ";
-    command = command + value;
-    command = command + " --server https://acme-v02.api.letsencrypt.org/directory";
+    var command = "certbot certonly --manual -d " +
+      value + ' --server https://acme-v02.api.letsencrypt.org/directory' +
+      '--force-renewal --preferred-chain "ISRG Root X1"';
 		$("#terminalCommand2").text(command);
 		$("#terminalDiv2").removeClass("hide");
     $("#certtype_generated2").prop('checked', true);

@@ -49,17 +49,7 @@ function install() {
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
     # create kamailio defaults config
-    (cat << 'EOF'
- RUN_KAMAILIO=yes
- USER=kamailio
- GROUP=kamailio
- SHM_MEMORY=64
- PKG_MEMORY=8
- PIDFILE=/var/run/kamailio/kamailio.pid
- CFGFILE=/etc/kamailio/kamailio.cfg
- #DUMP_CORE=yes
-EOF
-    ) > /etc/default/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}

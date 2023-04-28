@@ -11,18 +11,18 @@ from sqlalchemy import exc as sql_exceptions, and_, or_
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
-from database import SessionLoader, DummySession, Address, dSIPNotification, Domain, DomainAttrs, dSIPDomainMapping, \
-    dSIPMultiDomainMapping, Dispatcher, Gateways, GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, \
-    dSIPCallLimits, InboundMapping, dSIPCDRInfo, dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
+from database import SessionLoader, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
+    GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits, InboundMapping, dSIPCDRInfo, \
+    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, showApiError, debugEndpoint, StatusCodes, \
-    strFieldsToDict, IO, getRequestData
+    strFieldsToDict, getRequestData
+from modules.api.kamailio.functions import reloadKamailio
 from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
-from util.file_handling import isValidFile, change_owner
+from util.security import AES_CTR, urandomChars, KeyCertPair, api_security
+from util.file_handling import change_owner
 from util import kamtls, letsencrypt
-from util.cron import getTaggedCronjob, addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob, \
-    cronIntervalToDescription
+from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
 import settings, globals
 
 api = Blueprint('api', __name__)
@@ -67,7 +67,7 @@ def getKamailioStats():
 
 @api.route("/api/v1/kamailio/reload", methods=['GET'])
 @api_security
-def reloadKamailio():
+def reloadKamailioRoute():
     # defaults.. keep data returned separate from returned metadata
     response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
@@ -75,94 +75,7 @@ def reloadKamailio():
         if (settings.DEBUG):
             debugEndpoint()
 
-        # format some settings for kam config
-        dsip_api_url = settings.DSIP_API_PROTO + '://' + '127.0.0.1' + ':' + str(settings.DSIP_API_PORT)
-        if isinstance(settings.DSIP_API_TOKEN, bytes):
-            dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
-        else:
-            dsip_api_token = settings.DSIP_API_TOKEN
-
-        # Pulled tls.reload out of the reload process due to issues
-        # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
-
-        reload_cmds = [
-            {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
-            {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'dispatcher.reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["calllimit"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gw2gwgroup"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_hardfwd"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
-            {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'role', settings.ROLE]},
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_server', dsip_api_url]},
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'api_token', dsip_api_token]}
-        ]
-
-        if settings.TELEBLOCK_GW_ENABLED:
-            reload_cmds.append(
-                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-                 'params': ['teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)]})
-            reload_cmds.append(
-                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-                 'params': ['teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)]})
-            reload_cmds.append(
-                {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-                 'params': ['teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)]})
-            reload_cmds.append(
-                {'method': 'cfg.seti', 'jsonrpc': '2.0', 'id': 1,
-                 'params': ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]})
-
-        # Set TransNexus Settings
-
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
-
-        # Settings for STIR/SHAKEN
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_enabled', str(settings.STIR_SHAKEN_ENABLED)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_prefix_a', str(settings.STIR_SHAKEN_PREFIX_A)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_prefix_b', str(settings.STIR_SHAKEN_PREFIX_B)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_prefix_c', str(settings.STIR_SHAKEN_PREFIX_C)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_prefix_invalid', str(settings.STIR_SHAKEN_PREFIX_INVALID)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_key_path', str(settings.STIR_SHAKEN_KEY_PATH)]})
-        reload_cmds.append(
-            {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-             'params': ['stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL)]})
-
-        for cmdset in reload_cmds:
-            r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)
-            if r.status_code >= 400:
-                try:
-                    msg = r.json()['error']['message']
-                except:
-                    msg = r.reason
-                ex = http_exceptions.HTTPException(msg)
-                ex.code = r.status_code
-                raise ex
+        reloadKamailio()
 
         response_payload['msg'] = 'Kamailio reload succeeded'
         globals.reload_required = False
@@ -743,13 +656,13 @@ def deleteEndpointGroup(gwgroupid):
             # Get list of all domains managed by the endpoint group
             did_list = db.execute(
                 text("SELECT DISTINCT did FROM domain_attrs WHERE name = 'created_by' AND value=:gwgroupid"),
-                {'gwgroupid':gwgroupid}
+                {'gwgroupid': gwgroupid}
             ).all()
 
             # Delete all domains
             db.execute(
                 text("DELETE FROM domain WHERE did IN (SELECT did FROM domain_attrs WHERE name='created_by' AND value=:gwgroupid)"),
-                {'gwgroupid':gwgroupid}
+                {'gwgroupid': gwgroupid}
             )
 
             # Delete all domains_attrs
@@ -757,8 +670,8 @@ def deleteEndpointGroup(gwgroupid):
                 for did in did_list:
                     db.execute(
                         text("DELETE FROM domain_attrs WHERE did IN (:dids)"),
-                        {'dids':str(did[0])}
-                        )
+                        {'dids': str(did[0])}
+                    )
 
             # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
@@ -1187,14 +1100,15 @@ def updateEndpointGroups(gwgroupid=None):
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
                 # Create dispatcher group with the set id being the gateway group id
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight), description=name)
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
                 if int(fusionpbxenabled) > 0:
                     sip_addr_external = safeUriToHost(hostname, default_port=5080)
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                    dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
+                    dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={};".format(weight),
+                        description=name)
                     db.add(dispatcher)
 
                 db.add(Gateway)
@@ -1245,14 +1159,14 @@ def updateEndpointGroups(gwgroupid=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid)
 
             # Create dispatcher group with the set id being the gateway group id
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight), description=name)
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
             if int(fusionpbxenabled) > 0:
                 sip_addr_external = safeUriToHost(safeStripPort(hostname), default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={};".format(weight), description=name)
 
                 db.add(dispatcher)
 
@@ -1331,7 +1245,7 @@ def updateEndpointGroups(gwgroupid=None):
                     {"attrs": "weight={};".format(weight)}, synchronize_session=False)
             else:
                 dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),
-                                        description=name)
+                    description=name)
                 db.add(dispatcher)
 
             if int(fusionpbxenabled) > 0:
@@ -1344,11 +1258,13 @@ def updateEndpointGroups(gwgroupid=None):
                         db.delete(DispatcherEntry)
                 elif weight:
                     if DispatcherEntry is not None:
-                        db.query(Dispatcher).filter((Dispatcher.setid ==  int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).update({"attrs":"weight={};".format(weight)},synchronize_session=False)
+                        db.query(Dispatcher).filter(
+                            (Dispatcher.setid == int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))).update(
+                            {"attrs": "weight={};".format(weight)}, synchronize_session=False)
                     else:
-                        #sip_addr_external  = safeUriToHost(hostname, default_port=5080)
-                        #dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
-                        #db.add(dispatcher)
+                        # sip_addr_external  = safeUriToHost(hostname, default_port=5080)
+                        # dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
+                        # db.add(dispatcher)
                         pass
 
             gwlist.append(gwid)
@@ -1725,14 +1641,16 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, attrs=attrs)
 
             # Create dispatcher group with the set id being the gateway group id
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight),description=name)
-            db.add(dispatcher)
+            # Don't create a dispatcher set for endpoint groups that was created for MSTeams domains
+            if endpointGroupType != "msteams":
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, attrs="weight={};".format(weight), description=name)
+                db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
             if fusionpbxenabled:
                 sip_addr_external = safeUriToHost(hostname, default_port=5080)
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=gwgroupid+1000, destination=sip_addr_external, attrs="weight={};".format(weight),description=name)
+                dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="weight={};".format(weight), description=name)
 
                 db.add(dispatcher)
 
@@ -1748,7 +1666,9 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
             fields = strFieldsToDict(gwgroup.description)
-            fields['lb'] = gwgroupid
+            # Don't add a load balancing group if the domain is a MSTeams domain
+            if endpointGroupType != "msteams":
+                fields['lb'] = gwgroupid
             if fusionpbxenabled:
                 fields['lb_ext'] = gwgroupid + 1000
 
@@ -2502,9 +2422,9 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
 
         if nonCompletedCalls == True:
             query2 = (
-                """SELECT acc.id as cdr_id, acc.time, 0, acc.calltype,
-                acc.src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
-                acc.dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
+                """SELECT acc.id AS cdr_id, acc.time, 0, acc.calltype,
+                acc.src_gwgroupid, SUBSTRING_INDEX(SUBSTRING_INDEX(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
+                acc.dst_gwgroupid, SUBSTRING_INDEX(SUBSTRING_INDEX(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
                 acc.src_user,acc.dst_user,acc.src_ip,acc.dst_domain,acc.callid
                 FROM acc
                 JOIN dr_gw_lists t2 ON (acc.src_gwgroupid = t2.id)
@@ -2514,7 +2434,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
             )
             query = "(" + query + ")" + " UNION " + "(" + query2 + ")"
 
-        rows = db.execute(text(query), {"gwgroupid":gwgroupid,"dtfilter":dtfilter})
+        rows = db.execute(text(query), {"gwgroupid": gwgroupid, "dtfilter": dtfilter})
         cdrs = []
         dataFields = ['cdr_id', 'call_start_time', 'call_duration', 'call_direction', 'src_gwgroupid',
                       'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname', 'src_username',
@@ -2575,7 +2495,7 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
                     response_payload['type'] = 'email'
                     return jsonify(response_payload)
 
-            return send_file(csv_file, attachment_filename=filename, as_attachment=True), StatusCodes.HTTP_OK
+            return send_file(csv_file, as_attachment=True), StatusCodes.HTTP_OK
         else:
             return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -2709,7 +2629,7 @@ def createBackup():
         # attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
         # headers={"Content-disposition":attachment}
         # return Response(lines, mimetype="text/plain",headers=headers)
-        return send_file(backup_path, attachment_filename=backup_name, as_attachment=True), StatusCodes.HTTP_OK
+        return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
     except Exception as ex:
         return showApiError(ex)
@@ -2878,7 +2798,7 @@ def testConnectivity(domain):
             # Does the IP address of this server resolve to the domain
             import dns.resolver
 
-            # Get the IP address of the domain from Google  DNS
+            # Get the IP address of the domain from Google DNS
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']
             try:
@@ -3152,11 +3072,10 @@ def uploadCertificates(domain=None):
 
         files = request.files.getlist("certandkey")
         try:
-            (priv_key, priv_key_bytes), (x509_cert, x509_cert_bytes) = EasyCrypto.convertKeyCertPairToPEM(files)
-        except Exception as ex:
-            raise http_exceptions.BadRequest(str(ex))
-        try:
-            EasyCrypto.validateKeyCertPair(priv_key, x509_cert)
+            keycert_pair = KeyCertPair(files)
+            keycert_pair.validateKeyCertPair()
+            pkey_bytes = keycert_pair.dumpPkey()
+            cert_bytes = keycert_pair.dumpCerts()
         except Exception as ex:
             raise http_exceptions.BadRequest(str(ex))
 
@@ -3164,9 +3083,9 @@ def uploadCertificates(domain=None):
         cert_file = os.path.join(cert_domain_dir, 'dsiprouter-cert.pem')
 
         with open(key_file, 'wb') as newfile:
-            newfile.write(priv_key_bytes)
+            newfile.write(pkey_bytes)
         with open(cert_file, 'wb') as newfile:
-            newfile.write(x509_cert_bytes)
+            newfile.write(cert_bytes)
 
         # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations
         change_owner(cert_domain_dir, "dsiprouter", "kamailio")
@@ -3174,8 +3093,8 @@ def uploadCertificates(domain=None):
         change_owner(cert_file, "dsiprouter", "kamailio")
 
         # Convert Certificate and key to base64 so that they can be stored in the database
-        key_base64 = base64.b64encode(priv_key_bytes)
-        cert_base64 = base64.b64encode(x509_cert_bytes)
+        key_base64 = base64.b64encode(pkey_bytes)
+        cert_base64 = base64.b64encode(cert_bytes)
 
         # Store Certificate in dSIPCertificate Table
         certificate = dSIPCertificates(domain, "uploaded", None, cert_base64, key_base64)

@@ -32,11 +32,16 @@ license_manager = Blueprint('licensing', '__name__')
 
 def showWoocommerceError(ex):
     debugException(ex)
-    payload = {'error': 'other', 'msg': str(ex), 'kamreload': globals.reload_required, 'data': []}
-    return jsonify(payload), StatusCodes.HTTP_OK
+    payload = {
+        'error': 'woocommerce',
+        'msg': ex.response.json()['message'],
+        'kamreload': globals.reload_required,
+        'data': []
+    }
+    return jsonify(payload), ex.response.status_code
 
 
-def validateRequestArgs(data, allowed_args=dict(), required_args=set(), strict_mode=False):
+def validateRequestArgs(data, allowed_args=dict(), required_args=set(), strict_mode=False, extra_checks=dict()):
     # whitelist of extra params allowed if strict mode is disabled
     # typically used with clientside-app-specific args that we ignore in our serverside code
     # for example; the '_' request arg is used by jquery for enabling/disabling caching
@@ -44,6 +49,11 @@ def validateRequestArgs(data, allowed_args=dict(), required_args=set(), strict_m
         ignored_args = {'_'}
     else:
         ignored_args = set()
+
+    # validate required args (by key)
+    for arg in required_args:
+        if arg not in data.keys():
+            raise http_exceptions.BadRequest("Missing required request argument: {}".format(arg))
 
     # validate whitelisted args (key -> value dict)
     for k, v in data.items():
@@ -64,10 +74,13 @@ def validateRequestArgs(data, allowed_args=dict(), required_args=set(), strict_m
                 data[k] = allowed_args[k](v)
             except ValueError:
                 raise http_exceptions.BadRequest("Invalid request argument '{}' wrong type".format(k))
-    # validate required args (by key)
-    for arg in required_args:
-        if arg not in data.keys():
-            raise http_exceptions.BadRequest("Missing required request argument: {}".format(arg))
+
+        # does this argument have extra constraints to follow?
+        try:
+            if not extra_checks[k](v):
+                raise http_exceptions.BadRequest("Invalid request argument '{}' failed constraint checks".format(k))
+        except KeyError:
+            pass
 
 
 def cmpDsipLicense(lc, payload=None):
@@ -77,13 +90,13 @@ def cmpDsipLicense(lc, payload=None):
     settings_lc_combo = getattr(settings, lc.type)
     if len(settings_lc_combo) == 0:
         payload['data'].append(False)
-        payload['msg'] = 'license has is not registered to this node'
+        payload['msg'] = 'license is not registered to this node'
         return payload
 
     settings_lc = WoocommerceLicense(key_combo=settings_lc_combo, decrypt=True)
     if lc != settings_lc:
         payload['data'].append(False)
-        payload['msg'] = 'license has is not registered to this node'
+        payload['msg'] = 'license is not registered to this node'
         return payload
 
     payload['data'].append(True)
@@ -146,7 +159,7 @@ def validateLicense():
             return jsonify(response_payload), StatusCodes.HTTP_OK
 
         # local dsip validation
-        # response_payload = cmpDsipLicense(lc, response_payload)
+        response_payload = cmpDsipLicense(lc, response_payload)
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 

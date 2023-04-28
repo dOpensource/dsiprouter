@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, hashlib, binascii, string, ssl, OpenSSL, secrets
+import os, hashlib, binascii, string, ssl, OpenSSL, secrets, re
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
@@ -33,6 +33,7 @@ def urandomChars(length=32):
 
     chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
     return ''.join([chars[ord(os.urandom(1)) % len(chars)] for _ in range(length)])
+
 
 class Credentials():
     """
@@ -112,7 +113,6 @@ class Credentials():
         fields = {}
         local_fields = {}
 
-
         if len(dsip_creds) > 0:
             if len(dsip_creds) > Credentials.CREDS_MAX_LEN:
                 raise ValueError('dsiprouter credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
@@ -147,8 +147,11 @@ class Credentials():
             # update file settings including local fields
             updateConfig(settings, dict(fields, **local_fields))
             # update db settings
-            from database import updateDsipSettingsTable
-            updateDsipSettingsTable(fields)
+            from database import updateDsipSettingsTable, settingsToTableFormat
+            db_fields = settingsToTableFormat(settings)
+            db_fields.update(fields)
+            updateDsipSettingsTable(db_fields)
+
 
 class AES_CTR():
     """
@@ -244,9 +247,10 @@ def api_security(func):
 
     return wrapper
 
-class EasyCrypto():
+
+class CryptoLibInfo():
     """
-    Wrapper class for some simlpified crypto use cases
+    Wrapper class to standardize and simplify gathering info about the system crypto libraries
     """
 
     @staticmethod
@@ -268,7 +272,7 @@ class EasyCrypto():
         :rtype: list
         """
 
-        ssl_ver = EasyCrypto.getOpenSSLVer()
+        ssl_ver = CryptoLibInfo.getOpenSSLVer()
         if ssl_ver < 101:
             return [OpenSSL.SSL.TLSv1_METHOD]
         elif ssl_ver < 111:
@@ -278,8 +282,68 @@ class EasyCrypto():
             # ref: https://github.com/pyca/pyopenssl/issues/860
             return [OpenSSL.SSL.TLSv1_2_METHOD]
 
+
+# TODO: move to the standard library implementation "cryptography" module
+class KeyCertPair():
+    """
+    Represents a private key and cert(s) pair
+    """
+
+    X509_DER_FILESIG = b'0\x82'
+    X509_PEM_FILESIG = b'-----BEGIN CERTIFICATE-----'
+    X509_PEM_CERT_BEGIN = b'-----BEGIN CERTIFICATE-----'
+    X509_PEM_CERT_END = b'-----END CERTIFICATE-----'
+
+    def __init__(self, files):
+        """
+        Files to extract key/cert pair from
+
+        :param files: A list of filepaths or objects implementing the read method
+        :type files: list[str|IO]|tuple[str|IO]
+        """
+
+        if not isinstance(files, (list, tuple)):
+            raise ValueError('files must be provided via a list or tuple')
+
+        # we can accept key/cert pairs in one file or two separate files
+        num_files = len(files)
+        if num_files == 1:
+            buff = KeyCertPair.readFile(files[0])
+            self.pkey = KeyCertPair.convertKeyBuffToPkey(buff)
+            self.certs = KeyCertPair.convertCertBuffToX509List(buff)
+        elif num_files == 2:
+            for file in files:
+                buff = KeyCertPair.readFile(file)
+                # we don't know which file is which so try each type one at a time
+                try:
+                    self.pkey = KeyCertPair.convertKeyBuffToPkey(buff)
+                    continue
+                except ValueError:
+                    pass
+                try:
+                    self.certs = KeyCertPair.convertCertBuffToX509List(buff)
+                    continue
+                except ValueError:
+                    pass
+        else:
+            raise ValueError("key/cert pairs must be in a single file or two files")
+
     @staticmethod
-    def convertPKCS7CertToPEM(pkcs7_cert):
+    def readFile(file):
+        """
+        Read a file via filepath or using the object's read method
+        """
+
+        if isinstance(file, str):
+            with open(file, 'rb') as fp:
+                return fp.read()
+        elif hasattr(file, 'read'):
+            return file.read()
+        else:
+            raise ValueError('files must contain filepaths or file pointers')
+
+    @staticmethod
+    def convertPKCS7CertToX509List(pkcs7_cert):
         """
         Modified version of: https://github.com/pyca/pyopenssl/pull/367/files#r67300900 \n
         Returns all certificates for the PKCS7 structure, if present
@@ -287,7 +351,7 @@ class EasyCrypto():
         :param pkcs7_cert: the PKCS cert object
         :type pkcs7_cert: OpenSSL.crypto.PKCS7
         :return: The certificates in PEM format
-        :rtype: bytes
+        :rtype: list[OpenSSL.crypto.X509]
         """
 
         if not isinstance(pkcs7_cert, OpenSSL.crypto.PKCS7):
@@ -309,114 +373,119 @@ class EasyCrypto():
         if len(pycerts) == 0:
             raise ValueError('Invalid PKCS7 formatted certificate')
 
-        return b'\n'.join([OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, x) for x in pycerts])
+        return pycerts
 
     @staticmethod
-    def convertKeyCertPairToPEM(files):
+    def convertKeyBuffToPkey(buff):
         """
-        Convert private key / cert pair of random format to PEM formats
+        Convert a single private key of any format to PKey
 
-        :param files: key and cert file paths
-        :type files: list
-        :return: (private key object and bytes) (x509 cert object and bytes)
-        :rtype: ((OpenSSL.crypto.PKey, bytes), (OpenSSL.crypto.X509, bytes))
+        :param buff: private key buffer of unknown format
+        :type buff: bytes
+        :return: private key in OpenSSL usable format, type of
+        :rtype: OpenSSL.crypto.PKey
+        :raises: ValueError if the data can not be converted
         """
 
-        if len(files) != 2:
-            raise ValueError("Only one key/cert pair can be uploaded at a time")
+        if not isinstance(buff, bytes):
+            raise ValueError('buffer must be bytes')
 
-        priv_key, x509_cert, priv_key_bytes, x509_cert_bytes = None, None, None, None
-        for file in files:
-            if isinstance(file, str):
-                with open(file, 'rb') as fp:
-                    file_buff = fp.read()
-            elif hasattr(file, 'read'):
-                file_buff = file.read()
-            else:
-                raise ValueError('Improper arguments for key and cert')
+        # try loading each type of file until we find the format that works
+        # PEM encoded private key
+        try:
+            return OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, buff)
+        except:
+            pass
+        # ASN1/DER encoded private key
+        try:
+            return OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_ASN1, buff)
+        except:
+            pass
+        # PKCS12 formatted file
+        try:
+            return OpenSSL.crypto.load_pkcs12(buff).get_privatekey()
+        except:
+            pass
 
-            # TODO: more sophisticated PEM / ASN.1 file detection prior to conversion
-            # try loading each type of file and if we don't find a key and cert raise exception
-            if priv_key is None or priv_key_bytes is None:
-                try:
-                    priv_key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, file_buff)
-                    priv_key_bytes = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, priv_key)
-                    continue
-                except:
-                    pass
-                try:
-                    priv_key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_ASN1, file_buff)
-                    priv_key_bytes = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, priv_key)
-                    continue
-                except:
-                    pass
-                try:
-                    pkcs12_obj = OpenSSL.crypto.load_pkcs12(file_buff)
-                    priv_key_bytes = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, pkcs12_obj.get_privatekey())
-                    priv_key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, priv_key_bytes)
-                    continue
-                except:
-                    pass
-            if x509_cert is None or x509_cert_bytes is None:
-                try:
-                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, file_buff)
-                    x509_cert_bytes = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert)
-                    continue
-                except:
-                    pass
-                try:
-                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, file_buff)
-                    x509_cert_bytes = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert)
-                    continue
-                except:
-                    pass
-                try:
-                    pkcs12_obj = OpenSSL.crypto.load_pkcs12(file_buff)
-                    x509_cert_bytes = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, pkcs12_obj.get_certificate())
-                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert_bytes)
-                    continue
-                except:
-                    pass
-                try:
-                    pkcs7_cert = OpenSSL.crypto.load_pkcs7_data(OpenSSL.crypto.FILETYPE_PEM, file_buff)
-                    x509_cert_bytes = EasyCrypto.convertPKCS7CertToPEM(pkcs7_cert)
-                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert_bytes)
-                    continue
-                except:
-                    pass
-                try:
-                    pkcs7_cert = OpenSSL.crypto.load_pkcs7_data(OpenSSL.crypto.FILETYPE_ASN1, file_buff)
-                    x509_cert_bytes = EasyCrypto.convertPKCS7CertToPEM(pkcs7_cert)
-                    x509_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, x509_cert_bytes)
-                    continue
-                except:
-                    pass
-
-        if priv_key is None or x509_cert is None or priv_key_bytes is None or x509_cert_bytes is None:
-            raise ValueError("A valid certificate and key file must be provided")
-        return ((priv_key, priv_key_bytes), (x509_cert, x509_cert_bytes))
+        raise ValueError('could not convert private key to PKey')
 
     @staticmethod
-    def validateKeyCertPair(priv_key, x509_cert):
+    def convertCertBuffToX509List(buff):
+        """
+        Convert a one or more certificates of any format to X509
+
+        :param buff: certificate(s) buffer of unknown format
+        :type buff: bytes
+        :return: certificate(s) in OpenSSL usable format
+        :rtype: list[OpenSSL.crypto.X509]
+        :raises: ValueError if the data can not be converted
+        """
+
+        if not isinstance(buff, bytes):
+            raise ValueError('buffer must be bytes')
+
+        # try loading each type of file until we find the format that works
+        try:
+            # PEM encoded certificate(s)
+            if buff[0:len(KeyCertPair.X509_PEM_FILESIG)] == KeyCertPair.X509_PEM_FILESIG:
+                cert_regex = KeyCertPair.X509_PEM_CERT_BEGIN + rb'.*?' + KeyCertPair.X509_PEM_CERT_END
+                certs = []
+                for cert_bytes in re.findall(cert_regex, buff, flags=re.DOTALL):
+                    certs.append(OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert_bytes))
+                return certs
+            # ASN1/DER encoded certificate(s)
+            if buff[0:len(KeyCertPair.X509_DER_FILESIG)] == KeyCertPair.X509_DER_FILESIG:
+                #return [OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, buff)]
+                raise NotImplementedError('parsing DER encoded certificates is not supported, convert to PEM encoding and try again')
+        except OpenSSL.crypto.Error:
+            raise ValueError('could not convert certificate(s) to X509 list')
+        try:
+            pkcs12_obj = OpenSSL.crypto.load_pkcs12(buff)
+            certs = [pkcs12_obj.get_certificate()]
+            certs.extend(pkcs12_obj.get_ca_certificates())
+            return certs
+        except:
+            pass
+        try:
+            pkcs7_cert = OpenSSL.crypto.load_pkcs7_data(OpenSSL.crypto.FILETYPE_PEM, buff)
+            return KeyCertPair.convertPKCS7CertToX509List(pkcs7_cert)
+        except:
+            pass
+        try:
+            pkcs7_cert = OpenSSL.crypto.load_pkcs7_data(OpenSSL.crypto.FILETYPE_ASN1, buff)
+            return KeyCertPair.convertPKCS7CertToX509List(pkcs7_cert)
+        except:
+            pass
+
+        raise ValueError('could not convert certificate(s) to X509 list')
+
+    @staticmethod
+    def getCertSubjectPrintable(cert):
+        return str(cert.get_subject())[18:-2]
+
+    def validateKeyCertPair(self):
         """
         Check if the key/cert pair is valid
 
-        :param priv_key: private key to check
-        :type priv_key: OpenSSL.crypto.PKey
-        :param x509_cert: x509 cert to check
-        :type x509_cert: OpenSSL.crypto.X509
-        :return: None, raise exception on failure
-        :rtype: None
+        :raises: ValueError when invalid
         """
 
-        if x509_cert.has_expired():
-            raise ValueError("Uploaded certificate is expired, renew certificate and try again")
+        for cert in self.certs:
+            if cert.has_expired():
+                raise ValueError('certificate with subject "{}" is expired'.format(KeyCertPair.getCertSubjectPrintable(cert)))
+
         try:
-            ctx = OpenSSL.SSL.Context(EasyCrypto.getSupportedSSLProtocols()[0])
-            ctx.use_privatekey(priv_key)
-            ctx.use_certificate(x509_cert)
+            ctx = OpenSSL.SSL.Context(CryptoLibInfo.getSupportedSSLProtocols()[0])
+            ctx.use_privatekey(self.pkey)
+            ctx.use_certificate(self.certs[0])
+            for cert in self.certs[1:]:
+                ctx.add_extra_chain_cert(cert)
             ctx.check_privatekey()
         except:
-            raise ValueError('Private key does not match x509 cert supplied')
-        return None
+            raise ValueError('Private key does not match x509 certificates supplied')
 
+    def dumpPkey(self, encoding=OpenSSL.crypto.FILETYPE_PEM):
+        return OpenSSL.crypto.dump_privatekey(encoding, self.pkey)
+
+    def dumpCerts(self, encoding=OpenSSL.crypto.FILETYPE_PEM):
+        return b'\n'.join([OpenSSL.crypto.dump_certificate(encoding, cert) for cert in self.certs])

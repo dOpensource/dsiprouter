@@ -798,8 +798,8 @@ function renewSSLCert() {
     # Don't try to renew if using wildcard certs
     openssl x509 -in ${DSIP_SSL_CERT} -noout -subject | grep "CN\s\?=\s\?*." &>/dev/null
     if (( $? == 0 )); then
-	printwarn "Wildcard certifcates are being used! LetsEncrypt certifcates can't automatically renew wildcard certificates"    
-   	return
+	    printwarn "Wildcard certifcates are being used! LetsEncrypt certifcates can't automatically renew wildcard certificates"
+   	    return
     fi
 
     # Don't renew if a default cert was uploaded
@@ -845,7 +845,8 @@ function configureSSL() {
 
     # Try to create cert using LetsEncrypt's first
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
-    certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL}
+    certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL} \
+        --server https://acme-v02.api.letsencrypt.org/directory --force-renewal --preferred-chain "ISRG Root X1"
     if (( $? == 0 )); then
         rm -f ${DSIP_CERTS_DIR}/dsiprouter*
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
@@ -2117,6 +2118,7 @@ DefaultDependencies=no
 Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
+Environment='IGNORE_RESOLVCONF=yes'
 # make sure everything is setup correctly before starting
 ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
@@ -2294,15 +2296,7 @@ function start() {
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
-#            # Make sure process is still running
-#            PID=$!
-#            if ! ps -p ${PID} &>/dev/null; then
-#                printerr "Unable to start dSIPRouter"
-#                cleanupAndExit 1
-#            else
-#                pprint "dSIPRouter was started under pid ${PID}"
-#                echo "$PID" > ${DSIP_RUN_DIR}/dsiprouter.pid
-#            fi
+            cleanupAndExit $?
         else
             # normal startup, fork dSIPRouter as background process
             systemctl start dsiprouter
@@ -2351,8 +2345,8 @@ function stop() {
         systemctl stop nginx
         # if started in debug mode we have to manually kill the process
         if ! systemctl is-active --quiet dsiprouter; then
-            pkill -SIGTERM -f dsiprouter
-            if pgrep -f 'nginx|dsiprouter' &>/dev/null; then
+            pkill -SIGTERM -f dsiprouter.py
+            if pgrep -f 'nginx|dsiprouter.py' &>/dev/null; then
                 printerr "Unable to stop dSIPRouter"
                 cleanupAndExit 1
             else
@@ -2390,16 +2384,21 @@ function displayLoginInfo() {
     echo -ne '\n'
 
     printdbg "You can access the dSIPRouter WEB GUI here"
-    pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
+    pprint "Domain Name: ${DSIP_PROTO}://${EXTERNAL_FQDN}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ];then
+        pprint "External IP: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
         pprint "Internal IP: ${DSIP_PROTO}://${INTERNAL_IP_ADDR}:${DSIP_PORT}"
+    else
+        pprint "IP Address: ${DSIP_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
     fi
     echo -ne '\n'
 
     printdbg "You can access the dSIPRouter REST API here"
-    pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
     if [ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ];then
+        pprint "External IP: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
         pprint "Internal IP: ${DSIP_API_PROTO}://${INTERNAL_IP_ADDR}:${DSIP_PORT}"
+    else
+        pprint "IP Address: ${DSIP_API_PROTO}://${EXTERNAL_IP_ADDR}:${DSIP_PORT}"
     fi
     echo -ne '\n'
 
@@ -2435,6 +2434,8 @@ function setCredentials() {
     local SET_ROOT_DB_NAME="${SET_ROOT_DB_NAME}"
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
+    local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
+    local DSIP_CLUSTER_SYNC=${DSIP_CLUSTER_SYNC:-$([[ "$(getConfigAttrib 'DSIP_CLUSTER_SYNC' ${DSIP_CONFIG_FILE})" == "True" ]] && echo '1' || echo '0')}
     # the commands to execute for these updates
     local SHELL_CMDS=() SQL_STATEMENTS=() DEFERRED_SQL_STATEMENTS=()
     # how settings will be propagated to live systems
@@ -2469,11 +2470,13 @@ function setCredentials() {
 
     # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n "${SET_DSIP_GUI_USER}" ]]; then
-        SQL_STATEMENTS+=("update kamailio.dsip_settings set DSIP_USERNAME='${SET_DSIP_GUI_USER}' where DSIP_ID=${DSIP_ID};")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_ID='$DSIP_ID';")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         SHELL_CMDS+=("setConfigAttrib 'DSIP_USERNAME' '$SET_DSIP_GUI_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_MAIL_USER}" ]]; then
-        SQL_STATEMENTS+=("update kamailio.dsip_settings set MAIL_USERNAME='${SET_DSIP_MAIL_USER}' where DSIP_ID=${DSIP_ID};")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_ID='$DSIP_ID';")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         SHELL_CMDS+=("'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n "${SET_DSIP_API_TOKEN}" ]]; then
@@ -2517,7 +2520,8 @@ function setCredentials() {
             DEFERRED_SQL_STATEMENTS+=("CREATE USER '$SET_KAM_DB_USER'@'%' IDENTIFIED BY '${SET_KAM_DB_PASS:-$KAM_DB_PASS}';")
             DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'%';")
         fi
-        SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='${SET_KAM_DB_USER}' WHERE DSIP_ID=${DSIP_ID};")
+        SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='$SET_KAM_DB_USER' WHERE DSIP_ID='$DSIP_ID';")
+        SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='$SET_KAM_DB_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         SHELL_CMDS+=("setConfigAttrib 'KAM_DB_USER' '$SET_KAM_DB_USER' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
@@ -3282,6 +3286,7 @@ function updatePermissions() {
 
     return 0
 }
+export -f updatePermissions
 
 function usageOptions() {
     linebreak() {

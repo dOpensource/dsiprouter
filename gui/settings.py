@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.72'
+VERSION = '0.721'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -166,9 +166,9 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 # TransNexus Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
-TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
+TRANSNEXUS_AUTHSERVICE_HOST = 'outbound.sip.clearip.com:5060'
 TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
-TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
+TRANSNEXUS_VERIFYSERVICE_HOST = 'inbound.sip.clearip.com:5060'
 
 # STIR/SHAKEN Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
@@ -192,7 +192,7 @@ DID_PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+
 
 # micosoft teams settings
 # pick one of the
-MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
+MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com","sip2.pstnhub.microsoft.com","sip3.pstnhub.microsoft.com"]
 #MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.dod.teams.microsoft.us","sip.pstnhub.gov.teams.microsoft.us"]
 MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70","52.114.32.169"]
 #MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]

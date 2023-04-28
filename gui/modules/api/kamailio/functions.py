@@ -1,10 +1,12 @@
-import os, time, json, random, subprocess, requests, csv, base64, codecs, re, OpenSSL
+import requests
 from shared import IO
 import settings
-from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
+from util.security import AES_CTR
 from werkzeug import exceptions as http_exceptions
 import sys
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
+
 
 def reloadKamailio():
     try:
@@ -15,11 +17,8 @@ def reloadKamailio():
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 
-        # Pulled tls.reload out of the reload process due to issues (something to do with memory requirements)
-        # {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
-
-
         reload_cmds = [
+            {'method': 'tls.reload', 'jsonrpc': '2.0', 'id': 1},
             {"method": "permissions.addressReload", "jsonrpc": "2.0", "id": 1},
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
@@ -58,13 +57,13 @@ def reloadKamailio():
              'params': ['transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED)]})
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-            'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
+             'params': ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]})
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-            'params': ['transnexus', 'verifyservice_enabled', str(settings.TRANSNEXUS_VERIFYSERVICE_ENABLED)]})
+             'params': ['transnexus', 'verifyservice_enabled', str(settings.TRANSNEXUS_VERIFYSERVICE_ENABLED)]})
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
-            'params': ['transnexus', 'verifyservice_host', str(settings.TRANSNEXUS_VERIFYSERVICE_HOST)]})
+             'params': ['transnexus', 'verifyservice_host', str(settings.TRANSNEXUS_VERIFYSERVICE_HOST)]})
 
         # Settings for STIR/SHAKEN
         reload_cmds.append(
@@ -91,8 +90,6 @@ def reloadKamailio():
         reload_cmds.append(
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1,
              'params': ['stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL)]})
-
-
 
         for cmdset in reload_cmds:
             r = requests.get('http://127.0.0.1:5060/api/kamailio', json=cmdset)

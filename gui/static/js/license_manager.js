@@ -188,6 +188,10 @@
       "ajax": {
         "url": API_BASE_URL + "licensing/list",
         "type": "GET",
+        "error": function(xhr, error, code) {
+          var response = JSON.parse(xhr.responseText);
+          requestErrorHandler(xhr.status, response.msg, response.error);
+        }
       },
       "columns": [
         {"data": "type", "render": createReadonlyInputField},
