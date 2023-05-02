@@ -1073,15 +1073,13 @@ SELECT * from (
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, g.id AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_groupid = r.groupid LEFT JOIN dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') WHERE ff.dr_groupid <> :flt_outbound
     UNION ALL
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, NULL AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_ruleid = r.ruleid WHERE ff.dr_groupid = :flt_outbound
-) AS t3 ON t1.ruleid = t3.ff_ruleid
-            """),
-            flt_inbound=settings.FLT_INBOUND,
-            flt_outbound=settings.FLT_OUTBOUND
-        )
+) AS t3 ON t1.ruleid = t3.ff_ruleid"""),{"flt_inbound":settings.FLT_INBOUND,"flt_outbound":settings.FLT_OUTBOUND})
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
         gwgroups = db.query(GatewayGroups).filter(
             (GatewayGroups.description.like(endpoint_filter)) | (GatewayGroups.description.like(carrier_filter))).all()
+
+        gatewayList = db.query(Gateways).all()
 
         # sort endpoint groups by name
         epgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())
@@ -1096,7 +1094,7 @@ SELECT * from (
                 debugException(ex)
                 return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
 
-        return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids)
+        return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids, gatewayList=gatewayList)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1285,11 +1283,15 @@ def addUpdateInboundMapping():
                 # Assign Gateway id to the gateway list
                 gwlist = Gateway.gwid
 
-                if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
-                    db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
-                if settings.IPV6_ENABLED:
-                    if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
-                        db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                try:
+                    if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
+                        db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
+                    if settings.IPV6_ENABLED:
+                        if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
+                            db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                except sql_exceptions.MultipleResultsFound as ex:
+                    logging.info("Multiple Address rows found")
+
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
