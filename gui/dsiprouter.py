@@ -746,7 +746,7 @@ def deleteCarriers():
         # grab any related carrier groups
         Gatewaygroups = db.execute(
             text('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET(:gwid, dr_gw_lists.gwlist)'),
-            gwid=gwid
+            {'gwid':gwid}
         )
 
         # remove gateway
