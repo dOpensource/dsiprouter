@@ -6,21 +6,62 @@ export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
 if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
+# function defs
+decryptOldSetting() { (
+    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
+        cd /opt/dsiprouter/gui
+    else
+        cd ${DSIP_PROJECT_DIR}/gui
+    fi
+
+    VALUE=$(grep -oP '^(?!#)(?:'$1')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' /etc/dsiprouter/gui/settings.py)
+    if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
+        printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
+    else
+        python3 -c "import sys; sys.path.insert(0, '/etc/dsiprouter/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.$1).decode('utf-8'), end='')"
+    fi
+) }
+encryptNewCreds() { (
+    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
+        cd /tmp/dsiprouter/gui
+    else
+        cd ${DSIP_PROJECT_DIR}/gui
+    fi
+    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'), end='');"
+) }
+
+printdbg 'verifying version requirements'
+CURRENT_VERSION=$(getConfigAttrib "VERSION" "/etc/dsiprouter/gui/settings.py")
+UPGRADE_DEPENDS=$(jq -r '.depends' <"$(dirname "$(dirname "$(readlink -f "$0")")")/settings.json")
+if [[ "$CURRENT_VERSION" != "$UPGRADE_DEPENDS" ]]; then
+    printerr "unsupported upgrade scenario ($CURRENT_VERSION -> 0.721)"
+    exit 1
+fi
 
 printdbg 'backing up configs just in case the upgrade fails'
 BACKUP_DIR="/var/backups"
 CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%s')"
-mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine}
+mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
 cp -rf /opt/dsiprouter/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
 cp -rf /etc/kamailio/. ${CURR_BACKUP_DIR}/etc/kamailio/
 cp -rf /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
 cp -f /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
 cp -rf /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
 cp -f ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
-# TODO: backup current systemd service files
+cp -f /etc/systemd/system/{dnsmasq.service,kamailio.service,nginx.service,rtpengine.service} ${CURR_BACKUP_DIR}/etc/systemd/system/
+cp -f /lib/systemd/system/dsiprouter.service ${CURR_BACKUP_DIR}/lib/systemd/system/
+cp -f /etc/default/kamailio ${CURR_BACKUP_DIR}/etc/default/
+printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
+
+printdbg 'retrieving system info'
+export DISTRO=$(getDistroName)
+export DISTRO_VER=$(getDistroVer)
+export DISTRO_MAJOR_VER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
+export DISTRO_MINOR_VER=$(cut -s -d '.' -f 2 <<<"$DISTRO_VER")
 
 printdbg 'retrieving current settings'
-export DSIP_ID=$(cat /etc/machine-id | hashCreds)
+MACHINE_ID=$(</etc/machine-id)
+export DSIP_ID=$(hashCreds "$MACHINE_ID")
 export DSIP_CLUSTER_ID=$(getConfigAttrib "DSIP_CLUSTER_ID" "/etc/dsiprouter/gui/settings.py")
 export DSIP_CLUSTER_SYNC=$(getConfigAttrib "DSIP_CLUSTER_SYNC" "/etc/dsiprouter/gui/settings.py")
 export DSIP_PROTO=$(getConfigAttrib "DSIP_PROTO" "/etc/dsiprouter/gui/settings.py")
@@ -80,56 +121,63 @@ export MAIL_ASCII_ATTACHMENTS=$(getConfigAttrib "MAIL_ASCII_ATTACHMENTS" "/etc/d
 export MAIL_DEFAULT_SENDER=$(getConfigAttrib "MAIL_DEFAULT_SENDER" "/etc/dsiprouter/gui/settings.py")
 export MAIL_DEFAULT_SUBJECT=$(getConfigAttrib "MAIL_DEFAULT_SUBJECT" "/etc/dsiprouter/gui/settings.py")
 export BACKUP_FOLDER=$(getConfigAttrib "BACKUP_FOLDER" "/etc/dsiprouter/gui/settings.py")
-export TRANSNEXUS_AUTHSERVICE_HOST=$(getConfigAttrib "TRANSNEXUS_AUTHSERVICE_HOST" "/etc/dsiprouter/gui/settings.py")
-export TRANSNEXUS_VERIFYSERVICE_HOST=$(getConfigAttrib "TRANSNEXUS_VERIFYSERVICE_HOST" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_PREFIX_A=$(getConfigAttrib "STIR_SHAKEN_PREFIX_A" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_PREFIX_B=$(getConfigAttrib "STIR_SHAKEN_PREFIX_B" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_PREFIX_C=$(getConfigAttrib "STIR_SHAKEN_PREFIX_C" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_PREFIX_INVALID=$(getConfigAttrib "STIR_SHAKEN_PREFIX_INVALID" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_BLOCK_INVALID=$(getConfigAttrib "STIR_SHAKEN_BLOCK_INVALID" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_CERT_URL=$(getConfigAttrib "STIR_SHAKEN_CERT_URL" "/etc/dsiprouter/gui/settings.py")
-export STIR_SHAKEN_KEY_PATH=$(getConfigAttrib "STIR_SHAKEN_KEY_PATH" "/etc/dsiprouter/gui/settings.py")
+TRANSNEXUS_AUTHSERVICE_ENABLED=$(getConfigAttrib "TRANSNEXUS_AUTHSERVICE_ENABLED" "/etc/dsiprouter/gui/settings.py")
+TRANSNEXUS_VERIFYSERVICE_ENABLED=$(getConfigAttrib "TRANSNEXUS_VERIFYSERVICE_ENABLED" "/etc/dsiprouter/gui/settings.py")
+TRANSNEXUS_AUTHSERVICE_HOST=$(getConfigAttrib "TRANSNEXUS_AUTHSERVICE_HOST" "/etc/dsiprouter/gui/settings.py")
+TRANSNEXUS_VERIFYSERVICE_HOST=$(getConfigAttrib "TRANSNEXUS_VERIFYSERVICE_HOST" "/etc/dsiprouter/gui/settings.py")
+TRANSNEXUS_LICENSE_KEY=$(getConfigAttrib "TRANSNEXUS_LICENSE_KEY" "/etc/dsiprouter/gui/settings.py")
+if [[ -n "$TRANSNEXUS_LICENSE_KEY" ]]; then
+    DSIP_TRANSNEXUS_LICENSE=$(encryptNewCreds "${TRANSNEXUS_LICENSE_KEY}${MACHINE_ID}")
+else
+    if (( $TRANSNEXUS_AUTHSERVICE_ENABLED == 1 )) || (( $TRANSNEXUS_VERIFYSERVICE_ENABLED == 1 )); then
+        printwarn 'transnexus support requires a license, add a valid license and activate via the GUI'
+    fi
+    TRANSNEXUS_AUTHSERVICE_ENABLED=0
+    TRANSNEXUS_VERIFYSERVICE_ENABLED=0
+fi
+STIR_SHAKEN_PREFIX_A=$(getConfigAttrib "STIR_SHAKEN_PREFIX_A" "/etc/dsiprouter/gui/settings.py")
+STIR_SHAKEN_PREFIX_B=$(getConfigAttrib "STIR_SHAKEN_PREFIX_B" "/etc/dsiprouter/gui/settings.py")
+STIR_SHAKEN_PREFIX_C=$(getConfigAttrib "STIR_SHAKEN_PREFIX_C" "/etc/dsiprouter/gui/settings.py")
+STIR_SHAKEN_PREFIX_INVALID=$(getConfigAttrib "STIR_SHAKEN_PREFIX_INVALID" "/etc/dsiprouter/gui/settings.py")
+STIR_SHAKEN_BLOCK_INVALID=$(getConfigAttrib "STIR_SHAKEN_BLOCK_INVALID" "/etc/dsiprouter/gui/settings.py")
+STIR_SHAKEN_CERT_URL=$(getConfigAttrib "STIR_SHAKEN_CERT_URL" "/etc/dsiprouter/gui/settings.py")
+STIR_SHAKEN_KEY_PATH=$(getConfigAttrib "STIR_SHAKEN_KEY_PATH" "/etc/dsiprouter/gui/settings.py")
 export DSIP_DOCS_DIR="${DSIP_PROJECT_DIR}/docs"
 export ROOT_DB_USER=$(getConfigAttrib "ROOT_DB_USER" "/etc/dsiprouter/gui/settings.py")
 export ROOT_DB_NAME=$(getConfigAttrib "ROOT_DB_NAME" "/etc/dsiprouter/gui/settings.py")
 export LOAD_SETTINGS_FROM=$(getConfigAttrib "LOAD_SETTINGS_FROM" "/etc/dsiprouter/gui/settings.py")
 
-# TODO: currently no way of easily transferring the license keys to the upgraded platform
-#TRANSNEXUS_LICENSE_KEY -> DSIP_TRANSNEXUS_LICENSE
+printdbg 'updating select settings'
+export DSIP_API_TOKEN=$(decryptOldSetting "DSIP_API_TOKEN")
+export DSIP_IPC_PASS=$(decryptOldSetting "DSIP_IPC_PASS")
+export KAM_DB_PASS=$(decryptOldSetting "KAM_DB_PASS")
+export MAIL_PASSWORD=$(decryptOldSetting "MAIL_PASSWORD")
+export ROOT_DB_PASS=$(decryptOldSetting "ROOT_DB_PASS")
 
-getCredentials() {
-    local SALT_LEN='64'
-    local DK_LEN_DEFAULT='64'
-    local CREDS_MAX_LEN='64'
-    local HASH_ITERATIONS='10000'
-    local HASHED_CREDS_ENCODED_MAX_LEN='256'
-    local AESCTR_CREDS_ENCODED_MAX_LEN='160'
+printwarn 'dSIPRouter admin password hash can not be undone, generating new one'
+export DSIP_PASSWORD=$(urandomChars 64)
+printdbg "temporary password: $DSIP_PASSWORD"
 
-    printwarn 'dSIPRouter admin password hash can not be undone, generating new one'
-    export DSIP_PASSWORD=$(urandomChars 64)
-    printdbg "temporary password: $DSIP_PASSWORD"
-    export DSIP_API_TOKEN=$(decryptConfigAttrib "DSIP_API_TOKEN" "/etc/dsiprouter/gui/settings.py")
-    export DSIP_IPC_PASS=$(decryptConfigAttrib "DSIP_IPC_PASS" "/etc/dsiprouter/gui/settings.py")
-    export KAM_DB_PASS=$(decryptConfigAttrib "KAM_DB_PASS" "/etc/dsiprouter/gui/settings.py")
-    export MAIL_PASSWORD=$(decryptConfigAttrib "MAIL_PASSWORD" "/etc/dsiprouter/gui/settings.py")
-    export ROOT_DB_PASS=$(decryptConfigAttrib "ROOT_DB_PASS" "/etc/dsiprouter/gui/settings.py")
-}
-getCredentials
-
-encryptCreds() { (
-    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
-        cd /tmp/dsiprouter/gui
-    else
-        cd ${DSIP_PROJECT_DIR}/gui
-    fi
-    python3 -c "from util.security import AES_CTR; print(AES_CTR.encrypt('$1').decode('utf-8'), end='');"
-) }
 DSIP_PASSWORD_HASH=$(hashCreds "$DSIP_PASSWORD")
-DSIP_API_TOKEN_CIPHERTEXT=$(encryptCreds "$DSIP_API_TOKEN")
-DSIP_IPC_PASS_CIPHERTEXT=$(encryptCreds "$DSIP_IPC_PASS")
-KAM_DB_PASS_CIPHERTEXT=$(encryptCreds "$KAM_DB_PASS")
-MAIL_PASSWORD_CIPHERTEXT=$(encryptCreds "$MAIL_PASSWORD")
-ROOT_DB_PASS_CIPHERTEXT=$(encryptCreds "$ROOT_DB_PASS")
+DSIP_API_TOKEN_CIPHERTEXT=$(encryptNewCreds "$DSIP_API_TOKEN")
+DSIP_IPC_PASS_CIPHERTEXT=$(encryptNewCreds "$DSIP_IPC_PASS")
+KAM_DB_PASS_CIPHERTEXT=$(encryptNewCreds "$KAM_DB_PASS")
+MAIL_PASSWORD_CIPHERTEXT=$(encryptNewCreds "$MAIL_PASSWORD")
+ROOT_DB_PASS_CIPHERTEXT=$(encryptNewCreds "$ROOT_DB_PASS")
+
+export INTERNAL_IP_ADDR=$(getInternalIP -4)
+export INTERNAL_IP_NET=$(getInternalCIDR -4)
+export INTERNAL_IP6_ADDR=$(getInternalIP -6)
+export INTERNAL_IP_NET6=$(getInternalCIDR -6)
+EXTERNAL_IP_ADDR=$(getExternalIP -4)
+export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
+EXTERNAL_IP6_ADDR=$(getExternalIP -6)
+export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
+export INTERNAL_FQDN=$(getInternalFQDN)
+export EXTERNAL_FQDN=$(getExternalFQDN)
+if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
+    export EXTERNAL_FQDN="$INTERNAL_FQDN"
+fi
 
 printdbg 'migrating database schema'
 (
@@ -308,8 +356,7 @@ fi
 printdbg 'configuring dsiprouter GUI'
 if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
     # a few stragglers that need copied over
-    cp -f /opt/dsiprouter/gui/modules/fusionpbx/certs/cert.key /tmp/dsiprouter/gui/modules/fusionpbx/certs/cert.key
-    cp -f /opt/dsiprouter/gui/modules/fusionpbx/certs/cert_combined.crt /tmp/dsiprouter/gui/modules/fusionpbx/certs/cert.key
+    cp -rf /opt/dsiprouter/gui/modules/fusionpbx/certs/. /tmp/dsiprouter/gui/modules/fusionpbx/certs/
     # use the bootstrap repo instead cloning again
     rm -rf /opt/dsiprouter
     mv -f /tmp/dsiprouter /opt/dsiprouter
@@ -321,7 +368,23 @@ fi
 export DSIP_PROJECT_DIR=/opt/dsiprouter
 
 printdbg 'installing python dependencies for the GUI'
-python3 -m pip install -U Flask~=2.0 psycopg2_binary requests SQLAlchemy~=2.0 Werkzeug~=2.0
+python3 -m pip install -U Flask~=2.2.0 psycopg2_binary requests SQLAlchemy~=2.0 Werkzeug~=2.0
+if cmdExists 'apt-get'; then
+    apt-get remove -y *certbot*
+    apt-get install -y python3-venv
+elif cmdExists 'dnf'; then
+    dnf remove -y *certbot*
+    dnf install -y python3-virtualenv
+elif cmdExists 'yum'; then
+    yum remove -y *certbot*
+    yum install -y python3-virtualenv
+fi
+python3 -m pip remove certbot 2>/dev/null
+python3 -m pip install -U acme josepy
+python3 -m venv /opt/certbot/
+/opt/certbot/bin/pip install --upgrade pip
+/opt/certbot/bin/pip install certbot
+ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
 printdbg 'generating dynamic config files for the GUI'
 dsiprouter configuredsip &&
@@ -345,6 +408,74 @@ setConfigAttrib 'ROOT_DB_USER' "$ROOT_DB_USER" /etc/dsiprouter/gui/settings.py -
     fi
 } &&
 setConfigAttrib 'ROOT_DB_NAME' "$ROOT_DB_NAME" /etc/dsiprouter/gui/settings.py -q &&
+(
+    setConfigAttrib 'TRANSNEXUS_AUTHSERVICE_ENABLED' "$TRANSNEXUS_AUTHSERVICE_ENABLED" /etc/dsiprouter/gui/settings.py || exit 1
+    setConfigAttrib 'TRANSNEXUS_VERIFYSERVICE_ENABLED' "$TRANSNEXUS_VERIFYSERVICE_ENABLED" /etc/dsiprouter/gui/settings.py || exit 1
+    setConfigAttrib 'TRANSNEXUS_AUTHSERVICE_HOST' "$TRANSNEXUS_AUTHSERVICE_HOST" /etc/dsiprouter/gui/settings.py -q || exit 1
+    setConfigAttrib 'TRANSNEXUS_VERIFYSERVICE_HOST' "$TRANSNEXUS_VERIFYSERVICE_HOST" /etc/dsiprouter/gui/settings.py -q || exit 1
+    # if transnexus license is present we need to reactivate it on the new server
+    [[ -n "$DSIP_TRANSNEXUS_LICENSE" ]] && {
+        RESPONSE=$(
+            curl -sk -u "ck_068f510a518ff5ecf1cbdcbc7db7f9bac2331613:cs_5ae2f3decfa59f427a59b41f2e41459d18023dd7" \
+                "https://dopensource.com/wp-json/lmfwc/v2/licenses/${TRANSNEXUS_LICENSE_KEY}"
+        )
+        if (( $? != 0 )); then
+            printerr 'could not contact license server, check your internet connection and try again'
+            exit 1
+        fi
+        if [[ "$(jq -r '.success' <<<"$RESPONSE")" != "true" ]]; then
+                printerr 'invalid transnexus license can not be migrated'
+                printwarn 'licenses can be purchased here: https://dopensource.com/product/transnexus-clearip-module/'
+                exit 0
+        fi
+        NOW=$(date -u +'%s')
+        if [[ "$(jq -r '.data.expiresAt' <<<"$RESPONSE")" != "null" ]]; then
+            EXPIRES=$(
+                jq -r '.data.expiresAt' <<<"$RESPONSE" \
+                | date -u -f /dev/stdin +'%s'
+            )
+        else
+            EXPIRES=$(
+                jq -r '.data.createdAt' <<<"$RESPONSE" \
+                | date -u -f /dev/stdin +"%Y-%m-%d +$(jq -r '.data.validFor' <<<"$RESPONSE")day %H:%M:%S" \
+                | date -u -f /dev/stdin +'%s'
+            )
+        fi
+        if (( $(jq -r '.data.status' <<<"$RESPONSE") == 3 )) && (( $(jq -r '.data.timesActivated' <<<"$RESPONSE") > 0 )) && (( $EXPIRES > $NOW )); then
+            setConfigAttrib 'DSIP_TRANSNEXUS_LICENSE' "$DSIP_TRANSNEXUS_LICENSE" /etc/dsiprouter/gui/settings.py -qb
+        else
+            RESPONSE=$(
+                curl -sk -u "ck_068f510a518ff5ecf1cbdcbc7db7f9bac2331613:cs_5ae2f3decfa59f427a59b41f2e41459d18023dd7" \
+                    "https://dopensource.com/wp-json/lmfwc/v2/licenses/activate/${TRANSNEXUS_LICENSE_KEY}"
+                curl -skf -X PUT -H "Authorization: Bearer ${DSIP_API_TOKEN}" -H 'Content-Type: application/json' \
+                    -d "{\"license_key\":\"${TRANSNEXUS_LICENSE_KEY}\"}" 'https://localhost:5000/api/v1/licensing/activate'
+            )
+            if (( $? != 0 )) || [[ "$(jq -r '.success' <<<"$RESPONSE")" != "true" ]]; then
+                printerr 'failed to activate transnexus license'
+                printwarn 'contact dOpenSource to migrate your license: https://dopensource.com/'
+                exit 0
+            fi
+            setConfigAttrib 'DSIP_TRANSNEXUS_LICENSE' "$DSIP_TRANSNEXUS_LICENSE" /etc/dsiprouter/gui/settings.py -qb
+        fi
+    }
+    exit 0
+) &&
+(
+    setConfigAttrib 'STIR_SHAKEN_PREFIX_A' "$STIR_SHAKEN_PREFIX_A" /etc/dsiprouter/gui/settings.py -q || exit 1
+    setConfigAttrib 'STIR_SHAKEN_PREFIX_B' "$STIR_SHAKEN_PREFIX_B" /etc/dsiprouter/gui/settings.py -q || exit 1
+    setConfigAttrib 'STIR_SHAKEN_PREFIX_C' "$STIR_SHAKEN_PREFIX_C" /etc/dsiprouter/gui/settings.py -q || exit 1
+    setConfigAttrib 'STIR_SHAKEN_PREFIX_INVALID' "$STIR_SHAKEN_PREFIX_INVALID" /etc/dsiprouter/gui/settings.py -q || exit 1
+    setConfigAttrib 'STIR_SHAKEN_BLOCK_INVALID' "$STIR_SHAKEN_BLOCK_INVALID" /etc/dsiprouter/gui/settings.py || exit 1
+    setConfigAttrib 'STIR_SHAKEN_CERT_URL' "$STIR_SHAKEN_CERT_URL" /etc/dsiprouter/gui/settings.py -q || exit 1
+    setConfigAttrib 'STIR_SHAKEN_KEY_PATH' "$STIR_SHAKEN_KEY_PATH" /etc/dsiprouter/gui/settings.py -q || exit 1
+) &&
+{
+    # let user know how to upgrade ms teams license if valid
+    if [[ $(curl -s -d '{"method": "dsiprouter.health_check", "jsonrpc": "2.0", "id": 1}' 'http://localhost:5060/api/kamailio' | jq -r '.result' 2>/dev/null) == "Health Check Succeeded" ]]; then
+        printwarn 'your msteams license can not be converted automatically'
+        printwarn 'contact dOpenSource to migrate your license: https://dopensource.com/'
+    fi
+} &&
 printdbg 'successfully generated new settings file' ||
 {
     printerr 'failed generating new settings file'
@@ -378,23 +509,21 @@ mandb
 cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
 
 printdbg 'upgrading systemd service configurations'
-export DISTRO=$(getDistroName)
-export DISTRO_VER=$(getDistroVer)
-export DISTRO_MAJOR_VER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
-export DISTRO_MINOR_VER=$(cut -s -d '.' -f 2 <<<"$DISTRO_VER")
-
-export INTERNAL_IP_ADDR=$(getInternalIP -4)
-export INTERNAL_IP_NET=$(getInternalCIDR -4)
-export INTERNAL_IP6_ADDR=$(getInternalIP -6)
-export INTERNAL_IP_NET6=$(getInternalCIDR -6)
-EXTERNAL_IP_ADDR=$(getExternalIP -4)
-export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
-EXTERNAL_IP6_ADDR=$(getExternalIP -6)
-export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
-export INTERNAL_FQDN=$(getInternalFQDN)
-export EXTERNAL_FQDN=$(getExternalFQDN)
-if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
-    export EXTERNAL_FQDN="$INTERNAL_FQDN"
+# move kamailio defaults file to the new name
+mv -f /etc/default/kamailio /etc/default/kamailio.conf
+# update the default memory allocation if needed
+# currently the minimum system RAM is 256MB + 64MB + 512MB = 832MB
+if (( $(awk '/MemTotal/ { printf "%d \n", $2/1024 }' /proc/meminfo) < 832 )); then
+    printwarn 'system has less than 832MB RAM, not updating kamailio default memory allocations'
+else
+    PKG_MEM=$(grep -m 1 -oP 'PKG_MEMORY\=\K.*' /etc/default/kamailio.conf)
+    if (( $PKG_MEM < 64 )); then
+        perl -i -pe 's%(PKG_MEM\=).*%${1}64%' /etc/default/kamailio.conf
+    fi
+    SHM_MEM=$(grep -m 1 -oP 'SHM_MEMORY\=\K.*' /etc/default/kamailio.conf)
+    if (( $SHM_MEM < 512 )); then
+        perl -i -pe 's%(SHM_MEMORY\=).*%${1}512%' /etc/default/kamailio.conf
+    fi
 fi
 
     case "$DISTRO" in
@@ -412,6 +541,7 @@ DefaultDependencies=no
 Type=forking
 PIDFile=/run/dnsmasq/dnsmasq.pid
 Environment='RUN_DIR=/run/dnsmasq'
+Environment='IGNORE_RESOLVCONF=yes'
 # make sure everything is setup correctly before starting
 ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
 ExecStartPre=/usr/sbin/dnsmasq --test
@@ -430,18 +560,6 @@ ExecReload=/bin/kill -HUP $MAINPID
 [Install]
 WantedBy=multi-user.target
 EOF
-    # we need a newer version of certbot than the distro repos offer
-    apt-get remove -y *certbot*
-    apt-get install -y python3-venv
-    python3 -m venv /opt/certbot/
-    /opt/certbot/bin/pip install --upgrade pip
-    /opt/certbot/bin/pip install certbot
-    ln -s /opt/certbot/bin/certbot /usr/bin/certbot
-
-    # copy Kamailio Startup Conf file to the correct name
-    cp /etc/default/kamailio /etc/default/kamailio.conf
-    # Update the Kamailio memory to 512mb
-    sed -i -r 's/SHM_MEMORY=.*/SHM_MEMORY=512/' /etc/default/kamailio.conf
             ;;
         almalinux|rocky)
             cat << 'EOF' >/etc/systemd/system/dnsmasq.service
@@ -492,12 +610,20 @@ EOF
             ;;
     esac
 
-for SERVICE in kamailio nginx dsiprouter; do
-    if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.${SERVICE}installed" ]]; then
-        SVC_FILE=$(grep -oP "$SERVICE-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/$SERVICE/${DISTRO}/${DISTRO_MAJOR_VER}.sh)
-        cp -f ${DSIP_PROJECT_DIR}/$SERVICE/systemd/$SVC_FILE /etc/systemd/system/$SERVICE.service
-    fi
-done
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+    SVC_FILE=$(grep -oP "kamailio-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/kamailio/${DISTRO}/${DISTRO_MAJOR_VER}.sh)
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/$SVC_FILE /etc/systemd/system/kamailio.service
+fi
+
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
+    SVC_FILE=$(grep -oP "nginx-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/nginx/${DISTRO}/${DISTRO_MAJOR_VER}.sh)
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/$SVC_FILE /etc/systemd/system/nginx.service
+fi
+
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+    SVC_FILE=$(grep -oP "dsiprouter-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/dsiprouter/${DISTRO}/${DISTRO_MAJOR_VER}.sh)
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/systemd/$SVC_FILE /lib/systemd/system/dsiprouter.service
+fi
 
 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
     SVC_FILE=$(grep -m 1 -oP "rtpengine-v[0-9]+\.service" ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh)
