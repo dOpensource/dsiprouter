@@ -114,6 +114,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
             if address_query is None:
                 Addr = Address("msteams-sbc", hostname, 32, settings.FLT_MSTEAMS, gwgroup=0)
                 db.add(Addr)
+            hostname="{}:{};{}".format(hostname,"5061","transport=tls")
             endpoints.append({"hostname": hostname, "description": "msteams_endpoint", "maintmode": False})
 
         endpointGroup['endpoints'] = endpoints
