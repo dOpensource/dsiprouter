@@ -3,8 +3,6 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
 
-from util.pyasync import proc
-
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
@@ -748,7 +746,7 @@ def deleteCarriers():
         # grab any related carrier groups
         Gatewaygroups = db.execute(
             text('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET(:gwid, dr_gw_lists.gwlist)'),
-            gwid=gwid
+            {'gwid':gwid}
         )
 
         # remove gateway
