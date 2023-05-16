@@ -1081,6 +1081,8 @@ SELECT * from (
         gwgroups = db.query(GatewayGroups).filter(
             (GatewayGroups.description.like(endpoint_filter)) | (GatewayGroups.description.like(carrier_filter))).all()
 
+        gatewayList = db.query(Gateways).all()
+
         # sort endpoint groups by name
         epgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())
         # sort gateway groups by type then by name
@@ -1094,7 +1096,7 @@ SELECT * from (
                 debugException(ex)
                 return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
 
-        return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids)
+        return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids, gatewayList=gatewayList)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1283,11 +1285,15 @@ def addUpdateInboundMapping():
                 # Assign Gateway id to the gateway list
                 gwlist = Gateway.gwid
 
-                if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
-                    db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
-                if settings.IPV6_ENABLED:
-                    if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
-                        db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                try:
+                    if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
+                        db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
+                    if settings.IPV6_ENABLED:
+                        if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
+                            db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                except sql_exceptions.MultipleResultsFound as ex:
+                    logging.info("Multiple Address rows found")
+
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)

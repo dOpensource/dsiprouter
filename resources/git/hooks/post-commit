@@ -55,7 +55,7 @@ createMDCommentSection() {
     local NAME="$1"
     local CONTENT="$2"
 
-    printf '%s\n' "[//]: # (START_SECTION ${NAME}"
+    printf '%s\n' "[//]: # (START_SECTION ${NAME})"
     printf '%s' "$CONTENT" | sed -e '$a\'
     printf '%s\n' "END_SECTION ${NAME})"
 }
