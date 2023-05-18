@@ -582,6 +582,15 @@
   {{ script_tag('combobox') }}
   <script type="application/javascript">
     var DID_LIST = JSON.parse("{{ imported_dids }}") || [];
+
+    var gw_mapping = [];
+    {% for gw in gatewayList %}
+      gw_mapping.push({
+        id: {{ gw['gwid'] }},
+        group: "{{ gw['description']|attrFilter('gwgroup') }}",
+        option_value: "lb_{{ gw['description']|attrFilter('gwgroup') }}_{{ gw['description']|attrFilter('gwgroup')  }}",
+      });
+    {% endfor %}
   </script>
   {{ script_tag('inboundmapping') }}
 {% endblock %}
