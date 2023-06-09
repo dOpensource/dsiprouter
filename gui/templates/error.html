@@ -8,7 +8,9 @@
 {% block body %}
 
   {% set github_url = 'https://github.com/dOpensource/dsiprouter' %}
-  {% set github_issues_url = github_url + "/issues" %}
+  {% set github_issues_url = github_url + '/issues' %}
+  {% set dopensource_url = 'https://dopensource.com' %}
+  {% set dopensource_shop_url = dopensource_url + '/product-category/dsiprouter/' %}
 
   <div class="wrapper-vertical centered">
 
@@ -73,6 +75,27 @@
         <p>To submit a bug for review go to the <a href="{{ github_issues_url }}">dSIPRouter Issues</a> page and submit
           a new
           issue with a <strong>detailed</strong> explanation and <strong>screenshots</strong> of the issue.</p>
+      </div>
+
+    {% elif type=="woocommerce" %}
+
+      <div class="alert alert-danger container">
+        <h2><strong>Licensing Issue</strong></h2>
+      </div>
+
+      {% if msg is not none %}
+        <div class="alert alert-info container" style="padding: 10px 10px">
+          <p>Detailed Information: <b>{{ msg }}</b></p>
+        </div>
+      {% endif %}
+
+      <br>
+
+      <div class="alert container">
+        <p>Double check your license is still valid.</p>
+        <p>To renew your license go to the <a href="{{ dopensource_shop_url }}">dopensource shop</a>.</p>
+        <p>If your license was associated with a previous machine you have to remove it first.</p>
+        <p>If you purchased a license and are continuing to have issues please <a href="https://support.dopensource.com/">open a ticket</a> for support.</p>
       </div>
 
     {% else %}

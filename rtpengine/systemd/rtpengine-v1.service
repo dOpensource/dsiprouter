@@ -15,8 +15,7 @@ Environment='RUNDIR=/run/rtpengine'
 # PIDFile requires an absolute path
 PIDFile=/run/rtpengine/rtpengine.pid
 # ExecStart* requires an absolute path for the program
-ExecStartPre=/bin/mkdir -p $RUNDIR
-ExecStartPre=/bin/chown -R rtpengine:rtpengine $RUNDIR
+ExecStartPre=/usr/bin/dsiprouter chown -rtpengine
 ExecStartPre=/usr/sbin/rtpengine-start-pre $CFGFILE
 ExecStart=/usr/sbin/rtpengine -f $OPTIONS
 ExecStopPost=/usr/sbin/rtpengine-stop-post $CFGFILE

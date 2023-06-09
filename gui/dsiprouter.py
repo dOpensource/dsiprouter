@@ -2,14 +2,14 @@
 
 # make sure the generated source files are imported instead of the template ones
 import sys
+
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, socket, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess
 from copy import copy
-from collections import OrderedDict
 from importlib import reload
-from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint
+from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint, Response
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from sqlalchemy import func, exc as sql_exceptions
@@ -22,10 +22,10 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
-from util.networking import getInternalIP, getExternalIP, safeUriToHost, safeFormatSipUri, safeStripPort, getInternalCIDR, \
-    ipToHost
+from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
-    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
+    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
+    settingsToTableFormat
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -38,6 +38,7 @@ from modules.api.auth.routes import user
 from util.security import Credentials, urandomChars
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
+from modules.upgrade import UpdateUtils
 import globals, settings
 
 # TODO: unit testing per component
@@ -81,7 +82,7 @@ def before_request():
         app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
-
+# DEPRECATED: overridden by csrf.exempt(api), need to revist this, marked for review in v0.80
 @api.before_request
 def api_before_request():
     # for ua to api w/ api token disable csrf
@@ -745,7 +746,7 @@ def deleteCarriers():
         # grab any related carrier groups
         Gatewaygroups = db.execute(
             text('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET(:gwid, dr_gw_lists.gwlist)'),
-            gwid=gwid
+            {'gwid':gwid}
         )
 
         # remove gateway
@@ -1061,6 +1062,7 @@ def displayInboundMapping():
         endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
+
         res = db.execute(
             text("""
 SELECT * from (
@@ -1199,7 +1201,7 @@ def addUpdateInboundMapping():
             # find last rule in dr_rules
             res = db.execute(
                 text("SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=:db_name AND TABLE_NAME='dr_rules'"),
-                db_name=settings.KAM_DB_NAME
+                {"db_name":settings.KAM_DB_NAME}
             ).first()
             ruleid = int(res[0])
 
@@ -2232,6 +2234,111 @@ def addUpdateStirShaken():
         return showError(type=error)
 
 
+@app.route('/upgrade')
+def displayUpgrade(msg=None):
+    """
+    Display Upgrade settings in view
+    """
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        if len(settings.DSIP_CORE_LICENSE) == 0:
+            return render_template('license_required.html', msg=None)
+
+        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_CORE_LICENSE, decrypt=True)
+        if not settings_lc.active:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
+
+        lc = WoocommerceLicense(settings_lc.license_key)
+        if lc != settings_lc:
+            return render_template('license_required.html',
+                msg='license is associated with another machine, re-associate it with this machine first')
+
+        latest = UpdateUtils.get_latest_version()
+
+        upgrade_settings = {
+            "current_version": settings.VERSION,
+            "latest_version": latest['tag_name'],
+            "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
+        }
+        return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
+
+    except WoocommerceError as ex:
+        return render_template('license_required.html', msg=str(ex))
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+# TODO: not secured, can be called without license check if user is logged in
+@app.route('/upgrade/start', methods=['POST'])
+def start_upgrade():
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        logging.info("Starting upgrade")
+
+        form = stripDictVals(request.form.to_dict())
+        upgrade_resources_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
+        current_resources_dir = os.path.join(upgrade_resources_dir, form['latest_version'])
+        cmd = "python3 {} {}".format(current_resources_dir, form['latest_version'])
+
+        with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
+            run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+            run_info.check_returncode()
+
+        logging.info("Upgrade complete")
+
+        return displayUpgrade()
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
+@app.route('/upgrade/log')
+def getUpgradeLog(msg=None):
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        filename = "/var/log/dsiprouter_upgrade.log"
+        with open(filename, 'r') as file:
+            content = file.read()
+            return Response(content, content_type='text/plain')
+    except FileNotFoundError:
+        return 'File not found', 404
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        error = "http"
+        return showError(type=error)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        return showError(type=error)
+
+
 # custom jinja filters
 def yesOrNoFilter(list, field):
     if list == 1:
@@ -2263,10 +2370,16 @@ def attrFilter(list, field):
 def domainTypeFilter(list):
     if list is None:
         return "Unknown"
-    if list == "0":
+    elif list == "0":
         return "Static"
-    else:
+    elif list == "1":
         return "Dynamic"
+    elif list == "2":
+        return "Static using Dispatcher"
+    elif list == "3":
+        return "MSTeams"
+    else:
+        return "Other"
 
 
 def imgFilter(name):
@@ -2289,38 +2402,58 @@ def injectReloadRequired():
 def injectSettings():
     return dict(settings=settings)
 
+# DEPRECATED: now done by dsiprouter.sh (CLI commands run by dsip-init.service), marked for removal in v0.80
+# def getDynamicNetworkSettings():
+#     """
+#     Get the network settings depending on the state of NETWORK_MODE when called
+#
+#     :return:    network settings or empty dict
+#     :rtype:     dict
+#     """
+#
+#     if settings.NETWORK_MODE == 1:
+#         return {}
+#     elif settings.NETWORK_MODE == 2:
+#         raise NotImplementedError()
+#
+#     int_ip = getInternalIP('4')
+#     int_ip6 = getInternalIP('6')
+#     int_net = getInternalCIDR('4')
+#     int_net6 = getInternalCIDR('6')
+#     int_fqdn = socket.getfqdn()
+#     ext_ip = getExternalIP('4')
+#     ext_ip6 = getExternalIP('6')
+#     ext_fqdn = ipToHost(ext_ip)
+#     if os.path.exists('/proc/net/if_inet6'):
+#         try:
+#             with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
+#                 s.connect((int_ip6, 0))
+#             ipv6_enabled = True
+#         except:
+#             ipv6_enabled = False
+#     else:
+#         ipv6_enabled = False
+#
+#     return {
+#         'IPV6_ENABLED': ipv6_enabled,
+#         'INTERNAL_IP_ADDR': int_ip if int_ip is not None else '',
+#         'INTERNAL_IP_NET': int_net if int_net is not None else '',
+#         'INTERNAL_IP6_ADDR': int_ip6 if int_ip6 is not None else '',
+#         'INTERNAL_IP6_NET': int_net6 if int_net6 is not None else '',
+#         'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip if int_ip is not None else '',
+#         'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6 if int_ip6 is not None else '',
+#         'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn if int_fqdn is not None else ''
+#     }
 
-# TODO: deprecated, using bjoern for WSGI server
-# class CustomServer(Server):
-#     """ Customize the Flask server with our settings """
-#
-#     def __init__(self):
-#         super().__init__(
-#             host=settings.DSIP_HOST,
-#             port=settings.DSIP_PORT
-#         )
-#
-#         if len(settings.DSIP_SSL_CERT) > 0 and len(settings.DSIP_SSL_KEY) > 0:
-#            self.ssl_crt = settings.DSIP_SSL_CERT
-#            self.ssl_key = settings.DSIP_SSL_KEY
-#
-#         if settings.DEBUG == True:
-#             self.use_debugger = True
-#             self.use_reloader = True
-#         else:
-#             self.use_debugger = None
-#             self.use_reloader = None
-#             self.threaded = True
-#             self.processes = 1
-
+# DEPRECATED: updating network settings portion of this function has moved to the CLI
+#             marked for refactoring in v0.80 as shown below
+#               def syncSettings(new_fields={}):
 def syncSettings(new_fields={}, update_net=False):
     """
     Synchronize settings.py with shared mem / db
 
     :param new_fields:      fields to override when syncing
     :type new_fields:       dict
-    :param update_net:      if the network settings should be updated
-    :type update_net:       bool
     :return:                None
     :rtype:                 None
     """
@@ -2330,48 +2463,16 @@ def syncSettings(new_fields={}, update_net=False):
     try:
         db = SessionLoader()
 
-        # TODO: updating the dsiprouter settings file/dsip_settings table should be done by dsiprouter.sh (CLI commands run by dsip-init.service) instead
-        #       we need to start enforcing the concept on least privileges for our services and the system users running them
-        # update network settings dynamically
-        if update_net:
-            int_ip = getInternalIP('4')
-            int_ip6 = getInternalIP('6')
-            int_net = getInternalCIDR('4')
-            int_net6 = getInternalCIDR('6')
-            int_fqdn = socket.getfqdn()
-            ext_ip = getExternalIP('4')
-            ext_ip6 = getExternalIP('6')
-            ext_fqdn = ipToHost(ext_ip)
-            if os.path.exists('/proc/net/if_inet6'):
-                try:
-                    with socket.socket(socket.AF_INET6, socket.SOCK_DGRAM) as s:
-                        s.connect((int_ip6, 0))
-                    ipv6_enabled = True
-                except:
-                    ipv6_enabled = False
-            else:
-                ipv6_enabled = False
-
-            net_dict = {
-                'IPV6_ENABLED': ipv6_enabled,
-                'INTERNAL_IP_ADDR': int_ip if int_ip is not None else '',
-                'INTERNAL_IP_NET': int_net if int_net is not None else '',
-                'INTERNAL_IP6_ADDR': int_ip6 if int_ip6 is not None else '',
-                'INTERNAL_IP6_NET': int_net6 if int_net6 is not None else '',
-                'EXTERNAL_IP_ADDR': ext_ip if ext_ip is not None else int_ip if int_ip is not None else '',
-                'EXTERNAL_IP6_ADDR': ext_ip6 if ext_ip6 is not None else int_ip6 if int_ip6 is not None else '',
-                'EXTERNAL_FQDN': ext_fqdn if ext_fqdn is not None else int_fqdn if int_fqdn is not None else ''
-            }
-        else:
-            net_dict = {}
-
-        # need to grab any changes on disk b4 merging
-        reload(settings)
+        # sync settings from settings.py
+        if settings.LOAD_SETTINGS_FROM == 'file' or settings.DSIP_ID is None:
+            # need to grab any changes on disk b4 merging
+            reload(settings)
 
         # if DSIP_ID is not set, generate it
         if settings.DSIP_ID is None:
             with open('/etc/machine-id', 'r') as f:
                 settings.DSIP_ID = Credentials.hashCreds(f.read().rstrip())
+
         # if HOMER_ID is not set, generate it
         if settings.HOMER_ID is None:
             with open('/etc/machine-id', 'r') as f:
@@ -2381,98 +2482,15 @@ def syncSettings(new_fields={}, update_net=False):
         if settings.LOAD_SETTINGS_FROM == 'file':
 
             # format fields for DB
-            fields = OrderedDict([
-                ('DSIP_ID', settings.DSIP_ID),
-                ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID),
-                ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
-                ('DSIP_PROTO', settings.DSIP_PROTO),
-                ('DSIP_PORT', settings.DSIP_PORT),
-                ('DSIP_USERNAME', settings.DSIP_USERNAME),
-                ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
-                ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS),
-                ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
-                ('DSIP_API_PORT', settings.DSIP_API_PORT),
-                ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY),
-                ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
-                ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK),
-                ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK),
-                ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN),
-                ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
-                ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY),
-                ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
-                ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT),
-                ('DSIP_SSL_CA', settings.DSIP_SSL_CA),
-                ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL),
-                ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
-                ('VERSION', settings.VERSION),
-                ('DEBUG', settings.DEBUG),
-                ('ROLE', settings.ROLE),
-                ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
-                ('KAM_DB_HOST', settings.KAM_DB_HOST),
-                ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER),
-                ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
-                ('KAM_DB_PORT', settings.KAM_DB_PORT),
-                ('KAM_DB_NAME', settings.KAM_DB_NAME),
-                ('KAM_DB_USER', settings.KAM_DB_USER),
-                ('KAM_DB_PASS', settings.KAM_DB_PASS),
-                ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH),
-                ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
-                ('KAM_TLSCFG_PATH', settings.KAM_TLSCFG_PATH),
-                ('RTP_CFG_PATH', settings.RTP_CFG_PATH),
-                ('FLT_CARRIER', settings.FLT_CARRIER),
-                ('FLT_PBX', settings.FLT_PBX),
-                ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
-                ('FLT_OUTBOUND', settings.FLT_OUTBOUND),
-                ('FLT_INBOUND', settings.FLT_INBOUND),
-                ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
-                ('FLT_FWD_MIN', settings.FLT_FWD_MIN),
-                ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN),
-                ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
-                ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP),
-                ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
-                ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP),
-                ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
-                ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY),
-                ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
-                ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL),
-                ('HOMER_ID', settings.HOMER_ID),
-                ('HOMER_HEP_HOST', settings.HOMER_HEP_HOST),
-                ('HOMER_HEP_PORT', settings.HOMER_HEP_PORT),
-                ('IPV6_ENABLED', settings.IPV6_ENABLED),
-                ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
-                ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET),
-                ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR),
-                ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET),
-                ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
-                ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR),
-                ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
-                ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER),
-                ('MAIL_SERVER', settings.MAIL_SERVER),
-                ('MAIL_PORT', settings.MAIL_PORT),
-                ('MAIL_USE_TLS', settings.MAIL_USE_TLS),
-                ('MAIL_USERNAME', settings.MAIL_USERNAME),
-                ('MAIL_PASSWORD', settings.MAIL_PASSWORD),
-                ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
-                ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER),
-                ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT),
-                ('DSIP_CORE_LICENSE', settings.DSIP_CORE_LICENSE),
-                ('DSIP_STIRSHAKEN_LICENSE', settings.DSIP_STIRSHAKEN_LICENSE),
-                ('DSIP_TRANSNEXUS_LICENSE', settings.DSIP_TRANSNEXUS_LICENSE),
-                ('DSIP_MSTEAMS_LICENSE', settings.DSIP_MSTEAMS_LICENSE),
-            ])
-
+            fields = settingsToTableFormat(settings)
             fields.update(new_fields)
-            fields.update(net_dict)
 
-            # convert db specific fields
-            orig_kam_db_host = fields['KAM_DB_HOST']
-            if isinstance(settings.KAM_DB_HOST, list):
-                fields['KAM_DB_HOST'] = ','.join(settings.KAM_DB_HOST)
-
+            # update the table
             updateDsipSettingsTable(fields)
 
             # revert db specific fields
-            fields['KAM_DB_HOST'] = orig_kam_db_host
+            if ',' in fields['KAM_DB_HOST']:
+                fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
 
         # sync settings from dsip_settings table
         elif settings.LOAD_SETTINGS_FROM == 'db':
@@ -2483,12 +2501,11 @@ def syncSettings(new_fields={}, update_net=False):
                 ).first().items()
             )
             fields.update(new_fields)
-            fields.update(net_dict)
 
             if ',' in fields['KAM_DB_HOST']:
                 fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
 
-        # no other sync scenarios
+        # no configured storage device to sync settings to/from
         else:
             raise ValueError('invalid value for LOAD_SETTINGS_FROM, acceptable values: "file" or "db"')
 
@@ -2583,17 +2600,18 @@ def initApp(flask_app):
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
 
     # Dynamically update settings
-    syncSettings(update_net=True)
+    syncSettings()
 
     # Reload Kamailio with the settings from dSIPRouter settings config
     reloadKamailio()
 
     # configs depending on updated settings go here
+    # DEPRECATED: flask_app.env is deprecated and only flask_app.debug will be used in the future, marked for removal in v0.80
     flask_app.env = "development" if settings.DEBUG else "production"
     flask_app.debug = settings.DEBUG
-    # DEPRECATED: we don't use Flask-SQLalchemy anymore. The event system is only available in that version of sqlalchemy
-    # flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
+    # DEPRECATED: class interface changed and will be removed in Flask 2.3, marked for review in v0.80
+    #             customize 'app.json_provider_class' or 'app.json' instead
     # Set flask JSON encoder
     flask_app.json_encoder = CreateEncoder()
 

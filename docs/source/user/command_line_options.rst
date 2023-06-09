@@ -14,13 +14,14 @@ upgrade                                 Upgrade dSIPRouter platform (requires li
 start                                   Starts dSIPRouter
 stop                                    Stops dSIPRouter
 restart                                 Restarts dSIPRouter
+chown                                   Update file permissions for dSIPRouter and related services
 configurekam                            Reconfigures the Kamailio configuration file based on dSIPRouter settings
-configuresslcert                        Reconfigures SSL certificate used by Kamailio and dSIPRouter
+configuredsip                           Reconfigures the dSIPRouter configuration file, updating dynamic settings
 renewsslcert                            Renew configured letsencrypt SSL certificate
+configuresslcert                        Reconfigures SSL certificate used by Kamailio and dSIPRouter
 installmodules                          Install / uninstall dDSIProuter modules
 resetpassword                           Generate new random dSIPRouter admin account password
 setcredentials                          Set various credentials manually
-chown                                   Update file permissions for dSIPRouter and related services
 version                                 Show dSIPRouter version
 help                                    List all of the options
 ===================================     ======================================================================

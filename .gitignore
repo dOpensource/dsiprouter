@@ -1,6 +1,13 @@
+# dSIPRouter Project Specific Ignored Files
 .idea
 /resources/terraform/do/*.tfstate
 /resources/terraform/do/*.backup
 /resources/terraform/do/.terraform
 /resources/terraform/do/*.hcl
 /resources/terraform/do/terraform.tfvars
+*/__pycache__/
+# TODO: these following files could be generated elsewhere
+# adding them to python path where needed to cleanup project dir
+docs/build/
+gui/modules/fusionpbx/certs/cert.key
+gui/modules/fusionpbx/certs/cert_combined.crt

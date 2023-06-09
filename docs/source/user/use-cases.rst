@@ -428,15 +428,12 @@ Here we will demostrate how to setup dSIPRouter to enable hosting FreePBX using 
 
 .. raw:: html
         
-        <object width="560" height="315"><param name="movie"
-        value="https://www.youtube.com/embed/OgTZLYYx1u8"></param><param
-        name="allowFullScreen" value="true"></param><param
-        name="allowscriptaccess" value="always"></param><embed
-        src="https://www.youtube.com/embed/OgTZLYYx1u8"
-        type="application/x-shockwave-flash" allowscriptaccess="always"
-        allowfullscreen="true" width=""
-        height="385"></embed></object>
+	.. raw:: html
 
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+                <iframe src="https://www.youtube.com/embed/OgTZLYYx1u8" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 385px;"></iframe>
+        </div>
+     
 
 ------------------
 Steps to Implement
@@ -462,9 +459,9 @@ Steps to Implement
 .. image:: images/freepbx-pt-setup-softphone.png
           :align: center
 
-==============================
-Microsoft Teams Direct Routing
-==============================
+======================================================
+Microsoft Teams Direct Routing (SUBSCRIPTION REQUIRED)
+======================================================
 
 dSIPRouter can act as an intermediary Session Border Controller between Microsoft Teams Direct Routing and your SIP provider or SIP servers.
 
@@ -493,36 +490,37 @@ Note: For multi-tenant use, authorizing the root subdomain or domain (if you use
 
 .. code-block:: bash
 
-Install-Module -Name MicrosoftTeams
-Import-Module MicrosoftTeams
-$userCredential = Get-Credential
-Connect-MicrosoftTeams -Credential $userCredential
+	Install-Module -Name MicrosoftTeams
+	Import-Module MicrosoftTeams
+	$userCredential = Get-Credential
+	Connect-MicrosoftTeams -Credential $userCredential
 
-   code
+  
 
 Login Note: If your using multi-factor authentication (MFA/2FA), log in by typing Connect-MicrosoftTeams
-Debian 10 Note: If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
-**Replace sbc.example.com, user@example.com and +13137175555** with your SBC's FQDN, the user's email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)
+
+Debian 10 Note: 
+	If you run into `this OpenSSL issue <https://github.com/PowerShell/PowerShell/issues/12202>`_ , here is `a workaround <https://github.com/PowerShell/PowerShell/issues/12202#issuecomment-720402212>`_!
+	**Replace sbc.example.com, user@example.com and +13137175555** with your SBC's FQDN, the user's email address and their phone number (with + then country code, use +1 if you are in the North American Numbering Plan)
 
 .. code-block:: bash
 
-Set-CsOnlinePstnUsage -Identity Global -Usage @{Add="US and Canada"}
-Set-CsOnlineVoiceRoute -Identity "LocalRoute" -NumberPattern ".*" -OnlinePstnGatewayList sbc.example.com
-New-CsOnlineVoiceRoutingPolicy "US Only" -OnlinePstnUsages "US and Canada"
+	Set-CsOnlinePstnUsage -Identity Global -Usage @{Add="US and Canada"}
+	Set-CsOnlineVoiceRoute -Identity "LocalRoute" -NumberPattern ".*" -OnlinePstnGatewayList sbc.example.com
+	New-CsOnlineVoiceRoutingPolicy "US Only" -OnlinePstnUsages "US and Canada"
 
-# This is suppose to stop MSTeams from using the Microsoft Dialing Plan and using the routing policies that was defined above
-Set-CsTenantHybridConfiguration -UseOnPremDialPlan $False
+	# This is suppose to stop MSTeams from using the Microsoft Dialing Plan and using the routing policies that was defined above
+	Set-CsTenantHybridConfiguration -UseOnPremDialPlan $False
 
-# Apply and the US Only Voice Routing Policy to the user
-Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
+	# Apply and the US Only Voice Routing Policy to the user
+	Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
 
-# If it doesn’t return a value of US Only, then wait 15 minutes and try it again.  It sometime takes a while for the policy to be ready.
-Get-CsOnlineUser “user@example.com" | select OnlineVoiceRoutingPolicy
+	# If it doesn’t return a value of US Only, then wait 15 minutes and try it again.  It sometime takes a while for the policy to be ready.
+	Get-CsOnlineUser “user@example.com" | select OnlineVoiceRoutingPolicy
 
-# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
-Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
+	# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
+	Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
 
-   code
 
 Note: Log out by typing Disconnect-MicrosoftTeams
 
@@ -537,16 +535,59 @@ If you have an existing dSIPRouter SBC configured in Teams and have added a DID 
 
 .. code-block:: bash
 
-# Get Credentials, if using MFA/2FA just run Connect-MicrosoftTeams
-$userCredential = Get-Credential
-Connect-MicrosoftTeams -Credential $userCredential
+	# Get Credentials, if using MFA/2FA just run Connect-MicrosoftTeams
+	$userCredential = Get-Credential
+	Connect-MicrosoftTeams -Credential $userCredential
 
-# Apply and the US Only Voice Routing Policy to the user
-Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
+	# Apply and the US Only Voice Routing Policy to the user
+	Grant-CsOnlineVoiceRoutingPolicy -Identity “user@example.com“ -PolicyName "US Only"
 
-# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
-Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
+	# Define a outgoing phone number (aka DID) and set Enterprise Voice and Voicemail
+	Set-CsUser -Identity "user@example.com" -OnPremLineURI tel:+13137175555 -EnterpriseVoiceEnabled $true -HostedVoiceMail $true
 
-   code
-
+   
 Note: Log out by typing Disconnect-MicrosoftTeams
+
+
+=============================================
+Configure STIR/SHAKEN (SUBSCRIPTION REQUIRED)
+=============================================
+dSIPRouter enables an organization to start signing calls by enabling the STIR/SHAKEN module.  This module will sign outbound calls and validate that inbound calls are signed.  It also have the ability to add a prefix to the callerid if calls have an attestion of an A, B or C.  You can also specify a callerid prefix if callers aren't validated.  Lastly, you have the option to block invalidated callers. 
+
+1. Login to dSIPRouter
+2. Purchase a license from the `dSIPRouter Marketplace <https://dopensource.com/product-category/dsiprouter/>`_
+3. Click System Settings -> License Manager
+4. Add the license to the system
+
+5. If testing, connect to your dSIPRouter instance using ssh, run the command below and enter the requested information to create a self-signed certificate
+
+.. code-block:: bash
+	
+	/opt/dsiprouter/resources/stirshaken/generate_self_signed_cert.sh
+	
+If not testing, obtain a valid STIR/SHAKEN certificate and place them in the /etc/dsiprouter/certs/stirshaken/ directory.  For the purpose of these instructions, please name the certificate sp-cert.pem and name the key sp-key.pem  
+
+6. Check that the certificate can be accessed via https.  Open a web browser and enter the following into the URL.  This will be used by other VoIP servers to validate the signature of the the call.  
+
+.. code-block:: bash
+
+	https://<replace with ip or hostname>:5000/stirshaken_certs/sp-cert.pem
+
+7. Click System Settings -> STIR/SHAKEN
+8. Slide the Disabled toggle to Enabled
+9. Enter the Certificate URL from Step 6
+10. Enter the Key Path, which by default will be 
+
+.. code-block:: bash
+	
+	/etc/dsiprouter/certs/stirshaken/sp-key.pem
+
+11. Click Save
+
+The STIR/SHAKEN page should look like this:
+
+.. image:: images/stir_shaken_settings.png
+          :align: center
+
+
+

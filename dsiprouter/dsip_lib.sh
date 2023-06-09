@@ -28,12 +28,12 @@ DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
 # reuse credential settings from python files (exported for later usage)
-SALT_LEN=$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-DK_LEN_DEFAULT=$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-CREDS_MAX_LEN=$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-HASH_ITERATIONS=$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-export HASHED_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
-export AESCTR_CREDS_ENCODED_MAX_LEN=$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)
+export SALT_LEN=${SALT_LEN:-$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export DK_LEN_DEFAULT=${DK_LEN_DEFAULT:-$(grep -m 1 -oP 'DK_LEN_DEFAULT[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export CREDS_MAX_LEN=${CREDS_MAX_LEN:-$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export HASH_ITERATIONS=${HASH_ITERATIONS:-$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export HASHED_CREDS_ENCODED_MAX_LEN=${HASHED_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export AESCTR_CREDS_ENCODED_MAX_LEN=${AESCTR_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
@@ -189,7 +189,6 @@ function decryptConfigAttrib() {
 }
 export -f decryptConfigAttrib
 
-# TODO: openssl native version
 # $1 == attribute name
 # $2 == kamailio config file
 function enableKamailioConfigAttrib() {
@@ -469,23 +468,22 @@ function getInternalIP() {
     esac
 	    
     if (( ${IPV6_ENABLED} == 1 )); then
-	INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
     else
-	INTERFACE=$(ip -4 route show default | awk '{print $5}')
+		INTERFACE=$(ip -4 route show default | awk '{print $5}')
     fi
 
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-	
         # Marked for removal because it depends on DNS
-	#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
         # Marked for removal because it depends on DNS
         #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$INTERNAL_IP"
@@ -494,12 +492,9 @@ export -f getInternalIP
 
 # $1 == [-4|-6] to force specific IP version
 # $2 == network interface 
-# output: the internal IP for this system
+# output: the IP for the given interface
 # notes: prints ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
-# TODO: currently we only check for the internal IP associated with the default interface/default route
-#       this will fail if the internal IP is not assigned to the default interface/default route
-#       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
 function getIP() {
     local IP=""
 
@@ -523,25 +518,23 @@ function getIP() {
 	    INTERFACE=$2
     else
 	    if (( ${IPV6_ENABLED} == 1 )); then
-		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+			INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
 	    else
 	    	INTERFACE=$(ip -4 route show default | awk '{print $5}')
 	    fi
     fi
 
-   
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-	
         # Marked for removal because it depends on DNS
-	#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
         # Marked for removal because it depends on DNS
         #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-	IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$IP"
@@ -678,12 +671,12 @@ function getInternalCIDR() {
     if (( ${IPV4_ENABLED} == 1 )); then
         INTERNAL_IP=$(getIP -4 "$INTERFACE")
         if [[ -n "$INTERNAL_IP" ]]; then
-		if [[ -n "$INTERFACE" ]]; then
-			DEF_IFACE=$INTERFACE
-		else
-            		DEF_IFACE=$(ip -4 route list scope global  2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-            	fi
-		PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+			if [[ -n "$INTERFACE" ]]; then
+				DEF_IFACE=$INTERFACE
+			else
+				DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+			fi
+			PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
         fi
     fi
 
@@ -1123,21 +1116,23 @@ function parseDBConnURI() {
 }
 export -f parseDBConnURI
 
-# $1 == number of characters to get
-# output: string of random printable characters
+# usage:    urandomChars [options] [args]
+# options:  -f <filter> == characters to allow
+# args:     $1 == number of characters to get
+# output:   string of random printable characters
 function urandomChars() {
 	local LEN=32 FILTER="a-zA-Z0-9"
 
     while (( $# > 0 )); do
     	# last arg is length
-        if (( $# == 1 )) && [[ -z "$CREDS" ]]; then
-			LEN="$1"
-			shift
+        if (( $# == 1 )); then
+            LEN="$1"
+            shift
             break
         fi
 
         case "$1" in
-        	# user defined salt
+        	# user defined filter
             -f)
                 shift
                 FILTER="$1"
@@ -1237,9 +1232,21 @@ function hashCreds() {
 
 	# python native version
 	# no external dependencies other than vanilla python3
-	${PYTHON} -c "import hashlib,binascii; print(binascii.hexlify(hashlib.pbkdf2_hmac('sha512', '$CREDS'.encode('utf-8'), '$SALT'.encode('utf-8'), iterations=$HASH_ITERATIONS, dklen=$DK_LEN)).decode('utf-8'));"
+	${PYTHON} <<EOPYTHON
+import hashlib,binascii
+creds='$CREDS'.encode('utf-8')
+salt='$SALT'.encode('utf-8')
+hash=hashlib.pbkdf2_hmac('sha512', creds, salt, iterations=$HASH_ITERATIONS, dklen=$DK_LEN) + salt
+print(binascii.hexlify(hash).decode('utf-8'))
+EOPYTHON
 	# bash native version
 	# currently too slow for production usage
 	#${DSIP_PROJECT_DIR}/dsiprouter/pbkdf2.sh 'sha512' "$CREDS" "$SALT" "$HASH_ITERATIONS" 4
 }
 export -f hashCreds
+
+# TODO: openssl native version
+#function encryptCreds() {
+#    ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
+#}
+#export -f encryptCreds

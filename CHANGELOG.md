@@ -5,16 +5,93 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-0189676f5df3e764a795aa2d33659a4b0357d5f6
+0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25
+28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28
+e0bbbfa860e57f9549736149142c9df8be72433b
+a659fedb44ef2a844282d3de0d5503c567837948
+baa6415f1d630b695cd28de742ed609eb65f1399
+bc560f0fd419cbe271e22c0801e64e92a9469397
+0209c81fa9302517ac674725cefc1f4799d70d28
+c850b78988eed29591fcacbc01d4c26f2f49c22a
+36297d60599a1f214e8d183f978d2688236b4479
+fbeeb172c70957d7397f66a612811e75fd31dd6c
+2ec6da12a319bb378df586332c56261484ae1ace
+d2b1e55b3a9ea5743f68389a1ef864b4c06642a5
+4e717ae72b7d49bd35dbb9d6bef4b37b3fdb66ae
+1c939ac8a7fc954a21354672fab2cb0e8f877ce4
+8351d90c77289f126aad66c145eef2dc753591e9
+cbea100db0f75e72d39ae6eeeaaf6164221cdc4e
+7b883cf29bc9ae40ad5cc09a58f9830a4d7a8942
+5674c7f6191b002b43d9f2e89736b26c890e1ea7
+852f7412f7ad9c0502eaab76579a6e0f71f51f60
+80ae06ac5d83a3d219cbcca7432cae4de6403fc5
+669a4e115aad6efc4027cf9bb989e0fc2ea52729
+898f6dc5d884c92a049e06bbf4b3aac1f2a01f01
+5f7bec3e9b4802429701f3cdbc159ac379370f48
+dda4c22b944c3a1972fff24cd112a377b92f8d64
+9ee06fb3c6c2f1eed7b2db7bcd750ed152bc8895
+5522370d4d6f461c03c1caf31d6c7bebb90d9712
+98e5622375544c0eb7ae3f8233dc676f01de80e2
+d43dd36b6fcd625fcf80b9ce7cd380cc699c4666
+b599ffed2123ac4a8db6e572d71c540e44031ca3
+4b5f72a3b6d30d2bc660e947bcb2f924785979b7
+8258df375bc73cfc17b19cc92cc1e371295b00e9
+fb34d3bc071c54e92d5840c5c818bdb79f8209cc
+1d46d255fed53ec1511b103af5a99d64edf82edb
+a1738ef6ecf934e6775afcc7045adac7b1e31819
+34cd79c63c171b3bcb8b37a6857bb386b0aad127
+a54465a970ab50e701cf5a8c44ddb2fd55f6acee
+2953f326f02116afc1dc4fb5acbb458c63dba834
+6843ead09ca062c856a7c199a247aaf817b88306
+b935436bb85ffc97b3abb14458ff6d8de657f204
+96799b3245092cc24ed082212edd023802ad60b8
+c08a7f914caf43d37ffeff09bb8f9bf75dd442dd
+05f1eca4837d1676905d882a44d112de5c92562b
+6e931ce7092aecb7ce511059b3e40d4f6b1c9fda
+aaf31fce475ee60b5dccce765c34d9208a3af280
+3b341f4168e65f653fdf7191a08978e967e86237
+b926ea7f70d26818a04a8c75b68f295cdb8f4978
+02ea31c21261e6c9c374cf51e67484b0d358409f
+3c29315838afcc70648170e0cd12d8bcde3cb6ae
+cce7d0412b19159e65436c667241a7580b384263
+89450c0d2b9cbff0f9c5360b3301811bde4a17c1
+41736eb05ed2c9469622d49d9f41b7bc5b8125d0
+a7b22b34d458ba0b53af1bf452064caa61897078
+e415705f275a8aa4ec19f595c156338ecbed1075
+e24d53894f2f613e8d76d61b0065fce3fe63adcb
+2c80df409e6cb9e0782d6f7544096041ebfa225b
+69b735d9bf020d111d5251e70281767fb4e94faa
+7dbe2558f6c045311ef043f2c5859c711345491b
+33c3bee02578082f7c3192d3496b0067af992f9c
+f0f02584af775a85e723c6ccdb09db2c6141a145
+d7f7da68512e560bd9bc5f2dbb35b07e6630b7f9
+eb720e2961d73a826fbd6fae55a0b7e93eef25bf
+bbcfaeeb0d88324f3dc8a9a85b3875e7ff3e76dd
+050f5fbb39bdb1e2073fa98fb471acf01777f0f1
+94bfc589ae9777163855e52b511fc90f3f4adf1d
+13fcb33a140bba7391d9ad8b52a1aa7f25a09955
+72cd4261677d9de449577489edb50fafce56b662
+b7d9a30838189b0e240a590f610b66505d85d0ec
+8e19d470d3fff85329e78239c84e54998f39f247
+a1a55ec01f46433fb7ac64eae58089cc8e506a19
+5a34993875502fc1cd9f21dec686a3035a8dcb92
+8cac48d464f70bd5da4c8227abfc7025a23a82a0
+63ac499d92fac90f8bb1c3fabc7c03136abd505f
 2bba54fc6e7061893b205149d7c9172c97239cbf
 50348be3339f4d3f9be532dcd4164964992bdf17
 a1174d1e922ffd85eb767b7047fb84e3e3e0745e
 da72adbd503e5fce324c8a801d90c1e0b38ca054
+2a19a64551c0a191adc60a956111f25b2a6a340c
+6dfb127bd0e7f504522e80a4ad60ac01118f2c6f
+bb58600d9294fbb5ce39c2e273155602d7981638
 cc8a46218083c85894e090228f3cd55eb5a238c7
+681c2c432b735a3f67d6732264f50638b47b1552
 799d68b0365eeda8c2d17811575b925a0023ae2a
 9a82a5efab8b2d6a3bed6c0611888b0a191119c5
 e354fbeb2467854770650aec659d98b27dc8d464
 98270d267c77f991b3aecf572d38c097fecac68b
+16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35
+4082e01348c3279f71685ff9eeaccaee25a6e53d
 92d323dc7d6d82645ae7c25a4134679009dba4a6
 0b3ed50bbf81577558e79b77dd8b2c65f61ad034
 203f8ea5953044b05b047a5565c36c23155cff43
@@ -23,6 +100,7 @@ af39173450198616f9e1f959f233f980a65a4d47
 2f31989a6b34be6d213a891c3725dde6c168f2fb
 581d8ed65958db142c9c64e3d6f973327a626fcc
 3b02dc02eeaee8d4e8ca13741489c2e6f72de230
+63dfa5ae605542cb998a8b03155bdddb75bb1472
 a787ec5760bf147c755950116a9e440d181a2e9d
 35b4d7233eeda44587c59f0593f5599f82898f65
 1fc9ae71deb1b5191c68a3171bf9b5269e198b80
@@ -2099,10 +2177,1113 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 0189676f5df3e764a795aa2d33659a4b0357d5f6)
+[//]: # (START_SECTION 0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)
+### Update Documentation for v0.72
+
+> Commit: [0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25](https://github.com/dOpensource/dsiprouter/commit/0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)  
+> Date: Mon, 3 Apr 2023 15:52:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update boostrap command
+- update changelog
+
+
+---
+
+[//]: # (END_SECTION 0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)
+[//]: # (START_SECTION 28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)
+### v0.72 Release Bug Fix
+
+> Commit: [28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28](https://github.com/dOpensource/dsiprouter/commit/28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)  
+> Date: Mon, 3 Apr 2023 14:09:23 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix bad hash algorithm implementation in the CLI functions
+- fix schema migration issues on `dsip_settings` table
+- fix edge cases where bootstrapping failed
+- # Please enter the commit message for your changes. Lines starting
+- # with '#' will be ignored, and an empty message aborts the commit.
+- #
+- # On branch v0.72
+- # Your branch is up to date with 'origin/v0.72'.
+- #
+- # Changes to be committed:
+- #	modified:   dsiprouter/dsip_lib.sh
+- #	modified:   resources/upgrade/v0.72/scripts/bootstrap.sh
+- #	modified:   resources/upgrade/v0.72/scripts/migrate.sh
+- #
+
+
+---
+
+[//]: # (END_SECTION 28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)
+[//]: # (START_SECTION e0bbbfa860e57f9549736149142c9df8be72433b)
+### Bootstrap Fixes
+
+> Commit: [e0bbbfa860e57f9549736149142c9df8be72433b](https://github.com/dOpensource/dsiprouter/commit/e0bbbfa860e57f9549736149142c9df8be72433b)  
+> Date: Mon, 3 Apr 2023 10:32:08 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- change bootstrap to use tag instead of branch
+- fix python versioning
+- fix boostrap variable scoping
+- # Please enter the commit message for your changes. Lines starting
+- # with '#' will be ignored, and an empty message aborts the commit.
+- #
+- # Date:      Mon Apr 3 10:32:08 2023 -0400
+- #
+- # On branch v0.72
+- # Your branch is up to date with 'origin/v0.72'.
+- #
+- # Changes to be committed:
+- #	modified:   dsiprouter.sh
+- #	modified:   resources/upgrade/v0.72/scripts/bootstrap.sh
+- #	modified:   resources/upgrade/v0.72/scripts/migrate.sh
+- #
+
+
+---
+
+[//]: # (END_SECTION e0bbbfa860e57f9549736149142c9df8be72433b)
+[//]: # (START_SECTION a659fedb44ef2a844282d3de0d5503c567837948)
+### Merge Changes From Master (#500)
+
+> Commit: [a659fedb44ef2a844282d3de0d5503c567837948](https://github.com/dOpensource/dsiprouter/commit/a659fedb44ef2a844282d3de0d5503c567837948)  
+> Date: Mon, 3 Apr 2023 10:10:11 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Co-authored-by: Mack Hendricks <mack@dopensource.com>
+
+
+---
+
+[//]: # (END_SECTION a659fedb44ef2a844282d3de0d5503c567837948)
+[//]: # (START_SECTION baa6415f1d630b695cd28de742ed609eb65f1399)
+### Update The Changelog
+
+> Commit: [baa6415f1d630b695cd28de742ed609eb65f1399](https://github.com/dOpensource/dsiprouter/commit/baa6415f1d630b695cd28de742ed609eb65f1399)  
+> Date: Mon, 3 Apr 2023 09:12:46 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update `CHANGELOG.md`
+
+
+---
+
+[//]: # (END_SECTION baa6415f1d630b695cd28de742ed609eb65f1399)
+[//]: # (START_SECTION bc560f0fd419cbe271e22c0801e64e92a9469397)
+### Fixed permissions again
+
+> Commit: [bc560f0fd419cbe271e22c0801e64e92a9469397](https://github.com/dOpensource/dsiprouter/commit/bc560f0fd419cbe271e22c0801e64e92a9469397)  
+> Date: Sat, 1 Apr 2023 21:09:50 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION bc560f0fd419cbe271e22c0801e64e92a9469397)
+[//]: # (START_SECTION 0209c81fa9302517ac674725cefc1f4799d70d28)
+### Added execute permissions
+
+> Commit: [0209c81fa9302517ac674725cefc1f4799d70d28](https://github.com/dOpensource/dsiprouter/commit/0209c81fa9302517ac674725cefc1f4799d70d28)  
+> Date: Sat, 1 Apr 2023 20:29:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0209c81fa9302517ac674725cefc1f4799d70d28)
+[//]: # (START_SECTION c850b78988eed29591fcacbc01d4c26f2f49c22a)
+### Fixed permissions
+
+> Commit: [c850b78988eed29591fcacbc01d4c26f2f49c22a](https://github.com/dOpensource/dsiprouter/commit/c850b78988eed29591fcacbc01d4c26f2f49c22a)  
+> Date: Sat, 1 Apr 2023 20:25:34 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c850b78988eed29591fcacbc01d4c26f2f49c22a)
+[//]: # (START_SECTION 36297d60599a1f214e8d183f978d2688236b4479)
+### Stir Shaken Fixes - Fixed an issue with the certificate URL not being saved - Added logic to copy the self-signed certs to the proper location
+
+> Commit: [36297d60599a1f214e8d183f978d2688236b4479](https://github.com/dOpensource/dsiprouter/commit/36297d60599a1f214e8d183f978d2688236b4479)  
+> Date: Sat, 1 Apr 2023 20:12:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 36297d60599a1f214e8d183f978d2688236b4479)
+[//]: # (START_SECTION fbeeb172c70957d7397f66a612811e75fd31dd6c)
+### reverting change
+
+> Commit: [fbeeb172c70957d7397f66a612811e75fd31dd6c](https://github.com/dOpensource/dsiprouter/commit/fbeeb172c70957d7397f66a612811e75fd31dd6c)  
+> Date: Fri, 31 Mar 2023 14:42:14 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fbeeb172c70957d7397f66a612811e75fd31dd6c)
+[//]: # (START_SECTION 2ec6da12a319bb378df586332c56261484ae1ace)
+### fixed a bug that caused password encoding issues
+
+> Commit: [2ec6da12a319bb378df586332c56261484ae1ace](https://github.com/dOpensource/dsiprouter/commit/2ec6da12a319bb378df586332c56261484ae1ace)  
+> Date: Fri, 31 Mar 2023 14:21:37 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2ec6da12a319bb378df586332c56261484ae1ace)
+[//]: # (START_SECTION d2b1e55b3a9ea5743f68389a1ef864b4c06642a5)
+### Update migrate.sh
+
+> Commit: [d2b1e55b3a9ea5743f68389a1ef864b4c06642a5](https://github.com/dOpensource/dsiprouter/commit/d2b1e55b3a9ea5743f68389a1ef864b4c06642a5)  
+> Date: Fri, 31 Mar 2023 15:38:16 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d2b1e55b3a9ea5743f68389a1ef864b4c06642a5)
+[//]: # (START_SECTION 4e717ae72b7d49bd35dbb9d6bef4b37b3fdb66ae)
+### Update migrate.sh
+
+> Commit: [4e717ae72b7d49bd35dbb9d6bef4b37b3fdb66ae](https://github.com/dOpensource/dsiprouter/commit/4e717ae72b7d49bd35dbb9d6bef4b37b3fdb66ae)  
+> Date: Fri, 31 Mar 2023 15:15:23 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4e717ae72b7d49bd35dbb9d6bef4b37b3fdb66ae)
+[//]: # (START_SECTION 1c939ac8a7fc954a21354672fab2cb0e8f877ce4)
+### Update upgrade.rst
+
+> Commit: [1c939ac8a7fc954a21354672fab2cb0e8f877ce4](https://github.com/dOpensource/dsiprouter/commit/1c939ac8a7fc954a21354672fab2cb0e8f877ce4)  
+> Date: Fri, 31 Mar 2023 12:18:01 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1c939ac8a7fc954a21354672fab2cb0e8f877ce4)
+[//]: # (START_SECTION 8351d90c77289f126aad66c145eef2dc753591e9)
+### Update upgrade.rst
+
+> Commit: [8351d90c77289f126aad66c145eef2dc753591e9](https://github.com/dOpensource/dsiprouter/commit/8351d90c77289f126aad66c145eef2dc753591e9)  
+> Date: Fri, 31 Mar 2023 12:12:01 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8351d90c77289f126aad66c145eef2dc753591e9)
+[//]: # (START_SECTION cbea100db0f75e72d39ae6eeeaaf6164221cdc4e)
+### Update upgrade.rst
+
+> Commit: [cbea100db0f75e72d39ae6eeeaaf6164221cdc4e](https://github.com/dOpensource/dsiprouter/commit/cbea100db0f75e72d39ae6eeeaaf6164221cdc4e)  
+> Date: Fri, 31 Mar 2023 12:09:29 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cbea100db0f75e72d39ae6eeeaaf6164221cdc4e)
+[//]: # (START_SECTION 7b883cf29bc9ae40ad5cc09a58f9830a4d7a8942)
+### Update upgrade.rst
+
+> Commit: [7b883cf29bc9ae40ad5cc09a58f9830a4d7a8942](https://github.com/dOpensource/dsiprouter/commit/7b883cf29bc9ae40ad5cc09a58f9830a4d7a8942)  
+> Date: Fri, 31 Mar 2023 12:05:36 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7b883cf29bc9ae40ad5cc09a58f9830a4d7a8942)
+[//]: # (START_SECTION 5674c7f6191b002b43d9f2e89736b26c890e1ea7)
+### Update upgrade.rst
+
+> Commit: [5674c7f6191b002b43d9f2e89736b26c890e1ea7](https://github.com/dOpensource/dsiprouter/commit/5674c7f6191b002b43d9f2e89736b26c890e1ea7)  
+> Date: Fri, 31 Mar 2023 12:03:58 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5674c7f6191b002b43d9f2e89736b26c890e1ea7)
+[//]: # (START_SECTION 852f7412f7ad9c0502eaab76579a6e0f71f51f60)
+### Update upgrade.rst
+
+> Commit: [852f7412f7ad9c0502eaab76579a6e0f71f51f60](https://github.com/dOpensource/dsiprouter/commit/852f7412f7ad9c0502eaab76579a6e0f71f51f60)  
+> Date: Fri, 31 Mar 2023 12:02:52 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 852f7412f7ad9c0502eaab76579a6e0f71f51f60)
+[//]: # (START_SECTION 80ae06ac5d83a3d219cbcca7432cae4de6403fc5)
+### Add files via upload
+
+> Commit: [80ae06ac5d83a3d219cbcca7432cae4de6403fc5](https://github.com/dOpensource/dsiprouter/commit/80ae06ac5d83a3d219cbcca7432cae4de6403fc5)  
+> Date: Fri, 31 Mar 2023 07:57:31 -0700  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 80ae06ac5d83a3d219cbcca7432cae4de6403fc5)
+[//]: # (START_SECTION 669a4e115aad6efc4027cf9bb989e0fc2ea52729)
+### Upgrade Feature CLI Completion
+
+> Commit: [669a4e115aad6efc4027cf9bb989e0fc2ea52729](https://github.com/dOpensource/dsiprouter/commit/669a4e115aad6efc4027cf9bb989e0fc2ea52729)  
+> Date: Fri, 31 Mar 2023 10:31:14 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 669a4e115aad6efc4027cf9bb989e0fc2ea52729)
+[//]: # (START_SECTION 898f6dc5d884c92a049e06bbf4b3aac1f2a01f01)
+### WIP Upgrade Feature
+
+> Commit: [898f6dc5d884c92a049e06bbf4b3aac1f2a01f01](https://github.com/dOpensource/dsiprouter/commit/898f6dc5d884c92a049e06bbf4b3aac1f2a01f01)  
+> Date: Fri, 31 Mar 2023 09:05:55 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 898f6dc5d884c92a049e06bbf4b3aac1f2a01f01)
+[//]: # (START_SECTION 5f7bec3e9b4802429701f3cdbc159ac379370f48)
+### Update api.rst
+
+> Commit: [5f7bec3e9b4802429701f3cdbc159ac379370f48](https://github.com/dOpensource/dsiprouter/commit/5f7bec3e9b4802429701f3cdbc159ac379370f48)  
+> Date: Thu, 30 Mar 2023 23:58:55 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5f7bec3e9b4802429701f3cdbc159ac379370f48)
+[//]: # (START_SECTION dda4c22b944c3a1972fff24cd112a377b92f8d64)
+### Update api.rst
+
+> Commit: [dda4c22b944c3a1972fff24cd112a377b92f8d64](https://github.com/dOpensource/dsiprouter/commit/dda4c22b944c3a1972fff24cd112a377b92f8d64)  
+> Date: Thu, 30 Mar 2023 23:57:44 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION dda4c22b944c3a1972fff24cd112a377b92f8d64)
+[//]: # (START_SECTION 9ee06fb3c6c2f1eed7b2db7bcd750ed152bc8895)
+### Update api.rst
+
+> Commit: [9ee06fb3c6c2f1eed7b2db7bcd750ed152bc8895](https://github.com/dOpensource/dsiprouter/commit/9ee06fb3c6c2f1eed7b2db7bcd750ed152bc8895)  
+> Date: Thu, 30 Mar 2023 23:56:38 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9ee06fb3c6c2f1eed7b2db7bcd750ed152bc8895)
+[//]: # (START_SECTION 5522370d4d6f461c03c1caf31d6c7bebb90d9712)
+### Update api.rst
+
+> Commit: [5522370d4d6f461c03c1caf31d6c7bebb90d9712](https://github.com/dOpensource/dsiprouter/commit/5522370d4d6f461c03c1caf31d6c7bebb90d9712)  
+> Date: Thu, 30 Mar 2023 23:55:22 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5522370d4d6f461c03c1caf31d6c7bebb90d9712)
+[//]: # (START_SECTION 98e5622375544c0eb7ae3f8233dc676f01de80e2)
+### Update Bootstrap Process
+
+> Commit: [98e5622375544c0eb7ae3f8233dc676f01de80e2](https://github.com/dOpensource/dsiprouter/commit/98e5622375544c0eb7ae3f8233dc676f01de80e2)  
+> Date: Thu, 30 Mar 2023 23:45:48 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 98e5622375544c0eb7ae3f8233dc676f01de80e2)
+[//]: # (START_SECTION d43dd36b6fcd625fcf80b9ce7cd380cc699c4666)
+### Update api.rst
+
+> Commit: [d43dd36b6fcd625fcf80b9ce7cd380cc699c4666](https://github.com/dOpensource/dsiprouter/commit/d43dd36b6fcd625fcf80b9ce7cd380cc699c4666)  
+> Date: Thu, 30 Mar 2023 23:24:04 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d43dd36b6fcd625fcf80b9ce7cd380cc699c4666)
+[//]: # (START_SECTION b599ffed2123ac4a8db6e572d71c540e44031ca3)
+### Update api.rst
+
+> Commit: [b599ffed2123ac4a8db6e572d71c540e44031ca3](https://github.com/dOpensource/dsiprouter/commit/b599ffed2123ac4a8db6e572d71c540e44031ca3)  
+> Date: Thu, 30 Mar 2023 23:19:27 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b599ffed2123ac4a8db6e572d71c540e44031ca3)
+[//]: # (START_SECTION 4b5f72a3b6d30d2bc660e947bcb2f924785979b7)
+### Update api.rst
+
+> Commit: [4b5f72a3b6d30d2bc660e947bcb2f924785979b7](https://github.com/dOpensource/dsiprouter/commit/4b5f72a3b6d30d2bc660e947bcb2f924785979b7)  
+> Date: Thu, 30 Mar 2023 23:17:51 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4b5f72a3b6d30d2bc660e947bcb2f924785979b7)
+[//]: # (START_SECTION 8258df375bc73cfc17b19cc92cc1e371295b00e9)
+### Update api.rst
+
+> Commit: [8258df375bc73cfc17b19cc92cc1e371295b00e9](https://github.com/dOpensource/dsiprouter/commit/8258df375bc73cfc17b19cc92cc1e371295b00e9)  
+> Date: Thu, 30 Mar 2023 23:16:23 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8258df375bc73cfc17b19cc92cc1e371295b00e9)
+[//]: # (START_SECTION fb34d3bc071c54e92d5840c5c818bdb79f8209cc)
+### Update use-cases.rst
+
+> Commit: [fb34d3bc071c54e92d5840c5c818bdb79f8209cc](https://github.com/dOpensource/dsiprouter/commit/fb34d3bc071c54e92d5840c5c818bdb79f8209cc)  
+> Date: Thu, 30 Mar 2023 23:06:12 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fb34d3bc071c54e92d5840c5c818bdb79f8209cc)
+[//]: # (START_SECTION 1d46d255fed53ec1511b103af5a99d64edf82edb)
+### Update use-cases.rst
+
+> Commit: [1d46d255fed53ec1511b103af5a99d64edf82edb](https://github.com/dOpensource/dsiprouter/commit/1d46d255fed53ec1511b103af5a99d64edf82edb)  
+> Date: Thu, 30 Mar 2023 23:00:45 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1d46d255fed53ec1511b103af5a99d64edf82edb)
+[//]: # (START_SECTION a1738ef6ecf934e6775afcc7045adac7b1e31819)
+### Update use-cases.rst
+
+> Commit: [a1738ef6ecf934e6775afcc7045adac7b1e31819](https://github.com/dOpensource/dsiprouter/commit/a1738ef6ecf934e6775afcc7045adac7b1e31819)  
+> Date: Thu, 30 Mar 2023 22:44:33 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a1738ef6ecf934e6775afcc7045adac7b1e31819)
+[//]: # (START_SECTION 34cd79c63c171b3bcb8b37a6857bb386b0aad127)
+### Update carrier_groups.rst
+
+> Commit: [34cd79c63c171b3bcb8b37a6857bb386b0aad127](https://github.com/dOpensource/dsiprouter/commit/34cd79c63c171b3bcb8b37a6857bb386b0aad127)  
+> Date: Thu, 30 Mar 2023 22:34:59 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 34cd79c63c171b3bcb8b37a6857bb386b0aad127)
+[//]: # (START_SECTION a54465a970ab50e701cf5a8c44ddb2fd55f6acee)
+### Allow v0.70 Upgrade Bootstrapping
+
+> Commit: [a54465a970ab50e701cf5a8c44ddb2fd55f6acee](https://github.com/dOpensource/dsiprouter/commit/a54465a970ab50e701cf5a8c44ddb2fd55f6acee)  
+> Date: Thu, 30 Mar 2023 22:00:53 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION a54465a970ab50e701cf5a8c44ddb2fd55f6acee)
+[//]: # (START_SECTION 2953f326f02116afc1dc4fb5acbb458c63dba834)
+### Update use-cases.rst
+
+> Commit: [2953f326f02116afc1dc4fb5acbb458c63dba834](https://github.com/dOpensource/dsiprouter/commit/2953f326f02116afc1dc4fb5acbb458c63dba834)  
+> Date: Thu, 30 Mar 2023 20:01:21 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2953f326f02116afc1dc4fb5acbb458c63dba834)
+[//]: # (START_SECTION 6843ead09ca062c856a7c199a247aaf817b88306)
+### Update use-cases.rst
+
+> Commit: [6843ead09ca062c856a7c199a247aaf817b88306](https://github.com/dOpensource/dsiprouter/commit/6843ead09ca062c856a7c199a247aaf817b88306)  
+> Date: Thu, 30 Mar 2023 19:58:31 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6843ead09ca062c856a7c199a247aaf817b88306)
+[//]: # (START_SECTION b935436bb85ffc97b3abb14458ff6d8de657f204)
+### Update use-cases.rst
+
+> Commit: [b935436bb85ffc97b3abb14458ff6d8de657f204](https://github.com/dOpensource/dsiprouter/commit/b935436bb85ffc97b3abb14458ff6d8de657f204)  
+> Date: Thu, 30 Mar 2023 19:55:33 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b935436bb85ffc97b3abb14458ff6d8de657f204)
+[//]: # (START_SECTION 96799b3245092cc24ed082212edd023802ad60b8)
+### Update use-cases.rst
+
+> Commit: [96799b3245092cc24ed082212edd023802ad60b8](https://github.com/dOpensource/dsiprouter/commit/96799b3245092cc24ed082212edd023802ad60b8)  
+> Date: Thu, 30 Mar 2023 19:43:08 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 96799b3245092cc24ed082212edd023802ad60b8)
+[//]: # (START_SECTION c08a7f914caf43d37ffeff09bb8f9bf75dd442dd)
+### Update use-cases.rst
+
+> Commit: [c08a7f914caf43d37ffeff09bb8f9bf75dd442dd](https://github.com/dOpensource/dsiprouter/commit/c08a7f914caf43d37ffeff09bb8f9bf75dd442dd)  
+> Date: Thu, 30 Mar 2023 19:40:02 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c08a7f914caf43d37ffeff09bb8f9bf75dd442dd)
+[//]: # (START_SECTION 05f1eca4837d1676905d882a44d112de5c92562b)
+### Add files via upload
+
+> Commit: [05f1eca4837d1676905d882a44d112de5c92562b](https://github.com/dOpensource/dsiprouter/commit/05f1eca4837d1676905d882a44d112de5c92562b)  
+> Date: Thu, 30 Mar 2023 16:36:42 -0700  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 05f1eca4837d1676905d882a44d112de5c92562b)
+[//]: # (START_SECTION 6e931ce7092aecb7ce511059b3e40d4f6b1c9fda)
+### Update use-cases.rst
+
+> Commit: [6e931ce7092aecb7ce511059b3e40d4f6b1c9fda](https://github.com/dOpensource/dsiprouter/commit/6e931ce7092aecb7ce511059b3e40d4f6b1c9fda)  
+> Date: Thu, 30 Mar 2023 19:35:45 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6e931ce7092aecb7ce511059b3e40d4f6b1c9fda)
+[//]: # (START_SECTION aaf31fce475ee60b5dccce765c34d9208a3af280)
+### Update use-cases.rst
+
+> Commit: [aaf31fce475ee60b5dccce765c34d9208a3af280](https://github.com/dOpensource/dsiprouter/commit/aaf31fce475ee60b5dccce765c34d9208a3af280)  
+> Date: Thu, 30 Mar 2023 17:42:03 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION aaf31fce475ee60b5dccce765c34d9208a3af280)
+[//]: # (START_SECTION 3b341f4168e65f653fdf7191a08978e967e86237)
+### Update use-cases.rst
+
+> Commit: [3b341f4168e65f653fdf7191a08978e967e86237](https://github.com/dOpensource/dsiprouter/commit/3b341f4168e65f653fdf7191a08978e967e86237)  
+> Date: Thu, 30 Mar 2023 15:35:55 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3b341f4168e65f653fdf7191a08978e967e86237)
+[//]: # (START_SECTION b926ea7f70d26818a04a8c75b68f295cdb8f4978)
+### Fix Upgrade Feature Entrypoints
+
+> Commit: [b926ea7f70d26818a04a8c75b68f295cdb8f4978](https://github.com/dOpensource/dsiprouter/commit/b926ea7f70d26818a04a8c75b68f295cdb8f4978)  
+> Date: Thu, 30 Mar 2023 15:13:41 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION b926ea7f70d26818a04a8c75b68f295cdb8f4978)
+[//]: # (START_SECTION 02ea31c21261e6c9c374cf51e67484b0d358409f)
+### Update rhel_install.rst
+
+> Commit: [02ea31c21261e6c9c374cf51e67484b0d358409f](https://github.com/dOpensource/dsiprouter/commit/02ea31c21261e6c9c374cf51e67484b0d358409f)  
+> Date: Thu, 30 Mar 2023 15:01:51 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 02ea31c21261e6c9c374cf51e67484b0d358409f)
+[//]: # (START_SECTION 3c29315838afcc70648170e0cd12d8bcde3cb6ae)
+### Update debian_install.rst
+
+> Commit: [3c29315838afcc70648170e0cd12d8bcde3cb6ae](https://github.com/dOpensource/dsiprouter/commit/3c29315838afcc70648170e0cd12d8bcde3cb6ae)  
+> Date: Thu, 30 Mar 2023 15:01:19 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3c29315838afcc70648170e0cd12d8bcde3cb6ae)
+[//]: # (START_SECTION cce7d0412b19159e65436c667241a7580b384263)
+### Upgrade Feature Updates
+
+> Commit: [cce7d0412b19159e65436c667241a7580b384263](https://github.com/dOpensource/dsiprouter/commit/cce7d0412b19159e65436c667241a7580b384263)  
+> Date: Thu, 30 Mar 2023 14:55:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION cce7d0412b19159e65436c667241a7580b384263)
+[//]: # (START_SECTION 89450c0d2b9cbff0f9c5360b3301811bde4a17c1)
+### Update installing.rst
+
+> Commit: [89450c0d2b9cbff0f9c5360b3301811bde4a17c1](https://github.com/dOpensource/dsiprouter/commit/89450c0d2b9cbff0f9c5360b3301811bde4a17c1)  
+> Date: Thu, 30 Mar 2023 14:44:18 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 89450c0d2b9cbff0f9c5360b3301811bde4a17c1)
+[//]: # (START_SECTION 41736eb05ed2c9469622d49d9f41b7bc5b8125d0)
+### Update installing.rst
+
+> Commit: [41736eb05ed2c9469622d49d9f41b7bc5b8125d0](https://github.com/dOpensource/dsiprouter/commit/41736eb05ed2c9469622d49d9f41b7bc5b8125d0)  
+> Date: Thu, 30 Mar 2023 14:36:36 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 41736eb05ed2c9469622d49d9f41b7bc5b8125d0)
+[//]: # (START_SECTION a7b22b34d458ba0b53af1bf452064caa61897078)
+### Standalong Script checkpoint
+
+> Commit: [a7b22b34d458ba0b53af1bf452064caa61897078](https://github.com/dOpensource/dsiprouter/commit/a7b22b34d458ba0b53af1bf452064caa61897078)  
+> Date: Thu, 30 Mar 2023 10:12:26 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a7b22b34d458ba0b53af1bf452064caa61897078)
+[//]: # (START_SECTION e415705f275a8aa4ec19f595c156338ecbed1075)
+### WIP Changes for Upgrade Feature
+
+> Commit: [e415705f275a8aa4ec19f595c156338ecbed1075](https://github.com/dOpensource/dsiprouter/commit/e415705f275a8aa4ec19f595c156338ecbed1075)  
+> Date: Thu, 30 Mar 2023 11:50:17 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION e415705f275a8aa4ec19f595c156338ecbed1075)
+[//]: # (START_SECTION e24d53894f2f613e8d76d61b0065fce3fe63adcb)
+### Upgrade script tweaks
+
+> Commit: [e24d53894f2f613e8d76d61b0065fce3fe63adcb](https://github.com/dOpensource/dsiprouter/commit/e24d53894f2f613e8d76d61b0065fce3fe63adcb)  
+> Date: Thu, 30 Mar 2023 07:43:15 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e24d53894f2f613e8d76d61b0065fce3fe63adcb)
+[//]: # (START_SECTION 2c80df409e6cb9e0782d6f7544096041ebfa225b)
+### Bug Fixes And Cleanup For v0.72
+
+> Commit: [2c80df409e6cb9e0782d6f7544096041ebfa225b](https://github.com/dOpensource/dsiprouter/commit/2c80df409e6cb9e0782d6f7544096041ebfa225b)  
+> Date: Thu, 30 Mar 2023 09:34:52 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add flask gui deprecation comments
+- add additional documenting comments
+- silence superfluous output when sources.pref missing
+- fix systemd services bugfix not working
+- fix updating existing key/cert pair fails
+
+
+---
+
+[//]: # (END_SECTION 2c80df409e6cb9e0782d6f7544096041ebfa225b)
+[//]: # (START_SECTION 69b735d9bf020d111d5251e70281767fb4e94faa)
+### Bug Fixes And Cleanup For v0.72
+
+> Commit: [69b735d9bf020d111d5251e70281767fb4e94faa](https://github.com/dOpensource/dsiprouter/commit/69b735d9bf020d111d5251e70281767fb4e94faa)  
+> Date: Wed, 29 Mar 2023 16:02:15 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- allow notification message animation to be interrupted by another request
+- fix carrier defaults misaligned
+- fix msteams gwgroupid confilct
+- fix description field storage requirements for other DB tables
+
+
+---
+
+[//]: # (END_SECTION 69b735d9bf020d111d5251e70281767fb4e94faa)
+[//]: # (START_SECTION 7dbe2558f6c045311ef043f2c5859c711345491b)
+### Update index.rst
+
+> Commit: [7dbe2558f6c045311ef043f2c5859c711345491b](https://github.com/dOpensource/dsiprouter/commit/7dbe2558f6c045311ef043f2c5859c711345491b)  
+> Date: Wed, 29 Mar 2023 14:27:37 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7dbe2558f6c045311ef043f2c5859c711345491b)
+[//]: # (START_SECTION 33c3bee02578082f7c3192d3496b0067af992f9c)
+### Update index.rst
+
+> Commit: [33c3bee02578082f7c3192d3496b0067af992f9c](https://github.com/dOpensource/dsiprouter/commit/33c3bee02578082f7c3192d3496b0067af992f9c)  
+> Date: Wed, 29 Mar 2023 14:26:15 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 33c3bee02578082f7c3192d3496b0067af992f9c)
+[//]: # (START_SECTION f0f02584af775a85e723c6ccdb09db2c6141a145)
+### Update index.rst
+
+> Commit: [f0f02584af775a85e723c6ccdb09db2c6141a145](https://github.com/dOpensource/dsiprouter/commit/f0f02584af775a85e723c6ccdb09db2c6141a145)  
+> Date: Wed, 29 Mar 2023 14:17:44 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f0f02584af775a85e723c6ccdb09db2c6141a145)
+[//]: # (START_SECTION d7f7da68512e560bd9bc5f2dbb35b07e6630b7f9)
+### Stir-Shaken Fixes - Added a missing parameter to the Stir-Shaken outbound logic - Added a script that will generate a self-signed certificate for testing out Stir-Shaken
+
+> Commit: [d7f7da68512e560bd9bc5f2dbb35b07e6630b7f9](https://github.com/dOpensource/dsiprouter/commit/d7f7da68512e560bd9bc5f2dbb35b07e6630b7f9)  
+> Date: Wed, 29 Mar 2023 16:34:06 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d7f7da68512e560bd9bc5f2dbb35b07e6630b7f9)
+[//]: # (START_SECTION eb720e2961d73a826fbd6fae55a0b7e93eef25bf)
+### Updated SQL in Call Detail Records so that it loads properly
+
+> Commit: [eb720e2961d73a826fbd6fae55a0b7e93eef25bf](https://github.com/dOpensource/dsiprouter/commit/eb720e2961d73a826fbd6fae55a0b7e93eef25bf)  
+> Date: Wed, 29 Mar 2023 01:56:45 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION eb720e2961d73a826fbd6fae55a0b7e93eef25bf)
+[//]: # (START_SECTION bbcfaeeb0d88324f3dc8a9a85b3875e7ff3e76dd)
+### Bug Fixes And Cleanup For v0.72
+
+> Commit: [bbcfaeeb0d88324f3dc8a9a85b3875e7ff3e76dd](https://github.com/dOpensource/dsiprouter/commit/bbcfaeeb0d88324f3dc8a9a85b3875e7ff3e76dd)  
+> Date: Tue, 28 Mar 2023 15:09:59 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- remove superfluous cache files
+- fix "nginx not reloaded when default SSL cert updated"
+- update systemd services to use `dsiprouter chown` for preparation
+- fix `dsiprouter restart -debug` fails when started with `DEBUG=False`
+- remove deprecations noted for removal in v0.72
+
+
+---
+
+[//]: # (END_SECTION bbcfaeeb0d88324f3dc8a9a85b3875e7ff3e76dd)
+[//]: # (START_SECTION 050f5fbb39bdb1e2073fa98fb471acf01777f0f1)
+### Fixed Issue #493
+
+> Commit: [050f5fbb39bdb1e2073fa98fb471acf01777f0f1](https://github.com/dOpensource/dsiprouter/commit/050f5fbb39bdb1e2073fa98fb471acf01777f0f1)  
+> Date: Mon, 27 Mar 2023 17:13:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 050f5fbb39bdb1e2073fa98fb471acf01777f0f1)
+[//]: # (START_SECTION 94bfc589ae9777163855e52b511fc90f3f4adf1d)
+### Fixed a bug that prevented domain_attrs from being deleted
+
+> Commit: [94bfc589ae9777163855e52b511fc90f3f4adf1d](https://github.com/dOpensource/dsiprouter/commit/94bfc589ae9777163855e52b511fc90f3f4adf1d)  
+> Date: Sat, 25 Mar 2023 05:46:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 94bfc589ae9777163855e52b511fc90f3f4adf1d)
+[//]: # (START_SECTION 13fcb33a140bba7391d9ad8b52a1aa7f25a09955)
+### Fixed the WooCommerce Hashing Len
+
+> Commit: [13fcb33a140bba7391d9ad8b52a1aa7f25a09955](https://github.com/dOpensource/dsiprouter/commit/13fcb33a140bba7391d9ad8b52a1aa7f25a09955)  
+> Date: Fri, 17 Mar 2023 17:27:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 13fcb33a140bba7391d9ad8b52a1aa7f25a09955)
+[//]: # (START_SECTION 72cd4261677d9de449577489edb50fafce56b662)
+### Bug Fixes For v0.72
+
+> Commit: [72cd4261677d9de449577489edb50fafce56b662](https://github.com/dOpensource/dsiprouter/commit/72cd4261677d9de449577489edb50fafce56b662)  
+> Date: Tue, 14 Mar 2023 12:08:39 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- msteams address records missing
+- fix typos in dsiprouter.sh
+- fix `FLT_MSTEAMS` value in dsiprouter.sh
+- fix address records tag field too long
+
+
+---
+
+[//]: # (END_SECTION 72cd4261677d9de449577489edb50fafce56b662)
+[//]: # (START_SECTION b7d9a30838189b0e240a590f610b66505d85d0ec)
+### Updated the SQL logic for Inbound Routes to work with the text() function
+
+> Commit: [b7d9a30838189b0e240a590f610b66505d85d0ec](https://github.com/dOpensource/dsiprouter/commit/b7d9a30838189b0e240a590f610b66505d85d0ec)  
+> Date: Tue, 14 Mar 2023 15:05:10 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b7d9a30838189b0e240a590f610b66505d85d0ec)
+[//]: # (START_SECTION 8e19d470d3fff85329e78239c84e54998f39f247)
+### Suggested Changes and Comments
+
+> Commit: [8e19d470d3fff85329e78239c84e54998f39f247](https://github.com/dOpensource/dsiprouter/commit/8e19d470d3fff85329e78239c84e54998f39f247)  
+> Date: Mon, 13 Mar 2023 14:33:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 8e19d470d3fff85329e78239c84e54998f39f247)
+[//]: # (START_SECTION a1a55ec01f46433fb7ac64eae58089cc8e506a19)
+### Updated the database logic to use the new SQLAlchemy 2.0 result-object
+
+> Commit: [a1a55ec01f46433fb7ac64eae58089cc8e506a19](https://github.com/dOpensource/dsiprouter/commit/a1a55ec01f46433fb7ac64eae58089cc8e506a19)  
+> Date: Sun, 12 Mar 2023 00:44:26 +0000  
+> Author: root (root@mack.dsiprouter.net)  
+> Committer: root (root@mack.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a1a55ec01f46433fb7ac64eae58089cc8e506a19)
+[//]: # (START_SECTION 5a34993875502fc1cd9f21dec686a3035a8dcb92)
+### Allow Static Networking
+
+> Commit: [5a34993875502fc1cd9f21dec686a3035a8dcb92](https://github.com/dOpensource/dsiprouter/commit/5a34993875502fc1cd9f21dec686a3035a8dcb92)  
+> Date: Tue, 7 Mar 2023 15:39:52 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#473](https://github.com/dOpensource/dsiprouter/issues/473)
+
+
+---
+
+[//]: # (END_SECTION 5a34993875502fc1cd9f21dec686a3035a8dcb92)
+[//]: # (START_SECTION 8cac48d464f70bd5da4c8227abfc7025a23a82a0)
 ### Resolve Merge Conflicts
 
-> Commit: [0189676f5df3e764a795aa2d33659a4b0357d5f6](https://github.com/dOpensource/dsiprouter/commit/0189676f5df3e764a795aa2d33659a4b0357d5f6)  
+> Commit: [8cac48d464f70bd5da4c8227abfc7025a23a82a0](https://github.com/dOpensource/dsiprouter/commit/8cac48d464f70bd5da4c8227abfc7025a23a82a0)  
 > Date: Mon, 6 Mar 2023 15:06:24 -0500  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2113,7 +3294,22 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 0189676f5df3e764a795aa2d33659a4b0357d5f6)
+[//]: # (END_SECTION 8cac48d464f70bd5da4c8227abfc7025a23a82a0)
+[//]: # (START_SECTION 63ac499d92fac90f8bb1c3fabc7c03136abd505f)
+### Process Updates
+
+> Commit: [63ac499d92fac90f8bb1c3fabc7c03136abd505f](https://github.com/dOpensource/dsiprouter/commit/63ac499d92fac90f8bb1c3fabc7c03136abd505f)  
+> Date: Fri, 3 Mar 2023 08:24:03 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 63ac499d92fac90f8bb1c3fabc7c03136abd505f)
 [//]: # (START_SECTION 2bba54fc6e7061893b205149d7c9172c97239cbf)
 ### Security Updates For WSGI Dependencies
 
@@ -2179,6 +3375,52 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION da72adbd503e5fce324c8a801d90c1e0b38ca054)
+[//]: # (START_SECTION 2a19a64551c0a191adc60a956111f25b2a6a340c)
+### Update Installation Documentation
+
+> Commit: [2a19a64551c0a191adc60a956111f25b2a6a340c](https://github.com/dOpensource/dsiprouter/commit/2a19a64551c0a191adc60a956111f25b2a6a340c)  
+> Date: Wed, 1 Mar 2023 11:59:41 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves [#470](https://github.com/dOpensource/dsiprouter/issues/470)
+
+
+---
+
+[//]: # (END_SECTION 2a19a64551c0a191adc60a956111f25b2a6a340c)
+[//]: # (START_SECTION 6dfb127bd0e7f504522e80a4ad60ac01118f2c6f)
+### Add PR Template
+
+> Commit: [6dfb127bd0e7f504522e80a4ad60ac01118f2c6f](https://github.com/dOpensource/dsiprouter/commit/6dfb127bd0e7f504522e80a4ad60ac01118f2c6f)  
+> Date: Wed, 15 Feb 2023 11:32:46 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 6dfb127bd0e7f504522e80a4ad60ac01118f2c6f)
+[//]: # (START_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
+### Require Issue Template Usage
+
+> Commit: [bb58600d9294fbb5ce39c2e273155602d7981638](https://github.com/dOpensource/dsiprouter/commit/bb58600d9294fbb5ce39c2e273155602d7981638)  
+> Date: Wed, 15 Feb 2023 09:50:31 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION bb58600d9294fbb5ce39c2e273155602d7981638)
 [//]: # (START_SECTION cc8a46218083c85894e090228f3cd55eb5a238c7)
 ### Update issue templates (#481)
 
@@ -2195,6 +3437,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION cc8a46218083c85894e090228f3cd55eb5a238c7)
+[//]: # (START_SECTION 681c2c432b735a3f67d6732264f50638b47b1552)
+### Update issue templates
+
+> Commit: [681c2c432b735a3f67d6732264f50638b47b1552](https://github.com/dOpensource/dsiprouter/commit/681c2c432b735a3f67d6732264f50638b47b1552)  
+> Date: Wed, 15 Feb 2023 09:26:05 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 681c2c432b735a3f67d6732264f50638b47b1552)
 [//]: # (START_SECTION 799d68b0365eeda8c2d17811575b925a0023ae2a)
 ### Merge PR435
 
@@ -2278,6 +3535,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 98270d267c77f991b3aecf572d38c097fecac68b)
+[//]: # (START_SECTION 16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35)
+### API Updates
+
+> Commit: [16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35](https://github.com/dOpensource/dsiprouter/commit/16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35)  
+> Date: Tue, 7 Feb 2023 13:52:19 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 16a5a16cf1ef8a7aad44ac3d9da1e4c8706fac35)
+[//]: # (START_SECTION 4082e01348c3279f71685ff9eeaccaee25a6e53d)
+### Upgrade Checkpoint
+
+> Commit: [4082e01348c3279f71685ff9eeaccaee25a6e53d](https://github.com/dOpensource/dsiprouter/commit/4082e01348c3279f71685ff9eeaccaee25a6e53d)  
+> Date: Tue, 7 Feb 2023 13:06:59 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4082e01348c3279f71685ff9eeaccaee25a6e53d)
 [//]: # (START_SECTION 92d323dc7d6d82645ae7c25a4134679009dba4a6)
 ### Update installing.rst
 
@@ -2420,6 +3707,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 3b02dc02eeaee8d4e8ca13741489c2e6f72de230)
+[//]: # (START_SECTION 63dfa5ae605542cb998a8b03155bdddb75bb1472)
+### Added teh script to generate the self signed cert
+
+> Commit: [63dfa5ae605542cb998a8b03155bdddb75bb1472](https://github.com/dOpensource/dsiprouter/commit/63dfa5ae605542cb998a8b03155bdddb75bb1472)  
+> Date: Thu, 8 Dec 2022 11:53:58 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 63dfa5ae605542cb998a8b03155bdddb75bb1472)
 [//]: # (START_SECTION a787ec5760bf147c755950116a9e440d181a2e9d)
 ### Removed Rabbit MQ logic
 

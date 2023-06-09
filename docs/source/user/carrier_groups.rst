@@ -58,21 +58,19 @@ To add an Endpoint, click the Endpoint tab.
 .. image:: images/add_endpoint.png
         :align: center
        
-Click ADD, enter the Friendly name (optional), the IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again. RURI is when a number is dialed such as 9 plus the 1 and the number, a carrier may only want to see the phone number so the RURI would strip the "9" from in front of the telephone number. For example, if a PBX sends a number over as 914443332222 but the carrier wants the number to be sent as 14443332222 then the field should have a 1, which would strip off the 9. Some carriers request added digits, aka prefixes, in front of the phone number for validation that the call is from that carrier. In this example, the # of characters to strip from RURI is 0 as in none.
-
+Click ADD, enter the Friendly name (optional), the IP address of the endpoint/device, # of characters to strip from RURI, the character to prefix to a RURI then click ADD again.  For example, if a PBX sends a number over as 914443332222 but the carrier wants the number to be sent as 14443332222 then the # of characters to strip should be defined as 1, which would strip off the 9. Some carriers request added digits (aka Prefixes) in front of the phone number.
 
 
 .. image:: images/add_new_carrier_details.png
  :align: center
 
-Edit and click ADD again to add addtional endpoints. Click the gray X in that box to save window and close.
+Edit and click ADD again to add addtional endpoints. Click the gray X in that box to save the window and close.
 
 You should now see your added carrier with endpoints in the Carrier Group List.
 
 .. image:: images/carrier_group_list.png
  :align: center
 
- 
  
 Be sure to click the Reload Kamailio button to apply changes.
    

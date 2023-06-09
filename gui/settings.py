@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.71'
+VERSION = '0.721'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -91,6 +91,7 @@ TELEBLOCK_MEDIA_IP = ''
 TELEBLOCK_MEDIA_PORT = ''
 
 # Flowroute API Settings
+# TODO: encrypt/decrypt these creds instead of storing in plaintext
 FLOWROUTE_ACCESS_KEY = ''
 FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
@@ -100,19 +101,33 @@ HOMER_ID = None
 HOMER_HEP_HOST = ''
 HOMER_HEP_PORT = 9060
 
-# DMZ support
-# INTERNAL_IP_ADDR becomes private ip and EXTERNAL_IP_ADDR becomes the public ip
-DMZ_ENABLED = True
-
-# updated dynamically! These values will be overwritten
+# Network Settings
+# possible network modes:
+# 0:    (full-auto)     dynamically update all network settings, updated on startup
+# 1:    (manual)        user sets all network settings manually, interfaces are ignored
+# 2:    (dmz)           internal/external IP/subnet resolved from public/private interfaces, all other settings as in mode 0
+NETWORK_MODE = 0
 IPV6_ENABLED = False
-INTERNAL_IP_ADDR = '192.168.0.1'
-INTERNAL_IP_NET = '192.168.0.1/24'
-INTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'
-INTERNAL_IP6_NET = '2604:a880:400:d0::2048:3001/64'
-EXTERNAL_IP_ADDR = '1.1.1.1'
-EXTERNAL_IP6_ADDR = '2604:a880:400:d0::2048:3001'
-EXTERNAL_FQDN = 'sip.dsiprouter.org'
+# example: 192.168.0.1
+INTERNAL_IP_ADDR = ''
+# example: 192.168.0.1/24
+INTERNAL_IP_NET = ''
+# example: 2604:a880:400:d0::2048:3001
+INTERNAL_IP6_ADDR = ''
+# example: 2604:a880:400:d0::2048:3001/64
+INTERNAL_IP6_NET = ''
+# example: sip.dsiprouter.org
+INTERNAL_FQDN = ''
+# example: 1.1.1.1
+EXTERNAL_IP_ADDR = ''
+# example: 2604:a880:400:d0::2048:3001
+EXTERNAL_IP6_ADDR = ''
+# example: sip.dsiprouter.org
+EXTERNAL_FQDN = ''
+# example: eth0
+PUBLIC_IFACE = ''
+# example: eth1
+PRIVATE_IFACE = ''
 
 # upload folder for files
 UPLOAD_FOLDER = '/tmp'
@@ -124,7 +139,7 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter {}-{} <{}>'.format(str(DSIP_CLUSTER_ID), str(DSIP_ID), MAIL_USERNAME)
+MAIL_DEFAULT_SENDER = 'dSIPRouter sip.dsiprouter.org <>'
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # dSIPRouter licensing
@@ -151,9 +166,9 @@ BACKUP_FOLDER = '/var/backups/dsiprouter'
 # TransNexus Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
 TRANSNEXUS_AUTHSERVICE_ENABLED = 0
-TRANSNEXUS_AUTHSERVICE_HOST = 'sip.clearip.com'
+TRANSNEXUS_AUTHSERVICE_HOST = 'outbound.sip.clearip.com:5060'
 TRANSNEXUS_VERIFYSERVICE_ENABLED = 0
-TRANSNEXUS_VERIFYSERVICE_HOST =  "inbound.sip.clearip.com:5060"
+TRANSNEXUS_VERIFYSERVICE_HOST = 'inbound.sip.clearip.com:5060'
 
 # STIR/SHAKEN Settings
 # TODO: marked for review, these settings should be synced across cluster in the DB
@@ -176,8 +191,11 @@ DSIP_DOCS_DIR = '/opt/dsiprouter/docs/build/html'
 DID_PREFIX_ALLOWED_CHARS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '#', '*'}
 
 # micosoft teams settings
-MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com:5061;transport=tls","sip2.pstnhub.microsoft.com:5061;transport=tls","sip3.pstnhub.microsoft.com:5061;transport=tls"]
-MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70"]
+# pick one of the
+MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com","sip2.pstnhub.microsoft.com","sip3.pstnhub.microsoft.com"]
+#MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.dod.teams.microsoft.us","sip.pstnhub.gov.teams.microsoft.us"]
+MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70","52.114.32.169"]
+#MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]
 
 # root DB credentials
 ROOT_DB_USER = 'root'

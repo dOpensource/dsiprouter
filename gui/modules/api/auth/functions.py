@@ -1,15 +1,11 @@
-from shared import  updateConfig, getCustomRoutes, debugException, debugEndpoint, \
-    stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError,  IO, objToDict, StatusCodes
-from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, \
-    Subscribers, \
-    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPDomainMapping, dSIPMultiDomainMapping, Dispatcher, \
-    dSIPMaintModes, \
-    dSIPCallLimits, dSIPHardFwd, dSIPFailFwd, dSIPUser
-from sqlalchemy import func, exc as sql_exceptions
+from shared import debugException, debugEndpoint, stripDictVals, showError
+from database import SessionLoader, DummySession, dSIPUser
+from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-import settings, globals
+from flask import request
+import settings
 import datetime
-from util.security import AES_CTR, urandomChars, EasyCrypto, api_security
+from util.security import AES_CTR
 
 
 def addDSIPUser(data=None):

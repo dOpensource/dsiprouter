@@ -19,7 +19,14 @@ function install() {
 
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
-        libcurl4-openssl-dev libjansson-dev cmake firewalld certbot build-essential
+        libcurl4-openssl-dev libjansson-dev cmake firewalld python3 build-essential python3-venv
+
+    # we need a newer version of certbot than the distro repos offer
+    apt-get remove -y *certbot*
+    python3 -m venv /opt/certbot/
+    /opt/certbot/bin/pip install --upgrade pip
+    /opt/certbot/bin/pip install certbot
+    ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -62,17 +69,7 @@ EOF
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # create kamailio defaults config
-    (cat << 'EOF'
-RUN_KAMAILIO=yes
-USER=kamailio
-GROUP=kamailio
-SHM_MEMORY=128
-PKG_MEMORY=16
-PIDFILE=/run/kamailio/kamailio.pid
-CFGFILE=/etc/kamailio/kamailio.cfg
-#DUMP_CORE=yes
-EOF
-    ) > /etc/default/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
     # create kamailio tmp files
     echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
 
@@ -170,11 +167,6 @@ EOF
     else
         git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
-    # DEPRECATED v0.72: no custom kamailio modules in use at this time
-#    cp -rf ${DSIP_PROJECT_DIR}/kamailio/modules/dsiprouter/ ${SRC_DIR}/kamailio/src/modules/ &&
-#    ( cd ${SRC_DIR}/kamailio/src/modules/dsiprouter && make; exit $?; ) &&
-#    cp -f ${SRC_DIR}/kamailio/src/modules/dsiprouter/dsiprouter.so ${KAM_MODULES_DIR}/ ||
-#    { printerr 'Failed to compile and install dSIPRouter module'; return 1; }
 
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt
