@@ -82,6 +82,7 @@ def before_request():
         app.permanent_session_lifetime = datetime.timedelta(minutes=settings.GUI_INACTIVE_TIMEOUT)
     session.modified = True
 
+
 # DEPRECATED: overridden by csrf.exempt(api), need to revist this, marked for review in v0.80
 @api.before_request
 def api_before_request():
@@ -168,7 +169,7 @@ def certificates():
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
-        'favicon.ico', mimetype='image/vnd.microsoft.icon')
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -354,7 +355,7 @@ def addUpdateCarrierGroups():
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd":
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
-                    local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
+                             local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
@@ -381,16 +382,16 @@ def addUpdateCarrierGroups():
                 if authtype == "userpwd":
                     # update uacreg if exists, otherwise create
                     if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                         'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                         'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
+                            {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
+                             'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
+                             'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
                         Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
-                            auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
+                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                         db.add(Uacreg)
 
                     # update address if exists, otherwise create
                     if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                        {'ip_addr': auth_domain}, synchronize_session=False):
+                            {'ip_addr': auth_domain}, synchronize_session=False):
                         Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                         db.add(Addr)
                 else:
@@ -551,7 +552,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
-            reload_required=globals.reload_required)
+                               reload_required=globals.reload_required)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -746,7 +747,7 @@ def deleteCarriers():
         # grab any related carrier groups
         Gatewaygroups = db.execute(
             text('SELECT * FROM dr_gw_lists WHERE FIND_IN_SET(:gwid, dr_gw_lists.gwlist)'),
-            {'gwid':gwid}
+            {'gwid': gwid}
         )
 
         # remove gateway
@@ -809,7 +810,7 @@ def displayEndpointGroups():
 
         # NOTE: not including IPv6 address here as we only need to connect over IPv4 to fusion DB
         return render_template('endpointgroups.html', dsiprouter_ip=settings.EXTERNAL_IP_ADDR,
-            DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
+                               DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -1062,7 +1063,6 @@ def displayInboundMapping():
         endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
-
         res = db.execute(
             text("""
 SELECT * from (
@@ -1075,7 +1075,7 @@ SELECT * from (
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, g.id AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_groupid = r.groupid LEFT JOIN dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') WHERE ff.dr_groupid <> :flt_outbound
     UNION ALL
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, NULL AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_ruleid = r.ruleid WHERE ff.dr_groupid = :flt_outbound
-) AS t3 ON t1.ruleid = t3.ff_ruleid"""),{"flt_inbound":settings.FLT_INBOUND,"flt_outbound":settings.FLT_OUTBOUND})
+) AS t3 ON t1.ruleid = t3.ff_ruleid"""), {"flt_inbound": settings.FLT_INBOUND, "flt_outbound": settings.FLT_OUTBOUND})
 
         epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
         gwgroups = db.query(GatewayGroups).filter(
@@ -1175,12 +1175,14 @@ def addUpdateInboundMapping():
                 gwgroupid = x[1]
                 dispatcher_id = x[2].zfill(4)
 
-                # Create a gateway
+                Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
 
-                Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                if not Gateway:
+                    # Create a gateway
+                    Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
 
-                db.add(Gateway)
-                db.flush()
+                    db.add(Gateway)
+                    db.flush()
 
                 addresses = [Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)]
                 if settings.IPV6_ENABLED:
@@ -1201,7 +1203,7 @@ def addUpdateInboundMapping():
             # find last rule in dr_rules
             res = db.execute(
                 text("SELECT AUTO_INCREMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=:db_name AND TABLE_NAME='dr_rules'"),
-                {"db_name":settings.KAM_DB_NAME}
+                {"db_name": settings.KAM_DB_NAME}
             ).first()
             ruleid = int(res[0])
 
@@ -1264,22 +1266,32 @@ def addUpdateInboundMapping():
             inserts = []
 
             if "lb_" in gwgroupid:
+                # logging.info("In the load balancing update logic")
                 x = gwgroupid.split("_");
                 gwgroupid = x[1]
                 dispatcher_id = x[2].zfill(4)
 
+                # logging.info("Searching for the gateway by description")
                 # Create a gateway
-                Gateway = db.query(Gateways).filter(
-                    Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
+                Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
                 if Gateway:
+                    logging.info("Gateway found")
                     fields = strFieldsToDict(Gateway.description)
                     fields['lb'] = dispatcher_id
                     fields['gwgroup'] = gwgroupid
                     Gateway.update({'prefix': dispatcher_id, 'description': dictToStrFields(fields)})
                 else:
+                    # logging.info("Gateway not found")
+                    Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
+                    if not Gateway:
+                        logging.info("Gateway not found, creating new gateway")
+                        # Create a gateway
+                        Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                        db.add(Gateway)
+                        db.flush()
 
-                    Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-                    db.add(Gateway)
+                    # Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                    # db.add(Gateway)
 
                 db.flush()
                 # Assign Gateway id to the gateway list
@@ -1293,7 +1305,6 @@ def addUpdateInboundMapping():
                             db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
                 except sql_exceptions.MultipleResultsFound as ex:
                     logging.info("Multiple Address rows found")
-
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -1879,7 +1890,7 @@ def displayOutboundRoutes():
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
         return render_template('outboundroutes.html', rows=rows, cgroups=cgroups, teleblock=teleblock,
-            custom_routes=getCustomRoutes())
+                               custom_routes=getCustomRoutes())
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1960,7 +1971,7 @@ def addUpateOutboundRoutes():
                 pattern = from_prefix + "-" + prefix
 
             OMap = OutboundRoutes(groupid=groupid, prefix=prefix, timerec=timerec, priority=priority,
-                routeid=routeid, gwlist=gwlist, description=description)
+                                  routeid=routeid, gwlist=gwlist, description=description)
             db.add(OMap)
 
             # Add the lcr map
@@ -2152,7 +2163,7 @@ def displayStirShaken(msg=None):
         lc = WoocommerceLicense(settings_lc.license_key)
         if lc != settings_lc:
             return render_template('license_required.html',
-                msg='license is associated with another machine, re-associate it with this machine first')
+                                   msg='license is associated with another machine, re-associate it with this machine first')
 
         return render_template('stirshaken.html', msg=msg)
 
@@ -2191,7 +2202,7 @@ def addUpdateStirShaken():
         lc = WoocommerceLicense(settings_lc.license_key)
         if lc != settings_lc:
             return render_template('license_required.html',
-                msg='license is associated with another machine, re-associate it with this machine first')
+                                   msg='license is associated with another machine, re-associate it with this machine first')
 
         form = stripDictVals(request.form.to_dict())
 
@@ -2257,7 +2268,7 @@ def displayUpgrade(msg=None):
         lc = WoocommerceLicense(settings_lc.license_key)
         if lc != settings_lc:
             return render_template('license_required.html',
-                msg='license is associated with another machine, re-associate it with this machine first')
+                                   msg='license is associated with another machine, re-associate it with this machine first')
 
         latest = UpdateUtils.get_latest_version()
 
@@ -2278,6 +2289,7 @@ def displayUpgrade(msg=None):
         debugException(ex)
         error = "server"
         return showError(type=error)
+
 
 # TODO: not secured, can be called without license check if user is logged in
 @app.route('/upgrade/start', methods=['POST'])
@@ -2401,6 +2413,7 @@ def injectReloadRequired():
 @app.context_processor
 def injectSettings():
     return dict(settings=settings)
+
 
 # DEPRECATED: now done by dsiprouter.sh (CLI commands run by dsip-init.service), marked for removal in v0.80
 # def getDynamicNetworkSettings():
