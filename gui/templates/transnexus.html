@@ -6,14 +6,6 @@
 {% endblock %}
 
 {% block body %}
-  {% if settings.TRANSNEXUS_AUTHSERVICE_ENABLED == 1 %}
-    {% set authservice_checked = 'checked' %}
-    {% set transnexusOptions_hidden = 'hidden' %}
-  {% else %}
-    {% set authservice_checked = '' %}
-    {% set transnexusOptions_hidden = '' %}
-  {% endif %}
-
   <div class="col-md-12">
     <form action="/transnexus" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
