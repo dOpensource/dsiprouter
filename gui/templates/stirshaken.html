@@ -6,14 +6,6 @@
 {% endblock %}
 
 {% block body %}
-  {% if settings.STIR_SHAKEN_ENABLED == 1 %}
-    {% set toggle_checked = 'checked' %}
-    {% set options_hidden = 'hidden' %}
-  {% else %}
-    {% set toggle_checked = '' %}
-    {% set options_hidden = '' %}
-  {% endif %}
-
   <div class="col-md-12">
     <form action="/stirshaken" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

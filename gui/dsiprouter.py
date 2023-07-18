@@ -2165,7 +2165,14 @@ def displayStirShaken(msg=None):
             return render_template('license_required.html',
                                    msg='license is associated with another machine, re-associate it with this machine first')
 
-        return render_template('stirshaken.html', msg=msg)
+        if settings.STIR_SHAKEN_ENABLED == 1:
+            toggle_checked = 'checked'
+            options_hidden = 'hidden'
+        else:
+            toggle_checked = ''
+            options_hidden=''
+
+        return render_template('stirshaken.html', msg=msg,settings=settings,toggle_checked=toggle_checked,options_hidden=options_hidden)
 
     except WoocommerceError as ex:
         return render_template('license_required.html', msg=str(ex))
@@ -2211,6 +2218,9 @@ def addUpdateStirShaken():
         if 'stir_shaken_enabled' in form:
             tmp = form.get('stir_shaken_enabled', 0)
             ss_settings["STIR_SHAKEN_ENABLED"] = 1 if tmp == "1" else 0
+        else:
+            ss_settings["STIR_SHAKEN_ENABLED"] = 0
+
         if 'stir_shaken_prefix_a' in form:
             ss_settings["STIR_SHAKEN_PREFIX_A"] = form.get('stir_shaken_prefix_a', '')
         if 'stir_shaken_prefix_b' in form:
