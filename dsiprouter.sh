@@ -635,6 +635,7 @@ function generateDsiprouterConfig() {
 }
 
 # TODO: update DB settings here as well, currently they are updated in dsiprouter.py
+#       ^^ this is required to support loading settings from DB, i.e. LOAD_SETTINGS_FROM='db'
 function updateDsiprouterConfig() {
     local NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
 
@@ -771,6 +772,13 @@ function updateDsiprouterConfig() {
     # STIR_SHAKEN_KEY_PATH
     # MSTEAMS_DNS_ENDPOINTS
     # MSTEAMS_IP_ENDPOINTS
+
+    # TODO: workaround to update DB settings until next major release (v0.80)
+    if [[ "$LOAD_SETTINGS_FROM" == "db" ]]; then
+        setConfigAttrib 'LOAD_SETTINGS_FROM' 'file' ${DSIP_CONFIG_FILE} -q
+        ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from dsiprouter import syncSettings; syncSettings();"
+        setConfigAttrib 'LOAD_SETTINGS_FROM' 'db' ${DSIP_CONFIG_FILE} -q
+    fi
 }
 
 # TODO: these variables should be ephemeral, set as environment variables when running the service, no need to store them
