@@ -153,6 +153,9 @@ DSIP_MSTEAMS_LICENSE = ''
 ################# Local-Only Settings ####################
 # settings in this section are not stored on the DB
 
+# the fqdn / ip address used by uac/nathelper modules when contacting other servers
+UAC_REG_ADDR = ''
+
 # Cloud Platform
 # The cloud platform the dSIPRouter is installed on
 # The installer will update this

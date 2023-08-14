@@ -200,10 +200,15 @@ function setDynamicScriptSettings() {
 #		fi
 
         export INTERNAL_FQDN=$(getInternalFQDN)
-        # if external fqdn is not routable set it to the internal fqdn instead
         export EXTERNAL_FQDN=$(getExternalFQDN)
         if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
+            # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
+            # if external fqdn is not routable we must use the external IP as the uac registration address
+            export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
+        else
+            # external fqdn is routable, use it as the uac registration address
+            export UAC_REG_ADDR="$EXTERNAL_FQDN"
         fi
     # network settings pulled from env variables or from config file
     elif (( $NETWORK_MODE == 1 )); then
@@ -225,6 +230,7 @@ function setDynamicScriptSettings() {
 
         export INTERNAL_FQDN=${INTERNAL_FQDN:-$(getConfigAttrib 'INTERNAL_FQDN' ${DSIP_CONFIG_FILE})}
         export EXTERNAL_FQDN=${EXTERNAL_FQDN:-$(getConfigAttrib 'EXTERNAL_FQDN' ${DSIP_CONFIG_FILE})}
+        export UAC_REG_ADDR=${UAC_REG_ADDR:-$(getConfigAttrib 'UAC_REG_ADDR' ${DSIP_CONFIG_FILE})}
     # network settings resolved dynamically except IP/subnets (they are resolved by interfaces from CLI args or from the config)
     elif (( $NETWORK_MODE == 2 )); then
         PUBLIC_IFACE=${PUBLIC_IFACE:-$(getConfigAttrib 'PUBLIC_IFACE' ${DSIP_CONFIG_FILE})}
@@ -255,7 +261,13 @@ function setDynamicScriptSettings() {
         export INTERNAL_FQDN=$(getInternalFQDN)
         export EXTERNAL_FQDN=$(getExternalFQDN)
         if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
+            # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
+            # if external fqdn is not routable we must use the external IP as the uac registration address
+            export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
+        else
+            # external fqdn is routable, use it as the uac registration address
+            export UAC_REG_ADDR="$EXTERNAL_FQDN"
         fi
     else
         printerr 'Network Mode is invalid, can not proceed any further'
@@ -738,6 +750,7 @@ function updateDsiprouterConfig() {
     setConfigAttrib 'EXTERNAL_FQDN' "$EXTERNAL_FQDN" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'PUBLIC_IFACE' "$PUBLIC_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'PRIVATE_IFACE' "$PRIVATE_IFACE" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'UAC_REG_ADDR' "$UAC_REG_ADDR" ${DSIP_CONFIG_FILE} -q
 
     # TODO: the following are updated in setCredentials() and the config file should only be updated here
     #		i.e. settings the variables elsewhere is fine but any changes to the config file or DB should be centralised here
@@ -960,6 +973,7 @@ function updateKamailioConfig() {
     setKamailioConfigSubst 'EXTERNAL_IP6_ADDR' "${EXTERNAL_IP6_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_FQDN' "${INTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'EXTERNAL_FQDN' "${EXTERNAL_FQDN}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'UAC_REG_ADDR' "${UAC_REG_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'WSS_PORT' "${KAM_WSS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'SIP_PORT' "${KAM_SIP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'SIPS_PORT' "${KAM_SIPS_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
