@@ -1710,11 +1710,12 @@ function installDsiprouter() {
     if [[ ! -f "$DSIP_CONFIG_FILE" ]]; then
         generateDsiprouterConfig
     fi
-    updateDsiprouterConfig
-    updateDsiprouterStartup
 
     # configure dsiprouter modules
     installModules
+
+    updateDsiprouterConfig
+    updateDsiprouterStartup
 
     # make sure current python version is in the path
     # required in dsiprouter.py shebang (will fail startup without)
@@ -2036,11 +2037,11 @@ function uninstallSipsak() {
 
 # Install DNSmasq stub resolver for local DNS
 # used by kamailio dmq replication
-# TODO: need to integrate with cloud-init or dhclient/network-managaer/systemd-resolvd for resolv.conf config
-#       currently the dnsmasq configurations are being clobbered by other services
+# TODO: add support for integrating with openresolv
+# TODO: add support for integrating with network-manager
 # TODO: move DNSmasq install to its own directory, marked for v0.80
 function installDnsmasq() {
-    local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS
+    local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS DNSMASQ_RESOLV_FILE
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
         printwarn "DNSmasq is already installed"
@@ -2050,6 +2051,7 @@ function installDnsmasq() {
     fi
 
     # ipv6 compatibility
+    # TODO: marked for review, only one or the other is needed here, not both addresses
     if (( ${IPV6_ENABLED} == 1 )); then
         DNSMASQ_LISTEN_ADDRS="127.0.0.1,::1"
         DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1" "nameserver ::1")
@@ -2072,9 +2074,138 @@ function installDnsmasq() {
         yum install -y dnsmasq
     fi
 
-    # if systemd dns resolver is installed disable it
-    #systemctl stop systemd-resolved 2>/dev/null
-    #systemctl disable systemd-resolved 2>/dev/null
+    # make sure run dir is created
+    mkdir -p /run/dnsmasq
+    chown -R dnsmasq:dnsmasq /run/dnsmasq
+
+    # integration for resolvconf / systemd-resolvd
+    if systemctl -q is-enabled resolvconf; then
+        DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
+
+        cat <<'EOF' >/etc/default/resolvconf
+REPORT_ABSENT_SYMLINK=no
+TRUNCATE_NAMESERVER_LIST_AFTER_LOOPBACK_ADDRESS=yes
+EOF
+
+
+        cat <<'EOF' >/etc/resolvconf/update.d/zz_dnsmasq
+#!/bin/sh
+#
+# Script to update the resolver list for dnsmasq
+#
+# N.B. Resolvconf may run us even if dnsmasq is not (yet) running.
+# If dnsmasq is installed then we go ahead and update the resolver list
+# in case dnsmasq is started later.
+#
+# Assumption: On entry, PWD contains the resolv.conf-type files.
+#
+# This is a modified version of the file from the dnsmasq package.
+#
+
+set -e
+
+RUN_DIR="/run/dnsmasq"
+RSLVRLIST_FILE="${RUN_DIR}/resolv.conf"
+TMP_FILE="${RSLVRLIST_FILE}_new.$$"
+MY_NAME_FOR_RESOLVCONF="dnsmasq"
+RESOLVCONF_GEN_FILE="/run/resolvconf/resolv.conf"
+
+[ -x /usr/sbin/dnsmasq ] || exit 0
+[ -x /lib/resolvconf/list-records ] || exit 1
+
+PATH=/bin:/sbin
+
+report_err() { echo "$0: Error: $*" >&2 ; }
+
+# Stores arguments (minus duplicates) in RSLT, separated by spaces
+# Doesn't work properly if an argument itself contains whitespace
+uniquify() {
+	RSLT=""
+	while [ "$1" ] ; do
+		for E in $RSLT ; do
+			[ "$1" = "$E" ] && { shift ; continue 2 ; }
+		done
+		RSLT="${RSLT:+$RSLT }$1"
+		shift
+	done
+}
+
+filterdnsmasq() {
+    while read ADDR; do
+        for DNSMASQ_ADDR in $@; do
+            [ "x$ADDR" = "x$DNSMASQ_ADDR" ] && continue 2
+        done
+        echo "$ADDR"
+    done
+}
+
+if [ ! -d "$RUN_DIR" ] && ! mkdir --parents --mode=0755 "$RUN_DIR" ; then
+	report_err "Failed trying to create directory $RUN_DIR"
+	exit 1
+fi
+
+RSLVCNFFILES="$RESOLVCONF_GEN_FILE"
+for F in $(/lib/resolvconf/list-records) ; do
+	case "$F" in
+	    "lo.$MY_NAME_FOR_RESOLVCONF")
+		DNSMASQ_ADDRS="$(sed -n -e 's/^[[:space:]]*nameserver[[:space:]]\+//p' lo.$MY_NAME_FOR_RESOLVCONF)"
+		;;
+	  *)
+		RSLVCNFFILES="${RSLVCNFFILES:+$RSLVCNFFILES }$F"
+		;;
+	esac
+done
+
+NMSRVRS=""
+if [ "$RSLVCNFFILES" ] ; then
+	uniquify $(
+	    sed -n -e 's/^[[:space:]]*nameserver[[:space:]]\+//p' $RSLVCNFFILES |
+	    filterdnsmasq $DNSMASQ_ADDRS
+    )
+	NMSRVRS="$RSLT"
+fi
+
+# Dnsmasq uses the mtime of $RSLVRLIST_FILE, with a resolution of one second,
+# to detect changes in the file. This means that if a resolvconf update occurs
+# within one second of the previous one then dnsmasq may fail to notice the
+# more recent change. To work around this problem we sleep one second here
+# if necessary in order to ensure that the new mtime is different.
+if [ -f "$RSLVRLIST_FILE" ] && [ "$(ls -go --time-style='+%s' "$RSLVRLIST_FILE" | { read p h s t n ; echo "$t" ; })" = "$(date +%s)" ] ; then
+	sleep 1
+fi
+
+clean_up() { rm -f "$TMP_FILE" ; }
+trap clean_up EXIT
+: >| "$TMP_FILE"
+for N in $NMSRVRS ; do echo "nameserver $N" >> "$TMP_FILE" ; done
+mv -f "$TMP_FILE" "$RSLVRLIST_FILE"
+
+EOF
+        chmod +x /etc/resolvconf/update.d/zz_dnsmasq
+        rm -f /etc/resolvconf/update.d/dnsmasq
+
+        rm -f /etc/resolv.conf
+        echo '# DNS servers are being managed by dnsmasq, DO NOT CHANGE THIS FILE' >/etc/resolv.conf
+        for NAME_SERVER in ${DNSMASQ_NAME_SERVERS[@]}; do
+            echo "$NAME_SERVER" >>/etc/resolv.conf
+        done
+
+        # update the dynamic resolv.conf files
+        resolvconf -u
+
+    # static resolv.conf
+    else
+        DNSMASQ_RESOLV_FILE="/etc/resolv.conf"
+
+        if ! grep -q -E 'nameserver 127\.0\.0\.1|nameserver ::1' /etc/resolv.conf 2>/dev/null; then
+            # extra check in case no nameserver found
+            if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
+                joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
+            else
+                sed -i -r "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS[@]}")&|}" /etc/resolv.conf
+            fi
+        fi
+    fi
 
     # dnsmasq configuration
     mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bak 2>/dev/null
@@ -2088,28 +2219,9 @@ bind-interfaces
 user=dnsmasq
 group=dnsmasq
 conf-file=/etc/dnsmasq.conf
-resolv-file=/etc/resolv.conf
+resolv-file=${DNSMASQ_RESOLV_FILE}
 pid-file=/run/dnsmasq/dnsmasq.pid
 EOF
-
-    # make sure dnsmasq is first nameserver (utilizing dhclient)
-    [ ! -f "/etc/dhcp/dhclient.conf" ] && touch /etc/dhcp/dhclient.conf
-    if grep -q 'DSIP_CONFIG_START' /etc/dhcp/dhclient.conf 2>/dev/null; then
-        perl -0777 -i -pe "s|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\nprepend domain-name-servers ${DNSMASQ_LISTEN_ADDRS};\n\2|gms" /etc/dhcp/dhclient.conf
-    else
-        printf '\n%s\n%s\n%s\n' \
-            '#####DSIP_CONFIG_START' \
-            "prepend domain-name-servers ${DNSMASQ_LISTEN_ADDRS};" \
-            '#####DSIP_CONFIG_END' >> /etc/dhcp/dhclient.conf
-    fi
-    if ! grep -q -E 'nameserver 127\.0\.0\.1|nameserver ::1' /etc/resolv.conf 2>/dev/null; then
-        # extra check in case no nameserver found
-        if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
-            joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
-        else
-            sed -i -r "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS[@]}")&|}" /etc/resolv.conf
-        fi
-    fi
 
     # setup hosts in cluster node is resolvable
     # cron and kam service will configure these dynamically
@@ -2855,6 +2967,7 @@ function removeInitService() {
     rm -f /etc/cloud/cloud.cfg.d/99-dsip-init.cfg
 
     systemctl stop dsip-init
+    systemctl disable dsip-init
     rm -f $DSIP_INIT_FILE
     systemctl daemon-reload
 
