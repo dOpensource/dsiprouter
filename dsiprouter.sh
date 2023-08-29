@@ -1271,6 +1271,10 @@ function configureKamailioDB() {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/subscribers.sql
 
+    # Update schema for uacreg table
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/uacreg.sql
+
     # Install schema for custom LCR logic
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_lcr.sql
