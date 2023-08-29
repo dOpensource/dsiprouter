@@ -1,0 +1,4 @@
+-- update address schema
+ALTER TABLE address
+  MODIFY COLUMN `ip_addr` VARCHAR(253) NOT NULL,
+  MODIFY COLUMN `tag` VARCHAR(255) NOT NULL DEFAULT '';

@@ -2619,7 +2619,7 @@ function setCredentials() {
     if [[ -n "${SET_DSIP_IPC_TOKEN}" ]]; then
         DSIP_RELOAD_TYPE=2
     fi
-    if [[ -n "${SET_KAM_DB_USER}" ]]; then
+    if [[ -n "${SET_KAM_DB_USER}" && "$SET_KAM_DB_USER" != "$KAM_DB_USER" ]]; then
         # TODO: make this simpler by using DROP USER IF EXISTS statements instead
         # if user exists update username, otherwise we need to create the new user
         if checkDBUserExists --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" \
@@ -2661,7 +2661,7 @@ function setCredentials() {
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
-    if [[ -n "${SET_KAM_DB_PASS}" ]]; then
+    if [[ -n "${SET_KAM_DB_PASS}" && "$SET_KAM_DB_PASS" != "$KAM_DB_PASS" ]]; then
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'localhost' = PASSWORD('${SET_KAM_DB_PASS}');")
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' = PASSWORD('${SET_KAM_DB_PASS}');")
 
@@ -2679,7 +2679,7 @@ function setCredentials() {
         KAM_RELOAD_TYPE=2
         MYSQL_RELOAD_TYPE=2
     fi
-    if [[ -n "${SET_KAM_DB_PORT}" ]]; then
+    if [[ -n "${SET_KAM_DB_PORT}" && "$SET_KAM_DB_PORT" != "$KAM_DB_PORT" ]]; then
         SHELL_CMDS+=("setConfigAttrib 'KAM_DB_PORT' '$SET_KAM_DB_PORT' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
@@ -2692,12 +2692,12 @@ function setCredentials() {
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
-    if [[ -n "${SET_ROOT_DB_USER}" ]]; then
+    if [[ -n "${SET_ROOT_DB_USER}" && "$SET_ROOT_DB_USER" != "$ROOT_DB_USER" ]]; then
         DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'localhost' TO '${SET_ROOT_DB_USER}'@'localhost';")
 
         SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_USER' '$SET_ROOT_DB_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
-    if [[ -n "${SET_ROOT_DB_PASS}" ]]; then
+    if [[ -n "${SET_ROOT_DB_PASS}" && "$SET_ROOT_DB_PASS" != "$ROOT_DB_PASS" ]]; then
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_ROOT_DB_USER:-$ROOT_DB_USER}'@'localhost' = PASSWORD('${SET_ROOT_DB_PASS}');")
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_ROOT_DB_USER:-$ROOT_DB_USER}'@'%' = PASSWORD('${SET_ROOT_DB_PASS}');")
     fi
@@ -3167,24 +3167,66 @@ function cleanGitDevEnv() {
 # TODO: need to handle re-attempt better, when one node fails and others did not
 #       we could overwrite key, attempt install (will pass on already installed configs), re-encrypt
 #       this would require some way of knowing whether the credentials changed
-#       or we could check for install and decrypt/store creds before replcaing key and re-encrypting
+#       or we could check for install and decrypt/store creds before replacing key and re-encrypting
+# TODO: add support for calling various cluster scripts in HA directory
+# TODO: on new cluster install the 2nd / tertiary DBs don't exist when updating dsip_settings, so the credentials don't match
+#       kamailio db settings should not be synced in cluster sync mode (since config settings are stored there it would break the cluster)
+# TODO: handle re-running cluster install after failure (must reset GUI pass and probably should reset configs)
 function clusterInstall() { (
-    local TMP_PRIV_KEY="${DSIP_PROJECT_DIR}/dsip_privkey"
-    local SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
-    local SSH_HOSTS=() SSH_CMDS=() SSH_PWDS=() SCP_CMDS=()
-    local USER PASS HOST PORT SSH_REMOTE_HOST SSH_OPTS SCP_OPTS
-    local SSH_CMD="ssh" SCP_CMD="scp"
+    local i j
+    local USER PASS HOST PORT SSH_REMOTE_HOST
+    local CLUSTER_GUI_USER CLUSTER_GUI_PASS CLUSTER_API_TOKEN CLUSTER_MAIL_USER CLUSTER_MAIL_PASS CLUSTER_IPC_TOKEN
+    local CLUSTER_KAM_DB_USER CLUSTER_KAM_DB_PASS CLUSTER_KAM_DB_NAME CLUSTER_ROOT_DB_USER CLUSTER_ROOT_DB_PASS CLUSTER_ROOT_DB_NAME
+    local SSH_CMD=() RSYNC_CMD=()
+    local TMP_PRIV_KEY="/tmp/dsip_privkey"
+    local CLUSTER_SYNC=0
+    # default ssh options
+    local SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x)
+    local RSYNC_OPTS=()
+    # allow local project to be located anywhere
+    local LOCAL_PROJECT_DIR="$DSIP_PROJECT_DIR"
+    DSIP_PROJECT_DIR="/opt/dsiprouter"
 
-    printdbg 'Installing requirements for cluster install'
-    if cmdExists 'apt-get'; then
-        apt-get install -y sshpass
-    elif cmdExists 'yum'; then
-        yum install -y epel-release sshpass
+    if ! cmdExists 'ssh' || ! cmdExists 'rsync' || ! cmdExists 'sshpass'; then
+        printdbg 'Installing local requirements for cluster install'
+        if cmdExists 'apt-get'; then
+            sudo apt-get install -y openssh-client sshpass rsync
+        elif cmdExists 'dnf'; then
+            sudo dnf install --enablerepo=epel -y openssh-clients sshpass rsync
+        elif cmdExists 'yum'; then
+            sudo yum install --enablerepo=epel -y openssh-clients sshpass rsync
+        else
+            printerr "Your local OS is currently not supported"
+            exit 1
+        fi
     fi
 
     # sanity check
     if (( $? != 0 )); then
-        printerr 'Could not install requirements for cluster install'; cleanupAndExit 1
+        printerr 'Could not install requirements for cluster install'
+        exit 1
+    fi
+
+    # we need to know if cluster sync will be enabled beforehand
+    j=0
+    while (( $j < ${#SSH_SYNC_ARGS[@]} )); do
+        case "${SSH_SYNC_ARGS[$j]}" in
+            -dsipcsync|--dsip-clustersync=*)
+                if grep -q '=' 2>/dev/null <<<"${SSH_SYNC_ARGS[$j]}"; then
+                    CLUSTER_SYNC=$(cut -d '=' -f 2 <<<"${SSH_SYNC_ARGS[$j]}")
+                else
+                    CLUSTER_SYNC="${SSH_SYNC_ARGS[$((j + 1))]}"
+                fi
+                break
+                ;;
+        esac
+        j=$((j + 1))
+    done
+
+    # if installing in cluster sync mode GUI pass must generate it beforehand (can't undo the hash later)
+    # can still be overwritten by user provided args (probably not wise though)
+    if (( $CLUSTER_SYNC == 1 )); then
+        CLUSTER_GUI_PASS=$(urandomChars 64)
     fi
 
     # create private key if not set on cmdline
@@ -3208,110 +3250,167 @@ function clusterInstall() { (
     #  - validate conn
     #  - validate unattended ssh
     #  - collect ssh/scp cmds and pwds
-    for NODE in "${SSH_SYNC_NODES[@]}"; do
+    i=0
+    while (( $i < ${#SSH_SYNC_NODES[@]} )); do
         # parse node info
-        USER=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
-        PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
-        HOST=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1)
-        PORT=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -s -d ':' -f 2-)
+        USER=$(printf '%s' "${SSH_SYNC_NODES[$i]}" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
+        PASS=$(printf '%s' "${SSH_SYNC_NODES[$i]}" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
+        HOST=$(printf '%s' "${SSH_SYNC_NODES[$i]}" | cut -d '@' -f 2- | cut -d ':' -f -1)
+        PORT=$(printf '%s' "${SSH_SYNC_NODES[$i]}" | cut -d '@' -f 2- | cut -s -d ':' -f 2-)
 
         # default user is root for ssh
         USER=${USER:-root}
         # default port is 22 for ssh
         PORT=${PORT:-22}
         # host is required per node
-        if [ -z "$HOST" ]; then
-            printerr "Node [${NODE}] does not contain a host"; usageOptions; exit 1
-        else
-            SSH_REMOTE_HOST="${HOST}"
+        if [[ -z "$HOST" ]]; then
+            printerr "Node [${SSH_SYNC_NODES[$i]}] does not contain a host"
+            usageOptions
+            exit 1
         fi
-        SSH_REMOTE_HOST="${USER}@${SSH_REMOTE_HOST}"
+        SSH_REMOTE_HOST="${USER}@${HOST}"
 
         # select auth method and set vars accordingly
-        if [ -n "$PASS" ]; then
+        if [[ -n "$PASS" ]]; then
             export SSHPASS="${PASS}"
-            SSH_CMD="sshpass -e ssh"
-            SCP_CMD="sshpass -e scp"
-            SSH_OPTS="${SSH_DEFAULT_OPTS} -o PreferredAuthentications=password"
+            SSH_CMD=(sshpass -e ssh)
+            RSYNC_CMD=(sshpass -e rsync)
+            SSH_OPTS+=(-o PreferredAuthentications=password)
         else
-            SSH_CMD="ssh"
-            SCP_CMD="scp"
-            SSH_OPTS="${SSH_DEFAULT_OPTS} -o PreferredAuthentications=publickey"
+            SSH_CMD=(ssh)
+            RSYNC_CMD=(rsync)
+            if [[ -n "$SSH_KEY_FILE" ]]; then
+                SSH_OPTS+=(-o PreferredAuthentications=publickey -i $SSH_KEY_FILE)
+            else
+                SSH_OPTS+=(-o PreferredAuthentications=publickey)
+            fi
         fi
 
-        # finalize cmds
-        SCP_OPTS="${SSH_OPTS} -P ${PORT} -C -p -r -q -o IPQoS=throughput"
-        SSH_OPTS="${SSH_OPTS} -p ${PORT}"
-        SCP_CMD="${SCP_CMD} ${SCP_OPTS} ${DSIP_PROJECT_DIR}/. ${SSH_REMOTE_HOST}:/tmp/dsiprouter/"
-        SSH_CMD="${SSH_CMD} ${SSH_OPTS} ${SSH_REMOTE_HOST}"
+        # finalize options
+        RSYNC_OPTS+=(--port=${PORT} -z --exclude=".*")
+        SSH_OPTS+=(-p ${PORT})
 
-        if (( $DEBUG == 1 )); then
-            printdbg "SSH_CMD: ${SSH_CMD}"
-            printdbg "SCP_CMD: ${SCP_CMD}"
-        fi
-
-        printdbg "Validating tcp connection to ${HOST}"
-        if ! checkConn ${HOST} ${PORT}; then
-            printerr "Could not establish connection to host [${HOST}] on port [${PORT}]"; exit 1
-        fi
+#        printdbg "Validating tcp connection to ${HOST}"
+#        if ! checkConn ${HOST} ${PORT}; then
+#            printerr "Could not establish connection to host [${HOST}] on port [${PORT}]"
+#            exit 1
+#        fi
 
         printdbg "Validating unattended ssh connection to ${HOST}"
-        if ! checkSSH ${SSH_CMD}; then
-            printerr "Could not establish unattended ssh connection to [${SSH_REMOTE_HOST}] on port [${PORT}]"; exit 1
-        fi
-
-        SSH_CMDS+=( "$SSH_CMD" )
-        SCP_CMDS+=( "$SCP_CMD" )
-        SSH_PWDS+=( "$PASS" )
-        SSH_HOSTS+=( "$HOST" )
-    done
-
-    # loop through nodes to:
-    # - setup and secure private key
-    # - run script install command
-    for i in "${!SSH_SYNC_NODES[@]}"; do
-        printdbg "Starting remote install on ${SSH_HOSTS[$i]}"
-
-        # password used by ssh/scp
-        if [ -n "${SSH_PWDS[$i]}" ]; then
-            export SSHPASS="${SSH_PWDS[$i]}"
-        fi
-
-        printdbg "Copying project files to ${SSH_HOSTS[$i]}"
-        ${SCP_CMDS[$i]} 2>&1
-        if (( $? != 0 )); then
-            printerr "Copying files to ${SSH_HOSTS[$i]} failed"
+        if ! checkSSH ${SSH_CMD[@]} ${SSH_OPTS[@]} ${SSH_REMOTE_HOST}; then
+            printerr "Could not establish unattended ssh connection to [${SSH_REMOTE_HOST}] on port [${PORT}]"
             exit 1
         fi
 
-        printdbg "Running remote install on ${SSH_HOSTS[$i]}"
-        ${SSH_CMDS[$i]} bash 2>&1 <<- EOSSH
-        # debug the remote commands
-        if (( $DEBUG == 1 )); then
-            set -x
-        fi
+        printdbg "Installing remote requirements for cluster install"
+        ${SSH_CMD[@]} ${SSH_OPTS[@]} ${SSH_REMOTE_HOST} bash 2>&1 <<- EOSSH
+            $(typeset -f cmdExists)
 
-        # setting up project files on node
-        rm -rf ${DSIP_PROJECT_DIR} 2>/dev/null
-        mv -f /tmp/dsiprouter ${DSIP_PROJECT_DIR}
-
-        # setup cluster private key on node
-        mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
-        mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
-        chown root:root ${DSIP_PRIV_KEY}
-        chmod 0400 ${DSIP_PRIV_KEY}
-
-        # run script command
-        ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+            if cmdExists 'apt-get'; then
+                apt-get install -y rsync
+            elif cmdExists 'dnf'; then
+                dnf install -y rsync
+            elif cmdExists 'yum'; then
+                yum install -y rsync
+            else
+                exit 1
+            fi
+            exit 0
 EOSSH
+
         if (( $? != 0 )); then
-            printerr "Remote install on ${SSH_HOSTS[$i]} failed"
+            printerr "Failed installing requirements on remote node ${HOST_LIST[$i]}"
             exit 1
         fi
 
-        i=$((i+1))
+        printdbg "Starting remote install on ${HOST}"
+        # password used by ssh/scp
+        if [[ -n "$PASS" ]]; then
+            export SSHPASS="$PASS"
+        fi
+
+        printdbg "Copying project files to ${HOST}"
+        ${RSYNC_CMD[@]} ${RSYNC_OPTS[@]} --rsh="ssh ${SSH_OPTS[*]} -o IPQoS=throughput" -a ${LOCAL_PROJECT_DIR}/ ${SSH_REMOTE_HOST}:/tmp/dsiprouter/ 2>&1 &&
+        ${RSYNC_CMD[@]} ${RSYNC_OPTS[@]} --rsh="ssh ${SSH_OPTS[*]} -o IPQoS=throughput" ${TMP_PRIV_KEY} ${SSH_REMOTE_HOST}:${TMP_PRIV_KEY} 2>&1
+        if (( $? != 0 )); then
+            printerr "Copying files to ${HOST} failed"
+            exit 1
+        fi
+
+        printdbg "Running remote install on ${HOST}"
+        ${SSH_CMD[@]} ${SSH_OPTS[@]} ${SSH_REMOTE_HOST} bash 2>&1 <<- EOSSH
+            # debug the remote commands
+            if (( $DEBUG == 1 )); then
+                set -x
+            fi
+
+            # setting up project files on node
+            rm -rf ${DSIP_PROJECT_DIR} 2>/dev/null
+            mv -f /tmp/dsiprouter ${DSIP_PROJECT_DIR}
+
+            # setup cluster private key on node
+            mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
+            mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
+            chown root:root ${DSIP_PRIV_KEY}
+            chmod 0400 ${DSIP_PRIV_KEY}
+
+            # export any settings we wish to change in the install script
+            export SET_DSIP_GUI_USER="$CLUSTER_GUI_USER"
+            export SET_DSIP_GUI_PASS="$CLUSTER_GUI_PASS"
+            export SET_DSIP_API_TOKEN="$CLUSTER_API_TOKEN"
+            export SET_DSIP_MAIL_USER="$CLUSTER_MAIL_USER"
+            export SET_DSIP_MAIL_PASS="$CLUSTER_MAIL_PASS"
+            export SET_DSIP_IPC_TOKEN="$CLUSTER_IPC_TOKEN"
+            export SET_KAM_DB_USER="$CLUSTER_KAM_DB_USER"
+            export SET_KAM_DB_PASS="$CLUSTER_KAM_DB_PASS"
+            export SET_KAM_DB_NAME="$CLUSTER_KAM_DB_NAME"
+            export SET_ROOT_DB_USER="$CLUSTER_ROOT_DB_USER"
+            export SET_ROOT_DB_PASS="$CLUSTER_ROOT_DB_PASS"
+            export SET_ROOT_DB_NAME="$CLUSTER_ROOT_DB_NAME"
+
+            # run script command
+            ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+EOSSH
+
+        # sanity check, was the install script successful?
+        if (( $? != 0 )); then
+            printerr "Remote install on ${HOST} failed (install script failed)"
+            exit 1
+        fi
+
+        # if installing in cluster sync mode reuse the credentials set on the first node
+        # can still be overwritten by user provided args (probably not wise though)
+        if (( $i == 0 )) && (( $CLUSTER_SYNC == 1 )); then
+            . <(
+                ${SSH_CMD[@]} ${SSH_OPTS[@]} ${SSH_REMOTE_HOST} bash 2>/dev/null <<- EOSSH
+                    DSIP_PROJECT_DIR="$DSIP_PROJECT_DIR"
+                    DSIP_SYSTEM_CONFIG_DIR="$DSIP_SYSTEM_CONFIG_DIR"
+                    $(typeset -f getConfigAttrib)
+                    $(typeset -f decryptConfigAttrib)
+                    echo "CLUSTER_GUI_USER='\$(getConfigAttrib DSIP_USERNAME ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_API_TOKEN='\$(decryptConfigAttrib DSIP_API_TOKEN ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_MAIL_USER='\$(getConfigAttrib MAIL_USERNAME ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_MAIL_PASS='\$(decryptConfigAttrib MAIL_PASSWORD ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_IPC_TOKEN='\$(decryptConfigAttrib DSIP_IPC_PASS ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_KAM_DB_USER='\$(getConfigAttrib KAM_DB_USER ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_KAM_DB_PASS='\$(decryptConfigAttrib KAM_DB_PASS ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_KAM_DB_NAME='\$(getConfigAttrib KAM_DB_NAME ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_ROOT_DB_USER='\$(getConfigAttrib ROOT_DB_USER ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_ROOT_DB_PASS='\$(decryptConfigAttrib ROOT_DB_PASS ${DSIP_CONFIG_FILE})'"
+                    echo "CLUSTER_ROOT_DB_NAME='\$(getConfigAttrib ROOT_DB_NAME ${DSIP_CONFIG_FILE})'"
+EOSSH
+            )
+
+            # sanity check, were we able to get the settings from the remote node?
+            if [[ -z "$CLUSTER_GUI_USER$CLUSTER_API_TOKEN" ]]; then
+                printerr "Remote install on ${HOST} failed (could not get cluster credentials)"
+                exit 1
+            fi
+        fi
+
+        i=$((i + 1))
     done
-) || cleanupAndExit $?; }
+); cleanupAndExit $?; }
 
 # $@ == subset of permissions to update
 # TODO: update systemd ExecStartPre commands to use this logic instead
@@ -3445,7 +3544,7 @@ function usageOptions() {
     printf "%-30s %s\n" \
         "uninstall" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
-        "clusterinstall" "[-debug] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
+        "clusterinstall" "[-debug] [-i <ssh key file>] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
     printf "%-30s %s\n" \
         "upgrade" "[-debug|-dsipcid <num>|--dsip-clusterid=<num>] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
@@ -3578,7 +3677,6 @@ function processCMD() {
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
-            local SET_KAM_DB_USER="" SET_KAM_DB_PASS="" SET_KAM_DB_HOST="" SET_KAM_DB_PORT="" SET_KAM_DB_NAME=""
 
             while (( $# > 0 )); do
                 OPT="$1"
@@ -3646,31 +3744,16 @@ function processCMD() {
                             shift
                         fi
 
-                        SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
-                        SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
-                        SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
-                        SET_KAM_DB_PORT=$(parseDBConnURI -port "$DB_CONN_URI")
-                        SET_KAM_DB_NAME=$(parseDBConnURI -name "$DB_CONN_URI")
+                        export SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
+                        export SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
+                        export SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
+                        export SET_KAM_DB_PORT=$(parseDBConnURI -port "$DB_CONN_URI")
+                        export SET_KAM_DB_NAME=$(parseDBConnURI -name "$DB_CONN_URI")
 
                         # sanity check (required params)
-                        if [[ -n "${SET_KAM_DB_HOST}" ]]; then
-                            export KAM_DB_HOST="${SET_KAM_DB_HOST}"
-                        else
+                        if [[ -z "${SET_KAM_DB_HOST}" ]]; then
                             printerr 'Database Host is required and was not found in connection uri'
                             cleanupAndExit 1
-                        fi
-                        # set optional params (only if provided)
-                        if [[ -n "${SET_KAM_DB_USER}" ]]; then
-                            export KAM_DB_USER="${SET_KAM_DB_USER}"
-                        fi
-                        if [[ -n "${SET_KAM_DB_PASS}" ]]; then
-                            export KAM_DB_PASS="${SET_KAM_DB_PASS}"
-                        fi
-                        if [[ -n "${SET_KAM_DB_PORT}" ]]; then
-                            export KAM_DB_PORT="${SET_KAM_DB_PORT}"
-                        fi
-                        if [[ -n "${SET_KAM_DB_NAME}" ]]; then
-                            export KAM_DB_NAME="${SET_KAM_DB_NAME}"
                         fi
                         ;;
                     -dsipcid|--dsip-clusterid=*)
@@ -3877,11 +3960,17 @@ function processCMD() {
                 ARG="$1"
                 case $ARG in
                     --)
+                        # scrap the --
                         shift
                         break
                         ;;
                     -debug)
                         export DEBUG=1
+                        shift
+                        ;;
+                    -i)
+                        shift
+                        SSH_KEY_FILE="$1"
                         shift
                         ;;
                     *)  # add to list of nodes
@@ -3890,9 +3979,6 @@ function processCMD() {
                         ;;
                 esac
             done
-
-            # scrap the --
-            shift
 
             # loop through args and grab install options
             while (( $# > 0 )); do
@@ -4358,7 +4444,7 @@ function processCMD() {
                 SET_DSIP_IPC_TOKEN=$(urandomChars 64)
             fi
             if (( ${RESET_KAM_DB_PASS:-0} == 1 )); then
-                SET_KAM_DB_PASS=$(urandomChars 64)
+                export SET_KAM_DB_PASS=$(urandomChars 64)
             fi
 
             # display if not in quiet mode
@@ -4418,11 +4504,11 @@ function processCMD() {
                             cleanupAndExit 1
                         fi
 
-                        SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
-                        SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
-                        SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
-                        SET_KAM_DB_PORT=$(parseDBConnURI -port "$DB_CONN_URI")
-                        SET_KAM_DB_NAME=$(parseDBConnURI -name "$DB_CONN_URI")
+                        export SET_KAM_DB_USER=$(parseDBConnURI -user "$DB_CONN_URI")
+                        export SET_KAM_DB_PASS=$(parseDBConnURI -pass "$DB_CONN_URI")
+                        export SET_KAM_DB_HOST=$(parseDBConnURI -host "$DB_CONN_URI")
+                        export SET_KAM_DB_PORT=$(parseDBConnURI -port "$DB_CONN_URI")
+                        export SET_KAM_DB_NAME=$(parseDBConnURI -name "$DB_CONN_URI")
                         ;;
                     -mc|--mail-creds=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then

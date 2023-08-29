@@ -86,7 +86,7 @@ _dsiprouter() {
     declare -A sopts=(
         [install]='-debug -all -kam -dsip -rtp -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev -dmz -netm -homer'
         [uninstall]='-debug -all -kam -dsip -rtp'
-        [clusterinstall]='-debug'
+        [clusterinstall]='-debug -i'
         [upgrade]='-debug'
         [start]='-debug -all -kam -dsip -rtp'
         [stop]='-debug -all -kam -dsip -rtp'

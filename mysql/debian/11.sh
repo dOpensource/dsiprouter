@@ -25,6 +25,10 @@ function install {
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
 
+    # ensure data directory exists
+    mkdir -p /var/lib/mysql
+    chown mysql:mysql /var/lib/mysql
+
     # TODO: selinux/apparmor permissions for mysql
     #       firewall rules (cluster install needs remote access)
     #       configure galera replication (cluster install)
