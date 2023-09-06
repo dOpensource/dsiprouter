@@ -29,14 +29,12 @@ def start_upgrade():
     upgrade_settings = read_settings()
     logging.info("Current Version: " + current_version)
     logging.info("Upgrade Version: " + upgrade_settings['version'])
-    if upgrade_settings['depends'] == current_version:
+    if current_version in upgrade_settings['depends']:
         logging.info("Version Check Passed. Proceeding with upgrade to version " + upgrade_settings['version'])
         backup_system()
         merge_settings()
         upgrade_dsiprouter()
         logging.info("Upgrade complete.")
-
-        # TODO: Add git status diff checking
 
         sys.exit(0)
     else:

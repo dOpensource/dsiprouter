@@ -2,9 +2,6 @@
   "version": "0.72",
   "depends": "0.70",
   "install_location": "/opt/dsiprouter",
-  "database_migrations": [
-    "merge.sh"
-  ],
   "dsiprouter": [
     "migrate.sh"
   ]

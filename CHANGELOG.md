@@ -5,7 +5,50 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25
+088cc51f57dc1d10db80bc911206fb751d60647e
+8b1ccf2e53f1da403341957b57bbb4c318f64330
+ca9e5da8c80b3f9fb09752ebd8e1d2662a55f59a
+d663e2342ac65b1d559376fe3e7db6582648efec
+71f2577294ad7dddf7206fe30a362d29880a124d
+768793973e59ce600a909a29d744e5edaee3f934
+0e7e43b0471528a7dc9175c0939bb93bf9f34c85
+997f911ecce2f4df036a30bed2e488ca983c3fba
+e1f402ac7faf5604be924bc693cd389fd4ebd3fb
+6d2aa297487b38829ba832aec10ddc1e3b3d7f10
+8adead794dcb8fcea85b07819c2738ada08771ae
+55ac4519606a16f54c383c6de10d34725261c8a7
+d4a6a915bc7a4ef12c14899214df01a840c4fe01
+51eb9e2614dae7f49dca658e10c268433cf19702
+350e777e101b3e0b70134f8571a598348ede7d44
+904879953e2217394b364f7464101dafcdce5e98
+94f1469f2ed8b7412f8bf2f8b4d6e644415ffefd
+b69eb35a5b634101080a43c52ab323fd1ac3faa0
+e4e43e45f6d1c02c0ffa91a77719a2436dab66d5
+5f3fc87b08437f11bcd55d92618f5cc8129c8931
+8e0fae1a415b8e13427bf66489fd33f362054785
+e188ee0611c594e582f7b3c18adb2c65ce2fe3a9
+5d5c37dd97e4337a71782b42878114c1ba391dd7
+49c5034d79504c2558b57d751ad1bc63006ad2d2
+fc1fc199a1859d5f09454010c6e5d9e91d6ad68c
+84c412b8cd2e945e630120f567402f311defd46e
+473fb813f9d5ccd80270d63d67a02d31a95ce124
+b51c7a8db53f623a2dff1f84ac004da9de06b4d8
+e2a6e5fc12e9ce7015a7e73c4a93627a24fa93ce
+709d07e8f693bd7fb2899735f3ac0a37024f211b
+035438eb210cc122a233eb1c1543946f0bb890f6
+242f6999566658e2cc385639da0fd5d169bd1bac
+626da8c3d4947651afcbb7061e6cf07e2bd3739c
+816f78bd4adc634bd31ff95086f27813b78dcc41
+2a54a13ce90f9ec2b0907631e9995457d7f778ef
+3209ac195e1b47e42811a44ce5affb4764d4072b
+6758cb002b0bbc88e1e8c736f4a770fb190accc7
+d8c889ecc66770e3d388c91860bad31a68fa0803
+25b049f577776529d1e6eb1b651c895eeb8363e2
+eeb1eaad119a1ee5809f88b9af203956fc7f02eb
+86cb8df0f93f1a6cd07f560396de031e4a7abe08
+91d62644a07fc9b3693fffbb3ccfdcbddb4db794
+7ccb9c615e62c349a67e2509eed9741d5d064cae
+47c73b18c4d1eed30af136cdcb36f44fa8f0229f
 28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28
 e0bbbfa860e57f9549736149142c9df8be72433b
 a659fedb44ef2a844282d3de0d5503c567837948
@@ -2177,10 +2220,745 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)
+[//]: # (START_SECTION 088cc51f57dc1d10db80bc911206fb751d60647e)
+### Upgrade Scripts Update
+
+> Commit: [088cc51f57dc1d10db80bc911206fb751d60647e](https://github.com/dOpensource/dsiprouter/commit/088cc51f57dc1d10db80bc911206fb751d60647e)  
+> Date: Wed, 6 Sep 2023 11:40:34 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- bump dsiprouter version
+- reset dsip/kam settings defaults
+- add upgrade path from v0.7x to v0.73
+- fix versioning issue with upgrade scripts
+
+
+---
+
+[//]: # (END_SECTION 088cc51f57dc1d10db80bc911206fb751d60647e)
+[//]: # (START_SECTION 8b1ccf2e53f1da403341957b57bbb4c318f64330)
+### HotFix For Large Domain Names
+
+> Commit: [8b1ccf2e53f1da403341957b57bbb4c318f64330](https://github.com/dOpensource/dsiprouter/commit/8b1ccf2e53f1da403341957b57bbb4c318f64330)  
+> Date: Mon, 28 Aug 2023 21:59:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix large domain names not fitting in DB storage
+
+
+---
+
+[//]: # (END_SECTION 8b1ccf2e53f1da403341957b57bbb4c318f64330)
+[//]: # (START_SECTION ca9e5da8c80b3f9fb09752ebd8e1d2662a55f59a)
+### Cluster Deployment Fixes
+
+> Commit: [ca9e5da8c80b3f9fb09752ebd8e1d2662a55f59a](https://github.com/dOpensource/dsiprouter/commit/ca9e5da8c80b3f9fb09752ebd8e1d2662a55f59a)  
+> Date: Mon, 28 Aug 2023 21:58:49 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add check for missing commands in clusterinstall command
+- add support for choosing ssh key in clusterinstall command
+- add support for choosing ssh key in pacemaker cluster install
+- add support for choosing ssh key in galera cluster install
+- add support for digital ocean virtual IPs in pacemaker cluster install
+- fix galera cluster install service names wrong on debian 11
+- fix local project directory check in clusterinstall command
+- fix pacemaker cluster install invalid hostname resolution in cluster
+- fix pacemaker cluster install missing / conflicting hostname
+- fix pipe checks in shell library functions
+- fix clusterinstall command eating extra argument
+- update pacemaker cluster install to support corosync ver >= 0.10
+- update pacemaker cluster install to manage dsiprouter service as well
+- update pacemaker cluster install to use firewalld by default
+- update pacemaker cluster install to add cluster nodes by internal IP
+- update galera cluster install to use firewalld by default
+- update galera cluster install to add cluster nodes by internal IP
+- update clusterinstall command to use rsync instead of scp
+- update clusterinstall command to reuse credentials when cluster sync enabled
+
+
+---
+
+[//]: # (END_SECTION ca9e5da8c80b3f9fb09752ebd8e1d2662a55f59a)
+[//]: # (START_SECTION d663e2342ac65b1d559376fe3e7db6582648efec)
+### Hotfix For Dnsmasq
+
+> Commit: [d663e2342ac65b1d559376fe3e7db6582648efec](https://github.com/dOpensource/dsiprouter/commit/d663e2342ac65b1d559376fe3e7db6582648efec)  
+> Date: Fri, 18 Aug 2023 12:02:03 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix integration with resolvconf
+- fix ordering of dsiprouter module install
+
+
+---
+
+[//]: # (END_SECTION d663e2342ac65b1d559376fe3e7db6582648efec)
+[//]: # (START_SECTION 71f2577294ad7dddf7206fe30a362d29880a124d)
+### Hotfix For UAC Registration
+
+> Commit: [71f2577294ad7dddf7206fe30a362d29880a124d](https://github.com/dOpensource/dsiprouter/commit/71f2577294ad7dddf7206fe30a362d29880a124d)  
+> Date: Mon, 14 Aug 2023 09:14:52 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix uac registration when external fqdn is non-routable
+
+
+---
+
+[//]: # (END_SECTION 71f2577294ad7dddf7206fe30a362d29880a124d)
+[//]: # (START_SECTION 768793973e59ce600a909a29d744e5edaee3f934)
+### Hotfix For Flood Detection
+
+> Commit: [768793973e59ce600a909a29d744e5edaee3f934](https://github.com/dOpensource/dsiprouter/commit/768793973e59ce600a909a29d744e5edaee3f934)  
+> Date: Thu, 10 Aug 2023 15:13:17 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update flood detection to check any source other than self
+
+
+---
+
+[//]: # (END_SECTION 768793973e59ce600a909a29d744e5edaee3f934)
+[//]: # (START_SECTION 0e7e43b0471528a7dc9175c0939bb93bf9f34c85)
+### HotFix For CDR Generation
+
+> Commit: [0e7e43b0471528a7dc9175c0939bb93bf9f34c85](https://github.com/dOpensource/dsiprouter/commit/0e7e43b0471528a7dc9175c0939bb93bf9f34c85)  
+> Date: Fri, 4 Aug 2023 07:27:12 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #514
+
+
+---
+
+[//]: # (END_SECTION 0e7e43b0471528a7dc9175c0939bb93bf9f34c85)
+[//]: # (START_SECTION 997f911ecce2f4df036a30bed2e488ca983c3fba)
+### HotFix For Settings Update in Cluster Mode
+
+> Commit: [997f911ecce2f4df036a30bed2e488ca983c3fba](https://github.com/dOpensource/dsiprouter/commit/997f911ecce2f4df036a30bed2e488ca983c3fba)  
+> Date: Thu, 3 Aug 2023 13:02:30 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fixed (temp) dsiprouter settings not synced in cluster mode
+
+
+---
+
+[//]: # (END_SECTION 997f911ecce2f4df036a30bed2e488ca983c3fba)
+[//]: # (START_SECTION e1f402ac7faf5604be924bc693cd389fd4ebd3fb)
+### Kamailio Config HotFixes
+
+> Commit: [e1f402ac7faf5604be924bc693cd389fd4ebd3fb](https://github.com/dOpensource/dsiprouter/commit/e1f402ac7faf5604be924bc693cd389fd4ebd3fb)  
+> Date: Wed, 2 Aug 2023 08:58:45 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix sdp only updated on INVITE
+- fix IP Address ban not refreshed on next request from banned IP
+
+
+---
+
+[//]: # (END_SECTION e1f402ac7faf5604be924bc693cd389fd4ebd3fb)
+[//]: # (START_SECTION 6d2aa297487b38829ba832aec10ddc1e3b3d7f10)
+### Cluster Mode HotFixes
+
+> Commit: [6d2aa297487b38829ba832aec10ddc1e3b3d7f10](https://github.com/dOpensource/dsiprouter/commit/6d2aa297487b38829ba832aec10ddc1e3b3d7f10)  
+> Date: Wed, 2 Aug 2023 08:56:00 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix charset mismatches with mysql enterprise
+- fix DSIP_UNIX_SOCK and DSIP_IPC_SOCK swapped on DB update in cluster mode
+- fix DB update broken in cluster mode from sqlalchemy version update
+
+
+---
+
+[//]: # (END_SECTION 6d2aa297487b38829ba832aec10ddc1e3b3d7f10)
+[//]: # (START_SECTION 8adead794dcb8fcea85b07819c2738ada08771ae)
+### Update use-cases.rst
+
+> Commit: [8adead794dcb8fcea85b07819c2738ada08771ae](https://github.com/dOpensource/dsiprouter/commit/8adead794dcb8fcea85b07819c2738ada08771ae)  
+> Date: Thu, 20 Jul 2023 17:04:13 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8adead794dcb8fcea85b07819c2738ada08771ae)
+[//]: # (START_SECTION 55ac4519606a16f54c383c6de10d34725261c8a7)
+### Update 22.sh
+
+> Commit: [55ac4519606a16f54c383c6de10d34725261c8a7](https://github.com/dOpensource/dsiprouter/commit/55ac4519606a16f54c383c6de10d34725261c8a7)  
+> Date: Wed, 19 Jul 2023 13:52:13 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 55ac4519606a16f54c383c6de10d34725261c8a7)
+[//]: # (START_SECTION d4a6a915bc7a4ef12c14899214df01a840c4fe01)
+### Update 20.sh
+
+> Commit: [d4a6a915bc7a4ef12c14899214df01a840c4fe01](https://github.com/dOpensource/dsiprouter/commit/d4a6a915bc7a4ef12c14899214df01a840c4fe01)  
+> Date: Wed, 19 Jul 2023 13:51:08 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d4a6a915bc7a4ef12c14899214df01a840c4fe01)
+[//]: # (START_SECTION 51eb9e2614dae7f49dca658e10c268433cf19702)
+### Update 10.sh
+
+> Commit: [51eb9e2614dae7f49dca658e10c268433cf19702](https://github.com/dOpensource/dsiprouter/commit/51eb9e2614dae7f49dca658e10c268433cf19702)  
+> Date: Wed, 19 Jul 2023 13:49:52 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 51eb9e2614dae7f49dca658e10c268433cf19702)
+[//]: # (START_SECTION 350e777e101b3e0b70134f8571a598348ede7d44)
+### Fixed issue with StirShaken not able to be disbaled
+
+> Commit: [350e777e101b3e0b70134f8571a598348ede7d44](https://github.com/dOpensource/dsiprouter/commit/350e777e101b3e0b70134f8571a598348ede7d44)  
+> Date: Tue, 18 Jul 2023 21:26:55 +0000  
+> Author: root (root@mack-dsip-v0.7210)  
+> Committer: root (root@mack-dsip-v0.7210)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 350e777e101b3e0b70134f8571a598348ede7d44)
+[//]: # (START_SECTION 904879953e2217394b364f7464101dafcdce5e98)
+### Update 11.sh
+
+> Commit: [904879953e2217394b364f7464101dafcdce5e98](https://github.com/dOpensource/dsiprouter/commit/904879953e2217394b364f7464101dafcdce5e98)  
+> Date: Tue, 18 Jul 2023 06:54:50 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 904879953e2217394b364f7464101dafcdce5e98)
+[//]: # (START_SECTION 94f1469f2ed8b7412f8bf2f8b4d6e644415ffefd)
+### Fixed bug with Transnexus UI not able to be enabled
+
+> Commit: [94f1469f2ed8b7412f8bf2f8b4d6e644415ffefd](https://github.com/dOpensource/dsiprouter/commit/94f1469f2ed8b7412f8bf2f8b4d6e644415ffefd)  
+> Date: Mon, 10 Jul 2023 00:33:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 94f1469f2ed8b7412f8bf2f8b4d6e644415ffefd)
+[//]: # (START_SECTION b69eb35a5b634101080a43c52ab323fd1ac3faa0)
+### Fix for the gateway duplication
+
+> Commit: [b69eb35a5b634101080a43c52ab323fd1ac3faa0](https://github.com/dOpensource/dsiprouter/commit/b69eb35a5b634101080a43c52ab323fd1ac3faa0)  
+> Date: Fri, 9 Jun 2023 08:12:01 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b69eb35a5b634101080a43c52ab323fd1ac3faa0)
+[//]: # (START_SECTION e4e43e45f6d1c02c0ffa91a77719a2436dab66d5)
+### Critical Fix - Fixed MSTeams Endpoint Group so that it used 5061
+
+> Commit: [e4e43e45f6d1c02c0ffa91a77719a2436dab66d5](https://github.com/dOpensource/dsiprouter/commit/e4e43e45f6d1c02c0ffa91a77719a2436dab66d5)  
+> Date: Mon, 15 May 2023 10:56:24 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e4e43e45f6d1c02c0ffa91a77719a2436dab66d5)
+[//]: # (START_SECTION 5f3fc87b08437f11bcd55d92618f5cc8129c8931)
+### Critical Fixes - Deleting an Endpoint in CarrierGroup Causes dSIPRouter to become unavailable, Fixed #511 - Endpoint Group Weights are not being retrieved properly, Fixed #512
+
+> Commit: [5f3fc87b08437f11bcd55d92618f5cc8129c8931](https://github.com/dOpensource/dsiprouter/commit/5f3fc87b08437f11bcd55d92618f5cc8129c8931)  
+> Date: Sat, 13 May 2023 00:24:36 +0000  
+> Author: root (root@sbc4-dsip-v0.7210)  
+> Committer: root (root@sbc4-dsip-v0.7210)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5f3fc87b08437f11bcd55d92618f5cc8129c8931)
+[//]: # (START_SECTION 8e0fae1a415b8e13427bf66489fd33f362054785)
+### UI Updated pack ported
+
+> Commit: [8e0fae1a415b8e13427bf66489fd33f362054785](https://github.com/dOpensource/dsiprouter/commit/8e0fae1a415b8e13427bf66489fd33f362054785)  
+> Date: Mon, 1 May 2023 18:34:35 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8e0fae1a415b8e13427bf66489fd33f362054785)
+[//]: # (START_SECTION e188ee0611c594e582f7b3c18adb2c65ce2fe3a9)
+### Hotfixes for v0.72
+
+> Commit: [e188ee0611c594e582f7b3c18adb2c65ce2fe3a9](https://github.com/dOpensource/dsiprouter/commit/e188ee0611c594e582f7b3c18adb2c65ce2fe3a9)  
+> Date: Thu, 27 Apr 2023 13:18:12 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- pin Flask version to 2.2.x
+- fix tagging format
+- update upgrade documentation
+- add support for migrating trnasnexus licenses
+- various bug fixes in migration script
+- fix certbot overwrite on reinstall
+- # Please enter the commit message for your changes. Lines starting
+- # with '#' will be ignored, and an empty message aborts the commit.
+- #
+- # Date:      Thu Apr 27 13:03:19 2023 -0400
+- #
+- # On branch v0.721
+- # Your branch is ahead of 'origin/v0.721' by 1 commit.
+- #   (use "git push" to publish your local commits)
+- #
+- # Changes to be committed:
+- #	modified:   docs/source/user/upgrade.rst
+- #	modified:   dsiprouter.sh
+- #	modified:   gui/dsiprouter.py
+- #	modified:   gui/modules/api/licensemanager/routes.py
+- #	modified:   gui/requirements.txt
+- #	modified:   gui/settings.py
+- #	modified:   kamailio/almalinux/8.sh
+- #	modified:   kamailio/amzn/2.sh
+- #	modified:   kamailio/configs/kamailio.cfg
+- #	modified:   kamailio/debian/10.sh
+- #	modified:   kamailio/debian/11.sh
+- #	modified:   kamailio/debian/9.sh
+- #	modified:   kamailio/rhel/8.sh
+- #	modified:   kamailio/rocky/8.sh
+- #	modified:   kamailio/ubuntu/20.sh
+- #	modified:   kamailio/ubuntu/22.sh
+- #	modified:   resources/git/hooks/pre-commit
+- #	modified:   resources/upgrade/v0.721/scripts/bootstrap.sh
+- #	modified:   resources/upgrade/v0.721/scripts/migrate.sh
+- #
+
+
+---
+
+[//]: # (END_SECTION e188ee0611c594e582f7b3c18adb2c65ce2fe3a9)
+[//]: # (START_SECTION 5d5c37dd97e4337a71782b42878114c1ba391dd7)
+### Update upgrade.rst
+
+> Commit: [5d5c37dd97e4337a71782b42878114c1ba391dd7](https://github.com/dOpensource/dsiprouter/commit/5d5c37dd97e4337a71782b42878114c1ba391dd7)  
+> Date: Wed, 26 Apr 2023 02:01:57 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Added the steps to migrate from 0.70 to 0.721
+
+
+---
+
+[//]: # (END_SECTION 5d5c37dd97e4337a71782b42878114c1ba391dd7)
+[//]: # (START_SECTION 49c5034d79504c2558b57d751ad1bc63006ad2d2)
+### Fixed issue with upgrade script
+
+> Commit: [49c5034d79504c2558b57d751ad1bc63006ad2d2](https://github.com/dOpensource/dsiprouter/commit/49c5034d79504c2558b57d751ad1bc63006ad2d2)  
+> Date: Wed, 26 Apr 2023 05:27:08 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 49c5034d79504c2558b57d751ad1bc63006ad2d2)
+[//]: # (START_SECTION fc1fc199a1859d5f09454010c6e5d9e91d6ad68c)
+### Updated migration scripts to handle upgrading the shared memory
+
+> Commit: [fc1fc199a1859d5f09454010c6e5d9e91d6ad68c](https://github.com/dOpensource/dsiprouter/commit/fc1fc199a1859d5f09454010c6e5d9e91d6ad68c)  
+> Date: Wed, 26 Apr 2023 03:40:20 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fc1fc199a1859d5f09454010c6e5d9e91d6ad68c)
+[//]: # (START_SECTION 84c412b8cd2e945e630120f567402f311defd46e)
+### Added Upgrade to v0.721 logic
+
+> Commit: [84c412b8cd2e945e630120f567402f311defd46e](https://github.com/dOpensource/dsiprouter/commit/84c412b8cd2e945e630120f567402f311defd46e)  
+> Date: Wed, 26 Apr 2023 02:36:22 +0000  
+> Author: root (root@sbc4.customers.dsiprouter.net)  
+> Committer: root (root@sbc4.customers.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 84c412b8cd2e945e630120f567402f311defd46e)
+[//]: # (START_SECTION 473fb813f9d5ccd80270d63d67a02d31a95ce124)
+### Bug Fixes
+
+> Commit: [473fb813f9d5ccd80270d63d67a02d31a95ce124](https://github.com/dOpensource/dsiprouter/commit/473fb813f9d5ccd80270d63d67a02d31a95ce124)  
+> Date: Tue, 25 Apr 2023 14:33:57 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #504
+- fix credential updates broken
+- fix DNS resolution for local DNS providers
+- update login info display to include domain
+- update gitignore to exclude generated files in repo dir
+
+
+---
+
+[//]: # (END_SECTION 473fb813f9d5ccd80270d63d67a02d31a95ce124)
+[//]: # (START_SECTION b51c7a8db53f623a2dff1f84ac004da9de06b4d8)
+### MS Teams Address Table Fix
+
+> Commit: [b51c7a8db53f623a2dff1f84ac004da9de06b4d8](https://github.com/dOpensource/dsiprouter/commit/b51c7a8db53f623a2dff1f84ac004da9de06b4d8)  
+> Date: Tue, 25 Apr 2023 12:29:54 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix address entries for default ms teams endpoints
+
+
+---
+
+[//]: # (END_SECTION b51c7a8db53f623a2dff1f84ac004da9de06b4d8)
+[//]: # (START_SECTION e2a6e5fc12e9ce7015a7e73c4a93627a24fa93ce)
+### Update dsip_settings.sql
+
+> Commit: [e2a6e5fc12e9ce7015a7e73c4a93627a24fa93ce](https://github.com/dOpensource/dsiprouter/commit/e2a6e5fc12e9ce7015a7e73c4a93627a24fa93ce)  
+> Date: Fri, 21 Apr 2023 13:14:52 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- Changed HOMER_ID type from INT to BIGINT
+
+
+---
+
+[//]: # (END_SECTION e2a6e5fc12e9ce7015a7e73c4a93627a24fa93ce)
+[//]: # (START_SECTION 709d07e8f693bd7fb2899735f3ac0a37024f211b)
+### MSTeams Fix
+
+> Commit: [709d07e8f693bd7fb2899735f3ac0a37024f211b](https://github.com/dOpensource/dsiprouter/commit/709d07e8f693bd7fb2899735f3ac0a37024f211b)  
+> Date: Fri, 21 Apr 2023 11:36:06 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Fixed the UI so that domains of type MSTeams shows up correctly
+- - Updated the Kamailio configurtion to use 3 as the MSTeams domain type
+- - Changed the MSTEAMS Endpoints back to using TLS and port 5061
+
+
+---
+
+[//]: # (END_SECTION 709d07e8f693bd7fb2899735f3ac0a37024f211b)
+[//]: # (START_SECTION 035438eb210cc122a233eb1c1543946f0bb890f6)
+### Credentials Update Hotfix
+
+> Commit: [035438eb210cc122a233eb1c1543946f0bb890f6](https://github.com/dOpensource/dsiprouter/commit/035438eb210cc122a233eb1c1543946f0bb890f6)  
+> Date: Wed, 19 Apr 2023 11:08:04 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix formatting issue with new version of `DSIP_ID` in `setCredentials()`
+
+
+---
+
+[//]: # (END_SECTION 035438eb210cc122a233eb1c1543946f0bb890f6)
+[//]: # (START_SECTION 242f6999566658e2cc385639da0fd5d169bd1bac)
+### Better Coverage For DB Update HotFix
+
+> Commit: [242f6999566658e2cc385639da0fd5d169bd1bac](https://github.com/dOpensource/dsiprouter/commit/242f6999566658e2cc385639da0fd5d169bd1bac)  
+> Date: Tue, 18 Apr 2023 16:15:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix extra test cases found in 816f78bd4adc634bd31ff95086f27813b78dcc41
+
+
+---
+
+[//]: # (END_SECTION 242f6999566658e2cc385639da0fd5d169bd1bac)
+[//]: # (START_SECTION 626da8c3d4947651afcbb7061e6cf07e2bd3739c)
+### Domain Pass-thru Fixes - Fixed the PBX_TO_ENDPOINT_LOOKUP to lookup the location of an endpoint only if the request is coming from a PBX and the IP Address is private
+
+> Commit: [626da8c3d4947651afcbb7061e6cf07e2bd3739c](https://github.com/dOpensource/dsiprouter/commit/626da8c3d4947651afcbb7061e6cf07e2bd3739c)  
+> Date: Tue, 18 Apr 2023 19:17:58 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 626da8c3d4947651afcbb7061e6cf07e2bd3739c)
+[//]: # (START_SECTION 816f78bd4adc634bd31ff95086f27813b78dcc41)
+### DB Sync and Certbot Hotfix
+
+> Commit: [816f78bd4adc634bd31ff95086f27813b78dcc41](https://github.com/dOpensource/dsiprouter/commit/816f78bd4adc634bd31ff95086f27813b78dcc41)  
+> Date: Tue, 18 Apr 2023 15:03:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix issue where `dsip_settings` table was not updating properly
+- fix missing python package for updated certbot version
+
+
+---
+
+[//]: # (END_SECTION 816f78bd4adc634bd31ff95086f27813b78dcc41)
+[//]: # (START_SECTION 2a54a13ce90f9ec2b0907631e9995457d7f778ef)
+### Update Default Settings
+
+> Commit: [2a54a13ce90f9ec2b0907631e9995457d7f778ef](https://github.com/dOpensource/dsiprouter/commit/2a54a13ce90f9ec2b0907631e9995457d7f778ef)  
+> Date: Mon, 17 Apr 2023 09:41:32 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- reset default dsiprouter and kamailio settings
+- update dsiprouter version number
+
+
+---
+
+[//]: # (END_SECTION 2a54a13ce90f9ec2b0907631e9995457d7f778ef)
+[//]: # (START_SECTION 3209ac195e1b47e42811a44ce5affb4764d4072b)
+### Patch Dependencies and Backup Feature
+
+> Commit: [3209ac195e1b47e42811a44ce5affb4764d4072b](https://github.com/dOpensource/dsiprouter/commit/3209ac195e1b47e42811a44ce5affb4764d4072b)  
+> Date: Mon, 17 Apr 2023 09:22:01 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #503
+- fix `josepy` and `acme` dependencies after certbot version update
+- fix `send_file` function calls after Flask version update
+
+
+---
+
+[//]: # (END_SECTION 3209ac195e1b47e42811a44ce5affb4764d4072b)
+[//]: # (START_SECTION 6758cb002b0bbc88e1e8c736f4a770fb190accc7)
+### Cert / MS Teams HotFix
+
+> Commit: [6758cb002b0bbc88e1e8c736f4a770fb190accc7](https://github.com/dOpensource/dsiprouter/commit/6758cb002b0bbc88e1e8c736f4a770fb190accc7)  
+> Date: Fri, 14 Apr 2023 16:14:53 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix DST_Root_CA_X3 expired in lets encrypt chain
+- update certbot install version
+- fix uploading certs only parses the first cert in the chain
+- fix MS Teams inbound routing
+- fix MS Teams outbound routing via IP address
+- add option to route MS Teams domain via FQDN
+- fix MS Teams default address settings typo
+- fix kamailio TLS reload bug
+- update default memory allocatoin for kamailio
+- fix kamailio does not update TLS cert when reloading
+
+
+---
+
+[//]: # (END_SECTION 6758cb002b0bbc88e1e8c736f4a770fb190accc7)
+[//]: # (START_SECTION d8c889ecc66770e3d388c91860bad31a68fa0803)
+### handle a bug where multiple addresses are returned from the db.
+
+> Commit: [d8c889ecc66770e3d388c91860bad31a68fa0803](https://github.com/dOpensource/dsiprouter/commit/d8c889ecc66770e3d388c91860bad31a68fa0803)  
+> Date: Thu, 13 Apr 2023 08:50:04 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d8c889ecc66770e3d388c91860bad31a68fa0803)
+[//]: # (START_SECTION 25b049f577776529d1e6eb1b651c895eeb8363e2)
+### MSTeams fix - The load balancing attribute will not be set when creating an endpoint group of type Microsoft Teams
+
+> Commit: [25b049f577776529d1e6eb1b651c895eeb8363e2](https://github.com/dOpensource/dsiprouter/commit/25b049f577776529d1e6eb1b651c895eeb8363e2)  
+> Date: Thu, 13 Apr 2023 14:04:41 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 25b049f577776529d1e6eb1b651c895eeb8363e2)
+[//]: # (START_SECTION eeb1eaad119a1ee5809f88b9af203956fc7f02eb)
+### MSTeams fix - A dispatcher load balancing gorup will not be created when a MSTeams domain is created
+
+> Commit: [eeb1eaad119a1ee5809f88b9af203956fc7f02eb](https://github.com/dOpensource/dsiprouter/commit/eeb1eaad119a1ee5809f88b9af203956fc7f02eb)  
+> Date: Thu, 13 Apr 2023 13:26:45 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION eeb1eaad119a1ee5809f88b9af203956fc7f02eb)
+[//]: # (START_SECTION 86cb8df0f93f1a6cd07f560396de031e4a7abe08)
+### Licensing Patch
+
+> Commit: [86cb8df0f93f1a6cd07f560396de031e4a7abe08](https://github.com/dOpensource/dsiprouter/commit/86cb8df0f93f1a6cd07f560396de031e4a7abe08)  
+> Date: Fri, 7 Apr 2023 14:54:27 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add support for variable length license keys
+- fix error handling in license manager
+- update error message for license check failures
+- fix `stop` command scope issue in CLI
+
+
+---
+
+[//]: # (END_SECTION 86cb8df0f93f1a6cd07f560396de031e4a7abe08)
+[//]: # (START_SECTION 91d62644a07fc9b3693fffbb3ccfdcbddb4db794)
+### Added a fix to select the Correct load balance ID in the UI of the inbound route page
+
+> Commit: [91d62644a07fc9b3693fffbb3ccfdcbddb4db794](https://github.com/dOpensource/dsiprouter/commit/91d62644a07fc9b3693fffbb3ccfdcbddb4db794)  
+> Date: Tue, 4 Apr 2023 07:06:23 -0600  
+> Author: Maurice Rogers (cruzer45@gmail.com)  
+> Committer: Maurice Rogers (cruzer45@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 91d62644a07fc9b3693fffbb3ccfdcbddb4db794)
+[//]: # (START_SECTION 7ccb9c615e62c349a67e2509eed9741d5d064cae)
 ### Update Documentation for v0.72
 
-> Commit: [0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25](https://github.com/dOpensource/dsiprouter/commit/0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)  
+> Commit: [7ccb9c615e62c349a67e2509eed9741d5d064cae](https://github.com/dOpensource/dsiprouter/commit/7ccb9c615e62c349a67e2509eed9741d5d064cae)  
 > Date: Mon, 3 Apr 2023 15:52:09 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2193,7 +2971,24 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 0ad6e3d9fad4a59b025b47c8fec57523e8fa0a25)
+[//]: # (END_SECTION 7ccb9c615e62c349a67e2509eed9741d5d064cae)
+[//]: # (START_SECTION 47c73b18c4d1eed30af136cdcb36f44fa8f0229f)
+### Update Documentation for v0.72
+
+> Commit: [47c73b18c4d1eed30af136cdcb36f44fa8f0229f](https://github.com/dOpensource/dsiprouter/commit/47c73b18c4d1eed30af136cdcb36f44fa8f0229f)  
+> Date: Mon, 3 Apr 2023 15:52:09 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update boostrap command
+- update changelog
+
+
+---
+
+[//]: # (END_SECTION 47c73b18c4d1eed30af136cdcb36f44fa8f0229f)
 [//]: # (START_SECTION 28309c1a2d37d8ec3b3e3bfdbce1afda1c33ca28)
 ### v0.72 Release Bug Fix
 

@@ -4056,6 +4056,11 @@ function processCMD() {
                             usageOptions
                             cleanupAndExit 1
                         fi
+
+                        # format as per branch name if given as version number
+                        if [[ "${UPGRADE_RELEASE:0:1}" != "v" ]]; then
+                            UPGRADE_RELEASE="v${UPGRADE_RELEASE}"
+                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -4069,7 +4074,8 @@ function processCMD() {
             # use latest release if none specified
             if [[ -z "$UPGRADE_RELEASE" ]]; then
                 TMP=$(curl -s "https://api.github.com/repos/dOpensource/dsiprouter/releases/latest") &&
-                    UPGRADE_RELEASE=$(jq -r '.tag_name' <<<"$TMP") || {
+                TMP=$(jq -e -r '.tag_name' <<<"$TMP") &&
+                UPGRADE_RELEASE=$(grep -oP 'v[0-9]+\.[0-9]+' <<<"$TMP") || {
                         printerr "Could not retrieve latest release candidate"
                         cleanupAndExit 1
                     }
