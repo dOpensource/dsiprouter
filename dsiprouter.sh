@@ -199,16 +199,15 @@ function setDynamicScriptSettings() {
 #			export IPV6_ENABLED=0
 #		fi
 
+        # the address we put in the contact when registering to carriers via uac module
+        # by default it is set to the external IP of this server
+        export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
+
         export INTERNAL_FQDN=$(getInternalFQDN)
         export EXTERNAL_FQDN=$(getExternalFQDN)
         if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
             # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
-            # if external fqdn is not routable we must use the external IP as the uac registration address
-            export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
-        else
-            # external fqdn is routable, use it as the uac registration address
-            export UAC_REG_ADDR="$EXTERNAL_FQDN"
         fi
     # network settings pulled from env variables or from config file
     elif (( $NETWORK_MODE == 1 )); then
@@ -258,16 +257,15 @@ function setDynamicScriptSettings() {
 #			export IPV6_ENABLED=0
 #		fi
 
+        # the address we put in the contact when registering to carriers via uac module
+        # by default it is set to the external IP of this server
+        export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
+
         export INTERNAL_FQDN=$(getInternalFQDN)
         export EXTERNAL_FQDN=$(getExternalFQDN)
         if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
             # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
-            # if external fqdn is not routable we must use the external IP as the uac registration address
-            export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
-        else
-            # external fqdn is routable, use it as the uac registration address
-            export UAC_REG_ADDR="$EXTERNAL_FQDN"
         fi
     else
         printerr 'Network Mode is invalid, can not proceed any further'
