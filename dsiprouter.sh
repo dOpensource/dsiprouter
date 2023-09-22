@@ -2054,6 +2054,10 @@ function installDnsmasq() {
 
     # ipv6 compatibility
     # TODO: marked for review, only one or the other is needed here, not both addresses
+    
+    # A special shell variable IFS determines how Bash recognizes word boundaries 
+    # while splitting a sequence of character strings
+    IFS=""
     if (( ${IPV6_ENABLED} == 1 )); then
         DNSMASQ_LISTEN_ADDRS="127.0.0.1,::1"
         DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1" "nameserver ::1")
