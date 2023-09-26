@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.721'
+VERSION = '0.73'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -139,7 +139,7 @@ MAIL_USE_TLS = True
 MAIL_USERNAME = ''
 MAIL_PASSWORD = ''
 MAIL_ASCII_ATTACHMENTS = False
-MAIL_DEFAULT_SENDER = 'dSIPRouter sip.dsiprouter.org <>'
+MAIL_DEFAULT_SENDER = 'dSIPRouter <donotreply@sip.dsiprouter.org>'
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
 # dSIPRouter licensing
@@ -152,6 +152,9 @@ DSIP_MSTEAMS_LICENSE = ''
 
 ################# Local-Only Settings ####################
 # settings in this section are not stored on the DB
+
+# the fqdn / ip address used by uac/nathelper modules when contacting other servers
+UAC_REG_ADDR = ''
 
 # Cloud Platform
 # The cloud platform the dSIPRouter is installed on

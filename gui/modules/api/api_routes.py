@@ -2356,7 +2356,7 @@ def fetchNumberEnrichment(request_payload=None):
 # TODO: standardize response payload (use data param)
 # TODO: stop shadowing builtin functions! -> type == builtin
 # return value should be used in an http/flask context
-def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfilter='', nonCompletedCalls=True):
+def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None):
     """
     Generate CDRs Report for a gwgroup
 
@@ -2385,7 +2385,18 @@ def generateCDRS(gwgroupid, type=None, email=False, dtfilter=datetime.min, cdrfi
 
         if isinstance(gwgroupid, int):
             gwgroupid = str(gwgroupid)
-        type = type.lower()
+        if type is None:
+            type = 'json'
+        else:
+            type = type.lower()
+        if email is None:
+            email = False
+        if dtfilter is None:
+            dtfilter = datetime.min
+        if cdrfilter is None:
+            cdrfilter = ''
+        if nonCompletedCalls is None:
+            nonCompletedCalls = True
 
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
@@ -2526,9 +2537,9 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None, dtfi
     if email is None:
         email = bool(request.args.get('email', False))
     if filter is None:
-        filter = request.args.get('filter', '')
+        filter = request.args.get('filter', None)
     if dtfilter is None:
-        dtfilter = request.args.get('dtfilter', '')
+        dtfilter = request.args.get('dtfilter', None)
     if nonCompletedCalls is None:
         nonCompletedCalls = bool(request.args.get('nonCompletedCalls', True))
 

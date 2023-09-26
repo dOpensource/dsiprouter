@@ -42,6 +42,12 @@ export DSIP_LIB_IMPORTED=1
 # Printing functions and String Manipulation #
 ##############################################
 
+# checks if stdin is null and sets STDIN_FIRST_BYTE to first character of stdin
+function isStdinNull() {
+    local c
+    read -r -d '' c
+}
+
 function printerr() {
     if [[ "$1" == "-n" ]]; then
         shift; printf "%b%s%b" "${ANSI_RED}" "$*" "${ANSI_NONE}"
@@ -79,29 +85,44 @@ function pprint() {
 export -f pprint
 
 function tolower() {
-    if [[ -t 0 ]]; then
+    [[ -p /dev/stdin ]] &&
+    (
+        read -r -d '' INPUT
+        [[ -z "$INPUT" ]] && exit 1
+        tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ]' '[abcdefghijklmnopqrstuvwxyz]' <<<"$INPUT"
+        exit 0
+    ) ||
+    {
         printf '%s' "$1" | tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ]' '[abcdefghijklmnopqrstuvwxyz]'
-    else
-        tr '[ABCDEFGHIJKLMNOPQRSTUVWXYZ]' '[abcdefghijklmnopqrstuvwxyz]' </dev/stdin
-    fi
+    }
 }
 export -f tolower
 
 function toupper() {
-    if [[ -t 0 ]]; then
+    [[ -p /dev/stdin ]] &&
+    (
+        read -r -d '' INPUT
+        [[ -z "$INPUT" ]] && exit 1
+        tr '[abcdefghijklmnopqrstuvwxyz]' '[ABCDEFGHIJKLMNOPQRSTUVWXYZ]' <<<"$INPUT"
+        exit 0
+    ) ||
+    {
         printf '%s' "$1" | tr '[abcdefghijklmnopqrstuvwxyz]' '[ABCDEFGHIJKLMNOPQRSTUVWXYZ]'
-    else
-        tr '[abcdefghijklmnopqrstuvwxyz]' '[ABCDEFGHIJKLMNOPQRSTUVWXYZ]' </dev/stdin
-    fi
+    }
 }
 export -f toupper
 
 function hextoint() {
-	if [[ -t 0 ]]; then
-		printf '%d' "0x$1" 2>/dev/null
-	else
-		printf '%d' "0x$(</dev/stdin)" 2>/dev/null
-	fi
+    [[ -p /dev/stdin ]] &&
+    (
+        read -r -d '' INPUT
+        [[ -z "$INPUT" ]] && exit 1
+        printf '%d' "0x$INPUT" 2>/dev/null
+        exit 0
+    ) ||
+    {
+        printf '%d' "0x$1" 2>/dev/null
+    }
 }
 export -f hextoint
 
@@ -767,8 +788,8 @@ export -f checkConn
 # $@ == ssh command to test
 # returns: 0 == ssh connected, 1 == ssh could not connect
 function checkSSH() {
-    local SSH_CMD="$@ -o ConnectTimeout=5 -q 'exit 0'"
-    bash -c "${SSH_CMD}" 2>&1 > /dev/null; return $?
+    $@ -o ConnectTimeout=5 'exit 0' &>/dev/null
+    return $?
 }
 export -f checkSSH
 
@@ -996,7 +1017,7 @@ export -f dumpDBUser
 #           --db=<mysql database name>
 # returns:  0 if DB exists, 1 otherwise
 function sqlAsTransaction() {
-    local MYSQL_DBNAME
+    local MYSQL_DBNAME TMP
     local MYSQL_USER=${MYSQL_USER:-root}
     local MYSQL_PASS=${MYSQL_PASS:-}
     local MYSQL_HOST=${MYSQL_HOST:-localhost}
@@ -1036,8 +1057,9 @@ function sqlAsTransaction() {
     MYSQL_DBNAME=${MYSQL_DBNAME:-mysql}
 
     # if query was piped to stdin use that instead of positional args
-    if [[ ! -t 0 ]]; then
-        SQL_STATEMENTS=( $(</dev/stdin) )
+    if [[ -p /dev/stdin ]]; then
+        read -r -d '' TMP
+        [[ -n "$TMP" ]] && SQL_STATEMENTS=( "$TMP" )
     fi
 
     local STATUS=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" ${MYSQL_DBNAME} 2>/dev/null << EOF
@@ -1194,7 +1216,7 @@ function hashCreds() {
 	local PYTHON=${PYTHON_CMD:-python3}
 
 	# grab credentials from stdin if provided
-	if [[ ! -t 0 ]]; then
+	if [[ -p /dev/stdin ]]; then
 		CREDS=$(</dev/stdin)
 	fi
 

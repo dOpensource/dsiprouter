@@ -244,23 +244,18 @@ getPkgVer() {
     esac
 }
 
-# usage: dumpMysqlDatabases [options]
+# usage: dumpMysqlDatabases [options] [ <[user1[:pass]@]host1[:port]> <[user1[:pass]@]host2[:port]> ... ]
 # options:  -a|--all
 #           -f|--full
 #           -m|--merge
 #           -g|--grants
-#           --user=<mysql user>
-#           --pass=<mysql password>
-#           --host=<mysql host>
-#           --port=<mysql port>
 # notes: redirect output sql as needed (in shell)
 dumpMysqlDatabases() {
-    local OPT=""
-    local KEY=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
+    local KEY="full" #default
+    local OPT NODE USER PASS HOST PORT NON_SYSTEM_DB
+    local IDX=0 IDX_MAX=0 IDX_LAST=0
+    local USERS=() PASSES=() HOSTS=() PORTS=()
+
 
     while (( $# > 0 )); do
         OPT="$1"
@@ -281,52 +276,85 @@ dumpMysqlDatabases() {
                 KEY="grants"
                 shift
                 ;;
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            *)  # no valid args skip
+            *)
+                NODE="$1"
+                USER=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
+                PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
+                HOST=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1)
+                PORT=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -s -d ':' -f 2-)
+                USERS+=(${USER:-root})
+                PASSES+=(${PASS:-})
+                HOSTS+=(${HOST:-localhost})
+                PORTS+=(${PORT:-3306})
+                IDX_MAX=$(( IDX_MAX + 1 ))
                 shift
                 ;;
         esac
     done
 
+    IDX_LAST=$(( IDX_MAX - 1 ))
+
+    # key is not handled
+    case "$KEY" in
+        all|full|merge|grants) ;;
+        *) return 1;;
+    esac
+
     # for all databases
     if [[ "$KEY" == "all" ]] || [[ "$KEY" == "full" ]]; then
-        mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges --hex-blob \
-            --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" 2>/dev/null \
-            | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g'
+        IDX=0
+        while (( $IDX < $IDX_MAX )); do
+            mysqldump --single-transaction --opt --events --routines --triggers --all-databases --add-drop-database --flush-privileges --hex-blob \
+                --user="${USERS[$IDX]}" --password="${PASSES[$IDX]}" --port="${PORTS[$IDX]}" --host="${HOSTS[$IDX]}" 2>/dev/null \
+                | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g'
+            IDX=$(( IDX + 1 ))
+        done
     fi
     # for merging non system databases
-    if [[ "$KEY" == "all" ]] || [[ "$KEY" == "merge" ]]; then
-        local NON_SYSTEM_DB=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+    if [[ "$KEY" == "merge" ]]; then
+        # TODO: handle nodes other than 1st have other non-system DBs
+        NON_SYSTEM_DB=$(mysql -sN --user="${USERS[0]}" --password="${PASSES[0]}" --port="${PORTS[0]}" --host="${HOSTS[0]}" \
             -e "SELECT schema_name FROM information_schema.schemata WHERE schema_name NOT IN ('mysql','information_schema','performance_schema')" 2>/dev/null)
-        mysqldump --single-transaction --opt --routines --triggers --skip-add-drop-table --insert-ignore --hex-blob \
-            --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${NON_SYSTEM_DB} 2>/dev/null \
-            | perl -0777 -p -e 's/CREATE TABLE (`(.+?)`.+?;)/CREATE TABLE IF NOT EXISTS \1\n\nTRUNCATE TABLE `\2`;\n/gs' \
-            | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g'
+
+        while (( $IDX < $IDX_MAX )); do
+            if (( $IDX == 0 )); then
+                # recreate DB schema without triggers
+                mysqldump --single-transaction --skip-opt --quick --skip-triggers --routines --create-options --disable-keys --set-charset --add-drop-database --no-data --skip-comments \
+                     --user="${USERS[$IDX]}" --password="${PASSES[$IDX]}" --port="${PORTS[$IDX]}" --host="${HOSTS[$IDX]}" --databases ${NON_SYSTEM_DB} 2>/dev/null \
+                     | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g'
+            fi
+
+            # fill data from each node
+            mysqldump --single-transaction --skip-opt --skip-triggers --no-create-db --no-create-info --insert-ignore --hex-blob --skip-comments \
+                --user="${USERS[$IDX]}" --password="${PASSES[$IDX]}" --port="${PORTS[$IDX]}" --host="${HOSTS[$IDX]}" --databases ${NON_SYSTEM_DB} 2>/dev/null
+
+            if (( $IDX == $IDX_LAST )); then
+                # recreate DB triggers now that data is processed
+                mysqldump --single-transaction --skip-opt --quick --triggers --no-create-db --no-create-info --no-data --skip-comments \
+                     --user="${USERS[$IDX]}" --password="${PASSES[$IDX]}" --port="${PORTS[$IDX]}" --host="${HOSTS[$IDX]}" --databases ${NON_SYSTEM_DB} 2>/dev/null \
+                     | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g'
+            fi
+
+            IDX=$(( IDX + 1 ))
+        done
     fi
     # for copying privileges
     if [[ "$KEY" == "all" ]] || [[ "$KEY" == "grants" ]]; then
-        mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-            -e "SELECT DISTINCT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" 2>/dev/null \
-            | mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" 2>/dev/null \
-            | sed 's/$/;/g' \
-            | awk '!x[$0]++' &&
-            printf '%s\n' 'FLUSH PRIVILEGES;'
+        (
+            IDX=0
+            while (( $IDX < $IDX_MAX )); do
+                mysql -sN -A --user="${USERS[$IDX]}" --password="${PASSES[$IDX]}" --port="${PORTS[$IDX]}" --host="${HOSTS[$IDX]}" \
+                    -e "SELECT DISTINCT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user<>''" 2>/dev/null \
+                    | mysql -sN -A --user="${USERS[$IDX]}" --password="${PASSES[$IDX]}" --port="${PORTS[$IDX]}" --host="${HOSTS[$IDX]}" 2>/dev/null \
+                    | sed 's/$/;/g' \
+                    | awk '!x[$0]++'
+            IDX=$(( IDX + 1 ))
+            done
+        ) | sort -u
+        echo 'FLUSH PRIVILEGES;'
     fi
+
+    return 0
 }
 
 detectServiceMan() {
@@ -446,7 +474,145 @@ getExternalIP() {
     printf '%s' "$EXTERNAL_IP"
 }
 
-# notes:    prints internal ip addr
+# prints internal ip address for the default route
 getInternalIP() {
-    ip route get 8.8.8.8 | awk 'NR == 1 {print $7}'
+    INTERFACE=$(ip -4 route show default | awk '{print $5}')
+    ip addr show $INTERFACE | awk '/^[ \t]+inet / {print $2}' | cut -f1 -d'/' | head -1
+}
+
+# automate mysql_secure_installation
+# original: https://gist.github.com/kahidna/512b0d507ac90d1cbbf6b0230d38a502
+# $1 == new root password
+# $2 == old root password
+mysqlSecureInstall() {
+    local NEW_MYSQL_PASSWORD="$1"
+    local CURRENT_MYSQL_PASSWORD="$2"
+
+expect <<EOF
+set timeout 3
+spawn mysql_secure_installation
+expect "Enter current password for root (enter for none):"
+send "$CURRENT_MYSQL_PASSWORD\r"
+expect "root password?"
+send "y\r"
+expect "New password:"
+send "$NEW_MYSQL_PASSWORD\r"
+expect "Re-enter new password:"
+send "$NEW_MYSQL_PASSWORD\r"
+expect "Remove anonymous users?"
+send "y\r"
+expect "Disallow root login remotely?"
+send "n\r"
+expect "Remove test database and access to it?"
+send "y\r"
+expect "Reload privilege tables now?"
+send "y\r"
+expect eof
+EOF
+}
+
+getCloudPlatform() {
+    # -- amazon web service check --
+    if curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null; then
+        echo -n 'AWS'
+    # -- digital ocean check --
+    elif curl -s -f --connect-timeout 2 http://169.254.169.254/metadata/v1/id &>/dev/null; then
+        echo -n 'DO'
+    # -- google compute engine check --
+    elif curl -s -f --connect-timeout 2 -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/id &>/dev/null; then
+        echo -n 'GCE'
+    # -- microsoft azure check --
+    elif curl -s -f --connect-timeout 2 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2018-10-01" &>/dev/null; then
+        echo -n 'AZURE'
+    # -- vultr cloud check --
+    elif curl -s -f --connect-timeout 2 http://169.254.169.254/v1/instanceid &>/dev/null; then
+        echo -n 'VULTR'
+    # -- oracle cloud environment check --
+    elif curl -s -f --connect-timeout 2 -H 'Authorization: Bearer Oracle' http://169.254.169.254/opc/v2/instance; then
+        echo -n 'OCE'
+    fi
+    # -- bare metal or unsupported cloud platform --
+}
+
+# $1 == attribute name
+# $2 == python config file
+# output: attribute value
+getConfigAttrib() {
+    local NAME="$1"
+    local CONFIG_FILE="$2"
+
+    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
+}
+
+# $1 == attribute name
+# $2 == attribute value
+# $3 == python config file
+# $4 == -q (quote string) | -qb (quote byte string)
+setConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+
+    if (( $# >= 4 )); then
+        if [[ "$4" == "-q" ]]; then
+            VALUE="'${VALUE}'"
+        elif [[ "$4" == "-qb" ]]; then
+            VALUE="b'${VALUE}'"
+        fi
+    fi
+    sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
+}
+
+# $1 == cmd as executed in systemd (by ExecStart=)
+# $2 == service file to add command to
+# notes: take precaution when adding long running functions as they will block startup in boot order
+# notes: adding init commands on an AMI instance must not be long running processes, otherwise they will fail
+addExcStartCmd() {
+    local CMD=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
+    local SVC_FILE="$2"
+    local TMP_FILE="${SVC_FILE}.tmp"
+
+    # sanity check, does the entry already exist?
+    grep -q -oP "^ExecStart\=.*${CMD}.*" 2>/dev/null ${SVC_FILE} && return 0
+
+    tac ${SVC_FILE} | sed -r "0,\|^ExecStart\=.*|{s|^ExecStart\=.*|ExecStart=${CMD}\n&|}" | tac > ${TMP_FILE}
+    mv -f ${TMP_FILE} ${SVC_FILE}
+
+    systemctl daemon-reload
+}
+
+# $1 == string to match for removal (after ExecStart=)
+# $2 == service file to remove command from
+removeExecStartCmd() {
+    local STR=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
+    local SVC_FILE="$2"
+
+    sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${SVC_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == service name (full name with target) to be dependent
+# $2 == service file to add dependency to
+# notes: only adds startup ordering dependency (service continues if dependency fails)
+# notes: the Before= section of init will link to an After= dependency on daemon-reload
+addDependsOnService() {
+    local SERVICE="$1"
+    local SVC_FILE="$2"
+
+    # sanity check, does the entry already exist?
+    grep -q -oP "^(Before\=|Wants\=).*${SERVICE}.*" 2>/dev/null ${SVC_FILE} && return 0
+
+    perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${SVC_FILE}
+    systemctl daemon-reload
+}
+
+# $1 == service name (full name with target) to remove dependency on
+# $2 == service file to remove dependency from
+removeDependsOnService() {
+    local SERVICE="$1"
+    local SVC_FILE="$2"
+
+    perl -i -e "\$service='$SERVICE';" -pe 's%^((?:Before\=|Wants\=).*?)( ${service}|${service} |${service})(.*)%\1\3%g;' ${SVC_FILE}
+    systemctl daemon-reload
 }

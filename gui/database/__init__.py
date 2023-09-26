@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sq
 from sqlalchemy.orm import registry, sessionmaker, scoped_session
 from sqlalchemy.sql import text
 import settings
-from shared import IO, debugException, dictToStrFields
+from shared import IO, debugException, dictToStrFields, rowToDict
 from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
 
@@ -517,7 +517,7 @@ def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_hos
     if len(db_driver) > 0:
         db_driver = '+{}'.format(db_driver)
     # string template
-    db_uri_str = db_type + db_driver + "://" + db_user + ":" + db_pass + "@" + "{host}" + ":" + db_port + "/" + db_name + "?" + db_charset
+    db_uri_str = db_type + db_driver + "://" + db_user + ":" + db_pass + "@" + "{host}" + ":" + db_port + "/" + db_name + "?charset=" + db_charset
     # for cluster of DB add all hosts
     if isinstance(db_host, list):
         for host in db_host:
@@ -760,6 +760,7 @@ def settingsToTableFormat(settings):
     else:
         kam_db_host = settings.KAM_DB_HOST
 
+    # order matters here, as this is used to update table settings as well
     return OrderedDict([
         ('DSIP_ID', settings.DSIP_ID),
         ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID),
@@ -773,8 +774,8 @@ def settingsToTableFormat(settings):
         ('DSIP_API_PORT', settings.DSIP_API_PORT),
         ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY),
         ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
-        ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK),
         ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK),
+        ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK),
         ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN),
         ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
         ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY),
@@ -866,6 +867,22 @@ def updateDsipSettingsTable(fields):
         db.commit()
     except sql_exceptions.SQLAlchemyError:
         db.rollback()
+        db.flush()
+        raise
+    finally:
+        db.close()
+
+def getDsipSettingsTableAsDict(dsip_id):
+    db = DummySession()
+    try:
+        db = SessionLoader()
+        return rowToDict(
+            db.execute(
+                text('SELECT * FROM dsip_settings WHERE DSIP_ID=:dsip_id'),
+                params={'dsip_id': dsip_id}
+            ).first()
+        )
+    except sql_exceptions.SQLAlchemyError:
         raise
     finally:
         db.close()

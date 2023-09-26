@@ -25,7 +25,7 @@ from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint,
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
     dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
-    settingsToTableFormat
+    settingsToTableFormat, getDsipSettingsTableAsDict
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -2492,11 +2492,7 @@ def syncSettings(new_fields={}, update_net=False):
     :rtype:                 None
     """
 
-    db = DummySession()
-
     try:
-        db = SessionLoader()
-
         # sync settings from settings.py
         if settings.LOAD_SETTINGS_FROM == 'file' or settings.DSIP_ID is None:
             # need to grab any changes on disk b4 merging
@@ -2528,12 +2524,7 @@ def syncSettings(new_fields={}, update_net=False):
 
         # sync settings from dsip_settings table
         elif settings.LOAD_SETTINGS_FROM == 'db':
-            fields = dict(
-                db.execute(
-                    text('SELECT * FROM dsip_settings WHERE DSIP_ID=:dsip_id'),
-                    dsip_id=settings.DSIP_ID
-                ).first().items()
-            )
+            fields = getDsipSettingsTableAsDict(settings.DSIP_ID)
             fields.update(new_fields)
 
             if ',' in fields['KAM_DB_HOST']:
@@ -2550,10 +2541,7 @@ def syncSettings(new_fields={}, update_net=False):
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
         IO.printerr('Could Not Update dsip_settings Database Table')
-        db.rollback()
-        db.flush()
-    finally:
-        db.close()
+        raise
 
 
 def sigHandler(signum=None, frame=None):

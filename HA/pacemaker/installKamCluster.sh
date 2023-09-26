@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 #
-# corosync / pacemaker kamailio cluster config
+# Summary:  corosync / pacemaker kamailio cluster config
+#
 # Notes:    more than 2 nodes may require fencing settings
 #           you must be able to ssh to every node in the cluster from where script is run
 #           supported ssh authentication methods: password, pubkey
-# Usage:    ./installKamCluster.sh [-h|--help] -vip <virtual ip>|-net <subnet cidr> <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ...
+#           supported DB configurations: central, active/active
+##
+# TODO:     support active/passive galera replication
+#           https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary/
+#           better output to user when not in debug mode
 #
 ### log file locations:
 # /var/log/pcsd/pcsd.log
@@ -24,31 +29,58 @@ PACEMAKER_TCP_PORTS=(2224 3121 5403 21064)
 PACEMAKER_UDP_PORTS=(5404 5405)
 CLUSTER_NAME="kamcluster"
 CLUSTER_PASS="$(createPass)"
-CLUSTER_RESOURCE_TIMEOUT=45
+RESOURCE_STARTUP_TIMEOUT=30
+CLUSTER_OPTIONS=(transport udpu link bindnetaddr=0.0.0.0 broadcast=1)
 KAM_VIP=""
-CIDR_NETMASK="24"
+CIDR_NETMASK="32"
 DSIP_PROJECT_DIR="/opt/dsiprouter"
-DSIP_SCRIPT="${DSIP_PROJECT_DIR}/dsiprouter.sh"
-SSH_DEFAULT_OPTS="-o StrictHostKeyChecking=no -o CheckHostIp=no -o ServerAliveInterval=5 -o ServerAliveCountMax=2"
+DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
+STATIC_NETWORKING_MODE=1
+RETRY_CLUSTER_START=3
+RETRY_SHH_CONNECT=3 # TODO: implement this
+
+# global variables used throughout script
+SSH_KEY_FILE=""
+NODE_NAMES=()
+HOST_LIST=()
+USERHOST_LIST=()
+INT_IP_LIST=()
+CLUSTER_NODE_ADDRS=()
+declare -A CLOUD_DICT
+CLOUD_PLATFORM=""
+CLUSTER_RESOURCES=()
+SSH_CMD_LIST=()
+RSYNC_CMD_LIST=()
+DEBUG=0
 
 
 printUsage() {
-    pprint "Usage: $0 [-h|--help] -vip <virtual ip>|-net <subnet cidr> <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ..."
+    pprint "Usage: $0 [OPTIONAL OPTIONS] <REQUIRED OPTIONS> <REQUIRED ARGUMENTS>"
+    pprint "OPTIONAL OPTIONS:"
+    pprint "    -h|--help"
+    pprint "    -debug"
+    pprint "    -i <ssh key file>"
+    pprint "    --do-token=<your token>"
+    pprint "REQUIRED OPTIONS (one of):"
+    pprint "    -vip <virtual ip>"
+    pprint "    -net <subnet cidr>"
+    pprint "REQUIRED ARGUMENTS:"
+    pprint " <[sshuser1[:sshpass1]@]node1[:sshport1]> <[sshuser2[:sshpass2]@]node2[:sshport2]> ..."
 }
 
-if ! isRoot; then
-    printerr "Must be run with root privileges" && exit 1
-fi
-
-if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-    printUsage && exit 1
-fi
-
 # loop through args and evaluate any options
-ARGS=()
+NODES=()
 while (( $# > 0 )); do
     ARG="$1"
     case $ARG in
+        -h|--help)
+            printUsage
+            exit 0
+            ;;
+        -debug)
+            DEBUG=1
+            shift
+            ;;
         -vip)
             shift
             KAM_VIP="$1"
@@ -57,40 +89,64 @@ while (( $# > 0 )); do
         -net)
             shift
             KAM_VIP=$(findAvailableIP "$1")
-            CIDR_NETMASK=$(echo "$1" | cut -d '/' -f 2)
+            CIDR_NETMASK=$(cut -s -d '/' -f 2 <<<"$1")
+            shift
+            ;;
+        -i)
+            shift
+            SSH_KEY_FILE="$1"
+            shift
+            ;;
+        --do-token=*)
+            DO_TOKEN=$(cut -s -d '=' -f 2 <<<"$1")
             shift
             ;;
         *)  # add to list of args
-            ARGS+=( "$ARG" )
+            NODES+=( "$ARG" )
             shift
             ;;
     esac
 done
 
-if [[ -z "${KAM_VIP}" ]] || [[ -z "${CIDR_NETMASK}" ]]; then
-    printerr 'Kamailio virtual IP or CIDR netmask is required' && printUsage && exit 1
+if (( $DEBUG == 1 )); then
+    set -x
 fi
 
 # make sure required args are fulfilled
-if (( ${#ARGS[@]} < 2 )); then
-    printerr "At least 2 nodes are required to setup kam cluster" && printUsage && exit 1
+if [[ -z "${KAM_VIP}" ]] || [[ -z "${CIDR_NETMASK}" ]]; then
+    printerr 'Kamailio virtual IP or CIDR netmask is required'
+    printUsage
+    exit 1
+fi
+
+if (( ${#NODES[@]} < 2 )); then
+    printerr "At least 2 nodes are required to setup kam cluster"
+    printUsage
+    exit 1
 fi
 
 # install local requirements for script
-setOSInfo
-case "$DISTRO" in
-    debian|ubuntu|linuxmint)
-        apt-get install -y sshpass nmap sed gawk
-        ;;
-    centos|redhat|amazon)
-        yum install -y epel-release
-        yum install -y sshpass nmap sed gawk
-        ;;
-    *)
-        printerr "Your OS Distro is currently not supported"
+# TODO: validate sudo exists, if not and user=root then install, otherwise fail
+if ! cmdExists 'ssh' || ! cmdExists 'sshpass' || ! cmdExists 'nmap' || ! cmdExists 'sed' || ! cmdExists 'awk'; then
+    printdbg 'Installing local requirements for cluster install'
+
+    if cmdExists 'apt-get'; then
+        sudo apt-get install -y openssh-client sshpass nmap sed gawk rsync
+    elif cmdExists 'yum'; then
+        sudo yum install --enablerepo=epel -y openssh-clients sshpass nmap sed gawk rsync
+    elif cmdExists 'dnf'; then
+        sudo dnf install -y openssh-clients sshpass nmap sed gawk rsync
+    else
+        printerr "Your local OS is not currently not supported"
         exit 1
-        ;;
-esac
+    fi
+fi
+
+# sanity check
+if (( $? != 0 )); then
+    printerr 'Could not install requirements for cluster install'
+    exit 1
+fi
 
 # $1 == cidr subnet
 # returns: 0 == success, 1 == failure
@@ -114,19 +170,31 @@ findAvailableIP() {
 # returns: 0 == success, else == failure
 # notes: prints node name where resource is found
 findResource() {
-    (pcs status resources | grep "$1" | awk '{print $NF}'
-        exit ${PIPESTATUS[0]}; ) 2>/dev/null; return $?
+    local RESOURCE_FIND_TIMEOUT=5
+    local NODE
+
+    timeout "$RESOURCE_FIND_TIMEOUT" bash <<EOF 2>/dev/null
+while true; do
+    NODE=\$(pcs status resources | awk '\$2=="'$1'" && \$4=="Started" {print \$5}')
+    if [[ -n "\$NODE" ]]; then
+        echo "\$NODE"
+        break
+    fi
+    sleep 1
+done
+EOF
+    return $?
 }
 
 # $1 == timeout
 # returns: 0 == resources up within timeout, else == resources not up within timeout
 # notes: block while waiting for resources to come online until timeout
 waitResources() {
-    timeout "$1" bash <<'EOF' 2> /dev/null
-RESOURCES_DOWN=0
-while (( $RESOURCES_DOWN == 0 )); do
-    RESOURCES_DOWN=$(pcs status resources 2>/dev/null | grep -q 'Stopped'; echo $?)
+    timeout "$1" bash <<'EOF' 2>/dev/null
+RESOURCES_DOWN=$(pcs status resources | grep -v -F 'Resource Group' | awk '$4!="Started" {print $2}' | wc -l)
+while (( $RESOURCES_DOWN > 0 )); do
     sleep 1
+    RESOURCES_DOWN=$(pcs status resources | grep -v -F 'Resource Group' | awk '$4!="Started" {print $2}' | wc -l)
 done
 EOF
     return $?
@@ -139,62 +207,52 @@ showClusterStatus() {
 }
 
 setFirewallRules() {
-    local IP4RESTORE_FILE="$1"
-    local IP6RESTORE_FILE="$2"
-
-    # use firewalld if installed
-    if cmdExists "firewall-cmd"; then
-        for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
-            firewall-cmd --zone=public --add-port=${PORT}/tcp --permanent
-        done
-        for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
-            firewall-cmd --zone=public --add-port=${PORT}/udp --permanent
-        done
-        firewall-cmd --reload
-    else
-        # set ipv4 firewall rules (on each node)
-        for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
-            iptables -I INPUT 1 -p tcp --dport ${PORT} -j ACCEPT
-        done
-        for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
-            iptables -I INPUT 1 -p udp --dport ${PORT} -j ACCEPT
-        done
-
-        # set ipv6 firewall rules (on each node)
-        for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
-            ip6tables -I INPUT 1 -p tcp --dport ${PORT} -j ACCEPT
-        done
-        for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
-            ip6tables -I INPUT 1 -p udp --dport ${PORT} -j ACCEPT
-        done
-    fi
-
-    # Remove duplicates and save
-    mkdir -p $(dirname ${IP4RESTORE_FILE})
-    iptables-save | awk '!x[$0]++' > ${IP4RESTORE_FILE}
-    mkdir -p $(dirname ${IP6RESTORE_FILE})
-    ip6tables-save | awk '!x[$0]++' > ${IP6RESTORE_FILE}
+    for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
+        firewall-cmd --zone=public --add-port=${PORT}/tcp --permanent
+    done
+    for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
+        firewall-cmd --zone=public --add-port=${PORT}/udp --permanent
+    done
+    firewall-cmd --reload
 }
 
-# loop through args and grab hosts
-HOST_LIST=()
-NODE_NAMES=()
-i=0
-for NODE in ${ARGS[@]}; do
-    NODE_NAME="${CLUSTER_NAME}-node$((i+1))"
-    HOST_LIST+=( $(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1) )
-    NODE_NAMES+=( "$NODE_NAME" )
-    i=$((i+1))
-done
+addDefRoute() {
+    local IP="$1"
 
-## 1st loop installs requirements and enables services
-printdbg 'configuring servers for cluster deployment'
+    local VIP_CIDR="${IP}/${CIDR_NETMASK:-32}"
+    local ROUTE_INFO=$(ip route get 8.8.8.8 | head -1)
+    local DEF_IF=$(printf '%s' "${ROUTE_INFO}" | grep -oP 'dev \K\w+')
+    local VIP_ROUTE_INFO=$(printf '%s' "${ROUTE_INFO}" | sed -r "s|8.8.8.8|0.0.0.0/1|; s|dev [\w\d]+|dev ${DEF_IF}|; s|src [\w\d]+|src ${IP}|")
+
+    ip address add $VIP_CIDR dev $DEF_IF
+    ip route add $VIP_ROUTE_INFO
+}
+
+removeDefRoute() {
+    local IP="$1"
+
+    local ROUTE_INFO=$(ip route get 8.8.8.8 | head -1)
+    local DEF_IF=$(printf '%s' "${ROUTE_INFO}" | grep -oP 'dev \K\w+')
+
+    ip address del $VIP_CIDR dev $DEF_IF
+    ip route del 0.0.0.0/1
+}
+
+# loop through args and gather variables
 i=0
-for NODE in ${ARGS[@]}; do
+for NODE in ${NODES[@]}; do
+    SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x)
+    RSYNC_OPTS=()
+
+    NODE_NAME="${CLUSTER_NAME}-node$((i+1))"
+    NODE_NAMES+=( "$NODE_NAME" )
+
     USER=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
     PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
     HOST=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1)
     PORT=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -s -d ':' -f 2-)
+
+    HOST_LIST+=( "$HOST" )
 
     # default user is root for ssh
     USER=${USER:-root}
@@ -203,308 +261,616 @@ for NODE in ${ARGS[@]}; do
 
     # validate host connection
     if ! checkConn ${HOST} ${PORT}; then
-        printerr "Could not establish connection to host [${HOST}] on port [${PORT}]" && exit 1
+        printerr "Could not establish connection to host [${HOST}] on port [${PORT}]"
+        exit 1
     fi
 
-    SSH_CMD="ssh"
-    if [ -z "$HOST" ]; then
-        printerr "Node [${NODE}] does not contain a host" && printUsage && exit 1
-    else
-        SSH_REMOTE_HOST="${HOST}"
+    if [[ -z "$HOST" ]]; then
+        printerr "Node [${NODE}] does not contain a host"
+        printUsage
+        exit 1
     fi
-    SSH_REMOTE_HOST="${USER}@${SSH_REMOTE_HOST}"
-    if [ -n "$PASS" ]; then
-        #SSH_CMD="sshpass -f <(printf '${PASS}\n') ssh"
-        #SSH_CMD="sshpass -p '${PASS}' ssh"
+    USERHOST_LIST+=( "${USER}@${HOST}" )
+
+    if [[ -n "$PASS" ]]; then
         export SSHPASS="${PASS}"
         SSH_CMD="sshpass -e ssh"
+        RSYNC_CMD="sshpass -e rsync"
+        SSH_OPTS+=(-o PreferredAuthentications=password)
+    else
+        SSH_CMD="ssh"
+        RSYNC_CMD="rsync"
+        if [[ -n "$SSH_KEY_FILE" ]]; then
+            SSH_OPTS+=(-o PreferredAuthentications=publickey -i $SSH_KEY_FILE)
+        else
+            SSH_OPTS+=(-o PreferredAuthentications=publickey)
+        fi
     fi
-    SSH_OPTS="${SSH_DEFAULT_OPTS} -p ${PORT}"
-    SSH_CMD="${SSH_CMD} ${SSH_REMOTE_HOST} ${SSH_OPTS}"
 
-    # validate unattended ssh connection
-    if ! checkSSH ${SSH_CMD}; then
-        printerr "Could not establish unattended ssh connection to [${SSH_REMOTE_HOST}] on port [${PORT}]" && exit 1
+    RSYNC_OPTS+=(--port=${PORT} -z --exclude=".*")
+    SSH_OPTS+=(-p ${PORT})
+
+    printdbg 'validating unattended ssh connection'
+    if ! checkSSH ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
+        printerr "Could not establish unattended ssh connection to [${USERHOST_LIST[$i]}] on port [${PORT}]"
+        exit 1
     fi
 
-    # remote server will be using bash as interpreter
-    SSH_CMD="${SSH_CMD} bash"
-    # DEBUG:
-    printdbg "SSH_CMD: ${SSH_CMD}"
+    # wrap up some args / options
+    SSH_CMD_LIST+=( "${SSH_CMD} ${SSH_OPTS[*]}" )
+    RSYNC_CMD_LIST+=( "${RSYNC_CMD} ${RSYNC_OPTS[*]}" )
 
-    # run commands through ssh
-#    (cat <<- EOSSH
-    (${SSH_CMD} <<- EOSSH
-    set -x
+    # install requirements for the next commands
+    ${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+        if (( $DEBUG == 1 )); then
+            set -x
+        fi
 
-    # re-declare functions and vars we pass to remote server
-    # note that variables in function definitions (from calling environement)
-    # lose scope unless local to function, they must be passed to remote
-    $(typeset -f printdbg)
-    $(typeset -f printerr)
-    $(typeset -f cmdExists)
-    $(typeset -f join)
-    $(typeset -f setOSInfo)
-    $(typeset -f setFirewallRules)
-    HOST_LIST=( ${HOST_LIST[@]} )
-    NODE_NAMES=( ${NODE_NAMES[@]} )
-    ESC_SEQ="\033["
-    ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
-    ANSI_RED="\${ESC_SEQ}1;31m"
-    ANSI_GREEN="\${ESC_SEQ}1;32m"
+        # re-declare functions and vars we pass to remote server
+        # note that variables in function definitions (from calling environement)
+        # lose scope unless local to function, they must be passed to remote
+        ESC_SEQ="\033["
+        ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
+        ANSI_RED="\${ESC_SEQ}1;31m"
+        ANSI_GREEN="\${ESC_SEQ}1;32m"
+        $(typeset -f printdbg)
+        $(typeset -f printerr)
+        $(typeset -f cmdExists)
 
-
-    setOSInfo
-    printdbg 'installing requirements'
-    case "\$DISTRO" in
-        debian|ubuntu|linuxmint)
-            # debian-based configs
-            IP4RESTORE_FILE="/etc/iptables/rules.v4"
-            IP6RESTORE_FILE="/etc/iptables/rules.v6"
+        printdbg 'installing requirements'
+        # awk is required for getInternalIP()
+        # curl is required for getCloudPlatform()
+        # rsync is required to for the main script
+        if cmdExists 'apt-get'; then
             export DEBIAN_FRONTEND=noninteractive
-
-            apt-get install -y corosync pacemaker pcs gawk iptables-persistent netfilter-persistent
-            ;;
-        centos|redhat|amazon)
-            # redhat-based specific configs
-            IP4RESTORE_FILE="/etc/sysconfig/iptables"
-            IP6RESTORE_FILE="/etc/sysconfig/ip6tables"
-
-            yum install -y corosync pacemaker pcs gawk
-            ;;
-        *)
-            printerr "Your OS Distro is currently not supported"
+            apt-get install -y gawk curl rsync
+        elif cmdExists 'yum'; then
+            yum install -y gawk curl rsync
+        elif cmdExists 'dnf'; then
+            dnf install -y gawk curl rsync
+        else
+            printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
             exit 1
+        fi
+
+        if (( \$? != 0 )); then
+            printerr "Failed to install requirements on remote node ${HOST_LIST[$i]}"
+            exit 1
+        fi
+EOSSH
+
+    # find the cloud platform the node is deployed on
+    CLOUD_PLATFORM=$(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getCloudPlatform); getCloudPlatform;")
+    CLOUD_DICT[$CLOUD_PLATFORM]=1
+
+    # warn the user if we don't have an integration setup for this provider yet
+    case "${CLOUD_LIST[$i]}" in
+        AWS|GCE|AZURE|VULTR|OCE)
+            printwarn 'support for virtual IP assignment on this cloud platform has not been tested'
+            printwarn 'attempting install anyways'
             ;;
     esac
 
-    if ! cmdExists 'pcs'; then
-        printerr 'Failed to install requirements' && exit 1
+    # find the internal IP that the cluster will communicate over
+    INT_IP_LIST+=($(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getInternalIP); getInternalIP;"))
+
+    if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
+        CLUSTER_NODE_ADDRS+=($(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "curl -s http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address;"))
+    else
+        CLUSTER_NODE_ADDRS+=( "${INT_IP_LIST[$i]}" )
     fi
 
+    # find which resources we will be configuring
+    if (( $i == 0 )); then
+        if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
+            CLUSTER_RESOURCES+=(cluster_vip)
+        else
+            CLUSTER_RESOURCES+=(cluster_vip cluster_srcaddr)
+        fi
 
-    printdbg 'configuring server for cluster deployment'
-
-    # set firewall rules
-    setFirewallRules "\$IP4RESTORE_FILE" "\$IP6RESTORE_FILE"
-
-    # start the services (on each node)
-    systemctl enable pcsd
-    systemctl enable corosync
-    systemctl enable pacemaker
-    systemctl start pcsd
-    echo "${CLUSTER_PASS}" | passwd -q --stdin hacluster 2>/dev/null ||
-        echo "hacluster:${CLUSTER_PASS}" | chpasswd 2>/dev/null ||
-        { printerr "could not change hacluster user password"; exit 1; }
-
-    # hostnames are required even if not DNS resolvable (on each node)
-    if ! grep -q -E \$(join '|' \${HOST_LIST[@]}) /etc/hosts 2>/dev/null; then
-        i=0
-        while (( \$i < \${#HOST_LIST[@]} )); do
-            printf '%s\n' "\${HOST_LIST[\$i]}    \${NODE_NAMES[\$i]}" >> /etc/hosts
-            i=\$((i+1))
-        done
-    fi
-    printf '%s\n' "\${NODE_NAMES[$i]}" > /etc/hostname
-    hostname \${NODE_NAMES[$i]}
-
-    # enable binding to floating ip (on each node)
-    echo '1' > /proc/sys/net/ipv4/ip_nonlocal_bind
-    echo 'net.ipv4.ip_nonlocal_bind = 1' > /etc/sysctl.d/99-non-local-bind.conf
-
-    # change kamcfg and rtpenginecfg to use floating ip (on each node)
-    if [ -e "${DSIP_SCRIPT}" ]; then
-        printdbg 'updating kamailio and rtpengine settings'
-
-        # manually add default route to vip before updating settings
-        VIP_CIDR="${KAM_VIP}/${CIDR_NETMASK}"
-        ROUTE_INFO=\$(ip route get 8.8.8.8 | head -1)
-        DEF_IF=\$(printf '%s' "\${ROUTE_INFO}" | grep -oP 'dev \K\w+')
-        VIP_ROUTE_INFO=\$(printf '%s' "\${ROUTE_INFO}" | sed -r "s|8.8.8.8|0.0.0.0/1|; s|dev [\w\d]+|dev \${DEF_IF}|; s|src [\w\d]+|src ${KAM_VIP}|")
-        ip address add \$VIP_CIDR dev \$DEF_IF
-        ip route add \$VIP_ROUTE_INFO
-
-        ${DSIP_SCRIPT} updatekamconfig
-        ${DSIP_SCRIPT} updatertpconfig
-
-        ip address del \$VIP_CIDR dev \$DEF_IF
-        ip route del 0.0.0.0/1
-
-        # TODO: enable kamailio to listen to both ip's (maybe??)
-    fi
-
-    exit 0
+        CLUSTER_RESOURCES+=($(${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+            if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+                echo 'rtpengine_service'
+            fi
+            if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+                echo 'kamailio_service'
+            fi
+            if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+                echo 'dsiprouter_service'
+            fi
 EOSSH
-    ) 2>&1
-
-    if (( $? != 0 )); then
-        printerr "server configuration failed on ${HOST}" && exit 1
+        ))
     fi
 
     i=$((i+1))
 done
 
+# make sure user does not try to install on 2 different cloud platforms
+if (( ${#CLOUD_DICT[@]} > 1 )); then
+    printerr 'nodes are deployed on different cloud platforms'
+    printerr 'installation on differing cloud platforms is not supported'
+    exit 1
+fi
 
-## 2nd loop creates and configures the cluster
-printdbg 'deploying cluster configurations on servers'
+# make sure the credentials for the cloud provider was provided by the user
+if [[ "$CLOUD_PLATFORM" == "DO" ]] && [[ -z "$DO_TOKEN" ]]; then
+    printerr '--do-token is required when deploying on digital ocean'
+    exit 1
+fi
+
+# installs requirements and enables services
+printdbg 'configuring servers for cluster deployment'
 i=0
-for NODE in ${ARGS[@]}; do
-    USER=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -d ':' -f -1)
-    PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
-    HOST=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1)
-    PORT=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -s -d ':' -f 2-)
-
-    # default user is root for ssh
-    USER=${USER:-root}
-    # default port is 22 for ssh
-    PORT=${PORT:-22}
-
-    # validate host connection
-    if ! checkConn ${HOST} ${PORT}; then
-        printerr "Could not establish connection to host [${HOST}] on port [${PORT}]" && exit 1
+while (( $i < ${#NODES[@]} )); do
+    # copy over any files needed for the install
+    if [[ -n "$CLOUD_PLATFORM" ]]; then
+        printdbg "Copying cloud configuration files to ${HOST_LIST[$i]}"
+        ${RSYNC_CMD_LIST[$i]} --rsh="ssh ${SSH_OPTS[*]} -o IPQoS=throughput" -a ${PROJECT_ROOT}/HA/pacemaker/${CLOUD_PLATFORM}/ ${USERHOST_LIST[$i]}:/tmp/cloud/ 2>&1
+        if (( $? != 0 )); then
+            printerr "Copying files to ${HOST_LIST[$i]} failed"
+            exit 1
+        fi
     fi
-
-    SSH_CMD="ssh"
-    if [ -z "$HOST" ]; then
-        printerr "Node [${NODE}] does not contain a host" && printUsage && exit 1
-    else
-        SSH_REMOTE_HOST="${HOST}"
-    fi
-    SSH_REMOTE_HOST="${USER}@${SSH_REMOTE_HOST}"
-    if [ -n "$PASS" ]; then
-        #SSH_CMD="sshpass -f <(printf '${PASS}\n') ssh"
-        #SSH_CMD="sshpass -p '${PASS}' ssh"
-        export SSHPASS="${PASS}"
-        SSH_CMD="sshpass -e ssh"
-    fi
-    SSH_OPTS="${SSH_DEFAULT_OPTS} -p ${PORT}"
-    SSH_CMD="${SSH_CMD} ${SSH_REMOTE_HOST} ${SSH_OPTS}"
-
-    # validate unattended ssh connection
-    if ! checkSSH ${SSH_CMD}; then
-        printerr "Could not establish unattended ssh connection to [${SSH_REMOTE_HOST}] on port [${PORT}]" && exit 1
-    fi
-
-    # remote server will be using bash as interpreter
-    SSH_CMD="${SSH_CMD} bash"
-    # DEBUG:
-    printdbg "SSH_CMD: ${SSH_CMD}"
 
     # run commands through ssh
-#    (cat <<- EOSSH
-    (${SSH_CMD} <<- EOSSH
-    set -x
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+        if (( $DEBUG == 1 )); then
+            set -x
+        fi
 
-    # re-declare functions and vars we pass to remote server
-    # note that variables in function definitions (from calling environement)
-    # lose scope unless local to function, they must be passed to remote
-    $(typeset -f printdbg)
-    $(typeset -f printerr)
-    $(typeset -f findResource)
-    $(typeset -f showClusterStatus)
-    $(typeset -f waitResources)
-    NODE_NAMES=( ${NODE_NAMES[@]} )
-    ESC_SEQ="\033["
-    ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
-    ANSI_RED="\${ESC_SEQ}1;31m"
-    ANSI_GREEN="\${ESC_SEQ}1;32m"
+        # re-declare functions and vars we pass to remote server
+        # note that variables in function definitions (from calling environement)
+        # lose scope unless local to function, they must be passed to remote
+        ESC_SEQ="\033["
+        ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
+        ANSI_RED="\${ESC_SEQ}1;31m"
+        ANSI_GREEN="\${ESC_SEQ}1;32m"
+        PACEMAKER_TCP_PORTS=( ${PACEMAKER_TCP_PORTS[@]} )
+        PACEMAKER_UDP_PORTS=( ${PACEMAKER_UDP_PORTS[@]} )
+        NODE_NAMES=( ${NODE_NAMES[@]} )
+        CLUSTER_NODE_ADDRS=( ${CLUSTER_NODE_ADDRS[@]} )
+        $(typeset -f printdbg)
+        $(typeset -f printerr)
+        $(typeset -f cmdExists)
+        $(typeset -f setFirewallRules)
+        $(typeset -f addDefRoute)
+        $(typeset -f removeDefRoute)
+        $(typeset -f getConfigAttrib)
+        $(typeset -f setConfigAttrib)
+        $(typeset -f removeExecStartCmd)
+        $(typeset -f addDependsOnService)
+        $(typeset -f removeDependsOnService)
 
+        printdbg 'installing requirements'
+        if cmdExists 'apt-get'; then
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -y corosync pacemaker pcs firewalld jq perl dnsutils sed
+        elif cmdExists 'yum'; then
+            yum install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
+        elif cmdExists 'dnf'; then
+            dnf install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
+        else
+            printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
+            exit 1
+        fi
 
-    ## Pacemaker / Corosync cluster
-    if (( $i == 0 )); then
-        printdbg 'creating cluster'
+        if (( \$? != 0 )); then
+            printerr "Failed to install requirements on remote node ${HOST_LIST[$i]}"
+            exit 1
+        fi
 
-        # Now setup the cluster (on first node)
-        FLAT_NAMES=\${NODE_NAMES[@]}
-        pcs cluster auth --force -u hacluster -p ${CLUSTER_PASS} \$FLAT_NAMES
-        (( \$? != 0 )) && { printerr "Cluster auth failed" && exit 1; }
-        pcs cluster setup --force --enable --name ${CLUSTER_NAME} \$FLAT_NAMES
-        (( \$? != 0 )) && { printerr "Cluster creation failed" && exit 1; }
-        # Start the cluster (on first node)
-        pcs cluster start --all
+        printdbg 'configuring server for cluster deployment'
 
-        ## Stonith and qourum
+        printdbg 'updating firewall rules'
+        setFirewallRules
 
-        # We can disable this for now for testing (on first node)
-        pcs property set stonith-enabled=false
-        pcs property set no-quorum-policy=ignore
+        printdbg 'setting up cluster password'
+        echo "${CLUSTER_PASS}" | passwd -q --stdin hacluster 2>/dev/null ||
+            echo "hacluster:${CLUSTER_PASS}" | chpasswd 2>/dev/null ||
+            { printerr "could not change hacluster user password"; exit 1; }
 
-        ## Setting up the virtual ip address with pacemaker
+        printdbg 'setting up cluster hostname resolution'
 
-        # create resource for kamailio and virtual ip and default route (on first node)
-        pcs resource create kamailio_vip ocf:heartbeat:IPaddr2 ip=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} op monitor interval=10s
-        pcs resource create kamailio_srcaddr ocf:heartbeat:IPsrcaddr ipaddress=${KAM_VIP} cidr_netmask=24 op monitor interval=15s
-        pcs resource create kamailio_service systemd:kamailio op monitor interval=20s op start interval=0 timeout=45s op stop interval=0 timeout=45s
+        # for each node remove the loopback hostname if present
+        # this will cause issues when adding nodes to the cluster
+        # ref: https://serverfault.com/questions/363095/why-does-my-hostname-appear-with-the-address-127-0-1-1-rather-than-127-0-0-1-in
+        grep -v -E '^127\.0\.1\.1' /etc/hosts >/tmp/hosts &&
+            mv -f /tmp/hosts /etc/hosts
 
-        # set the stickiness on each resource before colocating (on first node)
-        pcs resource meta kamailio_service resource-stickiness=100
-        pcs resource meta kamailio_vip resource-stickiness=100
-        pcs resource meta kamailio_srcaddr resource-stickiness=100
-
-        # Then link these two services together (on first node)
-        pcs constraint colocation set kamailio_vip kamailio_srcaddr kamailio_service sequential=true setoptions score=INFINITY
-        pcs constraint order set kamailio_vip kamailio_srcaddr kamailio_service sequential=true action=start require-all=true setoptions symmetrical=true
-    fi
-
-    if (( $i == ${#ARGS[@]} - 1 )); then
-        printdbg 'testing cluster'
-
-        RESOURCES=(kamailio_vip kamailio_srcaddr kamailio_service)
-        CURRENT_RESOURCE_LOCATIONS=()
-        PREVIOUS_RESOURCE_LOCATIONS=()
-
-        # wait on resources to come online (last node)
-        waitResources ${CLUSTER_RESOURCE_TIMEOUT} || { printerr "Cluster resource failed to start within ${CLUSTER_RESOURCE_TIMEOUT} sec" && exit 1; }
-
-        # grab operation data for tests (last node)
-        for RESOURCE in \${RESOURCES[@]}; do
-            PREVIOUS_RESOURCE_LOCATIONS+=( \$(findResource \${RESOURCE}) )
+        # hostnames are required even if not DNS resolvable (on each node)
+        j=0
+        while (( \$j < \${#CLUSTER_NODE_ADDRS[@]} )); do
+            if ! grep -q -F "\${NODE_NAMES[\$j]}" /etc/hosts 2>/dev/null; then
+                echo "\${CLUSTER_NODE_ADDRS[\$j]} \${NODE_NAMES[\$j]}" >>/etc/hosts
+            fi
+            j=\$((j+1))
         done
 
-        pcs cluster standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
-        sleep 10 # wait for transfer to start
-        waitResources ${CLUSTER_RESOURCE_TIMEOUT} || { printerr "Cluster resource failed to start within ${CLUSTER_RESOURCE_TIMEOUT} sec" && exit 1; }
+        printdbg 'configuring floating IP support on server'
 
-        for RESOURCE in \${RESOURCES[@]}; do
-            CURRENT_RESOURCE_LOCATIONS+=( \$(findResource \${RESOURCE}) )
-        done
+        # enable binding to floating ip (on each node)
+        echo '1' > /proc/sys/net/ipv4/ip_nonlocal_bind
+        echo 'net.ipv4.ip_nonlocal_bind = 1' > /etc/sysctl.d/99-non-local-bind.conf
 
-        pcs cluster unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+        # change kamcfg and rtpenginecfg to use floating ip (on each node)
+        if [[ -e "${DSIP_SYSTEM_CONFIG_DIR}" ]]; then
+            printdbg 'updating dsiprouter services'
 
-        printdbg "PREVIOUS_RESOURCE_LOCATIONS: \${PREVIOUS_RESOURCE_LOCATIONS[@]}"
-        printdbg "CURRENT_RESOURCE_LOCATIONS: \${CURRENT_RESOURCE_LOCATIONS[@]}"
+            DSIP_INIT_PATH=\$(systemctl show -P FragmentPath dsip-init)
 
-        # run tests to make sure operations worked (last node)
-        i=0
-        while (( \$i < \${#RESOURCES[@]} )); do
-            if [[ \${PREVIOUS_RESOURCE_LOCATIONS[\$i]} != \${PREVIOUS_RESOURCE_LOCATIONS[\$((i+1))]:-\${PREVIOUS_RESOURCE_LOCATIONS[0]}} ]]; then
-                printerr "Cluster resource colocation tests failed (before migration)" && exit 1
+            if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
+                DSIP_VERSION=\$(getConfigAttrib 'VERSION' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py)
+                DSIP_MAJ_VER=\$(perl -pe 's%([0-9]+)\..*%\1%' <<<"\$DSIP_VERSION")
+                DSIP_MIN_VER=\$(perl -pe 's%[0-9]+\.([0-9]).*%\1%' <<<"\$DSIP_VERSION")
+                DSIP_PATCH_VER=\$(perl -pe 's%[0-9]+\.[0-9]([0-9]).*%\1%' <<<"\$DSIP_VERSION")
+
+                # v0.72 and above have static networking supported
+                if (( \$DSIP_MAJ_VER > 0 )) || (( \$DSIP_MAJ_VER == 0 && \$DSIP_MIN_VER >= 7 )); then
+                    setConfigAttrib 'NETWORK_MODE' "$STATIC_NETWORKING_MODE" ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
+                else
+                    removeExecStartCmd 'dsiprouter.sh updatertpconfig' \${DSIP_INIT_PATH}
+                    removeExecStartCmd 'dsiprouter.sh updatekamconfig' \${DSIP_INIT_PATH}
+                    removeExecStartCmd 'dsiprouter.sh updatedsipconfig' \${DSIP_INIT_PATH}
+                fi
+
+                setConfigAttrib 'EXTERNAL_IP_ADDR' '$KAM_VIP' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
+                NEW_EXT_FQDN=$(dig +short -x $KAM_VIP)
+                if [[ -n "\$NEW_EXT_FQDN" ]]; then
+                    setConfigAttrib 'EXTERNAL_FQDN' '\$NEW_EXT_FQDN' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
+                fi
+                setConfigAttrib 'UAC_REG_ADDR' '$KAM_VIP' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
+
+                # update the settings in the various services
+                if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+                    dsiprouter updatedsipconfig
+                fi
+                if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+                    dsiprouter updatekamconfig
+                fi
+                if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+                    dsiprouter updatertpconfig
+                fi
+            else
+                # manually add default route to vip before updating settings
+                addDefRoute "${KAM_VIP}"
+
+                # TODO: enable kamailio to listen to both ip's (maybe??)
+                if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+                    dsiprouter updatedsipconfig
+                fi
+                if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+                    dsiprouter updatekamconfig
+                fi
+                if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+                    dsiprouter updatertpconfig
+                fi
+
+                removeDefRoute "${KAM_VIP}"
             fi
 
-            if [[ \${CURRENT_RESOURCE_LOCATIONS[\$i]} != \${CURRENT_RESOURCE_LOCATIONS[\$((i+1))]:-\${CURRENT_RESOURCE_LOCATIONS[0]}} ]]; then
-                printerr "Cluster resource colocation tests failed (after migration)" && exit 1
+            # systemd services will be managed by corosync/pacemaker instead of dsip-init
+            if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+                removeDependsOnService "dsiprouter.service" \${DSIP_INIT_PATH}
+                systemctl stop dsiprouter
+                systemctl disable dsiprouter
+            fi
+            if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+                removeDependsOnService "kamailio.service" \${DSIP_INIT_PATH}
+                systemctl stop kamailio
+                systemctl disable kamailio
+            fi
+            if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+                removeDependsOnService "rtpengine.service" \${DSIP_INIT_PATH}
+                systemctl stop rtpengine
+                systemctl disable rtpengine
             fi
 
-            if [[ \${PREVIOUS_RESOURCE_LOCATIONS[\$i]} == \${CURRENT_RESOURCE_LOCATIONS[\$i]} ]] || [[ \${CURRENT_RESOURCE_LOCATIONS[\$i]} == "Stopped" ]]; then
-                printerr "Cluster resource \${RESOURCE} failover tests failed" && exit 1
-            fi
+            addDependsOnService "corosync.service" \${DSIP_INIT_PATH}
+            addDependsOnService "pacemaker.service" \${DSIP_INIT_PATH}
+        fi
 
-            i=\$((i+1))
-        done
+        printdbg 'configuring systemd services for pacemaker cluster'
+        systemctl enable pcsd
+        systemctl enable corosync
+        systemctl enable pacemaker
+        systemctl start pcsd
 
-        # show status to user (last node)
-        showClusterStatus
-    fi
+        printdbg 'removing any previous corosync configurations'
+        PCS_MAJMIN_VER=\$(pcs --version | cut -d '.' -f -2 | tr -d '.')
 
-    exit 0
+        if (( \$((10#\$PCS_MAJMIN_VER)) >= 10 )); then
+            pcs host deauth 2>/dev/null
+            pcs cluster destroy 2>/dev/null
+        else
+            pcs pcsd clear-auth 2>/dev/null
+            pcs cluster destroy 2>/dev/null
+        fi
+
+        exit 0
 EOSSH
     ) 2>&1
 
     if (( $? != 0 )); then
-        printerr "kamailio cluster configuration failed on ${HOST}" && exit 1
+        printerr "server configuration failed on ${HOST_LIST[$i]}" && exit 1
     fi
 
     i=$((i+1))
 done
 
+printdbg 'initializing pacemaker cluster'
+i=0
+while (( $i < ${#NODES[@]} )); do
+    # run commands through ssh
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+        if (( $DEBUG == 1 )); then
+            set -x
+        fi
+
+        # re-declare functions and vars we pass to remote server
+        # note that variables in function definitions (from calling environement)
+        # lose scope unless local to function, they must be passed to remote
+        ESC_SEQ="\033["
+        ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
+        ANSI_RED="\${ESC_SEQ}1;31m"
+        ANSI_GREEN="\${ESC_SEQ}1;32m"
+        $(typeset -f printdbg)
+        $(typeset -f printerr)
+
+        PCS_MAJMIN_VER=\$(pcs --version | cut -d '.' -f -2 | tr -d '.')
+
+        if (( \$((10#\$PCS_MAJMIN_VER)) >= 10 )); then
+            printdbg 'authenticating nodes to pcsd'
+            pcs host auth -u hacluster -p ${CLUSTER_PASS} ${NODE_NAMES[@]} || {
+                printerr "Cluster auth failed"
+                exit 1
+            }
+
+            if (( $i == ${#NODES[@]} - 1 )); then
+                printdbg 'creating the cluster'
+                pcs cluster setup --force --enable ${CLUSTER_NAME} ${NODE_NAMES[@]} ${CLUSTER_OPTIONS[@]} || {
+                    printerr "Cluster creation failed"
+                    exit 1
+                }
+            fi
+        else
+            printdbg 'authenticating nodes to pcsd'
+            pcs cluster auth --force -u hacluster -p ${CLUSTER_PASS} ${NODE_NAMES[@]} || {
+                printerr "Cluster auth failed"
+                exit 1
+            }
+
+            if (( $i == ${#NODES[@]} - 1 )); then
+                printdbg 'creating the cluster'
+                pcs cluster setup --force --enable --name ${CLUSTER_NAME} ${NODE_NAMES[@]} ${CLUSTER_OPTIONS[@]} || {
+                    printerr "Cluster creation failed"
+                    exit 1
+                }
+            fi
+        fi
+
+        # start cluster on the last node after all auth is completed
+        if (( $i == ${#NODES[@]} - 1 )); then
+            j=0
+            while (( \$j < $RETRY_CLUSTER_START )); do
+                pcs cluster start --all --request-timeout=15 --wait=15 &&
+                    break
+                j=\$((j+1))
+            done
+            # if we attempted all retries and finished the above loop we failed
+            if (( \$j == $RETRY_CLUSTER_START )); then
+                printerr "Starting cluster failed"
+                exit 1
+            fi
+        fi
+
+        # setup any cloud provider specific configuration files
+        if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
+            cp -f /tmp/cloud/assign-ip /usr/local/bin/assign-ip
+            chmod +x /usr/local/bin/assign-ip
+            mkdir -p /usr/lib/ocf/resource.d/digitalocean
+            cp -f /tmp/cloud/ocf-floatip /usr/lib/ocf/resource.d/digitalocean/floatip
+            chmod +x /usr/lib/ocf/resource.d/digitalocean/floatip
+        fi
+
+        exit 0
+EOSSH
+    ) 2>&1
+
+    if (( $? != 0 )); then
+        printerr "initializing pacemaker cluster failed on ${HOST_LIST[$i]}" && exit 1
+    fi
+
+    i=$((i+1))
+done
+
+# creates and configures the cluster
+# TODO: add support for updating virtual IP from various cloud providers
+printdbg 'configuring pacemaker cluster'
+i=0
+while (( $i < ${#NODES[@]} )); do
+    # run commands through ssh
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+        if (( $DEBUG == 1 )); then
+            set -x
+        fi
+
+        # re-declare functions and vars we pass to remote server
+        # note that variables in function definitions (from calling environement)
+        # lose scope unless local to function, they must be passed to remote
+        ESC_SEQ="\033["
+        ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
+        ANSI_RED="\${ESC_SEQ}1;31m"
+        ANSI_GREEN="\${ESC_SEQ}1;32m"
+        $(typeset -f printdbg)
+        $(typeset -f printerr)
+        $(typeset -f findResource)
+        $(typeset -f showClusterStatus)
+        $(typeset -f waitResources)
+
+        ## Pacemaker / Corosync cluster
+        if (( $i == 0 )); then
+            printdbg 'configuring pacemaker cluster'
+
+            # disabling stonith/quorum for now because it has caused issues in the past (on first node)
+            pcs property set stonith-enabled=false
+            pcs property set no-quorum-policy=ignore
+
+            printdbg 'Setting up the virtual ip address resource'
+            # create resource for services and virtual ip and default route (on first node)
+            if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
+                pcs resource create cluster_vip ocf:digitalocean:floatip \\
+                    do_token=${DO_TOKEN} floating_ip=${KAM_VIP} \\
+                    op monitor interval=15s timeout=15s \\
+                    op start interval=0 timeout=30s \\
+                    meta resource-stickiness=100 \\
+                    --group vip_group
+            else
+                pcs resource create cluster_vip ocf:heartbeat:IPaddr2 \\
+                    ip=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} \\
+                    op monitor interval=15s timeout=15s \\
+                    op start interval=0 timeout=30s \\
+                    meta resource-stickiness=100 \\
+                    --group vip_group
+                pcs resource create cluster_srcaddr ocf:heartbeat:IPsrcaddr \\
+                    ipaddress=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} \\
+                    op monitor interval=15s timeout=15s \\
+                    op start interval=0 timeout=30s \\
+                    meta resource-stickiness=100 \\
+                    --group vip_group
+            fi
+
+            printdbg 'Setting up resources for dsiprouter services'
+            if grep -q 'rtpengine_service' 2>/dev/null <<<"${CLUSTER_RESOURCES[@]}"; then
+                pcs resource create rtpengine_service systemd:rtpengine \\
+                    op monitor interval=30s timeout=15s \\
+                    op start interval=0 timeout=30s on-fail=restart \\
+                    op stop interval=0 timeout=30s \\
+                    meta resource-stickiness=100 \\
+                    --group dsip_group
+            fi
+            if grep -q 'kamailio_service' 2>/dev/null <<<"${CLUSTER_RESOURCES[@]}"; then
+                pcs resource create kamailio_service systemd:kamailio \\
+                    op monitor interval=30s timeout=15s \\
+                    op start interval=0 timeout=30s on-fail=restart \\
+                    op stop interval=0 timeout=30s \\
+                    meta resource-stickiness=100 \\
+                    --group dsip_group
+            fi
+            if grep -q 'dsiprouter_service' 2>/dev/null <<<"${CLUSTER_RESOURCES[@]}"; then
+                pcs resource create dsiprouter_service systemd:dsiprouter \\
+                    op monitor interval=60s timeout=15s \\
+                    op start interval=0 timeout=30s on-fail=restart \\
+                    op stop interval=0 timeout=30s \\
+                    meta resource-stickiness=100 \\
+                    --group dsip_group
+            fi
+
+            printdbg 'colocating resources on the same node'
+            pcs constraint colocation set vip_group dsip_group \\
+                sequential=true \\
+                setoptions score=INFINITY
+            pcs constraint order set vip_group dsip_group \\
+                action=start sequential=true require-all=true \\
+                setoptions symmetrical=false kind=Mandatory
+        fi
+
+        if (( $i == ${#NODES[@]} - 1 )); then
+            printdbg 'testing cluster'
+
+            PCS_MAJMIN_VER=\$(pcs --version | cut -d '.' -f -2 | tr -d '.')
+
+            RESOURCES=(${CLUSTER_RESOURCES[@]})
+            CURRENT_RESOURCE_LOCATIONS=()
+            PREVIOUS_RESOURCE_LOCATIONS=()
+
+            # wait on resources to come online (original node)
+            waitResources ${RESOURCE_STARTUP_TIMEOUT} || {
+                printerr "Cluster resources failed to start within ${RESOURCE_STARTUP_TIMEOUT} seconds"
+                exit 1
+            }
+
+            # grab operation data for tests (last node)
+            # TODO: error checking for resources not yet started
+            for RESOURCE in \${RESOURCES[@]}; do
+                PREVIOUS_RESOURCE_LOCATIONS+=( \$(findResource \${RESOURCE}) )
+            done
+
+            printdbg "current resource locations: \${PREVIOUS_RESOURCE_LOCATIONS[@]}"
+            printdbg "setting \${PREVIOUS_RESOURCE_LOCATIONS[0]} to standby"
+
+            if (( \$((10#\$PCS_MAJMIN_VER)) >= 10 )); then
+                pcs node standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+            else
+                pcs cluster standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+            fi
+
+            # wait for transfer to finish (to another node)
+            waitResources ${RESOURCE_STARTUP_TIMEOUT} || {
+                printerr "Cluster resources failed to start within ${RESOURCE_STARTUP_TIMEOUT} seconds"
+                exit 1
+            }
+
+            for RESOURCE in \${RESOURCES[@]}; do
+                CURRENT_RESOURCE_LOCATIONS+=( \$(findResource \${RESOURCE}) )
+            done
+
+            printdbg "current resource locations: \${CURRENT_RESOURCE_LOCATIONS[@]}"
+            printdbg "resetting \${PREVIOUS_RESOURCE_LOCATIONS[0]}"
+
+            if (( \$(pcs --version | cut -d '.' -f 2- | tr -d '.') >= 100 )); then
+                pcs node unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+            else
+                pcs cluster unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+            fi
+
+            # wait for transfer to finish (to another node, could be original)
+            waitResources ${RESOURCE_STARTUP_TIMEOUT} || {
+                printerr "Cluster resources failed to start within ${RESOURCE_STARTUP_TIMEOUT} seconds"
+                exit 1
+            }
+
+            # run tests to make sure operations worked (last node)
+            i=0
+            while (( \$i < \${#RESOURCES[@]} )); do
+                if [[ \${PREVIOUS_RESOURCE_LOCATIONS[\$i]} != \${PREVIOUS_RESOURCE_LOCATIONS[\$((i+1))]:-\${PREVIOUS_RESOURCE_LOCATIONS[0]}} ]]; then
+                    printerr "Cluster resource colocation tests failed (before migration)"
+                    exit 1
+                fi
+
+                if [[ \${CURRENT_RESOURCE_LOCATIONS[\$i]} != \${CURRENT_RESOURCE_LOCATIONS[\$((i+1))]:-\${CURRENT_RESOURCE_LOCATIONS[0]}} ]]; then
+                    printerr "Cluster resource colocation tests failed (after migration)"
+                    exit 1
+                fi
+
+                if [[ \${PREVIOUS_RESOURCE_LOCATIONS[\$i]} == \${CURRENT_RESOURCE_LOCATIONS[\$i]} ]]; then
+                    printerr "Cluster resource \${RESOURCE} failover tests failed"
+                    exit 1
+                fi
+
+                i=\$((i+1))
+            done
+
+            printdbg 'Any non-critical resource errors are shown below:'
+            pcs resource failcount show
+            printdbg 'Clearing any non-critical resource errors'
+            pcs resource cleanup vip_group
+            pcs resource cleanup dsip_group
+
+            # show status to user
+            printdbg 'cluster info:'
+            showClusterStatus
+        fi
+
+        exit 0
+EOSSH
+    ) 2>&1
+
+    if (( $? != 0 )); then
+        printerr "pacemaker cluster configuration failed on ${HOST_LIST[$i]}" && exit 1
+    fi
+
+    i=$((i+1))
+done
+
+printdbg 'Successfully configured pacemaker cluster'
 exit 0

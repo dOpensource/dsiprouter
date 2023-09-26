@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# derived from http://do.co/ocf-floatip
+
+api_base='https://api.digitalocean.com/v2'
+
+
+usage() {
+    echo "$0 <Floating IP>"
+    echo ''
+    echo 'Your DigitialOcean API token must be in the "DO_TOKEN" environmental variable.'
+}
+
+main() {
+    local floating_ip="$1"
+
+    droplet_id=$(curl -s http://169.254.169.254/metadata/v1/id)
+
+    resp=$(
+        curl -s \
+            -H "Authorization: Bearer $DO_TOKEN" \
+            -H 'Content-type: application/json' \
+            -d '{"type": "assign", "droplet_id": '$droplet_id'}' \
+           "${api_base}/floating_ips/${floating_ip}/actions"
+    )
+    msg=$(jq -e -r '.message' <<<"$resp") && {
+        echo "$(jq -r '.id' <<<"$resp"): $msg"
+        return 1
+    }
+    echo "Moving IP address: $(jq -r '.action.status' <<<"$resp")"
+    return 0
+}
+
+if [[ -z "$DO_TOKEN" ]] || (( $# != 1 )); then
+    usage
+    exit 1
+fi
+
+main "$@"
+exit $?
+

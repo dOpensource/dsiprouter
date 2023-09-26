@@ -32,9 +32,8 @@ def start_upgrade():
     if upgrade_settings['depends'] == current_version:
         logging.info("Version Check Passed. Proceeding with upgrade to version " + upgrade_settings['version'])
         backup_system()
-        upgrade_database()
-        upgrade_dsiprouter()
         merge_settings()
+        upgrade_dsiprouter()
         logging.info("Upgrade complete.")
 
         # TODO: Add git status diff checking
@@ -133,34 +132,6 @@ def read_settings():
         sys.exit(1)
 
 
-# write a function that loops through an array of sql statements and executes them
-def upgrade_database():
-    logging.info("Starting DB Upgrade process")
-    global upgrade_settings
-
-    migration_scripts = upgrade_settings['database_migrations']
-
-    try:
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        scripts_directory = os.path.join(current_dir, 'scripts')
-
-        logging.info("Running scripts from " + scripts_directory)
-
-        # execute the cmds one by one
-        for script in migration_scripts:
-            script_command = f"/bin/bash {scripts_directory}/{script}"
-            logging.info("Executing Script: " + script_command)
-            output = subprocess.check_output(script_command, shell=True)
-            logging.info(output.decode("utf-8"))
-            logging.info("Script " + script + "completed successfully")
-
-        logging.info("All DB Migrations completed successfully")
-
-    except Exception as e:
-        logging.error("An unexpected error occurred {}".format(e))
-        sys.exit(1)
-
-
 def upgrade_dsiprouter():
     logging.info("Starting dSIPRouter Upgrade process")
     global upgrade_settings
@@ -205,15 +176,11 @@ def merge_settings():
         if key in new_file_dict:
             new_file_dict[key] = value
 
-    # Output the merged dictionary
-    print(old_file_dict)
-
+    config_file = new_file_name
     try:
-        config_file = new_file_name
-
         with open(config_file, 'r+') as config:
             config_str = config.read()
-            for key, val in old_file_dict.items():
+            for key, val in new_file_dict.items():
                 regex = r"^(?!#)(?:" + re.escape(key) + \
                         r")[ \t]*=[ \t]*(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?\"\"\".*\"\"\"[ \t]*$|b?'''.*'''[ \v]*$|b?\".*\"[ \t]*$|b?'.*')"
                 replace_str = "{} = {}".format(key, repr(val))

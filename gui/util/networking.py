@@ -142,12 +142,12 @@ def hostToIP(host, ip_ver=''):
         try:
             return socket.getaddrinfo(host, 0, socket.AF_INET)[0][4][0]
         except:
-            pass
+            raise Exception("Endpoint hostname/address is malformed or not working:{0}".format(host))
     if ip_ver == '6' or len(ip_ver) == 0:
         try:
             return socket.getaddrinfo(host, 0, socket.AF_INET6)[0][4][0]
         except:
-            pass
+            raise Exception("Endpoint hostname/address is malformed or not working:{0}".format(host))
     return None
 
 def ipToHost(ip, exclude_dsip_aliases=True):
