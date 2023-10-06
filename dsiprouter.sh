@@ -1289,9 +1289,13 @@ function configureKamailioDB() {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_notification.sql
 
-    # Install schema for gw2gwgroup
+    # Install schema for dsip_gw2gwgroup
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
+
+    # Install schema for dsip_gwgroup2lb
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_gwgroup2lb.sql
 
     # Install schema for dsip_cdrinfo
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
