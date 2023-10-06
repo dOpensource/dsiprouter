@@ -311,6 +311,12 @@ function setDynamicScriptSettings() {
     if [[ "$HOMER_ID" == "None" ]] || [[ -z "$HOMER_ID" ]]; then
         export HOMER_ID=$(cat /etc/machine-id | hashCreds -l 4 | dd if=/dev/stdin of=/dev/stdout bs=1 count=8 2>/dev/null | hextoint)
     fi
+
+    # find the repo where we are getting upgrades from
+    # note that remote is assumed to be "origin"
+    # note that the VCS is assumed to be git
+    GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_CONFIG_FILE})
+    GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_CONFIG_FILE})
 }
 
 # Check if we are on a VPS Cloud Instance
@@ -4142,9 +4148,16 @@ function processCMD() {
                 esac
             done
 
+            # repo we are upgrading from could have been provided on the CLI
+            if [[ -n "UPGRADE_REPO" ]]; then
+                UPGRADE_RELEASE_URL="https://api.github.com/repos/$(rev <<<"$UPGRADE_REPO" | cut -d '/' -f -2 | cut -d '.' -f 2- | rev)/releases/latest"
+            else
+                UPGRADE_RELEASE_URL="$GIT_RELEASE_URL"
+            fi
+
             # use latest release if none specified
             if [[ -z "$UPGRADE_RELEASE" ]]; then
-                TMP=$(curl -s "https://api.github.com/repos/dOpensource/dsiprouter/releases/latest") &&
+                TMP=$(curl -s "$UPGRADE_RELEASE_URL") &&
                 TMP=$(jq -e -r '.tag_name' <<<"$TMP") &&
                 UPGRADE_RELEASE=$(grep -oP 'v[0-9]+\.[0-9]+' <<<"$TMP") || {
                         printerr "Could not retrieve latest release candidate"

@@ -1,10 +1,11 @@
 import re, requests
 
+import settings
+
 
 class UpdateUtils():
     @staticmethod
     def get_repo_version_list():
-        url = "https://api.github.com/repos/dOpensource/dsiprouter/releases"
         payload = {}
         headers = {
             'Accept': 'application/vnd.github+json'
@@ -13,12 +14,11 @@ class UpdateUtils():
             "per_page": 100
         }
 
-        r = requests.get(url, params=params, headers=headers, data=payload)
+        r = requests.get(settings.GIT_RELEASE_URL, params=params, headers=headers, data=payload)
         return r.json()
 
     @staticmethod
     def get_latest_version():
-        url = "https://api.github.com/repos/dOpensource/dsiprouter/releases"
         payload = {}
         headers = {
             'Accept': 'application/vnd.github+json'
@@ -27,7 +27,7 @@ class UpdateUtils():
             "per_page": 100
         }
 
-        r = requests.get(url, params=params, headers=headers, data=payload)
+        r = requests.get(settings.GIT_RELEASE_URL, params=params, headers=headers, data=payload)
         latest = {
             'tag_name': '',
             'ver_num': 0
