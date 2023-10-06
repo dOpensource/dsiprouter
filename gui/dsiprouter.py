@@ -44,6 +44,9 @@ import globals, settings
 # TODO: unit testing per component
 # TODO: many of these routes could use some updating...
 #       possibly look into this as well when reworking the architecture for API
+# TODO: do license checks on login and store in session variables
+#       this alleviates the extra requests and can be updated easily
+#       marked for implementation in v0.80
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -2306,7 +2309,7 @@ def displayUpgrade(msg=None):
 
         upgrade_settings = {
             "current_version": settings.VERSION,
-            "latest_version": latest['tag_name'],
+            "latest_version": latest['ver_num'],
             "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
         }
         return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
@@ -2336,11 +2339,9 @@ def start_upgrade():
         logging.info("Starting upgrade")
 
         form = stripDictVals(request.form.to_dict())
-        upgrade_resources_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
-        current_resources_dir = os.path.join(upgrade_resources_dir, form['latest_version'])
-        cmd = "python3 {} {}".format(current_resources_dir, form['latest_version'])
+        cmd = ['sudo', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
 
-        with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
+        with open('/tmp/dsiprouter_upgrade.log', 'wb') as f:
             run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
             run_info.check_returncode()
 
@@ -2367,7 +2368,7 @@ def getUpgradeLog(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        filename = "/var/log/dsiprouter_upgrade.log"
+        filename = "/tmp/dsiprouter_upgrade.log"
         with open(filename, 'r') as file:
             content = file.read()
             return Response(content, content_type='text/plain')

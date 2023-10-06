@@ -1062,38 +1062,17 @@ function sqlAsTransaction() {
         [[ -n "$TMP" ]] && SQL_STATEMENTS=( "$TMP" )
     fi
 
-    local STATUS=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" ${MYSQL_DBNAME} 2>/dev/null << EOF
-DROP PROCEDURE IF EXISTS tryStatements;
-DELIMITER //
-CREATE PROCEDURE tryStatements(OUT ret BOOL)
-BEGIN
-    DECLARE error_occurred BOOL DEFAULT 0;
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET error_occurred = 1;
-    START TRANSACTION;
+    mysql -s --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" ${MYSQL_DBNAME} <<EOF
+START TRANSACTION;
 
-    ${SQL_STATEMENTS[@]}
+${SQL_STATEMENTS[@]}
 
-    IF error_occurred THEN
-        ROLLBACK;
-    ELSE
-        COMMIT;
-    END IF;
-
-    set ret = error_occurred;
-END //
-DELIMITER ;
-
-CALL tryStatements(@ret);
-DROP PROCEDURE tryStatements;
-
-select @ret;
+SET @end_transaction = (SELECT IF(@@error_count > 0, "ROLLBACK;", "COMMIT;"));
+PREPARE stmt FROM @end_transaction;
+EXECUTE stmt;
 EOF
-    )
 
-    # in case we had an error connecting
-    STATUS=$((STATUS + $?))
-
-    return $STATUS
+    return $?
 }
 export -f sqlAsTransaction
 
