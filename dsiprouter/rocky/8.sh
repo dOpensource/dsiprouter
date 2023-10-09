@@ -20,7 +20,7 @@ function install {
 
     dnf install -y dnf-utils
     dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    dnf install -y firewalld
+    dnf install -y firewalld sudo
     dnf install -y python36 python36-libs python36-devel python36-pip MySQL-python
     dnf install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 

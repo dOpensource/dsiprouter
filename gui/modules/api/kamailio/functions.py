@@ -8,6 +8,8 @@ import sys
 sys.path.insert(0, '/etc/dsiprouter/gui')
 
 
+# TODO: parse enabled features from kamailio config and only reload enabled ones
+#       we would want to separate the feature definitions into a separate file to do this
 def reloadKamailio():
     try:
         # format some settings for kam config
@@ -23,13 +25,16 @@ def reloadKamailio():
             {'method': 'drouting.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'domain.reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'dispatcher.reload', 'jsonrpc': '2.0', 'id': 1},
-            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["maintmode"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["tofromprefix"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["calllimit"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gw2gwgroup"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["gwgroup2lb"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_hardfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_failfwd"]},
             {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["inbound_prefixmap"]},
+            #{'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["enrichdnid_lnpmap"]},
+            {'method': 'htable.reload', 'jsonrpc': '2.0', 'id': 1, 'params': ["dr_rules"]},
             {'method': 'uac.reg_reload', 'jsonrpc': '2.0', 'id': 1},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]},
             {'method': 'cfg.sets', 'jsonrpc': '2.0', 'id': 1, 'params': ['server', 'role', settings.ROLE]},

@@ -1,0 +1,2 @@
+Cmnd_Alias DSIP_UPGRADE_CMDS = /usr/bin/dsiprouter upgrade, /usr/bin/dsiprouter upgrade *
+dsiprouter ALL=(ALL) NOPASSWD: DSIP_UPGRADE_CMDS

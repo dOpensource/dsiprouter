@@ -1,44 +1,14 @@
 #!/usr/bin/env bash
 
-# set project dir (where src files are located)
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
-# import dsip_lib utility / shared functions
+# where the new project files were downloaded
+NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
+
+# set project dir where previous repo was located
+export DSIP_PROJECT_DIR='/opt/dsiprouter'
+# import dsip_lib utility / shared functions (we are using old functions on purpose here)
 if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
-
-printdbg 'verifying version requirements'
-REPO_URL='https://github.com/dOpensource/dsiprouter.git'
-UPGRADE_VER=$(jq -r -e '.version' <"$(dirname "$(dirname "$(readlink -f "$0")")")/settings.json")
-UPGRADE_VER_TAG="v${UPGRADE_VER}-rel"
-CURRENT_VERSION=$(getConfigAttrib "VERSION" "/etc/dsiprouter/gui/settings.py")
-UPGRADE_DEPENDS=( $(jq -r -e '.depends[]' <"$(dirname "$(dirname "$(readlink -f "$0")")")/settings.json") )
-(
-    for VER in ${UPGRADE_DEPENDS[@]}; do
-        if [[ "$CURRENT_VERSION" == "$VER" ]]; then
-            exit 0
-        fi
-    done
-    exit 1
-) || {
-    printerr "unsupported upgrade scenario ($CURRENT_VERSION -> $UPGRADE_VER)"
-    exit 1
-}
-
-printdbg 'backing up configs just in case the upgrade fails'
-BACKUP_DIR="/var/backups"
-CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%s')"
-mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
-cp -rf /opt/dsiprouter/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
-cp -rf /etc/kamailio/. ${CURR_BACKUP_DIR}/etc/kamailio/
-cp -rf /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
-cp -f /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
-cp -rf /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
-cp -f ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
-cp -f /etc/systemd/system/{dnsmasq.service,kamailio.service,nginx.service,rtpengine.service} ${CURR_BACKUP_DIR}/etc/systemd/system/
-cp -f /lib/systemd/system/dsiprouter.service ${CURR_BACKUP_DIR}/lib/systemd/system/
-cp -f /etc/default/kamailio ${CURR_BACKUP_DIR}/etc/default/
-printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
 
 printdbg 'retrieving system info'
 export DISTRO=$(getDistroName)
@@ -53,11 +23,10 @@ export KAM_DB_NAME=$(getConfigAttrib "KAM_DB_NAME" "/etc/dsiprouter/gui/settings
 export ROOT_DB_USER=$(getConfigAttrib "ROOT_DB_USER" "/etc/dsiprouter/gui/settings.py")
 export ROOT_DB_PASS=$(decryptConfigAttrib "ROOT_DB_PASS" "/etc/dsiprouter/gui/settings.py")
 
-printdbg 'configuring dSIPRouter project files'
+printdbg 'migrating dSIPRouter project files'
 # fresh repo coming up
-rm -rf /opt/dsiprouter
-git clone --depth 1 -b "$UPGRADE_VER_TAG" "$REPO_URL" /opt/dsiprouter
-export DSIP_PROJECT_DIR=/opt/dsiprouter
+cp -rf ${NEW_PROJECT_DIR}/. ${DSIP_PROJECT_DIR}/
+rm -rf ${NEW_PROJECT_DIR}
 
 printdbg 'migrating database schema'
 (
@@ -321,8 +290,133 @@ ALTER TABLE uacreg
   MODIFY COLUMN `r_domain` VARCHAR(253) NOT NULL DEFAULT '',
   MODIFY COLUMN `realm` varchar(253) NOT NULL DEFAULT '',
   MODIFY COLUMN `auth_proxy` varchar(16000) NOT NULL DEFAULT '';
+
+DROP TABLE IF EXISTS dsip_gwgroup2lb;
+CREATE TABLE dsip_gwgroup2lb (
+  gwgroupid varchar(64) NOT NULL,
+  setid varchar(64) NOT NULL,
+  enabled char(1) NOT NULL DEFAULT '0',
+  key_type varchar(64) NOT NULL DEFAULT '0',
+  value_type varchar(64) NOT NULL DEFAULT '0',
+  PRIMARY KEY (gwgroupid, setid)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+DROP TRIGGER IF EXISTS insert_gwgroup2lb;
+DELIMITER //
+CREATE TRIGGER insert_gwgroup2lb
+  AFTER INSERT
+  ON dr_gw_lists
+  FOR EACH ROW
+BEGIN
+  DECLARE v_setid varchar(64);
+
+  SET @new_gwgroupid := COALESCE(NEW.id, @new_gwgroupid, (
+    SELECT auto_increment
+    FROM information_schema.tables
+    WHERE table_name = 'dr_gw_lists' AND table_schema = DATABASE()));
+
+  IF NEW.description REGEXP '(?:lb:|lb_ext:)([0-9]+)' THEN
+    SET v_setid = REGEXP_REPLACE(NEW.description, '.*(?:lb:|lb_ext:)([0-9]+).*', '\\1');
+    REPLACE INTO dsip_gwgroup2lb
+      VALUES (CAST(@new_gwgroupid AS char), CAST(v_setid AS char), DEFAULT, DEFAULT, DEFAULT);
+  END IF;
+
+  SET @new_gwgroupid = @new_gwgroupid + 1;
+END; //
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS update_gwgroup2lb;
+DELIMITER //
+CREATE TRIGGER update_gwgroup2lb
+  AFTER UPDATE
+  ON dr_gw_lists
+  FOR EACH ROW
+BEGIN
+  DECLARE v_gwgroupid varchar(64) DEFAULT NULL;
+  DECLARE v_setid varchar(64) DEFAULT NULL;
+
+  IF NOT (NEW.description <=> OLD.description) THEN
+    SET v_gwgroupid = CAST(COALESCE(NEW.id, OLD.id) AS char);
+
+    DELETE FROM dsip_gwgroup2lb WHERE gwgroupid = v_gwgroupid;
+
+    IF NEW.description REGEXP '(?:lb:|lb_ext:)([0-9]+)' THEN
+      SET v_setid = REGEXP_REPLACE(NEW.description, '.*(?:lb:|lb_ext:)([0-9]+).*', '\\1');
+      INSERT INTO dsip_gwgroup2lb VALUES(v_gwgroupid, v_setid, DEFAULT, DEFAULT, DEFAULT);
+    END IF;
+  END IF;
+END; //
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS delete_gwgroup2lb;
+DELIMITER //
+CREATE TRIGGER delete_gwgroup2lb
+  AFTER DELETE
+  ON dr_gw_lists
+  FOR EACH ROW
+BEGIN
+  DELETE FROM dsip_gwgroup2lb WHERE gwgroupid = cast(OLD.id AS char);
+END; //
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS insert_rule_gwgroup2lb;
+DELIMITER //
+CREATE TRIGGER insert_rule_gwgroup2lb
+  AFTER INSERT
+  ON dr_rules
+  FOR EACH ROW
+BEGIN
+  SET @new_ruleid := COALESCE(NEW.ruleid, @new_ruleid, (
+    SELECT auto_increment
+    FROM information_schema.tables
+    WHERE table_name = 'dr_rules' AND table_schema = DATABASE()));
+
+  IF (NEW.description LIKE '%lb_enabled:1%') THEN
+    UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+  END IF;
+
+  SET @new_ruleid = @new_ruleid + 1;
+END; //
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS update_rule_gwgroup2lb;
+DELIMITER //
+CREATE TRIGGER update_rule_gwgroup2lb
+  AFTER UPDATE
+  ON dr_rules
+  FOR EACH ROW
+BEGIN
+  DECLARE v_gwgroupid varchar(64) DEFAULT NULL;
+  DECLARE v_ruleid varchar(64) DEFAULT NULL;
+  DECLARE v_description varchar(255) DEFAULT '';
+
+  SET v_ruleid = CAST(COALESCE(NEW.ruleid, OLD.ruleid) AS char);
+  SET v_gwgroupid = REPLACE(COALESCE(NEW.gwlist, OLD.gwlist), '#', '');
+  SET v_description = COALESCE(NEW.description, OLD.description);
+
+  IF (v_description LIKE '%lb_enabled:1%') THEN
+    UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
+  ELSE
+    UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = v_gwgroupid;
+  END IF;
+END; //
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS delete_rule_gwgroup2lb;
+DELIMITER //
+CREATE TRIGGER delete_rule_gwgroup2lb
+  AFTER DELETE
+  ON dr_rules
+  FOR EACH ROW
+BEGIN
+  IF (OLD.description LIKE '%lb_enabled:1%') THEN
+    UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = OLD.ruleid;
+  END IF;
+END; //
+DELIMITER ;
 EOF
-) | sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT"
+) | sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT" --db="$KAM_DB_NAME"
 
 if (( $? != 0 )); then
     printerr 'Failed merging DB schema'
@@ -353,13 +447,19 @@ gzip -f /usr/share/man/man1/dsiprouter.1
 mandb
 cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
 
+printdbg 'updating dSIPRouter CLI permissions'
+cat <<'EOF' >/etc/sudoers.d/99-dsiprouter
+Cmnd_Alias DSIP_UPGRADE_CMDS = /usr/bin/dsiprouter upgrade, /usr/bin/dsiprouter upgrade *
+dsiprouter ALL=(ALL) NOPASSWD: DSIP_UPGRADE_CMDS
+EOF
+
 printdbg 'upgrading DNSmasq installation'
 (
     DNSMASQ_LISTEN_ADDRS="127.0.0.1"
     DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1")
 
     # get dynamic network settings
-    NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
+    NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' /etc/dsiprouter/gui/settings.py)}
     NETWORK_MODE=${NETWORK_MODE:-0}
     if (( $NETWORK_MODE == 0 )); then
         export INTERNAL_IP_ADDR=$(getInternalIP -4)
@@ -378,19 +478,19 @@ printdbg 'upgrading DNSmasq installation'
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
         fi
     elif (( $NETWORK_MODE == 1 )); then
-        export INTERNAL_IP_ADDR=${INTERNAL_IP_ADDR:-$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP_NET=${INTERNAL_IP_NET:-$(getConfigAttrib 'INTERNAL_IP_NET' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP6_ADDR=${INTERNAL_IP6_ADDR:-$(getConfigAttrib 'INTERNAL_IP6_ADDR' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP_NET6=${INTERNAL_IP_NET6:-$(getConfigAttrib 'INTERNAL_IP_NET6' ${DSIP_CONFIG_FILE})}
+        export INTERNAL_IP_ADDR=${INTERNAL_IP_ADDR:-$(getConfigAttrib 'INTERNAL_IP_ADDR' /etc/dsiprouter/gui/settings.py)}
+        export INTERNAL_IP_NET=${INTERNAL_IP_NET:-$(getConfigAttrib 'INTERNAL_IP_NET' /etc/dsiprouter/gui/settings.py)}
+        export INTERNAL_IP6_ADDR=${INTERNAL_IP6_ADDR:-$(getConfigAttrib 'INTERNAL_IP6_ADDR' /etc/dsiprouter/gui/settings.py)}
+        export INTERNAL_IP_NET6=${INTERNAL_IP_NET6:-$(getConfigAttrib 'INTERNAL_IP_NET6' /etc/dsiprouter/gui/settings.py)}
 
-        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$(getConfigAttrib 'EXTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
-        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$(getConfigAttrib 'EXTERNAL_IP6_ADDR' ${DSIP_CONFIG_FILE})}
+        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$(getConfigAttrib 'EXTERNAL_IP_ADDR' /etc/dsiprouter/gui/settings.py)}
+        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$(getConfigAttrib 'EXTERNAL_IP6_ADDR' /etc/dsiprouter/gui/settings.py)}
 
-        export INTERNAL_FQDN=${INTERNAL_FQDN:-$(getConfigAttrib 'INTERNAL_FQDN' ${DSIP_CONFIG_FILE})}
-        export EXTERNAL_FQDN=${EXTERNAL_FQDN:-$(getConfigAttrib 'EXTERNAL_FQDN' ${DSIP_CONFIG_FILE})}
+        export INTERNAL_FQDN=${INTERNAL_FQDN:-$(getConfigAttrib 'INTERNAL_FQDN' /etc/dsiprouter/gui/settings.py)}
+        export EXTERNAL_FQDN=${EXTERNAL_FQDN:-$(getConfigAttrib 'EXTERNAL_FQDN' /etc/dsiprouter/gui/settings.py)}
     elif (( $NETWORK_MODE == 2 )); then
-        PUBLIC_IFACE=${PUBLIC_IFACE:-$(getConfigAttrib 'PUBLIC_IFACE' ${DSIP_CONFIG_FILE})}
-        PRIVATE_IFACE=${PRIVATE_IFACE:-$(getConfigAttrib 'PRIVATE_IFACE' ${DSIP_CONFIG_FILE})}
+        PUBLIC_IFACE=${PUBLIC_IFACE:-$(getConfigAttrib 'PUBLIC_IFACE' /etc/dsiprouter/gui/settings.py)}
+        PRIVATE_IFACE=${PRIVATE_IFACE:-$(getConfigAttrib 'PRIVATE_IFACE' /etc/dsiprouter/gui/settings.py)}
 
         export INTERNAL_IP_ADDR=$(getIP -4 "$PRIVATE_IFACE")
         export INTERNAL_IP_NET=$(getInternalCIDR -4 "$PRIVATE_IFACE")
@@ -711,7 +811,6 @@ dsiprouter chown
 
 printdbg 'restarting services'
 systemctl restart kamailio
-systemctl restart nginx
 systemctl restart dsiprouter
 
 exit 0

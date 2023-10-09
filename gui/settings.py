@@ -209,4 +209,8 @@ ROOT_DB_NAME = 'mysql'
 # file  - load from setting.py file
 # db    - load from dsip_settings table
 LOAD_SETTINGS_FROM = 'file'
+
+# where upgrades will be pulled from
+GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
+GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases/latest'
 ############### End Local-Only Settings ##################

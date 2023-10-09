@@ -35,6 +35,7 @@
       <th data-field="gwgroupname">Endpoint Group</th>
       <th data-field="rulename">Name</th>
       <th data-field="gwlist" class="hidden">Gateway List</th>
+      <th data-field="lb_enabled" class="hidden"></th>
       <th></th>
       <th></th>
       <th data-field="hf_ruleid" class="hidden"></th>
@@ -54,8 +55,8 @@
         <td class='ruleid'>{{ row.ruleid }}</td>
         <td class='prefix'>{{ row.prefix }}</td>
         <td class="gwgroupid hidden">{{ row.gwgroupid }}</td>
-        {% if "#" not in row.gwlist  %}
-          <td class='gwgroupname'>Load Balancing Group</td>
+        {% if row.rule_description|attrFilter('lb_enabled') == "1" %}
+          <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }} <small>(Load Balancing)</small></td>
         {% else %}
           {% if row.gwlist.split(',')|length > 1 %}
             <td class='gwgroupname'>{{ row.gwgroup_description|attrFilter('name') }}<sup> +1</sup></td>
@@ -65,6 +66,7 @@
         {% endif %}
         <td class="rulename">{{ row.rule_description|attrFilter('name') }}</td>
         <td class="gwlist hidden">{{ row.gwlist }}</td>
+        <td class="lb_enabled hidden">{{ row.rule_description|attrFilter('lb_enabled') }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit"
@@ -141,12 +143,12 @@
           <option class="hidden" value="" selected disabled>Endpoint Group</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
-        	    {% if epgroup['description']|attrFilter('lb') %}
-        	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
-        	    {% endif %}
-        	    {% if epgroup['description']|attrFilter('lb_ext') %}
-        	    <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb_ext') }}">{{ epgroup['description']|attrFilter('name') }} LB (External)</option>
-        	    {% endif %}
+            {% if epgroup['description']|attrFilter('lb') %}
+            <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb') }}">{{ epgroup['description']|attrFilter('name') }} LB</option>
+            {% endif %}
+            {% if epgroup['description']|attrFilter('lb_ext') %}
+            <option value="lb_{{ epgroup['id'] }}_{{ epgroup['description']|attrFilter('lb_ext') }}">{{ epgroup['description']|attrFilter('name') }} LB (External)</option>
+            {% endif %}
           {% endfor %}
         </select>
       </div>

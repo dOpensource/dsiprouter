@@ -92,6 +92,7 @@ function setStaticScriptSettings() {
     export SYSTEM_RTPENGINE_CONFIG_FILE="${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf"
     export PATH_UPDATE_FILE="/etc/profile.d/dsip_paths.sh" # updates paths required
     GIT_UPDATE_FILE="/etc/profile.d/dsip_git.sh" # extends git command
+    DSIP_SUDOERS_FILE="/etc/sudoers.d/99-dsiprouter"
     export RTPENGINE_VER="mr9.3.1.4"
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
@@ -310,6 +311,12 @@ function setDynamicScriptSettings() {
     if [[ "$HOMER_ID" == "None" ]] || [[ -z "$HOMER_ID" ]]; then
         export HOMER_ID=$(cat /etc/machine-id | hashCreds -l 4 | dd if=/dev/stdin of=/dev/stdout bs=1 count=8 2>/dev/null | hextoint)
     fi
+
+    # find the repo where we are getting upgrades from
+    # note that remote is assumed to be "origin"
+    # note that the VCS is assumed to be git
+    GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_CONFIG_FILE})
+    GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_CONFIG_FILE})
 }
 
 # Check if we are on a VPS Cloud Instance
@@ -1289,9 +1296,13 @@ function configureKamailioDB() {
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_notification.sql
 
-    # Install schema for gw2gwgroup
+    # Install schema for dsip_gw2gwgroup
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_gw2gwgroup.sql
+
+    # Install schema for dsip_gwgroup2lb
+    mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_gwgroup2lb.sql
 
     # Install schema for dsip_cdrinfo
     mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" $KAM_DB_NAME --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" \
@@ -1659,6 +1670,9 @@ function installDsiprouterCli() {
     # TODO: has no effect when executing script, user has to log out and log in for changes to take effect
     #. /etc/bash_completion
 
+    # add specific commands to sudoers that dsiprouter can run with escalated privileges
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
+
     touch "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
     printdbg "dSIPRouter CLI installed"
 }
@@ -1675,6 +1689,9 @@ function uninstallDsiprouterCli() {
     rm -f /usr/bin/dsiprouter
     # remove command line completion for dsiprouter.sh
     rm -f /etc/bash_completion.d/dsiprouter
+
+    # remove dsiprouter sudoers file
+    rm -f ${DSIP_SUDOERS_FILE}
 
     rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
     printdbg "dSIPRouter CLI uninstalled"
@@ -2981,16 +2998,60 @@ function removeInitService() {
 }
 
 function upgrade() {
-    local BS_SCRIPT_URL="https://github.com/dOpensource/dsiprouter/tree/${UPGRADE_RELEASE}/resources/upgrade/${UPGRADE_RELEASE}/scripts/bootstrap.sh"
-    export BOOTSTRAPPING_UPGRADE=${BOOTSTRAPPING_UPGRADE:-0}
+    local UPGRADE_VER CURRENT_VERSION UPGRADE_DEPENDS
+    local REPO_URL=${UPGRADE_REPO:-https://github.com/dOpensource/dsiprouter.git}
+    local TAG_NAME="${UPGRADE_RELEASE}-rel"
+    export NEW_PROJECT_DIR=${BOOTSTRAP_DIR:-/tmp/dsiprouter}
 
-    # check if the new function definitions need bootstrapped prior to upgrade
-    if (( $BOOTSTRAPPING_UPGRADE == 0 )) && curl -sf -I "$BS_SCRIPT_URL" -o /dev/null; then
-        curl -s "$BS_SCRIPT_URL" | bash
-        return $?
+    # make sure mask is reset to be more permissive
+    # repo must be created with permissions set in the remote repo
+    # and we want to keep permissions from backup files as well
+    umask 022
+
+    # if new repo was bootstrapped onto system already, use that repo instead
+    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 0 )); then
+        printdbg 'downloading new dSIPRouter project files'
+        rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
+        git clone --depth 1 -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
+            printerr 'failed downloading new project files'
+            cleanupAndExit 1
+        }
+    else
+        printdbg 'running with bootstrapped dSIPRouter project files'
     fi
 
-    ${DSIP_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
+    printdbg 'verifying version requirements'
+    UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
+    CURRENT_VERSION=$(getConfigAttrib "VERSION" "${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py")
+    UPGRADE_DEPENDS=( $(jq -r -e '.depends[]' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json") )
+    (
+        for VER in ${UPGRADE_DEPENDS[@]}; do
+            if [[ "$CURRENT_VERSION" == "$VER" ]]; then
+                exit 0
+            fi
+        done
+        exit 1
+    ) || {
+        printerr "unsupported upgrade scenario ($CURRENT_VERSION -> $UPGRADE_VER)"
+        exit 1
+    }
+
+    printdbg 'backing up configs just in case the upgrade fails'
+    CURR_BACKUP_DIR="${BACKUPS_DIR}/$(date '+%s')"
+    mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
+    cp -rf ${DSIP_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
+    cp -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
+    cp -rf /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
+    cp -f /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
+    cp -rf /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
+    cp -f ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
+    cp -f /etc/systemd/system/{dnsmasq.service,kamailio.service,nginx.service,rtpengine.service} ${CURR_BACKUP_DIR}/etc/systemd/system/
+    cp -f /lib/systemd/system/dsiprouter.service ${CURR_BACKUP_DIR}/lib/systemd/system/
+    cp -f /etc/default/kamailio ${CURR_BACKUP_DIR}/etc/default/
+    printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
+
+    printdbg "starting migration from $CURRENT_VERSION to $UPGRADE_VER"
+    ${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
     return $?
 }
 
@@ -3476,6 +3537,10 @@ function updatePermissions() {
         # dsiprouter gui files readable and writable only by dsiprouter
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
+
+        # files that should be executable
+        chmod +x ${DSIP_PROJECT_DIR}/dsiprouter.sh
+        chmod +x ${DSIP_PROJECT_DIR}/resources/upgrade/*/scripts/migrate.sh
     }
     # set permissions for files/dirs used by rtpengine
     setRtpenginePerms() {
@@ -3552,7 +3617,7 @@ function usageOptions() {
     printf "%-30s %s\n" \
         "clusterinstall" "[-debug] [-i <ssh key file>] <[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2]> ... -- [INSTALL OPTIONS]"
     printf "%-30s %s\n" \
-        "upgrade" "[-debug|-dsipcid <num>|--dsip-clusterid=<num>] <-rel <release number>|--release=<release number>>"
+        "upgrade" "[-debug|-dsipcid <num>|--dsip-clusterid=<num>|-url <repo url>|--repo-url=<repo url>] <-rel <release number>|--release=<release number>>"
     printf "%-30s %s\n" \
         "start" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine]"
     printf "%-30s %s\n" \
@@ -4064,6 +4129,16 @@ function processCMD() {
                             UPGRADE_RELEASE="v${UPGRADE_RELEASE}"
                         fi
                         ;;
+                    -url|--repo-url=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            export UPGRADE_REPO="$(echo "$1" | cut -d '=' -f 2)"
+                            shift
+                        else
+                            shift
+                            export UPGRADE_REPO="$1"
+                            shift
+                        fi
+                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -4073,9 +4148,16 @@ function processCMD() {
                 esac
             done
 
+            # repo we are upgrading from could have been provided on the CLI
+            if [[ -n "UPGRADE_REPO" ]]; then
+                UPGRADE_RELEASE_URL="https://api.github.com/repos/$(rev <<<"$UPGRADE_REPO" | cut -d '/' -f -2 | cut -d '.' -f 2- | rev)/releases/latest"
+            else
+                UPGRADE_RELEASE_URL="$GIT_RELEASE_URL"
+            fi
+
             # use latest release if none specified
             if [[ -z "$UPGRADE_RELEASE" ]]; then
-                TMP=$(curl -s "https://api.github.com/repos/dOpensource/dsiprouter/releases/latest") &&
+                TMP=$(curl -s "$UPGRADE_RELEASE_URL") &&
                 TMP=$(jq -e -r '.tag_name' <<<"$TMP") &&
                 UPGRADE_RELEASE=$(grep -oP 'v[0-9]+\.[0-9]+' <<<"$TMP") || {
                         printerr "Could not retrieve latest release candidate"

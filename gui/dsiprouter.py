@@ -44,6 +44,9 @@ import globals, settings
 # TODO: unit testing per component
 # TODO: many of these routes could use some updating...
 #       possibly look into this as well when reworking the architecture for API
+# TODO: do license checks on login and store in session variables
+#       this alleviates the extra requests and can be updated easily
+#       marked for implementation in v0.80
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -1145,7 +1148,7 @@ def addUpdateInboundMapping():
         ruleid = form['ruleid'] if 'ruleid' in form else None
         gwgroupid = form['gwgroupid'] if 'gwgroupid' in form and form['gwgroupid'] != "0" else ''
         prefix = form['prefix'] if 'prefix' in form else ''
-        description = 'name:{}'.format(form['rulename']) if 'rulename' in form else ''
+        desc_dict = {'name': form['rulename']} if 'rulename' in form else {}
         hardfwd_enabled = int(form['hardfwd_enabled'])
         hf_gwgroupid = form['hf_gwgroupid'] if 'hf_gwgroupid' in form and form['hf_gwgroupid'] != "0" else ''
         hf_groupid = form['hf_groupid'] if 'hf_groupid' in form else ''
@@ -1155,8 +1158,6 @@ def addUpdateInboundMapping():
         ff_groupid = form['ff_groupid'] if 'ff_groupid' in form else ''
         ff_fwddid = form['ff_fwddid'] if 'ff_fwddid' in form else ''
 
-        # we only support a single gwgroup at this time
-        gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
         fwdgroupid = None
 
         # TODO: seperate redundant code into functions
@@ -1171,31 +1172,37 @@ def addUpdateInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
 
             if "lb_" in gwgroupid:
-                x = gwgroupid.split("_");
+                x = gwgroupid.split("_")
                 gwgroupid = x[1]
-                dispatcher_id = x[2].zfill(4)
-
-                Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
-
-                if not Gateway:
-                    # Create a gateway
-                    Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-
-                    db.add(Gateway)
-                    db.flush()
-
-                addresses = [Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)]
-                if settings.IPV6_ENABLED:
-                    addresses.append(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
-                db.add_all(addresses)
-
-                # Define an Inbound Mapping that maps to the newly created gateway
-                gwlist = Gateway.gwid
-                IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
-                db.add(IMap)
-
-                db.commit()
-                return displayInboundMapping()
+                desc_dict['lb_enabled'] = '1'
+            else:
+                desc_dict['lb_enabled'] = '0'
+            description = dictToStrFields(desc_dict)
+            # we only support a single gwgroup at this time
+            gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
+            #     dispatcher_id = x[2].zfill(4)
+            #
+            #     Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
+            #
+            #     if not Gateway:
+            #         # Create a gateway
+            #         Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+            #
+            #         db.add(Gateway)
+            #         db.flush()
+            #
+            #     addresses = [Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid)]
+            #     if settings.IPV6_ENABLED:
+            #         addresses.append(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+            #     db.add_all(addresses)
+            #
+            #     # Define an Inbound Mapping that maps to the newly created gateway
+            #     gwlist = Gateway.gwid
+            #     IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
+            #     db.add(IMap)
+            #
+            #     db.commit()
+            #     return displayInboundMapping()
 
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             inserts.append(IMap)
@@ -1267,44 +1274,51 @@ def addUpdateInboundMapping():
 
             if "lb_" in gwgroupid:
                 # logging.info("In the load balancing update logic")
-                x = gwgroupid.split("_");
+                x = gwgroupid.split("_")
                 gwgroupid = x[1]
-                dispatcher_id = x[2].zfill(4)
+                desc_dict['lb_enabled'] = '1'
+            else:
+                desc_dict['lb_enabled'] = '0'
+            description = dictToStrFields(desc_dict)
+            # we only support a single gwgroup at this time
+            gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
+                # dispatcher_id = x[2].zfill(4)
+                #
+                # # logging.info("Searching for the gateway by description")
+                # # Create a gateway
+                # Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
+                # if Gateway:
+                #     logging.info("Gateway found")
+                #     fields = strFieldsToDict(Gateway.description)
+                #     fields['lb'] = dispatcher_id
+                #     fields['gwgroup'] = gwgroupid
+                #     Gateway.update({'prefix': dispatcher_id, 'description': dictToStrFields(fields)})
+                # else:
+                #     # logging.info("Gateway not found")
+                #     Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
+                #     if not Gateway:
+                #         logging.info("Gateway not found, creating new gateway")
+                #         # Create a gateway
+                #         Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                #         db.add(Gateway)
+                #         db.flush()
+                #
+                #     # Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+                #     # db.add(Gateway)
+                #
+                # db.flush()
+                # # Assign Gateway id to the gateway list
+                # gwlist = Gateway.gwid
+                #
+                # try:
+                #     if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
+                #         db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
+                #     if settings.IPV6_ENABLED:
+                #         if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
+                #             db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+                # except sql_exceptions.MultipleResultsFound as ex:
+                #     logging.info("Multiple Address rows found")
 
-                # logging.info("Searching for the gateway by description")
-                # Create a gateway
-                Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
-                if Gateway:
-                    logging.info("Gateway found")
-                    fields = strFieldsToDict(Gateway.description)
-                    fields['lb'] = dispatcher_id
-                    fields['gwgroup'] = gwgroupid
-                    Gateway.update({'prefix': dispatcher_id, 'description': dictToStrFields(fields)})
-                else:
-                    # logging.info("Gateway not found")
-                    Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
-                    if not Gateway:
-                        logging.info("Gateway not found, creating new gateway")
-                        # Create a gateway
-                        Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-                        db.add(Gateway)
-                        db.flush()
-
-                    # Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-                    # db.add(Gateway)
-
-                db.flush()
-                # Assign Gateway id to the gateway list
-                gwlist = Gateway.gwid
-
-                try:
-                    if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
-                        db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
-                    if settings.IPV6_ENABLED:
-                        if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
-                            db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
-                except sql_exceptions.MultipleResultsFound as ex:
-                    logging.info("Multiple Address rows found")
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -2295,7 +2309,7 @@ def displayUpgrade(msg=None):
 
         upgrade_settings = {
             "current_version": settings.VERSION,
-            "latest_version": latest['tag_name'],
+            "latest_version": latest['ver_num'],
             "upgrade_available": 1 if latest['ver_num'] > float(settings.VERSION) else 0
         }
         return render_template('upgrade.html', upgrade_settings=upgrade_settings, msg=msg)
@@ -2325,11 +2339,9 @@ def start_upgrade():
         logging.info("Starting upgrade")
 
         form = stripDictVals(request.form.to_dict())
-        upgrade_resources_dir = os.path.join(settings.DSIP_PROJECT_DIR, 'resources/upgrade')
-        current_resources_dir = os.path.join(upgrade_resources_dir, form['latest_version'])
-        cmd = "python3 {} {}".format(current_resources_dir, form['latest_version'])
+        cmd = ['sudo', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
 
-        with open('/var/log/dsiprouter_upgrade.log', 'wb', encoding="utf-8") as f:
+        with open('/tmp/dsiprouter_upgrade.log', 'wb') as f:
             run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
             run_info.check_returncode()
 
@@ -2356,7 +2368,7 @@ def getUpgradeLog(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        filename = "/var/log/dsiprouter_upgrade.log"
+        filename = "/tmp/dsiprouter_upgrade.log"
         with open(filename, 'r') as file:
             content = file.read()
             return Response(content, content_type='text/plain')
