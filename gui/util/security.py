@@ -234,17 +234,29 @@ def api_security(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         apiToken = APIToken(request)
-
-        if not session.get('logged_in') and not apiToken.isValid():
-            accept_header = request.headers.get('Accept', '')
-
+        accept_header = request.headers.get('Accept', '')
+       
+       # If user is logged into a session return right away
+        if session.get('logged_in'):
+            return func(*args, **kwargs)
+        else:
             if 'text/html' in accept_header:
                 return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
-            else:
-                payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-        return func(*args, **kwargs)
 
+        # If API Request check for license
+        if not re.match('text/html|text/css',accept_header,flags=re.IGNORECASE):
+                # Check if they have a Core Subscription
+                if settings.DSIP_CORE_LICENSE is None or not isinstance(settings.DSIP_CORE_LICENSE, bytes):
+                    payload = {'error': 'http', 'msg': 'Unauthorized - Core Subscription Requried.  Purchase from https://dopensource.com/product/dsiprouter-core/', 'kamreload': globals.reload_required, 'data': []}             
+                    return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
+                # Check if token is not valid
+                elif not apiToken.isValid():
+
+                    payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
+                    return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
+                # CHeck if token is valid
+                elif  apiToken.isValid():
+                    return func(*args, **kwargs)
     return wrapper
 
 
