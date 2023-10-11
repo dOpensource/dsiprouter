@@ -1,3 +1,4 @@
+import os, subprocess
 from functools import wraps
 from threading import Thread, Lock
 from multiprocessing import Process
@@ -21,6 +22,7 @@ class ThreadingIter():
         with self.lock:
             return self.iter.next()
 
+
 def thread(func):
     """
     Wrap function to execute within a single thread
@@ -33,9 +35,10 @@ def thread(func):
 
     return wrapper
 
-def proc(func):
+
+def process(func):
     """
-    Wrap function to execute within a single thread
+    Wrap function to execute within a single process
     """
 
     @wraps(func)
@@ -44,6 +47,43 @@ def proc(func):
         proc.start()
 
     return wrapper
+
+
+@process
+def daemonize(cmd, timeout=300):
+    """
+    Run command in detached daemon process
+
+    :param cmd:     commands to run
+    :type cmd:      list
+    :param timeout: timeout before daemonized process quits
+    :type timeout:  int
+    :return:        no return value
+    :rtype:         None
+    """
+
+    # decouple from parent environment
+    #os.chdir('/')
+    #os.setsid()
+    #os.umask(0)
+
+    # run command with new sid
+    # TODO: systemd tracks processes by cgroup and will kill these daemons when parent dies
+    #       os.unshare should accomplish this but is too new and only supported in python 3.12
+    #       back-porting would require compiling CPython modules or supporting multiple python versions?
+    #       alternatively we could ship a small ansi-C program that handles this
+    #       for now we workaround this in dsiprouter.sh but we should be more platform independent
+    subprocess.run(
+        cmd,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        timeout=timeout,
+        #start_new_session=True,
+        restore_signals=False,
+        #preexec_fn=lambda: os.unshare(os.CLONE_NEWCGROUP)
+    )
+
 
 def mpexec(func, args=None, kwargs=None, workers=None, callback=None):
     """
@@ -80,6 +120,7 @@ def mpexec(func, args=None, kwargs=None, workers=None, callback=None):
 
     return tasks
 
+
 def mtexec(func, args=None, kwargs=None, workers=None, callback=None):
     """
     Execute task within pool of threads
@@ -114,4 +155,3 @@ def mtexec(func, args=None, kwargs=None, workers=None, callback=None):
                 tasks = [executor.submit(func, *func_args, **func_kwargs) for func_args, func_kwargs in zip(args, kwargs)]
 
     return tasks
-

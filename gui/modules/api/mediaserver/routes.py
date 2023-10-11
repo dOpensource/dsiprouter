@@ -2,11 +2,16 @@ import os
 from flask import Blueprint, render_template, abort, jsonify
 from util.security import api_security
 from database import SessionLoader, DummySession, dSIPMultiDomainMapping
-from shared import showApiError,debugEndpoint,StatusCodes, getRequestData
-from enum import Enum
+from shared import debugEndpoint,StatusCodes, getRequestData
+from modules.api.api_functions import showApiError
 from werkzeug import exceptions as http_exceptions
 import importlib.util
 import settings, globals
+
+
+# TODO: standardize response payloads using new createApiResponse()
+#       marked for implementation in v0.74
+
 
 class config():
 
@@ -131,7 +136,7 @@ def getDomains(config_id=None,domain_id=None):
     # Currently we only support FusionPBX
     # Check if Configuration ID exists
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
     try:
         if settings.DEBUG:
@@ -171,7 +176,7 @@ def postDomains():
     REQUIRED_ARGS = {'name','config_id'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
 
     try:
@@ -233,7 +238,7 @@ def putDomains():
     REQUIRED_ARGS = {'domain_id','config_id'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
 
     try:
@@ -287,7 +292,7 @@ def deleteDomains():
     REQUIRED_ARGS = {'domain_id','config_id'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
 
     try:
@@ -347,7 +352,7 @@ def postExtensions():
     REQUIRED_ARGS = {'domain_id','extension','password', 'enabled','config_id'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
 
     try:
@@ -422,7 +427,7 @@ def putExtensions():
     REQUIRED_ARGS = {'domain_id','extension','password', 'enabled','config_id'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
 
     try:
@@ -512,7 +517,7 @@ def getExtensions(config_id=None,domain_id=None,extension_id=None):
     # Currently we only support FusionPBX
     # Check if Configuration ID exists
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
     try:
         if settings.DEBUG:
@@ -551,7 +556,7 @@ def deleteExtensions():
     REQUIRED_ARGS = VALID_REQUEST_DATA_ARGS
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
 
     try:

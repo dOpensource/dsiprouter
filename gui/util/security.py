@@ -1,16 +1,19 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import os, hashlib, binascii, string, ssl, OpenSSL, secrets, re
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
-from shared import updateConfig, StatusCodes
 from functools import wraps
 from flask import jsonify, render_template, request, session
+from shared import updateConfig, StatusCodes
+from modules.api.api_functions import createApiResponse
 import settings, globals
+
 
 #
 # Notes on storing credentials:
@@ -90,7 +93,8 @@ class Credentials():
         return binascii.hexlify(hash + salt)
 
     @staticmethod
-    def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'', ipc_creds=b'', rootdb_creds=b''):
+    def setCreds(dsip_creds=b'', api_creds=b'', kam_creds=b'', mail_creds=b'',
+                 ipc_creds=b'', rootdb_creds=b'', sesh_creds=b''):
         """
         Set secure credentials, either by hashing or encrypting\n
         Values must be within size limit and empty values are ignored\n
@@ -107,6 +111,8 @@ class Credentials():
         :type ipc_creds:        bytes|str
         :param rootdb_creds:    root db user's password as byte string
         :type rootdb_creds:     bytes|str
+        :param sesh_creds:      flask session manager key as byte string
+        :type sesh_creds:       bytes|str
         :return:                None
         :rtype:                 None
         """
@@ -138,9 +144,12 @@ class Credentials():
                 raise ValueError('ipc credentials must be {} bytes or less'.format(str(Credentials.CREDS_MAX_LEN)))
             fields['DSIP_IPC_PASS'] = AES_CTR.encrypt(ipc_creds)
 
-        # some fields are not synced with DB
+        # some fields are not synced with DB (also not constrained by max length limitations)
         if len(rootdb_creds) > 0:
             local_fields['ROOT_DB_PASS'] = AES_CTR.encrypt(rootdb_creds)
+
+        if len(sesh_creds) > 0:
+            local_fields['DSIP_SESSION_KEY'] = AES_CTR.encrypt(sesh_creds)
 
         # update settings based on where they are loaded from
         if len(fields) > 0 or len(local_fields) > 0:
@@ -235,8 +244,8 @@ def api_security(func):
     def wrapper(*args, **kwargs):
         apiToken = APIToken(request)
         accept_header = request.headers.get('Accept', '')
-       
-       # If user is logged into a session return right away
+
+        # If user is logged into a session return right away
         if session.get('logged_in'):
             return func(*args, **kwargs)
         else:
@@ -244,19 +253,24 @@ def api_security(func):
                 return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
 
         # If API Request check for license
-        if not re.match('text/html|text/css',accept_header,flags=re.IGNORECASE):
-                # Check if they have a Core Subscription
-                if settings.DSIP_CORE_LICENSE is None or not isinstance(settings.DSIP_CORE_LICENSE, bytes):
-                    payload = {'error': 'http', 'msg': 'Unauthorized - Core Subscription Requried.  Purchase from https://dopensource.com/product/dsiprouter-core/', 'kamreload': globals.reload_required, 'data': []}             
-                    return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-                # Check if token is not valid
-                elif not apiToken.isValid():
+        if not re.match('text/html|text/css', accept_header, flags=re.IGNORECASE):
+            # Check if they have a Core Subscription
+            if settings.DSIP_CORE_LICENSE is None or not isinstance(settings.DSIP_CORE_LICENSE, bytes):
+                return createApiResponse(
+                    error='http',
+                    msg='Unauthorized - Core Subscription Requried.  Purchase from https://dopensource.com/product/dsiprouter-core/',
+                    status_code=StatusCodes.HTTP_UNAUTHORIZED
+                )
+            # Check if token is valid
+            elif not apiToken.isValid():
+                return createApiResponse(
+                    error='http',
+                    msg='Unauthorized',
+                    status_code=StatusCodes.HTTP_UNAUTHORIZED
+                )
+            # checks succeeded allow the request
+            return func(*args, **kwargs)
 
-                    payload = {'error': 'http', 'msg': 'Unauthorized', 'kamreload': globals.reload_required, 'data': []}
-                    return jsonify(payload), StatusCodes.HTTP_UNAUTHORIZED
-                # CHeck if token is valid
-                elif  apiToken.isValid():
-                    return func(*args, **kwargs)
     return wrapper
 
 
@@ -447,7 +461,7 @@ class KeyCertPair():
                 return certs
             # ASN1/DER encoded certificate(s)
             if buff[0:len(KeyCertPair.X509_DER_FILESIG)] == KeyCertPair.X509_DER_FILESIG:
-                #return [OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, buff)]
+                # return [OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, buff)]
                 raise NotImplementedError('parsing DER encoded certificates is not supported, convert to PEM encoding and try again')
         except OpenSSL.crypto.Error:
             raise ValueError('could not convert certificate(s) to X509 list')

@@ -75,7 +75,7 @@ elif cmdExists "yum"; then
 fi
 
 # clone and install
-git clone --depth 1 ${DSIP_REPO} -b ${DSIP_VERSION} ${DSIP_DIR} || exit 1
+git clone --depth 1 -c advice.detachedHead=false ${DSIP_REPO} -b ${DSIP_VERSION} ${DSIP_DIR} || exit 1
 ${DSIP_DIR}/dsiprouter.sh ${BUILD_OPTIONS} || exit 1
 # cleanup environment for image
 ${DSIP_DIR}/cloud/pre-snapshot.sh || exit 1

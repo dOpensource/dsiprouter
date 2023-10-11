@@ -738,7 +738,7 @@ function updateDsiprouterConfig() {
     [[ -n "$DID_PREFIX_ALLOWED_CHARS" ]] && setConfigAttrib 'DID_PREFIX_ALLOWED_CHARS' "$DID_PREFIX_ALLOWED_CHARS" ${DSIP_CONFIG_FILE}
     [[ -n "$LOAD_SETTINGS_FROM" ]] && setConfigAttrib 'LOAD_SETTINGS_FROM' "$LOAD_SETTINGS_FROM" ${DSIP_CONFIG_FILE} -q
 
-    # update network settings based on values set by setDynamicScriptSettings()
+    # update settings based on values set by setDynamicScriptSettings()
     setConfigAttrib 'NETWORK_MODE' "$NETWORK_MODE" ${DSIP_CONFIG_FILE}
     if (( $IPV6_ENABLED == 1 )); then
         setConfigAttrib 'IPV6_ENABLED' "True" ${DSIP_CONFIG_FILE}
@@ -756,6 +756,8 @@ function updateDsiprouterConfig() {
     setConfigAttrib 'PUBLIC_IFACE' "$PUBLIC_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'PRIVATE_IFACE' "$PRIVATE_IFACE" ${DSIP_CONFIG_FILE} -q
     setConfigAttrib 'UAC_REG_ADDR' "$UAC_REG_ADDR" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'GIT_REPO_URL' "$GIT_REPO_URL" ${DSIP_CONFIG_FILE} -q
+    setConfigAttrib 'GIT_RELEASE_URL' "$GIT_RELEASE_URL" ${DSIP_CONFIG_FILE} -q
 
     # TODO: the following are updated in setCredentials() and the config file should only be updated here
     #		i.e. settings the variables elsewhere is fine but any changes to the config file or DB should be centralised here
@@ -773,6 +775,7 @@ function updateDsiprouterConfig() {
     # ROOT_DB_USER
     # ROOT_DB_PASS
     # ROOT_DB_NAME
+    # DSIP_SESSION_KEY
 
     # TODO: the following settings are only updatable via the GUI
     # TRANSNEXUS_AUTHSERVICE_ENABLED
@@ -1768,6 +1771,10 @@ function installDsiprouter() {
     SET_DSIP_API_TOKEN=${SET_DSIP_API_TOKEN:-$(urandomChars 64)}
     SET_DSIP_IPC_TOKEN=${SET_DSIP_IPC_TOKEN:-$(urandomChars 64)}
     SET_KAM_DB_PASS=${SET_KAM_DB_PASS:-$(urandomChars 64)}
+    SET_DSIP_SESSION_KEY=$(decryptConfigAttrib 'DSIP_SESSION_KEY' ${DSIP_CONFIG_FILE})
+    if [[ "$SET_DSIP_SESSION_KEY" == "None" ]] || [[ -z "$SET_DSIP_SESSION_KEY" ]]; then
+        SET_DSIP_SESSION_KEY=$(urandomChars 32)
+    fi
 
     # pass the variables on to setCredentials()
     setCredentials
@@ -2521,6 +2528,17 @@ function stop() {
     fi
 }
 
+function restart() {
+    # escape the systemd control group if told to daemonize
+    if (( RESTART_DAEMONIZE == 1 )); then
+        systemd-run --unit='dsip-daemon' --collect --slice=user.slice $0 ${RESTART_ARGS[@]}
+        exit 0
+    fi
+
+    stop
+    start
+}
+
 function displayLoginInfo() {
     local DSIP_USERNAME=${DSIP_USERNAME:-$(getConfigAttrib 'DSIP_USERNAME' ${DSIP_CONFIG_FILE})}
     local DSIP_PASSWORD=${DSIP_PASSWORD:-"<HASH CAN NOT BE UNDONE> (reset password if you forgot it)"}
@@ -2589,6 +2607,7 @@ function setCredentials() {
     local SET_ROOT_DB_USER="${SET_ROOT_DB_USER}"
     local SET_ROOT_DB_PASS="${SET_ROOT_DB_PASS}"
     local SET_ROOT_DB_NAME="${SET_ROOT_DB_NAME}"
+    local SET_DSIP_SESSION_KEY="${SET_DSIP_SESSION_KEY}"
     local LOAD_SETTINGS_FROM=${LOAD_SETTINGS_FROM:-$(getConfigAttrib 'LOAD_SETTINGS_FROM' ${DSIP_CONFIG_FILE})}
     local DSIP_ID=${DSIP_ID:-$(getConfigAttrib 'DSIP_ID' ${DSIP_CONFIG_FILE})}
     local DSIP_CLUSTER_ID=${DSIP_CLUSTER_ID:-$(getConfigAttrib 'DSIP_CLUSTER_ID' ${DSIP_CONFIG_FILE})}
@@ -2737,7 +2756,14 @@ function setCredentials() {
 import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
 sys.path.insert(0, '/etc/dsiprouter/gui')
 from util.security import Credentials;
-Credentials.setCreds(dsip_creds='${SET_DSIP_GUI_PASS}', api_creds='${SET_DSIP_API_TOKEN}', kam_creds='${SET_KAM_DB_PASS}', mail_creds='${SET_DSIP_MAIL_PASS}', ipc_creds='${SET_DSIP_IPC_TOKEN}');
+Credentials.setCreds(
+    dsip_creds='${SET_DSIP_GUI_PASS}',
+    api_creds='${SET_DSIP_API_TOKEN}',
+    kam_creds='${SET_KAM_DB_PASS}',
+    mail_creds='${SET_DSIP_MAIL_PASS}',
+    ipc_creds='${SET_DSIP_IPC_TOKEN}',
+    sesh_creds='${SET_DSIP_SESSION_KEY}',
+);
 EOF
     if (( $? != 0 )); then
         printerr 'Failed setting encrypted credentials'
@@ -3012,7 +3038,7 @@ function upgrade() {
     if (( ${BOOTSTRAPPING_UPGRADE:-0} == 0 )); then
         printdbg 'downloading new dSIPRouter project files'
         rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
-        git clone --depth 1 -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
+        git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
             printerr 'failed downloading new project files'
             cleanupAndExit 1
         }
@@ -3642,7 +3668,7 @@ function usageOptions() {
         "setcredentials" "[-debug|-dc <[user][:pass]>|--dsip-creds=<[user][:pass]>|-ac <token>|--api-creds=<token>|" \
         " " "-kc <[user[:pass]@]dbhost[:port][/dbname]>|--kam-creds=<[user[:pass]@]dbhost[:port][/dbname]>|" \
         " " "-mc <[user][:pass]>|--mail-creds=<[user][:pass]>|-ic <token>|--ipc-creds=<token>]|" \
-        " " "-dac <[user][:pass][/dbname]>|--db-admin-creds=<[user][:pass][/dbname]>"
+        " " "-dac <[user][:pass][/dbname]>|--db-admin-creds=<[user][:pass][/dbname]>|-sc <key>|--session-creds=<key>]"
     printf "%-30s %s\n" \
         "version|-v|--version" ""
     printf "%-30s %s\n" \
@@ -4150,7 +4176,7 @@ function processCMD() {
 
             # repo we are upgrading from could have been provided on the CLI
             if [[ -n "UPGRADE_REPO" ]]; then
-                UPGRADE_RELEASE_URL="https://api.github.com/repos/$(rev <<<"$UPGRADE_REPO" | cut -d '/' -f -2 | cut -d '.' -f 2- | rev)/releases/latest"
+                UPGRADE_RELEASE_URL="https://api.github.com/repos/$(rev <<<"$UPGRADE_REPO" | cut -d '/' -f -2 | cut -d '.' -f 2- | rev)/releases"
             else
                 UPGRADE_RELEASE_URL="$GIT_RELEASE_URL"
             fi
@@ -4158,11 +4184,11 @@ function processCMD() {
             # use latest release if none specified
             if [[ -z "$UPGRADE_RELEASE" ]]; then
                 TMP=$(curl -s "$UPGRADE_RELEASE_URL") &&
-                TMP=$(jq -e -r '.tag_name' <<<"$TMP") &&
-                UPGRADE_RELEASE=$(grep -oP 'v[0-9]+\.[0-9]+' <<<"$TMP") || {
-                        printerr "Could not retrieve latest release candidate"
-                        cleanupAndExit 1
-                    }
+                TMP=$(jq -e -r  '.[].tag_name | gsub("^v(?<tag>[0-9]+\\.[0-9]+).*?$"; "\(.tag)")' <<<"$TMP") &&
+                UPGRADE_RELEASE=$(sort -gur <<<"$TMP" | head -1) || {
+                    printerr "Could not retrieve latest release candidate"
+                    cleanupAndExit 1
+                }
             fi
             ;;
         start)
@@ -4264,13 +4290,17 @@ function processCMD() {
             done
             ;;
         restart)
+            RESTART_ARGS=(restart)
+            RESTART_DAEMONIZE=0
+
             # restart installed services
-            RUN_COMMANDS+=(stop start)
+            RUN_COMMANDS+=(restart)
             shift
 
             # process debug option before parsing others
             if [[ "$1" == "-debug" ]]; then
                 export DEBUG=1
+                RESTART_ARGS+=("$1")
                 set -x
                 shift
             fi
@@ -4294,21 +4324,30 @@ function processCMD() {
                         START_KAMAILIO=1
                         STOP_RTPENGINE=1
                         START_RTPENGINE=1
+                        RESTART_ARGS+=("$1")
                         shift
                         ;;
                     -dsip|--dsiprouter)
                         STOP_DSIPROUTER=1
                         START_DSIPROUTER=1
+                        RESTART_ARGS+=("$1")
                         shift
                         ;;
                     -kam|--kamailio)
                         STOP_KAMAILIO=1
                         START_KAMAILIO=1
+                        RESTART_ARGS+=("$1")
                         shift
                         ;;
                     -rtp|--rtpengine)
                         STOP_RTPENGINE=1
                         START_RTPENGINE=1
+                        RESTART_ARGS+=("$1")
+                        shift
+                        ;;
+                    # internal usage only, no need for user to be calling with this option
+                    -daemonize)
+                        RESTART_DAEMONIZE=1
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4646,6 +4685,16 @@ function processCMD() {
                         SET_ROOT_DB_USER=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\1%' <<<"$DB_CONN_URI")
                         SET_ROOT_DB_PASS=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\2%' <<<"$DB_CONN_URI")
                         SET_ROOT_DB_NAME=$(perl -pe 's%([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\3%' <<<"$DB_CONN_URI")
+                        ;;
+                    -sc|--session-creds=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            SET_DSIP_SESSION_KEY=$(echo "$1" | cut -d '=' -f 2)
+                            shift
+                        else
+                            shift
+                            SET_DSIP_SESSION_KEY="$1"
+                            shift
+                        fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"

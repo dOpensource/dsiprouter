@@ -10,6 +10,15 @@ if (typeof descendingSearch === "undefined") {
 if (typeof toggleElemDisabled === "undefined") {
   throw new Error("toggleElemDisabled() is required and is not defined");
 }
+if (typeof runUntilTimeout === "undefined") {
+  throw new Error("runUntilTimeout() is required and is not defined");
+}
+if (typeof reloadKamRequired === "undefined") {
+  throw new Error("reloadKamRequired() is required and is not defined");
+}
+if (typeof reloadDsipRequired === "undefined") {
+  throw new Error("reloadDsipRequired() is required and is not defined");
+}
 
 // throw an error if required globals not defined
 if (typeof API_BASE_URL === "undefined") {
@@ -99,7 +108,7 @@ $(function() {
 
   /**/
   var $menulink = $('.side-menu-link'),
-      $wrap = $('.wrap');
+    $wrap = $('.wrap');
 
   $menulink.click(function() {
     $menulink.toggleClass('active');
@@ -207,6 +216,8 @@ $(function() {
 // }
 
 $(document).ready(function() {
+  var reloading_overlay = $('#reloading_overlay');
+
   /* query param actions */
   if (getQueryString('action') === 'add') {
     $('#add').modal('show');
@@ -214,18 +225,80 @@ $(document).ready(function() {
 
   /* kam reload button listener */
   $('#reloadkam').click(function() {
+    reloading_overlay.removeClass('hidden');
+
     $.ajax({
-      type: "GET",
-      url: API_BASE_URL + "kamailio/reload",
+      type: "POST",
+      url: API_BASE_URL + "reload/kamailio",
       dataType: "json",
       global: false,
       success: function(response, text_status, xhr) {
         reloadKamRequired(false);
+        reloading_overlay.addClass('hidden');
         showNotification("Kamailio was reloaded");
       },
       error: function(xhr, text_status, error_msg) {
         error_msg = JSON.parse(xhr.responseText)["msg"];
+        reloading_overlay.addClass('hidden');
         showNotification("Kamailio was NOT reloaded: " + error_msg, true);
+      }
+    });
+  });
+
+  /* dsiprouter reload button listener */
+  $('#reload_dsip').click(function() {
+    var url = API_BASE_URL + "reload/dsiprouter";
+    reloading_overlay.removeClass('hidden');
+
+    $.ajax({
+      type: "POST",
+      url: url,
+      dataType: "json",
+      global: false,
+      success: function(response, text_status, xhr) {
+        // we started a reload in the background
+        showNotification(response.msg, false, 3000);
+        // poll the server until up or timeout
+        runUntilTimeout(
+          async function() {
+            try {
+              var response = await fetch(
+                url,
+                {
+                  method: "GET",
+                  cache: "no-cache",
+                  signal: AbortSignal.timeout(1500),
+                }
+              );
+              if (response.status === 200) {
+                var json = await response.json();
+                return json.data[0] === true;
+              }
+              return false;
+            }
+            catch {
+              return false;
+            }
+          },
+          60000,
+          2000,
+          function() {
+            showNotification("dSIPRouter was reloaded, reloading current session..", false, 5000);
+            // refresh the page and bypass the cache
+            setTimeout(function() {
+              window.location.reload(true);
+            }, 3000)
+          },
+          function() {
+            reloading_overlay.addClass('hidden');
+            showNotification("dSIPRouter reload timed out. Check the logs for more information.", true);
+          }
+        )
+      },
+      error: function(xhr, text_status, error_msg) {
+        error_msg = JSON.parse(xhr.responseText)["msg"];
+        reloading_overlay.addClass('hidden');
+        showNotification("dSIPRouter reload failed to start: " + error_msg, true);
       }
     });
   });
@@ -278,7 +351,6 @@ $(document).ready(function() {
         modal_body.find('.authtype').val('');
 
         /* show correct div's */
-
         $.each(hide_show_divs, function(i, elem) {
           if (target_radio.data('toggle') === $(elem).attr('name')) {
             $(elem).addClass("hidden");

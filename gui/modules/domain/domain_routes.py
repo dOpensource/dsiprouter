@@ -1,6 +1,7 @@
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import re
 from flask import request, Blueprint, render_template, redirect, session, url_for
@@ -326,7 +327,7 @@ def addUpdateDomain():
             addDomain(domainlist.split(",")[0].strip(), authtype, pbxs, notes, db)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -378,7 +379,7 @@ def deleteDomain():
         domainEntry.delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:

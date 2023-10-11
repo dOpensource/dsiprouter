@@ -153,6 +153,9 @@ DSIP_MSTEAMS_LICENSE = ''
 ################# Local-Only Settings ####################
 # settings in this section are not stored on the DB
 
+# the key used by the flask session manager
+DSIP_SESSION_KEY = None
+
 # the fqdn / ip address used by uac/nathelper modules when contacting other servers
 UAC_REG_ADDR = ''
 
@@ -212,5 +215,5 @@ LOAD_SETTINGS_FROM = 'file'
 
 # where upgrades will be pulled from
 GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
-GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases/latest'
+GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 ############### End Local-Only Settings ##################

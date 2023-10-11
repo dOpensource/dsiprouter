@@ -168,16 +168,16 @@ EOF
     if [[ -d ${SRC_DIR}/kamailio ]]; then
         if [[ "x$(cd ${SRC_DIR}/kamailio 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${KAM_VERSION_FULL}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
 
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
     fi
     ( cd ${SRC_DIR}/libjwt && autoreconf -i && ./configure --prefix=/usr && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libjwt'; return 1; }
@@ -191,7 +191,7 @@ EOF
 
     ## compile and install libstirshaken
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
-        git clone --depth 1 https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
     fi
     ( cd ${SRC_DIR}/libstirshaken && ./bootstrap.sh && ./configure --prefix=/usr &&
         make && make install && ldconfig; exit $?;

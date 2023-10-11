@@ -3,15 +3,18 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time
+from ansi2html import Ansi2HTMLConverter
 from copy import copy
 from importlib import reload
 from flask import Flask, render_template, request, redirect, flash, session, url_for, send_from_directory, Blueprint, Response
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
+from pygtail import Pygtail
 from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
 from sqlalchemy.sql import text
@@ -35,9 +38,10 @@ from modules.api.kamailio.functions import reloadKamailio
 from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
 from modules.api.licensemanager.routes import license_manager
 from modules.api.auth.routes import user
-from util.security import Credentials, urandomChars
+from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import createSettingsManager, DummySettingsManager
 from util.parse_json import CreateEncoder
+from util.persistence import updatePersistentState, setPersistentState
 from modules.upgrade import UpdateUtils
 import globals, settings
 
@@ -65,6 +69,7 @@ csrf.exempt(user)
 csrf.exempt(license_manager)
 numbers_api = flowroute.Numbers()
 settings_manager = DummySettingsManager()
+ansi_converter = Ansi2HTMLConverter(inline=True)
 
 
 @app.before_first_request
@@ -403,7 +408,7 @@ def addUpdateCarrierGroups():
                     db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -466,7 +471,7 @@ def deleteCarrierGroups():
         Gwgroup.delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -555,7 +560,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
-                               reload_required=globals.reload_required)
+                               kam_reload_required=globals.kam_reload_required)
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -686,7 +691,7 @@ def addUpdateCarriers():
             Gateway.description = dictToStrFields(gw_fields)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -773,7 +778,7 @@ def deleteCarriers():
                 rule.gwlist = ','.join(gwlist)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayCarriers(gwgroup=gwgroup)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -945,7 +950,7 @@ def addUpdateEndpointGroups():
             db.add(Gwgroup)
             db.commit()
 
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1019,7 +1024,7 @@ def deletePBX():
             domainmultimapping.delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1489,7 +1494,7 @@ def addUpdateInboundMapping():
                 db.add_all(inserts)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1571,7 +1576,7 @@ def deleteInboundMapping():
 
         db.commit()
 
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1675,7 +1680,7 @@ def importInboundMapping():
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
             processInboundMappingImport(filename, gwgroupid, None, db)
             flash('X number of file were imported')
-            globals.reload_required = True
+            globals.kam_reload_required = True
             return redirect(url_for('displayInboundMapping', filename=filename))
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1757,7 +1762,7 @@ def addUpdateTeleBlock():
 
         updateConfig(settings, teleblock, hot_reload=True)
 
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayTeleBlock()
 
     except http_exceptions.HTTPException as ex:
@@ -1854,7 +1859,7 @@ def addUpdateTransNexus():
 
         if len(tn_settings) != 0:
             updateConfig(settings, tn_settings, hot_reload=True)
-            globals.reload_required = True
+            globals.kam_reload_required = True
 
         return displayTransNexus()
 
@@ -2082,7 +2087,7 @@ def addUpateOutboundRoutes():
                 }, synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -2140,7 +2145,7 @@ def deleteOutboundRoute():
 
         db.commit()
 
-        globals.reload_required = True
+        globals.kam_reload_required = True
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -2264,7 +2269,7 @@ def addUpdateStirShaken():
 
         if len(ss_settings) != 0:
             updateConfig(settings, ss_settings, hot_reload=True)
-            globals.reload_required = True
+            globals.kam_reload_required = True
 
         return displayStirShaken()
 
@@ -2305,6 +2310,10 @@ def displayUpgrade(msg=None):
             return render_template('license_required.html',
                                    msg='license is associated with another machine, re-associate it with this machine first')
 
+        # make sure we remove offset file when navigating to top level page
+        if os.path.exists('/tmp/dsiprouter_upgrade.log.offset'):
+            os.remove('/tmp/dsiprouter_upgrade.log.offset')
+
         latest = UpdateUtils.get_latest_version()
 
         upgrade_settings = {
@@ -2339,11 +2348,23 @@ def start_upgrade():
         logging.info("Starting upgrade")
 
         form = stripDictVals(request.form.to_dict())
-        cmd = ['sudo', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
+        cmd = ['sudo', '-E', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
+        env = os.environ.copy()
+        env['RUN_FROM_GUI'] = '1'
 
-        with open('/tmp/dsiprouter_upgrade.log', 'wb') as f:
-            run_info = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+        with open('/tmp/dsiprouter_upgrade.log', 'wb', buffering=0) as f:
+            run_info = subprocess.run(
+                cmd,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                env=env
+            )
             run_info.check_returncode()
+
+        #globals.kam_reload_required = True
+        # kamailio will be reloaded when dsiprouter is reloaded
+        globals.dsip_reload_required = True
 
         logging.info("Upgrade complete")
 
@@ -2359,19 +2380,50 @@ def start_upgrade():
         return showError(type=error)
 
 
+# format a message as a server sent event
+# idea from: https://maxhalford.github.io/blog/flask-sse-no-deps/
+# TODO: separate into SSE specific file
+def formatSSE(data: str, event: str=None) -> str:
+    msg = f'data: {data}\n\n'
+    if event is not None:
+        msg = f'event: {event}\n{msg}'
+    return msg
+
+
+# inspired by: https://gist.github.com/kapb14/87255efffa173bb76cf5c1ed9db1d047
+# TODO: move to file handling
+def readLogChunk(log_file):
+    for line in Pygtail(log_file, offset_file=f'{log_file}.offset', every_n=1):
+        yield formatSSE(ansi_converter.convert(line, full=False).rstrip() + '<br>')
+        time.sleep(0.5)
+
+
 @app.route('/upgrade/log')
 def getUpgradeLog(msg=None):
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return 'Unauthorized', 401
 
         if (settings.DEBUG):
             debugEndpoint()
 
-        filename = "/tmp/dsiprouter_upgrade.log"
-        with open(filename, 'r') as file:
-            content = file.read()
-            return Response(content, content_type='text/plain')
+        accept = request.headers.get('Accept', '').lower()
+        if accept == 'text/event-stream':
+            return Response(
+                readLogChunk('/tmp/dsiprouter_upgrade.log'),
+                mimetype="text/event-stream",
+                headers={
+                    'X-Accel-Buffering': 'no',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive'
+                },
+            )
+        else:
+            with open('/tmp/dsiprouter_upgrade.log', 'r') as f:
+                return Response(
+                    ansi_converter.convert(f.read(), full=False).replace('\n', '<br>'),
+                    mimetype="text/html",
+                )
     except FileNotFoundError:
         return 'File not found', 404
     except http_exceptions.HTTPException as ex:
@@ -2440,7 +2492,10 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectReloadRequired():
-    return dict(reload_required=globals.reload_required)
+    return {
+        'kam_reload_required': globals.kam_reload_required,
+        'dsip_reload_required': globals.dsip_reload_required
+    }
 
 
 @app.context_processor
@@ -2612,11 +2667,11 @@ def replaceAppLoggers(log_handler):
 
 
 def initApp(flask_app):
-    # Initialize Globals
-    globals.initialize()
-
     # Setup the Flask session manager with a random secret key
-    flask_app.secret_key = os.urandom(32)
+    if settings.DSIP_SESSION_KEY is None:
+        flask_app.secret_key = os.urandom(32)
+    else:
+        flask_app.secret_key = AES_CTR.decrypt(settings.DSIP_SESSION_KEY)
 
     # Setup Flask timed url serializer
     flask_app.config['EMAIL_SALT'] = urandomChars()
@@ -2680,6 +2735,20 @@ def initApp(flask_app):
         os.remove(settings.DSIP_IPC_SOCK)
     if os.path.exists(settings.DSIP_UNIX_SOCK):
         os.remove(settings.DSIP_UNIX_SOCK)
+
+    # create/update the shared state file
+    # if the state got corrupted throw it away and start fresh
+    try:
+        state = updatePersistentState({
+            'dsip_reload_ongoing': False,
+            'dsip_reload_required': False,
+        })
+    except json.JSONDecodeError:
+        state = {}
+
+    # Initialize global variables based on persistent state
+    globals.initialize(state)
+
     # write out the main proc's PID
     with open(settings.DSIP_PID_FILE, 'w') as pidfd:
         pidfd.write(str(os.getpid()))
@@ -2693,6 +2762,10 @@ def initApp(flask_app):
 
 
 def teardown():
+    try:
+        setPersistentState(objToDict(globals))
+    except:
+        pass
     try:
         settings_manager.shutdown()
     except:

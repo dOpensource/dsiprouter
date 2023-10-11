@@ -363,7 +363,7 @@ if (( ${BOOTSTRAPPING_UPGRADE:-0} == 1 )); then
 else
     # fresh repo coming up
     rm -rf /opt/dsiprouter
-    git clone --depth 1 -b v0.721-rel https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter
+    git clone --depth 1 -c advice.detachedHead=false -b v0.721-rel https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter
 fi
 export DSIP_PROJECT_DIR=/opt/dsiprouter
 

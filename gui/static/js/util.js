@@ -197,7 +197,7 @@
       throw new Error("validateFields(): invalid selector argument");
     }
 
-    if (element.hasAttribute('on'+event)) {
+    if (element.hasAttribute('on' + event)) {
       return true;
     }
     else if ($._data(element, "events").hasOwnProperty(event)) {
@@ -211,7 +211,7 @@
    * @param {String} msg      message to display
    * @param {Boolean} error   whether the notification is an error
    */
-  window.showNotification = function(msg, error = false) {
+  window.showNotification = function(msg, error = false, duration = 10000) {
     var top_bar = $('.top-bar');
     var msg_bar = $('.message-bar');
     var visible_modals = $('.modal').filter(':not(:hidden)');
@@ -236,7 +236,7 @@
 
     // start the animation showing the notification
     top_bar.show();
-    top_bar.slideUp(10000, function() {
+    top_bar.slideUp(duration, function() {
       top_bar.hide();
     });
   };
@@ -259,5 +259,58 @@
       }
     }
   };
+
+  /**
+   * Update reload dsiprouter button to indicate if reload is required
+   * @param {Boolean} required    whether a reload is required
+   */
+  window.reloadDsipRequired = function(required = true) {
+    var reload_button = $('#reload_dsip');
+
+    if (reload_button.length > 0) {
+      if (required) {
+        reload_button.removeClass('btn-primary');
+        reload_button.addClass('btn-warning');
+      }
+      else {
+        reload_button.removeClass('btn-warning');
+        reload_button.addClass('btn-primary');
+      }
+    }
+  };
+
+  /**
+   * Run a function periodically until successful or timed out
+   * @param {Function}  run_fn      Function to run (must return true or false in a Promise)
+   * @param {Number}    timeout     Timeout (ms) until failure
+   * @param {Number}    interval    Period (ms) between attempting run_fn again
+   * @param {Function}  success_fn  Function to run on successful completion
+   * @param {Function}  timeout_fn  Function to run on timeout failure
+   */
+  window.runUntilTimeout = function(
+    run_fn, timeout, interval = 1000,
+    success_fn = null, timeout_fn = null
+  ) {
+    var timeout_timer = setTimeout(function() {
+      // ran unsuccessfully until timeout
+      clearInterval(interval_timer);
+      if (timeout_fn !== null) {
+        timeout_fn();
+      }
+    }, timeout);
+
+    var interval_timer = setInterval(function() {
+      run_fn().then((result) => {
+        if (result === true) {
+          // ran successfully without timeout
+          clearInterval(interval_timer);
+          clearTimeout(timeout_timer);
+          if (success_fn !== null) {
+            success_fn();
+          }
+        }
+      });
+    }, interval);
+  }
 
 })(window, document);

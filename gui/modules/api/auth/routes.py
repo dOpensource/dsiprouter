@@ -1,20 +1,23 @@
-import logging
-import os
+# make sure the generated source files are imported instead of the template ones
+import sys
+
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
+
+import datetime, uuid
 from flask import Blueprint, render_template, abort, jsonify
 from util.security import api_security, AES_CTR
-from database import SessionLoader, DummySession, dSIPMultiDomainMapping
-from shared import showApiError, debugEndpoint, StatusCodes, getRequestData
-from enum import Enum
-from werkzeug import exceptions as http_exceptions
-import importlib.util
-import settings, globals
-from database import dSIPUser
-from modules.api.auth.functions import *
+from shared import debugEndpoint, StatusCodes, getRequestData
+from database import DummySession, SessionLoader, dSIPUser
+from modules.api.api_functions import showApiError, createApiResponse
 from modules.api.auth.functions import addDSIPUser
-import uuid
-import datetime
+import globals, settings
 
 user = Blueprint('user', __name__)
+
+
+# TODO: standardize response payloads using new createApiResponse()
+#       marked for implementation in v0.74
 
 
 @user.route('/api/v1/auth/login', methods=['POST'])
@@ -44,13 +47,11 @@ def login():
         existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
 
         if existing_user:
-
             print("Saved Password: ", existing_user.password)
             print("Decrypted: ", AES_CTR.decrypt(existing_user.password).decode('utf-8'))
             print("Provided: ", request_data['password'])
 
             if str(request_data['password']) == AES_CTR.decrypt(existing_user.password).decode('utf-8'):
-
                 if (not existing_user.token) or (datetime.datetime.now() > existing_user.token_expiration):
                     existing_user.token = uuid.uuid4()
                     existing_user.token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
@@ -63,7 +64,6 @@ def login():
                 }
 
                 return jsonify(response_payload), StatusCodes.HTTP_OK
-
             else:
                 response_payload = {
                     "message": 'Invalid credentials',
@@ -71,7 +71,6 @@ def login():
                 }
 
                 return jsonify(response_payload), StatusCodes.HTTP_UNAUTHORIZED
-
         else:
             # If user does not exist  return an invalid credentials message
             response_payload['data'] = {
@@ -83,6 +82,8 @@ def login():
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        db.close()
 
 
 @user.route('/api/v1/auth/user', methods=['POST'])
@@ -96,7 +97,7 @@ def createUser():
     REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
     db = DummySession()
 
@@ -133,7 +134,7 @@ def createUser():
 @user.route('/api/v1/auth/user', methods=['GET'])
 def listUsers():
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
     db = DummySession()
 
@@ -175,7 +176,7 @@ def getUser(id=None):
     # REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
     db = DummySession()
 
@@ -221,7 +222,7 @@ def updateUser(id=None):
     REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
     db = DummySession()
 

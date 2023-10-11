@@ -5,7 +5,8 @@ from util.security import AES_CTR
 from werkzeug import exceptions as http_exceptions
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 
 # TODO: parse enabled features from kamailio config and only reload enabled ones

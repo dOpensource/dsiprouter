@@ -7,9 +7,12 @@
 # We should track the state of reloads in a file or database (the latter preferably)
 #
 
-def initialize():
-    global reload_required
-    globals()['reload_required'] = False
+def initialize(state):
+    globals()['kam_reload_required'] = state.get('kam_reload_required', False)
+    globals()['dsip_reload_required'] = state.get('dsip_reload_required', False)
+    globals()['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
 
 # allow references in code before initialize is called
-reload_required = globals()['reload_required'] if 'reload_required' in globals() else False
+kam_reload_required = globals()['kam_reload_required'] if 'kam_reload_required' in globals() else False
+dsip_reload_required = globals()['dsip_reload_required'] if 'dsip_reload_required' in globals() else False
+dsip_reload_ongoing = globals()['dsip_reload_ongoing'] if 'dsip_reload_ongoing' in globals() else False

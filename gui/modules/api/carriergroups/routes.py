@@ -1,13 +1,19 @@
 import os, importlib.util
 from flask import Blueprint, jsonify
 from database import SessionLoader, DummySession, GatewayGroups
-from shared import showApiError,debugEndpoint,StatusCodes, getRequestData,strFieldsToDict
+from shared import debugEndpoint, StatusCodes, getRequestData, strFieldsToDict
 from util.security import api_security
 from util.networking import getExternalIP
+from modules.api.api_functions import showApiError
 from modules.api.carriergroups.functions import addUpdateCarrierGroups, addUpdateCarriers
 import settings, globals
 
 carriergroups = Blueprint('carriergroups','__name__')
+
+
+# TODO: standardize response payloads using new createApiResponse()
+#       marked for implementation in v0.74
+
 
 @carriergroups.route('/api/v1/carriergroups',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['GET'])
@@ -50,7 +56,7 @@ def listCarrierGroups():
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
     typeFilter = "%type:{}%".format(str(settings.FLT_CARRIER))
 
     try:
@@ -169,7 +175,7 @@ def addCarrierGroups(id=None):
         db = SessionLoader()
 
         # defaults.. keep data returned separate from returned metadata
-        response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+        response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
 
         # Dictionary to store request parameters
         data = {}

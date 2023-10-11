@@ -14,9 +14,9 @@
   if (typeof showNotification === "undefined") {
     throw new Error("showNotification() is required and is not defined");
   }
-  if (typeof reloadKamRequired === "undefined") {
-    throw new Error("reloadKamRequired() is required and is not defined");
-  }
+  // if (typeof reloadKamRequired === "undefined") {
+  //   throw new Error("reloadKamRequired() is required and is not defined");
+  // }
 
   // throw an error if required globals not defined
   if (typeof GUI_BASE_URL === "undefined") {
@@ -69,30 +69,40 @@
       }
     }
   });
-  $(document).ajaxError(function(event, xhr, settings, error_msg) {
-    // handle HTTP errors, may redirect
-    try {
-      // try updating error message and type
-      var data = JSON.parse(xhr.responseText);
-      var error_type = data["error"];
-      error_msg = data["msg"];
-      requestErrorHandler(xhr.status, error_msg, error_type);
-    }
-    catch(error) {
-      // non-JSON response or no error info in response, use defaults
-      requestErrorHandler(xhr.status, xhr.statusText);
-    }
-  });
-  $(document).ajaxComplete(function(event, xhr, settings) {
-    try {
-      // try updating kam reload button
-      reloadKamRequired(JSON.parse(xhr.responseText)["kamreload"]);
-    }
-    catch(error) {
-      // non-JSON response or no kamreload in response, continue
-    }
-  });
+  /*
+      TODO: marked for review in v0.74
+      disabled the error handler / reload button handler
+      too hard to program with this abstraction
+  */
+  // $(document).ajaxError(function(event, xhr, settings, error_msg) {
+  //   // handle HTTP errors, may redirect
+  //   try {
+  //     // try updating error message and type
+  //     var data = JSON.parse(xhr.responseText);
+  //     var error_type = data["error"];
+  //     error_msg = data["msg"];
+  //     requestErrorHandler(xhr.status, error_msg, error_type);
+  //   }
+  //   catch(error) {
+  //     // non-JSON response or no error info in response, use defaults
+  //     requestErrorHandler(xhr.status, xhr.statusText);
+  //   }
+  // });
+  // $(document).ajaxComplete(function(event, xhr, settings) {
+  //   try {
+  //     // try updating kam reload button
+  //     reloadKamRequired(JSON.parse(xhr.responseText)["kamreload"]);
+  //   }
+  //   catch(error) {
+  //     // non-JSON response or no kamreload in response, continue
+  //   }
+  // });
 
+  /*
+      TODO: marked for review in v0.74
+      disabled the error handler / reload button handler
+      too hard to program with this abstraction
+  */
   // override fetch defaults
   window.fetch = function(resource, init) {
     // set anti-CSRF token
@@ -104,27 +114,27 @@
       }
     }
     return OLD_FETCH.call(this, resource, init).then(function(response) {
-      // handle HTTP errors, may redirect
-      try {
-        var data = JSON.parse(response.text());
-        // try updating kam reload button
-        if (data.hasOwnProperty("kamreload")) {
-          reloadKamRequired(data["kamreload"]);
-        }
-        // try updating error message and type
-        var error_type = data["error"];
-        var error_msg = data["msg"];
-        requestErrorHandler(response.status, error_msg, error_type);
-      }
-      catch(error) {
-        // non-JSON response or no error info in response, use defaults
-        requestErrorHandler(response.status, response.statusText);
-      }
+      // // handle HTTP errors, may redirect
+      // try {
+      //   var data = JSON.parse(response.text());
+      //   // try updating reload buttons
+      //   if (data.hasOwnProperty("kamreload")) {
+      //     reloadKamRequired(data["kamreload"]);
+      //   }
+      //   // try updating error message and type
+      //   var error_type = data["error"];
+      //   var error_msg = data["msg"];
+      //   requestErrorHandler(response.status, error_msg, error_type);
+      // }
+      // catch(error) {
+      //   // non-JSON response or no error info in response, use defaults
+      //   requestErrorHandler(response.status, response.statusText);
+      // }
 
       // pass on the response
       return response;
     }).catch(function(error) {
-      requestErrorHandler(500, error.message);
+      // requestErrorHandler(500, error.message);
       // if error handler doesn't redirect, reject the promise
       return Promise.reject(error);
     });

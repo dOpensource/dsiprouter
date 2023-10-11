@@ -107,7 +107,7 @@ def addUpdateCarrierGroups(data=None):
                 db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         if data is None:
             return displayCarrierGroups()
         else:
@@ -246,7 +246,7 @@ def addUpdateCarriers(data=None):
             Gateway.description = dictToStrFields(gw_fields)
 
         db.commit()
-        globals.reload_required = True
+        globals.kam_reload_required = True
         if data is None:
             return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 

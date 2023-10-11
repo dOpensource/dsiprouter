@@ -116,14 +116,14 @@ function install {
 
     ## compile and install libxh264
     if [[ ! -d ${SRC_DIR}/libxh264 ]]; then
-        git clone --depth 1 https://code.videolan.org/videolan/x264 ${SRC_DIR}/libxh264
+        git clone --depth 1 -c advice.detachedHead=false https://code.videolan.org/videolan/x264 ${SRC_DIR}/libxh264
     fi
     ( cd ${SRC_DIR}/libxh264 && ./configure --prefix=/usr --libdir=/usr/lib64 --enable-static && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libxh264'; return 1; }
 
     ## compile and install libx265
     if [[ ! -d ${SRC_DIR}/libx265 ]]; then
-        git clone --depth 1 https://github.com/videolan/x265 ${SRC_DIR}/libx265
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/videolan/x265 ${SRC_DIR}/libx265
     fi
     ( cd ${SRC_DIR}/libx265/build/linux && rm -rf ${SRC_DIR}/libx265/.git &&
         cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DLIB_INSTALL_DIR=/usr/lib64 \
@@ -132,29 +132,29 @@ function install {
 
     ## compile and install libfdkaac
     if [[ ! -d ${SRC_DIR}/libfdkaac ]]; then
-        git clone --depth 1 https://github.com/mstorsjo/fdk-aac ${SRC_DIR}/libfdkaac
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/mstorsjo/fdk-aac ${SRC_DIR}/libfdkaac
     fi
     ( cd ${SRC_DIR}/libfdkaac && autoreconf -i && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libfdkaac'; return 1; }
 
     ## compile and install libmp3lame
     if [[ ! -d ${SRC_DIR}/libmp3lame ]]; then
-        git clone --depth 1 https://github.com/gypified/libmp3lame.git ${SRC_DIR}/libmp3lame
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/gypified/libmp3lame.git ${SRC_DIR}/libmp3lame
     fi
     ( cd ${SRC_DIR}/libmp3lame && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared --enable-nasm && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libmp3lame'; return 1; }
 
     ## compile and install libopus
     if [[ ! -d ${SRC_DIR}/libopus ]]; then
-        git clone --depth 1 https://gitlab.xiph.org/xiph/opus.git ${SRC_DIR}/libopus ||
-        git clone --depth 1 https://github.com/xiph/opus.git ${SRC_DIR}/libopus
+        git clone --depth 1 -c advice.detachedHead=false https://gitlab.xiph.org/xiph/opus.git ${SRC_DIR}/libopus ||
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/xiph/opus.git ${SRC_DIR}/libopus
     fi
     ( cd ${SRC_DIR}/libopus && autoreconf -i && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libopus'; return 1; }
 
     ## compile and install libvpx
     if [[ ! -d ${SRC_DIR}/libvpx ]]; then
-        git clone --depth 1 https://chromium.googlesource.com/webm/libvpx.git ${SRC_DIR}/libvpx
+        git clone --depth 1 -c advice.detachedHead=false https://chromium.googlesource.com/webm/libvpx.git ${SRC_DIR}/libvpx
     fi
     ( cd ${SRC_DIR}/libvpx && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm &&
         make && make install; exit $?;
@@ -162,8 +162,8 @@ function install {
 
     ## compile and install ffmpeg
     if [[ ! -d ${SRC_DIR}/ffmpeg ]]; then
-        git clone --depth 1 https://git.ffmpeg.org/ffmpeg.git ${SRC_DIR}/ffmpeg ||
-        git clone --depth 1 https://github.com/FFmpeg/FFmpeg.git ${SRC_DIR}/ffmpeg
+        git clone --depth 1 -c advice.detachedHead=false https://git.ffmpeg.org/ffmpeg.git ${SRC_DIR}/ffmpeg ||
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/FFmpeg/FFmpeg.git ${SRC_DIR}/ffmpeg
     fi
     ( cd ${SRC_DIR}/ffmpeg && ./configure --prefix=/usr --libdir=/usr/lib64 --pkg-config-flags="--static" --extra-libs=-lpthread --extra-libs=-lm \
         --enable-gpl --enable-libfdk-aac --enable-libfreetype --enable-libmp3lame --enable-libopus --enable-libvpx --enable-libx264 --enable-libx265 \
@@ -172,7 +172,7 @@ function install {
 
     ## compile and install librabbitmq
     if [[ ! -d ${SRC_DIR}/librabbitmq ]]; then
-        git clone --depth 1 -b v0.11.0 https://github.com/alanxz/rabbitmq-c.git ${SRC_DIR}/librabbitmq
+        git clone --depth 1 -c advice.detachedHead=false -b v0.11.0 https://github.com/alanxz/rabbitmq-c.git ${SRC_DIR}/librabbitmq
     fi
     ( cd ${SRC_DIR}/librabbitmq && mkdir -p build && cd build/ && cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib64 \
         -DBUILD_EXAMPLES=FALSE -DBUILD_TESTS=FALSE .. && make && make install; exit $?;
@@ -180,14 +180,14 @@ function install {
 
     ## compile and install libspandsp
     if [[ ! -d ${SRC_DIR}/libspandsp ]]; then
-        git clone --depth 1 https://github.com/freeswitch/spandsp.git ${SRC_DIR}/libspandsp
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/freeswitch/spandsp.git ${SRC_DIR}/libspandsp
     fi
     ( cd ${SRC_DIR}/libspandsp && ./bootstrap.sh && ./configure --prefix=/usr --libdir=/usr/lib64 && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libspandsp'; return 1; }
 
     ## compile and install libwebsockets
     if [[ ! -d ${SRC_DIR}/libwebsockets ]]; then
-        git clone --depth 1 https://github.com/warmcat/libwebsockets.git ${SRC_DIR}/libwebsockets
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/warmcat/libwebsockets.git ${SRC_DIR}/libwebsockets
     fi
     ( cd ${SRC_DIR}/libwebsockets && mkdir -p build && cd build/ && cmake -DCMAKE_INSTALL_PREFIX=/usr -DLIB_SUFFIX=64 -DLWS_WITH_HTTP2=1 \
         -DLWS_OPENSSL_INCLUDE_DIRS=${SRC_DIR}/openssl/include -DLWS_OPENSSL_LIBRARIES="${SRC_DIR}/openssl/libssl.so;${SRC_DIR}/openssl/libcrypto.so" .. &&
@@ -199,10 +199,10 @@ function install {
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
         if [[ "x$(cd ${SRC_DIR}/rtpengine 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${RTPENGINE_VER}" ]]; then
             rm -rf ${SRC_DIR}/rtpengine
-            git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+            git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
         fi
     else
-        git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+        git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
 
     RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ${SRC_DIR}/rtpengine/el/rtpengine.spec)

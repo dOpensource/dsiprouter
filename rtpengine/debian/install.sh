@@ -133,10 +133,10 @@ function install {
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
         if [[ "x$(cd ${SRC_DIR}/rtpengine 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${RTPENGINE_VER}" ]]; then
             rm -rf ${SRC_DIR}/rtpengine
-            git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+            git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
         fi
     else
-        git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+        git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
     (
         cd ${SRC_DIR}/rtpengine &&

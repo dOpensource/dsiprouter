@@ -15,18 +15,14 @@
   </div>
   <div class="col-md-12">
 
-    <div class="saveTeleblock">
-      <div class="row">
-        <div class="col-sm-6">
-          <h4>dSIPRouter Upgrade</h4>
-        </div>
-        <div class="col-sm-6 text-right">
-          <button class="btn-sm btn btn-info" id="btnShowLog">Show Previous Log</button>
-        </div>
+    <div class="wrapper-horizontal edge-centered children-align-inherit content-header">
+      <div>
+        <h3>dSIPRouter Upgrade</h3>
       </div>
-
+      <div>
+        <button class="btn btn-med btn-info" id="btnShowLog">Show Previous Log</button>
+      </div>
     </div>
-    <hr>
 
     <div class="row">
       <div class="col-sm-12">
@@ -75,10 +71,11 @@
     </form>
 
     <div id="upgrade_output_row" class="row" style="display: none">
-      <div class="col-sm-12" style="height: auto;">
+      <div class="col-sm-12" style="height: auto; border-radius: 1em; border-width: medium; border-style: ridge;">
         <h4>Upgrade Log</h4>
-        <pre id="upgrade_output"></pre>
-        <a href="#" id="page_bottom"></a>
+        <div style="padding: 0.5em; border-width: medium 0 0 0; border-style: ridge;"></div>
+        <div id="upgrade_output"></div>
+        <div style="padding: 0.5em;"></div>
       </div>
     </div>
 

@@ -2,6 +2,8 @@
 
 # where the new project files were downloaded
 NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
+# whether or not this was called from the GUI
+RUN_FROM_GUI=${RUN_FROM_GUI:-0}
 
 # set project dir where previous repo was located
 export DSIP_PROJECT_DIR='/opt/dsiprouter'
@@ -423,36 +425,6 @@ if (( $? != 0 )); then
     exit 1
 fi
 
-printdbg 'updating dsiprouter settings'
-setConfigAttrib 'VERSION' '0.73' /etc/dsiprouter/gui/settings.py &&
-dsiprouter updatedsipconfig
-
-printdbg 'generating documentation for the GUI'
-(
-    cd ${DSIP_PROJECT_DIR}/docs
-    make html >/dev/null 2>&1
-)
-
-printdbg 'updating dSIPRouter CLI'
-ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-if [[ -f /etc/bash.bashrc ]]; then
-    perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
-fi
-cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-touch /etc/dsiprouter/.dsiproutercliinstalled
-
-printdbg 'generating documentation for the CLI'
-cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 /usr/share/man/man1/
-gzip -f /usr/share/man/man1/dsiprouter.1
-mandb
-cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-
-printdbg 'updating dSIPRouter CLI permissions'
-cat <<'EOF' >/etc/sudoers.d/99-dsiprouter
-Cmnd_Alias DSIP_UPGRADE_CMDS = /usr/bin/dsiprouter upgrade, /usr/bin/dsiprouter upgrade *
-dsiprouter ALL=(ALL) NOPASSWD: DSIP_UPGRADE_CMDS
-EOF
-
 printdbg 'upgrading DNSmasq installation'
 (
     DNSMASQ_LISTEN_ADDRS="127.0.0.1"
@@ -799,9 +771,65 @@ EOF
 )
 
 if (( $? != 0 )); then
-    printerr 'Failed upgrading DNSmasq'
+    printerr 'failed upgrading DNSmasq'
     exit 1
 fi
+
+printdbg 'updating required python modules'
+python3 -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt || {
+    printerr 'Failed installing required python modules'
+    exit 1
+}
+
+printdbg 'updating dSIPRouter settings'
+cd ${DSIP_PROJECT_DIR}/gui && (
+python3 <<'EOF'
+import os
+import settings as default_settings
+from importlib.util import module_from_spec, spec_from_file_location
+from shared import objToDict, updateConfig
+from util.security import AES_CTR
+default_settings_dict = objToDict(default_settings)
+spec = spec_from_file_location('current_settings', '/etc/dsiprouter/gui/settings.py')
+current_settings = module_from_spec(spec)
+spec.loader.exec_module(current_settings)
+current_settings_dict = objToDict(current_settings)
+default_settings_dict.update(current_settings_dict)
+default_settings_dict['DSIP_SESSION_KEY'] = AES_CTR.encrypt(os.urandom(32))
+os.system(f'cp -f {default_settings.__file__} {current_settings.__file__}')
+updateConfig(current_settings, default_settings_dict)
+EOF
+) &&
+setConfigAttrib 'VERSION' '0.73' /etc/dsiprouter/gui/settings.py || {
+    printerr 'failed updating dSIPRouter settings'
+    exit 1
+}
+
+printdbg 'generating documentation for the GUI'
+(
+    cd ${DSIP_PROJECT_DIR}/docs
+    make html >/dev/null 2>&1
+)
+
+printdbg 'updating dSIPRouter CLI'
+ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+if [[ -f /etc/bash.bashrc ]]; then
+    perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+fi
+cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+touch /etc/dsiprouter/.dsiproutercliinstalled
+
+printdbg 'generating documentation for the CLI'
+cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 /usr/share/man/man1/
+gzip -f /usr/share/man/man1/dsiprouter.1
+mandb
+cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+
+printdbg 'updating dsiprouter CLI permissions'
+cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter /etc/sudoers.d/99-dsiprouter || {
+    printerr 'unable to update sudoers files'
+    exit 1
+}
 
 printdbg 'upgrading kamailio configs'
 dsiprouter configurekam
@@ -809,8 +837,12 @@ dsiprouter configurekam
 printdbg 'updating file permissions'
 dsiprouter chown
 
-printdbg 'restarting services'
-systemctl restart kamailio
-systemctl restart dsiprouter
+if (( $RUN_FROM_GUI == 0 )); then
+    printdbg 'restarting services'
+    systemctl restart kamailio
+    systemctl restart dsiprouter
+fi
+
+pprint 'upgrade completed successfully'
 
 exit 0

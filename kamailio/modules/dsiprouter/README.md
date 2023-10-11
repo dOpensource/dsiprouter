@@ -10,7 +10,7 @@
 ```
 KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}' | sed -e  's/\([0-9]\.[0-9]\)\.[0-9]/\1/')
 rm -rf /tmp/kamailio 2>/dev/null
-git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio
+git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git /tmp/kamailio
 ```
 
 ### copy to src dir and compile:

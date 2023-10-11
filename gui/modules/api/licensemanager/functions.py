@@ -1,6 +1,7 @@
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import requests, functools, secrets, datetime
 from util.security import Credentials, AES_CTR
