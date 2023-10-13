@@ -1,6 +1,5 @@
 .. _installing_dsiprouter:
 
-
 Installing dSIPRouter
 =====================
 
@@ -8,30 +7,26 @@ Install dSIPRouter takes approximately 9-12 minutes to install.  The following v
 
 .. raw:: html
 
-        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
-                <iframe src="https://www.youtube.com/embed/Iu4BQkL1wGc" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 315px;"></iframe>
-        </div>
-     
-
+    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe src="https://www.youtube.com/embed/Iu4BQkL1wGc" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 315px;"></iframe>
+    </div>
 
 Prerequisites:
-^^^^^^^^^^^^^^
+--------------
 
 - Must run this as the root user (you can use sudo)
 - git needs to be installed
 - Hostname needs to be set to a FQDN (for certbot to get LetsEncrypt certificate)
 - The installer will handle all other dependencies
 
-
-
 Install Options
-^^^^^^^^^^^^^^^^
+----------------
 
 - Proxy SIP Traffic Only (Don't Proxy audio (RTP) traffic)
 - Proxy SIP Traffic, Audio and it configures the system to work properly when the PBX's and dSIPRouter are behind a NAT.
 
 OS Support
-^^^^^^^^^^
+----------
 
 ===================================     ================
 OS / Distro                             Current Support
@@ -47,7 +42,6 @@ Ubuntu 22.04 (jammy)                    ALPHA
 Ubuntu 20.04 (focal)                    ALPHA
 ===================================     ================
 
-
 Kamailio will be automatically installed along with dSIPRouter.
 Must be installed on a fresh install of one of the supported operating systems.
 You will not be prompted for any information.  It will take anywhere from  9-12 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
@@ -58,7 +52,7 @@ We maintain installation documentation for the following operating systems.  Ple
 - :ref:`rhel_install`
 
 Amazon AMI's
-^^^^^^^^^^^^
+------------
 
 We now provide Amazon AMI's (pre-built images) which allows you to get up and going even faster.
 You can find a list of the images `here <https://aws.amazon.com/marketplace/search/results?x=0&y=0&searchTerms=dsiprouter/>`_.

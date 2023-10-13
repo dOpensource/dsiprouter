@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-4571ee8caf4c6536a12b0c14760797bb812fbd98
+0d75422de5f2f1c2d7104367937e51f62a8a79a2
+4b835bbc8546269a75c79fe7b81a6313af2536b1
 5caff2334b4dbc19e315b98e9e3b5978d1a60a30
 8796289a7fbb2a88a44883baae68259b944de22c
 91223e1f6fac5d29ffc064745080839dc6a0892b
@@ -2235,10 +2236,29 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 4571ee8caf4c6536a12b0c14760797bb812fbd98)
+[//]: # (START_SECTION 0d75422de5f2f1c2d7104367937e51f62a8a79a2)
+### Make Docs Great Again
+
+> Commit: [0d75422de5f2f1c2d7104367937e51f62a8a79a2](https://github.com/dOpensource/dsiprouter/commit/0d75422de5f2f1c2d7104367937e51f62a8a79a2)  
+> Date: Fri, 13 Oct 2023 12:46:16 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update theming on local generated documentation
+- improve navigation from main TOC
+- update upgrading insctructions
+- add more developer documentation
+
+
+---
+
+[//]: # (END_SECTION 0d75422de5f2f1c2d7104367937e51f62a8a79a2)
+[//]: # (START_SECTION 4b835bbc8546269a75c79fe7b81a6313af2536b1)
 ### V0.73 Release Feature Improvements
 
-> Commit: [4571ee8caf4c6536a12b0c14760797bb812fbd98](https://github.com/dOpensource/dsiprouter/commit/4571ee8caf4c6536a12b0c14760797bb812fbd98)  
+> Commit: [4b835bbc8546269a75c79fe7b81a6313af2536b1](https://github.com/dOpensource/dsiprouter/commit/4b835bbc8546269a75c79fe7b81a6313af2536b1)  
 > Date: Wed, 11 Oct 2023 19:54:05 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2268,7 +2288,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 4571ee8caf4c6536a12b0c14760797bb812fbd98)
+[//]: # (END_SECTION 4b835bbc8546269a75c79fe7b81a6313af2536b1)
 [//]: # (START_SECTION 5caff2334b4dbc19e315b98e9e3b5978d1a60a30)
 ### API Change
 

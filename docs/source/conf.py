@@ -13,7 +13,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os, sys
-sys.path.insert(0, os.path.abspath('../../..'))
 sys.path.insert(0, os.path.abspath('../../gui'))
 sys.path.insert(0, '/etc/dsiprouter/gui')
 import settings
@@ -26,9 +25,9 @@ copyright = 'dOpenSource'
 author = 'dOpenSource'
 
 # The short X.Y version
-version = settings.VERSION
+version = str(settings.VERSION)
 # The full version, including alpha/beta/rc tags
-release = settings.VERSION
+release = str(settings.VERSION)
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,7 +49,7 @@ extensions = [
     'sphinxcontrib.autohttp.flask',
     'sphinxcontrib.autohttp.flaskqref',
 #    'rinoh.frontend.sphinx',
-    'recommonmark'
+    'myst_parser'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,7 +70,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -79,7 +78,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -87,14 +86,14 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'piccolo_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 html_theme_options = {
-    "collapse_navigation" : False
+    "source_url": f'{settings.GIT_REPO_URL.rsplit(".", 1)[0]}/',
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

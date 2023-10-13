@@ -1,13 +1,21 @@
-======================
-The dSIPRouter Project
-======================
+GUI/API Routes
+==============
+
+The GUI and API make several routes accessible for usage.
+A summary and description of each route are provided below.
+
+Summary Table
+-------------
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Routing Info
-   :numbered:
-   :titlesonly:
-   :glob:
-   :hidden:
+    :maxdepth: 2
 
-    routes <routes.rst>
+    summary.rst
+
+Detailed Descriptions
+---------------------
+
+.. toctree::
+    :maxdepth: 2
+
+    details.rst

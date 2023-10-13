@@ -11,6 +11,7 @@ Flask_WTF
 itsdangerous==2.0.1
 Jinja2==3.0.3
 josepy
+myst-parser
 mysqlclient
 pem
 psycopg2
@@ -26,6 +27,7 @@ requests
 sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme
+piccolo_theme
 SQLAlchemy~=2.0
 twilio
 Werkzeug~=2.0

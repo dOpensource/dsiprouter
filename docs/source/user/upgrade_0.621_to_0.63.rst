@@ -1,6 +1,3 @@
-Upgrade dSIPRouter
-====================
-
 In this section we will show you how to upgrade from 0.621 to 0.63.  This is the first release
 to contain our new upgrade approach.  
 

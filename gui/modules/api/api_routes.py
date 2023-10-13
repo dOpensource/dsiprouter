@@ -1442,70 +1442,77 @@ def updateEndpointGroups(gwgroupid=None):
 
 
 # TODO: fix up like updateEnpointGroups()
+# TODO: this is the only route that has the proper updated documentation format
+#       use this route as an example to populate the other route docstings
 @api.route("/api/v1/endpointgroups", methods=['POST'])
 @api_security
 def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     """
     Add a single Endpoint Group
 
-    ===============
-    Request Payload
-    ===============
+    :<json string name: the endpoint group name
+    :<json integer calllimit: limit concurrent calls to this endpoint group (0=unlimited)
+    :<json object auth: authentication settings for this endpoint group
+    :reqheader Accept: optional, assumed to be application/json
+    :reqheader Authorization: required, dSIPRouter API Bearer token
+    :resheader Content-Type: required, should always be application/json
+    :status 200: on success
+    :status 401: on auth failure
+    :status 500: on unhandled application server error
+    :status 502: when application server is down but reverse proxy is still up
+
+    Example Request:
 
     .. code-block:: json
 
         {
-            name: <string>,
-            calllimit: <int>,
-            auth: {
-                type: "ip"|"userpwd",
-                user: <string>
-                pass: <string>
-                domain: <string>
+            "name": "example",
+            "calllimit": 0,
+            "auth": {
+                "type": "userpwd",
+                "user": "example",
+                "pass": "example",
+                "domain": "example.com"
             },
-            endpoints [
+            "endpoints": [
                 {
-                    hostname:<string>,
-                    description:<string>
-                    weight:<string>
-                },
-                ...
+                    "hostname": "example",
+                    "description": "example",
+                    "weight": 100
+                }
             ],
-            strip: <int>,
-            prefix: <string>,
-            notifications: {
-                overmaxcalllimit: <string>,
-                endpointfailure: <string>
+            "strip": 0,
+            "prefix": "",
+            "notifications": {
+                "overmaxcalllimit": "email@example.com",
+                "endpointfailure": "email@example.com"
             },
-            cdr: {
-                cdr_email: <string>,
-                cdr_send_interval: <string>
-            }
-            fusionpbx: {
-                enabled: <bool>,
-                dbhost: <string>,
-                dbuser: <string>,
-                dbpass: <string>
+            "cdr": {
+                "cdr_email": "email@example.com",
+                "cdr_send_interval": "email@example.com"
+            },
+            "fusionpbx": {
+                "enabled": true,
+                "dbhost": "example",
+                "dbuser": "example",
+                "dbpass": "example"
             }
         }
 
-    ================
-    Response Payload
-    ================
+    Example Response:
 
     .. code-block:: json
 
         {
-            error: <string>,
-            msg: <string>,
-            kamreload: <bool>,
-            data: [
+            "error": "",
+            "msg": "Endpoint group created",
+            "kamreload": true,
+            "dsipreload": false,
+            "data": [
                 {
-                    gwgroupid: <int>,
-                    endpoints: [
-                        <int>,
-                        ...
-                    ]
+                    "gwgroupid": 101,
+                    "gwlist": "375",
+                    "name": "example"
                 }
             ]
         }

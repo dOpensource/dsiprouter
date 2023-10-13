@@ -1,5 +1,5 @@
 Command Line Options
-==========================
+====================
 
 Execute "./dsiprouter.sh" followed by one of the listed commands.
 **NOTE** Once installed the command will be available globally as *dsiprouter* with tab-completion.
@@ -33,26 +33,22 @@ To start dSIPRouter:
 
 .. code-block:: bash
 
-  ./dsiprouter.sh start
-
+    dsiprouter start
 
 To stop dSIPRouter:
 
 .. code-block:: bash
 
-  ./dsiprouter.sh stop
-
+    dsiprouter stop
 
 To restart dSIPRouter:
 
 .. code-block:: bash
 
-  ./dsiprouter.sh restart
-
+    dsiprouter restart
 
 To uninstall dSIPRouter:
 
 .. code-block:: bash
 
-  ./dsiprouter.sh unistall
-
+    dsiprouter uninstall -all
