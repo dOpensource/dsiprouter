@@ -1,12 +1,13 @@
 import os, importlib.util
 from flask import Blueprint, jsonify
-from database import SessionLoader, DummySession, GatewayGroups
+from database import startSession, DummySession, GatewayGroups
 from shared import debugEndpoint, StatusCodes, getRequestData, strFieldsToDict
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from util.security import api_security
 from util.networking import getExternalIP
 from modules.api.api_functions import showApiError
 from modules.api.carriergroups.functions import addUpdateCarrierGroups, addUpdateCarriers
-import settings, globals
+import settings
 
 carriergroups = Blueprint('carriergroups','__name__')
 
@@ -56,14 +57,14 @@ def listCarrierGroups():
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
     typeFilter = "%type:{}%".format(str(settings.FLT_CARRIER))
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         carriergroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
 
@@ -172,10 +173,10 @@ def addCarrierGroups(id=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # defaults.. keep data returned separate from returned metadata
-        response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+        response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
         # Dictionary to store request parameters
         data = {}

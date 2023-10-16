@@ -184,7 +184,7 @@ EOF
 
     ## compile and install libks
     if [[ ! -d ${SRC_DIR}/libks ]]; then
-        git clone --single-branch https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
+        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
     fi
     ( cd ${SRC_DIR}/libks && cmake -DCMAKE_INSTALL_PREFIX=/usr . && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libks'; return 1; }

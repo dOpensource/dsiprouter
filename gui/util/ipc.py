@@ -3,57 +3,38 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, signal
-from multiprocessing.managers import SyncManager
-from util.security import AES_CTR
+import inspect, os, signal
+from UltraDict import UltraDict, Exceptions as shmem_exceptions
 import settings
 
-# create server to share data over sockets
-def createSettingsManager(shared_settings, address=settings.DSIP_IPC_SOCK, authkey=None):
-    if authkey is None:
-        authkey = AES_CTR.decrypt(settings.DSIP_IPC_PASS)
 
-    class SettingsManager(SyncManager):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+SETTINGS_SHMEM_NAME = 'shmem_settings'
+STATE_SHMEM_NAME = 'shmem_state'
 
-    SettingsManager.register("getSettings", lambda: shared_settings,
-                             exposed=['__contains__', '__delitem__', '__getitem__', '__len__', '__setitem__', 'clear', 'copy',
-                                      'get', 'has_key', 'items', 'keys', 'pop', 'popitem', 'setdefault', 'update', 'values'])
 
-    manager = SettingsManager(address=address, authkey=authkey)
-    return manager
+def createSharedMemoryDict(val, name):
+    # globals from the top-level module
+    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
 
-class DummySettingsManager():
-    """
-    Sole purpose is to allow the settings manager to be defined globally and lazy loaded on startup
-    """
+    try:
+        caller_globals[name] = UltraDict(val, name=name, create=True, auto_unlink=False, recurse=True)
+    except shmem_exceptions.AlreadyExists:
+        # we always want fresh memory, even if the memory was not deallocated properly
+        UltraDict(name=name, create=False).unlink()
+        caller_globals[name] = UltraDict(val, name=name, create=True, auto_unlink=False, recurse=True)
 
-    @staticmethod
-    def noop(*args, **kwargs):
-        return None
-    def getSettings(self, *args, **kwargs):
-        DummySettingsManager.noop(*args, **kwargs)
-    def start(self, *args, **kwargs):
-        DummySettingsManager.noop(*args, **kwargs)
-    def shutdown(self, *args, **kwargs):
-        DummySettingsManager.noop(*args, **kwargs)
+    return caller_globals[name]
 
-# TODO: add error handling / good return codes for the following funcs
-def setSharedSettings(fields_dict={}, address=settings.DSIP_IPC_SOCK, authkey=None):
-    if authkey is None:
-        authkey = AES_CTR.decrypt(settings.DSIP_IPC_PASS)
+def getSharedMemoryDict(name):
+    # globals from the top-level module
+    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
 
-    class SettingsManager(SyncManager):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+    if name in caller_globals:
+        return caller_globals[name]
 
-    SettingsManager.register("getSettings")
+    caller_globals[name] = UltraDict(name=name, create=False)
+    return caller_globals[name]
 
-    manager = SettingsManager(address=address, authkey=authkey)
-    manager.connect()
-    settings_proxy = manager.getSettings()
-    settings_proxy.update(list(fields_dict.items()))
 
 def sendSyncSettingsSignal(pid_file=settings.DSIP_PID_FILE, load_shared_settings=False):
     """

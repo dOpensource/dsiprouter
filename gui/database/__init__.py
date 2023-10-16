@@ -1,10 +1,12 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
 
+import sqlalchemy.engine
+
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os
+import os, inspect
 from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
@@ -31,6 +33,9 @@ if settings.KAM_DB_TYPE == "mysql":
                 if settings.DEBUG:
                     debugException(ex)
                 raise
+
+DB_ENGINE_NAME = 'global_db_engine'
+SESSION_LOADER_NAME = 'global_session_loader'
 
 
 class Gateways(object):
@@ -574,18 +579,30 @@ def createValidEngine(uri_list):
         raise Exception(errors)
 
 
-def createSessionMaker():
+def startSession():
     """
-    This method uses a singleton pattern and returns SessionLoader if created
-    :return:    SessionMaker() object
+    This method uses a singleton pattern to grab the global session loader and start a session
     """
 
-    if 'SessionLoader' in globals():
-        return globals()['SessionLoader']
-    if not 'db_engine' in globals():
-        db_engine = createValidEngine(createDBURI())
-    else:
-        db_engine = globals()['db_engine']
+    # globals from the top-level module
+    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+
+    if SESSION_LOADER_NAME in caller_globals:
+        return caller_globals[SESSION_LOADER_NAME]()
+
+    db_engine, session_loader = createSessionObjects()
+    return session_loader()
+
+
+def createSessionObjects():
+    """
+    Create the DB engine and session factory
+
+    :return:    Session factory and DB Engine
+    :rtype:     (:class:`sqlalchemy.orm.Session`,:class:`sqlalchemy.engine.Engine`)
+    """
+
+    db_engine = createValidEngine(createDBURI())
 
     mapper = registry(metadata=MetaData(schema=db_engine.url.database))
 
@@ -654,13 +671,13 @@ def createSessionMaker():
     #     'description': [dr_groups.c.description, dr_gw_lists_alias.c.drlist_description],
     # })
 
-    loadSession = scoped_session(sessionmaker(bind=db_engine))
-    return loadSession
+    session_loader = scoped_session(sessionmaker(bind=db_engine))
+    return db_engine, session_loader
 
 
 class DummySession():
     """
-    Sole purpose is to avoid exceptions when SessionLoader fails
+    Sole purpose is to avoid exceptions when startSession fails
     This allows us to handle exceptions later in the try blocks
     We also avoid exceptions in the except blocks by using dummy sesh
     """
@@ -751,6 +768,15 @@ class DummySession():
         pass
 
     def query_property(self, *args, **kwargs):
+        pass
+
+
+class DummyEngine():
+    """
+    Sole purpose is to allow lazy loading of DB engine and proper closing from global context
+    """
+
+    def dispose(self, *args, **kwargs):
         pass
 
 
@@ -846,6 +872,7 @@ def settingsToTableFormat(settings):
         ('DSIP_MSTEAMS_LICENSE', settings.DSIP_MSTEAMS_LICENSE),
     ])
 
+
 def updateDsipSettingsTable(fields):
     """
     Update the dsip_settings table using our stored procedure
@@ -860,7 +887,7 @@ def updateDsipSettingsTable(fields):
     db = DummySession()
     try:
         field_mapping = ', '.join([':{}'.format(x, x) for x in fields.keys()])
-        db = SessionLoader()
+        db = startSession()
         db.execute(
             text('CALL update_dsip_settings({})'.format(field_mapping)),
             fields
@@ -873,10 +900,11 @@ def updateDsipSettingsTable(fields):
     finally:
         db.close()
 
+
 def getDsipSettingsTableAsDict(dsip_id):
     db = DummySession()
     try:
-        db = SessionLoader()
+        db = startSession()
         return rowToDict(
             db.execute(
                 text('SELECT * FROM dsip_settings WHERE DSIP_ID=:dsip_id'),
@@ -887,12 +915,3 @@ def getDsipSettingsTableAsDict(dsip_id):
         raise
     finally:
         db.close()
-
-
-# TODO: we should be creating a queue of the valid db_engines
-# from there we can perform round robin connections and more advanced clustering
-# this does have the requirement of new session instancing per request
-
-# Make the engine and session maker global
-db_engine = createValidEngine(createDBURI())
-SessionLoader = createSessionMaker()

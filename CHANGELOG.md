@@ -5,7 +5,8 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-0d75422de5f2f1c2d7104367937e51f62a8a79a2
+2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365
+29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b
 4b835bbc8546269a75c79fe7b81a6313af2536b1
 5caff2334b4dbc19e315b98e9e3b5978d1a60a30
 8796289a7fbb2a88a44883baae68259b944de22c
@@ -2236,10 +2237,27 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 0d75422de5f2f1c2d7104367937e51f62a8a79a2)
+[//]: # (START_SECTION 2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365)
+### Update Shared Memory Manager
+
+> Commit: [2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365](https://github.com/dOpensource/dsiprouter/commit/2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365)  
+> Date: Mon, 16 Oct 2023 12:38:19 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- move state manager to shared memory instead of domain sockets
+- move license checks to startup, improving load times drastically
+
+
+---
+
+[//]: # (END_SECTION 2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365)
+[//]: # (START_SECTION 29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)
 ### Make Docs Great Again
 
-> Commit: [0d75422de5f2f1c2d7104367937e51f62a8a79a2](https://github.com/dOpensource/dsiprouter/commit/0d75422de5f2f1c2d7104367937e51f62a8a79a2)  
+> Commit: [29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b](https://github.com/dOpensource/dsiprouter/commit/29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)  
 > Date: Fri, 13 Oct 2023 12:46:16 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2254,7 +2272,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 0d75422de5f2f1c2d7104367937e51f62a8a79a2)
+[//]: # (END_SECTION 29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)
 [//]: # (START_SECTION 4b835bbc8546269a75c79fe7b81a6313af2536b1)
 ### V0.73 Release Feature Improvements
 

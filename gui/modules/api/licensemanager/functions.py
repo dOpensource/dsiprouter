@@ -37,6 +37,13 @@ class WoocommerceLicense(object):
         2569: 'DSIP_MSTEAMS_LICENSE',
         2556: 'DSIP_MSTEAMS_LICENSE',
     }
+    # dsiprouter license type -> global state name
+    STATE_MAPPING = {
+        'DSIP_CORE_LICENSE': 'core_license_status',
+        'DSIP_STIRSHAKEN_LICENSE': 'stirshaken_license_status',
+        'DSIP_TRANSNEXUS_LICENSE': 'transnexus_license_status',
+        'DSIP_MSTEAMS_LICENSE': 'msteams_license_status',
+    }
     # constant salt used for equality checks
     # should not be used for generating a hash that is stored
     CMP_SALT = 'A' * Credentials.SALT_LEN
@@ -214,3 +221,33 @@ class WoocommerceLicense(object):
     # format: license_key-machine_id
     def encrypt(self):
         return AES_CTR.encrypt('{}{}'.format(self._license_key, self.__machine_id))
+
+def licenseToGlobalStateVariable(license):
+    """
+    Determine the current state of a license
+
+    :param license: license key combo
+    :type license:  str|bytes
+    :return:        status of the license
+    :rtype:         int
+
+    the license status returned corresponds to::
+
+        0 == no license present
+        1 == license present but not valid
+        2 == license present but associated with another machine
+        3 == license present and valid
+    """
+
+    if len(license) == 0:
+        return 0
+
+    settings_lc = WoocommerceLicense(key_combo=license, decrypt=True)
+    if not settings_lc.active:
+        return 1
+
+    generated_lc = WoocommerceLicense(settings_lc.license_key)
+    if generated_lc != settings_lc:
+        return 2
+
+    return 3

@@ -8,7 +8,7 @@ from flask import jsonify
 from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from shared import debugException, StatusCodes
-import globals
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 
 
 def createApiResponse(error=None, msg=None, kamreload=None, dsipreload=None, data=None,
@@ -39,9 +39,9 @@ def createApiResponse(error=None, msg=None, kamreload=None, dsipreload=None, dat
     if msg is None:
         msg = ''
     if kamreload is None:
-        kamreload = globals.kam_reload_required
+        kamreload = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
     if dsipreload is None:
-        dsipreload = globals.dsip_reload_required
+        dsipreload = getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required']
     if data is None:
         data = []
     return jsonify({

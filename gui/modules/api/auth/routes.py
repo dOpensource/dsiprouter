@@ -8,10 +8,11 @@ import datetime, uuid
 from flask import Blueprint, render_template, abort, jsonify
 from util.security import api_security, AES_CTR
 from shared import debugEndpoint, StatusCodes, getRequestData
-from database import DummySession, SessionLoader, dSIPUser
+from database import DummySession, startSession, dSIPUser
 from modules.api.api_functions import showApiError, createApiResponse
 from modules.api.auth.functions import addDSIPUser
-import globals, settings
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+import settings
 
 user = Blueprint('user', __name__)
 
@@ -30,7 +31,7 @@ def login():
     REQUIRED_ARGS = {'username', 'password'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     db = DummySession()
 
@@ -41,7 +42,7 @@ def login():
         # get request data
         request_data = getRequestData()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Check for existing user
         existing_user = db.query(dSIPUser).filter(dSIPUser.username == (request_data['username'])).first()
@@ -97,7 +98,7 @@ def createUser():
     REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     db = DummySession()
 
@@ -108,7 +109,7 @@ def createUser():
         # get request data
         request_data = getRequestData()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Check for existing user
         existing_user = db.query(dSIPUser).filter(dSIPUser.username.like(request_data['username'])).all()
@@ -134,7 +135,7 @@ def createUser():
 @user.route('/api/v1/auth/user', methods=['GET'])
 def listUsers():
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     db = DummySession()
 
@@ -142,7 +143,7 @@ def listUsers():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Check for existing user
         user_list = db.query(dSIPUser).all()
@@ -176,7 +177,7 @@ def getUser(id=None):
     # REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     db = DummySession()
 
@@ -189,7 +190,7 @@ def getUser(id=None):
                                 'msg': 'Invalid Request. You seem to be missing the ID parameter.'}
             return jsonify(response_payload), StatusCodes.HTTP_BAD_REQUEST
 
-        db = SessionLoader()
+        db = startSession()
 
         # Check for existing user
         existing_user = db.query(dSIPUser).get(id)
@@ -222,7 +223,7 @@ def updateUser(id=None):
     REQUIRED_ARGS = {'firstname', 'lastname', 'username', 'password', 'roles', 'domains'}
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     db = DummySession()
 
@@ -238,7 +239,7 @@ def updateUser(id=None):
         # get request data
         request_data = getRequestData()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Check for existing user
         existing_user = db.query(dSIPUser).get(id)
@@ -284,7 +285,7 @@ def deleteUser(id=None):
                                 'msg': 'Invalid Request. You seem to be missing the ID parameter.'}
             return jsonify(response_payload), StatusCodes.HTTP_BAD_REQUEST
 
-        db = SessionLoader()
+        db = startSession()
 
         # Check for existing user
         existing_user = db.query(dSIPUser).get(id)

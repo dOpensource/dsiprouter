@@ -166,7 +166,7 @@ EOF
 
     ## compile and install libks
     if [[ ! -d ${SRC_DIR}/libks ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libks ${SRC_DIR}/libks
+        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
     fi
     ( cd ${SRC_DIR}/libks && cmake -DCMAKE_INSTALL_PREFIX=/usr . && make install &&
         ln -sft /usr/lib64/ /usr/lib/libks.so* && ln -sft /usr/lib64/pkgconfig/ /usr/lib/pkgconfig/libks.pc; exit $?;

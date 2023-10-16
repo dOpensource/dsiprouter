@@ -26,24 +26,25 @@ from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
-from database import db_engine, SessionLoader, DummySession, Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, \
-    dSIPLCR, UAC, GatewayGroups, Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
-    settingsToTableFormat, getDsipSettingsTableAsDict
+from database import DummyEngine, DummySession, createSessionObjects, startSession, \
+    DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
+    Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
+    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
-from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
+from modules.api.licensemanager.functions import WoocommerceError, licenseToGlobalStateVariable
 from modules.api.licensemanager.routes import license_manager
 from modules.api.auth.routes import user
 from util.security import Credentials, urandomChars, AES_CTR
-from util.ipc import createSettingsManager, DummySettingsManager
+from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
 from util.parse_json import CreateEncoder
 from util.persistence import updatePersistentState, setPersistentState
 from modules.upgrade import UpdateUtils
-import globals, settings
+import settings
 
 # TODO: unit testing per component
 # TODO: many of these routes could use some updating...
@@ -51,6 +52,12 @@ import globals, settings
 # TODO: do license checks on login and store in session variables
 #       this alleviates the extra requests and can be updated easily
 #       marked for implementation in v0.80
+# TODO: move settings to read/write from shared memory instead of using module replacement
+#       marked for implementation in v0.80
+# TODO: go through templates/routes and replace redundant references to settings/globals
+#       they are both injected on every request via the context processor
+# TODO: remove references to "ipc.sock" / DSIP_IPC_SOCK
+#       we moved to shared memory instead of domain sockets for sharing state across processes
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -68,8 +75,8 @@ csrf.exempt(carriergroups)
 csrf.exempt(user)
 csrf.exempt(license_manager)
 numbers_api = flowroute.Numbers()
-settings_manager = DummySettingsManager()
 ansi_converter = Ansi2HTMLConverter(inline=True)
+global_db_engine = DummyEngine()
 
 
 @app.before_first_request
@@ -177,7 +184,7 @@ def certificates():
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+        'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -267,7 +274,7 @@ def displayCarrierGroups(gwgroup=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
 
@@ -323,7 +330,7 @@ def addUpdateCarrierGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -363,7 +370,7 @@ def addUpdateCarrierGroups():
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd":
                 Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
-                             local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
+                    local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
                 db.add(Addr)
@@ -390,16 +397,16 @@ def addUpdateCarrierGroups():
                 if authtype == "userpwd":
                     # update uacreg if exists, otherwise create
                     if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                            {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                             'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                             'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
+                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
+                            'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
+                            'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
                         Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
-                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
+                            auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                         db.add(Uacreg)
 
                     # update address if exists, otherwise create
                     if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                            {'ip_addr': auth_domain}, synchronize_session=False):
+                        {'ip_addr': auth_domain}, synchronize_session=False):
                         Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                         db.add(Addr)
                 else:
@@ -408,7 +415,7 @@ def addUpdateCarrierGroups():
                     db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -448,7 +455,7 @@ def deleteCarrierGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -471,7 +478,7 @@ def deleteCarrierGroups():
         Gwgroup.delete(synchronize_session=False)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayCarrierGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -516,7 +523,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # carriers is a list of carriers matching query
         # carrier_routes is a list of associated rules for each carrier
@@ -560,7 +567,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
 
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
-                               kam_reload_required=globals.kam_reload_required)
+            kam_reload_required=getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'])
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -602,7 +609,7 @@ def addUpdateCarriers():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -691,7 +698,7 @@ def addUpdateCarriers():
             Gateway.description = dictToStrFields(gw_fields)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -731,7 +738,7 @@ def deleteCarriers():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -778,7 +785,7 @@ def deleteCarriers():
                 rule.gwlist = ','.join(gwlist)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayCarriers(gwgroup=gwgroup)
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -818,7 +825,7 @@ def displayEndpointGroups():
 
         # NOTE: not including IPv6 address here as we only need to connect over IPv4 to fusion DB
         return render_template('endpointgroups.html', dsiprouter_ip=settings.EXTERNAL_IP_ADDR,
-                               DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
+            DEFAULT_auth_domain=settings.DEFAULT_AUTH_DOMAIN)
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -920,7 +927,7 @@ def addUpdateEndpointGroups():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # form = stripDictVals(request.form.to_dict())
         #
@@ -950,7 +957,7 @@ def addUpdateEndpointGroups():
             db.add(Gwgroup)
             db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -991,7 +998,7 @@ def deletePBX():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1024,7 +1031,7 @@ def deletePBX():
             domainmultimapping.delete(synchronize_session=False)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayEndpointGroups()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1066,21 +1073,21 @@ def displayInboundMapping():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
         res = db.execute(
             text("""
-SELECT * from (
+SELECT * FROM (
     SELECT r.ruleid, r.groupid, r.prefix, r.gwlist, r.description AS rule_description, g.id AS gwgroupid, g.description AS gwgroup_description FROM dr_rules AS r LEFT JOIN dr_gw_lists AS g ON g.id = REPLACE(r.gwlist, '#', '') WHERE r.groupid = :flt_inbound
 ) AS t1 LEFT JOIN (
-    SELECT hf.dr_ruleid AS hf_ruleid, hf.dr_groupid AS hf_groupid, hf.did AS hf_fwddid, g.id AS hf_gwgroupid FROM dsip_hardfwd AS hf LEFT JOIN dr_rules AS r ON hf.dr_groupid = r.groupid LEFT JOIN dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') WHERE hf.dr_groupid <> :flt_outbound
+    SELECT hf.dr_ruleid AS hf_ruleid, hf.dr_groupid AS hf_groupid, hf.did AS hf_fwddid, g.id AS hf_gwgroupid FROM dsip_hardfwd AS hf LEFT JOIN dr_rules AS r ON hf.dr_groupid = r.groupid LEFT JOIN dr_gw_lists AS g ON g.id = REPLACE(r.gwlist, '#', '') WHERE hf.dr_groupid <> :flt_outbound
     UNION ALL
     SELECT hf.dr_ruleid AS hf_ruleid, hf.dr_groupid AS hf_groupid, hf.did AS hf_fwddid, NULL AS hf_gwgroupid FROM dsip_hardfwd AS hf LEFT JOIN dr_rules AS r ON hf.dr_ruleid = r.ruleid WHERE hf.dr_groupid = :flt_outbound
 ) AS t2 ON t1.ruleid = t2.hf_ruleid LEFT JOIN (
-    SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, g.id AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_groupid = r.groupid LEFT JOIN dr_gw_lists as g on g.id = REPLACE(r.gwlist, '#', '') WHERE ff.dr_groupid <> :flt_outbound
+    SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, g.id AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_groupid = r.groupid LEFT JOIN dr_gw_lists AS g ON g.id = REPLACE(r.gwlist, '#', '') WHERE ff.dr_groupid <> :flt_outbound
     UNION ALL
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, NULL AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_ruleid = r.ruleid WHERE ff.dr_groupid = :flt_outbound
 ) AS t3 ON t1.ruleid = t3.ff_ruleid"""), {"flt_inbound": settings.FLT_INBOUND, "flt_outbound": settings.FLT_OUTBOUND})
@@ -1145,7 +1152,7 @@ def addUpdateInboundMapping():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1287,43 +1294,42 @@ def addUpdateInboundMapping():
             description = dictToStrFields(desc_dict)
             # we only support a single gwgroup at this time
             gwlist = '#{}'.format(gwgroupid) if len(gwgroupid) > 0 else ''
-                # dispatcher_id = x[2].zfill(4)
-                #
-                # # logging.info("Searching for the gateway by description")
-                # # Create a gateway
-                # Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
-                # if Gateway:
-                #     logging.info("Gateway found")
-                #     fields = strFieldsToDict(Gateway.description)
-                #     fields['lb'] = dispatcher_id
-                #     fields['gwgroup'] = gwgroupid
-                #     Gateway.update({'prefix': dispatcher_id, 'description': dictToStrFields(fields)})
-                # else:
-                #     # logging.info("Gateway not found")
-                #     Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
-                #     if not Gateway:
-                #         logging.info("Gateway not found, creating new gateway")
-                #         # Create a gateway
-                #         Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-                #         db.add(Gateway)
-                #         db.flush()
-                #
-                #     # Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
-                #     # db.add(Gateway)
-                #
-                # db.flush()
-                # # Assign Gateway id to the gateway list
-                # gwlist = Gateway.gwid
-                #
-                # try:
-                #     if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
-                #         db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
-                #     if settings.IPV6_ENABLED:
-                #         if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
-                #             db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
-                # except sql_exceptions.MultipleResultsFound as ex:
-                #     logging.info("Multiple Address rows found")
-
+            # dispatcher_id = x[2].zfill(4)
+            #
+            # # logging.info("Searching for the gateway by description")
+            # # Create a gateway
+            # Gateway = db.query(Gateways).filter(Gateways.description.like(gwgroupid) & Gateways.description.like("lb:{}".format(dispatcher_id))).first()
+            # if Gateway:
+            #     logging.info("Gateway found")
+            #     fields = strFieldsToDict(Gateway.description)
+            #     fields['lb'] = dispatcher_id
+            #     fields['gwgroup'] = gwgroupid
+            #     Gateway.update({'prefix': dispatcher_id, 'description': dictToStrFields(fields)})
+            # else:
+            #     # logging.info("Gateway not found")
+            #     Gateway = db.query(Gateways).filter(Gateways.description.like("%drouting_to_dispatcher%"), Gateways.address == "localhost", Gateways.strip == 0, Gateways.pri_prefix == dispatcher_id, Gateways.type == settings.FLT_PBX).first()
+            #     if not Gateway:
+            #         logging.info("Gateway not found, creating new gateway")
+            #         # Create a gateway
+            #         Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+            #         db.add(Gateway)
+            #         db.flush()
+            #
+            #     # Gateway = Gateways("drouting_to_dispatcher", "localhost", 0, dispatcher_id, settings.FLT_PBX, gwgroup=gwgroupid)
+            #     # db.add(Gateway)
+            #
+            # db.flush()
+            # # Assign Gateway id to the gateway list
+            # gwlist = Gateway.gwid
+            #
+            # try:
+            #     if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP_ADDR).scalar():
+            #         db.add(Address("myself", settings.INTERNAL_IP_ADDR, 32, 1, gwgroup=gwgroupid))
+            #     if settings.IPV6_ENABLED:
+            #         if not db.query(Address).filter(Address.ip_addr == settings.INTERNAL_IP6_ADDR).scalar():
+            #             db.add(Address("myself", settings.INTERNAL_IP6_ADDR, 32, 1, gwgroup=gwgroupid))
+            # except sql_exceptions.MultipleResultsFound as ex:
+            #     logging.info("Multiple Address rows found")
 
             db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
                 {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
@@ -1494,7 +1500,7 @@ def addUpdateInboundMapping():
                 db.add_all(inserts)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1536,7 +1542,7 @@ def deleteInboundMapping():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1576,7 +1582,7 @@ def deleteInboundMapping():
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayInboundMapping()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1659,7 +1665,7 @@ def importInboundMapping():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -1680,7 +1686,7 @@ def importInboundMapping():
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
             processInboundMappingImport(filename, gwgroupid, None, db)
             flash('X number of file were imported')
-            globals.kam_reload_required = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             return redirect(url_for('displayInboundMapping', filename=filename))
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1762,7 +1768,7 @@ def addUpdateTeleBlock():
 
         updateConfig(settings, teleblock, hot_reload=True)
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayTeleBlock()
 
     except http_exceptions.HTTPException as ex:
@@ -1788,25 +1794,29 @@ def displayTransNexus(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        if len(settings.DSIP_TRANSNEXUS_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['transnexus_license_status']
+        if license_status == 0:
             return render_template('license_required.html', msg=None)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_TRANSNEXUS_LICENSE, decrypt=True)
-        if not settings_lc.active:
+        if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
+        if license_status == 2:
             return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
-        if settings.TRANSNEXUS_AUTHSERVICE_ENABLED == 1: 
+        if settings.TRANSNEXUS_AUTHSERVICE_ENABLED == 1:
             authservice_checked = 'checked'
             transnexusOptions_hidden = 'hidden'
         else:
-            authservice_checked = '' 
+            authservice_checked = ''
             transnexusOptions_hidden = ''
-    
-        return render_template('transnexus.html', msg=msg,settings=settings,authservice_checked=authservice_checked,transnexusOptions_hidden=transnexusOptions_hidden)
+
+        return render_template(
+            'transnexus.html',
+            msg=msg,
+            authservice_checked=authservice_checked,
+            transnexusOptions_hidden=transnexusOptions_hidden
+        )
 
     except WoocommerceError as ex:
         return render_template('license_required.html', msg=str(ex))
@@ -1833,15 +1843,14 @@ def addUpdateTransNexus():
         if (settings.DEBUG):
             debugEndpoint()
 
-        if len(settings.DSIP_TRANSNEXUS_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['transnexus_license_status']
+        if license_status == 0:
             return render_template('license_required.html', msg=None)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_TRANSNEXUS_LICENSE, decrypt=True)
-        if not settings_lc.active:
+        if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
+        if license_status == 2:
             return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
         form = stripDictVals(request.form.to_dict())
@@ -1859,7 +1868,7 @@ def addUpdateTransNexus():
 
         if len(tn_settings) != 0:
             updateConfig(settings, tn_settings, hot_reload=True)
-            globals.kam_reload_required = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
 
         return displayTransNexus()
 
@@ -1892,7 +1901,7 @@ def displayOutboundRoutes():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
 
@@ -1920,7 +1929,7 @@ def displayOutboundRoutes():
         teleblock["media_port"] = settings.TELEBLOCK_MEDIA_PORT
 
         return render_template('outboundroutes.html', rows=rows, cgroups=cgroups, teleblock=teleblock,
-                               custom_routes=getCustomRoutes())
+            custom_routes=getCustomRoutes())
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -1961,7 +1970,7 @@ def addUpateOutboundRoutes():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -2001,7 +2010,7 @@ def addUpateOutboundRoutes():
                 pattern = from_prefix + "-" + prefix
 
             OMap = OutboundRoutes(groupid=groupid, prefix=prefix, timerec=timerec, priority=priority,
-                                  routeid=routeid, gwlist=gwlist, description=description)
+                routeid=routeid, gwlist=gwlist, description=description)
             db.add(OMap)
 
             # Add the lcr map
@@ -2087,7 +2096,7 @@ def addUpateOutboundRoutes():
                 }, synchronize_session=False)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -2129,7 +2138,7 @@ def deleteOutboundRoute():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         form = stripDictVals(request.form.to_dict())
 
@@ -2145,7 +2154,7 @@ def deleteOutboundRoute():
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayOutboundRoutes()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -2183,26 +2192,29 @@ def displayStirShaken(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        if len(settings.DSIP_STIRSHAKEN_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['stirshaken_license_status']
+        if license_status == 0:
             return render_template('license_required.html', msg=None)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_STIRSHAKEN_LICENSE, decrypt=True)
-        if not settings_lc.active:
+        if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
-            return render_template('license_required.html',
-                                   msg='license is associated with another machine, re-associate it with this machine first')
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
         if settings.STIR_SHAKEN_ENABLED == 1:
             toggle_checked = 'checked'
             options_hidden = 'hidden'
         else:
             toggle_checked = ''
-            options_hidden=''
+            options_hidden = ''
 
-        return render_template('stirshaken.html', msg=msg,settings=settings,toggle_checked=toggle_checked,options_hidden=options_hidden)
+        return render_template(
+            'stirshaken.html',
+            msg=msg,
+            toggle_checked=toggle_checked,
+            options_hidden=options_hidden
+        )
 
     except WoocommerceError as ex:
         return render_template('license_required.html', msg=str(ex))
@@ -2229,17 +2241,15 @@ def addUpdateStirShaken():
         if (settings.DEBUG):
             debugEndpoint()
 
-        if len(settings.DSIP_STIRSHAKEN_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['stirshaken_license_status']
+        if license_status == 0:
             return render_template('license_required.html', msg=None)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_STIRSHAKEN_LICENSE, decrypt=True)
-        if not settings_lc.active:
+        if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
-            return render_template('license_required.html',
-                                   msg='license is associated with another machine, re-associate it with this machine first')
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
         form = stripDictVals(request.form.to_dict())
 
@@ -2269,7 +2279,7 @@ def addUpdateStirShaken():
 
         if len(ss_settings) != 0:
             updateConfig(settings, ss_settings, hot_reload=True)
-            globals.kam_reload_required = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
 
         return displayStirShaken()
 
@@ -2298,17 +2308,15 @@ def displayUpgrade(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        if len(settings.DSIP_CORE_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status']
+        if license_status == 0:
             return render_template('license_required.html', msg=None)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_CORE_LICENSE, decrypt=True)
-        if not settings_lc.active:
+        if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
-            return render_template('license_required.html',
-                                   msg='license is associated with another machine, re-associate it with this machine first')
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
         # make sure we remove offset file when navigating to top level page
         if os.path.exists('/tmp/dsiprouter_upgrade.log.offset'):
@@ -2362,9 +2370,9 @@ def start_upgrade():
             )
             run_info.check_returncode()
 
-        #globals.kam_reload_required = True
+        # getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         # kamailio will be reloaded when dsiprouter is reloaded
-        globals.dsip_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
 
         logging.info("Upgrade complete")
 
@@ -2383,7 +2391,7 @@ def start_upgrade():
 # format a message as a server sent event
 # idea from: https://maxhalford.github.io/blog/flask-sse-no-deps/
 # TODO: separate into SSE specific file
-def formatSSE(data: str, event: str=None) -> str:
+def formatSSE(data: str, event: str = None) -> str:
     msg = f'data: {data}\n\n'
     if event is not None:
         msg = f'event: {event}\n{msg}'
@@ -2488,19 +2496,13 @@ def imgFilter(name):
     else:
         return ""
 
-
 # custom jinja context processors
 @app.context_processor
-def injectReloadRequired():
+def injectGlobals():
     return {
-        'kam_reload_required': globals.kam_reload_required,
-        'dsip_reload_required': globals.dsip_reload_required
+        'settings': settings,
+        'state': getSharedMemoryDict(STATE_SHMEM_NAME),
     }
-
-
-@app.context_processor
-def injectSettings():
-    return dict(settings=settings)
 
 
 # DEPRECATED: now done by dsiprouter.sh (CLI commands run by dsip-init.service), marked for removal in v0.80
@@ -2626,7 +2628,7 @@ def sigHandler(signum=None, frame=None):
     elif signum == signal.SIGUSR2.value:
         IO.printdbg("Received SIGUSR2 syncing settings from shared memory")
         IO.logdbg("Received SIGUSR2 syncing settings from shared memory")
-        shared_settings = dict(settings_manager.getSettings().items())
+        shared_settings = dict(getSharedMemoryDict(SETTINGS_SHMEM_NAME).items())
         syncSettings(shared_settings)
     # run teardown logic before exiting
     elif signum == signal.SIGINT.value:
@@ -2666,7 +2668,63 @@ def replaceAppLoggers(log_handler):
     logging.getLogger('sqlalchemy.orm').setLevel(settings.DSIP_LOG_LEVEL)
 
 
+def intializeGlobalSettings():
+    """
+    Initialize global settings and make it accessible in shared memory
+
+    :return:    None
+    :rtype:     None
+    """
+
+    syncSettings()
+
+    updated_settings = objToDict(settings)
+    createSharedMemoryDict(updated_settings, name=SETTINGS_SHMEM_NAME)
+
+    if settings.DEBUG:
+        IO.printinfo(f'global settings initialized: {updated_settings}')
+
+
+def intializeGlobalState():
+    """
+    Initialize global state and make it accessible in shared memory
+
+    :return:    None
+    :rtype:     None
+    """
+
+    # create/update the shared state file
+    # if the state got corrupted throw it away and start fresh
+    try:
+        state = updatePersistentState({
+            'dsip_reload_ongoing': False,
+            'dsip_reload_required': False,
+        })
+    except json.JSONDecodeError:
+        state = {}
+
+    # license checks are always performed on startup, not loaded from state file
+    state['core_license_status'] = licenseToGlobalStateVariable(settings.DSIP_CORE_LICENSE)
+    state['stirshaken_license_status'] = licenseToGlobalStateVariable(settings.DSIP_STIRSHAKEN_LICENSE)
+    state['transnexus_license_status'] = licenseToGlobalStateVariable(settings.DSIP_TRANSNEXUS_LICENSE)
+    state['msteams_license_status'] = licenseToGlobalStateVariable(settings.DSIP_MSTEAMS_LICENSE)
+    state['kam_reload_required'] = state.get('kam_reload_required', False)
+    state['dsip_reload_required'] = state.get('dsip_reload_required', False)
+    state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
+
+    createSharedMemoryDict(state, name=STATE_SHMEM_NAME)
+
+    if settings.DEBUG:
+        IO.printinfo(f'global state initialized: {state}')
+
+
 def initApp(flask_app):
+    # load the DB objects into memory
+    global global_session_loader
+    global_db_engine, global_session_loader = createSessionObjects()
+    # make sure we did not break the global naming contract with the database module
+    assert DB_ENGINE_NAME in globals() and SESSION_LOADER_NAME in globals()
+
     # Setup the Flask session manager with a random secret key
     if settings.DSIP_SESSION_KEY is None:
         flask_app.secret_key = os.urandom(32)
@@ -2687,9 +2745,10 @@ def initApp(flask_app):
     # Add jinja2 functions
     flask_app.jinja_env.globals.update(zip=zip)
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
+    flask_app.jinja_env.globals.update(licenseValid=lambda x: x==3)
 
     # Dynamically update settings
-    syncSettings()
+    intializeGlobalSettings()
 
     # Reload Kamailio with the settings from dSIPRouter settings config
     reloadKamailio()
@@ -2731,31 +2790,15 @@ def initApp(flask_app):
     os.umask(~0o660 & 0o777)
 
     # remove sockets / PID file from previous runs (only possible on SIGKILL or system halt)
-    if os.path.exists(settings.DSIP_IPC_SOCK):
-        os.remove(settings.DSIP_IPC_SOCK)
     if os.path.exists(settings.DSIP_UNIX_SOCK):
         os.remove(settings.DSIP_UNIX_SOCK)
 
-    # create/update the shared state file
-    # if the state got corrupted throw it away and start fresh
-    try:
-        state = updatePersistentState({
-            'dsip_reload_ongoing': False,
-            'dsip_reload_required': False,
-        })
-    except json.JSONDecodeError:
-        state = {}
-
     # Initialize global variables based on persistent state
-    globals.initialize(state)
+    intializeGlobalState()
 
     # write out the main proc's PID
     with open(settings.DSIP_PID_FILE, 'w') as pidfd:
         pidfd.write(str(os.getpid()))
-
-    # start the Shared Memory Management server
-    settings_manager = createSettingsManager(objToDict(settings))
-    settings_manager.start()
 
     # start the Flask App server
     bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
@@ -2767,7 +2810,11 @@ def teardown():
     except:
         pass
     try:
-        settings_manager.shutdown()
+        getSharedMemoryDict(SETTINGS_SHMEM_NAME).unlink()
+    except:
+        pass
+    try:
+        getSharedMemoryDict(STATE_SHMEM_NAME).unlink()
     except:
         pass
     try:
@@ -2775,7 +2822,7 @@ def teardown():
     except:
         pass
     try:
-        db_engine.dispose(close=True)
+        global_db_engine.dispose(close=True)
     except:
         pass
     try:
@@ -2784,10 +2831,6 @@ def teardown():
         pass
     # TODO: multiprocessing and bjoern modules try to handle this in the ExitException handlers
     #       marked for review...
-    try:
-        os.remove(settings.DSIP_IPC_SOCK)
-    except:
-        pass
     try:
         os.remove(settings.DSIP_UNIX_SOCK)
     except:

@@ -7,17 +7,18 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json
 from contextlib import closing
 from datetime import datetime
-from flask import Blueprint, jsonify, request, send_file, session
+from flask import Blueprint, jsonify, request, send_file, g
 from sqlalchemy import exc as sql_exceptions, and_, or_
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
-from database import SessionLoader, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
+from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
     GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits, InboundMapping, dSIPCDRInfo, \
     dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
-    strFieldsToDict, getRequestData
+    strFieldsToDict, getRequestData, IO
 from util.pyasync import daemonize
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError
 from modules.api.kamailio.functions import reloadKamailio
 from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
@@ -26,7 +27,7 @@ from util.security import AES_CTR, urandomChars, KeyCertPair, api_security
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
-import settings, globals
+import settings
 
 api = Blueprint('api', __name__)
 
@@ -66,7 +67,7 @@ def handleReloadKamailio():
 
         reloadKamailio()
 
-        globals.kam_reload_required = False
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
         return createApiResponse(
             msg='Kamailio reload succeeded',
             kamreload=False,
@@ -85,7 +86,7 @@ def handleReloadDsiprouter():
 
         # check on a current reload
         if request.method == 'GET':
-            if globals.dsip_reload_ongoing:
+            if getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing']:
                 return createApiResponse(
                     msg='dSIPRouter reload in progress',
                     data=[False],
@@ -98,16 +99,16 @@ def handleReloadDsiprouter():
             )
         # try the reload
         elif request.method == 'POST':
-            if globals.dsip_reload_ongoing:
+            if getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing']:
                 return createApiResponse(
                     msg='dSIPRouter reload in progress',
                     status_code=StatusCodes.HTTP_ACCEPTED,
                 )
 
             # update globals before we reload so server stores them on teardown
-            globals.dsip_reload_ongoing = True
-            globals.kam_reload_required = False
-            globals.dsip_reload_required = False
+            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing'] = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
+            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = False
 
             daemonize(['sudo', 'dsiprouter', 'restart', '-all', '-daemonize'])
 
@@ -142,7 +143,7 @@ def getEndpointLease():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         email = request.args.get('email')
         if not email:
@@ -192,7 +193,7 @@ def getEndpointLease():
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Lease created',
             data=[lease_data],
@@ -216,7 +217,7 @@ def revokeEndpointLease(leaseid):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Query the Lease ID
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
@@ -234,7 +235,7 @@ def revokeEndpointLease(leaseid):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Lease revoked',
             kamreload=True,
@@ -258,7 +259,7 @@ def updateEndpoint(id):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Covert JSON message to Dictionary Object
         request_payload = getRequestData()
@@ -280,7 +281,7 @@ def updateEndpoint(id):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Endpoint updated',
             kamreload=True,
@@ -321,7 +322,7 @@ def handleInboundMapping():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # =========================================
         # get rule for DID mapping or list of rules
@@ -425,8 +426,8 @@ def handleInboundMapping():
             db.add(IMap)
 
             db.commit()
-            globals.kam_reload_required = True
-            payload['kamreload'] = globals.kam_reload_required
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+            payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
             payload['msg'] = 'Rule Created'
             return createApiResponse(**payload)
 
@@ -499,8 +500,8 @@ def handleInboundMapping():
                     raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
 
             db.commit()
-            globals.kam_reload_required = True
-            payload['kamreload'] = globals.kam_reload_required
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+            payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
             return createApiResponse(**payload)
 
         # ===========================
@@ -532,7 +533,7 @@ def handleInboundMapping():
                     raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
 
             db.commit()
-            globals.kam_reload_required = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             payload['kamreload'] = True
             payload['msg'] = 'Rule Deleted'
             return createApiResponse(**payload)
@@ -570,7 +571,7 @@ def handleNotificationRequest():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # ============================
         # create and send notification
@@ -649,7 +650,7 @@ def deleteEndpointGroup(gwgroupid):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid)
         if endpointgroup is not None:
@@ -719,7 +720,7 @@ def deleteEndpointGroup(gwgroupid):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(msg='EndpointGroup deleted', kamreload=True)
 
     except Exception as ex:
@@ -741,7 +742,7 @@ def getEndpointGroup(gwgroupid):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointgroup is not None:
@@ -855,7 +856,7 @@ def listEndpointGroups():
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
 
@@ -971,7 +972,7 @@ def updateEndpointGroups(gwgroupid=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # get request data
         request_payload = getRequestData()
@@ -1426,7 +1427,7 @@ def updateEndpointGroups(gwgroupid=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Endpoint group updated',
             data=[gwgroup_data],
@@ -1533,7 +1534,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if data == None:
             # Convert Request message to Dictionary Object
@@ -1754,7 +1755,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Endpoint group created',
             data=[gwgroup_data],
@@ -1806,7 +1807,7 @@ def getNumberEnrichment(rule_id=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # get a single enrichment rule
         if rule_id is not None:
@@ -1906,7 +1907,7 @@ def addNumberEnrichment(request_payload=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -1944,7 +1945,7 @@ def addNumberEnrichment(request_payload=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Enrichment Rule(s) created',
             data=response_data,
@@ -2021,7 +2022,7 @@ def updateNumberEnrichment(rule_id=None, request_payload=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -2077,7 +2078,7 @@ def updateNumberEnrichment(rule_id=None, request_payload=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Enrichment Rule(s) updated',
             data=response_data,
@@ -2141,7 +2142,7 @@ def deleteNumberEnrichment(rule_id, request_payload=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -2177,7 +2178,7 @@ def deleteNumberEnrichment(rule_id, request_payload=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Enrichment Rule(s) deleted',
             kamreload=True,
@@ -2253,7 +2254,7 @@ def fetchNumberEnrichment(request_payload=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -2385,7 +2386,7 @@ def fetchNumberEnrichment(request_payload=None):
                 'rule_name': strFieldsToDict(rule.description)['name']
             })
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             **response_payload,
             kamreload=True,
@@ -2418,12 +2419,12 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': None, 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
     # define here so we can cleanup in finally statement
     csv_file = ''
 
     try:
-        db = SessionLoader()
+        db = startSession()
 
         if isinstance(gwgroupid, int):
             gwgroupid = str(gwgroupid)
@@ -2601,10 +2602,10 @@ def getGatewayCDRS(gwid=None):
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.kam_reload_required, 'data': []}
+    response_payload = {'error': None, 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
-        db = SessionLoader()
+        db = startSession()
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2736,7 +2737,7 @@ def restoreBackup():
         with open(restore_path, 'rb') as fp:
             subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='The restore was successful',
             kamreload=True,
@@ -2829,7 +2830,6 @@ def getOptionMessageStatus(domain):
 @api.route("/api/v1/domains/msteams/test/<string:domain>", methods=['GET'])
 @api_security
 def testConnectivity(domain):
-
     try:
         test_data = {"hostname_check": False, "tls_check": False, "option_check": False}
 
@@ -2888,7 +2888,7 @@ def getCertificates(domain=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
@@ -2955,7 +2955,7 @@ def createCertificate():
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         request_payload = getRequestData()
 
@@ -2992,7 +2992,7 @@ def createCertificate():
                     key, cert = letsencrypt.generateCertificate(domain, email, default=replace_default_cert)
 
             except Exception as ex:
-                globals.kam_reload_required = False
+                getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
                 raise http_exceptions.BadRequest(
                     "Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
 
@@ -3020,7 +3020,7 @@ def createCertificate():
             if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg="Certificate creation succeeded",
             data=[{"id": certificate.id}],
@@ -3044,7 +3044,7 @@ def deleteCertificates(domain=None):
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
@@ -3062,7 +3062,7 @@ def deleteCertificates(domain=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Certificate Deleted',
             kamreload=True,
@@ -3085,7 +3085,7 @@ def uploadCertificates(domain=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         data = getRequestData()
 
@@ -3152,7 +3152,7 @@ def uploadCertificates(domain=None):
 
         db.commit()
 
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg="Certificate and Key were uploaded",
             data=[{"id": certificate.id}],

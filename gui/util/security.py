@@ -9,10 +9,10 @@ from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
 from functools import wraps
-from flask import jsonify, render_template, request, session
+from flask import render_template, request, session
 from shared import updateConfig, StatusCodes
 from modules.api.api_functions import createApiResponse
-import settings, globals
+import settings
 
 
 #

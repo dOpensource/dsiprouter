@@ -31,7 +31,7 @@
           <a class="navbar-brand" href="http://dopensource.com/dsiprouter"><img
               src="{{ url_for('static', filename='images/dsiprouter_x50px.png') }}"></a>
           <ul class="nav navbar-nav navbar-right">
-            {% if kam_reload_required == True %}
+            {% if state.kam_reload_required == True %}
               <button class="btn btn-warning btn-med" id="reloadkam"
                       name="reloadkam">Reload Kamailio
               </button>
@@ -40,7 +40,7 @@
                       name="reloadkam">Reload Kamailio
               </button>
             {% endif %}
-            {% if dsip_reload_required == True %}
+            {% if state.dsip_reload_required == True %}
               <button class="btn btn-warning btn-med" id="reload_dsip"
                       name="reload_dsip">Reload dSIPRouter
               </button>

@@ -1,9 +1,10 @@
 from flask import request
 from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
-import settings, globals
+import settings
 from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
-from database import SessionLoader, DummySession, Gateways, Address, UAC, GatewayGroups
+from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 
 def addUpdateCarrierGroups(data=None):
@@ -11,13 +12,15 @@ def addUpdateCarrierGroups(data=None):
     Add or Update a group of carriers
     """
 
+    global displayCarrierGroups
+
     db = DummySession()
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if data is not None:
             # Set the form variables to data parameter
@@ -107,7 +110,7 @@ def addUpdateCarrierGroups(data=None):
                 db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         if data is None:
             return displayCarrierGroups()
         else:
@@ -147,7 +150,7 @@ def addUpdateCarriers(data=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if data is not None:
             # Set the form variables to data parameter
@@ -246,7 +249,7 @@ def addUpdateCarriers(data=None):
             Gateway.description = dictToStrFields(gw_fields)
 
         db.commit()
-        globals.kam_reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         if data is None:
             return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
 

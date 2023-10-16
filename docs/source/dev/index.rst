@@ -12,7 +12,6 @@ This section makes the core modules easier to explore for developers.
 
     database <database.rst>
     dsiprouter <dsiprouter.rst>
-    globals <globals.rst>
     modules <modules.rst>
     settings <settings.rst>
     shared <shared.rst>
