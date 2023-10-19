@@ -159,6 +159,14 @@
         btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
         btn.attr("disabled", true);
 
+	// Update Reload buttons
+	$('#reload').removeClass('btn-primary');
+        $('#reload').addClass('btn-warning');
+        $('#reload-split').removeClass('btn-primary');
+        $('#reload-split').addClass('btn-warning');
+        $('#reloadkam').removeClass('btn-primary');
+        $('#reloadkam').addClass('btn-warning');
+
         if (action === "POST") {
           gwgroup_table.row.add({
             "name": requestPayload.name,
