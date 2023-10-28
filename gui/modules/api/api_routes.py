@@ -2665,7 +2665,7 @@ def createBackup():
         backup_path = os.path.join(settings.BACKUP_FOLDER, backup_name)
         # need to decrypt password
         if isinstance(settings.KAM_DB_PASS, bytes):
-            kampass = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
+            kampass = AES_CTR.decrypt(settings.KAM_DB_PASS)
         else:
             kampass = settings.KAM_DB_PASS
 

@@ -488,7 +488,7 @@ class dSIPUser(object):
 
     pass
 
-
+# TODO: switch to from sqlalchemy.engine.URL API
 def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_host=None, db_port=None, db_name=None, db_charset='utf8mb4'):
     """
     Get any and all DB Connection URI's
@@ -518,7 +518,7 @@ def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_hos
 
     # need to decrypt password
     if isinstance(db_pass, bytes):
-        db_pass = AES_CTR.decrypt(db_pass).decode('utf-8')
+        db_pass = AES_CTR.decrypt(db_pass)
     # formatting for driver
     if len(db_driver) > 0:
         db_driver = '+{}'.format(db_driver)
@@ -542,13 +542,17 @@ def createValidEngine(uri_list):
     Create DB engine if connection is valid
     Attempts each uri in the list until a valid connection is made
     This method uses a singleton pattern and returns db_engine if created
+
     :param uri_list:    list of connection uri's
     :return:            DB engine object
     :raise:             SQLAlchemyError if all connections fail
     """
 
-    if 'db_engine' in globals():
-        return globals()['db_engine']
+    # globals from the top-level module
+    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+
+    if DB_ENGINE_NAME in caller_globals:
+        return caller_globals[DB_ENGINE_NAME]
 
     errors = []
 
@@ -564,7 +568,8 @@ def createValidEngine(uri_list):
             # test connection
             _ = db_engine.connect()
             # conn good return it
-            return db_engine
+            caller_globals[DB_ENGINE_NAME] = db_engine
+            return caller_globals[DB_ENGINE_NAME]
         except Exception as ex:
             errors.append(ex)
 
@@ -675,6 +680,7 @@ def createSessionObjects():
     return db_engine, session_loader
 
 
+# TODO: change to the global define pattern instead of instantiating dummy objects
 class DummySession():
     """
     Sole purpose is to avoid exceptions when startSession fails
@@ -768,15 +774,6 @@ class DummySession():
         pass
 
     def query_property(self, *args, **kwargs):
-        pass
-
-
-class DummyEngine():
-    """
-    Sole purpose is to allow lazy loading of DB engine and proper closing from global context
-    """
-
-    def dispose(self, *args, **kwargs):
         pass
 
 

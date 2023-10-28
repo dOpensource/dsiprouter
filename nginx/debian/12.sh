@@ -15,7 +15,7 @@ function install() {
     userdel nginx &>/dev/null; groupdel nginx &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "nginx HTTP Service Provider" nginx
 
-    dnf install -y nginx
+    apt-get install -y nginx
 
     if (( $? != 0 )); then
         return 1
@@ -24,10 +24,6 @@ function install() {
     # setup runtime directorys for nginx
     mkdir -p /run/nginx
     chown -R nginx:nginx /run/nginx
-
-    # give dsiprouter permissions in SELINUX
-    semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
-    semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
 
     # Configure nginx
     # determine available TLS protocols (try using highest available)
@@ -67,7 +63,7 @@ function uninstall() {
     # stop nginx and remove nginx package
     systemctl stop nginx
     systemctl disable nginx
-    dnf remove -y nginx
+    apt-get remove -y nginx
 
     # remove nginx systemd service
     rm -f /usr/sbin/nginx-stop
@@ -75,9 +71,6 @@ function uninstall() {
     rm -f /etc/systemd/system/nginx-watcher.service
     rm -f /etc/systemd/system/nginx-watcher.path
     systemctl daemon-reload
-
-    # remove SELINUX permissions
-    semanage port -d -t http_port_t -p tcp ${DSIP_PORT}
 
     return 0
 }

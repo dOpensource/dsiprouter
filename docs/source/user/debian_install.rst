@@ -9,14 +9,15 @@ Make sure to **set the hostmane to a fully qualified domain name (FQDN)** that h
 The average install time is between 9-12 minutes depending on the resources on your vm/server and the options your specify.
 
 Set the Hostname 
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+----------------
+
 .. code-block:: bash
   
   hostnamectl set-hostname <hostname>
   
 
 Install (Don't Proxy audio (RTP) traffic)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------------
 
 .. code-block:: bash
 
@@ -36,7 +37,7 @@ One Line Version:
 
 
 Install (Proxy audio (RTP) traffic)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------------
 
 If you need to proxy RTP traffic then use -all install option. The command to install dSIPRouter and the RTPEngine would be:
 

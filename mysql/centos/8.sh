@@ -9,60 +9,32 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    # Install Dependencies
-    # ...
+    # create mysql user and group
+    # sometimes locks aren't properly removed (this seems to happen often on VM's)
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
+    userdel mysql &>/dev/null; groupdel mysql &>/dev/null
+    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    dnf install -y mariadb mariadb-devel mariadb-server
+    dnf install -y mariadb mariadb-server mariadb-devel
+
+    if (( $? != 0 )); then
+        printerr 'Failed installing mariadb packages'
+        return 1
+    fi
 
     # Setup mysql config locations in a reliable manner
-    ln -s /usr/share/mariadb/ /usr/share/mysql
-    rm -f ~/.my.cnf
+    rm -f ~/.my.cnf 2>/dev/null
+    ln -snf /usr/share/mariadb /usr/share/mysql
+    ln -snf /var/log/mariadb /var/log/mysql
+    mkdir -p /var/run/mariadb /var/lib/mysql
+    chown -R mysql:mysql /var/run/mariadb/ /var/lib/mysql/ /var/log/mysql/ /usr/share/mysql/ /var/lib/mysql
 
     # allow symlinks in mariadb service
     sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
 
-    # add in the original aliases (from debian repo) to mariadb.service
-    perl -0777 -i -pe 's|(\[Install\]\s+WantedBy.*?\n+)|\1Alias=mysql.service\nAlias=mysqld.service\n\n|gms' /lib/systemd/system/mariadb.service
-
-    # alias mariadb.service to mysql.service and mysqld.service as in debian repo
-    # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-
-[Install]
-Alias=
-Alias=mysqld.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysql.service
-    chmod 0644 /lib/systemd/system/mysql.service
-    (cat << 'EOF'
-# Add mysql Aliases by including distro script as recommended in /lib/systemd/system/mariadb.service
-.include /lib/systemd/system/mariadb.service
-
-[Install]
-Alias=
-Alias=mysql.service
-Alias=mariadb.service
-EOF
-    ) > /lib/systemd/system/mysqld.service
-    chmod 0644 /lib/systemd/system/mysqld.service
-    systemctl daemon-reload
-
     # if db is remote don't run local service
     reconfigureMysqlSystemdService
-
-    # create mysql user and group
-    mkdir -p /var/run/mariadb
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
-    useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
-    chown -R mysql:mysql /var/run/mariadb /var/lib/mysql /var/log/mariadb /usr/share/mysql
-
-    # Enable mysql on boot
-    systemctl enable mariadb
 
     # TODO: selinux/apparmor permissions for mysql
     #       firewall rules (cluster install needs remote access)
@@ -78,18 +50,15 @@ EOF
 }
 
 function uninstall {
-    # Stop servers
-    systemctl stop mariadb
-    systemctl disable mariadb
-
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
 
     # remove mysql unit files we created
-    rm -f /lib/systemd/system/mysql.service /lib/systemd/system/mysqld.service
+    rm -rf /etc/systemd/system/mariadb.service.d/
+    rm -f /etc/systemd/system/mariadb.service 2>/dev/null
+    systemctl daemon-reload
 
     # Uninstall mysql / Mariadb packages
-    dnf remove -y mysql\*
     dnf remove -y mariadb\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 

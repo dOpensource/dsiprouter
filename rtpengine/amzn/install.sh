@@ -86,27 +86,218 @@ function install {
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
     local RHEL_BASE_VER=$(rpm -E %{rhel})
+    local NPROC=$(nproc)
 
     # Install required libraries
     amazon-linux-extras enable -y GraphicsMagick1.3 >/dev/null
     amazon-linux-extras enable -y redis6 >/dev/null
     amazon-linux-extras install -y epel >/dev/null
-    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
-
-    yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
-        xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables iptables-devel xmlrpc-c-devel gperf system-lsb redhat-rpm-config rpm-build rpmrebuild pkgconfig \
-        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd spandsp-devel bc libwebsockets-devel \
-        gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny spandsp \
+    yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools'
+    yum install -y gcc glib2 glib2-devel zlib zlib-devel pcre pcre-devel libcurl libcurl-devel libjpeg-turbo-devel \
+        xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent \
+        libevent-devel iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build rpmrebuild cmake3 \
+        pkgconfig freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd libtiff-devel \
+        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny \
         libbluray-devel libavcodec-devel libavformat-devel libavutil-devel libswresample-devel libavfilter-devel \
-        libjpeg-turbo-devel mosquitto-devel glib2-devel xmlrpc-c-devel hiredis-devel libpcap-devel libevent-devel json-glib-devel \
-        gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel
-    yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL}
+        libjpeg-turbo-devel mosquitto-devel glib2-devel xmlrpc-c-devel hiredis-devel libpcap-devel libevent-devel \
+        json-glib-devel gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel
 
     if (( $? != 0 )); then
-        printerr "Problem with installing the required libraries for RTPEngine"
+        printerr "Could not install the required libraries for RTPEngine"
         exit 1
     fi
+
+    yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
+        printwarn 'could not install kernel headers for current kernel'
+        echo 'upgrading kernel and installing new headers'
+        printwarn 'you will need to reboot the machine for changes to take effect'
+        yum install -y kernel-devel kernel-headers
+    }
+
+    if (( $? != 0 )); then
+        printerr "Could not install kernel headers"
+        exit 1
+    fi
+
+    # link latest version of cmake
+    ln -sf $(which cmake3) /usr/local/bin/cmake
+
+    ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
+    ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
+    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1q" ]]; then
+        if [[ ! -d ${SRC_DIR}/openssl ]]; then
+            ( cd ${SRC_DIR} &&
+            curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
+            tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
+        fi
+        (
+            cd ${SRC_DIR}/openssl &&
+            ./Configure --prefix=/usr linux-$(uname -m) &&
+            make -j $NRPOC &&
+            make -j $NPROC install
+        ) || {
+            printerr 'Failed to compile openssl'
+            return 1
+        }
+    fi
+
+    ## compile and install libxh264
+    if [[ ! -d ${SRC_DIR}/libxh264 ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://code.videolan.org/videolan/x264 ${SRC_DIR}/libxh264
+    fi
+    (
+        cd ${SRC_DIR}/libxh264 &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 --enable-static &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libxh264'
+        return 1
+    }
+
+    ## compile and install libx265
+    if [[ ! -d ${SRC_DIR}/libx265 ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/videolan/x265 ${SRC_DIR}/libx265
+    fi
+    (
+        cd ${SRC_DIR}/libx265/build/linux &&
+        rm -rf ${SRC_DIR}/libx265/.git &&
+        cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DLIB_INSTALL_DIR=/usr/lib64 \
+            -DENABLE_SHARED=FALSE ../../source &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libx265'
+        return 1
+    }
+
+    ## compile and install libfdkaac
+    if [[ ! -d ${SRC_DIR}/libfdkaac ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/mstorsjo/fdk-aac ${SRC_DIR}/libfdkaac
+    fi
+    (
+        cd ${SRC_DIR}/libfdkaac &&
+        autoreconf -i &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libfdkaac'
+        return 1
+    }
+
+    ## compile and install libmp3lame
+    if [[ ! -d ${SRC_DIR}/libmp3lame ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/gypified/libmp3lame.git ${SRC_DIR}/libmp3lame
+    fi
+    (
+        cd ${SRC_DIR}/libmp3lame &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared --enable-nasm &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libmp3lame'
+        return 1
+    }
+
+    ## compile and install libopus
+    if [[ ! -d ${SRC_DIR}/libopus ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://gitlab.xiph.org/xiph/opus.git ${SRC_DIR}/libopus ||
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/xiph/opus.git ${SRC_DIR}/libopus
+    fi
+    (
+        cd ${SRC_DIR}/libopus &&
+        autoreconf -i &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libopus'
+        return 1
+    }
+
+    ## compile and install libvpx
+    if [[ ! -d ${SRC_DIR}/libvpx ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://chromium.googlesource.com/webm/libvpx.git ${SRC_DIR}/libvpx
+    fi
+    (
+        cd ${SRC_DIR}/libvpx &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libvpx'
+        return 1
+    }
+
+    ## compile and install ffmpeg
+    if [[ ! -d ${SRC_DIR}/ffmpeg ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://git.ffmpeg.org/ffmpeg.git ${SRC_DIR}/ffmpeg ||
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/FFmpeg/FFmpeg.git ${SRC_DIR}/ffmpeg
+    fi
+    (
+        cd ${SRC_DIR}/ffmpeg &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 --pkg-config-flags="--static" --extra-libs=-lpthread --extra-libs=-lm \
+            --enable-gpl --enable-libfdk-aac --enable-libfreetype --enable-libmp3lame --enable-libopus --enable-libvpx \
+            --enable-libx264 --enable-libx265 --enable-nonfree &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install ffmpeg'
+        return 1
+    }
+
+    ## compile and install librabbitmq
+    if [[ ! -d ${SRC_DIR}/librabbitmq ]]; then
+        git clone --depth 1 -c advice.detachedHead=false -b v0.11.0 https://github.com/alanxz/rabbitmq-c.git ${SRC_DIR}/librabbitmq
+    fi
+    (
+        cd ${SRC_DIR}/librabbitmq &&
+        mkdir -p build &&
+        cd build/ &&
+        cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib64 \
+            -DBUILD_EXAMPLES=FALSE -DBUILD_TESTS=FALSE .. &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install librabbitmq'
+        return 1
+    }
+
+    ## compile and install libspandsp
+    if [[ ! -d ${SRC_DIR}/libspandsp ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/freeswitch/spandsp.git ${SRC_DIR}/libspandsp
+    fi
+    (
+        cd ${SRC_DIR}/libspandsp &&
+        ./bootstrap.sh &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libspandsp'
+        return 1
+    }
+
+    ## compile and install libwebsockets
+    if [[ ! -d ${SRC_DIR}/libwebsockets ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/warmcat/libwebsockets.git ${SRC_DIR}/libwebsockets
+    fi
+    (
+        cd ${SRC_DIR}/libwebsockets &&
+        mkdir -p build &&
+        cd build/ &&
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DLIB_SUFFIX=64 -DLWS_WITH_HTTP2=1 \
+            -DLWS_OPENSSL_INCLUDE_DIRS=${SRC_DIR}/openssl/include \
+            -DLWS_OPENSSL_LIBRARIES="${SRC_DIR}/openssl/libssl.so;${SRC_DIR}/openssl/libcrypto.so" .. &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libwebsockets'
+        return 1
+    }
+
+    ## compile and install RTPEngine as an RPM package
 
     # create rtpengine user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -114,90 +305,9 @@ function install {
     userdel rtpengine &>/dev/null; groupdel rtpengine &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
 
-    ## compile and install libxh264
-    if [[ ! -d ${SRC_DIR}/libxh264 ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://code.videolan.org/videolan/x264 ${SRC_DIR}/libxh264
-    fi
-    ( cd ${SRC_DIR}/libxh264 && ./configure --prefix=/usr --libdir=/usr/lib64 --enable-static && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libxh264'; return 1; }
-
-    ## compile and install libx265
-    if [[ ! -d ${SRC_DIR}/libx265 ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/videolan/x265 ${SRC_DIR}/libx265
-    fi
-    ( cd ${SRC_DIR}/libx265/build/linux && rm -rf ${SRC_DIR}/libx265/.git &&
-        cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DLIB_INSTALL_DIR=/usr/lib64 \
-        -DENABLE_SHARED=FALSE ../../source && make && make install; exit $?;
-    ) || { printerr 'Failed to compile and install libx265'; return 1; }
-
-    ## compile and install libfdkaac
-    if [[ ! -d ${SRC_DIR}/libfdkaac ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/mstorsjo/fdk-aac ${SRC_DIR}/libfdkaac
-    fi
-    ( cd ${SRC_DIR}/libfdkaac && autoreconf -i && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libfdkaac'; return 1; }
-
-    ## compile and install libmp3lame
-    if [[ ! -d ${SRC_DIR}/libmp3lame ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/gypified/libmp3lame.git ${SRC_DIR}/libmp3lame
-    fi
-    ( cd ${SRC_DIR}/libmp3lame && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared --enable-nasm && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libmp3lame'; return 1; }
-
-    ## compile and install libopus
-    if [[ ! -d ${SRC_DIR}/libopus ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://gitlab.xiph.org/xiph/opus.git ${SRC_DIR}/libopus ||
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/xiph/opus.git ${SRC_DIR}/libopus
-    fi
-    ( cd ${SRC_DIR}/libopus && autoreconf -i && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-shared && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libopus'; return 1; }
-
-    ## compile and install libvpx
-    if [[ ! -d ${SRC_DIR}/libvpx ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://chromium.googlesource.com/webm/libvpx.git ${SRC_DIR}/libvpx
-    fi
-    ( cd ${SRC_DIR}/libvpx && ./configure --prefix=/usr --libdir=/usr/lib64 --disable-examples --disable-unit-tests --enable-vp9-highbitdepth --as=yasm &&
-        make && make install; exit $?;
-    ) || { printerr 'Failed to compile and install libvpx'; return 1; }
-
-    ## compile and install ffmpeg
-    if [[ ! -d ${SRC_DIR}/ffmpeg ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://git.ffmpeg.org/ffmpeg.git ${SRC_DIR}/ffmpeg ||
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/FFmpeg/FFmpeg.git ${SRC_DIR}/ffmpeg
-    fi
-    ( cd ${SRC_DIR}/ffmpeg && ./configure --prefix=/usr --libdir=/usr/lib64 --pkg-config-flags="--static" --extra-libs=-lpthread --extra-libs=-lm \
-        --enable-gpl --enable-libfdk-aac --enable-libfreetype --enable-libmp3lame --enable-libopus --enable-libvpx --enable-libx264 --enable-libx265 \
-        --enable-nonfree && make && make install; exit $?;
-    ) || { printerr 'Failed to compile and install ffmpeg'; return 1; }
-
-    ## compile and install librabbitmq
-    if [[ ! -d ${SRC_DIR}/librabbitmq ]]; then
-        git clone --depth 1 -c advice.detachedHead=false -b v0.11.0 https://github.com/alanxz/rabbitmq-c.git ${SRC_DIR}/librabbitmq
-    fi
-    ( cd ${SRC_DIR}/librabbitmq && mkdir -p build && cd build/ && cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib64 \
-        -DBUILD_EXAMPLES=FALSE -DBUILD_TESTS=FALSE .. && make && make install; exit $?;
-    ) || { printerr 'Failed to compile and install librabbitmq'; return 1; }
-
-    ## compile and install libspandsp
-    if [[ ! -d ${SRC_DIR}/libspandsp ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/freeswitch/spandsp.git ${SRC_DIR}/libspandsp
-    fi
-    ( cd ${SRC_DIR}/libspandsp && ./bootstrap.sh && ./configure --prefix=/usr --libdir=/usr/lib64 && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libspandsp'; return 1; }
-
-    ## compile and install libwebsockets
-    if [[ ! -d ${SRC_DIR}/libwebsockets ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/warmcat/libwebsockets.git ${SRC_DIR}/libwebsockets
-    fi
-    ( cd ${SRC_DIR}/libwebsockets && mkdir -p build && cd build/ && cmake -DCMAKE_INSTALL_PREFIX=/usr -DLIB_SUFFIX=64 -DLWS_WITH_HTTP2=1 \
-        -DLWS_OPENSSL_INCLUDE_DIRS=${SRC_DIR}/openssl/include -DLWS_OPENSSL_LIBRARIES="${SRC_DIR}/openssl/libssl.so;${SRC_DIR}/openssl/libcrypto.so" .. &&
-        make && make install; exit $?;
-    ) || { printerr 'Failed to compile and install libwebsockets'; return 1; }
-
-    ## compile and install RTPEngine as an RPM package
-    ## reuse repo if it exists and matches version we want to install
+    # reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
-        if [[ "x$(cd ${SRC_DIR}/rtpengine 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${RTPENGINE_VER}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/rtpengine)" != "${RTPENGINE_VER}" ]]; then
             rm -rf ${SRC_DIR}/rtpengine
             git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
         fi
@@ -205,13 +315,11 @@ function install {
         git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
 
-    RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ${SRC_DIR}/rtpengine/el/rtpengine.spec)
-    if (( $(echo "$RTPENGINE_VER" | perl -0777 -pe 's|mr(\d+\.\d+)\.(\d+)\.(\d+)|\1\2\3 >= 6.511|gm' | bc -l) )); then
-        PREFIX="rtpengine-${RTPENGINE_RPM_VER}"
-    else
-        PREFIX="ngcp-rtpengine-${RTPENGINE_RPM_VER}"
-    fi
+    # replace the spec file with our custom one
+    # NOTE: this is amzn2 specific and should not be used by other versions
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/amzn/rtpengine.spec ${SRC_DIR}/rtpengine/el/rtpengine.spec
 
+    RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ${SRC_DIR}/rtpengine/el/rtpengine.spec)
     RPM_BUILD_ROOT="${HOME}/rpmbuild"
     rm -rf ${RPM_BUILD_ROOT} 2>/dev/null
     mkdir -p ${RPM_BUILD_ROOT}/SOURCES &&
@@ -219,37 +327,38 @@ function install {
         # some packages had to be compiled from source and therefore the default rpm build will fail
         # we remove these from the the rpm spec files so we can still reliably install the other deps
         # this also allows us to keep the standard post/pre build configurations from the spec file
-        perl -i -pe 's|(%define archname) rtpengine-mr|\1 rtpengine-|; s|(BuildRequires:  ffmpeg-devel)|#\1|;' \
-            -pe 's|(Requires.*ffmpeg-libs)|#\1|; s|(BuildRequires:.*%{mysql_devel_pkg}) ffmpeg-devel|\1|;' \
-            -pe 's|(BuildRequires.*pkgconfig.spandsp.)|#\1|; s|(BuildRequires.*pkgconfig.libwebsockets.)|#\1|;' \
-             ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
         cd ${SRC_DIR} &&
-        tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz --transform="s%^rtpengine%${PREFIX}%g" rtpengine/ &&
+        tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz \
+            --transform="s%^rtpengine%ngcp-rtpengine-$RTPENGINE_RPM_VER%g" rtpengine/ &&
+        echo "%__make /usr/bin/make -j $NPROC" >~/.rpmmacros &&
         # build the RPM's
-        rpmbuild -ba ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
+        rpmbuild -ba ${SRC_DIR}/rtpengine/el/rtpengine.spec || exit 1
+        rm -f ~/.rpmmacros &&
+        # see: https://stackoverflow.com/questions/49263444/missing-libraries-in-my-rpm-but-i-know-they-are-there
         rpmrebuild --change-spec-requires='sed -re "/^(Requires:.*)(libspandsp\.so|libwebsockets\.so).*/d"' \
-            -bp ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm &&
+            -bp ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm || exit 1
+
+        systemctl mask ngcp-rtpengine-daemon.service
+
         # install the RPM's
         yum localinstall -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
             ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
             ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
-#            ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm
-        exit $?
     )
 
     if (( $? != 0 )); then
-        printerr "Problem installing RTPEngine RPM's"
+        printerr "Problems occurred compiling rtpengine"
         exit 1
     fi
 
     # make sure RTPEngine kernel module configured
-    if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
-        printerr "Problem installing RTPEngine kernel module"
-        exit 1
+    # skip if the kernel headers were not installed
+    if rpm -qa | grep -q "kernel-headers-$(uname -r)"; then
+        if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
+            printerr "Problem installing RTPEngine kernel module"
+            exit 1
+        fi
     fi
-
-    # stop the demaon so we can configure it properly
-    systemctl stop ngcp-rtpengine-daemon
 
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
@@ -257,7 +366,7 @@ function install {
 
     # rtpengine config file
     # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
-    # TODO: move from 2 seperate config files to generating entire config
+    # TODO: move from 2 separate config files to generating entire config
     #       1st we should change to generating config using rtpengine-start-pre
     #       eventually we should create a config parser similar to how kamailio config is parsed
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
@@ -269,10 +378,12 @@ function install {
     systemctl enable firewalld
     systemctl start firewalld
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
     if (( $? != 0 )); then
+        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
+        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
+        systemctl restart systemd-logind
     fi
 
     # Setup Firewall rules for RTPEngine
@@ -294,7 +405,7 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /etc/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
-    chmod +x /usr/sbin/rtpengine*
+    chmod +x /usr/sbin/rtpengine* /usr/bin/rtpengine
 
     # Reload systemd configs
     systemctl daemon-reload
@@ -318,11 +429,16 @@ function uninstall {
 
     yum remove -y ngcp-rtpengine\*
 
-    rm -f /usr/sbin/rtpengine* /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
+    rm -f /usr/sbin/rtpengine* /usr/bin/rtpengine /etc/rsyslog.d/rtpengine.conf \
+        /etc/logrotate.d/rtpengine ${SRC_DIR}/rtpengine
 
-    # TODO: make uninstall source libs
-    rm -rf ${SRC_DIR}/libxh264 ${SRC_DIR}/libx265 ${SRC_DIR}/libfdkaac ${SRC_DIR}/libmp3lame ${SRC_DIR}/libopus ${SRC_DIR}/rtpengine \
-        ${SRC_DIR}/libvpx ${SRC_DIR}/ffmpeg ${SRC_DIR}/librabbitmq ${SRC_DIR}/libspandsp ${SRC_DIR}/libwebsockets
+    for LIB in libxh264 libx265 libfdkaac libmp3lame libopus libvpx ffmpeg librabbitmq libspandsp libwebsockets; do
+    (
+        cd ${SRC_DIR}/${LIB} &&
+        make uninstall &&
+        rm -rf ${SRC_DIR}/${LIB}
+    )
+    done
 
     # check that rtpengine actually uninstalled
     if ! cmdExists rtpengine; then

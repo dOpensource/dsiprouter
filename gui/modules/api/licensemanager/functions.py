@@ -60,12 +60,12 @@ class WoocommerceLicense(object):
                 if len(license_key) == 0:
                     raise ValueError('license_key must not be empty')
                 if decrypt:
-                    license_key = AES_CTR.decrypt(license_key).decode('utf-8')
+                    license_key = AES_CTR.decrypt(license_key)
             elif isinstance(license_key, bytes):
                 if len(license_key) == 0:
                     raise ValueError('license_key must not be empty')
                 if decrypt:
-                    license_key = AES_CTR.decrypt(license_key).decode('utf-8')
+                    license_key = AES_CTR.decrypt(license_key)
                 else:
                     license_key = license_key.decode('utf-8')
             else:
@@ -83,7 +83,7 @@ class WoocommerceLicense(object):
                 if len(key_combo) == 0:
                     raise ValueError('key_combo must not be empty')
                 if decrypt:
-                    key_combo = AES_CTR.decrypt(key_combo).decode('utf-8')
+                    key_combo = AES_CTR.decrypt(key_combo)
                 else:
                     key_combo = key_combo.decode('utf-8')
             else:

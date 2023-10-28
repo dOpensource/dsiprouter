@@ -150,6 +150,6 @@ firewallSetup() {
 }
 
 firewallSetup
-echo "Start Command:    /usr/sbin/rtpengine $OPTIONS"
+echo "Start Command:    /usr/bin/rtpengine $OPTIONS"
 echo "OPTIONS='$OPTIONS'" > $DAEMON_OPTIONS_FILE
 exit 0

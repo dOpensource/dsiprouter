@@ -31,7 +31,7 @@ Add any applicable logs as well; such as an `dsiprouter.log`, or `kamailio.log`,
 *If not on a release version include the branch name and last commit id*
  - Kamailio Version: *output from* `kamailio -v`
  - RTPengine Version: *output from* `rtpengine -v`
- - Python Package Versions: *if applicable, include output from* `python3 -m pip freeze`
+ - Python Package Versions: *if applicable, include output from* `/opt/dsiprouter/venv/bin/python -m pip freeze`
 
 **Client Info:**
  - Device: *e.g. Polycom VVX 350, Lenovo Thinkpad X1, ..*

@@ -12,91 +12,35 @@ function install() {
     local KAM_VERSION_DOTTED RHEL_BASE_VER NPROC
 
     # Install Dependencies
-    amazon-linux-extras install -y epel >/dev/null &&
-    yum install -y yum-utils &&
-    yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools' &&
-    yum install -y psmisc curl wget sed gawk vim perl firewalld logrotate rsyslog cmake3 gcc10 \
-        uuid-devel libtool jansson-devel libuuid-devel libcurl-devel libjwt-devel libatomic \
-        bzip2-devel libffi-devel
+    dnf groupinstall -y 'core' &&
+    dnf groupinstall -y 'base' &&
+    dnf groupinstall -y 'Development Tools' &&
+    dnf install -y epel-release dnf-plugins-core &&
+    dnf install -y git curl perl firewalld logrotate rsyslog certbot cmake libuuid-devel \
+        libcurl-devel libjwt-devel libatomic openssl-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
-        exit 1
+        return 1
     fi
 
     KAM_VERSION_DOTTED=$(perl -pe 's%([0-9])([0-9])%\1.\2%' <<<"$KAM_VERSION")
     RHEL_BASE_VER=$(rpm -E %{rhel})
     NPROC=$(nproc)
 
-    # link latest version of cmake
-    ln -sf $(which cmake3) /usr/local/bin/cmake
-
-    ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
-    ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
-    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1q" ]]; then
-        if [[ ! -d ${SRC_DIR}/openssl ]]; then
-            ( cd ${SRC_DIR} &&
-            curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
-            tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
-        fi
-        (
-            cd ${SRC_DIR}/openssl &&
-            ./Configure --prefix=/usr linux-$(uname -m) &&
-            make -j $NRPOC &&
-            make -j $NPROC install
-        ) || {
-            printerr 'Failed to compile openssl'
-            return 1
-        }
-    fi
-
-    # python 3.8 or higher is required
-    # if not installed already, install it now
-    if [[ "$(python3 -V 2>/dev/null | cut -d ' ' -f 2)" != "3.9.18" ]]; then
-        # installation / compilation never completed, start it now
-        if [[ ! -d "${SRC_DIR}/Python-3.9.18" ]]; then
-            (
-                cd ${SRC_DIR} &&
-                curl -s -o Python-3.9.18.tgz https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz &&
-                tar -xf Python-3.9.18.tgz &&
-                rm -f Python-3.9.18.tgz
-            )
-        fi
-        (
-            cd ${SRC_DIR} &&
-            cd Python-3.9.18/ &&
-            ./configure --enable-optimizations CFLAGS=-I${SRC_DIR}/openssl/include LDFLAGS=-L${SRC_DIR}/openssl &&
-            make -j $NPROC &&
-            make -j $NPROC install
-        ) || {
-            printerr 'Failed to compile and install required python version'
-            return 1
-        }
-        python3 -m pip install -U pip setuptools || {
-            printerr 'Failed to update pip and setuptools'
-            return 1
-        }
-    fi
-
-    # we need a newer version of certbot than the distro repos offer
-    yum remove -y *certbot*
-    python3 -m venv /opt/certbot/
-    /opt/certbot/bin/pip install --upgrade pip
-    /opt/certbot/bin/pip install certbot
-    ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
-
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
-    # TODO: amzn2 should be based off rhel not centos but the kamailio rhel repos are out of date
-    yum-config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
-    echo $RHEL_BASE_VER >/etc/yum/vars/rhelver &&
-    perl -i -pe 's%\$releasever%\$rhelver%g' /etc/yum.repos.d/kamailio.repo
-    yum-config-manager --disable 'kamailio*' >/dev/null &&
-    yum-config-manager --enable "kamailio-$KAM_VERSION_DOTTED" >/dev/null &&
-    yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
+#    KAM_VERSION_FULL=$(
+#        curl -s "https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_VERSION_DOTTED}/listing" 2>/dev/null |
+#        tail -n -1
+#    )
+    dnf config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
+    dnf config-manager --disable 'kamailio*' &&
+    dnf config-manager --enable "kamailio-$KAM_VERSION_DOTTED" &&
+    dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
         kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid
 
@@ -106,7 +50,7 @@ function install() {
     fi
 
     # get info about the kamailio install for later use in script
-    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | awk '/^version:/ {print $3}')
+    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # make sure run dir exists
@@ -115,8 +59,9 @@ function install() {
 
     # create kamailio defaults config
     cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
-    # create kamailio tmp files
-    echo "d /run/kamailio 0750 kamailio kamailio" > /etc/tmpfiles.d/kamailio.conf
+
+    touch /etc/tmpfiles.d/kamailio.conf
+    echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR} ${BACKUPS_DIR}/kamailio
@@ -149,17 +94,17 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
+    # give kamailio permissions in SELINUX
+    semanage port -a -t sip_port_t -p udp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIPS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIPS_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_WSS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_WSS_PORT}
+    # TODO: create a dmq port definition
+    semanage port -a -t rabbitmq_port_t -p udp ${KAM_DMQ_PORT} || semanage port -m -t rabbitmq_port_t -p udp ${KAM_DMQ_PORT}
+
     # Start firewalld
     systemctl enable firewalld
     systemctl start firewalld
-
-    if (( $? != 0 )); then
-        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
-        systemctl restart dbus
-        systemctl restart firewalld
-        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
-        systemctl restart systemd-logind
-    fi
 
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
@@ -170,7 +115,7 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v1.service /etc/systemd/system/kamailio.service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
     chmod 644 /etc/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
@@ -194,13 +139,6 @@ EOF
     updateCACertsDir
 
     # setup STIR/SHAKEN module for kamailio
-    ## compile and install libjwt
-    #if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-    #    git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
-    #fi
-    #( cd ${SRC_DIR}/libjwt && autoreconf -i && ./configure --prefix=/usr --libdir=/usr/lib64 && make && make install; exit $?; ) ||
-    #{ printerr 'Failed to compile and install libjwt'; return 1; }
-
     ## compile and install libks
     if [[ ! -d ${SRC_DIR}/libks ]]; then
         git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
@@ -210,8 +148,7 @@ EOF
         cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release . &&
         make -j $NPROC &&
         make -j $NPROC install &&
-        ln -sft /usr/lib64/ /usr/lib/libks.so* &&
-        ln -sft /usr/lib64/pkgconfig/ /usr/lib/pkgconfig/libks.pc
+        ln -sft /usr/lib64/ /usr/lib/libks.so*
     ) || {
         printerr 'Failed to compile and install libks'
         return 1
@@ -224,10 +161,8 @@ EOF
     (
         cd ${SRC_DIR}/libstirshaken &&
         ./bootstrap.sh &&
-        ./configure --prefix=/usr --libdir=/usr/lib64 CC=/bin/gcc10-gcc CXX=/usr/bin/gcc10-g++ \
-            CFLAGS=-I${SRC_DIR}/openssl/include LDFLAGS=-L${SRC_DIR}/openssl \
-            PKG_CONFIG_PATH=${SRC_DIR}/openssl &&
-        make -j $NPROC CFLAGS='-Wno-deprecated-declarations' &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 &&
+        make -j $NPROC &&
         make -j $NPROC install &&
         ldconfig
     ) || {
@@ -257,24 +192,21 @@ EOF
     return 0
 }
 
-function uninstall() {
+function uninstall {
     # Stop servers
     systemctl stop kamailio
     systemctl disable kamailio
 
     # Backup kamailio configuration directory
-    cp -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${BACKUPS_DIR}/kamailio/
-    rm -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}
-
-    # Uninstall Stirshaken Required Packages
-    ( cd ${SRC_DIR}/libjwt; make uninstall; exit $?; ) && rm -rf ${SRC_DIR}/libjwt
-    ( cd ${SRC_DIR}/libks; make uninstall; exit $?; ) && { rm -rf ${SRC_DIR}/libks; rm -f /usr/lib64/{,pkgconfig/}libks*; }
-    ( cd ${SRC_DIR}/libstirshaken; make uninstall; exit $?; ) && rm -rf ${SRC_DIR}/libstirshaken
-    rm -rf ${SRC_DIR}/openssl
-    rm -rf ${SRC_DIR}/kamailio
+    mv -f ${SYSTEM_KAMAILIO_CONFIG_DIR} ${SYSTEM_KAMAILIO_CONFIG_DIR}.bak.$(date +%Y%m%d_%H%M%S)
 
     # Uninstall Kamailio modules
-    yum remove -y kamailio\*
+    dnf remove -y kamailio\*
+
+    # remove our selinux changes
+    semanage port -D -t sip_port_t -p udp
+    semanage port -D -t sip_port_t -p tcp
+    semanage port -D -t rabbitmq_port_t -p udp
 
     # Remove firewall rules that was created by us:
     firewall-cmd --zone=public --remove-port=${KAM_SIP_PORT}/udp --permanent

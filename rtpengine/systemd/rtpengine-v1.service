@@ -17,7 +17,7 @@ PIDFile=/run/rtpengine/rtpengine.pid
 # ExecStart* requires an absolute path for the program
 ExecStartPre=/usr/bin/dsiprouter chown -rtpengine
 ExecStartPre=/usr/sbin/rtpengine-start-pre $CFGFILE
-ExecStart=/usr/sbin/rtpengine -f $OPTIONS
+ExecStart=/usr/bin/rtpengine -f $OPTIONS
 ExecStopPost=/usr/sbin/rtpengine-stop-post $CFGFILE
 Restart=on-failure
 

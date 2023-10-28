@@ -59,18 +59,20 @@ function install {
     # reset python cmd in case it was just installed
     setPythonCmd
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+   # Enable and start firewalld
+    systemctl enable firewalld
+    systemctl start firewalld
+
     if (( $? != 0 )); then
+        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
+        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
+        systemctl restart systemd-logind
     fi
 
     # Setup Firewall for DSIP_PORT
     firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
-
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl restart firewalld
 
     cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 ${PYTHON_CMD} -m pip install
     if [ $? -eq 1 ]; then

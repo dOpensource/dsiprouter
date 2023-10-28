@@ -9,6 +9,8 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
+    local NPROC=$(nproc)
+
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
@@ -16,12 +18,62 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Install dependencies for dSIPRouter
-    yum install -y yum-utils firewalld python3 python3-libs python3-devel python3-pip MySQL-python \
-        logrotate rsyslog perl libev-devel util-linux postgresql-devel python3-wheel sudo
-    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
+    yum install -y yum-utils &&
+    yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools' &&
+    yum install -y firewalld logrotate rsyslog perl libev-devel util-linux postgresql-devel \
+        bzip2-devel libffi-devel zlib-devel curl
 
-    # reset python cmd in case it was just installed
-    setPythonCmd
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
+
+    ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
+    ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
+    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1q" ]]; then
+        if [[ ! -d ${SRC_DIR}/openssl ]]; then
+            ( cd ${SRC_DIR} &&
+            curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
+            tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
+        fi
+        (
+            cd ${SRC_DIR}/openssl &&
+            ./Configure --prefix=/usr linux-$(uname -m) &&
+            make -j $NRPOC &&
+            make -j $NPROC install
+        ) || {
+            printerr 'Failed to compile openssl'
+            return 1
+        }
+    fi
+
+    # python 3.8 or higher is required
+    # if not installed already, install it now
+    if [[ "$(python3 -V 2>/dev/null | cut -d ' ' -f 2)" != "3.9.18" ]]; then
+        # installation / compilation never completed, start it now
+        if [[ ! -d "${SRC_DIR}/Python-3.9.18" ]]; then
+            (
+                cd ${SRC_DIR} &&
+                curl -s -o Python-3.9.18.tgz https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz &&
+                tar -xf Python-3.9.18.tgz &&
+                rm -f Python-3.9.18.tgz
+            )
+        fi
+        (
+            cd ${SRC_DIR} &&
+            cd Python-3.9.18/ &&
+            ./configure --enable-optimizations CFLAGS=-I${SRC_DIR}/openssl/include LDFLAGS=-L${SRC_DIR}/openssl &&
+            make -j $NPROC &&
+            make -j $NPROC install
+        ) || {
+            printerr 'Failed to compile and install required python version'
+            return 1
+        }
+        python3 -m pip install -U pip setuptools || {
+            printerr 'Failed to update pip and setuptools'
+            return 1
+        }
+    fi
 
     # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter nginx
@@ -36,23 +88,27 @@ function install() {
     semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
         semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
+    # Start firewalld
+    systemctl enable firewalld
+    systemctl start firewalld
+
     if (( $? != 0 )); then
+        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
+        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
+        systemctl restart systemd-logind
     fi
 
     # Setup Firewall for DSIP_PORT
-    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
+    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+    firewall-cmd --reload
 
-   # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl restart firewalld
-
+    python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
-        printerr "dSIPRouter install failed: Couldn't install required python libraries"
-        exit 1
+        printerr "Failed installing required python libraries"
+        return 1
     fi
 
     # setup dsiprouter nginx configs
@@ -79,7 +135,6 @@ function install() {
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
-        -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v1.service > /lib/systemd/system/dsiprouter.service
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
@@ -87,22 +142,13 @@ function install() {
 
     # add hook to bash_completion in the standard debian location
     echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
+
+    return 0
 }
 
 
 function uninstall() {
-    # Uninstall dependencies for dSIPRouter
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m pip uninstall --yes
-    if (( $? == 1 )); then
-        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
-        exit 1
-    else
-        printdbg "DSIPRouter uninstall was successful"
-        exit 0
-    fi
-
-    yum remove -y python3-\*
-    yum groupremove -y "Development Tools"
+    rm -rf ${PYTHON_VENV}
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
@@ -119,17 +165,19 @@ function uninstall() {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
-}
 
+    return 0
+}
 
 case "$1" in
     uninstall)
-        uninstall
+        uninstall && exit 0 || exit 1
         ;;
     install)
-        install
+        install && exit 0 || exit 1
         ;;
     *)
         printerr "usage $0 [install | uninstall]"
+        exit 1
         ;;
 esac

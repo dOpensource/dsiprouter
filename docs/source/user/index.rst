@@ -107,7 +107,7 @@ Upgrading dSIPRouter
 .. toctree::
     :maxdepth: 2
 
-    upgrade.rst
+    upgrading.rst
 
 Extra Resources
 ---------------

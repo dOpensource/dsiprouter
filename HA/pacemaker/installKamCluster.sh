@@ -18,7 +18,6 @@
 # /var/log/nodeutil.log
 
 # set project root, if in a git repo resolve top level dir
-PROJECT_ROOT=${PROJECT_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}
 PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(dirname $(dirname $(readlink -f "$0"))))}
 # import shared library functions
 . ${PROJECT_ROOT}/HA/shared_lib.sh
@@ -132,10 +131,10 @@ if ! cmdExists 'ssh' || ! cmdExists 'sshpass' || ! cmdExists 'nmap' || ! cmdExis
 
     if cmdExists 'apt-get'; then
         sudo apt-get install -y openssh-client sshpass nmap sed gawk rsync
-    elif cmdExists 'yum'; then
-        sudo yum install --enablerepo=epel -y openssh-clients sshpass nmap sed gawk rsync
     elif cmdExists 'dnf'; then
         sudo dnf install -y openssh-clients sshpass nmap sed gawk rsync
+    elif cmdExists 'yum'; then
+        sudo yum install --enablerepo=epel -y openssh-clients sshpass nmap sed gawk rsync
     else
         printerr "Your local OS is not currently not supported"
         exit 1
@@ -324,10 +323,10 @@ for NODE in ${NODES[@]}; do
         if cmdExists 'apt-get'; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get install -y gawk curl rsync
-        elif cmdExists 'yum'; then
-            yum install -y gawk curl rsync
         elif cmdExists 'dnf'; then
             dnf install -y gawk curl rsync
+        elif cmdExists 'yum'; then
+            yum install -y gawk curl rsync
         else
             printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
             exit 1
@@ -445,10 +444,10 @@ while (( $i < ${#NODES[@]} )); do
         if cmdExists 'apt-get'; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get install -y corosync pacemaker pcs firewalld jq perl dnsutils sed
-        elif cmdExists 'yum'; then
-            yum install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
         elif cmdExists 'dnf'; then
             dnf install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
+        elif cmdExists 'yum'; then
+            yum install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
         else
             printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
             exit 1

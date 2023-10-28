@@ -9,8 +9,6 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    local NPROC=$(nproc)
-
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
@@ -18,10 +16,8 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev \
-        libsqlite3-dev libreadline-dev libffi-dev libbz2-dev libpq-dev logrotate rsyslog perl sngrep libev-dev \
-        uuid-runtime tar &&
-    apt-get install -t bullseye -y firewalld python3 python3-venv python3-pip python3-dev libmariadb-dev
+    apt-get install -y build-essential curl python3 python3-pip python3-dev libpq-dev python3-venv \
+        firewalld sudo libmariadb-dev logrotate rsyslog perl sngrep libev-dev uuid-runtime pkg-config
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -89,7 +85,6 @@ function uninstall() {
 #    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld
 #    apt-get remove -y --allow-unauthenticated libmariadbclient-dev
 #    apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
-    #apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent

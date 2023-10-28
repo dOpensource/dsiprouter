@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # make sure the generated source files are imported instead of the template ones
 import sys
 
@@ -26,7 +24,7 @@ from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
-from database import DummyEngine, DummySession, createSessionObjects, startSession, \
+from database import DummySession, createSessionObjects, startSession, \
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
     Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
@@ -76,7 +74,6 @@ csrf.exempt(user)
 csrf.exempt(license_manager)
 numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)
-global_db_engine = DummyEngine()
 
 
 @app.before_first_request
@@ -2720,7 +2717,7 @@ def intializeGlobalState():
 
 def initApp(flask_app):
     # load the DB objects into memory
-    global global_session_loader
+    global global_db_engine, global_session_loader
     global_db_engine, global_session_loader = createSessionObjects()
     # make sure we did not break the global naming contract with the database module
     assert DB_ENGINE_NAME in globals() and SESSION_LOADER_NAME in globals()
@@ -2729,7 +2726,7 @@ def initApp(flask_app):
     if settings.DSIP_SESSION_KEY is None:
         flask_app.secret_key = os.urandom(32)
     else:
-        flask_app.secret_key = AES_CTR.decrypt(settings.DSIP_SESSION_KEY)
+        flask_app.secret_key = AES_CTR.decrypt(settings.DSIP_SESSION_KEY, decode=False)
 
     # Setup Flask timed url serializer
     flask_app.config['EMAIL_SALT'] = urandomChars()
@@ -2805,6 +2802,8 @@ def initApp(flask_app):
 
 
 def teardown():
+    global global_db_engine
+
     try:
         setPersistentState(objToDict(globals))
     except:

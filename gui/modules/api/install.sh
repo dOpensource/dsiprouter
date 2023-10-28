@@ -14,22 +14,22 @@ fi
 function installSQL {
     # Check to see if the acc table or cdr tables are in use
     MERGE_DATA=0
-    count=$(mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e "select count(*) from dsip_endpoint_lease limit 10" 2> /dev/null)
+    count=$(withRootDBConn --db="$KAM_DB_NAME" mysql -sN -e "select count(*) from dsip_endpoint_lease limit 10" 2> /dev/null)
     if [ ${count:-0} -gt 0 ]; then
         MERGE_DATA=1
     fi
 
     if [ ${MERGE_DATA} -eq 1 ]; then
 	    printwarn "The endpoint lease table (dsip_endpoint_lease) in Kamailio already exists. Merging table data"
-	    (cat ${DSIP_PROJECT_DIR}/gui/modules/api/api.sql;
-            mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-                --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" ${KAM_DB_NAME} dsip_endpoint_lease
-        ) | mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
+	    (
+	        cat ${DSIP_PROJECT_DIR}/gui/modules/api/api.sql;
+            withRootDBConn --db="$KAM_DB_NAME" mysqldump --single-transaction --skip-triggers --skip-add-drop-table \
+                --no-create-info --insert-ignore dsip_endpoint_lease
+        ) | withRootDBConn --db="$KAM_DB_NAME" mysql
     else
         # Replace the api tables
         printwarn "Adding/Replacing the tables needed for API module within dSIPRouter..."
-        mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME < ${DSIP_PROJECT_DIR}/gui/modules/api/api.sql
+        withRootDBConn --db="$KAM_DB_NAME" mysql -sN <${DSIP_PROJECT_DIR}/gui/modules/api/api.sql
     fi
 }
 

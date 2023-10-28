@@ -16,7 +16,7 @@ def reloadKamailio():
         # format some settings for kam config
         dsip_api_url = settings.DSIP_API_PROTO + '://' + '127.0.0.1' + ':' + str(settings.DSIP_API_PORT)
         if isinstance(settings.DSIP_API_TOKEN, bytes):
-            dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+            dsip_api_token = AES_CTR.decrypt(settings.DSIP_API_TOKEN)
         else:
             dsip_api_token = settings.DSIP_API_TOKEN
 

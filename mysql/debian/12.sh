@@ -8,7 +8,7 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
-function install() {
+function install {
     # create mysql user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
@@ -16,22 +16,22 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    amazon-linux-extras enable mariadb10.5 >/dev/null
-    yum clean -y metadata
-    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
+    apt-get install -y mariadb-server
 
-    # Setup mysql config locations in a reliable manner
-    rm -f ~/.my.cnf 2>/dev/null
-    ln -snf /usr/share/mariadb /usr/share/mysql
-    ln -snf /var/log/mariadb /var/log/mysql
-    mkdir -p /var/run/mariadb
-    chown -R mysql:mysql /var/run/mariadb/ /var/lib/mysql/ /var/log/mysql/ /usr/share/mysql/
+    if (( $? != 0 )); then
+        printerr 'Failed installing mariadb packages'
+        return 1
+    fi
 
-    # allow symlinks in mariadb service
-    sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
-
-    # setup aliases and if db is remote replace with dummy service file
+    # if db is remote don't run local service
     reconfigureMysqlSystemdService
+
+    # Make sure no extra configs present on fresh install
+    rm -f ~/.my.cnf
+
+    # ensure data directory exists
+    mkdir -p /var/lib/mysql
+    chown mysql:mysql /var/lib/mysql
 
     # TODO: selinux/apparmor permissions for mysql
     #       firewall rules (cluster install needs remote access)
@@ -47,20 +47,15 @@ function install() {
 }
 
 function uninstall {
-    # Stop servers
+    # Stop and disable services
     systemctl stop mariadb
     systemctl disable mariadb
 
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
 
-    # remove mysql unit files we created
-    rm -rf /etc/systemd/system/mariadb.service.d/
-    rm -f /etc/systemd/system/mariadb.service 2>/dev/null
-    systemctl daemon-reload
-
-    # Uninstall mysql / Mariadb packages
-    yum remove -y mariadb\*
+    # Uninstall mariadb packages
+    apt-get -y remove --purge mariadb\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # TODO: remove selinux/apparmor rules

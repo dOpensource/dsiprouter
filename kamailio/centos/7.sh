@@ -18,7 +18,7 @@ function install() {
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
-    sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
+    sed -i -e 's/(^SELINUX=).*/SELINUX=permissive/' /etc/selinux/config
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -89,22 +89,16 @@ EOF
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
 
-    # Setup firewall rules
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp
-    firewall-offline-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp
-    firewall-offline-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp
-    firewall-offline-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp
-    firewall-offline-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
-
     # Start firewalld
     systemctl start firewalld
     systemctl enable firewalld
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
     if (( $? != 0 )); then
+        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
+        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
+        systemctl restart systemd-logind
     fi
 
     # Setup firewall rules
@@ -113,7 +107,6 @@ EOF
     firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Make sure MariaDB and Local DNS start before Kamailio
@@ -173,7 +166,6 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Remove kamailio Logging

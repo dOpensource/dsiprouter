@@ -18,15 +18,15 @@ function install {
         yum remove -y rs-epel-release
         yum remove -y python36  python36-libs python36-devel python36-pip
         yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-        yum install -y python36u python36u-libs python36u-devel python36u-pip
+        yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-virtualenv
     elif [[ "$VER" =~ 3 ]]; then
         yum remove -y rs-epel-release
         yum remove -y python3* python3*-libs python3*-devel python3*-pip
         yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-        yum install -y python36u python36u-libs python36u-devel python36u-pip
+        yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-virtualenv
     else
         yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-        yum install -y python36u python36u-libs python36u-devel python36u-pip
+        yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-virtualenv
     fi
 
    # Install dependencies for dSIPRouter
@@ -56,28 +56,28 @@ function install {
     semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
         semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
 
-    # reset python cmd in case it was just installed
-    setPythonCmd
+   # Enable and start firewalld
+    systemctl enable firewalld
+    systemctl start firewalld
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
     if (( $? != 0 )); then
+        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
+        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
+        systemctl restart systemd-logind
     fi
 
     # Setup Firewall for DSIP_PORT
-    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
+    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+    firewall-cmd --reload
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl restart firewalld
-
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 ${PYTHON_CMD} -m pip install
-    if [ $? -eq 1 ]; then
-        printerr "dSIPRouter install failed: Couldn't install required libraries"
+    python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
+    ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
+    if (( $? == 1 )); then
+        printerr "Failed installing required python libraries"
         exit 1
     fi
-
 
     # Configure nginx
     # determine available TLS protocols (try using highest available)
@@ -122,7 +122,6 @@ function install {
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
-        -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v2.service > /lib/systemd/system/dsiprouter.service
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload

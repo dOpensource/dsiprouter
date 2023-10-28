@@ -3,13 +3,25 @@
 Installing dSIPRouter
 =====================
 
-Install dSIPRouter takes approximately 9-12 minutes to install.  The following video shows you the install process:
+The following video shows you the install process:
 
 .. raw:: html
 
     <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
         <iframe src="https://www.youtube.com/embed/Iu4BQkL1wGc" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 560px; height: 315px;"></iframe>
     </div>
+
+We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:
+
+- :ref:`debian_install`
+- :ref:`rhel_install`
+
+Install times vary by depending on OS and system hardware.
+On debian/centos, expect a short install time, typically around 12 minutes.
+On amazon linux, expect long compilation times, typically around 45 minutes.
+
+dSIPRouter should be installed on a clean install of the OS.
+To upgrade your dSIPRouter platform, see instead :ref:`upgrading`
 
 Prerequisites:
 --------------
@@ -31,25 +43,20 @@ OS Support
 ===================================     ================
 OS / Distro                             Current Support
 ===================================     ================
+Debian 12 (bookworm)                    STABLE
 Debian 11 (bullseye)                    STABLE
 Debian 10 (buster)                      STABLE
-Debian 9 (stretch)                      STABLE
+Debian 9 (stretch)                      DEPRECATED
+CentOS 9 (stream)                       STABLE
+CentOS 8 (stream)                       STABLE
+CentOS 7                                DEPRECATED
 RedHat Linux 8                          ALPHA
 Alma Linux 8                            ALPHA
 Rocky Linux 8                           ALPHA
 Amazon Linux 2                          STABLE
 Ubuntu 22.04 (jammy)                    ALPHA
-Ubuntu 20.04 (focal)                    ALPHA
+Ubuntu 20.04 (focal)                    DEPRECATED
 ===================================     ================
-
-Kamailio will be automatically installed along with dSIPRouter.
-Must be installed on a fresh install of one of the supported operating systems.
-You will not be prompted for any information.  It will take anywhere from  9-12 minutes to install - depending on the processing power of the machine. You can secure the Kamailio database after the installation.
-
-We maintain installation documentation for the following operating systems.  Please open a pull request if you want to add and maintain addtional documentation:
-
-- :ref:`debian_install`
-- :ref:`rhel_install`
 
 Amazon AMI's
 ------------

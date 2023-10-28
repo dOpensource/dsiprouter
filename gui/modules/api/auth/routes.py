@@ -49,10 +49,10 @@ def login():
 
         if existing_user:
             print("Saved Password: ", existing_user.password)
-            print("Decrypted: ", AES_CTR.decrypt(existing_user.password).decode('utf-8'))
+            print("Decrypted: ", AES_CTR.decrypt(existing_user.password))
             print("Provided: ", request_data['password'])
 
-            if str(request_data['password']) == AES_CTR.decrypt(existing_user.password).decode('utf-8'):
+            if str(request_data['password']) == AES_CTR.decrypt(existing_user.password):
                 if (not existing_user.token) or (datetime.datetime.now() > existing_user.token_expiration):
                     existing_user.token = uuid.uuid4()
                     existing_user.token_expiration = datetime.datetime.now() + datetime.timedelta(days=1)
@@ -130,6 +130,8 @@ def createUser():
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        db.close()
 
 
 @user.route('/api/v1/auth/user', methods=['GET'])
@@ -165,6 +167,8 @@ def listUsers():
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        db.close()
 
 
 @user.route('/api/v1/auth/user/<int:id>', methods=['GET'])
@@ -210,6 +214,8 @@ def getUser(id=None):
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        db.close()
 
 
 @user.route('/api/v1/auth/user/<int:id>', methods=['PUT'])
@@ -269,6 +275,8 @@ def updateUser(id=None):
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        db.close()
 
 
 @user.route('/api/v1/auth/user/<int:id>', methods=['DELETE'])
@@ -301,3 +309,5 @@ def deleteUser(id=None):
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        db.close()

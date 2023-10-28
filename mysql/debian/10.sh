@@ -16,8 +16,7 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    apt-get install -y --allow-unauthenticated default-mysql-server ||
-        apt-get install -y --allow-unauthenticated mariadb-server
+    apt-get install -y -t bullseye default-mysql-server mariadb-server
 
     # if db is remote don't run local service
     reconfigureMysqlSystemdService

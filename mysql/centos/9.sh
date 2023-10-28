@@ -16,21 +16,25 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    amazon-linux-extras enable mariadb10.5 >/dev/null
-    yum clean -y metadata
-    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
+    dnf install -y mariadb mariadb-server &&
+    dnf install -y --enablerepo=crb mariadb-devel
+
+    if (( $? != 0 )); then
+        printerr 'Failed installing mariadb packages'
+        return 1
+    fi
 
     # Setup mysql config locations in a reliable manner
     rm -f ~/.my.cnf 2>/dev/null
     ln -snf /usr/share/mariadb /usr/share/mysql
     ln -snf /var/log/mariadb /var/log/mysql
-    mkdir -p /var/run/mariadb
-    chown -R mysql:mysql /var/run/mariadb/ /var/lib/mysql/ /var/log/mysql/ /usr/share/mysql/
+    mkdir -p /var/run/mariadb /var/lib/mysql
+    chown -R mysql:mysql /var/run/mariadb/ /var/lib/mysql/ /var/log/mysql/ /usr/share/mysql/ /var/lib/mysql
 
     # allow symlinks in mariadb service
     sed -i 's/symbolic-links=0/#symbolic-links=0/' /etc/my.cnf
 
-    # setup aliases and if db is remote replace with dummy service file
+    # if db is remote don't run local service
     reconfigureMysqlSystemdService
 
     # TODO: selinux/apparmor permissions for mysql
@@ -47,10 +51,6 @@ function install() {
 }
 
 function uninstall {
-    # Stop servers
-    systemctl stop mariadb
-    systemctl disable mariadb
-
     # Backup mysql / mariadb
     mv -f /var/lib/mysql /var/lib/mysql.bak.$(date +%Y%m%d_%H%M%S)
 
@@ -60,7 +60,7 @@ function uninstall {
     systemctl daemon-reload
 
     # Uninstall mysql / Mariadb packages
-    yum remove -y mariadb\*
+    dnf remove -y mariadb\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 
     # TODO: remove selinux/apparmor rules

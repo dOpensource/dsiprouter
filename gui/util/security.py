@@ -6,7 +6,6 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 
 import os, hashlib, binascii, string, ssl, OpenSSL, secrets, re
 from Crypto.Cipher import AES
-from Crypto.Util import Counter
 from Crypto.Random import get_random_bytes
 from functools import wraps
 from flask import render_template, request, session
@@ -46,9 +45,10 @@ class Credentials():
     SALT_LEN = 16
     CREDS_MAX_LEN = 64
     DK_LEN_DEFAULT = 48
-    HASHED_CREDS_ENCODED_MAX_LEN = 128
-    AESCTR_CREDS_ENCODED_MAX_LEN = 160
     HASH_ITERATIONS = 10000
+    # literals to make parsing from bash easier
+    HASHED_CREDS_ENCODED_MAX_LEN = 128
+    assert HASHED_CREDS_ENCODED_MAX_LEN == CREDS_MAX_LEN * 2
 
     @staticmethod
     def hashCreds(creds, salt=None, dklen=None):
@@ -153,13 +153,15 @@ class Credentials():
 
         # update settings based on where they are loaded from
         if len(fields) > 0 or len(local_fields) > 0:
-            # update file settings including local fields
-            updateConfig(settings, dict(fields, **local_fields))
             # update db settings
             from database import updateDsipSettingsTable, settingsToTableFormat
             db_fields = settingsToTableFormat(settings)
             db_fields.update(fields)
+            # WARNING: if called after updating settings.py the session loader may import
+            #          incorrect connection credentials and fail to connect to the DB
             updateDsipSettingsTable(db_fields)
+            # update file settings including the local fields
+            updateConfig(settings, dict(fields, **local_fields))
 
 
 class AES_CTR():
@@ -169,6 +171,11 @@ class AES_CTR():
 
     BLOCK_SIZE = 16
     KEY_SIZE = 32
+    # literal to make parsing from bash easier
+    NONCE_SIZE = 8
+    assert NONCE_SIZE == BLOCK_SIZE // 2
+    AESCTR_CREDS_ENCODED_MAX_LEN = 144
+    assert AESCTR_CREDS_ENCODED_MAX_LEN == (Credentials.CREDS_MAX_LEN * 2) + (NONCE_SIZE * 2)
 
     @staticmethod
     def genKey(keyfile=settings.DSIP_PRIV_KEY):
@@ -184,15 +191,14 @@ class AES_CTR():
         with open(key_file, 'rb') as f:
             key = f.read(AES_CTR.KEY_SIZE)
 
-        iv = get_random_bytes(AES_CTR.BLOCK_SIZE)
-        ctr = Counter.new(AES_CTR.BLOCK_SIZE * 8, initial_value=int(binascii.hexlify(iv), 16))
-        aes = AES.new(key, AES.MODE_CTR, counter=ctr)
-        cipher_bytes = iv + aes.encrypt(byte_string)
+        nonce = get_random_bytes(AES_CTR.NONCE_SIZE)
+        aes = AES.new(key, AES.MODE_CTR, nonce=nonce)
+        ct_bytes = aes.encrypt(byte_string)
 
-        return binascii.hexlify(cipher_bytes)
+        return binascii.hexlify(nonce + ct_bytes)
 
     @staticmethod
-    def decrypt(byte_string, key_file=settings.DSIP_PRIV_KEY):
+    def decrypt(byte_string, key_file=settings.DSIP_PRIV_KEY, decode=True):
         if isinstance(byte_string, str):
             byte_string = byte_string.encode('utf-8')
         byte_string = binascii.unhexlify(byte_string)
@@ -200,12 +206,13 @@ class AES_CTR():
         with open(key_file, 'rb') as f:
             key = f.read(AES_CTR.KEY_SIZE)
 
-        iv = byte_string[:AES_CTR.BLOCK_SIZE]
-        ctr = Counter.new(AES_CTR.BLOCK_SIZE * 8, initial_value=int(binascii.hexlify(iv), 16))
-        aes = AES.new(key, AES.MODE_CTR, counter=ctr)
+        nonce = byte_string[:AES_CTR.NONCE_SIZE]
+        aes = AES.new(key, AES.MODE_CTR, nonce=nonce)
+        pt_bytes = aes.decrypt(byte_string[AES_CTR.NONCE_SIZE:])
 
-        return aes.decrypt(byte_string[AES_CTR.BLOCK_SIZE:])
-
+        if decode:
+            return pt_bytes.decode('utf-8')
+        return pt_bytes
 
 class APIToken:
     token = None
@@ -228,7 +235,7 @@ class APIToken:
 
                 # need to decrypt token
                 if isinstance(settings.DSIP_API_TOKEN, bytes):
-                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN).decode('utf-8')
+                    tokencheck = AES_CTR.decrypt(settings.DSIP_API_TOKEN)
                 else:
                     tokencheck = settings.DSIP_API_TOKEN
 

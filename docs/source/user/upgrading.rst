@@ -1,4 +1,6 @@
-Upgrading dSIPRouter 
+.. _upgrading:
+
+Upgrading dSIPRouter
 ====================
 
 Auto Upgrade Feature
@@ -29,7 +31,10 @@ Upgrading to 0.73 can be done from 0.72 or 0.721 by doing the following
 
 3. Login to the dSIPRouter UI to validate that the upgrade was successful.
 
-Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription which can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.
+**Note**, if you are upgrading from a debian 9 system you must first upgrade OS versions to a supported version.
+See the `debian upgrade <https://wiki.debian.org/DebianUpgrade>`_ documentation for more information.
+
+Note, if the upgrade fails you can purchase a dSIPRouter Core Subscription from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.
 This will provide you with support hours so that we can help with the upgrade.
 
 Upgrade 0.70 to 0.721

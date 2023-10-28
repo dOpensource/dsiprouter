@@ -8,25 +8,21 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
-function install() {
-    local NPROC=$(nproc)
+function install {
+    # Install dependencies for dSIPRouter
+    dnf install -y firewalld logrotate rsyslog perl curl python3 python3-devel libpq-devel \
+        libev-devel
+
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
 
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
     userdel dsiprouter &>/dev/null; groupdel dsiprouter &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
-
-    # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev \
-        libsqlite3-dev libreadline-dev libffi-dev libbz2-dev libpq-dev logrotate rsyslog perl sngrep libev-dev \
-        uuid-runtime tar &&
-    apt-get install -t bullseye -y firewalld python3 python3-venv python3-pip python3-dev libmariadb-dev
-
-    if (( $? != 0 )); then
-        printerr 'Failed installing required packages'
-        exit 1
-    fi
 
     # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter nginx
@@ -37,7 +33,11 @@ function install() {
     mkdir -p ${DSIP_RUN_DIR}
     chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 
-    # Enable and start firewalld if not already running
+    # give dsiprouter permissions in SELINUX
+    semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
+    semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
+
+   # Enable and start firewalld
     systemctl enable firewalld
     systemctl start firewalld
 
@@ -49,7 +49,7 @@ function install() {
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"
-        exit 1
+        return 1
     fi
 
     # setup dsiprouter nginx configs
@@ -80,16 +80,16 @@ function install() {
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
+
+    # add hook to bash_completion in the standard debian location
+    echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
+
+    return 0
 }
 
-function uninstall() {
-    rm -rf ${PYTHON_VENV}
 
-    # TODO: this is dangerous without dependency management (i.e. our own DEB)
-#    apt-get remove -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld
-#    apt-get remove -y --allow-unauthenticated libmariadbclient-dev
-#    apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
-    #apt-get remove -y build-essential curl python3 python3-pip python-dev libmariadbclient-dev libmariadb-client-lgpl-dev python-mysqldb libpq-dev firewalld
+function uninstall {
+    rm -rf ${PYTHON_VENV}
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
@@ -106,16 +106,19 @@ function uninstall() {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    return 0
 }
 
 case "$1" in
     uninstall)
-        uninstall
+        uninstall && exit 0 || exit 1
         ;;
     install)
-        install
+        install && exit 0 || exit 1
         ;;
     *)
         printerr "usage $0 [install | uninstall]"
+        exit 1
         ;;
 esac

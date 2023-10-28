@@ -2,6 +2,11 @@
 # Main process is managed via signals from systemd (stop/reload data/etc..)
 # When stopping the service a SIGTERM is sent immediately, to the main process
 # If, after 3s dsiprouter is still running, sends SIGKILL to all process
+#
+# The following are updated dynamically on install and should not be changed here:
+#   Environment=DSIP_PROJECT_DIR
+#   Environment=DSIP_RUN_DIR
+#   Environment=DSIP_SYSTEM_CONFIG_DIR
 [Unit]
 Description=dSIPRouter Service
 DefaultDependencies=no
@@ -9,7 +14,6 @@ Requires=basic.target network.target
 After=network.target network-online.target systemd-journald.socket basic.target
 After=rsyslog.service mariadb.service nginx.service
 Wants=nginx.service mariadb.service
-PartOf=nginx.service
 
 [Service]
 Type=simple
@@ -23,7 +27,7 @@ Environment='DSIP_SYSTEM_CONFIG_DIR=/etc/dsiprouter'
 PIDFile=/run/dsiprouter/dsiprouter.pid
 # ExecStart* requires an absolute path for the program
 ExecStartPre=!-/usr/bin/dsiprouter chown -dsiprouter
-ExecStart=/usr/bin/python3 $DSIP_PROJECT_DIR/gui/dsiprouter.py
+ExecStart=/usr/bin/dsiprouter exec
 TimeoutStopSec=3
 KillMode=mixed
 Restart=on-failure
