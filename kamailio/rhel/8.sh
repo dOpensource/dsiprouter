@@ -219,13 +219,14 @@ function uninstall {
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

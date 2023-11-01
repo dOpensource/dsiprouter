@@ -5,7 +5,10 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365
+b9c9fd0db73086cba12a8cfdf8090afd8198c9f6
+5cee36cfb362c6fceb14348494749a93cdb1a2d2
+28bf73e59979e32ba4952f8923db4aee3f25f87c
+d6c45d81e09759f98a897d36fe73754c261f9d4a
 29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b
 4b835bbc8546269a75c79fe7b81a6313af2536b1
 5caff2334b4dbc19e315b98e9e3b5978d1a60a30
@@ -2237,10 +2240,103 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365)
+[//]: # (START_SECTION b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)
+### Upgrade Fixes
+
+> Commit: [b9c9fd0db73086cba12a8cfdf8090afd8198c9f6](https://github.com/dOpensource/dsiprouter/commit/b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)  
+> Date: Tue, 31 Oct 2023 21:29:48 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix bug in bash native credential parsing functions
+- fix resetting of credentials in v0.73 upgrade scripts
+- fix bug where multiple scripts could clobber `apt.conf.d` settings
+- add dpkg lock timeout to allow other processes to release apt lock
+- fix kamailio config not regenerated on upgrade
+- add more robust resetting of config files on upgrade failure
+- fix centos7 /etc/default/kamailio.conf in wrong place
+- fix upgrade log is not cleared when clicking show previous log
+- fix typo in `RESTART_DAEMONIZE` variable
+- fix cursor not a pointer on new reload buttons
+- fix reload lib functions to use new reload buttons
+- fix upgrade from gui hanging
+
+
+---
+
+[//]: # (END_SECTION b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)
+[//]: # (START_SECTION 5cee36cfb362c6fceb14348494749a93cdb1a2d2)
+### Stability Improvements
+
+> Commit: [5cee36cfb362c6fceb14348494749a93cdb1a2d2](https://github.com/dOpensource/dsiprouter/commit/5cee36cfb362c6fceb14348494749a93cdb1a2d2)  
+> Date: Sat, 28 Oct 2023 17:01:03 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add support for debian 12
+- deprecate debian 9 support
+- drop support for debian7-8 and ubuntu 16.04
+- update support for centos 8-9 to stable
+- deprecate centos 7 support
+- add support for mariadb ver >= 10.6.1
+- update openssl native decrpytion/encrption in dsip_lib.sh
+- update AES CTR implementation to match openssl standard implemenation
+- improve decrypt function API in security.py
+- update project to use virtual env for python dependencies
+- bump kamailio version to 5.7.x for debian10-12/amzn2/centos8-9/ubuntu20-22/rhel8/rocky8/alma8
+- bump rtpengine version to 11.5.1.11 for debian10-12/centos8-9/ubuntu20-22/rhel8/rocky8/alma8
+- bump openssl version on amzn2 to 1.1.1q
+- bump python version on amzn2 to 3.9.18
+- bump python version on debian10 to 3.9.2
+- bump maridb version on debian10 to 10.5.21
+- improve compilation times for debian and amazon linux
+- improve startup times of configured systemd services
+- decouple nginx and dsiprouter service again (speed improvements)
+- add exec internal command for calling into main script from systemd
+- update bug report template
+- revise DB engine loading as other globals are done
+- add python version check to install command
+- allow root DB connection host/port to be set separate from kam DB
+- fix dnsmasq startup issue on debian12
+- add fix for low memory systems failing to compile large libraries
+- update CLI help message
+- imporove performance of help/version CLI commands
+- update dsiprouter manpage
+- fix bug in settings credentials when DB connection changes
+- reset default verbosity level in scripts
+- fix issue with main script project root resolution (when PWD is other git repo)
+- fix misconfigured RTP fw rules when rtpengine is not installed
+- fix systemd inhibitor locking error on centos7/amzn2
+- add initial support for selinux in centos8-9
+- update upgrade script to handle all the above changes
+
+
+---
+
+[//]: # (END_SECTION 5cee36cfb362c6fceb14348494749a93cdb1a2d2)
+[//]: # (START_SECTION 28bf73e59979e32ba4952f8923db4aee3f25f87c)
+### Changed Reload Button to a Split Dropdown Button
+
+> Commit: [28bf73e59979e32ba4952f8923db4aee3f25f87c](https://github.com/dOpensource/dsiprouter/commit/28bf73e59979e32ba4952f8923db4aee3f25f87c)  
+> Date: Thu, 19 Oct 2023 22:30:02 +0000  
+> Author: root (root@demo-dsip-v0.730)  
+> Committer: root (root@demo-dsip-v0.730)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 28bf73e59979e32ba4952f8923db4aee3f25f87c)
+[//]: # (START_SECTION d6c45d81e09759f98a897d36fe73754c261f9d4a)
 ### Update Shared Memory Manager
 
-> Commit: [2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365](https://github.com/dOpensource/dsiprouter/commit/2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365)  
+> Commit: [d6c45d81e09759f98a897d36fe73754c261f9d4a](https://github.com/dOpensource/dsiprouter/commit/d6c45d81e09759f98a897d36fe73754c261f9d4a)  
 > Date: Mon, 16 Oct 2023 12:38:19 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2253,7 +2349,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION 2ccb9d77eb5b3fc86d0e15d2aa4f7baadbbb6365)
+[//]: # (END_SECTION d6c45d81e09759f98a897d36fe73754c261f9d4a)
 [//]: # (START_SECTION 29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)
 ### Make Docs Great Again
 

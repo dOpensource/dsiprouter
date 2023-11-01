@@ -27,7 +27,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
-        exit 1
+        return 1
     fi
 
     # we need a newer version of certbot than the distro repos offer
@@ -90,7 +90,7 @@ EOF
 
     if (( $? != 0 )); then
         printerr "failed installing kamailio modules from packages"
-        exit 1
+        return 1
     fi
 
     # get info about the kamailio install for later use in script
@@ -150,8 +150,8 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
-    chmod 644 /etc/systemd/system/kamailio.service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
+    chmod 644 /lib/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
 

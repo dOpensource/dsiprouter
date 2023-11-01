@@ -236,10 +236,6 @@ $(document).ready(function() {
         reloadKamRequired(false);
         reloading_overlay.addClass('hidden');
         showNotification("Kamailio was reloaded");
-	$('#reload').removeClass('btn-warning');
-	$('#reload').addClass('btn-primary');
-	$('#reload-split').removeClass('btn-warning');
-	$('#reload-split').addClass('btn-primary');
       },
       error: function(xhr, text_status, error_msg) {
         error_msg = JSON.parse(xhr.responseText)["msg"];

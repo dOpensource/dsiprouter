@@ -44,7 +44,7 @@ function install() {
 
     if (( $? != 0 )); then
         printerr 'Failed installing kamailio packages'
-        exit 1
+        return 1
     fi
 
     # get info about the kamailio install for later use in script
@@ -113,8 +113,8 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
-    chmod 644 /etc/systemd/system/kamailio.service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
+    chmod 644 /lib/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
 
@@ -166,7 +166,7 @@ EOF
         ldconfig
     ) || {
         printerr 'Failed to compile and install libstirshaken'
-        return
+        return 1
     }
 
     ## compile and install STIR/SHAKEN module

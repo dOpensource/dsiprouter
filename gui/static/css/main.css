@@ -666,3 +666,7 @@ table.dataTable {
     transform: rotate(315deg);
   }
 }
+
+#reloadkam, #reload_dsip {
+  cursor: pointer;
+}

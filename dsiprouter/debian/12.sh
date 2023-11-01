@@ -21,7 +21,7 @@ function install() {
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
-        exit 1
+        return 1
     fi
 
     # make sure the nginx user has access to dsiprouter directories
@@ -45,7 +45,7 @@ function install() {
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"
-        exit 1
+        return 1
     fi
 
     # setup dsiprouter nginx configs
@@ -76,6 +76,8 @@ function install() {
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
+
+    return 0
 }
 
 function uninstall() {
@@ -101,16 +103,19 @@ function uninstall() {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    return 0
 }
 
 case "$1" in
-    uninstall)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

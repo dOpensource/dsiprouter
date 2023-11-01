@@ -246,17 +246,25 @@
    * @param {Boolean} required    whether a reload is required
    */
   window.reloadKamRequired = function(required = true) {
-    var reload_button = $('#reloadkam');
+    var reload_btn = $('#reload');
+    var split_btn = $('#reload-split');
+    var kamailio_btn = $('#reloadkam');
 
-    if (reload_button.length > 0) {
-      if (required) {
-        reload_button.removeClass('btn-primary');
-        reload_button.addClass('btn-warning');
-      }
-      else {
-        reload_button.removeClass('btn-warning');
-        reload_button.addClass('btn-primary');
-      }
+    if (required) {
+      reload_btn.removeClass('btn-primary');
+      split_btn.removeClass('btn-primary');
+      kamailio_btn.removeClass('btn-primary');
+      reload_btn.addClass('btn-warning');
+      split_btn.addClass('btn-warning');
+      kamailio_btn.addClass('btn-warning');
+    }
+    else {
+      reload_btn.removeClass('btn-warning');
+      split_btn.removeClass('btn-warning');
+      kamailio_btn.removeClass('btn-warning');
+      reload_btn.addClass('btn-primary');
+      split_btn.addClass('btn-primary');
+      kamailio_btn.addClass('btn-primary');
     }
   };
 
@@ -265,17 +273,25 @@
    * @param {Boolean} required    whether a reload is required
    */
   window.reloadDsipRequired = function(required = true) {
-    var reload_button = $('#reload_dsip');
+    var reload_btn = $('#reload_dsip');
+    var split_btn = $('#reload-split');
+    var kamailio_btn = $('#reloadkam');
 
-    if (reload_button.length > 0) {
-      if (required) {
-        reload_button.removeClass('btn-primary');
-        reload_button.addClass('btn-warning');
-      }
-      else {
-        reload_button.removeClass('btn-warning');
-        reload_button.addClass('btn-primary');
-      }
+    if (required) {
+      reload_btn.removeClass('btn-primary');
+      split_btn.removeClass('btn-primary');
+      kamailio_btn.removeClass('btn-primary');
+      reload_btn.addClass('btn-warning');
+      split_btn.addClass('btn-warning');
+      kamailio_btn.addClass('btn-warning');
+    }
+    else {
+      reload_btn.removeClass('btn-warning');
+      split_btn.removeClass('btn-warning');
+      kamailio_btn.removeClass('btn-warning');
+      reload_btn.addClass('btn-primary');
+      split_btn.addClass('btn-primary');
+      kamailio_btn.addClass('btn-primary');
     }
   };
 

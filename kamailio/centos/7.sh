@@ -10,11 +10,16 @@ fi
 
 function install() {
     # Install Dependencies
-    yum groupinstall -y 'core'
-    yum groupinstall -y 'base'
-    yum groupinstall -y 'Development Tools'
-    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel openssl-devel
-    yum install -y logrotate rsyslog certbot
+    yum groupinstall -y 'core' &&
+    yum groupinstall -y 'base' &&
+    yum groupinstall -y 'Development Tools' &&
+    yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel \
+        openssl-devel logrotate rsyslog certbot
+
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
@@ -45,17 +50,7 @@ function install() {
     echo "d /run/kamailio 0750 kamailio users" > /etc/tmpfiles.d/kamailio.conf
 
     # create kamailio defaults config
-    (cat << 'EOF'
- RUN_KAMAILIO=yes
- USER=kamailio
- GROUP=kamailio
- SHM_MEMORY=64
- PKG_MEMORY=8
- PIDFILE=/var/run/kamailio/kamailio.pid
- CFGFILE=/etc/kamailio/kamailio.cfg
- #DUMP_CORE=yes
-EOF
-    ) > /etc/default/kamailio
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio.conf /etc/default/kamailio.conf
 
     # Configure Kamailio and Required Database Modules
     mkdir -p ${SYSTEM_KAMAILIO_CONFIG_DIR}
@@ -176,13 +171,14 @@ function uninstall {
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

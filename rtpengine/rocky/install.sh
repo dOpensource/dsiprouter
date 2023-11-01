@@ -269,10 +269,12 @@ EOF
 
     # Setup tmp files
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
-    chmod +x /usr/sbin/rtpengine* /usr/bin/rtpengine
+
+    # Reconfigure systemd service files
+    rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
+    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
 
     # Reload systemd configs
     systemctl daemon-reload

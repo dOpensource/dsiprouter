@@ -22,6 +22,11 @@ function install() {
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
         libcurl4-openssl-dev libjansson-dev cmake firewalld python3 build-essential python3-venv
 
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
+
     # we need a newer version of certbot than the distro repos offer
     apt-get remove -y *certbot*
     python3 -m venv /opt/certbot/
@@ -122,8 +127,8 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
-    chmod 644 /etc/systemd/system/kamailio.service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
+    chmod 644 /lib/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
 

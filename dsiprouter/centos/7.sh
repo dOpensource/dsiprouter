@@ -76,7 +76,7 @@ function install {
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"
-        exit 1
+        return 1
     fi
 
     # Configure nginx
@@ -129,6 +129,8 @@ function install {
 
     # add hook to bash_completion in the standard debian location
     echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
+
+    return 0
 }
 
 
@@ -169,17 +171,19 @@ function uninstall {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    return 0
 }
 
-
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

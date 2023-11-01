@@ -32,6 +32,7 @@ export HASH_ITERATIONS=${HASH_ITERATIONS:-$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+
 export HASHED_CREDS_ENCODED_MAX_LEN=${HASHED_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 export AESCTR_CREDS_ENCODED_MAX_LEN=${AESCTR_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 export AES_CTR_NONCE_SIZE=${AES_CTR_NONCE_SIZE:-$(grep -m 1 -oP 'NONCE_SIZE[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export AES_CTR_KEY_SIZE=${AES_CTR_KEY_SIZE:-$(grep -m 1 -oP 'KEY_SIZE[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
@@ -176,14 +177,10 @@ function setConfigAttrib() {
 }
 export -f setConfigAttrib
 
-# $1 == attribute name
-# $2 == attribute value
-# $3 == python config file
-function encryptConfigAttrib() {
-    local NAME="$1"
-    local VALUE="$2"
-    local CONFIG_FILE="$3"
-        # this is the file not the raw key
+# $1 == credentials to encrypt
+function encryptCreds() {
+    local PT_CREDS="$1"
+    # this is the file not the raw key
     local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")}
     local NONCE CT_HEX
 
@@ -192,11 +189,26 @@ function encryptConfigAttrib() {
     CT_HEX=$(
         openssl enc -aes-256-ctr -e \
             -iv "$NONCE" \
-            -K "$(xxd -p -l 32 -c 0 <"${DSIP_PRIV_KEY}")" \
-            < <(echo -n "$VALUE") \
-            2>/dev/null | xxd -p -c 0
+            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${DSIP_PRIV_KEY}")" \
+            < <(echo -n "$PT_CREDS") \
+            2>/dev/null | xxd -p -c $AESCTR_CREDS_ENCODED_MAX_LEN
     )
-    setConfigAttrib "$NAME" "${NONCE}${CT_HEX}" "$CONFIG_FILE" -qb
+    echo -n "${NONCE}${CT_HEX}"
+}
+export -f encryptCreds
+
+# $1 == attribute name
+# $2 == attribute value
+# $3 == python config file
+function encryptConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+    local CT_CREDS
+
+    # openssl version - depends on openssl, xxd, and sed
+    CT_CREDS=$(encryptCreds "$VALUE")
+    setConfigAttrib "$NAME" "$CT_CREDS" "$CONFIG_FILE" -qb
     # python version - depends on dsiprouter's python3 venv and pycryptodome
 #    ${PYTHON_CMD} <<EOPY
 #import os, sys
@@ -244,8 +256,8 @@ function decryptConfigAttrib() {
         NONCE=${VALUE:0:$NONCE_OFFSET}
         openssl enc -aes-256-ctr -d \
             -iv "$NONCE" \
-            -K "$(xxd -p -l 32 -c 0 <"${DSIP_PRIV_KEY}")" \
-            < <(echo -n "${VALUE:$NONCE_OFFSET}" | xxd -r -p -c 0) \
+            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${DSIP_PRIV_KEY}")" \
+            < <(echo -n "${VALUE:$NONCE_OFFSET}" | xxd -r -p -c $AESCTR_CREDS_ENCODED_MAX_LEN) \
             2>/dev/null
         # python version - depends on dsiprouter's python3 venv and pycryptodome
 #        ${PYTHON_CMD} <<EOPY

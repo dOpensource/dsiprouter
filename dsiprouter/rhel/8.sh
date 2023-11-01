@@ -16,16 +16,16 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Install dependencies for dSIPRouter
-    yum remove -y rs-epel-release*
+    yum remove -y rs-epel-release* &&
+    yum install -y yum-utils &&
+    yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools" &&
+    yum install -y firewalld python36 python36-libs python36-devel python36-pip MySQL-python sudo \
+        python36-virtualenv logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 
-    yum install -y yum-utils
-    yum --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    yum install -y firewalld
-    yum install -y python36 python36-libs python36-devel python36-pip MySQL-python sudo python36-virtualenv
-    yum install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
-
-    # reset python cmd in case it was just installed
-    setPythonCmd
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
 
     # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter nginx
@@ -52,7 +52,7 @@ function install {
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"
-        exit 1
+        return 1
     fi
 
     # setup dsiprouter nginx configs
@@ -88,23 +88,15 @@ function install {
 
     # add hook to bash_completion in the standard debian location
     echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
+
+    return 0
 }
 
 
 function uninstall {
     # Uninstall dependencies for dSIPRouter
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m pip uninstall --yes
-    if (( $? == 1 )); then
-        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
-        exit 1
-    else
-        printdbg "DSIPRouter uninstall was successful"
-        exit 0
-    fi
-
     yum remove -y python36u\*
     yum remove -y ius-release
-    yum groupremove -y "Development Tools"
 
     # Remove the repos
     rm -f /etc/yum.repos.d/ius*
@@ -126,17 +118,19 @@ function uninstall {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    return 0
 }
 
-
 case "$1" in
-    uninstall)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

@@ -61,9 +61,7 @@
 # set project dir (where src files are located)
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
 # Import dsip_lib utility / shared functions
-if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
-    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
-fi
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
 
 # settings used by script that are user configurable
@@ -110,6 +108,7 @@ function setStaticScriptSettings() {
     APT_OFFICIAL_PREFS="/etc/apt/preferences"
     APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.list"
     APT_OFFICIAL_PREFS_BAK="${BACKUPS_DIR}/original-sources.pref"
+    APT_DSIP_CONFIG="/etc/apt/apt.conf.d/99dsiprouter"
     YUM_OFFICIAL_REPOS="/etc/yum.repos.d/official-releases.repo"
 
     # Force the installation of an Kamailio version by uncommenting
@@ -201,7 +200,7 @@ function setDynamicScriptSettings() {
 #			# if not we can not use this address (interface is not configured properly)
 #			if ! checkConn "$INTERNAL_IP6_ADDR"; then
 #				printerr "IPV6 enabled but address [$INTERNAL_IP6_ADDR] is not routable"
-#				cleanupAndExit 1
+#				exit 1
 #			fi
 #			export IPV6_ENABLED=1
 #		else
@@ -259,7 +258,7 @@ function setDynamicScriptSettings() {
 #			# if not we can not use this address (interface is not configured properly)
 #			if ! checkConn "$INTERNAL_IP6_ADDR"; then
 #				printerr "IPV6 enabled but address [$INTERNAL_IP6_ADDR] is not routable"
-#				cleanupAndExit 1
+#				exit 1
 #			fi
 #			export IPV6_ENABLED=1
 #		else
@@ -278,7 +277,7 @@ function setDynamicScriptSettings() {
         fi
     else
         printerr 'Network Mode is invalid, can not proceed any further'
-        cleanupAndExit 1
+        exit 1
     fi
 
     # if the public ip address is not the same as the internal address then enable serverside NAT
@@ -327,6 +326,8 @@ function setDynamicScriptSettings() {
     # note that the VCS is assumed to be git
     GIT_REPO_URL=$(getConfigAttrib 'GIT_REPO_URL' ${DSIP_CONFIG_FILE})
     GIT_RELEASE_URL=$(getConfigAttrib 'GIT_RELEASE_URL' ${DSIP_CONFIG_FILE})
+
+    export CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"${BACKUPS_DIR}/$(date '+%s')"}
 }
 
 # Check if we are on a VPS Cloud Instance
@@ -379,18 +380,11 @@ IHRvIG91ciBzcG9uc29yOiBkT3BlblNvdXJjZSAoaHR0cHM6Ly9kb3BlbnNvdXJjZS5jb20pCg==" \
 | { echo -e "\e[1;49;36m"; cat; echo -e "\e[39;49;00m"; }
 }
 
-# Cleanup temp files / settings and exit
-function cleanupAndExit() {
-    rm -f /etc/apt/apt.conf.d/local 2>/dev/null
-    set +x
-    exit $1
-}
-
 # check if running as root
 function validateRootPriv() {
     if (( $(id -u 2>/dev/null) != 0 )); then
         printerr "$0 must be run as root user"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -425,7 +419,7 @@ function validateOSInfo() {
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                cleanupAndExit 1
+                exit 1
                 ;;
         esac
     elif [[ "$DISTRO" == "centos" ]]; then
@@ -441,7 +435,7 @@ function validateOSInfo() {
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                cleanupAndExit 1
+                exit 1
             ;;
         esac
     elif [[ "$DISTRO" == "amzn" ]]; then
@@ -452,7 +446,7 @@ function validateOSInfo() {
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                cleanupAndExit 1
+                exit 1
                 ;;
         esac
     elif [[ "$DISTRO" == "ubuntu" ]]; then
@@ -470,7 +464,7 @@ function validateOSInfo() {
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                cleanupAndExit 1
+                exit 1
                 ;;
         esac
     elif [[ "$DISTRO" =~ rhel|almalinux|rocky ]]; then
@@ -482,12 +476,12 @@ function validateOSInfo() {
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                cleanupAndExit 1
+                exit 1
                 ;;
         esac
     else
         printerr "Your Operating System is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # export it for external scripts
@@ -1279,7 +1273,7 @@ function fixMPATH() {
         printdbg "The Kamailio mpath has been updated to: $mpath"
     else
         printerr "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -1313,7 +1307,7 @@ function installScriptRequirements() {
 
     if (( $? != 0 )); then
         printerr 'Could not install script requirements'
-        cleanupAndExit 1
+        exit 1
     fi
 
     # initialize the openssl rnd generator
@@ -1334,22 +1328,21 @@ function setupScriptRequiredFiles() {
         cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
     fi
 
-    if [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "ubuntu" ]]; then
+    if cmdExists 'apt-get' && [[ ! -f "$APT_DSIP_CONFIG" ]]; then
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
         # make sure we run package installs unattended
         export DEBIAN_FRONTEND="noninteractive"
         export DEBIAN_PRIORITY="critical"
         # default dpkg to noninteractive modes for install
-        (cat << 'EOF'
+        cat <<'EOF' >${APT_DSIP_CONFIG}
 Dpkg::Options {
 "--force-confdef";
 "--force-confnew";
 }
-
+Dpkg::Lock::Timeout "300";
 APT::Get::Fix-Missing "1";
 EOF
-        ) > /etc/apt/apt.conf.d/local
     fi
 
     # make perl CPAN installs non interactive
@@ -1431,7 +1424,7 @@ function configureSystemRepos() {
 
     if (( $? == 1 )); then
         printerr 'Could not configure system repositories'
-        cleanupAndExit 1
+        exit 1
     elif (( $? >= 100 )); then
         printwarn 'Some issues occurred configuring system repositories, attempting to continue...'
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured
@@ -1452,7 +1445,9 @@ function removeDsipSystemConfig() {
             ;;
         esac
     fi
-
+    if [[ -f "$APT_DSIP_CONFIG" ]]; then
+        rm -f "$APT_DSIP_CONFIG"
+    fi
     rm -rf ${DSIP_SYSTEM_CONFIG_DIR}
 }
 
@@ -1468,7 +1463,7 @@ function installMysql() {
 
     if (( $? != 0 )); then
         printerr "MySQL install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Restart MySQL with the new configurations
@@ -1480,7 +1475,7 @@ function installMysql() {
         printdbg "------------------------------------"
     else
         printerr "MySQL install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -1496,7 +1491,7 @@ function uninstallMysql() {
 
     if (( $? != 0 )); then
         printerr "MySQL uninstall failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Remove the hidden installed file, which denotes if it's installed or not
@@ -1516,7 +1511,7 @@ function installNginx() {
 
     if (( $? != 0 )); then
         printerr "nginx install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Restart nginx with the new configurations
@@ -1528,7 +1523,7 @@ function installNginx() {
         printdbg "------------------------------------"
     else
         printerr "nginx install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -1544,7 +1539,7 @@ function uninstallNginx() {
 
     if (( $? != 0 )); then
         printerr "nginx uninstall failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Remove the hidden installed file, which denotes if it's installed or not
@@ -1563,7 +1558,7 @@ function installRTPEngine() {
     ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
     if (( $? != 0 )); then
         printerr "RTPEngine install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # config updates that are the same across all OS
@@ -1576,7 +1571,7 @@ function installRTPEngine() {
     # did the service actually start with the changes?
     if ! systemctl is-active --quiet rtpengine; then
         printerr "RTPEngine install failed"
-        cleanupAndExit 1
+        exit 1
     fi
     # sanity check, did the new kernel module load?
     if ! lsmod | grep -q 'xt_RTPENGINE' 2>/dev/null; then
@@ -1611,7 +1606,7 @@ function uninstallRTPEngine() {
         fi
     else
         printerr "RTPEngine uninstall failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # remove rtpengine service dependencies
@@ -1720,7 +1715,7 @@ function installDsiprouter() {
 
     if (( $? != 0 )); then
         printerr "dSIPRouter install failed - OS install script failure"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # extra check to ensure the OS specific script gave us the required python version
@@ -1730,12 +1725,10 @@ function installDsiprouter() {
     versionCompare $DSIP_CURRENT_PYTHON_VER gteq $DSIP_MIN_PYTHON_VER
     if (( $? != 0 )); then
         printerr "dSIPRouter install failed - minimum python version not installed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     printdbg "Configuring dSIPRouter settings"
-    # TODO: pull the settings.py generation logic out into its own function
-    #		currently we use the defaults in settings.py prior to this being executed...
     if [[ ! -f "$DSIP_CONFIG_FILE" ]]; then
         generateDsiprouterConfig
     fi
@@ -1751,30 +1744,37 @@ function installDsiprouter() {
     # 2:    set prior to externally
     # 3:    generate new key
     # TODO: create bash-native equivalent function for creating the private key
-    if [[ -n "${SET_DSIP_PRIV_KEY}" ]]; then
+    if [[ -n ${SET_DSIP_PRIV_KEY+set} ]]; then
         printf '%s' "${SET_DSIP_PRIV_KEY}" > ${DSIP_PRIV_KEY}
     elif [ -f "${DSIP_PRIV_KEY}" ]; then
         :
-    else
+    elif (( ${RUNNING_UPGRADE:-0} == 0 )); then
+        # only generate if running a fresh install
         ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
     fi
 
     # Set credentials for our services, will either use credentials from CLI or generate them
-    if [[ -z "$SET_DSIP_GUI_PASS" ]]; then
+    if [[ -z ${SET_DSIP_GUI_PASS+set} ]] && (( ${RUNNING_UPGRADE:-0} == 0 )); then
         if (( ${IMAGE_BUILD} == 1 || ${RESET_FORCE_INSTANCE_ID:-0} == 1 )); then
             if [[ -z "$CLOUD_PLATFORM" ]]; then
                 printerr "Cloud Instance password generation requested, but Cloud Platform is unsupported or not found"
-                cleanupAndExit 1
+                exit 1
             fi
             SET_DSIP_GUI_PASS=$(getInstanceID)
         else
             SET_DSIP_GUI_PASS=$(urandomChars 64)
         fi
     fi
-    SET_DSIP_API_TOKEN=${SET_DSIP_API_TOKEN:-$(urandomChars 64)}
-    SET_DSIP_IPC_TOKEN=${SET_DSIP_IPC_TOKEN:-$(urandomChars 64)}
-    SET_KAM_DB_PASS=${SET_KAM_DB_PASS:-$(urandomChars 64)}
-    SET_DSIP_SESSION_KEY=$(decryptConfigAttrib 'DSIP_SESSION_KEY' ${DSIP_CONFIG_FILE})
+    if [[ -z ${SET_DSIP_API_TOKEN+set} ]] && (( ${RUNNING_UPGRADE:-0} == 0 )); then
+        SET_DSIP_API_TOKEN=$(urandomChars 64)
+    fi
+    if [[ -z ${SET_DSIP_IPC_TOKEN+set} ]] && (( ${RUNNING_UPGRADE:-0} == 0 )); then
+        SET_DSIP_IPC_TOKEN=$(urandomChars 64)
+    fi
+    if [[ -z ${SET_KAM_DB_PASS+set} ]] && (( ${RUNNING_UPGRADE:-0} == 0 )); then
+        SET_KAM_DB_PASS=$(urandomChars 64)
+    fi
+    SET_DSIP_SESSION_KEY=${SET_DSIP_SESSION_KEY:-$(decryptConfigAttrib 'DSIP_SESSION_KEY' ${DSIP_CONFIG_FILE})}
     if [[ "$SET_DSIP_SESSION_KEY" == "None" ]] || [[ -z "$SET_DSIP_SESSION_KEY" ]]; then
         SET_DSIP_SESSION_KEY=$(urandomChars 32)
     fi
@@ -1870,7 +1870,7 @@ EOF
         printdbg "-------------------------------------"
     else
         printerr "dSIPRouter install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -1889,7 +1889,7 @@ function uninstallDsiprouter() {
 
     if [ $? -ne 0 ]; then
         printerr "dsiprouter uninstall failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Remove dsiprouter crontab entries
@@ -1909,10 +1909,8 @@ function uninstallDsiprouter() {
 }
 
 function installKamailio() {
-    local NOW=$(date '+%s')
-    local KAMDB_BACKUP_DIR="${BACKUPS_DIR}/kamdb"
-    local KAMDB_DATABASE_BACKUP_FILE="${KAMDB_BACKUP_DIR}/db-${NOW}.sql"
-    local KAMDB_USER_BACKUP_FILE="${KAMDB_BACKUP_DIR}/user-${NOW}.sql"
+    local KAMDB_DATABASE_BACKUP_FILE="${CURR_BACKUP_DIR}/db.sql"
+    local KAMDB_USER_BACKUP_FILE="${CURR_BACKUP_DIR}/user.sql"
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
         printwarn "kamailio is already installed"
@@ -1922,7 +1920,7 @@ function installKamailio() {
     fi
 
     # backup and drop kam db if it exists already
-    mkdir -p ${KAMDB_BACKUP_DIR}
+    mkdir -p ${CURR_BACKUP_DIR}
 
     if cmdExists 'mysql'; then
         if checkDB "$KAM_DB_NAME"; then
@@ -1946,7 +1944,7 @@ function installKamailio() {
         updateKamailioStartup
     else
         printerr "kamailio install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Restart Kamailio with the new configurations
@@ -1958,7 +1956,7 @@ function installKamailio() {
         printdbg "-----------------------------------"
     else
         printerr "Kamailio install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -1977,7 +1975,7 @@ function uninstallKamailio() {
 
     if [ $? -ne 0 ]; then
         printerr "kamailio uninstall failed"
-        cleanupAndExit 1
+        exit 1
     fi
 
     # remove kam service dependencies
@@ -2124,7 +2122,7 @@ function installDnsmasq() {
 
     if (( $? != 0 )); then
         printerr 'failed installing DNSmasq via package manager'
-        cleanupAndExit 1
+        exit 1
     fi
 
     # make sure we unmask before configuring the service ourselves
@@ -2294,7 +2292,7 @@ EOF
     # configure systemd service
     case "$DISTRO" in
         debian|ubuntu)
-            cat << 'EOF' >/etc/systemd/system/dnsmasq.service
+            cat << 'EOF' >/lib/systemd/system/dnsmasq.service
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
 Requires=basic.target network.target
@@ -2328,7 +2326,7 @@ WantedBy=multi-user.target
 EOF
             ;;
         almalinux|rocky|centos)
-            cat << 'EOF' >/etc/systemd/system/dnsmasq.service
+            cat << 'EOF' >/lib/systemd/system/dnsmasq.service
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
 Requires=basic.target network.target
@@ -2356,7 +2354,7 @@ EOF
         #SYSTEMD_VER=$(systemctl --version | head -1 | awk '{print $2}')
         # TODO: the same issue occurs on debian9 with systemd ver 232
         amzn|rhel)
-            cat << 'EOF' >/etc/systemd/system/dnsmasq.service
+            cat << 'EOF' >/lib/systemd/system/dnsmasq.service
 [Unit]
 Description=dnsmasq - A lightweight DHCP and caching DNS server
 Requires=basic.target network.target
@@ -2398,7 +2396,7 @@ EOF
         pprint "DNSmasq was installed"
     else
         printerr "DNSmasq install failed"
-        cleanupAndExit 1
+        exit 1
     fi
 }
 
@@ -2408,10 +2406,8 @@ function uninstallDnsmasq() {
     fi
 
     # stop the process
+    systemctl disable dnsmasq
     systemctl stop dnsmasq
-    # remove dnsmasq systemd service
-    rm -f /etc/systemd/system/dnsmasq.service
-    systemctl daemon-reload
 
     # uninstall dnsmasq
     if cmdExists 'apt-get'; then
@@ -2457,7 +2453,7 @@ function start() {
         # Make sure process is still running
         if ! systemctl is-active --quiet kamailio; then
             printerr "Unable to start Kamailio"
-            cleanupAndExit 1
+            exit 1
         else
             pprint "Kamailio was started"
         fi
@@ -2469,7 +2465,7 @@ function start() {
         # Make sure process is still running
         if ! systemctl is-active --quiet rtpengine; then
             printerr "Unable to start RTPEngine"
-            cleanupAndExit 1
+            exit 1
         else
             pprint "RTPEngine was started"
         fi
@@ -2487,7 +2483,7 @@ function start() {
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
             sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
-            cleanupAndExit $?
+            exit $?
         else
             # start the reverse proxy first
             systemctl start nginx
@@ -2496,7 +2492,7 @@ function start() {
             # Make sure process is still running
             if ! systemctl is-active --quiet dsiprouter || ! systemctl is-active --quiet nginx; then
                 printerr "Unable to start dSIPRouter"
-                cleanupAndExit 1
+                exit 1
             else
                 pprint "dSIPRouter was started"
             fi
@@ -2515,7 +2511,7 @@ function stop() {
         # Make sure process is not running
         if systemctl is-active --quiet kamailio; then
             printerr "Unable to stop Kamailio"
-            cleanupAndExit 1
+            exit 1
         else
             pprint "Kamailio was stopped"
         fi
@@ -2527,7 +2523,7 @@ function stop() {
         # Make sure process is not running
         if systemctl is-active --quiet rtpengine; then
             printerr "Unable to stop RTPEngine"
-            cleanupAndExit 1
+            exit 1
         else
             pprint "RTPEngine was stopped"
         fi
@@ -2541,7 +2537,7 @@ function stop() {
             pkill -SIGTERM -f dsiprouter.py
             if pgrep -f 'nginx|dsiprouter.py' &>/dev/null; then
                 printerr "Unable to stop dSIPRouter"
-                cleanupAndExit 1
+                exit 1
             else
                 pprint "dSIPRouter was stopped"
             fi
@@ -2550,7 +2546,7 @@ function stop() {
             systemctl stop dsiprouter
             if systemctl is-active --quiet dsiprouter || systemctl is-active --quiet nginx; then
                 printerr "Unable to stop dSIPRouter"
-                cleanupAndExit 1
+                exit 1
             else
                 pprint "dSIPRouter was stopped"
             fi
@@ -2560,7 +2556,7 @@ function stop() {
 
 function restart() {
     # escape the systemd control group if told to daemonize
-    if (( RESTART_DAEMONIZE == 1 )); then
+    if (( $RESTART_DAEMONIZE == 1 )); then
         systemd-run --unit='dsip-daemon' --collect --slice=user.slice $0 ${RESTART_ARGS[@]}
         exit 0
     fi
@@ -2658,6 +2654,7 @@ function setCredentials() {
     local DSIP_RELOAD_TYPE=1 KAM_RELOAD_TYPE=0 MYSQL_RELOAD_TYPE=0
     # whether or not we will be running logic to update settings on the DB
     local RUN_SQL_STATEMENTS=1
+    local TMP_VAL
 
     # sanity check, can we connect to the DB as the root user?
     # we determine if user already changed DB creds (and just want dsiprouter to store them accordingly)
@@ -2687,7 +2684,7 @@ function setCredentials() {
         [[ -n ${SET_ROOT_DB_PORT+set} ]] ||
         [[ -n ${SET_ROOT_DB_NAME+set} ]]; then
             printerr 'Connection to DB failed'
-            cleanupAndExit 1
+            exit 1
         fi
         # no DB updates necessary
         RUN_SQL_STATEMENTS=0
@@ -2696,18 +2693,53 @@ function setCredentials() {
     # update non-encrypted settings locally and gather statements for updating DB
     if [[ -n ${SET_DSIP_GUI_USER+set} ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_ID='$DSIP_ID';")
-        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_USERNAME='$SET_DSIP_GUI_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
         SHELL_CMDS+=("setConfigAttrib 'DSIP_USERNAME' '$SET_DSIP_GUI_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
+    if [[ -n ${SET_DSIP_GUI_PASS+set} ]]; then
+        TMP_VAL=$(hashCreds "$SET_DSIP_GUI_PASS")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_PASSWORD='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_PASSWORD='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
+        SHELL_CMDS+=("setConfigAttrib 'DSIP_PASSWORD' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
+    fi
+
     if [[ -n ${SET_DSIP_MAIL_USER+set} ]]; then
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_ID='$DSIP_ID';")
-        SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
-        SHELL_CMDS+=("'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_USERNAME='$SET_DSIP_MAIL_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
+        SHELL_CMDS+=("setConfigAttrib 'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
+    fi
+    if [[ -n ${SET_DSIP_MAIL_PASS+set} ]]; then
+        TMP_VAL=$(encryptCreds "$SET_DSIP_MAIL_PASS")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_PASSWORD='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_PASSWORD='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
+        SHELL_CMDS+=("setConfigAttrib 'MAIL_PASSWORD' '$TMP_VAL' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n ${SET_DSIP_API_TOKEN+set} ]]; then
+        TMP_VAL=$(encryptCreds "$SET_DSIP_API_TOKEN")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_API_TOKEN='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_API_TOKEN='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
+        SHELL_CMDS+=("setConfigAttrib 'DSIP_API_TOKEN' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
+
         KAM_RELOAD_TYPE=1
     fi
     if [[ -n ${SET_DSIP_IPC_TOKEN+set} ]]; then
+        TMP_VAL=$(encryptCreds "$SET_DSIP_IPC_TOKEN")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_IPC_PASS='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_IPC_PASS='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
+        SHELL_CMDS+=("setConfigAttrib 'DSIP_IPC_PASS' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
+
         DSIP_RELOAD_TYPE=2
     fi
     if [[ -n ${SET_KAM_DB_USER+set} ]]; then
@@ -2721,7 +2753,7 @@ function setCredentials() {
         DEFERRED_SQL_STATEMENTS+=("GRANT ALL PRIVILEGES ON $KAM_DB_NAME.* TO '$SET_KAM_DB_USER'@'%';")
 
         SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='$SET_KAM_DB_USER' WHERE DSIP_ID='$DSIP_ID';")
-        if (( $DSIP_CLUSTER_SYNC == 1)); then
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
             SQL_STATEMENTS+=("UPDATE kamailio.dsip_settings SET KAM_DB_USER='$SET_KAM_DB_USER' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         fi
         SHELL_CMDS+=("setConfigAttrib 'KAM_DB_USER' '$SET_KAM_DB_USER' ${DSIP_CONFIG_FILE} -q;")
@@ -2732,6 +2764,13 @@ function setCredentials() {
     if [[ -n ${SET_KAM_DB_PASS+set} ]]; then
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'localhost' = PASSWORD('$SET_KAM_DB_PASS');")
         DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' = PASSWORD('$SET_KAM_DB_PASS');")
+
+        TMP_VAL=$(encryptCreds "$SET_KAM_DB_PASS")
+        SQL_STATEMENTS+=("update kamailio.dsip_settings SET KAM_DB_PASS='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
+        if (( $DSIP_CLUSTER_SYNC == 1 )); then
+            SQL_STATEMENTS+=("update kamailio.dsip_settings SET KAM_DB_PASS='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
+        fi
+        SHELL_CMDS+=("setConfigAttrib 'KAM_DB_PASS' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
 
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
@@ -2781,6 +2820,9 @@ function setCredentials() {
                 DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$ROOT_DB_USER'@'%' = PASSWORD('$SET_ROOT_DB_PASS');")
             fi
         fi
+
+        TMP_VAL=$(encryptCreds "$SET_ROOT_DB_PASS")
+        SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_PASS' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
     fi
     if [[ -n ${SET_ROOT_DB_HOST+set} ]]; then
         SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_HOST' '$SET_ROOT_DB_HOST' ${DSIP_CONFIG_FILE} -q;")
@@ -2791,28 +2833,13 @@ function setCredentials() {
     if [[ -n ${SET_ROOT_DB_NAME+set} ]]; then
         SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_NAME' '$SET_ROOT_DB_NAME' ${DSIP_CONFIG_FILE} -q;")
     fi
-    DEFERRED_SQL_STATEMENTS+=("flush privileges;")
+    if [[ -n ${SET_DSIP_SESSION_KEY+set} ]]; then
+        TMP_VAL=$(encryptCreds "$SET_DSIP_SESSION_KEY")
+        SHELL_CMDS+=("setConfigAttrib 'DSIP_SESSION_KEY' '$TMP_VAL' ${DSIP_CONFIG_FILE} -q;")
 
-    # update encrypted settings locally and in DB
-    # NOTE: we must run this before the config files AND live DB credentials are changed otherwise we won't be able to connect
-    # TODO: replace with bash-native functions
-    ${PYTHON_CMD} <<EOF
-import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui');
-sys.path.insert(0, '/etc/dsiprouter/gui')
-from util.security import Credentials;
-Credentials.setCreds(
-    dsip_creds='${SET_DSIP_GUI_PASS}',
-    api_creds='${SET_DSIP_API_TOKEN}',
-    kam_creds='${SET_KAM_DB_PASS}',
-    mail_creds='${SET_DSIP_MAIL_PASS}',
-    ipc_creds='${SET_DSIP_IPC_TOKEN}',
-    sesh_creds='${SET_DSIP_SESSION_KEY}',
-);
-EOF
-    if (( $? != 0 )); then
-        printerr 'Failed setting encrypted credentials'
-        cleanupAndExit 1
+        DSIP_RELOAD_TYPE=2
     fi
+    DEFERRED_SQL_STATEMENTS+=("flush privileges;")
 
     # allow settings that don't require DB to be running to be updated (we verified at the start of this func whether we needed DB)
     if (( ${RUN_SQL_STATEMENTS} == 1 )); then
@@ -2820,14 +2847,14 @@ EOF
         sqlAsTransaction --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$ROOT_DB_HOST" --port="$ROOT_DB_PORT" "${SQL_STATEMENTS[@]}"
         if (( $? != 0 )); then
             printerr 'Failed setting credentials on DB'
-            cleanupAndExit 1
+            exit 1
         fi
 
         # update live DB settings (DB user passwords, privileges, etc..)
         sqlAsTransaction --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$ROOT_DB_HOST" --port="$ROOT_DB_PORT" "${DEFERRED_SQL_STATEMENTS[@]}"
         if (( $? != 0 )); then
             printerr 'Failed setting credentials on DB'
-            cleanupAndExit 1
+            exit 1
         fi
     fi
 
@@ -3074,6 +3101,7 @@ function upgrade() {
     local REPO_URL=${UPGRADE_REPO:-https://github.com/dOpensource/dsiprouter.git}
     local TAG_NAME="${UPGRADE_RELEASE}-rel"
     export NEW_PROJECT_DIR=${BOOTSTRAP_DIR:-/tmp/dsiprouter}
+    export RUNNING_UPGRADE=1
 
     # make sure mask is reset to be more permissive
     # repo must be created with permissions set in the remote repo
@@ -3086,7 +3114,7 @@ function upgrade() {
         rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
         git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
             printerr 'failed downloading new project files'
-            cleanupAndExit 1
+            exit 1
         }
     else
         printdbg 'running with bootstrapped dSIPRouter project files'
@@ -3108,18 +3136,31 @@ function upgrade() {
         exit 1
     }
 
+    # TODO: check license, this will be implemented in next release
+    #       can not be done yet because we are allowing bootstrapping an upgrade
+#    if (( $RUN_FROM_GUI == 0 )); then
+#       # check shared memory
+#    else
+#       # manually query license server
+#    fi
+
     printdbg 'backing up configs just in case the upgrade fails'
-    CURR_BACKUP_DIR="${BACKUPS_DIR}/$(date '+%s')"
-    mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
-    cp -rf ${DSIP_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
-    cp -rf ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
-    cp -rf /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
-    cp -f /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
-    cp -rf /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
-    cp -f ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
-    cp -f /etc/systemd/system/{dnsmasq.service,kamailio.service,nginx.service,rtpengine.service} ${CURR_BACKUP_DIR}/etc/systemd/system/
-    cp -f /lib/systemd/system/dsiprouter.service ${CURR_BACKUP_DIR}/lib/systemd/system/
-    cp -f /etc/default/kamailio ${CURR_BACKUP_DIR}/etc/default/
+    # TODO: make the destination paths use our static variables as well
+    mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/dsiprouter,etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
+#    mkdir -p ${CURR_BACKUP_DIR}/{var/lib/mysql,${HOME}}
+    cp -af ${DSIP_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
+    cp -af ${DSIP_LIB_DIR}/. ${CURR_BACKUP_DIR}/var/lib/dsiprouter/
+    cp -af ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
+    cp -af ${DSIP_SYSTEM_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/dsiprouter/
+    cp -af ${SYSTEM_RTPENGINE_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/rtpengine/
+#    cp -af /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
+#    cp -af /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
+#    cp -af /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
+#    cp -af ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
+    cp -af /etc/dnsmasq.conf ${CURR_BACKUP_DIR}/etc/
+    cp -af /etc/systemd/system/{nginx,dsiprouter,dnsmasq,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/etc/systemd/system/ 2>/dev/null
+    cp -af /lib/systemd/system/{nginx,dsiprouter,dnsmasq,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/lib/systemd/system/ 2>/dev/null
+    cp -af /etc/default/{kamailio,rtpengine}.conf ${CURR_BACKUP_DIR}/etc/default/
     printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
 
     printdbg "starting migration from $CURRENT_VERSION to $UPGRADE_VER"
@@ -3549,7 +3590,7 @@ EOSSH
 
         i=$((i + 1))
     done
-); cleanupAndExit $?; }
+); exit $?; }
 
 # $@ == subset of permissions to update
 # TODO: update systemd ExecStartPre commands to use this logic instead
@@ -3825,7 +3866,7 @@ function preprocessCMD() {
     # Display usage options if no command is specified
     if (( $# == 0 )); then
         usageOptions
-        cleanupAndExit 1
+        exit 1
     fi
 
     # Do not run the extra prep on these commands
@@ -3982,7 +4023,7 @@ function processCMD() {
                                 ;;
                             *)
                                 printerr 'Invalid value for setting DSIP_CLUSTER_SYNC'
-                                cleanupAndExit 1
+                                exit 1
                                 ;;
                         esac
 
@@ -4001,7 +4042,7 @@ function processCMD() {
                         # sanity check
                         if (( $(printf '%s' "${SET_DSIP_PRIV_KEY}" | wc -c) != 32 )); then
                             printerr 'dSIPRouter private key must be 32 bytes'
-                            cleanupAndExit 1
+                            exit 1
                         fi
                         ;;
                     -with_lcr|--with_lcr=*)
@@ -4037,13 +4078,13 @@ function processCMD() {
                         # sanity check
                         if [[ -z "$HOMER_HEP_HOST" ]]; then
                             printerr 'Missing required argument <homer_host> to option -homer'
-                            cleanupAndExit 1
+                            exit 1
                         fi
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4098,7 +4139,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4167,7 +4208,7 @@ function processCMD() {
                         # sanity check
                         if (( $(printf '%s' "${SET_DSIP_PRIV_KEY}" | wc -c) != 32 )); then
                             printerr 'dSIPRouter private key must be 32 bytes'
-                            cleanupAndExit 1
+                            exit 1
                         fi
                         ;;
                     *)  # add to list of args
@@ -4181,7 +4222,7 @@ function processCMD() {
             if (( ${#SSH_SYNC_NODES[@]} < 1 )); then
                 printerr "At least 2 nodes are required to setup cluster"
                 usageOptions
-                cleanupAndExit 1
+                exit 1
             fi
             ;;
         upgrade)
@@ -4220,7 +4261,7 @@ function processCMD() {
                         if [[ -z "$UPGRADE_RELEASE" ]]; then
                             printerr "Invalid upgrade release specified"
                             usageOptions
-                            cleanupAndExit 1
+                            exit 1
                         fi
 
                         # format as per branch name if given as version number
@@ -4241,14 +4282,14 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
             done
 
             # repo we are upgrading from could have been provided on the CLI
-            if [[ -n "UPGRADE_REPO" ]]; then
+            if [[ -n "$UPGRADE_REPO" ]]; then
                 UPGRADE_RELEASE_URL="https://api.github.com/repos/$(rev <<<"$UPGRADE_REPO" | cut -d '/' -f -2 | cut -d '.' -f 2- | rev)/releases"
             else
                 UPGRADE_RELEASE_URL="$GIT_RELEASE_URL"
@@ -4260,7 +4301,7 @@ function processCMD() {
                 TMP=$(jq -e -r  '.[].tag_name | gsub("^v(?<tag>[0-9]+\\.[0-9]+).*?$"; "\(.tag)")' <<<"$TMP") &&
                 UPGRADE_RELEASE=$(sort -gur <<<"$TMP" | head -1) || {
                     printerr "Could not retrieve latest release candidate"
-                    cleanupAndExit 1
+                    exit 1
                 }
             fi
             ;;
@@ -4307,7 +4348,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4356,7 +4397,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4426,7 +4467,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4455,7 +4496,7 @@ function processCMD() {
             # pass the rest of the user args to the local function
             # TODO: figure out how to pass variables into staged commands
             updatePermissions "$@"
-            cleanupAndExit $?
+            exit $?
             ;;
         # TODO: add commands for configuring rtpengine using same setup
         #       i.e.) configurertp should be externally accessible and documented
@@ -4475,7 +4516,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4497,7 +4538,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4519,7 +4560,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4546,7 +4587,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4568,7 +4609,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4629,7 +4670,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4641,7 +4682,7 @@ function processCMD() {
                     SET_DSIP_GUI_PASS=$(getInstanceID)
                     if [[ -z "$SET_DSIP_GUI_PASS" ]]; then
                         printerr "Could not retrieve the instance ID for password reset"
-                        cleanupAndExit 1
+                        exit 1
                     fi
                 else
                     SET_DSIP_GUI_PASS=$(urandomChars 64)
@@ -4713,7 +4754,7 @@ function processCMD() {
                         # sanity check
                         if [[ -z "${DB_CONN_URI}" ]]; then
                             printerr "Credentials must be given for option $OPT"
-                            cleanupAndExit 1
+                            exit 1
                         fi
 
                         TMP_VAL=$(parseDBConnURI -user "$DB_CONN_URI") && export SET_KAM_DB_USER="$TMP_VAL"
@@ -4758,7 +4799,7 @@ function processCMD() {
                         # sanity check
                         if [[ -z "${DB_CONN_URI}" ]]; then
                             printerr "Credentials must be given for option $OPT"
-                            cleanupAndExit 1
+                            exit 1
                         fi
 
                         TMP_VAL=$(parseDBConnURI -user "$DB_CONN_URI") && export SET_ROOT_DB_USER="$TMP_VAL"
@@ -4780,7 +4821,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4803,7 +4844,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4826,7 +4867,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4849,7 +4890,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4873,7 +4914,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4896,7 +4937,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4919,7 +4960,7 @@ function processCMD() {
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
-                        cleanupAndExit 1
+                        exit 1
                         shift
                         ;;
                 esac
@@ -4927,16 +4968,16 @@ function processCMD() {
             ;;
         version|-v|--version)
             printf '%s\n' "$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})"
-            cleanupAndExit 1
+            exit 1
             ;;
         help|-h|--help)
             usageOptions
-            cleanupAndExit 1
+            exit 1
             ;;
         *)
             printerr "Invalid command [$ARG]"
             usageOptions
-            cleanupAndExit 1
+            exit 1
             ;;
     esac
 
@@ -4958,7 +4999,7 @@ function processCMD() {
         $RUN_COMMAND
         RETVAL=$((RETVAL + $?))
     done
-    cleanupAndExit $RETVAL
+    exit $RETVAL
 } #end of processCMD
 
 processCMD "$@"

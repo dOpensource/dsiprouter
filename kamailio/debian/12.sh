@@ -17,6 +17,11 @@ function install() {
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
         libcurl4-openssl-dev libjansson-dev cmake firewalld build-essential certbot
 
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
+
     # create kamailio user and group
     mkdir -p /var/run/kamailio
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -124,8 +129,8 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service
-    chmod 644 /etc/systemd/system/kamailio.service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
+    chmod 644 /lib/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
 

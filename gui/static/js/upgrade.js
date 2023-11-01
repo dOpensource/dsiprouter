@@ -12,6 +12,7 @@
 
   function displayUpgradeLog() {
     upgrade_form.hide();
+    upgrade_output.html("");
     upgrade_output_row.show();
   }
 
@@ -35,6 +36,18 @@
     });
   }
 
+  function monitorUpgrade() {
+    var source = new EventSource("/upgrade/status");
+    source.onmessage = function(event) {
+      if (event.data === '0') {
+        reloadDsipRequired(true);
+      }
+    };
+    source.onerror = function(event) {
+      source.close();
+    };
+  }
+
   $(document).ready(function() {
     $('#btnShowLog').click(function() {
       displayUpgradeLog();
@@ -43,9 +56,6 @@
 
     upgrade_form.submit(function(e) {
       e.preventDefault();
-
-      displayUpgradeLog();
-      streamLog();
 
       var formData = $(this).serialize();
 
@@ -56,7 +66,9 @@
         data: formData,
         success: function(response, text_status, xhr) {
           showNotification("Upgrade started. See log below for more details..", 5000);
-          reloadDsipRequired(true);
+          displayUpgradeLog();
+          streamLog();
+          monitorUpgrade();
         },
         error: function(xhr, text_status, error_msg) {
           showNotification("Could not start upgrade: " + error_msg, true);

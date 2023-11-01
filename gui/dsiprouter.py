@@ -41,6 +41,7 @@ from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
 from util.parse_json import CreateEncoder
 from util.persistence import updatePersistentState, setPersistentState
+from util.pyasync import process
 from modules.upgrade import UpdateUtils
 import settings
 
@@ -56,6 +57,11 @@ import settings
 #       they are both injected on every request via the context processor
 # TODO: remove references to "ipc.sock" / DSIP_IPC_SOCK
 #       we moved to shared memory instead of domain sockets for sharing state across processes
+
+# module constants
+# TODO: create /var/log/dsiprouter/ and move there
+UPGRADE_LOG = f'{settings.BACKUP_FOLDER}/upgrade.log'
+UPGRADE_OFFSET = f'{UPGRADE_LOG}.offset'
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -2308,16 +2314,14 @@ def displayUpgrade(msg=None):
         license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status']
         if license_status == 0:
             return render_template('license_required.html', msg=None)
-
         if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
-
         if license_status == 2:
             return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
         # make sure we remove offset file when navigating to top level page
-        if os.path.exists('/tmp/dsiprouter_upgrade.log.offset'):
-            os.remove('/tmp/dsiprouter_upgrade.log.offset')
+        if os.path.exists(UPGRADE_OFFSET):
+            os.remove(UPGRADE_OFFSET)
 
         latest = UpdateUtils.get_latest_version()
 
@@ -2340,9 +2344,31 @@ def displayUpgrade(msg=None):
         return showError(type=error)
 
 
-# TODO: not secured, can be called without license check if user is logged in
+@process
+def runUpgrade(cmd, env):
+    try:
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] = True
+
+        with open(UPGRADE_LOG, 'wb', buffering=0) as f:
+            run_info = subprocess.run(
+                cmd,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                env=env,
+                restore_signals=False,
+                close_fds=True
+            )
+            run_info.check_returncode()
+
+            # getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+            # kamailio will be reloaded when dsiprouter is reloaded
+            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
+    finally:
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] = False
+
 @app.route('/upgrade/start', methods=['POST'])
-def start_upgrade():
+def startUpgrade():
     try:
         if not session.get('logged_in'):
             return redirect(url_for('index'))
@@ -2350,30 +2376,20 @@ def start_upgrade():
         if (settings.DEBUG):
             debugEndpoint()
 
-        logging.info("Starting upgrade")
+        if getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'] != 3:
+            raise WoocommerceError('invalid license')
+
+        IO.loginfo("starting upgrade")
 
         form = stripDictVals(request.form.to_dict())
         cmd = ['sudo', '-E', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
         env = os.environ.copy()
         env['RUN_FROM_GUI'] = '1'
+        runUpgrade(cmd, env)
 
-        with open('/tmp/dsiprouter_upgrade.log', 'wb', buffering=0) as f:
-            run_info = subprocess.run(
-                cmd,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                env=env
-            )
-            run_info.check_returncode()
+        IO.loginfo("upgrade started")
 
-        # getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
-        # kamailio will be reloaded when dsiprouter is reloaded
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = True
-
-        logging.info("Upgrade complete")
-
-        return displayUpgrade()
+        return Response(), StatusCodes.HTTP_OK
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
@@ -2398,13 +2414,44 @@ def formatSSE(data: str, event: str = None) -> str:
 # inspired by: https://gist.github.com/kapb14/87255efffa173bb76cf5c1ed9db1d047
 # TODO: move to file handling
 def readLogChunk(log_file):
-    for line in Pygtail(log_file, offset_file=f'{log_file}.offset', every_n=1):
-        yield formatSSE(ansi_converter.convert(line, full=False).rstrip() + '<br>')
-        time.sleep(0.5)
+    while getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] == True:
+        time.sleep(2)
+        for line in Pygtail(log_file, offset_file=f'{log_file}.offset'):
+            yield formatSSE(ansi_converter.convert(line, full=False).rstrip() + '<br>')
 
+
+def checkUpgradeStatus():
+    while getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] == True:
+        time.sleep(30)
+        yield formatSSE('1')
+    yield formatSSE('0')
+
+
+@app.route('/upgrade/status')
+def getUpgradeStatus():
+    try:
+        if not session.get('logged_in'):
+            return 'Unauthorized', 401
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        return Response(
+            checkUpgradeStatus(),
+            mimetype="text/event-stream",
+            headers={
+                'X-Accel-Buffering': 'no',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive'
+            },
+        )
+
+    except Exception as ex:
+        debugException(ex)
+        return 'Failed Checking Status', StatusCodes.HTTP_INTERNAL_SERVER_ERROR
 
 @app.route('/upgrade/log')
-def getUpgradeLog(msg=None):
+def getUpgradeLog():
     try:
         if not session.get('logged_in'):
             return 'Unauthorized', 401
@@ -2415,7 +2462,7 @@ def getUpgradeLog(msg=None):
         accept = request.headers.get('Accept', '').lower()
         if accept == 'text/event-stream':
             return Response(
-                readLogChunk('/tmp/dsiprouter_upgrade.log'),
+                readLogChunk(UPGRADE_LOG),
                 mimetype="text/event-stream",
                 headers={
                     'X-Accel-Buffering': 'no',
@@ -2424,7 +2471,7 @@ def getUpgradeLog(msg=None):
                 },
             )
         else:
-            with open('/tmp/dsiprouter_upgrade.log', 'r') as f:
+            with open(UPGRADE_LOG, 'r') as f:
                 return Response(
                     ansi_converter.convert(f.read(), full=False).replace('\n', '<br>'),
                     mimetype="text/html",
@@ -2692,10 +2739,12 @@ def intializeGlobalState():
 
     # create/update the shared state file
     # if the state got corrupted throw it away and start fresh
+    # NOTE: upgrade process does not daemonize, it is always gone on startup
     try:
         state = updatePersistentState({
             'dsip_reload_ongoing': False,
             'dsip_reload_required': False,
+            'dsip_upgrade_ongoing': False,
         })
     except json.JSONDecodeError:
         state = {}
@@ -2708,6 +2757,7 @@ def intializeGlobalState():
     state['kam_reload_required'] = state.get('kam_reload_required', False)
     state['dsip_reload_required'] = state.get('dsip_reload_required', False)
     state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
+    state['dsip_upgrade_ongoing'] = state.get('dsip_upgrade_ongoing', False)
 
     createSharedMemoryDict(state, name=STATE_SHMEM_NAME)
 
