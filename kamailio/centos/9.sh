@@ -145,10 +145,9 @@ EOF
     fi
     (
         cd ${SRC_DIR}/libks &&
-        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release . &&
-        make -j $NPROC &&
-        make -j $NPROC install &&
-        ln -sft /usr/lib64/ /usr/lib/libks.so*
+        cmake -DCMAKE_BUILD_TYPE=Release . &&
+        make -j $NPROC CFLAGS='-Wno-deprecated-declarations' &&
+        make -j $NPROC install
     ) || {
         printerr 'Failed to compile and install libks'
         return 1
@@ -162,7 +161,7 @@ EOF
         cd ${SRC_DIR}/libstirshaken &&
         ./bootstrap.sh &&
         ./configure --prefix=/usr --libdir=/usr/lib64 &&
-        make -j $NPROC &&
+        make -j $NPROC CFLAGS='-Wno-deprecated-declarations' &&
         make -j $NPROC install &&
         ldconfig
     ) || {

@@ -143,11 +143,9 @@ EOF
     fi
     (
         cd ${SRC_DIR}/libks &&
-        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release . &&
+        cmake -DCMAKE_BUILD_TYPE=Release . &&
         make -j $NPROC &&
-        make -j $NPROC install &&
-        ln -sft /usr/lib64/ /usr/lib/libks.so* &&
-        ln -sft /usr/lib64/pkgconfig/ /usr/lib/pkgconfig/libks.pc
+        make -j $NPROC install
     ) || {
         printerr 'Failed to compile and install libks'
         return 1
