@@ -27,8 +27,8 @@ sphinx:
 formats:
   - pdf
 
-# Optionally set the version of Python and requirements required to build your docs
-#python:
-# version: 3.7
-# install:
-#    - requirements: docs/source/requirements.txt
+# Optional but recommended, declare the Python requirements
+# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+python:
+  install:
+    - requirements: docs/requirements.txt
