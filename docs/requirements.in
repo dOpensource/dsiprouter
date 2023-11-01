@@ -1,0 +1,9 @@
+docutils<0.17,>=0.12
+myst-parser
+recommonmark
+requests
+sphinx
+sphinxcontrib-httpdomain
+sphinx-rtd-theme
+piccolo_theme
+UltraDict
