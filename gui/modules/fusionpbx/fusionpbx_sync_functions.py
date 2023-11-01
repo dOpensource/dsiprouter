@@ -429,7 +429,7 @@ def run_sync(settings):
 
         # need to decrypt password if encrypted
         if isinstance(settings.KAM_DB_PASS, bytes):
-            kam_password = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
+            kam_password = AES_CTR.decrypt(settings.KAM_DB_PASS)
         else:
             kam_password = settings.KAM_DB_PASS
 

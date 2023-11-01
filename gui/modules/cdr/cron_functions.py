@@ -1,13 +1,13 @@
 from datetime import datetime
 from shared import debugException
-from database import SessionLoader, DummySession, dSIPCDRInfo
+from database import startSession, DummySession, dSIPCDRInfo
 from modules.api.api_routes import generateCDRS
 
 def sendCdrReport(gwgroupid):
     db = DummySession()
 
     try:
-        db = SessionLoader()
+        db = startSession()
 
         now = datetime.now()
         cdr_info = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()

@@ -9,80 +9,88 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install {
-   # Install dependencies for dSIPRouter
-    dnf install -y dnf-utils
-    dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools"
-    dnf install -y firewalld nginx policycoreutils-python-utils
-    dnf install -y python36 python3-libs python36-devel python3-pip python3-mysql
-    dnf install -y logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
+    local NPROC
 
-    # create dsiprouter and nginx user and group
+    # Install dependencies for dSIPRouter
+    dnf install -y yum-utils &&
+    dnf groupinstall -y "Development Tools" &&
+    dnf install -y firewalld logrotate rsyslog perl libev-devel util-linux postgresql-devel \
+        bzip2-devel libffi-devel zlib-devel curl
+
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
+
+    NPROC=$(nproc)
+
+    # python 3.8 or higher is required
+    # if not installed already, install it now
+    if [[ "$(python3 -V 2>/dev/null | cut -d ' ' -f 2)" != "3.9.18" ]]; then
+        # installation / compilation never completed, start it now
+        if [[ ! -d "${SRC_DIR}/Python-3.9.18" ]]; then
+            (
+                cd ${SRC_DIR} &&
+                curl -s -o Python-3.9.18.tgz https://www.python.org/ftp/python/3.9.18/Python-3.9.18.tgz &&
+                tar -xf Python-3.9.18.tgz &&
+                rm -f Python-3.9.18.tgz
+            )
+        fi
+        (
+            cd ${SRC_DIR} &&
+            cd Python-3.9.18/ &&
+            ./configure --enable-optimizations CFLAGS=-I${SRC_DIR}/openssl/include LDFLAGS=-L${SRC_DIR}/openssl &&
+            make -j $NPROC &&
+            make -j $NPROC install
+        ) || {
+            printerr 'Failed to compile and install required python version'
+            return 1
+        }
+        python3 -m pip install -U pip setuptools || {
+            printerr 'Failed to update pip and setuptools'
+            return 1
+        }
+    fi
+
+    # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
+    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
+    userdel dsiprouter &>/dev/null; groupdel dsiprouter &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
-    useradd --system --user-group --shell /bin/false --comment "nginx HTTP Service Provider" nginx
 
     # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter nginx
     # make dsiprouter user has access to kamailio files
     usermod -a -G kamailio dsiprouter
 
-    # setup runtime directorys for dsiprouter and nginx
-    mkdir -p ${DSIP_RUN_DIR} /run/nginx
+    # setup runtime directorys for dsiprouter
+    mkdir -p ${DSIP_RUN_DIR}
     chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-    chown -R nginx:nginx /run/nginx
 
     # give dsiprouter permissions in SELINUX
     semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
-    semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
+        semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
 
-    # reset python cmd in case it was just installed
-    setPythonCmd
-
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
-    if (( $? != 0 )); then
-        systemctl restart dbus
-        systemctl restart firewalld
-    fi
+   # Enable and start firewalld
+    systemctl enable firewalld
+    systemctl start firewalld
 
     # Setup Firewall for DSIP_PORT
-    firewall-offline-cmd --zone=public --add-port=${DSIP_PORT}/tcp
+    firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
+    firewall-cmd --reload
 
-    # Enable and start firewalld if not already running
-    systemctl enable firewalld
-    systemctl restart firewalld
-
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 ${PYTHON_CMD} -m pip install
-    if [ $? -eq 1 ]; then
-        printerr "dSIPRouter install failed: Couldn't install required libraries"
-        exit 1
+    python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
+    ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
+    if (( $? == 1 )); then
+        printerr "Failed installing required python libraries"
+        return 1
     fi
 
-
-    # Configure nginx
-    # determine available TLS protocols (try using highest available)
-    OPENSSL_VER=$(openssl version 2>/dev/null | awk '{print $2}' | perl -pe 's%([0-9])\.([0-9]).([0-9]).*%\1\2\3%')
-    if (( ${OPENSSL_VER} < 101 )); then
-        TLS_PROTOCOLS="TLSv1"
-    elif (( ${OPENSSL_VER} < 111 )); then
-        TLS_PROTOCOLS="TLSv1.1 TLSv1.2"
-    else
-        TLS_PROTOCOLS="TLSv1.2 TLSv1.3"
-    fi
-    mkdir -p /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/nginx.conf.d/
-    # remove the defaults
-    rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* /etc/nginx/nginx.conf.d/*
-    # setup our own nginx configs
-    perl -e "\$tls_protocols='${TLS_PROTOCOLS}';" \
-        -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
-        ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
+    # setup dsiprouter nginx configs
     perl -e "\$dsip_port='${DSIP_PORT}'; \$dsip_unix_sock='${DSIP_UNIX_SOCK}'; \$dsip_ssl_cert='${DSIP_SSL_CERT}'; \$dsip_ssl_key='${DSIP_SSL_KEY}';" \
         -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
         ${DSIP_PROJECT_DIR}/nginx/configs/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
     ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
-
-    systemctl enable nginx
-    systemctl restart nginx
 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
@@ -102,7 +110,6 @@ function install {
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
-        -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v2.service > /lib/systemd/system/dsiprouter.service
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
@@ -110,31 +117,13 @@ function install {
 
     # add hook to bash_completion in the standard debian location
     echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
+
+    return 0
 }
 
 
 function uninstall {
-    # Uninstall dependencies for dSIPRouter
-    PIP_CMD="pip"
-
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
-    if [ $? -eq 1 ]; then
-        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
-        exit 1
-    else
-        printdbg "DSIPRouter uninstall was successful"
-        exit 0
-    fi
-
-    dnf remove -y python36u\*
-    dnf remove -y ius-release
-    dnf remove -y nginx
-    dnf groupremove -y "Development Tools"
-
-    # Remove the repos
-    rm -f /etc/yum.repos.d/ius*
-    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
-    yum clean all
+    rm -rf ${PYTHON_VENV}
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
@@ -147,21 +136,23 @@ function uninstall {
     rm -f /etc/logrotate.d/dsiprouter
 
     # Remove dSIProuter as a service
+    systemctl stop dsiprouter.service
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    return 0
 }
 
-
 case "$1" in
-    uninstall|remove)
-        uninstall
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     install)
-        install
+        install && exit 0 || exit 1
         ;;
     *)
         printerr "usage $0 [install | uninstall]"
+        exit 1
         ;;
 esac
-

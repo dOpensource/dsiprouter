@@ -70,8 +70,8 @@ Set the database connection uri.
 -dsipcid <num>|--dsip-clusterid=<num>
 Set the dsiprouter cluster id.
 
--dbadmin <[user][:pass][/dbname]>|--database-admin=<[user][:pass][/dbname]>
-Set the root DB user to connect to the database.
+-dbadmin <[user[:pass]@]dbhost[:port][/dbname]>|--database-admin=<[user[:pass]@]dbhost[:port][/dbname]>
+Set the connection settings for the root/admin database account.
 
 -dsipcsync <num>|--dsip-clustersync=<num>
 Enable or disable cluster synchronization between dSIPRouter nodes.
@@ -105,7 +105,7 @@ Uninstall rtpengine.
 -debug
 Debug mode to display install step by step.
 
-<[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2>...--[<install options>]
+<[user1[:pass1]@]node1[:port1]> <[user2[:pass2]@]node2[:port2> ... -- [<install options>]
 URIs denoting the connection parameters for the nodes to install dSIPRouter on.
 
 -- [INSTALL OPTIONS]
@@ -229,8 +229,11 @@ Used to set email useername/password manually.
 -ic <pass>|--ipc-creds=<pass>
 Used to set the dSIPRouter IPC token manually.
 
--dac <[user][:pass][/dbname]>|--db-admin-creds=<[user][:pass][/dbname]>
-Used to set the root database user/password/database name manually.
+-dac <[user[:pass]@]dbhost[:port][/dbname]>|--db-admin-creds=<[user[:pass]@]dbhost[:port][/dbname]>
+Update the root/admin database connection settings.
+
+-sc <key>|--session-creds=<key>
+Used to set the key for the flask session manager manually.
 
 .IP "configurekam options"
 -debug

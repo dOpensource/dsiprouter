@@ -28,7 +28,7 @@ function install() {
 
     # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
     # Disable SELinux
-    sed -i -e 's/(^SELINUX=).*/SELINUX=disabled/' /etc/selinux/config
+    sed -i -e 's/(^SELINUX=).*/SELINUX=permissive/' /etc/selinux/config
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -111,19 +111,12 @@ EOF
     systemctl start firewalld
     systemctl enable firewalld
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
-    if (( $? != 0 )); then
-        systemctl restart dbus
-        systemctl restart firewalld
-    fi
-
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Make sure MariaDB and Local DNS start before Kamailio
@@ -176,7 +169,6 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Remove kamailio Logging
@@ -187,13 +179,14 @@ function uninstall {
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

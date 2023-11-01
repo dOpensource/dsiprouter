@@ -1,44 +1,17 @@
 #!/usr/bin/env bash
 
-# set project dir (where src files are located)
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
-# import dsip_lib utility / shared functions
-if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
-    . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
-fi
+# where the new project files were downloaded
+NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
+# whether or not this was called from the GUI
+RUN_FROM_GUI=${RUN_FROM_GUI:-0}
+# the backup directory set by dsiprouter.sh
+CURR_BACKUP_DIR=${CURR_BACKUP_DIR:-"/var/backups/dsiprouter/$(date '+%s')"}
 
-printdbg 'verifying version requirements'
-REPO_URL='https://github.com/dOpensource/dsiprouter.git'
-UPGRADE_VER=$(jq -r -e '.version' <"$(dirname "$(dirname "$(readlink -f "$0")")")/settings.json")
-UPGRADE_VER_TAG="v${UPGRADE_VER}-rel"
-CURRENT_VERSION=$(getConfigAttrib "VERSION" "/etc/dsiprouter/gui/settings.py")
-UPGRADE_DEPENDS=( $(jq -r -e '.depends[]' <"$(dirname "$(dirname "$(readlink -f "$0")")")/settings.json") )
-(
-    for VER in ${UPGRADE_DEPENDS[@]}; do
-        if [[ "$CURRENT_VERSION" == "$VER" ]]; then
-            exit 0
-        fi
-    done
-    exit 1
-) || {
-    printerr "unsupported upgrade scenario ($CURRENT_VERSION -> $UPGRADE_VER)"
-    exit 1
-}
-
-printdbg 'backing up configs just in case the upgrade fails'
-BACKUP_DIR="/var/backups"
-CURR_BACKUP_DIR="${BACKUP_DIR}/$(date '+%s')"
-mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/mysql,${HOME},etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
-cp -rf /opt/dsiprouter/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
-cp -rf /etc/kamailio/. ${CURR_BACKUP_DIR}/etc/kamailio/
-cp -rf /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
-cp -f /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
-cp -rf /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
-cp -f ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
-cp -f /etc/systemd/system/{dnsmasq.service,kamailio.service,nginx.service,rtpengine.service} ${CURR_BACKUP_DIR}/etc/systemd/system/
-cp -f /lib/systemd/system/dsiprouter.service ${CURR_BACKUP_DIR}/lib/systemd/system/
-cp -f /etc/default/kamailio ${CURR_BACKUP_DIR}/etc/default/
-printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
+# set project dir where previous repo was located
+export DSIP_PROJECT_DIR='/opt/dsiprouter'
+# import dsip_lib utility / shared functions (we are using old functions on purpose here)
+# WARNING: from here on we are explicitly using the OLD definitions of the dsip_lib funcs
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
 printdbg 'retrieving system info'
 export DISTRO=$(getDistroName)
@@ -46,430 +19,264 @@ export DISTRO_VER=$(getDistroVer)
 export DISTRO_MAJOR_VER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
 export DISTRO_MINOR_VER=$(cut -s -d '.' -f 2 <<<"$DISTRO_VER")
 
-printdbg 'retrieving DB connection settings'
-export KAM_DB_HOST=$(getConfigAttrib "KAM_DB_HOST" "/etc/dsiprouter/gui/settings.py")
-export KAM_DB_PORT=$(getConfigAttrib "KAM_DB_PORT" "/etc/dsiprouter/gui/settings.py")
-export KAM_DB_NAME=$(getConfigAttrib "KAM_DB_NAME" "/etc/dsiprouter/gui/settings.py")
-export ROOT_DB_USER=$(getConfigAttrib "ROOT_DB_USER" "/etc/dsiprouter/gui/settings.py")
-export ROOT_DB_PASS=$(decryptConfigAttrib "ROOT_DB_PASS" "/etc/dsiprouter/gui/settings.py")
-
-printdbg 'configuring dSIPRouter project files'
-# fresh repo coming up
-rm -rf /opt/dsiprouter
-git clone --depth 1 -b "$UPGRADE_VER_TAG" "$REPO_URL" /opt/dsiprouter
-export DSIP_PROJECT_DIR=/opt/dsiprouter
-
-printdbg 'migrating database schema'
-(
-cat <<'EOF'
-ALTER TABLE address
-  MODIFY COLUMN `ip_addr` VARCHAR(253) NOT NULL,
-  MODIFY COLUMN `tag` VARCHAR(255) NOT NULL DEFAULT '';
-
-ALTER TABLE dr_gateways
-  MODIFY COLUMN `address` VARCHAR(253) NOT NULL,
-  MODIFY COLUMN `pri_prefix` VARCHAR(64) NOT NULL DEFAULT '',
-  MODIFY COLUMN `attrs` VARCHAR(255) NOT NULL DEFAULT '',
-  MODIFY COLUMN `description` VARCHAR(255) NOT NULL DEFAULT '';
-
-ALTER TABLE dsip_settings CONVERT TO CHARACTER SET utf8mb4;
-
-ALTER TABLE uacreg
-  MODIFY COLUMN `l_domain` VARCHAR(253) NOT NULL DEFAULT '',
-  MODIFY COLUMN `r_domain` VARCHAR(253) NOT NULL DEFAULT '',
-  MODIFY COLUMN `realm` varchar(253) NOT NULL DEFAULT '',
-  MODIFY COLUMN `auth_proxy` varchar(16000) NOT NULL DEFAULT '';
-EOF
-) | sqlAsTransaction --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="$KAM_DB_HOST" --port="$KAM_DB_PORT"
-
-if (( $? != 0 )); then
-    printerr 'Failed merging DB schema'
+printdbg 'validating OS support'
+if [[ "$(getDistroName)" == 'debian' && "$(getDistroVer)" == "9" ]]; then
+    printerr 'debian stretch is not supported in this version of dSIPRouter'
+    echo 'upgrade your system to a supported version of debian first'
+    echo 'for more information see: https://dsiprouter.readthedocs.io/en/latest/upgrading.html'
     exit 1
 fi
 
-printdbg 'updating dsiprouter settings'
-setConfigAttrib 'VERSION' '0.73' /etc/dsiprouter/gui/settings.py &&
-dsiprouter updatedsipconfig
+printdbg 'retrieving current system settings'
+# NOTE: some magic is being done here to reset specific settings next install
+export PYTHON_CMD=python3
+DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
+DSIP_CONFIG_FILE=${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
+DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
+export ROOT_DB_PASS=$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})
+export ROOT_DB_HOST=$(getConfigAttrib 'ROOT_DB_HOST' ${DSIP_CONFIG_FILE})
+export ROOT_DB_PORT=$(getConfigAttrib 'ROOT_DB_PORT' ${DSIP_CONFIG_FILE})
+export ROOT_DB_NAME=$(getConfigAttrib 'ROOT_DB_NAME' ${DSIP_CONFIG_FILE})
+export KAM_DB_NAME=$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})
+export SET_KAM_DB_HOST=$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})
+export KAM_DB_HOST="$SET_KAM_DB_HOST"
+export KAM_DB_USER=$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})
+export SET_KAM_DB_PASS=$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})
+export KAM_DB_PASS="$SET_KAM_DB_PASS"
+export SET_DSIP_API_TOKEN=$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})
+export DSIP_IPC_PASS="$SET_DSIP_API_TOKEN"
+export SET_DSIP_MAIL_PASS=$(decryptConfigAttrib 'MAIL_PASSWORD' ${DSIP_CONFIG_FILE})
+export MAIL_PASSWORD="$DSIP_MAIL_PASS"
+export SET_DSIP_IPC_TOKEN=$(decryptConfigAttrib 'DSIP_IPC_PASS' ${DSIP_CONFIG_FILE})
+export DSIP_IPC_PASS="$SET_DSIP_IPC_TOKEN"
 
-printdbg 'generating documentation for the GUI'
-(
-    cd ${DSIP_PROJECT_DIR}/docs
-    make html >/dev/null 2>&1
-)
-
-printdbg 'updating dSIPRouter CLI'
-ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
-if [[ -f /etc/bash.bashrc ]]; then
-    perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
+printdbg 'preparing for migration'
+REINSTALL_DNSMASQ=0
+REINSTALL_KAMAILIO=0
+REINSTALL_DSIPROUTER=0
+REINSTALL_RTPENGINE=0
+INSTALL_OPTS=()
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]]; then
+    REINSTALL_DNSMASQ=1
 fi
-cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-touch /etc/dsiprouter/.dsiproutercliinstalled
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
+    REINSTALL_KAMAILIO=1
+    INSTALL_OPTS+=(-kam)
+fi
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+    REINSTALL_DSIPROUTER=1
+    INSTALL_OPTS+=(-dsip)
+fi
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
+    REINSTALL_RTPENGINE=1
+    INSTALL_OPTS+=(-rtp)
+fi
+mkdir -p $CURR_BACKUP_DIR
 
-printdbg 'generating documentation for the CLI'
-cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 /usr/share/man/man1/
-gzip -f /usr/share/man/man1/dsiprouter.1
-mandb
-cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
+# if the state files for the services to upgrade were there before
+# and we fail, put them back so the system can recover
+resetConfigsHandler() {
+    printwarn 'upgrade failed, resetting system to previous state'
 
-printdbg 'upgrading DNSmasq installation'
-(
-    DNSMASQ_LISTEN_ADDRS="127.0.0.1"
-    DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1")
+    if (( $REINSTALL_KAMAILIO == 1 )); then
+        systemctl unmask kamailio.service
+    fi
+    if (( $REINSTALL_DSIPROUTER == 1 )); then
+        systemctl unmask dsiprouter.service
+    fi
+    if (( $REINSTALL_RTPENGINE == 1 )); then
+        systemctl unmask rtpengine.service
+    fi
 
-    # get dynamic network settings
-    NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
-    NETWORK_MODE=${NETWORK_MODE:-0}
-    if (( $NETWORK_MODE == 0 )); then
-        export INTERNAL_IP_ADDR=$(getInternalIP -4)
-        export INTERNAL_IP_NET=$(getInternalCIDR -4)
-        export INTERNAL_IP6_ADDR=$(getInternalIP -6)
-        export INTERNAL_IP_NET6=$(getInternalCIDR -6)
+    cp -af ${CURR_BACKUP_DIR}/opt/. /etc/
+    cp -af ${CURR_BACKUP_DIR}/opt/. /lib/
+    cp -af ${CURR_BACKUP_DIR}/opt/. /opt/
+    cp -af ${CURR_BACKUP_DIR}/opt/. /var/
+    systemctl deamon-reload
 
-        EXTERNAL_IP_ADDR=$(getExternalIP -4)
-        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
-        EXTERNAL_IP6_ADDR=$(getExternalIP -6)
-        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
+    if (( ${KAM_DB_DROPPED:-0} == 1 )); then
+        withRootDBConn mysql <${CURR_BACKUP_DIR}/db.sql
+        withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql
+    fi
 
-        export INTERNAL_FQDN=$(getInternalFQDN)
-        export EXTERNAL_FQDN=$(getExternalFQDN)
-        if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
-            export EXTERNAL_FQDN="$INTERNAL_FQDN"
+    if (( $RUN_FROM_GUI == 0 )); then
+        if (( $REINSTALL_DNSMASQ == 1 )); then
+            systemctl restart dnsmasq
         fi
-    elif (( $NETWORK_MODE == 1 )); then
-        export INTERNAL_IP_ADDR=${INTERNAL_IP_ADDR:-$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP_NET=${INTERNAL_IP_NET:-$(getConfigAttrib 'INTERNAL_IP_NET' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP6_ADDR=${INTERNAL_IP6_ADDR:-$(getConfigAttrib 'INTERNAL_IP6_ADDR' ${DSIP_CONFIG_FILE})}
-        export INTERNAL_IP_NET6=${INTERNAL_IP_NET6:-$(getConfigAttrib 'INTERNAL_IP_NET6' ${DSIP_CONFIG_FILE})}
-
-        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$(getConfigAttrib 'EXTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
-        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$(getConfigAttrib 'EXTERNAL_IP6_ADDR' ${DSIP_CONFIG_FILE})}
-
-        export INTERNAL_FQDN=${INTERNAL_FQDN:-$(getConfigAttrib 'INTERNAL_FQDN' ${DSIP_CONFIG_FILE})}
-        export EXTERNAL_FQDN=${EXTERNAL_FQDN:-$(getConfigAttrib 'EXTERNAL_FQDN' ${DSIP_CONFIG_FILE})}
-    elif (( $NETWORK_MODE == 2 )); then
-        PUBLIC_IFACE=${PUBLIC_IFACE:-$(getConfigAttrib 'PUBLIC_IFACE' ${DSIP_CONFIG_FILE})}
-        PRIVATE_IFACE=${PRIVATE_IFACE:-$(getConfigAttrib 'PRIVATE_IFACE' ${DSIP_CONFIG_FILE})}
-
-        export INTERNAL_IP_ADDR=$(getIP -4 "$PRIVATE_IFACE")
-        export INTERNAL_IP_NET=$(getInternalCIDR -4 "$PRIVATE_IFACE")
-        export INTERNAL_IP6_ADDR=$(getIP -6 "$PRIVATE_IFACE")
-        export INTERNAL_IP_NET6=$(getInternalCIDR -6 "$PRIVATE_IFACE")
-
-        EXTERNAL_IP_ADDR=$(getIP -4 "$PUBLIC_IFACE")
-        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
-        EXTERNAL_IP6_ADDR=$(getIP -6 "$PUBLIC_IFACE")
-        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
-
-        export INTERNAL_FQDN=$(getInternalFQDN)
-        export EXTERNAL_FQDN=$(getExternalFQDN)
-        if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
-            export EXTERNAL_FQDN="$INTERNAL_FQDN"
+        if (( $REINSTALL_KAMAILIO == 1 )); then
+            systemctl restart kamailio
         fi
-    else
-        printerr 'Network Mode is invalid, can not proceed any further'
+        if (( $REINSTALL_DSIPROUTER == 1 )); then
+            systemctl restart dsiprouter
+        fi
+        if (( $REINSTALL_RTPENGINE == 1 )); then
+            systemctl restart rtpengine
+        fi
+    fi
+
+    trap - EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+}
+trap 'resetConfigsHandler $?' EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+
+# always reinstalled
+rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" 2>/dev/null
+rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.requirementsinstalled" 2>/dev/null
+rm -rf ${SRC_DIR}/kamailio ${SRC_DIR}/rtpengine
+
+# conditionally reinstalled
+printdbg 'masking services'
+if (( $REINSTALL_DNSMASQ == 1 )); then
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
+
+    # dnsmasq is not masked, we want it to restart during the install process
+    if [[ -f /etc/systemd/system/dnsmasq.service ]]; then
+        mv -f /etc/systemd/system/dnsmasq.service /lib/systemd/system/dnsmasq.service
+        systemctl daemon-reload
+    fi
+fi
+if (( $REINSTALL_KAMAILIO == 1 )); then
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
+
+    if [[ -f /etc/systemd/system/kamailio.service ]]; then
+        mv -f /etc/systemd/system/kamailio.service /lib/systemd/system/kamailio.service
+        systemctl daemon-reload
+    fi
+
+    rm -f "$DSIP_KAMAILIO_CONFIG_FILE"
+
+    systemctl mask kamailio.service
+fi
+if (( $REINSTALL_DSIPROUTER == 1 )); then
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled
+
+    systemctl mask dsiprouter.service
+fi
+if (( $REINSTALL_RTPENGINE == 1 )); then
+    rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
+
+    if [[ -f /etc/systemd/system/rtpengine.service ]]; then
+        mv -f /etc/systemd/system/rtpengine.service /lib/systemd/system/rtpengine.service
+        systemctl daemon-reload
+    fi
+
+    systemctl mask rtpengine.service
+fi
+
+printdbg 'migrating dSIPRouter project files'
+cp -rf ${NEW_PROJECT_DIR}/. ${DSIP_PROJECT_DIR}/
+rm -rf ${NEW_PROJECT_DIR}
+cd ${DSIP_PROJECT_DIR}/
+
+if (( $REINSTALL_DSIPROUTER == 1 )); then
+    printdbg 'updating new dSIPRouter settings'
+    cd ${DSIP_PROJECT_DIR}/gui && (
+python3 <<'EOF'
+import os
+import settings as default_settings
+from importlib.util import module_from_spec, spec_from_file_location
+from shared import objToDict, updateConfig
+default_settings_dict = objToDict(default_settings)
+spec = spec_from_file_location('current_settings', '/etc/dsiprouter/gui/settings.py')
+current_settings = module_from_spec(spec)
+spec.loader.exec_module(current_settings)
+current_settings_dict = objToDict(current_settings)
+default_settings_dict.update(current_settings_dict)
+os.system(f'cp -f {default_settings.__file__} {current_settings.__file__}')
+updateConfig(current_settings, default_settings_dict)
+EOF
+    ) || {
+        printerr 'failed updating dSIPRouter settings'
+        exit 1
+    }
+fi
+
+# source the new dsip_lib functions
+# WARNING: from here on we are explicitly using the NEW definitions of the dsip_lib funcs
+# NOTE: resetConfigsHandler() above will still use the new definitions (lazy loading)
+. ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
+if (( $REINSTALL_KAMAILIO == 1 )); then
+    printdbg 'backing up kamailio database'
+    dumpDB "$KAM_DB_NAME" >${CURR_BACKUP_DIR}/db.sql
+    dumpDBUser "$KAM_DB_USER@$KAM_DB_NAME" >${CURR_BACKUP_DIR}/user.sql
+
+    withRootDBConn mysql -e "USE $KAM_DB_NAME; DROP TABLE IF EXISTS dsip_settings;"
+    withRootDBConn mysqldump --single-transaction --no-create-info --skip-triggers --replace "$KAM_DB_NAME" >${CURR_BACKUP_DIR}/data.sql
+    if [[ ! -f ${CURR_BACKUP_DIR}/data.sql ]]; then
+        printerr 'failed backing up kamailio database data'
         exit 1
     fi
-
-    # create dnsmasq user and group
-    # output removed, some cloud providers (DO) use caching and output is misleading
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
-    userdel dnsmasq &>/dev/null; groupdel dnsmasq &>/dev/null
-    useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
-
-    # install dnsmasq
-    if cmdExists 'apt-get'; then
-        apt-get install -y dnsmasq
-    elif cmdExists 'yum'; then
-        yum install -y dnsmasq
-    fi
-
-    # make sure run dir is created
-    mkdir -p /run/dnsmasq
-    chown -R dnsmasq:dnsmasq /run/dnsmasq
-
-    # integration for resolvconf / systemd-resolvd
-    if systemctl -q is-enabled resolvconf; then
-        DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
-
-        cat <<'EOF' >/etc/default/resolvconf
-REPORT_ABSENT_SYMLINK=no
-TRUNCATE_NAMESERVER_LIST_AFTER_LOOPBACK_ADDRESS=yes
-EOF
-
-
-        cat <<'EOF' >/etc/resolvconf/update.d/zz_dnsmasq
-#!/bin/sh
-#
-# Script to update the resolver list for dnsmasq
-#
-# N.B. Resolvconf may run us even if dnsmasq is not (yet) running.
-# If dnsmasq is installed then we go ahead and update the resolver list
-# in case dnsmasq is started later.
-#
-# Assumption: On entry, PWD contains the resolv.conf-type files.
-#
-# This is a modified version of the file from the dnsmasq package.
-#
-
-set -e
-
-RUN_DIR="/run/dnsmasq"
-RSLVRLIST_FILE="${RUN_DIR}/resolv.conf"
-TMP_FILE="${RSLVRLIST_FILE}_new.$$"
-MY_NAME_FOR_RESOLVCONF="dnsmasq"
-RESOLVCONF_GEN_FILE="/run/resolvconf/resolv.conf"
-
-[ -x /usr/sbin/dnsmasq ] || exit 0
-[ -x /lib/resolvconf/list-records ] || exit 1
-
-PATH=/bin:/sbin
-
-report_err() { echo "$0: Error: $*" >&2 ; }
-
-# Stores arguments (minus duplicates) in RSLT, separated by spaces
-# Doesn't work properly if an argument itself contains whitespace
-uniquify() {
-	RSLT=""
-	while [ "$1" ] ; do
-		for E in $RSLT ; do
-			[ "$1" = "$E" ] && { shift ; continue 2 ; }
-		done
-		RSLT="${RSLT:+$RSLT }$1"
-		shift
-	done
-}
-
-filterdnsmasq() {
-    while read ADDR; do
-        for DNSMASQ_ADDR in $@; do
-            [ "x$ADDR" = "x$DNSMASQ_ADDR" ] && continue 2
-        done
-        echo "$ADDR"
-    done
-}
-
-if [ ! -d "$RUN_DIR" ] && ! mkdir --parents --mode=0755 "$RUN_DIR" ; then
-	report_err "Failed trying to create directory $RUN_DIR"
-	exit 1
+    printdbg 'dropping kamailio database to install new schema'
+    withRootDBConn mysql -e "DROP DATABASE IF EXISTS $KAM_DB_NAME;"
+    withRootDBConn mysql -e "DROP USER IF EXISTS '$KAM_DB_USER'@'%'; DROP USER IF EXISTS '$KAM_DB_USER'@'localhost';"
+    KAM_DB_DROPPED=1
 fi
 
-RSLVCNFFILES="$RESOLVCONF_GEN_FILE"
-for F in $(/lib/resolvconf/list-records) ; do
-	case "$F" in
-	    "lo.$MY_NAME_FOR_RESOLVCONF")
-		DNSMASQ_ADDRS="$(sed -n -e 's/^[[:space:]]*nameserver[[:space:]]\+//p' lo.$MY_NAME_FOR_RESOLVCONF)"
-		;;
-	  *)
-		RSLVCNFFILES="${RSLVCNFFILES:+$RSLVCNFFILES }$F"
-		;;
-	esac
-done
-
-NMSRVRS=""
-if [ "$RSLVCNFFILES" ] ; then
-	uniquify $(
-	    sed -n -e 's/^[[:space:]]*nameserver[[:space:]]\+//p' $RSLVCNFFILES |
-	    filterdnsmasq $DNSMASQ_ADDRS
-    )
-	NMSRVRS="$RSLT"
-fi
-
-# Dnsmasq uses the mtime of $RSLVRLIST_FILE, with a resolution of one second,
-# to detect changes in the file. This means that if a resolvconf update occurs
-# within one second of the previous one then dnsmasq may fail to notice the
-# more recent change. To work around this problem we sleep one second here
-# if necessary in order to ensure that the new mtime is different.
-if [ -f "$RSLVRLIST_FILE" ] && [ "$(ls -go --time-style='+%s' "$RSLVRLIST_FILE" | { read p h s t n ; echo "$t" ; })" = "$(date +%s)" ] ; then
-	sleep 1
-fi
-
-clean_up() { rm -f "$TMP_FILE" ; }
-trap clean_up EXIT
-: >| "$TMP_FILE"
-for N in $NMSRVRS ; do echo "nameserver $N" >> "$TMP_FILE" ; done
-mv -f "$TMP_FILE" "$RSLVRLIST_FILE"
-
-EOF
-        chmod +x /etc/resolvconf/update.d/zz_dnsmasq
-        rm -f /etc/resolvconf/update.d/dnsmasq
-
-        rm -f /etc/resolv.conf
-        echo '# DNS servers are being managed by dnsmasq, DO NOT CHANGE THIS FILE' >/etc/resolv.conf
-        for NAME_SERVER in ${DNSMASQ_NAME_SERVERS[@]}; do
-            echo "$NAME_SERVER" >>/etc/resolv.conf
-        done
-
-        # update the dynamic resolv.conf files
-        resolvconf -u
-
-    # static resolv.conf
-    else
-        DNSMASQ_RESOLV_FILE="/etc/resolv.conf"
-
-        if ! grep -q -E 'nameserver 127\.0\.0\.1|nameserver ::1' /etc/resolv.conf 2>/dev/null; then
-            # extra check in case no nameserver found
-            if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
-                joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
-            else
-                sed -i -r "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS[@]}")&|}" /etc/resolv.conf
-            fi
-        fi
-    fi
-
-    # dnsmasq configuration
-    mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bak 2>/dev/null
-    cat << EOF >/etc/dnsmasq.conf
-port=53
-domain-needed
-bogus-priv
-strict-order
-listen-address=${DNSMASQ_LISTEN_ADDRS}
-bind-interfaces
-user=dnsmasq
-group=dnsmasq
-conf-file=/etc/dnsmasq.conf
-resolv-file=${DNSMASQ_RESOLV_FILE}
-pid-file=/run/dnsmasq/dnsmasq.pid
-EOF
-
-    # setup hosts in cluster node is resolvable
-    # cron and kam service will configure these dynamically
-    if grep -q 'DSIP_CONFIG_START' /etc/hosts 2>/dev/null; then
-        perl -e "\$int_ip='${INTERNAL_IP_ADDR}'; \$ext_ip='${EXTERNAL_IP_ADDR}'; \$int_fqdn='${INTERNAL_FQDN}'; \$ext_fqdn='${EXTERNAL_FQDN}';" \
-            -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${int_ip} ${int_fqdn} local.cluster\n${ext_ip} ${ext_fqdn} local.cluster\n\2|gms' /etc/hosts
-    else
-        printf '\n%s\n%s\n%s\n%s\n' \
-            '#####DSIP_CONFIG_START' \
-            "${INTERNAL_IP_ADDR} ${INTERNAL_FQDN} local.cluster" \
-            "${EXTERNAL_IP_ADDR} ${EXTERNAL_FQDN} local.cluster" \
-            '#####DSIP_CONFIG_END' >> /etc/hosts
-    fi
-
-    # configure systemd service
-    case "$DISTRO" in
-        debian|ubuntu)
-            cat << 'EOF' >/etc/systemd/system/dnsmasq.service
-[Unit]
-Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=basic.target network.target
-After=network.target network-online.target basic.target
-Wants=nss-lookup.target
-Before=nss-lookup.target
-DefaultDependencies=no
-
-[Service]
-Type=forking
-PIDFile=/run/dnsmasq/dnsmasq.pid
-Environment='RUN_DIR=/run/dnsmasq'
-Environment='IGNORE_RESOLVCONF=yes'
-# make sure everything is setup correctly before starting
-ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
-ExecStartPre=/usr/sbin/dnsmasq --test
-# We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
-# wrapper picking up extra configuration files and then execs dnsmasq
-# itself, when called with the "systemd-exec" function.
-ExecStart=/etc/init.d/dnsmasq systemd-exec
-# The systemd-*-resolvconf functions configure (and deconfigure)
-# resolvconf to work with the dnsmasq DNS server. They're called like
-# this to get correct error handling (ie don't start-resolvconf if the
-# dnsmasq daemon fails to start.
-ExecStartPost=/etc/init.d/dnsmasq systemd-start-resolvconf
-ExecStop=/etc/init.d/dnsmasq systemd-stop-resolvconf
-ExecReload=/bin/kill -HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-EOF
-            ;;
-        almalinux|rocky)
-            cat << 'EOF' >/etc/systemd/system/dnsmasq.service
-[Unit]
-Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=basic.target network.target
-After=network.target network-online.target basic.target
-Before=multi-user.target
-DefaultDependencies=no
-
-[Service]
-Type=simple
-PIDFile=/run/dnsmasq/dnsmasq.pid
-Environment='RUN_DIR=/run/dnsmasq'
-# make sure everything is setup correctly before starting
-ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
-ExecStartPre=/usr/sbin/dnsmasq --test
-ExecStart=/usr/sbin/dnsmasq -k
-ExecReload=/bin/kill -HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-EOF
-            ;;
-        # amazon linux 2 and rhel 8 ship with systemd ver 219 (many new features missing)
-        # therefore we have to create backward compatible versions of our service files
-        # the following snippet may be useful in the future when we support later versions
-        #SYSTEMD_VER=$(systemctl --version | head -1 | awk '{print $2}')
-        # TODO: the same issue occurs on debian9 with systemd ver 232
-        amzn|rhel)
-            cat << 'EOF' >/etc/systemd/system/dnsmasq.service
-[Unit]
-Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=basic.target network.target
-After=network.target network-online.target basic.target
-Before=multi-user.target
-DefaultDependencies=no
-
-[Service]
-Type=simple
-PermissionsStartOnly=true
-PIDFile=/run/dnsmasq/dnsmasq.pid
-Environment='RUN_DIR=/run/dnsmasq'
-# make sure everything is setup correctly before starting
-ExecStartPre=/usr/bin/dsiprouter chown -dnsmasq
-ExecStartPre=/usr/sbin/dnsmasq --test
-ExecStart=/usr/sbin/dnsmasq -k
-ExecReload=/bin/kill -HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-EOF
-            ;;
-    esac
-
-    # reload systemd configs and start on boot
-    systemctl daemon-reload
-    systemctl enable dnsmasq
-
-    # update DNS hosts prior to dSIPRouter startup
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
-    # update DNS hosts every minute
-    if ! crontab -l 2>/dev/null | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"; then
-        cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
-    fi
-
-    systemctl restart dnsmasq
-    if systemctl is-active --quiet dnsmasq; then
-        touch /etc/dsiprouter/.dnsmasqinstalled
-        exit 0
-    else
-        exit 1
-    fi
-)
+printdbg 'upgrading services'
+${DSIP_PROJECT_DIR}/dsiprouter.sh install ${INSTALL_OPTS[@]}
 
 if (( $? != 0 )); then
-    printerr 'Failed upgrading DNSmasq'
+    printerr 'failed upgrading services'
     exit 1
 fi
 
-printdbg 'upgrading kamailio configs'
-dsiprouter configurekam
+if (( $REINSTALL_KAMAILIO == 1 )); then
+    printdbg 'restoring kamailio database data'
+    withRootDBConn --db="$KAM_DB_NAME" mysql <${CURR_BACKUP_DIR}/data.sql || {
+        printerr 'failed restoring kamailio database data'
+        exit 1
+    }
+fi
 
-printdbg 'updating file permissions'
-dsiprouter chown
+if (( $REINSTALL_DSIPROUTER == 1 )); then
+    printdbg 'updating dSIPRouter version'
+    setConfigAttrib 'VERSION' '0.73' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py -q || {
+        printerr 'failed updating dSIPRouter version'
+        exit 1
+    }
+fi
 
-printdbg 'restarting services'
-systemctl restart kamailio
-systemctl restart nginx
-systemctl restart dsiprouter
+printdbg 'unmasking services'
+if (( $REINSTALL_KAMAILIO == 1 )); then
+    systemctl unmask kamailio.service
+fi
+if (( $REINSTALL_DSIPROUTER == 1 )); then
+    systemctl unmask dsiprouter.service
+fi
+if (( $REINSTALL_RTPENGINE == 1 )); then
+    systemctl unmask rtpengine.service
+fi
+
+if (( $RUN_FROM_GUI == 0 )); then
+    printdbg 'restarting services'
+    if (( $REINSTALL_KAMAILIO == 1 )); then
+        systemctl restart kamailio
+        if ! systemctl is-active -q kamailio; then
+            printerr 'could not start kamailio service'
+            exit 1
+        fi
+    fi
+    if (( $REINSTALL_DSIPROUTER == 1 )); then
+        systemctl restart dsiprouter
+        if ! systemctl is-active -q dsiprouter; then
+            printerr 'could not start dsiprouter service'
+            exit 1
+        fi
+    fi
+    if (( $REINSTALL_RTPENGINE == 1 )); then
+        systemctl restart rtpengine
+        if ! systemctl is-active -q rtpengine; then
+            printerr 'could not start rtpengine service'
+            exit 1
+        fi
+    fi
+else
+    printwarn 'running from the GUI, some services require restarting'
+fi
+
+# make sure the resetConfigsHandler() is nerfed now that we are successful
+trap - EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+
+pprint 'upgrade completed successfully'
 
 exit 0

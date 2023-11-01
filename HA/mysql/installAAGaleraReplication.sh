@@ -2,7 +2,7 @@
 #
 # Summary:      mysql active active galera replication
 #
-# Supported OS: debian, centos
+# Supported OS: debian, centos, amzn
 #
 # Notes:        uses mariadb
 #               you must be able to ssh to every node in the cluster from where script is run
@@ -16,7 +16,6 @@
 #
 
 # set project root, if in a git repo resolve top level dir
-PROJECT_ROOT=${PROJECT_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}
 PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(dirname $(dirname $(readlink -f "$0"))))}
 # import shared library functions
 . ${PROJECT_ROOT}/HA/shared_lib.sh
@@ -91,10 +90,10 @@ if ! cmdExists 'ssh' || ! cmdExists 'sshpass' || ! cmdExists 'nmap' || ! cmdExis
 
     if cmdExists 'apt-get'; then
         sudo apt-get install -y openssh-client sshpass gawk
-    elif cmdExists 'yum'; then
-        sudo yum install --enablerepo=epel -y openssh-clients sshpass gawk
     elif cmdExists 'dnf'; then
         sudo dnf install -y openssh-clients sshpass gawk
+    elif cmdExists 'yum'; then
+        sudo yum install --enablerepo=epel -y openssh-clients sshpass gawk
     else
         printerr "Your local OS is not currently not supported"
         exit 1
@@ -110,10 +109,7 @@ fi
 # prints number of nodes in cluster
 getClusterSize() {
     local OPT=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
+    local MYSQL_USER='' MYSQL_PASS='' MYSQL_HOST='' MYSQL_PORT=''
 
     while (( $# > 0 )); do
         OPT="$1"
@@ -250,10 +246,10 @@ for NODE in ${NODES[@]}; do
             if cmdExists 'apt-get'; then
                 export DEBIAN_FRONTEND=noninteractive
                 apt-get install -y gawk
-            elif cmdExists 'yum'; then
-                yum install -y gawk
             elif cmdExists 'dnf'; then
                 dnf install -y gawk
+            elif cmdExists 'yum'; then
+                yum install -y gawk
             else
                 printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
                 exit 1

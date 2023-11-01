@@ -12,23 +12,22 @@ fi
 function installSQL {
     # Check to see if the acc table or cdr tables are in use
     MERGE_DATA=0
-    count=$(mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-        -e "select count(*) from dsip_dnid_enrich_lnp limit 1" 2> /dev/null)
+    count=$(withRootDBConn --db="$KAM_DB_NAME" mysql -sN -e "select count(*) from dsip_dnid_enrich_lnp limit 1" 2> /dev/null)
     if [ ${count:-0} -gt 0 ]; then
         MERGE_DATA=1
     fi
 
     if [ ${MERGE_DATA} -eq 1 ]; then
 	    printwarn "The table already exists. Merging table data"
-	    (cat ${DSIP_PROJECT_DIR}/gui/modules/dnid_enrichment/dnid_enrichment.sql;
-            mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info --insert-ignore \
-                --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME dsip_dnid_enrich_lnp
-        ) | mysql --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME
+	    (
+	        cat ${DSIP_PROJECT_DIR}/gui/modules/dnid_enrichment/dnid_enrichment.sql;
+            withRootDBConn --db="$KAM_DB_NAME" mysqldump --single-transaction --skip-triggers --skip-add-drop-table --no-create-info \
+            --insert-ignore dsip_dnid_enrich_lnp
+        ) | withRootDBConn --db="$KAM_DB_NAME" mysql
     else
         # Replace the api tables
         printwarn "Adding/Replacing the tables needed for DNID LNP Enrichment module within dSIPRouter..."
-        mysql -s -N --user="$ROOT_DB_USER" --password="$ROOT_DB_PASS" --host="${KAM_DB_HOST}" --port="${KAM_DB_PORT}" $KAM_DB_NAME \
-            < ${DSIP_PROJECT_DIR}/gui/modules/dnid_enrichment/dnid_enrichment.sql
+        withRootDBConn --db="$KAM_DB_NAME" mysql <${DSIP_PROJECT_DIR}/gui/modules/dnid_enrichment/dnid_enrichment.sql
     fi
 }
 

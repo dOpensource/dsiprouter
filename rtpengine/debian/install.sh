@@ -33,17 +33,25 @@ function aptInstallKernelHeadersFromURI() {
     (
         # download the .deb file
         cd /tmp/
-        curl -sLO "$KERN_HDR_URI"
+        curl -sLO --retry 3 "$KERN_HDR_URI"
 
         # install dependent common headers
-        KERN_HDR_COMMON_URI=$(debSearch $(dpkg --info "$KERN_HDR_DEB" 2>/dev/null | grep 'Depends:' | cut -d ':' -f 2 | tr ',' '\n' | grep -oP 'linux-headers-.*-common')) &&
-            KERN_HDR_COMMON_DEB=$(basename "$KERN_HDR_COMMON_URI") &&
-            curl -sLO "$KERN_HDR_COMMON_URI" && {
-                apt-get install -y ./${KERN_HDR_COMMON_DEB}
-                RET=$((RET + $?))
-                apt-get install -y -f
-                rm -f "$KERN_HDR_COMMON_DEB"
-            }
+        KERN_HDR_COMMON_URI=$(
+            debSearch $(
+                dpkg --info "$KERN_HDR_DEB" 2>/dev/null |
+                grep 'Depends:' |
+                cut -d ':' -f 2 |
+                tr ',' '\n' |
+                grep -oP 'linux-headers-.*-common'
+            )
+        ) &&
+        KERN_HDR_COMMON_DEB=$(basename "$KERN_HDR_COMMON_URI") &&
+        curl -sLO --retry 3 "$KERN_HDR_COMMON_URI" && {
+            apt-get install -y ./${KERN_HDR_COMMON_DEB}
+            RET=$((RET + $?))
+            apt-get install -y -f
+            rm -f "$KERN_HDR_COMMON_DEB"
+        }
 
         # install the kernel headers
         apt-get install -y ./${KERN_HDR_DEB}
@@ -55,70 +63,86 @@ function aptInstallKernelHeadersFromURI() {
     return $?
 }
 
+# prints $1 if not virtual or the package that provides $1 if virtual
+function resolveAptVirtualPkg() {
+    apt-cache search "^$1\$" | awk '{print $1}'
+}
+
+# when run from root of a debian repo finds the package dependencies
+function getDebDependencies() {
+    local TMP DISCRETE_PKGS CONDITIONAL_PKGS RESULT_PKGS=()
+
+    TMP=$(
+        dpkg-checkbuilddeps 2>&1 |
+        awk -F 'Unmet build dependencies: ' '{print $2}' |
+        perl -pe 's% \(.*?\)%%g'
+    )
+    DISCRETE_PKGS=$(perl -pe 's%[^ ]+ \| [^ ]+%%g' <<<"$TMP")
+    CONDITIONAL_PKGS=$(
+        grep -oP '[^ ]+ \| [^ ]+' <<<"$TMP" | (
+            while IFS= read -r LINE; do
+                PKG=$(resolveAptVirtualPkg $(awk -F ' | ' '{print $1}' <<<"$LINE"))
+                if [[ -n "$(apt-cache search $PKG 2>/dev/null)" ]]; then
+                    echo "$PKG"
+                else
+                    PKG=$(resolveAptVirtualPkg $(awk -F ' | ' '{print $2}' <<<"$LINE"))
+                    [[ -n "$(apt-cache search $PKG 2>/dev/null)" ]] && echo "$PKG"
+                fi
+            done
+        )
+    )
+
+    for PKG in $DISCRETE_PKGS; do
+        RESULT_PKGS+=( $(resolveAptVirtualPkg "$PKG") )
+    done
+    for PKG in $CONDITIONAL_PKGS; do
+        RESULT_PKGS+=( "$PKG" )
+    done
+
+    echo ${RESULT_PKGS[@]}
+}
+
 function install {
-    # Install required libraries
-    # TODO: consolidate and version properly per supported distro versions
-    apt-get install -y logrotate rsyslog
-    apt-get install -y firewalld
-    apt-get install -y libcurl4-openssl-dev
-    apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
-    apt-get install -y markdown
-    apt-get install -y libglib2.0-dev
-    apt-get install -y libavcodec-dev
-    apt-get install -y libevent-dev
-    apt-get install -y libhiredis-dev
-    apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
-    apt-get install -y libavfilter-dev
-    apt-get install -y libavformat-dev
-    apt-get install -y libavcodec-extra
-    # TODO: move mysql dev headers install to mysql dir for easier version management
-    apt-get install -y default-libmysqlclient-dev ||
-        apt-get install -y libmysqlclient-dev
-    apt-get install -y libmariadbclient-dev-compat ||
-    	apt-get install -y libmariadbclient-dev
-    apt-get install -y module-assistant
-    apt-get install -y dkms
-    apt-get install -y cmake
-    apt-get install -y unzip
-    apt-get install -y libavresample-dev
+    local MISSING_PKGS
+    local NPROC=$(nproc)
 
-    apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
-        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
-
-    # older versions need a few newer packages
+    # Install required packages
     case "${DISTRO_VER}" in
-        9)
-            apt-get install -y -t buster libarchive13
-            apt-get install -y -t stretch-backports debhelper init-system-helpers
-            apt-get install -y -t bullseye libbcg729-0 libbcg729-dev
-            apt-get install -y iptables-dev libiptc-dev
-            ;;
         10)
-            apt-get install -y -t bullseye libbcg729-0 libbcg729-dev
-            apt-get install -y debhelper iptables-dev libiptc-dev
+            apt-get install -y git logrotate rsyslog dpkg-dev
+            apt-get install -y -t bullseye libbcg729-0 libbcg729-dev debhelper dkms libglib2.0-dev libncurses-dev \
+                zlib1g-dev default-libmysqlclient-dev libmariadb-dev firewalld python3 python3-dev python3-websockets \
+                perl libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libnet-interface-perl \
+                libsocket6-perl libdigest-hmac-perl libio-multiplex-perl libio-socket-inet6-perl libjson-perl libtest2-suite-perl
             ;;
         *)
-            apt-get install -y debhelper libbcg729-0 libbcg729-dev libxtables-dev libiptc-dev
+            apt-get install -y git logrotate rsyslog firewalld dpkg-dev
             ;;
     esac
+
+    if (( $? != 0 )); then
+        printerr "Problem with installing the required libraries for RTPEngine"
+        exit 1
+    fi
 
     # try installing kernel dev headers in the following order:
     # 1: headers from repos
     # 2: headers from snapshot.debian.org
-    # note: headers must be installed for all kernels on the system
-    for OS_KERNEL in $(ls /lib/modules/ 2>/dev/null); do
-        apt-get install -y linux-headers-${OS_KERNEL} ||
+    # NOTE: headers should be installed for all kernels on the system
+    #       but we do not want to support ancient kernel dependencies
+    (
+        RET=0
+        for OS_KERNEL in $(ls /lib/modules/ 2>/dev/null); do
+            apt-get install -y linux-headers-${OS_KERNEL} ||
             aptInstallKernelHeadersFromURI $(debSearch linux-headers-${OS_KERNEL})
-#       (
-#           KERNEL_META_PKG=$(echo ${OS_KERNEL} | perl -pe 's%[0-9-.]+(.*)%\1%')
-#            apt-get install -y linux-image-${KERNEL_META_PKG} linux-headers-${KERNEL_META_PKG}
-#            printwarn 'Required Kernel Update Installed'
-#            printwarn 'RTPEngine will not forward packets in-kernel until a reboot occurs'
-#        )
-    done
+            RET=$((RET+$?))
+        done
+        exit $RET
+    )
 
-    if (( $? != 0 )); then
-        printerr "Problem with installing the required libraries for RTPEngine"
+    # debian ver <= 10 has package conflicts with some older kernels so allow userspace forwarding
+    if (( $? != 0 && ${DISTRO_VER} > 10 )); then
+        printerr "Problems occurred installing one or more kernel headers"
         exit 1
     fi
 
@@ -128,27 +152,29 @@ function install {
     userdel rtpengine &>/dev/null; groupdel rtpengine &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
 
-    ## compile and install RTPEngine as an RPM package
+    ## compile and install RTPEngine as a DEB package
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
-        if [[ "x$(cd ${SRC_DIR}/rtpengine 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${RTPENGINE_VER}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/rtpengine)" != "${RTPENGINE_VER}" ]]; then
             rm -rf ${SRC_DIR}/rtpengine
-            git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+            git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
         fi
     else
-        git clone --depth 1 -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+        git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
     (
-        cd ${SRC_DIR}/rtpengine &&
-        if [[ -e "${SRC_DIR}/rtpengine/debian/flavors/no_ngcp" ]]; then
-            ${SRC_DIR}/rtpengine/debian/flavors/no_ngcp
-        fi &&
-        dpkg-buildpackage -us -uc -sa &&
-        cd .. &&
-        systemctl mask ngcp-rtpengine-daemon.service &&
-        apt-get install -y ./ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
-            ./ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ./ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
-#            ./ngcp-rtpengine-recording-daemon_*${RTPENGINE_VER}*.deb
+        cd ${SRC_DIR}/rtpengine
+
+        # install all missing dependencies from the control file
+        MISSING_PKGS=$(getDebDependencies)
+        [[ -n "$MISSING_PKGS" ]] && apt-get install -y $MISSING_PKGS
+
+        dpkg-buildpackage -us -uc -sa --jobs=$NPROC || exit 1
+
+        systemctl mask ngcp-rtpengine-daemon.service
+
+        apt-get install -y ../ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
+            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
         exit $?
     )
 
@@ -158,9 +184,12 @@ function install {
     fi
 
     # make sure RTPEngine kernel module configured
-    if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
-        printerr "Problem installing RTPEngine kernel module"
-        exit 1
+    # skip this check for older versions as we allow userspace forwarding
+    if (( ${DISTRO_VER} > 10 )); then
+        if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
+            printerr "Problem installing RTPEngine kernel module"
+            exit 1
+        fi
     fi
 
     # ensure config dirs exist
@@ -197,16 +226,10 @@ function install {
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    case "${DISTRO_VER}" in
-        9)
-            cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /etc/systemd/system/rtpengine.service
-            ;;
-        *)
-            cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
-            ;;
-    esac
+    rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
-    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post}
+    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
 
     # Reload systemd configs
     systemctl daemon-reload
@@ -225,12 +248,12 @@ function install {
 function uninstall {
     systemctl disable rtpengine
     systemctl stop rtpengine
-    rm -f /etc/systemd/system/rtpengine.service
+    rm -f /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
 
     apt-get remove -y ngcp-rtpengine\*
 
-    rm -f /usr/sbin/rtpengine* /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
+    rm -f /usr/sbin/rtpengine* /usr/bin/rtpengine /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
 
     # check that rtpengine actually uninstalled
     if ! cmdExists rtpengine; then

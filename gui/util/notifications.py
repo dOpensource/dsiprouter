@@ -1,6 +1,7 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import os, smtplib
 from email import encoders
@@ -74,7 +75,7 @@ def sendEmail(recipients, text_body, html_body=None, subject=settings.MAIL_DEFAU
 
         # need to decrypt password
         if isinstance(settings.MAIL_PASSWORD, bytes):
-            mailpass = AES_CTR.decrypt(settings.MAIL_PASSWORD).decode('utf-8')
+            mailpass = AES_CTR.decrypt(settings.MAIL_PASSWORD)
         else:
             mailpass = settings.MAIL_PASSWORD
 

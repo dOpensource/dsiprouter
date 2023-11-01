@@ -243,10 +243,12 @@ EOF
     systemctl enable firewalld
     systemctl start firewalld
 
-    # Fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
     if (( $? != 0 )); then
+        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
+        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
+        systemctl restart systemd-logind
     fi
 
     # Setup Firewall rules for RTPEngine
@@ -267,10 +269,12 @@ EOF
 
     # Setup tmp files
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /etc/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre /usr/sbin/
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post /usr/sbin/
-    chmod +x /usr/sbin/rtpengine*
+
+    # Reconfigure systemd service files
+    rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
+    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
 
     # Reload systemd configs
     systemctl daemon-reload
@@ -281,7 +285,7 @@ EOF
 
     # Start manually if the service fails to start
     if [ $? -ne 0 ]; then
-        /usr/sbin/rtpengine --config-file=${SYSTEM_RTPENGINE_CONFIG_FILE} --pidfile=/var/run/rtpengine/rtpengine.pid
+        /usr/bin/rtpengine --config-file=${SYSTEM_RTPENGINE_CONFIG_FILE} --pidfile=/var/run/rtpengine/rtpengine.pid
     fi
 
     # File to signify that the install happened
@@ -296,7 +300,7 @@ EOF
 # Remove RTPEngine
 function uninstall {
     systemctl stop rtpengine
-    rm -f /usr/sbin/rtpengine
+    rm -f /usr/bin/rtpengine
     rm -f /etc/rsyslog.d/rtpengine.conf
     rm -f /etc/logrotate.d/rtpengine
     printdbg "Removed RTPEngine for $DISTRO"

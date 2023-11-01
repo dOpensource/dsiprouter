@@ -1,0 +1,4 @@
+Cmnd_Alias DSIP_UPGRADE_CMDS = /usr/bin/dsiprouter upgrade, /usr/bin/dsiprouter upgrade *
+Cmnd_Alias DSIP_RESTART_CMDS = /usr/bin/dsiprouter restart, /usr/bin/dsiprouter restart *
+dsiprouter ALL=(ALL) NOPASSWD:SETENV: DSIP_UPGRADE_CMDS
+dsiprouter ALL=(ALL) NOPASSWD: DSIP_RESTART_CMDS

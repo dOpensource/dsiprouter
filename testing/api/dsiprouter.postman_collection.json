@@ -193,12 +193,12 @@
 			"name": "kamailio",
 			"item": [
 				{
-					"name": "/api/v1/kamailio/reload",
+					"name": "/api/v1/reload/kamailio",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/kamailio/reload",
+							"raw": "https://167.99.182.100:5000/api/v1/reload/kamailio",
 							"protocol": "https",
 							"host": [
 								"167",

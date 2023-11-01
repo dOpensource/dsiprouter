@@ -5,7 +5,27 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-088cc51f57dc1d10db80bc911206fb751d60647e
+b9c9fd0db73086cba12a8cfdf8090afd8198c9f6
+5cee36cfb362c6fceb14348494749a93cdb1a2d2
+28bf73e59979e32ba4952f8923db4aee3f25f87c
+d6c45d81e09759f98a897d36fe73754c261f9d4a
+29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b
+4b835bbc8546269a75c79fe7b81a6313af2536b1
+5caff2334b4dbc19e315b98e9e3b5978d1a60a30
+8796289a7fbb2a88a44883baae68259b944de22c
+91223e1f6fac5d29ffc064745080839dc6a0892b
+89ab6283a42c62d625f9a0cf4d48fe76c8c0049a
+c9596877cfa5d559efe756718bb24370605c5b67
+bed7432a0883791f9cca6913ab03b708f10f0b85
+0f94ab7184a1e81feab9d5154226630de54a720c
+e32711d41e34c6e07ef5bfdf48eb3b14cc2f5e4b
+ec3d3696c2c77ef8c2715c32a3cb001422e5ecfa
+9d11a5062fafabc3f39573c583552e6caee2aa51
+10f4deb3e10de44df76acb637d7002fb00907231
+1fa981a268f0a17f1d3ec33ad05739130dbf3315
+5b9cbccd2d522d713434ec0da90e10c9b26b665e
+8c5e8907aba41c1b92adbc0f19c6084e0502a08d
+cb9112446174e67633d26ec6b71956060a8531ab
 8b1ccf2e53f1da403341957b57bbb4c318f64330
 ca9e5da8c80b3f9fb09752ebd8e1d2662a55f59a
 d663e2342ac65b1d559376fe3e7db6582648efec
@@ -2220,10 +2240,406 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION 088cc51f57dc1d10db80bc911206fb751d60647e)
+[//]: # (START_SECTION b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)
+### Upgrade Fixes
+
+> Commit: [b9c9fd0db73086cba12a8cfdf8090afd8198c9f6](https://github.com/dOpensource/dsiprouter/commit/b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)  
+> Date: Tue, 31 Oct 2023 21:29:48 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix bug in bash native credential parsing functions
+- fix resetting of credentials in v0.73 upgrade scripts
+- fix bug where multiple scripts could clobber `apt.conf.d` settings
+- add dpkg lock timeout to allow other processes to release apt lock
+- fix kamailio config not regenerated on upgrade
+- add more robust resetting of config files on upgrade failure
+- fix centos7 /etc/default/kamailio.conf in wrong place
+- fix upgrade log is not cleared when clicking show previous log
+- fix typo in `RESTART_DAEMONIZE` variable
+- fix cursor not a pointer on new reload buttons
+- fix reload lib functions to use new reload buttons
+- fix upgrade from gui hanging
+
+
+---
+
+[//]: # (END_SECTION b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)
+[//]: # (START_SECTION 5cee36cfb362c6fceb14348494749a93cdb1a2d2)
+### Stability Improvements
+
+> Commit: [5cee36cfb362c6fceb14348494749a93cdb1a2d2](https://github.com/dOpensource/dsiprouter/commit/5cee36cfb362c6fceb14348494749a93cdb1a2d2)  
+> Date: Sat, 28 Oct 2023 17:01:03 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add support for debian 12
+- deprecate debian 9 support
+- drop support for debian7-8 and ubuntu 16.04
+- update support for centos 8-9 to stable
+- deprecate centos 7 support
+- add support for mariadb ver >= 10.6.1
+- update openssl native decrpytion/encrption in dsip_lib.sh
+- update AES CTR implementation to match openssl standard implemenation
+- improve decrypt function API in security.py
+- update project to use virtual env for python dependencies
+- bump kamailio version to 5.7.x for debian10-12/amzn2/centos8-9/ubuntu20-22/rhel8/rocky8/alma8
+- bump rtpengine version to 11.5.1.11 for debian10-12/centos8-9/ubuntu20-22/rhel8/rocky8/alma8
+- bump openssl version on amzn2 to 1.1.1q
+- bump python version on amzn2 to 3.9.18
+- bump python version on debian10 to 3.9.2
+- bump maridb version on debian10 to 10.5.21
+- improve compilation times for debian and amazon linux
+- improve startup times of configured systemd services
+- decouple nginx and dsiprouter service again (speed improvements)
+- add exec internal command for calling into main script from systemd
+- update bug report template
+- revise DB engine loading as other globals are done
+- add python version check to install command
+- allow root DB connection host/port to be set separate from kam DB
+- fix dnsmasq startup issue on debian12
+- add fix for low memory systems failing to compile large libraries
+- update CLI help message
+- imporove performance of help/version CLI commands
+- update dsiprouter manpage
+- fix bug in settings credentials when DB connection changes
+- reset default verbosity level in scripts
+- fix issue with main script project root resolution (when PWD is other git repo)
+- fix misconfigured RTP fw rules when rtpengine is not installed
+- fix systemd inhibitor locking error on centos7/amzn2
+- add initial support for selinux in centos8-9
+- update upgrade script to handle all the above changes
+
+
+---
+
+[//]: # (END_SECTION 5cee36cfb362c6fceb14348494749a93cdb1a2d2)
+[//]: # (START_SECTION 28bf73e59979e32ba4952f8923db4aee3f25f87c)
+### Changed Reload Button to a Split Dropdown Button
+
+> Commit: [28bf73e59979e32ba4952f8923db4aee3f25f87c](https://github.com/dOpensource/dsiprouter/commit/28bf73e59979e32ba4952f8923db4aee3f25f87c)  
+> Date: Thu, 19 Oct 2023 22:30:02 +0000  
+> Author: root (root@demo-dsip-v0.730)  
+> Committer: root (root@demo-dsip-v0.730)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 28bf73e59979e32ba4952f8923db4aee3f25f87c)
+[//]: # (START_SECTION d6c45d81e09759f98a897d36fe73754c261f9d4a)
+### Update Shared Memory Manager
+
+> Commit: [d6c45d81e09759f98a897d36fe73754c261f9d4a](https://github.com/dOpensource/dsiprouter/commit/d6c45d81e09759f98a897d36fe73754c261f9d4a)  
+> Date: Mon, 16 Oct 2023 12:38:19 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- move state manager to shared memory instead of domain sockets
+- move license checks to startup, improving load times drastically
+
+
+---
+
+[//]: # (END_SECTION d6c45d81e09759f98a897d36fe73754c261f9d4a)
+[//]: # (START_SECTION 29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)
+### Make Docs Great Again
+
+> Commit: [29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b](https://github.com/dOpensource/dsiprouter/commit/29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)  
+> Date: Fri, 13 Oct 2023 12:46:16 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update theming on local generated documentation
+- improve navigation from main TOC
+- update upgrading insctructions
+- add more developer documentation
+
+
+---
+
+[//]: # (END_SECTION 29d9de5df30bdb2dbe0fb1d1de74c3e654d6920b)
+[//]: # (START_SECTION 4b835bbc8546269a75c79fe7b81a6313af2536b1)
+### V0.73 Release Feature Improvements
+
+> Commit: [4b835bbc8546269a75c79fe7b81a6313af2536b1](https://github.com/dOpensource/dsiprouter/commit/4b835bbc8546269a75c79fe7b81a6313af2536b1)  
+> Date: Wed, 11 Oct 2023 19:54:05 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix annoying "detached head" message from dependent repos on install
+- fix GUI reload process killed by systemd
+- add persistent storage to globals
+- update flask session key to be generated on install
+- update CLI to allow setting the flask session key
+- improve import efficiency by removing duplicate paths
+- create standardized response payload and tooling for API
+- implement standardized responses on majority of the API routes
+- add ability to reload GUI/web server from within the GUI
+- add ability to reload GUI/web server from the API
+- fix upgrade release search functions
+- fix edge cases in upgrade merging logic for settings
+- add an overlay when user is waiting on reloads
+- improve look and feel of upgrade page
+- improve performance when showing previous upgrade log
+- add formatted streaming log feature to upgrade page
+- remove unused and confusing error handler overrides
+- update CLI documentation/help/CLI completion
+- update CHANGELOG
+
+
+---
+
+[//]: # (END_SECTION 4b835bbc8546269a75c79fe7b81a6313af2536b1)
+[//]: # (START_SECTION 5caff2334b4dbc19e315b98e9e3b5978d1a60a30)
+### API Change
+
+> Commit: [5caff2334b4dbc19e315b98e9e3b5978d1a60a30](https://github.com/dOpensource/dsiprouter/commit/5caff2334b4dbc19e315b98e9e3b5978d1a60a30)  
+> Date: Mon, 9 Oct 2023 03:18:26 +0000  
+> Author: root (root@demo-dsip-v0.730)  
+> Committer: root (root@demo-dsip-v0.730)  
+> Signed:   
+
+
+- - Moved API to only be available via paid subscription
+
+
+---
+
+[//]: # (END_SECTION 5caff2334b4dbc19e315b98e9e3b5978d1a60a30)
+[//]: # (START_SECTION 8796289a7fbb2a88a44883baae68259b944de22c)
+### Allow Changing Upgrade Repo
+
+> Commit: [8796289a7fbb2a88a44883baae68259b944de22c](https://github.com/dOpensource/dsiprouter/commit/8796289a7fbb2a88a44883baae68259b944de22c)  
+> Date: Fri, 6 Oct 2023 17:50:03 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add ability to change upgrade repo
+
+
+---
+
+[//]: # (END_SECTION 8796289a7fbb2a88a44883baae68259b944de22c)
+[//]: # (START_SECTION 91223e1f6fac5d29ffc064745080839dc6a0892b)
+### Fix Upgrade Feature
+
+> Commit: [91223e1f6fac5d29ffc064745080839dc6a0892b](https://github.com/dOpensource/dsiprouter/commit/91223e1f6fac5d29ffc064745080839dc6a0892b)  
+> Date: Fri, 6 Oct 2023 16:47:22 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix GUI upgrade permissions
+- add bootstrap for v0.73
+- fix transaction handler could not handle routines in `dsip_lib.sh`
+- add `-rel` and `-url` options to `upgrade` command
+- improve update process logic
+- fix issues with v0.73 migrate script
+- add sudo dependency
+
+
+---
+
+[//]: # (END_SECTION 91223e1f6fac5d29ffc064745080839dc6a0892b)
+[//]: # (START_SECTION 89ab6283a42c62d625f9a0cf4d48fe76c8c0049a)
+### Fix Load Balancing Feature
+
+> Commit: [89ab6283a42c62d625f9a0cf4d48fe76c8c0049a](https://github.com/dOpensource/dsiprouter/commit/89ab6283a42c62d625f9a0cf4d48fe76c8c0049a)  
+> Date: Fri, 6 Oct 2023 11:01:31 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix dispatcher lookups and routing when lb enabled on epgroup
+- fix missing htable reloads
+- update timeouts for inbound calls to be more sane
+- update pike defaults to be more sane
+- fix servernat / rtpengine detection in serverside NAT scenarios
+- update record routing checks to work in more NAT scenarios
+- fix clientside NAT handling for UAs that do not support STUN
+- update carrier registrations to be more carrier agnostic by default
+
+
+---
+
+[//]: # (END_SECTION 89ab6283a42c62d625f9a0cf4d48fe76c8c0049a)
+[//]: # (START_SECTION c9596877cfa5d559efe756718bb24370605c5b67)
+### HotFix For CLI Upgrade
+
+> Commit: [c9596877cfa5d559efe756718bb24370605c5b67](https://github.com/dOpensource/dsiprouter/commit/c9596877cfa5d559efe756718bb24370605c5b67)  
+> Date: Wed, 27 Sep 2023 18:24:28 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- add the DB procedure changes to upgrade script
+
+
+---
+
+[//]: # (END_SECTION c9596877cfa5d559efe756718bb24370605c5b67)
+[//]: # (START_SECTION bed7432a0883791f9cca6913ab03b708f10f0b85)
+### Updated README
+
+> Commit: [bed7432a0883791f9cca6913ab03b708f10f0b85](https://github.com/dOpensource/dsiprouter/commit/bed7432a0883791f9cca6913ab03b708f10f0b85)  
+> Date: Tue, 26 Sep 2023 07:52:42 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION bed7432a0883791f9cca6913ab03b708f10f0b85)
+[//]: # (START_SECTION 0f94ab7184a1e81feab9d5154226630de54a720c)
+### Updated README to make it easier to read
+
+> Commit: [0f94ab7184a1e81feab9d5154226630de54a720c](https://github.com/dOpensource/dsiprouter/commit/0f94ab7184a1e81feab9d5154226630de54a720c)  
+> Date: Tue, 26 Sep 2023 07:50:30 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0f94ab7184a1e81feab9d5154226630de54a720c)
+[//]: # (START_SECTION e32711d41e34c6e07ef5bfdf48eb3b14cc2f5e4b)
+### Hotfix For DB License Storage Mismatch
+
+> Commit: [e32711d41e34c6e07ef5bfdf48eb3b14cc2f5e4b](https://github.com/dOpensource/dsiprouter/commit/e32711d41e34c6e07ef5bfdf48eb3b14cc2f5e4b)  
+> Date: Mon, 25 Sep 2023 14:02:47 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix `update_dsip_settings()` procedure input sizes for licenses
+
+
+---
+
+[//]: # (END_SECTION e32711d41e34c6e07ef5bfdf48eb3b14cc2f5e4b)
+[//]: # (START_SECTION ec3d3696c2c77ef8c2715c32a3cb001422e5ecfa)
+### Inbound Route Load Balancing Fix
+
+> Commit: [ec3d3696c2c77ef8c2715c32a3cb001422e5ecfa](https://github.com/dOpensource/dsiprouter/commit/ec3d3696c2c77ef8c2715c32a3cb001422e5ecfa)  
+> Date: Mon, 25 Sep 2023 17:11:29 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Added logic to correctly select the dispatcher set, which hands load balancing of requests
+
+
+---
+
+[//]: # (END_SECTION ec3d3696c2c77ef8c2715c32a3cb001422e5ecfa)
+[//]: # (START_SECTION 9d11a5062fafabc3f39573c583552e6caee2aa51)
+### API Updates
+
+> Commit: [9d11a5062fafabc3f39573c583552e6caee2aa51](https://github.com/dOpensource/dsiprouter/commit/9d11a5062fafabc3f39573c583552e6caee2aa51)  
+> Date: Mon, 25 Sep 2023 02:23:21 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Configured the EndpointGroup API to send an error with the hostname/ip that's maltformed or not working
+
+
+---
+
+[//]: # (END_SECTION 9d11a5062fafabc3f39573c583552e6caee2aa51)
+[//]: # (START_SECTION 10f4deb3e10de44df76acb637d7002fb00907231)
+### Core Networks Changes
+
+> Commit: [10f4deb3e10de44df76acb637d7002fb00907231](https://github.com/dOpensource/dsiprouter/commit/10f4deb3e10de44df76acb637d7002fb00907231)  
+> Date: Fri, 22 Sep 2023 20:28:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- - Raise an exception with a readable message when the hostname or ip is not routeable
+
+
+---
+
+[//]: # (END_SECTION 10f4deb3e10de44df76acb637d7002fb00907231)
+[//]: # (START_SECTION 1fa981a268f0a17f1d3ec33ad05739130dbf3315)
+### Changes - Added Slack link to the dSIP Dashboard - Fixed issue with the nameserver line in /etc/resolv.conf not being set correctly
+
+> Commit: [1fa981a268f0a17f1d3ec33ad05739130dbf3315](https://github.com/dOpensource/dsiprouter/commit/1fa981a268f0a17f1d3ec33ad05739130dbf3315)  
+> Date: Fri, 22 Sep 2023 02:10:56 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 1fa981a268f0a17f1d3ec33ad05739130dbf3315)
+[//]: # (START_SECTION 5b9cbccd2d522d713434ec0da90e10c9b26b665e)
+### NAT Updates - Removed logic that re-wrote the contact address coming from Carriers and SIP Endpoints
+
+> Commit: [5b9cbccd2d522d713434ec0da90e10c9b26b665e](https://github.com/dOpensource/dsiprouter/commit/5b9cbccd2d522d713434ec0da90e10c9b26b665e)  
+> Date: Sat, 16 Sep 2023 02:03:52 +0000  
+> Author: root (root@demo2.dsiprouter.net)  
+> Committer: root (root@demo2.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5b9cbccd2d522d713434ec0da90e10c9b26b665e)
+[//]: # (START_SECTION 8c5e8907aba41c1b92adbc0f19c6084e0502a08d)
+### Change Default UAC Registration Address
+
+> Commit: [8c5e8907aba41c1b92adbc0f19c6084e0502a08d](https://github.com/dOpensource/dsiprouter/commit/8c5e8907aba41c1b92adbc0f19c6084e0502a08d)  
+> Date: Thu, 14 Sep 2023 09:41:44 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- make the uac reg addr default to the external IP for dynamic networking modes
+
+
+---
+
+[//]: # (END_SECTION 8c5e8907aba41c1b92adbc0f19c6084e0502a08d)
+[//]: # (START_SECTION cb9112446174e67633d26ec6b71956060a8531ab)
 ### Upgrade Scripts Update
 
-> Commit: [088cc51f57dc1d10db80bc911206fb751d60647e](https://github.com/dOpensource/dsiprouter/commit/088cc51f57dc1d10db80bc911206fb751d60647e)  
+> Commit: [cb9112446174e67633d26ec6b71956060a8531ab](https://github.com/dOpensource/dsiprouter/commit/cb9112446174e67633d26ec6b71956060a8531ab)  
 > Date: Wed, 6 Sep 2023 11:40:34 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2234,11 +2650,12 @@ END_SECTION COMMITS)
 - reset dsip/kam settings defaults
 - add upgrade path from v0.7x to v0.73
 - fix versioning issue with upgrade scripts
+- update CHANGELOG
 
 
 ---
 
-[//]: # (END_SECTION 088cc51f57dc1d10db80bc911206fb751d60647e)
+[//]: # (END_SECTION cb9112446174e67633d26ec6b71956060a8531ab)
 [//]: # (START_SECTION 8b1ccf2e53f1da403341957b57bbb4c318f64330)
 ### HotFix For Large Domain Names
 

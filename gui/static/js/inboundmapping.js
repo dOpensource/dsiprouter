@@ -100,20 +100,21 @@
     $('#inboundmapping').on('click', '#open-Update', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('inboundmapping');
-      var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
-      var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-      var gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-      var gwgroupname = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
-      var rulename = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
-      var gwlistid = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
-      var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
-      var hf_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
-      var hf_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(11)').text();
-      var hf_fwddid = $(c).find('tr:eq(' + row_index + ') td:eq(12)').text();
-      var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(13)').text();
-      var ff_groupid = $(c).find('tr:eq(' + row_index + ') td:eq(14)').text();
-      var ff_gwgroupid = $(c).find('tr:eq(' + row_index + ') td:eq(15)').text();
-      var ff_fwddid = $(c).find('tr:eq(' + row_index + ') td:eq(16)').text();
+      var ruleid = $(c).find('tr:eq(' + row_index + ') td.ruleid').text();
+      var prefix = $(c).find('tr:eq(' + row_index + ') td.prefix').text();
+      var gwgroupid = $(c).find('tr:eq(' + row_index + ') td.gwgroupid').text();
+      var gwgroupname = $(c).find('tr:eq(' + row_index + ') td.gwgroupname').text();
+      var rulename = $(c).find('tr:eq(' + row_index + ') td.rulename').text();
+      var gwlistid = $(c).find('tr:eq(' + row_index + ') td.gwlistid').text().replace('#', '');
+      var lb_enabled = $(c).find('tr:eq(' + row_index + ') td.lb_enabled').text() === '1';
+      var hf_ruleid = $(c).find('tr:eq(' + row_index + ') td.hf_ruleid').text();
+      var hf_groupid = $(c).find('tr:eq(' + row_index + ') td.hf_groupid').text();
+      var hf_gwgroupid = $(c).find('tr:eq(' + row_index + ') td.hf_gwgroupid').text();
+      var hf_fwddid = $(c).find('tr:eq(' + row_index + ') td.hf_fwddid').text();
+      var ff_ruleid = $(c).find('tr:eq(' + row_index + ') td.ff_ruleid').text();
+      var ff_groupid = $(c).find('tr:eq(' + row_index + ') td.ff_groupid').text();
+      var ff_gwgroupid = $(c).find('tr:eq(' + row_index + ') td.ff_gwgroupid').text();
+      var ff_fwddid = $(c).find('tr:eq(' + row_index + ') td.ff_fwddid').text();
 
       /** Clear out the modal */
       var modal_body = $('#edit .modal-body');
@@ -143,6 +144,11 @@
       modal_body.find("select.gwgroupid").val(gwgroupid);
       modal_body.find("select.hf_gwgroupid").val(hf_gwgroupid);
       modal_body.find("select.ff_gwgroupid").val(ff_gwgroupid);
+      if (lb_enabled) {
+        modal_body.find("select.gwgroupid option").filter(function() {
+          return this.value.indexOf('lb_') !== -1;
+        }).prop("selected", true);
+      }
 
       /* update toggle buttons */
       if (hf_ruleid.length > 0) {
@@ -158,20 +164,6 @@
       else {
         modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
       }
-
-
-      if (gwgroupname === 'Load Balancing Group'){
-
-        var selectedGateway = gw_mapping.find((the_gw) => {
-          return the_gw.id === parseInt(gwlistid);
-        });
-
-        modal_body.find("select.gwgroupid option").filter(function(){
-            return this.value === selectedGateway.option_value;
-        }).prop("selected", true);
-      }
-
-
     });
 
     $('#inboundmapping').on('click', '#open-Delete', function() {

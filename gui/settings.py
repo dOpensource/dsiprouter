@@ -153,6 +153,9 @@ DSIP_MSTEAMS_LICENSE = ''
 ################# Local-Only Settings ####################
 # settings in this section are not stored on the DB
 
+# the key used by the flask session manager
+DSIP_SESSION_KEY = None
+
 # the fqdn / ip address used by uac/nathelper modules when contacting other servers
 UAC_REG_ADDR = ''
 
@@ -201,6 +204,8 @@ MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76
 #MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]
 
 # root DB credentials
+ROOT_DB_HOST = 'localhost'
+ROOT_DB_PORT = ''
 ROOT_DB_USER = 'root'
 ROOT_DB_PASS = ''
 ROOT_DB_NAME = 'mysql'
@@ -209,4 +214,8 @@ ROOT_DB_NAME = 'mysql'
 # file  - load from setting.py file
 # db    - load from dsip_settings table
 LOAD_SETTINGS_FROM = 'file'
+
+# where upgrades will be pulled from
+GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
+GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 ############### End Local-Only Settings ##################

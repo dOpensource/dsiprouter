@@ -6,6 +6,7 @@
 /resources/terraform/do/*.hcl
 /resources/terraform/do/terraform.tfvars
 */__pycache__/
+venv/
 # TODO: these following files could be generated elsewhere
 # adding them to python path where needed to cleanup project dir
 docs/build/

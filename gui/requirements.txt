@@ -1,4 +1,5 @@
 acme
+ansi2html
 bjoern
 cron_descriptor
 cryptography
@@ -10,11 +11,13 @@ Flask_WTF
 itsdangerous==2.0.1
 Jinja2==3.0.3
 josepy
+myst-parser
 mysqlclient
 pem
 psycopg2
 psycopg2_binary
 pycryptodome
+pygtail
 PyMySQL
 pyOpenSSL
 python_crontab
@@ -24,6 +27,8 @@ requests
 sphinx
 sphinxcontrib-httpdomain
 sphinx-rtd-theme
+piccolo_theme
 SQLAlchemy~=2.0
 twilio
+UltraDict
 Werkzeug~=2.0

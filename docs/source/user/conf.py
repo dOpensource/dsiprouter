@@ -12,10 +12,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-#sys.path.insert(0, os.path.abspath('../../..'))
+import os, sys
 #sys.path.insert(0, os.path.abspath('../../gui'))
+#sys.path.insert(0, '/etc/dsiprouter/gui')
 #import settings
 sys.setrecursionlimit(1500)
 
@@ -50,7 +49,7 @@ extensions = [
 #    'sphinxcontrib.autohttp.flask',
 #    'sphinxcontrib.autohttp.flaskqref',
 #    'rinoh.frontend.sphinx',
-    'recommonmark'
+    'myst_parser'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -71,7 +70,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -79,7 +78,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------

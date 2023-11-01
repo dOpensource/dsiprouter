@@ -1,21 +1,25 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, time, random, subprocess, requests, csv, base64, codecs, re, socket
+import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json
 from contextlib import closing
 from datetime import datetime
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request, send_file, g
 from sqlalchemy import exc as sql_exceptions, and_, or_
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
-from database import SessionLoader, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
+from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
     GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits, InboundMapping, dSIPCDRInfo, \
     dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
-from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, showApiError, debugEndpoint, StatusCodes, \
-    strFieldsToDict, getRequestData
+from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
+    strFieldsToDict, getRequestData, IO
+from util.pyasync import daemonize
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+from modules.api.api_functions import createApiResponse, showApiError
 from modules.api.kamailio.functions import reloadKamailio
 from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
@@ -23,29 +27,17 @@ from util.security import AES_CTR, urandomChars, KeyCertPair, api_security
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
-import settings, globals
+import settings
 
 api = Blueprint('api', __name__)
 
 
-# TODO: we need to standardize our response payload, preferably we can create a custom response class
-#       proposed format:    { 'error': '', 'msg': '', 'kamreload': True/False, 'data': [] }
-#                           error:      error string if one occurred (db|http|server|other)
-#                           msg:        response message string
-#                           kamreload:  bool, whether kam requires a reload
-#                           data:       dict of data returned, if any
-#       currently all the formats are different for each endpoint, we need to change this!!
-# TODO: this is almost impossible to work on...
-#       we need to abstract out common code between gui and api and standardize routes!
+# TODO: we need to abstract out common code between gui and api
 
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
 @api_security
 def getKamailioStats():
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-    stats_data = {'current': 0}
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
@@ -57,30 +49,78 @@ def getKamailioStats():
             ex.code = r.status_code
             raise ex
 
-        response_payload['msg'] = 'Successfully retrieved kamailio stats'
-        response_payload['data'].append(r.json()['result'])
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        return createApiResponse(
+            msg='Successfully retrieved kamailio stats',
+            data=[r.json()['result']],
+        )
 
     except Exception as ex:
         return showApiError(ex)
 
 
-@api.route("/api/v1/kamailio/reload", methods=['GET'])
+@api.route("/api/v1/reload/kamailio", methods=['POST'])
 @api_security
-def reloadKamailioRoute():
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
+def handleReloadKamailio():
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
         reloadKamailio()
 
-        response_payload['msg'] = 'Kamailio reload succeeded'
-        globals.reload_required = False
-        response_payload['kamreload'] = False
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
+        return createApiResponse(
+            msg='Kamailio reload succeeded',
+            kamreload=False,
+        )
+
+    except Exception as ex:
+        return showApiError(ex)
+
+# TODO: state file is not thread/process safe, move to shared memory manager
+@api.route("/api/v1/reload/dsiprouter", methods=['GET', 'POST'])
+@api_security
+def handleReloadDsiprouter():
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        # check on a current reload
+        if request.method == 'GET':
+            if getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing']:
+                return createApiResponse(
+                    msg='dSIPRouter reload in progress',
+                    data=[False],
+                    status_code=StatusCodes.HTTP_ACCEPTED,
+                )
+
+            return createApiResponse(
+                msg='dSIPRouter reload complete',
+                data=[True],
+            )
+        # try the reload
+        elif request.method == 'POST':
+            if getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing']:
+                return createApiResponse(
+                    msg='dSIPRouter reload in progress',
+                    status_code=StatusCodes.HTTP_ACCEPTED,
+                )
+
+            # update globals before we reload so server stores them on teardown
+            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_ongoing'] = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
+            getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_reload_required'] = False
+
+            daemonize(['sudo', 'dsiprouter', 'restart', '-all', '-daemonize'])
+
+            return createApiResponse(
+                msg='dSIPRouter reload started',
+            )
+        # method not allowed
+        else:
+            return createApiResponse(
+                msg='Invalid HTTP method for this route',
+                status_code=StatusCodes.HTTP_METHOD_NOT_ALLOWED,
+            )
 
     except Exception as ex:
         return showApiError(ex)
@@ -97,15 +137,13 @@ def getEndpointLease():
 
     DEF_PASSWORD_LEN = 32
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     lease_data = {}
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         email = request.args.get('email')
         if not email:
@@ -154,10 +192,13 @@ def getEndpointLease():
         lease_data['ttl'] = ttl
 
         db.commit()
-        response_payload['data'].append(lease_data)
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Lease created',
+            data=[lease_data],
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -172,14 +213,11 @@ def getEndpointLease():
 def revokeEndpointLease(leaseid):
     db = DummySession()
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Query the Lease ID
         Lease = db.query(dSIPLeases).filter(dSIPLeases.id == leaseid).first()
@@ -196,9 +234,12 @@ def revokeEndpointLease(leaseid):
         db.delete(Lease)
 
         db.commit()
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Lease revoked',
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -214,14 +255,11 @@ def revokeEndpointLease(leaseid):
 def updateEndpoint(id):
     db = DummySession()
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # Covert JSON message to Dictionary Object
         request_payload = getRequestData()
@@ -242,15 +280,18 @@ def updateEndpoint(id):
                 db.add(MaintMode)
 
         db.commit()
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Endpoint updated',
+            kamreload=True,
+        )
 
     except sql_exceptions.IntegrityError as ex:
         db.rollback()
         db.flush()
-        response_payload['msg'] = "endpoint {} is already in maintmode".format(id)
-        return showApiError(ex, response_payload)
+        payload = {'msg': "endpoint {} is already in maintmode".format(id)}
+        return showApiError(ex, payload)
     except Exception as ex:
         db.rollback()
         db.flush()
@@ -275,14 +316,13 @@ def handleInboundMapping():
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {'did', 'servers', 'name'}
 
-    # defaults.. keep data returned separate from returned metadata
-    payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    payload = {'data': []}
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # =========================================
         # get rule for DID mapping or list of rules
@@ -341,7 +381,7 @@ def handleInboundMapping():
                     else:
                         payload['msg'] = 'No Rules Found'
 
-            return jsonify(payload), StatusCodes.HTTP_OK
+            return createApiResponse(**payload)
 
         # ===========================
         # create rule for DID mapping
@@ -386,10 +426,10 @@ def handleInboundMapping():
             db.add(IMap)
 
             db.commit()
-            globals.reload_required = True
-            payload['kamreload'] = globals.reload_required
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+            payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
             payload['msg'] = 'Rule Created'
-            return jsonify(payload), StatusCodes.HTTP_OK
+            return createApiResponse(**payload)
 
         # ===========================
         # update rule for DID mapping
@@ -460,9 +500,9 @@ def handleInboundMapping():
                     raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
 
             db.commit()
-            globals.reload_required = True
-            payload['kamreload'] = globals.reload_required
-            return jsonify(payload), StatusCodes.HTTP_OK
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+            payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
+            return createApiResponse(**payload)
 
         # ===========================
         # delete rule for DID mapping
@@ -493,14 +533,18 @@ def handleInboundMapping():
                     raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
 
             db.commit()
-            globals.reload_required = True
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             payload['kamreload'] = True
             payload['msg'] = 'Rule Deleted'
-            return jsonify(payload), StatusCodes.HTTP_OK
+            return createApiResponse(**payload)
 
         # not possible
         else:
-            raise Exception('Unknown Error Occurred')
+            payload['msg'] = 'Invalid HTTP method for this route'
+            return createApiResponse(
+                **payload,
+                status_code=StatusCodes.HTTP_METHOD_NOT_ALLOWED
+            )
 
     except Exception as ex:
         db.rollback()
@@ -523,14 +567,11 @@ def handleNotificationRequest():
     VALID_REQUEST_DATA_ARGS = {'gwgroupid': int, 'type': int, 'text_body': str,
                                'gwid': int, 'subject': str, 'sender': str}
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # ============================
         # create and send notification
@@ -590,8 +631,7 @@ def handleNotificationRequest():
         elif notification_row.method == dSIPNotification.FLAGS.METHOD_SLACK.value:
             pass
 
-        response_payload['msg'] = 'Email Sent'
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        return createApiResponse(msg='Email Sent')
 
     except Exception as ex:
         db.rollback()
@@ -606,14 +646,11 @@ def handleNotificationRequest():
 def deleteEndpointGroup(gwgroupid):
     db = DummySession()
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid)
         if endpointgroup is not None:
@@ -682,10 +719,9 @@ def deleteEndpointGroup(gwgroupid):
             dispatcher.delete(synchronize_session=False)
 
         db.commit()
-        response_payload['status'] = 200
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(msg='EndpointGroup deleted', kamreload=True)
 
     except Exception as ex:
         db.rollback()
@@ -700,14 +736,13 @@ def deleteEndpointGroup(gwgroupid):
 def getEndpointGroup(gwgroupid):
     db = DummySession()
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     gwgroup_data = {}
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointgroup is not None:
@@ -795,10 +830,10 @@ def getEndpointGroup(gwgroupid):
             gwgroup_data['cdr']['cdr_email'] = cdrinfo.email
             gwgroup_data['cdr']['cdr_send_interval'] = cdrinfo.send_interval
 
-        response_payload['data'].append(gwgroup_data)
-        response_payload['msg'] = 'Endpoint group found'
-
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        return createApiResponse(
+            msg='Endpoint group found',
+            data=[gwgroup_data],
+        )
 
     except Exception as ex:
         db.rollback()
@@ -814,15 +849,14 @@ def getEndpointGroup(gwgroupid):
 def listEndpointGroups():
     db = DummySession()
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_data = []
     typeFilter = "%type:{}%".format(str(settings.FLT_PBX))
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
 
@@ -831,14 +865,16 @@ def listEndpointGroups():
             fields = strFieldsToDict(endpointgroup.description)
 
             # append summary of endpoint group data
-            response_payload['data'].append({
+            response_data.append({
                 'gwgroupid': endpointgroup.id,
                 'name': fields['name'],
                 'gwlist': endpointgroup.gwlist
             })
 
-        response_payload['msg'] = 'Endpoint groups found'
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        return createApiResponse(
+            msg='Endpoint groups found',
+            data=response_data,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -930,15 +966,13 @@ def updateEndpointGroups(gwgroupid=None):
     # ensure requred args are provided
     REQUIRED_ARGS = {'gwgroupid'}
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     gwgroup_data = {}
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # get request data
         request_payload = getRequestData()
@@ -1393,11 +1427,12 @@ def updateEndpointGroups(gwgroupid=None):
 
         db.commit()
 
-        response_payload['msg'] = 'Endpoint group updated'
-        response_payload['data'].append(gwgroup_data)
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Endpoint group updated',
+            data=[gwgroup_data],
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -1408,70 +1443,77 @@ def updateEndpointGroups(gwgroupid=None):
 
 
 # TODO: fix up like updateEnpointGroups()
+# TODO: this is the only route that has the proper updated documentation format
+#       use this route as an example to populate the other route docstings
 @api.route("/api/v1/endpointgroups", methods=['POST'])
 @api_security
 def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
     """
     Add a single Endpoint Group
 
-    ===============
-    Request Payload
-    ===============
+    :<json string name: the endpoint group name
+    :<json integer calllimit: limit concurrent calls to this endpoint group (0=unlimited)
+    :<json object auth: authentication settings for this endpoint group
+    :reqheader Accept: optional, assumed to be application/json
+    :reqheader Authorization: required, dSIPRouter API Bearer token
+    :resheader Content-Type: required, should always be application/json
+    :status 200: on success
+    :status 401: on auth failure
+    :status 500: on unhandled application server error
+    :status 502: when application server is down but reverse proxy is still up
+
+    Example Request:
 
     .. code-block:: json
 
         {
-            name: <string>,
-            calllimit: <int>,
-            auth: {
-                type: "ip"|"userpwd",
-                user: <string>
-                pass: <string>
-                domain: <string>
+            "name": "example",
+            "calllimit": 0,
+            "auth": {
+                "type": "userpwd",
+                "user": "example",
+                "pass": "example",
+                "domain": "example.com"
             },
-            endpoints [
+            "endpoints": [
                 {
-                    hostname:<string>,
-                    description:<string>
-                    weight:<string>
-                },
-                ...
+                    "hostname": "example",
+                    "description": "example",
+                    "weight": 100
+                }
             ],
-            strip: <int>,
-            prefix: <string>,
-            notifications: {
-                overmaxcalllimit: <string>,
-                endpointfailure: <string>
+            "strip": 0,
+            "prefix": "",
+            "notifications": {
+                "overmaxcalllimit": "email@example.com",
+                "endpointfailure": "email@example.com"
             },
-            cdr: {
-                cdr_email: <string>,
-                cdr_send_interval: <string>
-            }
-            fusionpbx: {
-                enabled: <bool>,
-                dbhost: <string>,
-                dbuser: <string>,
-                dbpass: <string>
+            "cdr": {
+                "cdr_email": "email@example.com",
+                "cdr_send_interval": "email@example.com"
+            },
+            "fusionpbx": {
+                "enabled": true,
+                "dbhost": "example",
+                "dbuser": "example",
+                "dbpass": "example"
             }
         }
 
-    ================
-    Response Payload
-    ================
+    Example Response:
 
     .. code-block:: json
 
         {
-            error: <string>,
-            msg: <string>,
-            kamreload: <bool>,
-            data: [
+            "error": "",
+            "msg": "Endpoint group created",
+            "kamreload": true,
+            "dsipreload": false,
+            "data": [
                 {
-                    gwgroupid: <int>,
-                    endpoints: [
-                        <int>,
-                        ...
-                    ]
+                    "gwgroupid": 101,
+                    "gwlist": "375",
+                    "name": "example"
                 }
             ]
         }
@@ -1486,15 +1528,13 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         "notifications": dict, "cdr": dict, "fusionpbx": dict, "endpoints": list
     }
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
     gwgroup_data = {}
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if data == None:
             # Convert Request message to Dictionary Object
@@ -1715,11 +1755,12 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         db.commit()
 
-        response_payload['msg'] = 'Endpoint group created'
-        response_payload['data'].append(gwgroup_data)
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Endpoint group created',
+            data=[gwgroup_data],
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -1760,19 +1801,19 @@ def getNumberEnrichment(rule_id=None):
     """
     db = DummySession()
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_data = []
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # get a single enrichment rule
         if rule_id is not None:
             rule = db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id == rule_id).first()
             if rule is not None:
-                response_payload['data'].append({
+                response_data.append({
                     'rule_id': rule.id,
                     'dnid': rule.dnid,
                     'country_code': rule.country_code,
@@ -1786,7 +1827,7 @@ def getNumberEnrichment(rule_id=None):
             rules = db.query(dSIPDNIDEnrichment).all()
 
             for rule in rules:
-                response_payload['data'].append({
+                response_data.append({
                     'rule_id': rule.id,
                     'dnid': rule.dnid,
                     'country_code': rule.country_code,
@@ -1794,9 +1835,10 @@ def getNumberEnrichment(rule_id=None):
                     'rule_name': strFieldsToDict(rule.description)['name']
                 })
 
-        response_payload['msg'] = 'Enrichment Rule(s) found'
-
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        return createApiResponse(
+            msg='Enrichment Rule(s) found',
+            data=response_data,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -1859,14 +1901,13 @@ def addNumberEnrichment(request_payload=None):
     # ensure requred args are provided
     REQUIRED_REQUEST_DATA_ARGS = {'dnid'}
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_data = []
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -1900,14 +1941,16 @@ def addNumberEnrichment(request_payload=None):
             rule = dSIPDNIDEnrichment(**rule_data)
             db.add(rule)
             db.flush()
-            response_payload['data'].append({'rule_id': rule.id})
+            response_data.append({'rule_id': rule.id})
 
         db.commit()
 
-        response_payload['msg'] = 'Enrichment Rule(s) created'
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Enrichment Rule(s) created',
+            data=response_data,
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -1973,14 +2016,13 @@ def updateNumberEnrichment(rule_id=None, request_payload=None):
     # ensure requred args are provided
     REQUIRED_REQUEST_DATA_ARGS = {'dnid'}
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_data = []
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -2022,7 +2064,7 @@ def updateNumberEnrichment(rule_id=None, request_payload=None):
                 rule = dSIPDNIDEnrichment(**rule_data)
                 db.add(rule)
                 db.flush()
-                response_payload['data'].append({'rule_id': rule.id})
+                response_data.append({'rule_id': rule.id})
             # updating existing rules
             else:
                 rule_id = rule_data.pop('rule_id')
@@ -2032,14 +2074,16 @@ def updateNumberEnrichment(rule_id=None, request_payload=None):
                 if not db.query(dSIPDNIDEnrichment).filter(dSIPDNIDEnrichment.id == rule_id).update(
                     rule_data, synchronize_session=False):
                     raise http_exceptions.BadRequest("Enrichment Rule with id '{}' does not exist".format(str(rule_id)))
-                response_payload['data'].append({'rule_id': rule_id})
+                response_data.append({'rule_id': rule_id})
 
         db.commit()
 
-        response_payload['msg'] = 'Enrichment Rule(s) updated'
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Enrichment Rule(s) updated',
+            data=response_data,
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -2094,14 +2138,11 @@ def deleteNumberEnrichment(rule_id, request_payload=None):
     # ensure requred args are provided
     REQUIRED_REQUEST_DATA_ARGS = {'rule_id'}
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -2137,10 +2178,11 @@ def deleteNumberEnrichment(rule_id, request_payload=None):
 
         db.commit()
 
-        response_payload['msg'] = "Enrichment Rule(s) deleted"
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Enrichment Rule(s) deleted',
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -2206,14 +2248,13 @@ def fetchNumberEnrichment(request_payload=None):
     # ensure required args are provided
     REQUIRED_REQUEST_DATA_ARGS = {'url'}
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'data': []}
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # allow calling function with payload data
         if request_payload is None:
@@ -2302,7 +2343,7 @@ def fetchNumberEnrichment(request_payload=None):
                 resp = ret[0].get_json(force=True)
                 response_payload['error'] = resp['error']
                 response_payload['msg'] = resp['msg']
-                return jsonify(response_payload), ret[1]
+                return createApiResponse(**response_payload, status_code=ret[1])
             response_payload['msg'] = "Enrichment Rule(s) replaced"
         else:
             current_rules_lut = {
@@ -2331,7 +2372,7 @@ def fetchNumberEnrichment(request_payload=None):
                 resp = ret[0].get_json(force=True)
                 response_payload['error'] = resp['error']
                 response_payload['msg'] = resp['msg']
-                return jsonify(response_payload), ret[1]
+                return createApiResponse(**response_payload, status_code=ret[1])
             response_payload['msg'] = "Enrichment Rule(s) updated"
 
         # let requestor know what rules are now available
@@ -2345,16 +2386,18 @@ def fetchNumberEnrichment(request_payload=None):
                 'rule_name': strFieldsToDict(rule.description)['name']
             })
 
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            **response_payload,
+            kamreload=True,
+        )
 
     except Exception as ex:
         return showApiError(ex, response_payload)
 
 
 # TODO: standardize response payload (use data param)
-# TODO: stop shadowing builtin functions! -> type == builtin
+# TODO: stop shadowing builtin functions -> type == builtin
 # return value should be used in an http/flask context
 def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None):
     """
@@ -2376,12 +2419,12 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': None, 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
     # define here so we can cleanup in finally statement
     csv_file = ''
 
     try:
-        db = SessionLoader()
+        db = startSession()
 
         if isinstance(gwgroupid, int):
             gwgroupid = str(gwgroupid)
@@ -2546,7 +2589,7 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None, dtfi
     return generateCDRS(gwgroupid, type, email, cdrfilter=filter, dtfilter=dtfilter, nonCompletedCalls=nonCompletedCalls)
 
 
-# TODO: standardize response payload (use data param)
+# TODO: standardize response payload (use createApiResponse())
 @api.route("/api/v1/cdrs/endpoint/<int:gwid>", methods=['GET'])
 @api_security
 def getGatewayCDRS(gwid=None):
@@ -2559,10 +2602,10 @@ def getGatewayCDRS(gwid=None):
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': None, 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
-        db = SessionLoader()
+        db = startSession()
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2622,7 +2665,7 @@ def createBackup():
         backup_path = os.path.join(settings.BACKUP_FOLDER, backup_name)
         # need to decrypt password
         if isinstance(settings.KAM_DB_PASS, bytes):
-            kampass = AES_CTR.decrypt(settings.KAM_DB_PASS).decode('utf-8')
+            kampass = AES_CTR.decrypt(settings.KAM_DB_PASS)
         else:
             kampass = settings.KAM_DB_PASS
 
@@ -2655,9 +2698,6 @@ def restoreBackup():
     """
     Restore backup of the database
     """
-
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
 
     try:
         if (settings.DEBUG):
@@ -2697,13 +2737,14 @@ def restoreBackup():
         with open(restore_path, 'rb') as fp:
             subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
 
-        response_payload['msg'] = "The restore was successful"
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return response_payload, StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='The restore was successful',
+            kamreload=True,
+        )
 
     except Exception as ex:
-        return showApiError(ex, response_payload)
+        return showApiError(ex)
 
 
 @api.route("/api/v1/sys/generatepassword", methods=['GET'])
@@ -2715,16 +2756,13 @@ def generatePassword():
 
     DEF_PASSWORD_LEN = 32
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
-        response_payload['data'].append(urandomChars(DEF_PASSWORD_LEN))
-        response_payload['msg'] = 'Succesfully generated password'
-        return jsonify(response_payload), StatusCodes.HTTP_OK
-
+        return createApiResponse(
+            msg='Successfully generated password',
+            data=[urandomChars(DEF_PASSWORD_LEN)],
+        )
     except Exception as ex:
-        return showApiError(ex, response_payload)
+        return showApiError(ex)
 
 
 # TODO:  The response coming back from Kamailio Command Line
@@ -2792,9 +2830,6 @@ def getOptionMessageStatus(domain):
 @api.route("/api/v1/domains/msteams/test/<string:domain>", methods=['GET'])
 @api_security
 def testConnectivity(domain):
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         test_data = {"hostname_check": False, "tls_check": False, "option_check": False}
 
@@ -2831,9 +2866,10 @@ def testConnectivity(domain):
         if getOptionMessageStatus(domain):
             test_data['option_check'] = True
 
-        response_payload['msg'] = 'Tests ran without error'
-        response_payload['data'].append(test_data)
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        return createApiResponse(
+            msg='Tests ran without error',
+            data=[test_data],
+        )
 
     except Exception as ex:
         return showApiError(ex)
@@ -2846,13 +2882,13 @@ def testConnectivity(domain):
 def getCertificates(domain=None):
     db = DummySession()
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_data = []
 
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
@@ -2865,7 +2901,7 @@ def getCertificates(domain=None):
 
         for certificate in certificates:
             # append summary of endpoint group data
-            response_payload['data'].append({
+            response_data.append({
                 'id': certificate.id,
                 'domain': certificate.domain,
                 'type': certificate.type,
@@ -2873,8 +2909,11 @@ def getCertificates(domain=None):
             })
 
         db.commit()
-        response_payload['msg'] = 'Certificates found' if len(certificates) > 0 else 'No Certificates'
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        return createApiResponse(
+            msg='Certificates found' if len(certificates) > 0 else 'No Certificates',
+            data=response_data,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -2909,9 +2948,6 @@ def createCertificate():
     CERT_TYPE_GENERATED = "generated"
     CERT_TYPE_UPLOADED = "uploaded"
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     # Check parameters and raise exception if missing required parameters
     requiredParameters = ['domain']
 
@@ -2919,7 +2955,7 @@ def createCertificate():
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         request_payload = getRequestData()
 
@@ -2956,7 +2992,7 @@ def createCertificate():
                     key, cert = letsencrypt.generateCertificate(domain, email, default=replace_default_cert)
 
             except Exception as ex:
-                globals.reload_required = False
+                getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
                 raise http_exceptions.BadRequest(
                     "Issue with validating ownership of the domain.  Please add a DNS record for this domain and try again")
 
@@ -2984,11 +3020,12 @@ def createCertificate():
             if not kamtls.addCustomTLSConfig(domain, ip, port, server_name_mode):
                 raise Exception('Failed to add Certificate to Kamailio')
 
-        response_payload['msg'] = "Certificate creation succeeded"
-        response_payload['data'].append({"id": certificate.id})
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg="Certificate creation succeeded",
+            data=[{"id": certificate.id}],
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -3003,13 +3040,11 @@ def createCertificate():
 def deleteCertificates(domain=None):
     db = DummySession()
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if settings.DEBUG:
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         # if domain is not None:
         #     domain_configs = getCustomTLSConfigs(domain)
@@ -3027,10 +3062,11 @@ def deleteCertificates(domain=None):
 
         db.commit()
 
-        response_payload['msg'] = 'Certificate Deleted'
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg='Certificate Deleted',
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()
@@ -3045,13 +3081,11 @@ def deleteCertificates(domain=None):
 def uploadCertificates(domain=None):
     db = DummySession()
 
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
-
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         data = getRequestData()
 
@@ -3118,11 +3152,12 @@ def uploadCertificates(domain=None):
 
         db.commit()
 
-        response_payload['msg'] = "Certificate and Key were uploaded"
-        response_payload['data'].append({"id": certificate.id})
-        globals.reload_required = True
-        response_payload['kamreload'] = True
-        return jsonify(response_payload), StatusCodes.HTTP_OK
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        return createApiResponse(
+            msg="Certificate and Key were uploaded",
+            data=[{"id": certificate.id}],
+            kamreload=True,
+        )
 
     except Exception as ex:
         db.rollback()

@@ -282,10 +282,10 @@ dumpMysqlDatabases() {
                 PASS=$(printf '%s' "$NODE" | cut -s -d '@' -f -1 | cut -s -d ':' -f 2-)
                 HOST=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -d ':' -f -1)
                 PORT=$(printf '%s' "$NODE" | cut -d '@' -f 2- | cut -s -d ':' -f 2-)
-                USERS+=(${USER:-root})
-                PASSES+=(${PASS:-})
-                HOSTS+=(${HOST:-localhost})
-                PORTS+=(${PORT:-3306})
+                USERS+=("$USER")
+                PASSES+=("$PASS")
+                HOSTS+=("$HOST")
+                PORTS+=("$PORT")
                 IDX_MAX=$(( IDX_MAX + 1 ))
                 shift
                 ;;

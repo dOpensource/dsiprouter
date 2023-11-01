@@ -17,6 +17,11 @@ function install {
         libcurl4-openssl-dev libjansson-dev cmake firewalld python3 python3-venv
     apt-get install -y -t buster build-essential
 
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
+
     # we need a newer version of certbot than the distro repos offer
     apt-get remove -y *certbot*
     python3 -m venv /opt/certbot/
@@ -113,24 +118,26 @@ EOF
     fi
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
-    kamdbctl create
+    kamdbctl create || {
+        printerr 'Failed creating kamailio database'
+        return 1
+    }
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
     systemctl start firewalld
 
-    # Firewall settings
+    # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v1.service /etc/systemd/system/kamailio.service
-    chmod 644 /etc/systemd/system/kamailio.service
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v1.service /lib/systemd/system/kamailio.service
+    chmod 644 /lib/systemd/system/kamailio.service
     systemctl daemon-reload
     systemctl enable kamailio
 
@@ -155,32 +162,32 @@ EOF
     # setup dSIPRouter module for kamailio
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "x$(cd ${SRC_DIR}/kamailio 2>/dev/null && git branch --show-current 2>/dev/null)" != "x${KAM_VERSION_FULL}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
 
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
     fi
     ( cd ${SRC_DIR}/libjwt && autoreconf -i && ./configure --prefix=/usr && make && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libjwt'; return 1; }
 
     ## compile and install libks
     if [[ ! -d ${SRC_DIR}/libks ]]; then
-        git clone --single-branch https://github.com/signalwire/libks ${SRC_DIR}/libks
+        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
     fi
     ( cd ${SRC_DIR}/libks && cmake -DCMAKE_INSTALL_PREFIX=/usr . && make install; exit $?; ) ||
     { printerr 'Failed to compile and install libks'; return 1; }
 
     ## compile and install libstirshaken
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
-        git clone --depth 1 https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
     fi
     ( cd ${SRC_DIR}/libstirshaken && ./bootstrap.sh && ./configure --prefix=/usr &&
         make && make install && ldconfig; exit $?;
@@ -218,7 +225,6 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
-    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp
     firewall-cmd --reload
 
     # Remove kamailio Logging

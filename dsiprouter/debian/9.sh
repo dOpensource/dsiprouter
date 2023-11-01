@@ -16,12 +16,15 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Install dependencies for dSIPRouter
-    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld
+    apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl \
+        python3-venv libpq-dev firewalld sudo
     apt-get install -y --allow-unauthenticated libmariadbclient-dev
     apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime libpq-dev
 
-    # reset python cmd in case it was just installed
-    setPythonCmd
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        return 1
+    fi
 
     # make sure the nginx user has access to dsiprouter directories
     usermod -a -G dsiprouter nginx
@@ -40,10 +43,11 @@ function install() {
     firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
+    python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
-        printerr "dSIPRouter install failed: Couldn't install required python libraries"
-        exit 1
+        printerr "Failed installing required python libraries"
+        return 1
     fi
 
     # setup dsiprouter nginx configs
@@ -70,11 +74,12 @@ function install() {
         -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
         -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
         -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
-        -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
         ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v1.service > /lib/systemd/system/dsiprouter.service
     chmod 644 /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
     systemctl enable dsiprouter
+
+    return 0
 }
 
 function uninstall() {
@@ -108,16 +113,19 @@ function uninstall() {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    return 0
 }
 
 case "$1" in
-    uninstall)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

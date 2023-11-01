@@ -1,13 +1,12 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, re, json, socket, requests, logging, traceback, inspect, ssl
+import os, re, json, socket, logging, traceback, inspect, ssl
 from calendar import monthrange
 from importlib import reload
-from flask import request, render_template, make_response, jsonify
-from sqlalchemy import exc as sql_exceptions
-from werkzeug import exceptions as http_exceptions
+from flask import request, render_template, make_response
 from werkzeug.utils import escape
 from werkzeug.urls import iri_to_uri
 import settings
@@ -365,33 +364,6 @@ def allowed_file(filename, ALLOWED_EXTENSIONS={'csv', 'txt', 'pdf', 'png', 'jpg'
 def showError(type="", code=None, msg=None):
     code = int(code) if code is not None else StatusCodes.HTTP_INTERNAL_SERVER_ERROR
     return render_template('error.html', type=type, msg=msg), code
-
-def showApiError(ex, payload={}):
-    debugException(ex)
-
-    if isinstance(ex, sql_exceptions.SQLAlchemyError):
-        payload['error'] = "db"
-        if len(str(ex)) > 0:
-            payload['msg'] = str(ex)
-        else:
-            payload['msg'] = "Unknown DB Error Occurred"
-        status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
-    elif isinstance(ex, http_exceptions.HTTPException):
-        payload['error'] = "http"
-        if len(ex.description) > 0:
-            payload['msg'] = ex.description
-        else:
-            payload['msg'] = "Unknown HTTP Error Occurred"
-        status_code = ex.code or StatusCodes.HTTP_INTERNAL_SERVER_ERROR
-    else:
-        payload['error'] = "server"
-        if len(str(ex)) > 0:
-            payload['msg'] = str(ex)
-        else:
-            payload['msg'] = "Unknown Error Occurred"
-        status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
-
-    return jsonify(payload), status_code
 
 def redirectCustom(location, *render_args, code=302, response_cb=None, force_redirect=False):
     """

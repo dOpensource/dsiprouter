@@ -11,6 +11,9 @@
   if (typeof toggleElemDisabled === "undefined") {
     throw new Error("toggleElemDisabled() is required and is not defined");
   }
+  if (typeof reloadKamRequired === "undefined") {
+    throw new Error("reloadKamRequired() is required and is not defined");
+  }
 
   // throw an error if required globals not defined
   if (typeof API_BASE_URL === "undefined") {
@@ -158,6 +161,9 @@
         btn.addClass("btn-success");
         btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
         btn.attr("disabled", true);
+
+	      // Update Reload buttons
+	      reloadKamRequired(true);
 
         if (action === "POST") {
           gwgroup_table.row.add({

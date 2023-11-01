@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # NOTES:
 # contains utility functions and shared variables
 # should be sourced by an external script
@@ -24,7 +22,6 @@ export GOOGLE_DNS_IPV6="2001:4860:4860::8888"
 # Constants for imported functions
 export DSIP_INIT_FILE=${DSIP_INIT_FILE:-"/lib/systemd/system/dsip-init.service"}
 export DSIP_SYSTEM_CONFIG_DIR=${DSIP_SYSTEM_CONFIG_DIR:-"/etc/dsiprouter"}
-DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}
 export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
 
 # reuse credential settings from python files (exported for later usage)
@@ -34,6 +31,8 @@ export CREDS_MAX_LEN=${CREDS_MAX_LEN:-$(grep -m 1 -oP 'CREDS_MAX_LEN[ \t]+=[ \t]
 export HASH_ITERATIONS=${HASH_ITERATIONS:-$(grep -m 1 -oP 'HASH_ITERATIONS[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 export HASHED_CREDS_ENCODED_MAX_LEN=${HASHED_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'HASHED_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 export AESCTR_CREDS_ENCODED_MAX_LEN=${AESCTR_CREDS_ENCODED_MAX_LEN:-$(grep -m 1 -oP 'AESCTR_CREDS_ENCODED_MAX_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export AES_CTR_NONCE_SIZE=${AES_CTR_NONCE_SIZE:-$(grep -m 1 -oP 'NONCE_SIZE[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
+export AES_CTR_KEY_SIZE=${AES_CTR_KEY_SIZE:-$(grep -m 1 -oP 'KEY_SIZE[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}
 
 # Flag denoting that these functions have been imported (verifiable in sub-processes)
 export DSIP_LIB_IMPORTED=1
@@ -178,6 +177,51 @@ function setConfigAttrib() {
 }
 export -f setConfigAttrib
 
+# $1 == credentials to encrypt
+function encryptCreds() {
+    local PT_CREDS="$1"
+    # this is the file not the raw key
+    local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")}
+    local NONCE CT_HEX
+
+    # openssl version - depends on openssl, xxd, and sed
+    NONCE=$(openssl rand -hex $AES_CTR_NONCE_SIZE)
+    CT_HEX=$(
+        openssl enc -aes-256-ctr -e \
+            -iv "$NONCE" \
+            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${DSIP_PRIV_KEY}")" \
+            < <(echo -n "$PT_CREDS") \
+            2>/dev/null | xxd -p -c $AESCTR_CREDS_ENCODED_MAX_LEN
+    )
+    echo -n "${NONCE}${CT_HEX}"
+}
+export -f encryptCreds
+
+# $1 == attribute name
+# $2 == attribute value
+# $3 == python config file
+function encryptConfigAttrib() {
+    local NAME="$1"
+    local VALUE="$2"
+    local CONFIG_FILE="$3"
+    local CT_CREDS
+
+    # openssl version - depends on openssl, xxd, and sed
+    CT_CREDS=$(encryptCreds "$VALUE")
+    setConfigAttrib "$NAME" "$CT_CREDS" "$CONFIG_FILE" -qb
+    # python version - depends on dsiprouter's python3 venv and pycryptodome
+#    ${PYTHON_CMD} <<EOPY
+#import os, sys
+#os.chdir('${DSIP_PROJECT_DIR}/gui')
+#sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
+#import settings
+#from shared import updateConfig
+#from util.security import AES_CTR
+#updateConfig(settings, {'$NAME': AES_CTR.encrypt('$VALUE')})
+#EOPY
+}
+export -f setConfigAttrib
+
 # $1 == attribute name
 # $2 == python config file
 # output: attribute value
@@ -190,7 +234,6 @@ function getConfigAttrib() {
 }
 export -f getConfigAttrib
 
-# TODO: openssl native version
 # $1 == attribute name
 # $2 == python config file
 # output: attribute value decrypted
@@ -198,14 +241,33 @@ export -f getConfigAttrib
 function decryptConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
-    local PYTHON=${PYTHON_CMD:-python3}
+    # this is the file not the raw key
+    local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")}
+    local NONCE NONCE_OFFSET
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
     # if value is not a byte literal it isn't encrypted
     if ! printf '%s' "${VALUE}" | grep -q -oP '(b""".*"""|'"b'''.*'''"'|b".*"|'"b'.*')"; then
         printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
     else
-        ${PYTHON} -c "import os; os.chdir('${DSIP_PROJECT_DIR}/gui'); import sys; sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); import settings; from util.security import AES_CTR; print(AES_CTR.decrypt(settings.${NAME}).decode('utf-8'), end='')"
+        VALUE=$(perl -pe 's%b"""(.*)"""|'"b'''(.*)'''"'|b"(.*)"|'"b'(.*)'"'%\1\2\3\4%' <<<"$VALUE")
+        # openssl version - depends on openssl and xxd
+        NONCE_OFFSET=$((AES_CTR_NONCE_SIZE * 2))
+        NONCE=${VALUE:0:$NONCE_OFFSET}
+        openssl enc -aes-256-ctr -d \
+            -iv "$NONCE" \
+            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${DSIP_PRIV_KEY}")" \
+            < <(echo -n "${VALUE:$NONCE_OFFSET}" | xxd -r -p -c $AESCTR_CREDS_ENCODED_MAX_LEN) \
+            2>/dev/null
+        # python version - depends on dsiprouter's python3 venv and pycryptodome
+#        ${PYTHON_CMD} <<EOPY
+#import os, sys
+#os.chdir('${DSIP_PROJECT_DIR}/gui')
+#sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
+#import settings
+#from util.security import AES_CTR
+#print(AES_CTR.decrypt(settings.${NAME}), end='')
+#EOPY
     fi
 }
 export -f decryptConfigAttrib
@@ -793,52 +855,134 @@ function checkSSH() {
 }
 export -f checkSSH
 
-# usage: checkDB [options] <database>
+# bake in the connection details for kamailio user/database
+# standardizes our usage and avoids various pitfalls with the client APIs
+# usage:    withKamDB <mysql cmd> [mysql options/args]
+function withKamDB() {
+    local CONN_OPTS=()
+    local CMD="$1"
+    shift
+
+    [[ -n "$KAM_DB_HOST" ]] && CONN_OPTS+=( "--host=${KAM_DB_HOST}" )
+    [[ -n "$KAM_DB_PORT" ]] && CONN_OPTS+=( "--port=${KAM_DB_PORT}" )
+    [[ -n "$KAM_DB_USER" ]] && CONN_OPTS+=( "--user=${KAM_DB_USER}" )
+    [[ -n "$KAM_DB_PASS" ]] && CONN_OPTS+=( "--password=${KAM_DB_PASS}" )
+    if [[ "$1" == "mysql" ]]; then
+        [[ -n "$KAM_DB_NAME" ]] && CONN_OPTS+=( "--database=${KAM_DB_NAME}" )
+    fi
+
+    if [[ -p /dev/stdin ]]; then
+        ${CMD} "${CONN_OPTS[@]}" "$@" </dev/stdin
+    else
+        ${CMD} "${CONN_OPTS[@]}" "$@"
+    fi
+    return $?
+}
+export -f withKamDB
+
+# bake in the connection details for root user/database
+# standardizes our usage and avoids various pitfalls with the client APIs
+# usage:    withRootDBConn [options] <mysql cmd> [mysql options/args]
+# options:  --db=<mysql db name>
+function withRootDBConn() {
+    local TMP CMD
+    local CONN_OPTS=()
+
+    case "$1" in
+        --db=*)
+            TMP=$(cut -d '=' -f 2- <<<"$1")
+            [[ -n "$TMP" ]] && CONN_OPTS+=( "--database=${TMP}" )
+            shift
+            CMD="$1"
+            shift
+            ;;
+        *)
+            CMD="$1"
+            shift
+            if [[ "$CMD" == "mysql" ]]; then
+                [[ -n "$ROOT_DB_NAME" ]] && CONN_OPTS+=( "--database=${ROOT_DB_NAME}" )
+            fi
+            ;;
+    esac
+
+    [[ -n "$ROOT_DB_HOST" ]] && CONN_OPTS+=( "--host=${ROOT_DB_HOST}" )
+    [[ -n "$ROOT_DB_PORT" ]] && CONN_OPTS+=( "--port=${ROOT_DB_PORT}" )
+    [[ -n "$ROOT_DB_USER" ]] && CONN_OPTS+=( "--user=${ROOT_DB_USER}" )
+    [[ -n "$ROOT_DB_PASS" ]] && CONN_OPTS+=( "--password=${ROOT_DB_PASS}" )
+
+    if [[ -p /dev/stdin ]]; then
+        ${CMD} "${CONN_OPTS[@]}" "$@" </dev/stdin
+    else
+        ${CMD} "${CONN_OPTS[@]}" "$@"
+    fi
+    return $?
+}
+export -f withRootDBConn
+
+# allow passing in connection details to bake into the command
+# standardizes our usage and avoids various pitfalls with the client APIs
+# usage:    withGivenDB [options] <mysql cmd> [mysql options/args]
 # options:  --user=<mysql user>
 #           --pass=<mysql password>
 #           --host=<mysql host>
 #           --port=<mysql port>
-# returns:  0 if DB exists, 1 otherwise
-function checkDB() {
-    local MYSQL_DBNAME=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
+#           --db=<mysql db name>
+function withGivenDB() {
+    local TMP
+    local ARGS=()
+    local CONN_OPTS=()
 
     while (( $# > 0 )); do
-        # last arg is database
-        if (( $# == 1 )); then
-            MYSQL_DBNAME="$1"
-            shift
-            break
-        fi
-
         case "$1" in
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+            --user=*)
+                TMP=$(cut -d '=' -f 2- <<<"$1")
+                [[ -n "$TMP" ]] && CONN_OPTS+=( "--user=${TMP}" )
                 shift
                 ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+            --pass=*)
+                TMP=$(cut -d '=' -f 2- <<<"$1")
+                [[ -n "$TMP" ]] && CONN_OPTS+=( "--password=${TMP}" )
                 shift
                 ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+            --host=*)
+                TMP=$(cut -d '=' -f 2- <<<"$1")
+                [[ -n "$TMP" ]] && CONN_OPTS+=( "--host=${TMP}" )
                 shift
                 ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+            --port=*)
+                TMP=$(cut -d '=' -f 2- <<<"$1")
+                [[ -n "$TMP" ]] && CONN_OPTS+=( "--port=${TMP}" )
                 shift
                 ;;
-            *)  # not valid option skip
+            --db=*)
+                TMP=$(cut -d '=' -f 2- <<<"$1")
+                [[ -n "$TMP" ]] && CONN_OPTS+=( "--database=${TMP}" )
+                shift
+                ;;
+            *)
+                ARGS+=( "$1" )
                 shift
                 ;;
         esac
     done
 
-    local CHECK=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-        -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$MYSQL_DBNAME';" 2>/dev/null)
+    if [[ -p /dev/stdin ]]; then
+        ${ARGS[0]} "${CONN_OPTS[@]}" "${ARGS[@]:1}" </dev/stdin
+    else
+        ${ARGS[0]} "${CONN_OPTS[@]}" "${ARGS[@]:1}"
+    fi
+    return $?
+}
+export -f withGivenDB
+
+# usage: checkDB <database>
+# returns:  0 if DB exists, 1 otherwise
+function checkDB() {
+    local CHECK=$(
+        withRootDBConn mysql -sN \
+            -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='$1';" \
+            2>/dev/null
+    )
     if [[ -n "$CHECK" ]]; then
         return 0
     fi
@@ -846,161 +990,47 @@ function checkDB() {
 }
 export -f checkDB
 
-# usage: checkDBUserExists [options] <user>@<host>
-# options:  --user=<mysql user>
-#           --pass=<mysql password>
-#           --host=<mysql host>
-#           --port=<mysql port>
-# notes: make sure to test for proper DB connection
+# usage: checkDBUserExists <user>@<host>
 # returns: 0 if user exists, 1 on DB connection failure, 2 if user does not exist
 function checkDBUserExists() {
-    local MYSQL_CHECK_USER=""
-    local MYSQL_CHECK_HOST=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
+    local USER=$(cut -d '@' -f 1 <<<"$1")
+    local HOST=$(cut -d '@' -f 2 <<<"$1")
 
-    while (( $# > 0 )); do
-        # last arg is user and database
-        if (( $# == 1 )); then
-            MYSQL_CHECK_USER=$(printf '%s' "$1" | cut -d '@' -f 1)
-            MYSQL_CHECK_HOST=$(printf '%s' "$1" | cut -d '@' -f 2)
-            shift
-            break
-        fi
-
-        case "$1" in
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            *)  # not valid option skip
-                shift
-                ;;
-        esac
-    done
-
-    return $(mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-        -e "SELECT IF(EXISTS(SELECT 1 FROM mysql.user WHERE User='${MYSQL_CHECK_USER}' AND Host='${MYSQL_CHECK_HOST}'),0,2);" 2>/dev/null)
+    return $(
+        withRootDBConn mysql -sN -A \
+            -e "SELECT IF(EXISTS(SELECT 1 FROM mysql.user WHERE User='${USER}' AND Host='${HOST}'),0,2);" \
+            2>/dev/null
+    )
 }
 export -f checkDBUserExists
 
-# usage: dumpDB [options] <database>
-# options:  --user=<mysql user>
-#           --pass=<mysql password>
-#           --host=<mysql host>
-#           --port=<mysql port>
+# usage: dumpDB <databases>
 # output: dumped database as sql (redirect as needed)
 # returns: 0 on success, non zero otherwise
 function dumpDB() {
-    local MYSQL_DBNAME=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
-
-    while (( $# > 0 )); do
-        # last arg is database
-        if (( $# == 1 )); then
-            MYSQL_DBNAME="$1"
-            shift
-            break
-        fi
-
-        case "$1" in
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            *)  # not valid option skip
-                shift
-                ;;
-        esac
-    done
-
-    (mysqldump --single-transaction --opt --routines --triggers --hex-blob \
-        --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" --databases ${MYSQL_DBNAME} 2>/dev/null \
-        | sed -r -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g';
-        exit ${PIPESTATUS[0]}; ) 2>/dev/null
-    return $?
+    withRootDBConn mysqldump --single-transaction --opt --routines --triggers --hex-blob --databases "$@" \
+        2>/dev/null |
+        sed -r \
+            -e 's|DEFINER=[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']@[`"'"'"'][a-zA-Z0-9_%]*[`"'"'"']||g' \
+            -e 's|ENGINE=MyISAM|ENGINE=InnoDB|g' \
+            2>/dev/null
+    return ${PIPESTATUS[0]}
 }
 export -f dumpDB
 
-# usage: dumpDBUser [options] <user>@<database>
-# options:  --user=<mysql user>
-#           --pass=<mysql password>
-#           --host=<mysql host>
-#           --port=<mysql port>
+# usage: dumpDBUser <user>@<host>|<user>
 # output: dumped database user as sql (redirect as needed)
 # returns: 0 on success, non zero otherwise
 function dumpDBUser() {
-    local MYSQL_DBNAME=""
-    local MYSQL_DBUSER=""
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
+    USER=$(printf '%s' "$1" | cut -s -d '@' -f 1)
+    if [[ -n "$USER" ]]; then
+        shift
+        USER="$1"
+    fi
 
-    while (( $# > 0 )); do
-        # last arg is user and database
-        if (( $# == 1 )); then
-            MYSQL_DBUSER=$(printf '%s' "$1" | cut -d '@' -f 1)
-            MYSQL_DBNAME=$(printf '%s' "$1" | cut -d '@' -f 2)
-            shift
-            break
-        fi
-
-        case "$1" in
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            *)  # not valid option skip
-                shift
-                ;;
-        esac
-    done
-
-    (mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
-        -e "SELECT DISTINCT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user='${MYSQL_DBUSER}'" 2>/dev/null \
-        | mysql -sN -A --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" 2>/dev/null \
+    (withRootDBConn mysql -sN -A \
+        -e "SELECT DISTINCT CONCAT('SHOW GRANTS FOR ''',user,'''@''',host,''';') FROM mysql.user WHERE user='${USER}'" 2>/dev/null \
+        | withRootDBConn mysql -sN -A 2>/dev/null \
         | sed 's/$/;/g' \
         | awk '!x[$0]++' &&
         printf '%s\n' 'FLUSH PRIVILEGES;';
@@ -1017,44 +1047,32 @@ export -f dumpDBUser
 #           --db=<mysql database name>
 # returns:  0 if DB exists, 1 otherwise
 function sqlAsTransaction() {
-    local MYSQL_DBNAME TMP
-    local MYSQL_USER=${MYSQL_USER:-root}
-    local MYSQL_PASS=${MYSQL_PASS:-}
-    local MYSQL_HOST=${MYSQL_HOST:-localhost}
-    local MYSQL_PORT=${MYSQL_PORT:-3306}
-    local SQL_STATEMENTS=()
+    local TMP
+    local DB_SET=0
+    local MYSQL_USER='' MYSQL_PASS='' MYSQL_HOST='' MYSQL_PORT=''
+    local OPTS=() SQL_STATEMENTS=()
 
     while (( $# > 0 )); do
         case "$1" in
-            --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+            --user=*|--pass=*|--host=*|--port=*)
+                OPTS+=( "$1" )
                 shift
                 ;;
-            --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+            --db=*)
+                OPTS+=( "$1" )
                 shift
-                ;;
-            --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
-                ;;
-            --db*)
-                MYSQL_DBNAME=$(printf '%s' "$1" | cut -d '=' -f 2-)
-                shift
+                DB_SET=1
                 ;;
             *)  # all positional args are part of SQL query
-                SQL_STATEMENTS+=("$1")
+                SQL_STATEMENTS+=( "$1" )
                 shift
                 ;;
         esac
     done
 
     # creating the procedure will fail if we don't select a database
-    MYSQL_DBNAME=${MYSQL_DBNAME:-mysql}
+    # TODO: do we need this now that we switched to prepared statements?
+    (( $DB_SET == 0 )) && OPTS+=( "--db=mysql" )
 
     # if query was piped to stdin use that instead of positional args
     if [[ -p /dev/stdin ]]; then
@@ -1062,41 +1080,18 @@ function sqlAsTransaction() {
         [[ -n "$TMP" ]] && SQL_STATEMENTS=( "$TMP" )
     fi
 
-    local STATUS=$(mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" ${MYSQL_DBNAME} 2>/dev/null << EOF
-DROP PROCEDURE IF EXISTS tryStatements;
-DELIMITER //
-CREATE PROCEDURE tryStatements(OUT ret BOOL)
-BEGIN
-    DECLARE error_occurred BOOL DEFAULT 0;
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION SET error_occurred = 1;
-    START TRANSACTION;
-
-    ${SQL_STATEMENTS[@]}
-
-    IF error_occurred THEN
-        ROLLBACK;
-    ELSE
-        COMMIT;
-    END IF;
-
-    set ret = error_occurred;
-END //
-DELIMITER ;
-
-CALL tryStatements(@ret);
-DROP PROCEDURE tryStatements;
-
-select @ret;
+    cat <<EOF | withGivenDB "${OPTS[@]}" mysql -s
+START TRANSACTION;
+${SQL_STATEMENTS[@]}
+SET @end_transaction = (SELECT IF(@@error_count > 0, "ROLLBACK;", "COMMIT;"));
+PREPARE stmt FROM @end_transaction;
+EXECUTE stmt;
 EOF
-    )
-
-    # in case we had an error connecting
-    STATUS=$((STATUS + $?))
-
-    return $STATUS
+    return $?
 }
 export -f sqlAsTransaction
 
+# TODO: remove dependency on system python3
 # usage: parseDBConnURI <field> <connection uri>
 # field:    -user
 #           -pass
@@ -1104,37 +1099,50 @@ export -f sqlAsTransaction
 #           -port
 #           -name
 # output: the selected field of the connection uri
-# returns: 0 on success, non zero otherwise
+# returns:
+#   0   == field set
+#   1   == field not set
+#   255 == error parsing
 function parseDBConnURI() {
-    # parse based on
+    local GROUP
+
     case "$1" in
         -user)
             shift
-            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\1%' <<<"$1"
+            GROUP=0
             ;;
         -pass)
             shift
-            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\2%' <<<"$1"
+            GROUP=1
             ;;
         -host)
             shift
-            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\3%' <<<"$1"
+            GROUP=2
             ;;
         -port)
             shift
-            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\4%' <<<"$1"
+            GROUP=3
             ;;
         -name)
             shift
-            perl -pe 's%(?:([^:@\t\r\n\v\f]*)(?::([^@\t\r\n\v\f]*))?@)?([^:/\t\r\n\v\f]+)(?::([^/\t\r\n\v\f]*))?(?:/(.+))?%\5%' <<<"$1"
+            GROUP=4
             ;;
         *)  # not valid field
             return 1
             ;;
     esac
 
-    # valid field selected
-    return 0
+    # WARNING: we must use system python3 here (dsiprouter python venv may not exist)
+    python3 <<EOPY
+import re
+matches = re.search(r'[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*', '$1')
+if matches is None:
+    exit(1)
+if matches.groups()[$GROUP] is None:
+    exit(1)
+print(matches.groups()[$GROUP], end='')
+EOPY
+    return $?
 }
 export -f parseDBConnURI
 
@@ -1209,11 +1217,9 @@ function sendKamCmd() {
 }
 export -f sendKamCmd
 
-# TODO: input validation
-# TODO: swap with bash native version?
+# TODO: improve performance of openssl native version and swap it out
 function hashCreds() {
 	local CREDS SALT DK_LEN
-	local PYTHON=${PYTHON_CMD:-python3}
 
 	# grab credentials from stdin if provided
 	if [[ -p /dev/stdin ]]; then
@@ -1254,7 +1260,8 @@ function hashCreds() {
 
 	# python native version
 	# no external dependencies other than vanilla python3
-	${PYTHON} <<EOPYTHON
+	# WARNING: we must use system python3 here (dsiprouter python venv may not exist)
+	python3 <<EOPYTHON
 import hashlib,binascii
 creds='$CREDS'.encode('utf-8')
 salt='$SALT'.encode('utf-8')
@@ -1267,8 +1274,77 @@ EOPYTHON
 }
 export -f hashCreds
 
-# TODO: openssl native version
-#function encryptCreds() {
-#    ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from util.security import AES_CTR; AES_CTR.genKey()"
-#}
-#export -f encryptCreds
+# args:
+#   $1  ==  version 1 to compare from
+#   $2  ==  compare operation
+#   $3  ==  version 2 to compare against
+# returns:
+#   0   ==  version comparison is true
+#   1   ==  version comparison is false
+#   255 ==  comparison failed
+function versionCompare() { (
+    set -e
+    trap 'exit 255' ERR
+
+    if [[ ! "$1$2" =~ [\.0-9]+ ]]; then
+        echo "${FUNCNAME}(): invalid version"
+        exit 255
+    fi
+
+    local IFS=.
+    local IDX LEN
+    local VER1=( $1 ) VER2=( $3 )
+    if (( ${#VER1[@]} >= ${#VER2[@]} )); then
+        LEN=${#VER1[@]}
+    else
+        LEN=${#VER2[@]}
+    fi
+    for (( IDX=0; IDX<$LEN; IDX++)); do
+        VER1[$IDX]=${VER1[$IDX]:-0}
+        VER2[$IDX]=${VER2[$IDX]:-0}
+    done
+
+    case "$2" in
+        lt)
+            [[ "${VER1[@]}" == "${VER2[@]}" ]] && exit 1
+            for (( IDX=0; IDX<$LEN; IDX++)); do
+                (( ${VER1[$IDX]} > ${VER2[$IDX]} )) && exit 1
+            done
+            exit 0
+            ;;
+        lteq)
+            for (( IDX=0; IDX<$LEN; IDX++)); do
+                (( ${VER1[$IDX]} <= ${VER2[$IDX]} )) || exit 1
+            done
+            exit 0
+            ;;
+        eq)
+            COMP='=='
+            ;;
+        gt)
+            [[ "${VER1[@]}" == "${VER2[@]}" ]] && exit 1
+            for (( IDX=0; IDX<$LEN; IDX++)); do
+                (( ${VER1[$IDX]} < ${VER2[$IDX]} )) && exit 1
+            done
+            exit 0
+            ;;
+        gteq)
+            for (( IDX=0; IDX<$LEN; IDX++)); do
+                (( ${VER1[$IDX]} >= ${VER2[$IDX]} )) || exit 1
+            done
+            exit 0
+            ;;
+        *)
+            echo "${FUNCNAME}(): invalid comparator"
+            exit 255
+            ;;
+    esac
+) }
+export -f versionCompare
+
+# $1 == repo path
+function getGitTagFromShallowRepo() { (
+    cd "$1" 2>/dev/null &&
+    git config --get remote.origin.fetch | cut -d ':' -f 2- | rev | cut -d '/' -f 1 | rev
+) }
+export -f getGitTagFromShallowRepo

@@ -1,11 +1,11 @@
 /* custom icons */
 @font-face {
   font-family: 'icomoon';
-  src:  url('/static/fonts/icomoon.eot?flwvm');
-  src:  url('/static/fonts/icomoon.eot?flwvm#iefix') format('embedded-opentype'),
-    url('/static/fonts/icomoon.ttf?flwvm') format('truetype'),
-    url('/static/fonts/icomoon.woff?flwvm') format('woff'),
-    url('/static/fonts/icomoon.svg?flwvm#icomoon') format('svg');
+  src: url('/static/fonts/icomoon.eot?flwvm');
+  src: url('/static/fonts/icomoon.eot?flwvm#iefix') format('embedded-opentype'),
+  url('/static/fonts/icomoon.ttf?flwvm') format('truetype'),
+  url('/static/fonts/icomoon.woff?flwvm') format('woff'),
+  url('/static/fonts/icomoon.svg?flwvm#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -28,36 +28,47 @@
 .icon-fusionpbx_full:before {
   content: "\e900";
 }
+
 .icon-gryphon:before {
   content: "\e901";
 }
+
 .icon-fusionpbx:before {
   content: "\e902";
 }
+
 .icon-asterisk:before {
   content: "\e903";
 }
+
 .icon-kamailio:before {
   content: "\e904";
 }
+
 .icon-flowroute:before {
   content: "\e905";
 }
+
 .icon-freepbx:before {
   content: "\e906";
 }
+
 .icon-zencommunication:before {
   content: "\e907";
 }
+
 .icon-call_failfwd:before {
   content: "\e908";
 }
+
 .icon-call_hardfwd:before {
   content: "\e909";
 }
+
 .icon-circle-up:before {
   content: "\ea41";
 }
+
 .icon-circle-down:before {
   content: "\ea43";
 }
@@ -73,18 +84,24 @@
 }
 
 .wrap .nav-bar .navbar-brand {
-  margin-top: 15px;
   color: #FFB266;
-  height: 70px;
-  padding: 9px 40px;
+  padding: 0.5em 2em;
+}
+
+.wrap .nav-bar .navbar-brand > * {
+  max-height: 100%;
 }
 
 .wrap .nav-bar .navbar-form {
   margin-top: 25px;
 }
 
-.wrap .nav-bar .nav {
+.wrap .nav-bar .navbar-right {
   float: right !important;
+}
+
+.wrap .nav-bar .navbar-right .btn {
+  margin-top: 0.5em;
 }
 
 .wrap .nav-bar .nav .dropdown span.fa,
@@ -287,8 +304,6 @@
   color: #ffb266;
 } */
 
-
-
 .panel-info > .panel-heading {
   color: #FF8100;
   background-color: #000000;
@@ -301,7 +316,6 @@
 
 .loginlogo {
   text-align: center;
-
 }
 
 .navlink a:link,
@@ -399,6 +413,7 @@ a.navlink {
   display: flex;
   flex-direction: row;
 }
+
 .wrapper-horizontal > div,
 .wrapper-horizontal > h1,
 .wrapper-horizontal > h2,
@@ -434,6 +449,7 @@ a.navlink {
   display: flex;
   flex-direction: column;
 }
+
 .wrapper-vertical > div,
 .wrapper-vertical > h1,
 .wrapper-vertical > h2,
@@ -465,6 +481,7 @@ a.navlink {
   align-items: center;
   justify-content: center;
 }
+
 .centered > * {
   text-align: center;
 }
@@ -474,6 +491,7 @@ a.navlink {
   align-items: center;
   justify-content: space-between;
 }
+
 .edge-centered > * {
   text-align: center;
 }
@@ -483,6 +501,7 @@ a.navlink {
   align-items: center;
   justify-content: space-evenly;
 }
+
 .equal-centered > * {
   text-align: center;
 }
@@ -505,6 +524,7 @@ a.navlink {
 .resizable {
   overflow: hidden;
 }
+
 .resizable > * {
   overflow: auto;
   resize: both;
@@ -550,25 +570,39 @@ table.dataTable {
   padding-left: 10px;
 }
 
+#reloading_overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: url("/static/images/spinner.svg"), -webkit-gradient(linear, left bottom, left top, from(rgba(74, 243, 245, 0.85)), to(rgba(34, 45, 55, 0.85)));
+  background-image: url("/static/images/spinner.svg"), -o-linear-gradient(bottom, rgba(74, 243, 245, 0.85) 0%, rgba(34, 45, 55, 0.85) 100%);
+  background-image: url("/static/images/spinner.svg"), linear-gradient(0deg, rgba(74, 243, 245, 0.85) 0%, rgba(34, 45, 55, 0.85) 100%);
+  background-repeat: no-repeat;
+  background-position-x: center;
+  background-size: auto auto;
+  -webkit-box-shadow: inset 2em 2em 2em -20px rgba(20, 20, 20, .1);
+  box-shadow: inset 2em 2em 2em -20px rgba(20, 20, 20, .1);
+  z-index: 1050;
+}
 
 /* iPhone 11 */
 @media screen and (max-width: 552px) {
-   .left-half {
-     display: none;
-   }
+  .left-half {
+    display: none;
+  }
 
-   .right-half {
-     width: 100%;
-   }
+  .right-half {
+    width: 100%;
+  }
 
-   .col-xs-4 {
-     width: 70%;
-     display: inline-block;
-   }
+  .col-xs-4 {
+    width: 70%;
+    display: inline-block;
+  }
 
-   /*.wrap .content .content-inner .content-section {
-	margin: 0 auto;
-   }*/
+  /*.wrap .content .content-inner .content-section {
+ margin: 0 auto;
+  }*/
 
 }
 
@@ -631,4 +665,8 @@ table.dataTable {
     -o-transform: rotate(315deg);
     transform: rotate(315deg);
   }
+}
+
+#reloadkam, #reload_dsip {
+  cursor: pointer;
 }

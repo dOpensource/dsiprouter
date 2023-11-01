@@ -31,15 +31,32 @@
           <a class="navbar-brand" href="http://dopensource.com/dsiprouter"><img
               src="{{ url_for('static', filename='images/dsiprouter_x50px.png') }}"></a>
           <ul class="nav navbar-nav navbar-right">
-            {% if reload_required == True %}
-              <button class="btn btn-warning btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam"
-                      name="reloadkam">Reload Kamailio
-              </button>
-            {% else %}
-              <button class="btn btn-primary btn-med" style="margin-top:10px;margin-right:10px" id="reloadkam"
-                      name="reloadkam">Reload Kamailio
-              </button>
-            {% endif %}
+             <div class="btn-group" style="margin-right: 0.5em">
+            {% if state.kam_reload_required == True or state.dsip_reload_required == True %}
+		 <button type="button" class="btn btn-warning" id="reload">Reload</button>
+  		 <button type="button" class="btn btn-warning dropdown-toggle" id="reload-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+ 	    {% else %}
+		 <button type="button" class="btn btn-primary" id="reload">Reload</button>
+  		 <button type="button" class="btn btn-primary dropdown-toggle" id="reload-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	    {% endif %}
+			 <span class="caret"></span>
+			<span class="sr-only">Toggle Dropdown</span>
+                 </button>
+                 <ul class="dropdown-menu" role="menu">
+            		{% if state.kam_reload_required == True %}
+				{% set kam_reload_state="btn-warning" %}
+			{% else %}
+				{% set kam_reload_state="" %}
+			{% endif %}
+            		{% if state.dsip_reload_required == True %}
+				{% set dsip_reload_state="btn-warning" %}
+			{% else %}
+				{% set dsip_reload_state="" %}
+			{% endif %}
+			 <li><a class="dropdown-item {{ kam_reload_state }}" id="reloadkam">Reload Kamailio</a></li>
+			 <li><a class="dropdown-item {{ dsip_reload_state }}" id="reload_dsip">Reload dSIPRouter</a></li>
+ 	        </ul>
+	     </div>
             <!-- <form id="qform" class="navbar-form pull-left" role="search">
                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                <input type="text" class="form-control" placeholder="Search" />
@@ -54,7 +71,6 @@
                 <li><a href="/logout"><span class="fa fa-power-off"></span>Logout</a></li>
               </ul>
             </li>
-
           </ul>
         </div>
       </nav>
@@ -158,6 +174,7 @@
         </div>
 
         <section class="content-inner">
+          <div id="reloading_overlay" class="hidden"></div>
           {% block body %}
           {% endblock %}
         </section>

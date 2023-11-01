@@ -1,5 +1,5 @@
 from shared import debugException, debugEndpoint, stripDictVals, showError
-from database import SessionLoader, DummySession, dSIPUser
+from database import startSession, DummySession, dSIPUser
 from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from flask import request
@@ -19,7 +19,7 @@ def addDSIPUser(data=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if data is not None:
             # Set the form variables to data parameter

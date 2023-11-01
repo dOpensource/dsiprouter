@@ -1,5 +1,5 @@
-Configuring dSIPRouter
-======================
+dSIPRouter GUI Intro
+====================
 
 .. toctree::
   :maxdepth: 3

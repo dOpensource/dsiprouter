@@ -1,14 +1,17 @@
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 from flask import Blueprint, jsonify, request
 from werkzeug import exceptions as http_exceptions
 from database import updateDsipSettingsTable
-from shared import showApiError, debugEndpoint, debugException, StatusCodes, getRequestData, updateConfig
+from shared import debugEndpoint, debugException, StatusCodes, getRequestData, updateConfig
 from util.security import api_security
+from modules.api.api_functions import showApiError
 from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
-import settings, globals
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+import settings
 
 license_manager = Blueprint('licensing', '__name__')
 
@@ -27,7 +30,8 @@ license_manager = Blueprint('licensing', '__name__')
 # kamreload:  whether kamailio settings need reloaded or not
 # data:       data returned, if any
 #=================================================================================
-# TODO: standardized HTTP response status codes
+# TODO: standardize response payloads using new createApiResponse()
+#       marked for implementation in v0.74
 #=================================================================================
 
 def showWoocommerceError(ex):
@@ -35,7 +39,7 @@ def showWoocommerceError(ex):
     payload = {
         'error': 'woocommerce',
         'msg': ex.response.json()['message'],
-        'kamreload': globals.reload_required,
+        'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'],
         'data': []
     }
     return jsonify(payload), ex.response.status_code
@@ -85,7 +89,7 @@ def validateRequestArgs(data, allowed_args=dict(), required_args=set(), strict_m
 
 def cmpDsipLicense(lc, payload=None):
     if payload is None:
-        payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+        payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     settings_lc_combo = getattr(settings, lc.type)
     if len(settings_lc_combo) == 0:
@@ -135,7 +139,7 @@ def validateLicense():
         }
     """
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
         if settings.DEBUG:
@@ -207,7 +211,7 @@ def retrieveLicense():
         }
     """
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
         if settings.DEBUG:
@@ -268,7 +272,7 @@ def listLicenses():
         }
     """
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
         if settings.DEBUG:
@@ -335,7 +339,7 @@ def activateLicense():
         }
     """
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
         if settings.DEBUG:
@@ -368,6 +372,9 @@ def activateLicense():
 
         lc_dict = dict(lc)
         lc_dict['valid'] = True
+
+        # update global state
+        getSharedMemoryDict(STATE_SHMEM_NAME)[WoocommerceLicense.STATE_MAPPING[lc.type]] = 3
 
         response_payload['data'].append(lc_dict)
         response_payload['msg'] = 'activation succeeded'
@@ -410,7 +417,7 @@ def deactivateLicense():
         }
     """
     # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': '', 'msg': '', 'kamreload': globals.reload_required, 'data': []}
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
 
     try:
         if settings.DEBUG:
@@ -440,6 +447,9 @@ def deactivateLicense():
         if settings.LOAD_SETTINGS_FROM == 'db':
             updateDsipSettingsTable({lc.type: ''})
         updateConfig(settings, {lc.type: ''}, hot_reload=True)
+
+        # update global state
+        getSharedMemoryDict(STATE_SHMEM_NAME)[WoocommerceLicense.STATE_MAPPING[lc.type]] = 0
 
         response_payload['msg'] = 'deactivation succeeded'
         return jsonify(response_payload), StatusCodes.HTTP_OK

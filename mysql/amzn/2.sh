@@ -60,7 +60,6 @@ function uninstall {
     systemctl daemon-reload
 
     # Uninstall mysql / Mariadb packages
-    yum remove -y mysql\*
     yum remove -y mariadb\*
     rm -rf /etc/my.cnf*; rm -f /etc/my.cnf*; rm -f ~/*my.cnf
 

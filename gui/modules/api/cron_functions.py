@@ -1,12 +1,12 @@
 from datetime import datetime
 from shared import debugException
-from database import SessionLoader, DummySession, Subscribers, dSIPLeases, Gateways
+from database import startSession, DummySession, Subscribers, dSIPLeases, Gateways
 
 def cleanupLeases():
     db = DummySession()
 
     try:
-        db = SessionLoader()
+        db = startSession()
 
         Leases = db.query(dSIPLeases).filter(datetime.now() >= dSIPLeases.expiration).all()
         for Lease in Leases:

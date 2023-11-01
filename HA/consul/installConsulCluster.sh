@@ -10,7 +10,6 @@
 #
 
 # set project root, if in a git repo resolve top level dir
-PROJECT_ROOT=${PROJECT_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}
 PROJECT_ROOT=${PROJECT_ROOT:-$(dirname $(dirname $(dirname $(readlink -f "$0"))))}
 # import shared library functions
 . ${PROJECT_ROOT}/HA/shared_lib.sh

@@ -1,17 +1,19 @@
 import sys
 
-sys.path.insert(0, '/etc/dsiprouter/gui')
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import re
 from flask import request, Blueprint, render_template, redirect, session, url_for
 from sqlalchemy import exc as sql_exceptions
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
-from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
-from database import SessionLoader, DummySession, Domain, DomainAttrs, Dispatcher, Gateways, Address
+from modules.api.licensemanager.functions import WoocommerceError
+from database import startSession, DummySession, Domain, DomainAttrs, Dispatcher, Gateways, Address
 from modules.api.api_routes import addEndpointGroups
 from shared import debugException, debugEndpoint, showError, strFieldsToDict, stripDictVals
-import settings, globals
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+import settings
 
 domains = Blueprint('domains', __name__)
 
@@ -158,19 +160,17 @@ def configureMSTeams(id):
         if (settings.DEBUG):
             debugEndpoint()
 
-        if len(settings.DSIP_MSTEAMS_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['msteams_license_status']
+        if license_status == 0:
             return render_template('license_required.html', msg=None)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_MSTEAMS_LICENSE, decrypt=True)
-        if not settings_lc.active:
+        if license_status == 1:
             return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
-            return render_template('license_required.html',
-                msg='license is associated with another machine, re-associate it with this machine first')
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
-        db = SessionLoader()
+        db = startSession()
 
         domain_query = db.query(Domain).filter(Domain.id == id)
         domain = domain_query.first()
@@ -209,7 +209,7 @@ def displayDomains():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
@@ -246,16 +246,15 @@ def displayDomains():
                 'notes': notes
             }
 
-        if len(settings.DSIP_MSTEAMS_LICENSE) == 0:
+        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['msteams_license_status']
+        if license_status == 0:
             return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 
-        settings_lc = WoocommerceLicense(key_combo=settings.DSIP_MSTEAMS_LICENSE, decrypt=True)
-        if not settings_lc.active:
-            return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
+        if license_status == 1:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
 
-        lc = WoocommerceLicense(settings_lc.license_key)
-        if lc != settings_lc:
-            return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
         return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=True)
 
@@ -289,7 +288,7 @@ def addUpdateDomain():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if not session.get('logged_in'):
             return render_template('index.html')
@@ -326,7 +325,7 @@ def addUpdateDomain():
             addDomain(domainlist.split(",")[0].strip(), authtype, pbxs, notes, db)
 
         db.commit()
-        globals.reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -359,7 +358,7 @@ def deleteDomain():
         if (settings.DEBUG):
             debugEndpoint()
 
-        db = SessionLoader()
+        db = startSession()
 
         if not session.get('logged_in'):
             return render_template('index.html', version=settings.VERSION)
@@ -378,7 +377,7 @@ def deleteDomain():
         domainEntry.delete(synchronize_session=False)
 
         db.commit()
-        globals.reload_required = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayDomains()
 
     except sql_exceptions.SQLAlchemyError as ex:
