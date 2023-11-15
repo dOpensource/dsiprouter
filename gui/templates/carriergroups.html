@@ -101,6 +101,10 @@
         <input class="form-control prefix" type="text" name="prefix"
                placeholder="The characters to prefix to a RURI (outbound calls)">
       </div>
+      <div class="form-group">
+        <input class="form-control weight" type="text" name="weight"
+               placeholder="The amount of traffic allocated to the carrier endpoint (outbound calls)">
+      </div>
 
       <div class="modal-footer ">
         <button type="submit" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
@@ -142,6 +146,10 @@
         <input class="form-control prefix" type="text" name="prefix"
                placeholder="The characters to prefix to a RURI (outbound calls)">
       </div>
+      <div class="form-group">
+        <input class="form-control weight" type="text" name="weight"
+               placeholder="The amount of traffic allocated to the carrier endpoint (outbound calls)">
+      </div>
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
@@ -166,6 +174,7 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input type="hidden" class="gwid" name="gwid">
       <input type="hidden" class="name" name="name">
+      <input type="hidden" class="ip_addr" name="ip_addr">
       <input type="hidden" class="gwgroup" name="gwgroup" value="{{ gwgroup|noneFilter() }}">
       <input type="hidden" class="related_rules" name="related_rules">
 

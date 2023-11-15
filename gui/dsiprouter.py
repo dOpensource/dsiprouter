@@ -15,7 +15,7 @@ from itsdangerous import URLSafeTimedSerializer
 from pygtail import Pygtail
 from sqlalchemy import func, exc as sql_exceptions
 from sqlalchemy.orm import load_only
-from sqlalchemy.sql import text
+from sqlalchemy.sql import text, func
 from sqlalchemy.orm.session import close_all_sessions
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
@@ -27,7 +27,7 @@ from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 from database import DummySession, createSessionObjects, startSession, \
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
-    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
+    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, Dispatcher
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -549,7 +549,9 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             # check if any endpoints in group b4 converting to list(int)
             if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
                 gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
-                carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
+                carriers =  db.query(Gateways.gwid,Gateways.attrs,Gateways.address,Gateways.strip,Gateways.pri_prefix,Dispatcher.attrs.label("weight")).\
+                    filter(Gateways.gwid.in_(gwlist)).\
+                    outerjoin(Dispatcher, Gateways.address == func.substr(Dispatcher.destination,5)).all()
                 rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                 for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
                     gateway_rules = {}
@@ -560,7 +562,9 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
 
         # get all carriers
         else:
-            carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+            carriers = db.query(Gateways.gwid,Gateways.attrs,Gateways.address,Gateways.strip,Gateways.pri_prefix,Dispatcher.attrs.label("weight")).\
+                filter(Gateways.type == settings.FLT_CARRIER).\
+                outerjoin(Dispatcher, Gateways.address == func.substr(Dispatcher.destination,5)).all()
             rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
             for gateway in carriers:
                 gateway_rules = {}
@@ -568,7 +572,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                     if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
                         gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-
+       
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
             kam_reload_required=getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'])
 
@@ -622,6 +626,7 @@ def addUpdateCarriers():
         hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
+        weight = form['weight'] if len(form['weight']) > 0 else ''
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
@@ -649,6 +654,12 @@ def addUpdateCarriers():
                 gwlist.append(gwid)
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
+                # Create dispatcher group with the set id being the gateway group id
+                # The weight field has to be set
+                if len(weight) > 0:
+                    dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, attrs="weight={}".format(weight), description=name)
+                    db.add(dispatcher)
+
             else:
                 Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
                 db.add(Addr)
@@ -668,6 +679,19 @@ def addUpdateCarriers():
             gw_fields['name'] = name
             if len(gwgroup) <= 0:
                 gw_fields['gwgroup'] = gwgroup
+          
+            DispatcherEntry = db.query(Dispatcher).filter(
+                     (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
+        
+            if len(weight) > 0:
+                # Update Dispatcher if weight > 0 
+                if DispatcherEntry is not None:
+                    db.query(Dispatcher).filter(
+                        (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))).update(
+                        {"attrs": "weight={}".format(weight)}, synchronize_session=False)
+            else:
+                # Delete Dispatcher entry is weight <= 0
+                db.delete(DispatcherEntry)
 
             # if address exists update
             address_exists = False
@@ -746,8 +770,11 @@ def deleteCarriers():
         form = stripDictVals(request.form.to_dict())
 
         gwid = form['gwid']
+        hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
         related_rules = json.loads(form['related_rules']) if 'related_rules' in form else ''
+
+        sip_addr = safeUriToHost(hostname, default_port=5060)
 
         Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
         Gateway_Row = Gateway.first()
@@ -770,6 +797,11 @@ def deleteCarriers():
 
         # remove gateway
         Gateway.delete(synchronize_session=False)
+
+        # remove from carrier from dispatcher
+        DispatcherEntry = db.query(Dispatcher).filter(
+                    (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
+        db.delete(DispatcherEntry)
 
         # remove carrier from gwlist in carrier group
         for Gatewaygroup in Gatewaygroups:
@@ -2508,6 +2540,12 @@ def attrFilter(list, field):
         return ""
     if ":" in list:
         d = dict(item.split(":") for item in list.split(","))
+        try:
+            return d[field]
+        except:
+            return
+    elif "=" in list:
+        d = dict(item.split("=") for item in list.split(","))
         try:
             return d[field]
         except:
