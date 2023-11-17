@@ -801,7 +801,8 @@ def deleteCarriers():
         # remove from carrier from dispatcher
         DispatcherEntry = db.query(Dispatcher).filter(
                     (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))).first()
-        db.delete(DispatcherEntry)
+        if DispatcherEntry:
+            db.delete(DispatcherEntry)
 
         # remove carrier from gwlist in carrier group
         for Gatewaygroup in Gatewaygroups:
