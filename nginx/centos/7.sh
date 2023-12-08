@@ -98,40 +98,20 @@ function install {
     perl -e "\$tls_protocols='${TLS_PROTOCOLS}';" \
         -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
         ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
-    perl -e "\$dsip_port='${DSIP_PORT}'; \$dsip_unix_sock='${DSIP_UNIX_SOCK}'; \$dsip_ssl_cert='${DSIP_SSL_CERT}'; \$dsip_ssl_key='${DSIP_SSL_KEY}';" \
-        -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
-        ${DSIP_PROJECT_DIR}/nginx/configs/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
-    ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
 
-    systemctl enable nginx
-    systemctl restart nginx
-
-    # Configure rsyslog defaults
-    if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
-        cp -f ${DSIP_PROJECT_DIR}/resources/syslog/rsyslog.conf /etc/rsyslog.conf
-    fi
-
-    # Setup dSIPRouter Logging
-    cp -f ${DSIP_PROJECT_DIR}/resources/syslog/dsiprouter.conf /etc/rsyslog.d/dsiprouter.conf
-    touch /var/log/dsiprouter.log
-    systemctl restart rsyslog
-
-    # Setup logrotate
-    cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/dsiprouter /etc/logrotate.d/dsiprouter
-
-    # Install dSIPRouter as a service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-stop.sh /usr/sbin/nginx-stop
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v2.service /lib/systemd/system/nginx.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher-v2.service /lib/systemd/system/nginx-watcher.service
     perl -p \
-        -e "s|'DSIP_RUN_DIR\=.*'|'DSIP_RUN_DIR=$DSIP_RUN_DIR'|;" \
-        -e "s|'DSIP_PROJECT_DIR\=.*'|'DSIP_PROJECT_DIR=$DSIP_PROJECT_DIR'|;" \
-        -e "s|'DSIP_SYSTEM_CONFIG_DIR\=.*'|'DSIP_SYSTEM_CONFIG_DIR=$DSIP_SYSTEM_CONFIG_DIR'|;" \
-        -e "s|ExecStart\=.*|ExecStart=${PYTHON_CMD} "'\${DSIP_PROJECT_DIR}'"/gui/dsiprouter.py|;" \
-        ${DSIP_PROJECT_DIR}/dsiprouter/systemd/dsiprouter-v2.service > /lib/systemd/system/dsiprouter.service
-    chmod 644 /lib/systemd/system/dsiprouter.service
+        -e "s%PathChanged\=.*%PathChanged=${DSIP_CERTS_DIR}/%;" \
+        ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.path >/lib/systemd/system/nginx-watcher.path
+    chmod 644 /lib/systemd/system/nginx.service
+    chmod 644 /lib/systemd/system/nginx-watcher.service
+    chmod 644 /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload
-    systemctl enable dsiprouter
+    systemctl enable nginx
 
-    # add hook to bash_completion in the standard debian location
-    echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
+    return 0
 }
 
 

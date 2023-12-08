@@ -14,16 +14,12 @@ function install() {
     yum groupinstall -y 'base' &&
     yum groupinstall -y 'Development Tools' &&
     yum install -y psmisc curl wget sed gawk vim epel-release perl firewalld uuid-devel \
-        openssl-devel logrotate rsyslog certbot
+        openssl-devel logrotate rsyslog certbot policycoreutils-python
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
         return 1
     fi
-
-    # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
-    # Disable SELinux
-    sed -i -e 's/(^SELINUX=).*/SELINUX=permissive/' /etc/selinux/config
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -83,6 +79,13 @@ EOF
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
+
+    # give kamailio permissions in SELINUX
+    semanage port -a -t sip_port_t -p udp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIPS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIPS_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_WSS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_WSS_PORT}
+    semanage port -a -t sip_port_t -p udp ${KAM_DMQ_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_DMQ_PORT}
 
     # Start firewalld
     systemctl start firewalld

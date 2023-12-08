@@ -14,6 +14,7 @@ export ANSI_RED="${ESC_SEQ}1;31m"
 export ANSI_GREEN="${ESC_SEQ}1;32m"
 export ANSI_YELLOW="${ESC_SEQ}1;33m"
 export ANSI_CYAN="${ESC_SEQ}1;36m"
+export ANSI_WHITE="${ESC_SEQ}1;37m"
 
 # public IP's us for testing / DNS lookups in scripts
 export GOOGLE_DNS_IPV4="8.8.8.8"
@@ -46,6 +47,15 @@ function isStdinNull() {
     local c
     read -r -d '' c
 }
+
+function printbold() {
+    if [[ "$1" == "-n" ]]; then
+        shift; printf "%b%s%b" "${ANSI_WHITE}" "$*" "${ANSI_NONE}"
+    else
+        printf "%b%s%b\n" "${ANSI_WHITE}" "$*" "${ANSI_NONE}"
+    fi
+}
+export -f printbold
 
 function printerr() {
     if [[ "$1" == "-n" ]]; then
@@ -416,8 +426,20 @@ export -f pathCheck
 # returns: 0 == success, otherwise failure
 # notes: try to access the AWS metadata URL to determine if this is an AMI instance
 function isInstanceAMI() {
-    curl -s -f --connect-timeout 2 http://169.254.169.254/latest/dynamic/instance-identity/ &>/dev/null
-    return $?
+    local RET TOKEN
+
+    # handle IMDS version selection automatically
+    # ref: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+    RET=$(curl -s -o /dev/null --connect-timeout 2 -w '%{http_code}' http://169.254.169.254/latest/meta-data/ami-id)
+    if (( $RET == 200 )); then
+        return 0
+    elif (( $RET == 401 )); then
+        TOKEN=$(curl -s -X PUT --connect-timeout 2 -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token)
+        curl -s -f --connect-timeout 2 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/ami-id
+        return $?
+    else
+        return 1
+    fi
 }
 export -f isInstanceAMI
 
@@ -454,11 +476,20 @@ function isInstanceVULTR() {
 export -f isInstanceDO
 
 # output: instance ID || blank string
-# notes: we try checking for exported instance variable avoid querying again
+# notes: we try checking for exported instance variable to avoid querying again
 function getInstanceID() {
+    local RET TOKEN
+
     if (( ${AWS_ENABLED:-0} == 1)); then
-        curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
-        ec2-metadata -i 2>/dev/null | awk '{print $2}'
+        RET=$(curl -s -o /dev/null -w '%{http_code}' http://169.254.169.254/latest/meta-data/ami-id 2>/dev/null)
+        if (( $RET == 200 )); then
+            curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null
+        elif (( $RET == 401 )); then
+            TOKEN=$(curl -s -X PUT --connect-timeout 2 -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token 2>/dev/null)
+            curl -s -f --connect-timeout 2 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null
+        else
+            return 1
+        fi
     elif (( ${DO_ENABLED:-0} == 1 )); then
         curl -s -f http://169.254.169.254/metadata/v1/id 2>/dev/null
     elif (( ${GCE_ENABLED:-0} == 1 )); then
@@ -469,8 +500,15 @@ function getInstanceID() {
         curl -s -f http://169.254.169.254/v1/instanceid 2>/dev/null
     else
         if isInstanceAMI; then
-            curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null ||
-            ec2-metadata -i 2>/dev/null | awk '{print $2}'
+            RET=$(curl -s -o /dev/null -w '%{http_code}' http://169.254.169.254/latest/meta-data/ami-id 2>/dev/null)
+            if (( $RET == 200 )); then
+                curl -s -f http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null
+            elif (( $RET == 401 )); then
+                TOKEN=$(curl -s -X PUT --connect-timeout 2 -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token 2>/dev/null)
+                curl -s -f --connect-timeout 2 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id 2>/dev/null
+            else
+                return 1
+            fi
         elif isInstanceDO; then
             curl -s -f http://169.254.169.254/metadata/v1/id 2>/dev/null
         elif isInstanceGCE; then

@@ -15,7 +15,7 @@ function install() {
     dnf groupinstall -y 'Development Tools' &&
     dnf install -y epel-release dnf-plugins-core &&
     dnf install -y git curl perl firewalld logrotate rsyslog certbot cmake libuuid-devel \
-        libcurl-devel libjwt-devel libatomic openssl-devel
+        libcurl-devel libjwt-devel libatomic openssl-devel policycoreutils-python-utils
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -97,8 +97,7 @@ EOF
     semanage port -a -t sip_port_t -p tcp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIP_PORT}
     semanage port -a -t sip_port_t -p tcp ${KAM_SIPS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIPS_PORT}
     semanage port -a -t sip_port_t -p tcp ${KAM_WSS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_WSS_PORT}
-    # TODO: create a dmq port definition
-    semanage port -a -t rabbitmq_port_t -p udp ${KAM_DMQ_PORT} || semanage port -m -t rabbitmq_port_t -p udp ${KAM_DMQ_PORT}
+    semanage port -a -t sip_port_t -p udp ${KAM_DMQ_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_DMQ_PORT}
 
     # Start firewalld
     systemctl enable firewalld

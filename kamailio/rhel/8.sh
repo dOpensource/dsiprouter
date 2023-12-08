@@ -16,7 +16,7 @@ function install() {
     dnf groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${DISTRO_MAJOR_VER}.noarch.rpm
     dnf install -y psmisc curl wget sed gawk perl firewalld openssl-devel logrotate rsyslog python3 libuuid-devel \
-        libtool jansson-devel libcurl-devel libatomic python3-virtualenv
+        libtool jansson-devel libcurl-devel libatomic python3-virtualenv policycoreutils-python-utils
 
     # we need a newer version of certbot than the distro repos offer
     dnf remove -y *certbot*
@@ -24,10 +24,6 @@ function install() {
     /opt/certbot/bin/pip install --upgrade pip
     /opt/certbot/bin/pip install certbot
     ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
-
-    # TODO: we should detect if SELINUX is enabled and if so add proper permissions for kamailio, dsip, etc..
-    # Disable SELinux
-    sed -i -e 's/(^SELINUX=).*/SELINUX=permissive/' /etc/selinux/config
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -106,6 +102,13 @@ EOF
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
+
+    # give kamailio permissions in SELINUX
+    semanage port -a -t sip_port_t -p udp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIPS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIPS_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_WSS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_WSS_PORT}
+    semanage port -a -t sip_port_t -p udp ${KAM_DMQ_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_DMQ_PORT}
 
     # Start firewalld
     systemctl start firewalld

@@ -1,0 +1,11 @@
+[Unit]
+Description=Nginx Service Reloader
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/nginx -s reload
+StartLimitInterval=5
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

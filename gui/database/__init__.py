@@ -488,6 +488,14 @@ class dSIPUser(object):
 
     pass
 
+
+class DsipSettings(OrderedDict):
+    """
+    Identifies the contained data as already formatted for the table
+    """
+    pass
+
+
 # TODO: switch to from sqlalchemy.engine.URL API
 def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_host=None, db_port=None, db_name=None, db_charset='utf8mb4'):
     """
@@ -785,7 +793,7 @@ def settingsToTableFormat(settings):
         kam_db_host = settings.KAM_DB_HOST
 
     # order matters here, as this is used to update table settings as well
-    return OrderedDict([
+    return DsipSettings([
         ('DSIP_ID', settings.DSIP_ID),
         ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID),
         ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
@@ -883,11 +891,17 @@ def updateDsipSettingsTable(fields):
 
     db = DummySession()
     try:
-        field_mapping = ', '.join([':{}'.format(x, x) for x in fields.keys()])
+        if isinstance(fields, DsipSettings):
+            db_fields = fields
+        else:
+            db_fields = settingsToTableFormat(settings)
+            db_fields.update(fields)
+        field_mapping = ', '.join([':{}'.format(x, x) for x in db_fields.keys()])
+
         db = startSession()
         db.execute(
             text('CALL update_dsip_settings({})'.format(field_mapping)),
-            fields
+            db_fields
         )
         db.commit()
     except sql_exceptions.SQLAlchemyError:

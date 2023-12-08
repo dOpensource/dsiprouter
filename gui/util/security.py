@@ -154,12 +154,10 @@ class Credentials():
         # update settings based on where they are loaded from
         if len(fields) > 0 or len(local_fields) > 0:
             # update db settings
-            from database import updateDsipSettingsTable, settingsToTableFormat
-            db_fields = settingsToTableFormat(settings)
-            db_fields.update(fields)
+            from database import updateDsipSettingsTable
             # WARNING: if called after updating settings.py the session loader may import
             #          incorrect connection credentials and fail to connect to the DB
-            updateDsipSettingsTable(db_fields)
+            updateDsipSettingsTable(fields)
             # update file settings including the local fields
             updateConfig(settings, dict(fields, **local_fields))
 
