@@ -3447,7 +3447,7 @@ function updatePermissions() {
         mkdir -p ${DSIP_RUN_DIR}
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
         chown dsiprouter:root ${DSIP_RUN_DIR}
-        chmod 770 ${DSIP_RUN_DIR}
+        chmod 775 ${DSIP_RUN_DIR}
 
         # dsiprouter user is the only one making backups
         chown -R dsiprouter:root ${BACKUPS_DIR}
