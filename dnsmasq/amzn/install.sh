@@ -22,22 +22,59 @@ function install() {
     # make sure we unmask before configuring the service ourselves
     systemctl unmask dnsmasq.service
 
-    # Configure dnsmasq systemd service
+    # configure dnsmasq systemd service
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v3.service /lib/systemd/system/dnsmasq.service
     chmod 644 /lib/systemd/system/dnsmasq.service
     systemctl daemon-reload
     systemctl enable dnsmasq
 
+    # backup the original resolv.conf and dhclient scripts
+    [[ ! -e "${BACKUPS_DIR}/etc/resolv.conf" ]] && {
+        mkdir -p ${BACKUPS_DIR}/{etc/sysconfig/network-scripts/,usr/sbin/}
+        cp -df /etc/resolv.conf ${BACKUPS_DIR}/etc/resolv.conf
+        cp -dfr /etc/sysconfig/network-scripts/. ${BACKUPS_DIR}/etc/sysconfig/network-scripts/
+        cp -f /usr/sbin/dhclient-script ${BACKUPS_DIR}/usr/sbin/
+    }
+
+    # make dnsmasq the DNS provider
+    rm -f /etc/resolv.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
+
+    # make all the dhclient scripts use a different resolv.conf location
+    sed -i 's%/etc/resolv\.conf%/var/lib/dhclient/resolv.conf%g' /usr/sbin/dhclient-script
+    find /etc/sysconfig/network-scripts/ -type f -exec sed -i 's%/etc/resolv\.conf%/var/lib/dhclient/resolv.conf%g' {} +
+
+    # make sure the dhclient resolv.conf is recreated in the new location
+    dhclient -r && dhclient
+
+    # tell dnsmasq to grab dynamic DNS servers from dhclient
+    export DNSMASQ_RESOLV_FILE="/var/lib/dhclient/resolv.conf"
+    envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
+
     return 0
 }
 
 function uninstall {
-    # Stop and disable services
+    # stop and disable services
     systemctl disable dnsmasq
     systemctl stop dnsmasq
 
-    # Uninstall packages
+    # uninstall packages
     yum remove -y dnsmasq
+
+    # restore dhclient scripts
+    cp -dfr ${BACKUPS_DIR}/etc/sysconfig/network-scripts/. /etc/sysconfig/network-scripts/
+    cp -f ${BACKUPS_DIR}/usr/sbin/dhclient-script /usr/sbin/dhclient-script
+
+    # restore original resolv.conf
+    cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
+
+    # update resolv.conf if needed
+    dhclient -r && dhclient
+
+    # cleanup backup files
+    rm -rf ${BACKUPS_DIR}/etc/sysconfig/network-scripts/
+    rm -f ${BACKUPS_DIR}/{etc/resolv.conf,usr/sbin/dhclient-script}
 
     return 0
 }

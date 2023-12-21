@@ -9,18 +9,10 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    # remove previous dns stack
-    apt-get remove -y libnss-resolve systemd-resolved
-
-    if (( $? != 0 )); then
-        printerr 'Failed removing old dns stack'
-        return 1
-    fi
-
     # mask the service before running package manager to avoid faulty startup errors
     systemctl mask dnsmasq.service
 
-    apt-get install -y dnsmasq resolvconf
+    apt-get install -y dnsmasq
 
     if (( $? != 0 )); then
         printerr 'Failed installing new dns stack'
@@ -36,24 +28,71 @@ function install() {
     systemctl daemon-reload
     systemctl enable dnsmasq
 
-    # tell network manager to use dnsmasq instead
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+    # backup the original resolv.conf
+    [[ ! -e "${BACKUPS_DIR}/etc/resolv.conf" ]] && {
+        mkdir -p ${BACKUPS_DIR}/etc/
+        cp -df /etc/resolv.conf ${BACKUPS_DIR}/etc/resolv.conf
+    }
+
+    # make dnsmasq the DNS provider
+    rm -f /etc/resolv.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
+
+    # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
+    mkdir -p /etc/systemd/resolved.conf.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+
+    # for some reason the defaults on systemd-networkd are not followed after changing the above
+    # so we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the ifaces
+    # see systemd.network and systemd.networkd for more information
+    mkdir -p /etc/systemd/network/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemd.network /etc/systemd/network/99-dsiprouter.network
+
+    # restart systemd network services
+    systemctl restart systemd-networkd &&
+    systemctl restart systemd-resolved || {
+        printerr 'failed loading new systemd network configurations..'
+        printwarn 'reverting network changes and aborting dnsmasq install'
+        cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
+        rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+        rm -f /etc/systemd/network/99-dsiprouter.network
+        systemctl restart systemd-networkd
+        systemctl restart systemd-resolved
+        return 1
+    }
+
+    # tell dnsmasq to grab dns servers from systemd-resolved
+    export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
+    envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
 
     return 0
 }
 
 function uninstall() {
-    # remove network manager config
-    rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
+    # stop and disable services
+    systemctl disable dnsmasq
+    systemctl stop dnsmasq
 
-    # swap old resolvers in as static file so DNS still works while uninstalling
-    mv -f /run/dnsmasq/resolv.conf /etc/resolv.conf
+    # uninstall packages
+    apt-get remove -y --purge dnsmasq
 
-    # uninstall new dns stack
-    apt-get remove -y --purge dnsmasq resolvconf
+    # remove our systemd-resolved configurations
+    rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
 
-    # reinstall old dns stack
-    apt-get install -y libnss-resolve systemd-resolved
+    # remove the systemd.network rules
+    rm -f /etc/systemd/network/99-dsiprouter.network
+
+    # restore original resolv.conf
+    cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
+
+    # restart systemd.networkd with the original rules
+    systemctl restart systemd-networkd
+
+    # update resolv.conf / restart systemd-resolved with new configs
+    systemctl restart systemd-resolved
+
+    # cleanup backup files
+    rm -f ${BACKUPS_DIR}/etc/resolv.conf
 
     return 0
 }

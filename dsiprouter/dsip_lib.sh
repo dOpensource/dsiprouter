@@ -591,7 +591,7 @@ function getInternalIP() {
     if (( ${IPV6_ENABLED} == 1 )); then
 		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
     else
-		INTERFACE=$(ip -4 route show default | awk '{print $5}')
+		INTERFACE=$(ip -4 route show default | head -1 | awk '{print $5}')
     fi
 
     # Get the ip address without depending on DNS
@@ -641,7 +641,7 @@ function getIP() {
 	    if (( ${IPV6_ENABLED} == 1 )); then
 			INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
 	    else
-	    	INTERFACE=$(ip -4 route show default | awk '{print $5}')
+	    	INTERFACE=$(ip -4 route show default | head -1 | awk '{print $5}')
 	    fi
     fi
 

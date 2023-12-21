@@ -22,22 +22,55 @@ function install() {
     # make sure we unmask before configuring the service ourselves
     systemctl unmask dnsmasq.service
 
-    # Configure dnsmasq systemd service
+    # configure dnsmasq systemd service
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v2.service /lib/systemd/system/dnsmasq.service
     chmod 644 /lib/systemd/system/dnsmasq.service
     systemctl daemon-reload
     systemctl enable dnsmasq
 
+    # backup the original resolv.conf
+    [[ ! -e "${BACKUPS_DIR}/etc/resolv.conf" ]] && {
+        mkdir -p ${BACKUPS_DIR}/etc/
+        cp -df /etc/resolv.conf ${BACKUPS_DIR}/etc/resolv.conf
+    }
+
+    # make dnsmasq the DNS provider
+    rm -f /etc/resolv.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
+
+    # tell NetworkManager we will manage the DNS servers
+    mkdir -p /etc/NetworkManager/conf.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+
+    # make sure the NetworkManager resolv.conf is recreated with the new configuration options
+    systemctl restart NetworkManager
+
+    # tell dnsmasq to grab dynamic DNS servers from dhclient
+    export DNSMASQ_RESOLV_FILE="/run/NetworkManager/no-stub-resolv.conf"
+    envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
+
     return 0
 }
 
 function uninstall {
-    # Stop and disable services
+    # stop and disable services
     systemctl disable dnsmasq
     systemctl stop dnsmasq
 
-    # Uninstall packages
+    # uninstall packages
     dnf remove -y dnsmasq
+
+    # remove our NetworkManager configurations
+    rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
+
+    # restore original resolv.conf
+    cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
+
+    # update resolv.conf / restart NetworkManager with new configs
+    systemctl restart NetworkManager
+
+    # cleanup backup files
+    rm -f ${BACKUPS_DIR}/etc/resolv.conf
 
     return 0
 }

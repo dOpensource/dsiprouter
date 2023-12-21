@@ -36,10 +36,16 @@ function install() {
     systemctl daemon-reload
     systemctl enable dnsmasq
 
+    # tell network manager to use dnsmasq instead
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+
     return 0
 }
 
 function uninstall() {
+    # remove network manager config
+    rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
+
     # swap old resolvers in as static file so DNS still works while uninstalling
     mv -f /run/dnsmasq/resolv.conf /etc/resolv.conf
 

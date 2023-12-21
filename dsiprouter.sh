@@ -2100,24 +2100,10 @@ function uninstallSipsak() {
 
 # Install DNSmasq stub resolver for local DNS
 # - used by kamailio dmq replication
-# TODO: add support for integrating with openresolv
-# TODO: add support for integrating with network-manager
 function installDnsmasq() {
-    local DNSMASQ_NAME_SERVERS
-
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
         printwarn "DNSmasq is already installed"
         return
-    fi
-
-    # ipv6 compatibility
-    # TODO: marked for review, only one or the other is needed here, not both addresses
-    if (( ${IPV6_ENABLED} == 1 )); then
-        export DNSMASQ_LISTEN_ADDRS="127.0.0.1,::1"
-        DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1" "nameserver ::1")
-    else
-        export DNSMASQ_LISTEN_ADDRS="127.0.0.1"
-        DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1")
     fi
 
     # create dnsmasq user and group
@@ -2137,43 +2123,6 @@ function installDnsmasq() {
 
     # make sure run dir is created with correct permissions
     updatePermissions -dnsmasq
-
-    if systemctl -q is-enabled resolvconf &>/dev/null; then
-        # integration with resolvconf
-        export DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
-
-        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_def /etc/default/resolvconf
-        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_upd /etc/resolvconf/update.d/zz_dnsmasq
-        chmod +x /etc/resolvconf/update.d/zz_dnsmasq
-        rm -f /etc/resolvconf/update.d/dnsmasq
-
-        rm -f /etc/resolv.conf
-        echo '# DNS servers are being managed by dnsmasq, DO NOT CHANGE THIS FILE' >/etc/resolv.conf
-        for NAME_SERVER in ${DNSMASQ_NAME_SERVERS[@]}; do
-            echo "$NAME_SERVER" >>/etc/resolv.conf
-        done
-
-        # update the dynamic resolv.conf files
-        resolvconf -u
-    elif systemctl -q is-enabled systemd-resolved &>/dev/null; then
-        printerr 'systemd-resolved is still running but dnsmasq should be instead'
-        exit 1
-    else
-        # static resolv.conf
-        export DNSMASQ_RESOLV_FILE="/etc/resolv.conf"
-
-        if ! grep -q -E 'nameserver 127\.0\.0\.1|nameserver ::1' /etc/resolv.conf 2>/dev/null; then
-            # extra check in case no nameserver found
-            if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
-                joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
-            else
-                sed -i -r "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS[@]}")&|}" /etc/resolv.conf
-            fi
-        fi
-    fi
-
-    # dnsmasq configuration
-    envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
 
     # setup hosts in cluster node is resolvable
     # cron and kam service will configure these dynamically
@@ -3415,21 +3364,21 @@ function updatePermissions() {
         mkdir -p /run/dnsmasq
         chown -R dnsmasq:dnsmasq /run/dnsmasq
         chown dnsmasq:root /run/dnsmasq
-        chmod 770 /run/dnsmasq
+        chmod 771 /run/dnsmasq
     }
     # set permissions for files/dirs used by nginx
     setNginxPerms() {
         mkdir -p /run/nginx
         chown -R nginx:nginx /run/nginx
         chown nginx:root /run/nginx
-        chmod 770 /run/nginx
+        chmod 771 /run/nginx
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
         mkdir -p /run/kamailio
         chown -R kamailio:kamailio /run/kamailio
         chown kamailio:root /run/kamailio
-        chmod 770 /run/kamailio
+        chmod 771 /run/kamailio
 
         # dsiprouter needs to have control over the kamailio dir
         # this allows dsiprouter to update kamailio dynamically
@@ -3447,7 +3396,7 @@ function updatePermissions() {
         mkdir -p ${DSIP_RUN_DIR}
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
         chown dsiprouter:root ${DSIP_RUN_DIR}
-        chmod 775 ${DSIP_RUN_DIR}
+        chmod 771 ${DSIP_RUN_DIR}
 
         # dsiprouter user is the only one making backups
         chown -R dsiprouter:root ${BACKUPS_DIR}
@@ -3467,7 +3416,7 @@ function updatePermissions() {
         mkdir -p /run/rtpengine
         chown -R rtpengine:rtpengine /run/rtpengine
         chown rtpengine:root /run/rtpengine
-        chmod 770 /run/rtpengine
+        chmod 771 /run/rtpengine
     }
 
     # no args given set permissions for all services
