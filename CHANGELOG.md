@@ -5,7 +5,15 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-b9c9fd0db73086cba12a8cfdf8090afd8198c9f6
+c45108fbda546110b7b5bf8f78d70489fcc6450b
+8eebafba384a4604c3a754a2b9c708eae462b3ea
+e856b11068c25bd8a5bfe8ec53629d94aba1c5c7
+c6c4bb239aa4870dd8e24d24e68950ec76ece921
+c38834a439f34e16c6a8370a1609f1c501513826
+b1bb9d026fa0a2c5de1a28ef73f2fbeebdd39a58
+9e71bfb6ef03e5ae7573adabf44578691a1b0402
+239a79a38937b5844b47c2351118155642419320
+fad1ddc79f5567760d323634fe09adb5ba8cf27d
 5cee36cfb362c6fceb14348494749a93cdb1a2d2
 28bf73e59979e32ba4952f8923db4aee3f25f87c
 d6c45d81e09759f98a897d36fe73754c261f9d4a
@@ -2240,10 +2248,159 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)
+[//]: # (START_SECTION c45108fbda546110b7b5bf8f78d70489fcc6450b)
+### Add Support For v0.74 Upgrade
+
+> Commit: [c45108fbda546110b7b5bf8f78d70489fcc6450b](https://github.com/dOpensource/dsiprouter/commit/c45108fbda546110b7b5bf8f78d70489fcc6450b)  
+> Date: Fri, 22 Dec 2023 13:47:55 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- - add license check to CLI upgrade command
+- - add supoprt for v0.73 -> v0.74 upgrade
+- - fix upgrade git url not defaulting to settings.py
+
+
+---
+
+[//]: # (END_SECTION c45108fbda546110b7b5bf8f78d70489fcc6450b)
+[//]: # (START_SECTION 8eebafba384a4604c3a754a2b9c708eae462b3ea)
+### DNSmasq and SElinux Fixes
+
+> Commit: [8eebafba384a4604c3a754a2b9c708eae462b3ea](https://github.com/dOpensource/dsiprouter/commit/8eebafba384a4604c3a754a2b9c708eae462b3ea)  
+> Date: Thu, 21 Dec 2023 10:05:49 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- - fix DNSmasq integration with systemdresolved on debian
+- - fix DNSmasq integration with dhclient on amazon linux
+- - fix DNSmasq integration with NetworkManager on centos
+- - fix SElinux support on centos
+- - fix default route resolution when multiple default routes available
+- - fix typo in v0.73 upgrade script
+- - fix centos missing hosts template for cloud-init
+
+
+---
+
+[//]: # (END_SECTION 8eebafba384a4604c3a754a2b9c708eae462b3ea)
+[//]: # (START_SECTION e856b11068c25bd8a5bfe8ec53629d94aba1c5c7)
+### Fixed permissions to allow Nginx to access the the dSIPRouter UI via a UNIX socket
+
+> Commit: [e856b11068c25bd8a5bfe8ec53629d94aba1c5c7](https://github.com/dOpensource/dsiprouter/commit/e856b11068c25bd8a5bfe8ec53629d94aba1c5c7)  
+> Date: Mon, 18 Dec 2023 04:09:31 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e856b11068c25bd8a5bfe8ec53629d94aba1c5c7)
+[//]: # (START_SECTION c6c4bb239aa4870dd8e24d24e68950ec76ece921)
+### OS And Cloud Bug Fixes
+
+> Commit: [c6c4bb239aa4870dd8e24d24e68950ec76ece921](https://github.com/dOpensource/dsiprouter/commit/c6c4bb239aa4870dd8e24d24e68950ec76ece921)  
+> Date: Fri, 8 Dec 2023 14:24:42 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- - fix amzn2 issue with kernel headers when installing rtpengine
+- - fix debian10 dependency issue when installing kamailio
+- - fix missing cron dependency on AWS debian images
+- - fix amazn2 libwebsockets compilation failing (bump openssl version)
+- - fix AWS metadata API changed
+- - fix testing regressions
+- - update references to `dsiprouter.sh` to use the binary path instead
+- - fix update* commands may return bad exit status to systemd
+- - fix run permissions for services to work with SELinux enabled
+- - fix nginx systemd service not loading on older versions
+- - fix selinux DMQ port definition incorrect
+- - fix license activation regression
+- - update debian/ubuntu to swap out dns stack for dnsmasq/resolvconf
+- - refactor dnsmasq install to use separate scripts for each OS
+
+
+---
+
+[//]: # (END_SECTION c6c4bb239aa4870dd8e24d24e68950ec76ece921)
+[//]: # (START_SECTION c38834a439f34e16c6a8370a1609f1c501513826)
+### Fix Callee BYE Regression
+
+> Commit: [c38834a439f34e16c6a8370a1609f1c501513826](https://github.com/dOpensource/dsiprouter/commit/c38834a439f34e16c6a8370a1609f1c501513826)  
+> Date: Fri, 10 Nov 2023 15:38:51 -0500  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix callee BYE not routed to caller
+- fix rtp ports exhausted by updating timeouts
+
+
+---
+
+[//]: # (END_SECTION c38834a439f34e16c6a8370a1609f1c501513826)
+[//]: # (START_SECTION b1bb9d026fa0a2c5de1a28ef73f2fbeebdd39a58)
+### Fix ReadTheDocs
+
+> Commit: [b1bb9d026fa0a2c5de1a28ef73f2fbeebdd39a58](https://github.com/dOpensource/dsiprouter/commit/b1bb9d026fa0a2c5de1a28ef73f2fbeebdd39a58)  
+> Date: Wed, 1 Nov 2023 13:22:47 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix missing python dependencies for readthedocs
+
+
+---
+
+[//]: # (END_SECTION b1bb9d026fa0a2c5de1a28ef73f2fbeebdd39a58)
+[//]: # (START_SECTION 9e71bfb6ef03e5ae7573adabf44578691a1b0402)
+### Update ReadTheDocs Config
+
+> Commit: [9e71bfb6ef03e5ae7573adabf44578691a1b0402](https://github.com/dOpensource/dsiprouter/commit/9e71bfb6ef03e5ae7573adabf44578691a1b0402)  
+> Date: Wed, 1 Nov 2023 09:16:06 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- update rtd config to [v2](https://docs.readthedocs.io/en/stable/config-file/v2.html)
+
+
+---
+
+[//]: # (END_SECTION 9e71bfb6ef03e5ae7573adabf44578691a1b0402)
+[//]: # (START_SECTION 239a79a38937b5844b47c2351118155642419320)
+### Fix CentOS 8/9 LibKS
+
+> Commit: [239a79a38937b5844b47c2351118155642419320](https://github.com/dOpensource/dsiprouter/commit/239a79a38937b5844b47c2351118155642419320)  
+> Date: Wed, 1 Nov 2023 01:00:49 -0400  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix compiling libks/libstirshaken in centos 8/9
+
+
+---
+
+[//]: # (END_SECTION 239a79a38937b5844b47c2351118155642419320)
+[//]: # (START_SECTION fad1ddc79f5567760d323634fe09adb5ba8cf27d)
 ### Upgrade Fixes
 
-> Commit: [b9c9fd0db73086cba12a8cfdf8090afd8198c9f6](https://github.com/dOpensource/dsiprouter/commit/b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)  
+> Commit: [fad1ddc79f5567760d323634fe09adb5ba8cf27d](https://github.com/dOpensource/dsiprouter/commit/fad1ddc79f5567760d323634fe09adb5ba8cf27d)  
 > Date: Tue, 31 Oct 2023 21:29:48 -0400  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2266,7 +2423,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION b9c9fd0db73086cba12a8cfdf8090afd8198c9f6)
+[//]: # (END_SECTION fad1ddc79f5567760d323634fe09adb5ba8cf27d)
 [//]: # (START_SECTION 5cee36cfb362c6fceb14348494749a93cdb1a2d2)
 ### Stability Improvements
 

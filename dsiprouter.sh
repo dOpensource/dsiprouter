@@ -2846,9 +2846,10 @@ function removeInitService() {
 
 function upgrade() {
     local UPGRADE_VER CURRENT_VERSION UPGRADE_DEPENDS
-    local REPO_URL=${UPGRADE_REPO:-https://github.com/dOpensource/dsiprouter.git}
+    local REPO_URL=${UPGRADE_REPO:-"$GIT_REPO_URL"}
+    REPO_URL=${REPO_URL:-https://github.com/dOpensource/dsiprouter.git}
     local TAG_NAME="${UPGRADE_RELEASE}-rel"
-    export NEW_PROJECT_DIR=${BOOTSTRAP_DIR:-/tmp/dsiprouter}
+    export NEW_PROJECT_DIR=/tmp/dsiprouter
     export RUNNING_UPGRADE=1
 
     # make sure mask is reset to be more permissive
@@ -2856,17 +2857,12 @@ function upgrade() {
     # and we want to keep permissions from backup files as well
     umask 022
 
-    # if new repo was bootstrapped onto system already, use that repo instead
-    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 0 )); then
-        printdbg 'downloading new dSIPRouter project files'
-        rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
-        git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
-            printerr 'failed downloading new project files'
-            exit 1
-        }
-    else
-        printdbg 'running with bootstrapped dSIPRouter project files'
-    fi
+    printdbg 'downloading new dSIPRouter project files'
+    rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
+    git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
+        printerr 'failed downloading new project files'
+        exit 1
+    }
 
     printdbg 'verifying version requirements'
     UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
@@ -2884,13 +2880,31 @@ function upgrade() {
         exit 1
     }
 
-    # TODO: check license, this will be implemented in next release
-    #       can not be done yet because we are allowing bootstrapping an upgrade
-#    if (( $RUN_FROM_GUI == 0 )); then
-#       # check shared memory
-#    else
-#       # manually query license server
-#    fi
+    if (( $RUN_FROM_GUI == 0 )); then
+        # check shared memory
+        if [[ $(${PYTHON_CMD} -c "
+import os
+os.chdir('${DSIP_PROJECT_DIR}/gui')
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+print(getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'])
+        ") != "3" ]]; then
+            printerr 'dSPIRouter core license is not valid'
+            exit 1
+        fi
+    else
+        # manually grab license status
+        if [[ $(${PYTHON_CMD} -c "
+import os, sys
+os.chdir('${DSIP_PROJECT_DIR}/gui')
+sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
+from modules.api.licensemanager.functions import licenseToGlobalStateVariable
+import settings
+print(licenseToGlobalStateVariable(settings.DSIP_CORE_LICENSE))
+        ") != "3" ]]; then
+            printerr 'dSPIRouter core license is not valid'
+            exit 1
+        fi
+    fi
 
     printdbg 'backing up configs just in case the upgrade fails'
     # TODO: make the destination paths use our static variables as well
