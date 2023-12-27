@@ -30,11 +30,11 @@ function install() {
 
     ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
     ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
-    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1q" ]]; then
+    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1w" ]]; then
         if [[ ! -d ${SRC_DIR}/openssl ]]; then
             ( cd ${SRC_DIR} &&
-            curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
-            tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
+            curl -sL https://www.openssl.org/source/openssl-1.1.1w.tar.gz 2>/dev/null |
+            tar -xzf - --transform 's%openssl-1.1.1w%openssl%'; )
         fi
         (
             cd ${SRC_DIR}/openssl &&

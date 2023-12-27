@@ -92,7 +92,7 @@ resetConfigsHandler() {
     cp -af ${CURR_BACKUP_DIR}/opt/. /lib/
     cp -af ${CURR_BACKUP_DIR}/opt/. /opt/
     cp -af ${CURR_BACKUP_DIR}/opt/. /var/
-    systemctl deamon-reload
+    systemctl daemon-reload
 
     if (( ${KAM_DB_DROPPED:-0} == 1 )); then
         withRootDBConn mysql <${CURR_BACKUP_DIR}/db.sql

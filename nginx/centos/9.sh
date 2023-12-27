@@ -18,6 +18,7 @@ function install() {
     dnf install -y nginx
 
     if (( $? != 0 )); then
+        printerr 'failed installing nginx packages'
         return 1
     fi
 
@@ -25,9 +26,28 @@ function install() {
     mkdir -p /run/nginx
     chown -R nginx:nginx /run/nginx
 
-    # give dsiprouter permissions in SELINUX
+    # give nginx permissions in SELINUX
     semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
     semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
+    # NOTE: /var/run is required here due to the aliasing in the fcontexts
+    #semanage fcontext -a -t httpd_var_run_t '/var/run/dsiprouter/dsiprouter\.sock'
+    # TODO: this is a workaround, this the "wrong" way to do it
+    # we need to figure out why the fcontexts are not applying by default to new files
+    # and possibly (preferably) create our own type with those specific permissions
+    # for example a new type dsiprouter_run_t labeled on '/var/run/dsiprouter/.+'
+    (
+        if semodule -l | grep -q 'dsiprouter'; then
+            semodule -r dsiprouter
+        fi
+        cd /tmp &&
+        checkmodule -M -m -o dsiprouter.mod ${DSIP_PROJECT_DIR}/nginx/selinux/centos.te &&
+        semodule_package -o dsiprouter.pp -m dsiprouter.mod &&
+        semodule -i dsiprouter.pp
+    )
+    if (( $? != 0 )); then
+        printerr 'failed updating selinux permissions'
+        return 1
+    fi
 
     # Configure nginx
     # determine available TLS protocols (try using highest available)
@@ -49,14 +69,14 @@ function install() {
 
     # configure nginx systemd service
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-stop.sh /usr/sbin/nginx-stop
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v2.service /etc/systemd/system/nginx.service
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.service /etc/systemd/system/nginx-watcher.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v2.service /lib/systemd/system/nginx.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher-v2.service /lib/systemd/system/nginx-watcher.service
     perl -p \
         -e "s%PathChanged\=.*%PathChanged=${DSIP_CERTS_DIR}/%;" \
-        ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.path >/etc/systemd/system/nginx-watcher.path
-    chmod 644 /etc/systemd/system/nginx.service
-    chmod 644 /etc/systemd/system/nginx-watcher.service
-    chmod 644 /etc/systemd/system/nginx-watcher.path
+        ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.path >/lib/systemd/system/nginx-watcher.path
+    chmod 644 /lib/systemd/system/nginx.service
+    chmod 644 /lib/systemd/system/nginx-watcher.service
+    chmod 644 /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload
     systemctl enable nginx
 
@@ -71,9 +91,9 @@ function uninstall() {
 
     # remove nginx systemd service
     rm -f /usr/sbin/nginx-stop
-    rm -f /etc/systemd/system/nginx.service
-    rm -f /etc/systemd/system/nginx-watcher.service
-    rm -f /etc/systemd/system/nginx-watcher.path
+    rm -f /lib/systemd/system/nginx.service
+    rm -f /lib/systemd/system/nginx-watcher.service
+    rm -f /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload
 
     # remove SELINUX permissions

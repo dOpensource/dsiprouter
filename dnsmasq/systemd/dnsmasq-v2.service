@@ -1,0 +1,19 @@
+[Unit]
+Description=dnsmasq - A lightweight DHCP and caching DNS server
+Requires=basic.target network.target
+After=network.target network-online.target basic.target
+Before=multi-user.target
+DefaultDependencies=no
+
+[Service]
+Type=simple
+PIDFile=/run/dnsmasq/dnsmasq.pid
+Environment='RUN_DIR=/run/dnsmasq'
+# make sure everything is setup correctly before starting
+ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
+ExecStartPre=/usr/sbin/dnsmasq --test
+ExecStart=/usr/sbin/dnsmasq -k
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

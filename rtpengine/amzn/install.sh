@@ -124,11 +124,11 @@ function install {
 
     ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
     ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
-    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1q" ]]; then
+    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1w" ]]; then
         if [[ ! -d ${SRC_DIR}/openssl ]]; then
             ( cd ${SRC_DIR} &&
-            curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
-            tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
+            curl -sL https://www.openssl.org/source/openssl-1.1.1w.tar.gz 2>/dev/null |
+            tar -xzf - --transform 's%openssl-1.1.1w%openssl%'; )
         fi
         (
             cd ${SRC_DIR}/openssl &&
@@ -281,15 +281,20 @@ function install {
 
     ## compile and install libwebsockets
     if [[ ! -d ${SRC_DIR}/libwebsockets ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/warmcat/libwebsockets.git ${SRC_DIR}/libwebsockets
+        git clone --depth 1 -c advice.detachedHead=false -b v4.3.3 https://github.com/warmcat/libwebsockets.git ${SRC_DIR}/libwebsockets
     fi
     (
+        CMAKE_ARGS='-DCMAKE_INSTALL_PREFIX=/usr -DLIB_SUFFIX=64 -DLWS_WITH_HTTP2=1'
+        if [[ -e "${SRC_DIR}/openssl" ]]; then
+            CMAKE_ARGS="$CMAKE_ARGS -DLWS_OPENSSL_INCLUDE_DIRS=${SRC_DIR}/openssl/include"
+            CMAKE_ARGS="$CMAKE_ARGS -DLWS_OPENSSL_LIBRARIES=${SRC_DIR}/openssl/libssl.so;${SRC_DIR}/openssl/libcrypto.so"
+        fi
+
         cd ${SRC_DIR}/libwebsockets &&
+        { rm -rf build/ 2>/dev/null || :; } &&
         mkdir -p build &&
         cd build/ &&
-        cmake -DCMAKE_INSTALL_PREFIX=/usr -DLIB_SUFFIX=64 -DLWS_WITH_HTTP2=1 \
-            -DLWS_OPENSSL_INCLUDE_DIRS=${SRC_DIR}/openssl/include \
-            -DLWS_OPENSSL_LIBRARIES="${SRC_DIR}/openssl/libssl.so;${SRC_DIR}/openssl/libcrypto.so" .. &&
+        cmake $CMAKE_ARGS .. &&
         make -j $NPROC &&
         make -j $NPROC install
     ) || {

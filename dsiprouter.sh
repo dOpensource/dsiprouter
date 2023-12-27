@@ -691,6 +691,8 @@ function updateDsiprouterConfig() {
         ${PYTHON_CMD} -c "import os,sys; os.chdir('${DSIP_PROJECT_DIR}/gui'); sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui'); from dsiprouter import syncSettings; syncSettings();"
         setConfigAttrib 'LOAD_SETTINGS_FROM' 'db' ${DSIP_CONFIG_FILE} -q
     fi
+
+    return 0
 }
 
 # TODO: these variables should be ephemeral, set as environment variables when running the service, no need to store them
@@ -706,8 +708,8 @@ function updateDsiprouterStartup {
     local KAM_UPDATE_OPTS=""
 
     # update dsiprouter configs on reboot
-    removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatedsipconfig"
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatedsipconfig $KAM_UPDATE_OPTS"
+    removeInitCmd "/usr/bin/dsiprouter updatedsipconfig"
+    addInitCmd "/usr/bin/dsiprouter updatedsipconfig $KAM_UPDATE_OPTS"
 
     # make sure dsip-init service runs prior to dsiprouter service
     removeDependsOnInit "dsiprouter.service"
@@ -771,8 +773,8 @@ function configureSSL() {
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
         cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
         # Add Nightly Cronjob to renew certs if not already there
-        if ! crontab -l | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert" 2>/dev/null; then
-            cronAppend "0 0 * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh renewsslcert"
+        if ! crontab -l | grep -q "/usr/bin/dsiprouter renewsslcert" 2>/dev/null; then
+            cronAppend "0 0 * * * /usr/bin/dsiprouter renewsslcert"
         fi
     else
         printwarn "Failed Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
@@ -948,6 +950,8 @@ function updateKamailioConfig() {
 #            s%(#========== webrtc_ipv6_start ==========#[\s]+).*(#========== webrtc_ipv6_stop ==========#)%\1\2%s;' \
 #            ${DSIP_KAMAILIO_TLS_CONFIG_FILE}
 #    fi
+
+    return 0
 }
 
 # update kamailio service startup commands accounting for any changes
@@ -955,8 +959,8 @@ function updateKamailioStartup {
     local KAM_UPDATE_OPTS=""
 
     # update kamailio configs on reboot
-    removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig"
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatekamconfig $KAM_UPDATE_OPTS"
+    removeInitCmd "/usr/bin/dsiprouter updatekamconfig"
+    addInitCmd "/usr/bin/dsiprouter updatekamconfig $KAM_UPDATE_OPTS"
 
     # make sure dsip-init service runs prior to kamailio service
     removeDependsOnInit "kamailio.service"
@@ -1004,6 +1008,8 @@ function updateRtpengineConfig() {
         disableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         disableRtpengineConfigAttrib 'homer-id' ${SYSTEM_RTPENGINE_CONFIG_FILE}
     fi
+
+    return 0
 }
 
 # update rtpengine service startup commands accounting for any changes
@@ -1011,8 +1017,8 @@ function updateRtpengineStartup() {
     local RTP_UPDATE_OPTS=""
 
     # update rtpengine configs on reboot
-    removeInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig"
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatertpconfig $RTP_UPDATE_OPTS"
+    removeInitCmd "/usr/bin/dsiprouter updatertpconfig"
+    addInitCmd "/usr/bin/dsiprouter updatertpconfig $RTP_UPDATE_OPTS"
 
     # make sure dsip-init service runs prior to rtpengine service
     removeDependsOnInit "rtpengine.service"
@@ -1062,13 +1068,15 @@ function updateDnsConfig() {
         -0777 -i -pe 's|(#+DSIP_CONFIG_START).*?(#+DSIP_CONFIG_END)|\1\n${cluster_hosts}\2|gms' /etc/hosts
 
     # tell dnsmasq to reload configs
-    if [ -f /var/run/dnsmasq/dnsmasq.pid ]; then
-        kill -SIGHUP $(cat /var/run/dnsmasq/dnsmasq.pid) 2>/dev/null
-    elif [ -f /var/run/dnsmasq.pid ]; then
-        kill -SIGHUP $(cat /var/run/dnsmasq.pid) 2>/dev/null
+    if [ -f /run/dnsmasq/dnsmasq.pid ]; then
+        kill -SIGHUP $(cat /run/dnsmasq/dnsmasq.pid) 2>/dev/null
+    elif [ -f /run/dnsmasq.pid ]; then
+        kill -SIGHUP $(cat /run/dnsmasq.pid) 2>/dev/null
     else
         kill -SIGHUP $(pidof dnsmasq) 2>/dev/null
     fi
+
+    return 0
 }
 
 function updateCACertsDir() {
@@ -1076,9 +1084,11 @@ function updateCACertsDir() {
         'BEGIN {c=0;}
         /BEGIN CERT/{c++} {
             print > dsip_certs_dir "/ca/cert." c ".pem"
-        }' <${DSIP_SSL_CA}
-    openssl rehash ${DSIP_CERTS_DIR}/ca/
-    updatePermissions -certs
+        }' <${DSIP_SSL_CA} &&
+    openssl rehash ${DSIP_CERTS_DIR}/ca/ &&
+    updatePermissions -certs &&
+    return 0 ||
+    return 1
 }
 export -f updateCACertsDir
 
@@ -1275,17 +1285,6 @@ function fixMPATH() {
         printerr "Can't find the module path for Kamailio.  Please ensure Kamailio is installed and try again!"
         exit 1
     fi
-}
-
-function setSelinuxMode() {
-    # TODO: get someone with more selinux experience to fix the policy issues
-    #       for now just set to permissive mode
-    case "$DISTRO" in
-        rhel|almalinux|rocky|centos|amzn)
-            setenforce permissive
-            sed -i -e 's/(^SELINUX=).*/SELINUX=permissive/' /etc/selinux/config
-            ;;
-    esac
 }
 
 # Requirements to run this script / any imported functions
@@ -1610,7 +1609,7 @@ function uninstallRTPEngine() {
     fi
 
     # remove rtpengine service dependencies
-    removeInitCmd "dsiprouter.sh updatertpconfig"
+    removeInitCmd "/usr/bin/dsiprouter updatertpconfig"
     removeDependsOnInit "rtpengine.service"
 
     # Remove the hidden installed file, which denotes if it's installed or not
@@ -1793,7 +1792,7 @@ function installDsiprouter() {
 #!/usr/bin/env bash
 
 # reset admin user password
-${DSIP_PROJECT_DIR}/dsiprouter.sh resetpassword -q -fid
+/usr/bin/dsiprouter resetpassword -q -fid
 
 exit 0
 EOF
@@ -1979,7 +1978,7 @@ function uninstallKamailio() {
     fi
 
     # remove kam service dependencies
-    removeInitCmd "dsiprouter.sh updatekamconfig"
+    removeInitCmd "/usr/bin/dsiprouter updatekamconfig"
     removeDependsOnInit "kamailio.service"
 
     # Remove the hidden installed file, which denotes if it's installed or not
@@ -1999,6 +1998,31 @@ function installModules() {
             ${dir}/install.sh
         fi
     done
+}
+
+function installCron() {
+    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.croninstalled" ]; then
+        printwarn "cron is already installed"
+        return
+    else
+        printdbg "Attempting to install cron"
+    fi
+
+    if cmdExists 'apt-get'; then
+        apt-get install -y cron
+    elif cmdExists 'dnf'; then
+        dnf install -y cronie
+    elif cmdExists 'yum'; then
+        yum install -y cronie
+    fi
+
+    if (( $? != 0 )); then
+        printerr "cron install failed"
+        exit 1
+    fi
+
+    pprint "cron was installed"
+    touch ${DSIP_SYSTEM_CONFIG_DIR}/.croninstalled
 }
 
 # Install Sipsak
@@ -2075,28 +2099,11 @@ function uninstallSipsak() {
 }
 
 # Install DNSmasq stub resolver for local DNS
-# used by kamailio dmq replication
-# TODO: add support for integrating with openresolv
-# TODO: add support for integrating with network-manager
-# TODO: move DNSmasq install to its own directory, marked for v0.80
+# - used by kamailio dmq replication
 function installDnsmasq() {
-    local DNSMASQ_LISTEN_ADDRS DNSMASQ_NAME_SERVERS DNSMASQ_RESOLV_FILE
-
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
         printwarn "DNSmasq is already installed"
         return
-    else
-        printdbg "Attempting to install DNSmasq"
-    fi
-
-    # ipv6 compatibility
-    # TODO: marked for review, only one or the other is needed here, not both addresses
-    if (( ${IPV6_ENABLED} == 1 )); then
-        DNSMASQ_LISTEN_ADDRS="127.0.0.1,::1"
-        DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1" "nameserver ::1")
-    else
-        DNSMASQ_LISTEN_ADDRS="127.0.0.1"
-        DNSMASQ_NAME_SERVERS=("nameserver 127.0.0.1")
     fi
 
     # create dnsmasq user and group
@@ -2106,175 +2113,16 @@ function installDnsmasq() {
     userdel dnsmasq &>/dev/null; groupdel dnsmasq &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
 
-    # mask the service before running package manager to avoid faulty startup errors
-    systemctl mask dnsmasq.service
-
-    # install dnsmasq
-    if cmdExists 'apt-get'; then
-        apt-get install -y dnsmasq
-    elif cmdExists 'dnf'; then
-        dnf install -y dnsmasq
-    elif cmdExists 'yum'; then
-        yum install -y dnsmasq
-    else
-        ( exit 1; )
-    fi
+    printdbg "Attempting to install DNSmasq..."
+    ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh install
 
     if (( $? != 0 )); then
-        printerr 'failed installing DNSmasq via package manager'
+        printerr "DNSmasq install failed - OS install script failure"
         exit 1
     fi
 
-    # make sure we unmask before configuring the service ourselves
-    systemctl unmask dnsmasq.service
-
-    # make sure run dir is created
-    mkdir -p /run/dnsmasq
-    chown -R dnsmasq:dnsmasq /run/dnsmasq
-
-    # integration for resolvconf / systemd-resolvd
-    if systemctl -q is-enabled resolvconf &>/dev/null; then
-        DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
-
-        cat <<'EOF' >/etc/default/resolvconf
-REPORT_ABSENT_SYMLINK=no
-TRUNCATE_NAMESERVER_LIST_AFTER_LOOPBACK_ADDRESS=yes
-EOF
-
-        cat <<'EOF' >/etc/resolvconf/update.d/zz_dnsmasq
-#!/bin/sh
-#
-# Script to update the resolver list for dnsmasq
-#
-# N.B. Resolvconf may run us even if dnsmasq is not (yet) running.
-# If dnsmasq is installed then we go ahead and update the resolver list
-# in case dnsmasq is started later.
-#
-# Assumption: On entry, PWD contains the resolv.conf-type files.
-#
-# This is a modified version of the file from the dnsmasq package.
-#
-
-set -e
-
-RUN_DIR="/run/dnsmasq"
-RSLVRLIST_FILE="${RUN_DIR}/resolv.conf"
-TMP_FILE="${RSLVRLIST_FILE}_new.$$"
-MY_NAME_FOR_RESOLVCONF="dnsmasq"
-RESOLVCONF_GEN_FILE="/run/resolvconf/resolv.conf"
-
-[ -x /usr/sbin/dnsmasq ] || exit 0
-[ -x /lib/resolvconf/list-records ] || exit 1
-
-PATH=/bin:/sbin
-
-report_err() { echo "$0: Error: $*" >&2 ; }
-
-# Stores arguments (minus duplicates) in RSLT, separated by spaces
-# Doesn't work properly if an argument itself contains whitespace
-uniquify() {
-	RSLT=""
-	while [ "$1" ] ; do
-		for E in $RSLT ; do
-			[ "$1" = "$E" ] && { shift ; continue 2 ; }
-		done
-		RSLT="${RSLT:+$RSLT }$1"
-		shift
-	done
-}
-
-filterdnsmasq() {
-    while read ADDR; do
-        for DNSMASQ_ADDR in $@; do
-            [ "x$ADDR" = "x$DNSMASQ_ADDR" ] && continue 2
-        done
-        echo "$ADDR"
-    done
-}
-
-if [ ! -d "$RUN_DIR" ] && ! mkdir --parents --mode=0755 "$RUN_DIR" ; then
-	report_err "Failed trying to create directory $RUN_DIR"
-	exit 1
-fi
-
-RSLVCNFFILES="$RESOLVCONF_GEN_FILE"
-for F in $(/lib/resolvconf/list-records) ; do
-	case "$F" in
-	    "lo.$MY_NAME_FOR_RESOLVCONF")
-		DNSMASQ_ADDRS="$(sed -n -e 's/^[[:space:]]*nameserver[[:space:]]\+//p' lo.$MY_NAME_FOR_RESOLVCONF)"
-		;;
-	  *)
-		RSLVCNFFILES="${RSLVCNFFILES:+$RSLVCNFFILES }$F"
-		;;
-	esac
-done
-
-NMSRVRS=""
-if [ "$RSLVCNFFILES" ] ; then
-	uniquify $(
-	    sed -n -e 's/^[[:space:]]*nameserver[[:space:]]\+//p' $RSLVCNFFILES |
-	    filterdnsmasq $DNSMASQ_ADDRS
-    )
-	NMSRVRS="$RSLT"
-fi
-
-# Dnsmasq uses the mtime of $RSLVRLIST_FILE, with a resolution of one second,
-# to detect changes in the file. This means that if a resolvconf update occurs
-# within one second of the previous one then dnsmasq may fail to notice the
-# more recent change. To work around this problem we sleep one second here
-# if necessary in order to ensure that the new mtime is different.
-if [ -f "$RSLVRLIST_FILE" ] && [ "$(ls -go --time-style='+%s' "$RSLVRLIST_FILE" | { read p h s t n ; echo "$t" ; })" = "$(date +%s)" ] ; then
-	sleep 1
-fi
-
-clean_up() { rm -f "$TMP_FILE" ; }
-trap clean_up EXIT
-: >| "$TMP_FILE"
-for N in $NMSRVRS ; do echo "nameserver $N" >> "$TMP_FILE" ; done
-mv -f "$TMP_FILE" "$RSLVRLIST_FILE"
-
-EOF
-        chmod +x /etc/resolvconf/update.d/zz_dnsmasq
-        rm -f /etc/resolvconf/update.d/dnsmasq
-
-        rm -f /etc/resolv.conf
-        echo '# DNS servers are being managed by dnsmasq, DO NOT CHANGE THIS FILE' >/etc/resolv.conf
-        for NAME_SERVER in ${DNSMASQ_NAME_SERVERS[@]}; do
-            echo "$NAME_SERVER" >>/etc/resolv.conf
-        done
-
-        # update the dynamic resolv.conf files
-        resolvconf -u
-
-    # static resolv.conf
-    else
-        DNSMASQ_RESOLV_FILE="/etc/resolv.conf"
-
-        if ! grep -q -E 'nameserver 127\.0\.0\.1|nameserver ::1' /etc/resolv.conf 2>/dev/null; then
-            # extra check in case no nameserver found
-            if ! grep -q 'nameserver' /etc/resolv.conf 2>/dev/null; then
-                joinwith '' $'\n' '' "${DNSMASQ_NAME_SERVERS[@]}" >> /etc/resolv.conf
-            else
-                sed -i -r "0,\|^nameserver.*|{s||$(joinwith '' '' '\n' "${DNSMASQ_NAME_SERVERS[@]}")&|}" /etc/resolv.conf
-            fi
-        fi
-    fi
-
-    # dnsmasq configuration
-    mv -f /etc/dnsmasq.conf /etc/dnsmasq.conf.bak 2>/dev/null
-    cat <<EOF >/etc/dnsmasq.conf
-port=53
-domain-needed
-bogus-priv
-strict-order
-listen-address=${DNSMASQ_LISTEN_ADDRS}
-bind-interfaces
-user=dnsmasq
-group=dnsmasq
-conf-file=/etc/dnsmasq.conf
-resolv-file=${DNSMASQ_RESOLV_FILE}
-pid-file=/run/dnsmasq/dnsmasq.pid
-EOF
+    # make sure run dir is created with correct permissions
+    updatePermissions -dnsmasq
 
     # setup hosts in cluster node is resolvable
     # cron and kam service will configure these dynamically
@@ -2286,108 +2134,14 @@ EOF
             '#####DSIP_CONFIG_START' \
             "${INTERNAL_IP_ADDR} ${INTERNAL_FQDN} local.cluster" \
             "${EXTERNAL_IP_ADDR} ${EXTERNAL_FQDN} local.cluster" \
-            '#####DSIP_CONFIG_END' >> /etc/hosts
+            '#####DSIP_CONFIG_END' >>/etc/hosts
     fi
 
-    # configure systemd service
-    case "$DISTRO" in
-        debian|ubuntu)
-            cat << 'EOF' >/lib/systemd/system/dnsmasq.service
-[Unit]
-Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=basic.target network.target
-After=network.target network-online.target basic.target
-Wants=nss-lookup.target
-Before=nss-lookup.target
-DefaultDependencies=no
-
-[Service]
-Type=forking
-PIDFile=/run/dnsmasq/dnsmasq.pid
-Environment='RUN_DIR=/run/dnsmasq'
-Environment='IGNORE_RESOLVCONF=yes'
-# make sure everything is setup correctly before starting
-ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
-ExecStartPre=/usr/sbin/dnsmasq --test
-# We run dnsmasq via the /etc/init.d/dnsmasq script which acts as a
-# wrapper picking up extra configuration files and then execs dnsmasq
-# itself, when called with the "systemd-exec" function.
-ExecStart=/etc/init.d/dnsmasq systemd-exec
-# The systemd-*-resolvconf functions configure (and deconfigure)
-# resolvconf to work with the dnsmasq DNS server. They're called like
-# this to get correct error handling (ie don't start-resolvconf if the
-# dnsmasq daemon fails to start.
-ExecStartPost=/etc/init.d/dnsmasq systemd-start-resolvconf
-ExecStop=/etc/init.d/dnsmasq systemd-stop-resolvconf
-ExecReload=/bin/kill -HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-EOF
-            ;;
-        almalinux|rocky|centos)
-            cat << 'EOF' >/lib/systemd/system/dnsmasq.service
-[Unit]
-Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=basic.target network.target
-After=network.target network-online.target basic.target
-Before=multi-user.target
-DefaultDependencies=no
-
-[Service]
-Type=simple
-PIDFile=/run/dnsmasq/dnsmasq.pid
-Environment='RUN_DIR=/run/dnsmasq'
-# make sure everything is setup correctly before starting
-ExecStartPre=!-/usr/bin/dsiprouter chown -dnsmasq
-ExecStartPre=/usr/sbin/dnsmasq --test
-ExecStart=/usr/sbin/dnsmasq -k
-ExecReload=/bin/kill -HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-EOF
-            ;;
-        # amazon linux 2 and rhel 8 ship with systemd ver 219 (many new features missing)
-        # therefore we have to create backward compatible versions of our service files
-        # the following snippet may be useful in the future when we support later versions
-        #SYSTEMD_VER=$(systemctl --version | head -1 | awk '{print $2}')
-        # TODO: the same issue occurs on debian9 with systemd ver 232
-        amzn|rhel)
-            cat << 'EOF' >/lib/systemd/system/dnsmasq.service
-[Unit]
-Description=dnsmasq - A lightweight DHCP and caching DNS server
-Requires=basic.target network.target
-After=network.target network-online.target basic.target
-Before=multi-user.target
-DefaultDependencies=no
-
-[Service]
-Type=simple
-PermissionsStartOnly=true
-PIDFile=/run/dnsmasq/dnsmasq.pid
-Environment='RUN_DIR=/run/dnsmasq'
-# make sure everything is setup correctly before starting
-ExecStartPre=/usr/bin/dsiprouter chown -dnsmasq
-ExecStartPre=/usr/sbin/dnsmasq --test
-ExecStart=/usr/sbin/dnsmasq -k
-ExecReload=/bin/kill -HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-EOF
-            ;;
-    esac
-
-    # reload systemd configs and start on boot
-    systemctl daemon-reload
-    systemctl enable dnsmasq
-
     # update DNS hosts prior to dSIPRouter startup
-    addInitCmd "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
+    addInitCmd "/usr/bin/dsiprouter updatednsconfig"
     # update DNS hosts every minute
-    if ! crontab -l 2>/dev/null | grep -q "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"; then
-        cronAppend "0 * * * * ${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
+    if ! crontab -l 2>/dev/null | grep -q "/usr/bin/dsiprouter updatednsconfig"; then
+        cronAppend "0 * * * * /usr/bin/dsiprouter updatednsconfig"
     fi
 
     systemctl restart dnsmasq
@@ -2398,6 +2152,8 @@ EOF
         printerr "DNSmasq install failed"
         exit 1
     fi
+
+    return 0
 }
 
 function uninstallDnsmasq() {
@@ -2405,17 +2161,12 @@ function uninstallDnsmasq() {
         printwarn "DNSmasq is not installed or failed during install - uninstalling anyway to be safe"
     fi
 
-    # stop the process
-    systemctl disable dnsmasq
-    systemctl stop dnsmasq
+    printdbg "Attempting to uninstall DNSmasq..."
+    ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
 
-    # uninstall dnsmasq
-    if cmdExists 'apt-get'; then
-        apt-get remove -y dnsmasq
-    elif cmdExists 'dnf'; then
-        dnf remove -y dnsmasq
-    elif cmdExists 'yum'; then
-        yum remove -y dnsmasq
+    if (( $? != 0 )); then
+        printerr "DNSmasq uninstall failed - OS install script failure"
+        exit 1
     fi
 
     # remove dnsmasq configuration
@@ -2429,17 +2180,14 @@ function uninstallDnsmasq() {
     sed -ir -e '/#+DSIP_CONFIG_START/,/#+DSIP_CONFIG_END/d' /etc/hosts
 
     # remove cron job and init command
-    removeInitCmd "dsiprouter.sh updatednsconfig"
-    cronRemove "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig"
-
-    # if systemd dns resolver installed re-enable it
-    #systemctl enable systemd-resolved 2>/dev/null
-    #systemctl start systemd-resolved 2>/dev/null
+    removeInitCmd "/usr/bin/dsiprouter updatednsconfig"
+    cronRemove "/usr/bin/dsiprouter updatednsconfig"
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
-
     printdbg "DNSmasq was uninstalled"
+
+    return 0
 }
 
 function start() {
@@ -3098,9 +2846,10 @@ function removeInitService() {
 
 function upgrade() {
     local UPGRADE_VER CURRENT_VERSION UPGRADE_DEPENDS
-    local REPO_URL=${UPGRADE_REPO:-https://github.com/dOpensource/dsiprouter.git}
+    local REPO_URL=${UPGRADE_REPO:-"$GIT_REPO_URL"}
+    REPO_URL=${REPO_URL:-https://github.com/dOpensource/dsiprouter.git}
     local TAG_NAME="${UPGRADE_RELEASE}-rel"
-    export NEW_PROJECT_DIR=${BOOTSTRAP_DIR:-/tmp/dsiprouter}
+    export NEW_PROJECT_DIR=/tmp/dsiprouter
     export RUNNING_UPGRADE=1
 
     # make sure mask is reset to be more permissive
@@ -3108,17 +2857,12 @@ function upgrade() {
     # and we want to keep permissions from backup files as well
     umask 022
 
-    # if new repo was bootstrapped onto system already, use that repo instead
-    if (( ${BOOTSTRAPPING_UPGRADE:-0} == 0 )); then
-        printdbg 'downloading new dSIPRouter project files'
-        rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
-        git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
-            printerr 'failed downloading new project files'
-            exit 1
-        }
-    else
-        printdbg 'running with bootstrapped dSIPRouter project files'
-    fi
+    printdbg 'downloading new dSIPRouter project files'
+    rm -rf "$NEW_PROJECT_DIR" 2>/dev/null
+    git clone --depth 1 -c advice.detachedHead=false -b "$TAG_NAME" "$REPO_URL" "$NEW_PROJECT_DIR" || {
+        printerr 'failed downloading new project files'
+        exit 1
+    }
 
     printdbg 'verifying version requirements'
     UPGRADE_VER=$(jq -r -e '.version' <"${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/settings.json")
@@ -3136,13 +2880,31 @@ function upgrade() {
         exit 1
     }
 
-    # TODO: check license, this will be implemented in next release
-    #       can not be done yet because we are allowing bootstrapping an upgrade
-#    if (( $RUN_FROM_GUI == 0 )); then
-#       # check shared memory
-#    else
-#       # manually query license server
-#    fi
+    if (( $RUN_FROM_GUI == 0 )); then
+        # check shared memory
+        if [[ $(${PYTHON_CMD} -c "
+import os
+os.chdir('${DSIP_PROJECT_DIR}/gui')
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+print(getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'])
+        ") != "3" ]]; then
+            printerr 'dSPIRouter core license is not valid'
+            exit 1
+        fi
+    else
+        # manually grab license status
+        if [[ $(${PYTHON_CMD} -c "
+import os, sys
+os.chdir('${DSIP_PROJECT_DIR}/gui')
+sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
+from modules.api.licensemanager.functions import licenseToGlobalStateVariable
+import settings
+print(licenseToGlobalStateVariable(settings.DSIP_CORE_LICENSE))
+        ") != "3" ]]; then
+            printerr 'dSPIRouter core license is not valid'
+            exit 1
+        fi
+    fi
 
     printdbg 'backing up configs just in case the upgrade fails'
     # TODO: make the destination paths use our static variables as well
@@ -3615,16 +3377,22 @@ function updatePermissions() {
     setDnsmasqPerms() {
         mkdir -p /run/dnsmasq
         chown -R dnsmasq:dnsmasq /run/dnsmasq
+        chown dnsmasq:root /run/dnsmasq
+        chmod 771 /run/dnsmasq
     }
     # set permissions for files/dirs used by nginx
     setNginxPerms() {
         mkdir -p /run/nginx
         chown -R nginx:nginx /run/nginx
+        chown nginx:root /run/nginx
+        chmod 771 /run/nginx
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
         mkdir -p /run/kamailio
         chown -R kamailio:kamailio /run/kamailio
+        chown kamailio:root /run/kamailio
+        chmod 771 /run/kamailio
 
         # dsiprouter needs to have control over the kamailio dir
         # this allows dsiprouter to update kamailio dynamically
@@ -3641,6 +3409,8 @@ function updatePermissions() {
     setDsiprouterPerms() {
         mkdir -p ${DSIP_RUN_DIR}
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
+        chown dsiprouter:root ${DSIP_RUN_DIR}
+        chmod 771 ${DSIP_RUN_DIR}
 
         # dsiprouter user is the only one making backups
         chown -R dsiprouter:root ${BACKUPS_DIR}
@@ -3659,6 +3429,8 @@ function updatePermissions() {
     setRtpenginePerms() {
         mkdir -p /run/rtpengine
         chown -R rtpengine:rtpengine /run/rtpengine
+        chown rtpengine:root /run/rtpengine
+        chmod 771 /run/rtpengine
     }
 
     # no args given set permissions for all services
@@ -3903,7 +3675,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(setSelinuxMode configureSystemRepos setCloudPlatform createInitService createSwapFile installDsiprouterCli)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService createSwapFile installDsiprouterCli)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -3918,24 +3690,24 @@ function processCMD() {
                         ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio)
+                        RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio)
                         shift
                         ;;
                     -dsip|--dsiprouter)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installMysql installNginx installDsiprouter)
+                        RUN_COMMANDS+=(installSipsak installCron installMysql installNginx installDsiprouter)
                         shift
                         ;;
                     -rtp|--rtpengine)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installRTPEngine)
+                        RUN_COMMANDS+=(installCron installRTPEngine)
                         shift
                         ;;
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
+                        RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
                     # DEPRECATED: marked for removal in v0.80

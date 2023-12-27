@@ -17,7 +17,7 @@ function install() {
     yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools' &&
     yum install -y psmisc curl wget sed gawk vim perl firewalld logrotate rsyslog cmake3 gcc10 \
         uuid-devel libtool jansson-devel libuuid-devel libcurl-devel libjwt-devel libatomic \
-        bzip2-devel libffi-devel
+        bzip2-devel libffi-devel policycoreutils-python
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -33,11 +33,11 @@ function install() {
 
     ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
     ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
-    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1q" ]]; then
+    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1w" ]]; then
         if [[ ! -d ${SRC_DIR}/openssl ]]; then
             ( cd ${SRC_DIR} &&
-            curl -sL https://www.openssl.org/source/openssl-1.1.1q.tar.gz 2>/dev/null |
-            tar -xzf - --transform 's%openssl-1.1.1q%openssl%'; )
+            curl -sL https://www.openssl.org/source/openssl-1.1.1w.tar.gz 2>/dev/null |
+            tar -xzf - --transform 's%openssl-1.1.1w%openssl%'; )
         fi
         (
             cd ${SRC_DIR}/openssl &&
@@ -148,6 +148,13 @@ EOF
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
+
+    # give kamailio permissions in SELINUX
+    semanage port -a -t sip_port_t -p udp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIP_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIP_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_SIPS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_SIPS_PORT}
+    semanage port -a -t sip_port_t -p tcp ${KAM_WSS_PORT} || semanage port -m -t sip_port_t -p tcp ${KAM_WSS_PORT}
+    semanage port -a -t sip_port_t -p udp ${KAM_DMQ_PORT} || semanage port -m -t sip_port_t -p udp ${KAM_DMQ_PORT}
 
     # Start firewalld
     systemctl enable firewalld

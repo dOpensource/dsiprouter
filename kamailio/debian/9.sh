@@ -36,6 +36,9 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
+    # allow root to fix permissions before starting services (required to work with SELinux enabled)
+    usermod -a -G kamailio root
+
     # add repo sources to apt
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
