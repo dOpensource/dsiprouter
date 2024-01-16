@@ -106,3 +106,9 @@
     transform: rotate(359deg);
   }
 }
+
+.modal-dialog {
+    width: fit-content;
+    margin: 30px auto;
+    min-width: 600px;
+}

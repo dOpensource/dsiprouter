@@ -378,6 +378,8 @@
       modal_body.find(".ip_addr").val('');
       modal_body.find(".strip").val('');
       modal_body.find(".prefix").val('');
+      modal_body.find(".weight").val('');
+
 
       /* make sure ip_addr not disabled */
       modal_body.find('.ip_addr').prop('disabled', false);
@@ -392,6 +394,7 @@
       var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
       var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
       var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
+      var weight = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
 
       /** Clear out the modal */
       var modal_body = $('#edit .modal-body');
@@ -400,6 +403,7 @@
       modal_body.find(".ip_addr").val('');
       modal_body.find(".strip").val('');
       modal_body.find(".prefix").val('');
+      modal_body.find(".weight").val('');
 
       /* update modal fields */
       modal_body.find(".gwid").val(gwid);
@@ -407,6 +411,7 @@
       modal_body.find(".ip_addr").val(ip_addr);
       modal_body.find(".strip").val(strip);
       modal_body.find(".prefix").val(prefix);
+      modal_body.find(".weight").val(weight);
     });
 
     carriers_tbody.on('click', '#open-Delete', function() {
@@ -414,7 +419,8 @@
       var c = document.getElementById('carriers');
       var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
       var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
-      var related_rules = JSON.parse($(c).find('tr:eq(' + row_index + ') td:eq(6)').text());
+      var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
+      var related_rules = JSON.parse($(c).find('tr:eq(' + row_index + ') td:eq(7)').text());
 
       var modal_body = $('#delete .modal-body');
 
@@ -441,6 +447,7 @@
       /* update modal fields */
       modal_body.find(".gwid").val(gwid);
       modal_body.find(".name").val(name);
+      modal_body.find(".ip_addr").val(ip_addr);
       modal_body.find(".related_rules").val(JSON.stringify(related_rules));
     });
   }
