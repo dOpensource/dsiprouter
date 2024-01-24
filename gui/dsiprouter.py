@@ -1283,6 +1283,23 @@ def addUpdateInboundMapping():
 
             db.add_all(inserts)
 
+            # enabling/disabling load balancing on one route must enable them all due to current limitations
+            db.flush()
+            if desc_dict['lb_enabled'] == '1':
+                lb_find = 'lb_enabled:0'
+                lb_repl = 'lb_enabled:1'
+            else:
+                lb_find = 'lb_enabled:1'
+                lb_repl = 'lb_enabled:0'
+            for row in db.query(InboundMapping).filter(
+                InboundMapping.groupid == settings.FLT_INBOUND
+            ).filter(
+                InboundMapping.gwlist == IMap.gwlist
+            ).filter(
+                InboundMapping.ruleid != IMap.ruleid
+            ):
+                row.description = row.description.replace(lb_find, lb_repl)
+
         # Updating
         else:
             inserts = []
@@ -1334,8 +1351,10 @@ def addUpdateInboundMapping():
             # except sql_exceptions.MultipleResultsFound as ex:
             #     logging.info("Multiple Address rows found")
 
-            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
-                {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
+            IMap = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).first()
+            IMap.prefix = prefix
+            IMap.gwlist = gwlist
+            IMap.description = description
 
             hardfwd_exists = True if db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).scalar() else False
             db.flush()
@@ -1501,6 +1520,23 @@ def addUpdateInboundMapping():
 
             if len(inserts) > 0:
                 db.add_all(inserts)
+
+            # enabling/disabling load balancing on one route must enable them all due to current limitations
+            db.flush()
+            if desc_dict['lb_enabled'] == '1':
+                lb_find = 'lb_enabled:0'
+                lb_repl = 'lb_enabled:1'
+            else:
+                lb_find = 'lb_enabled:1'
+                lb_repl = 'lb_enabled:0'
+            for row in db.query(InboundMapping).filter(
+                InboundMapping.groupid == settings.FLT_INBOUND
+            ).filter(
+                InboundMapping.gwlist == IMap.gwlist
+            ).filter(
+                InboundMapping.ruleid != IMap.ruleid
+            ):
+                row.description = row.description.replace(lb_find, lb_repl)
 
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True

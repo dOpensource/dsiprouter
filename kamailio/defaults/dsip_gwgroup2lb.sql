@@ -82,16 +82,14 @@ CREATE TRIGGER insert_rule_gwgroup2lb
   ON dr_rules
   FOR EACH ROW
 BEGIN
-  SET @new_ruleid := COALESCE(NEW.ruleid, @new_ruleid, (
-    SELECT auto_increment
-    FROM information_schema.tables
-    WHERE table_name = 'dr_rules' AND table_schema = DATABASE()));
-
-  IF (NEW.description LIKE '%lb_enabled:1%') THEN
-    UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+  -- only inbound/outbound rules can have load balancing
+  IF (NEW.groupid = 8000 OR NEW.groupid = 9000) THEN
+    IF (NEW.description LIKE '%lb_enabled:1%') THEN
+      UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+    ELSE
+      UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+    END IF;
   END IF;
-
-  SET @new_ruleid = @new_ruleid + 1;
 END; //
 DELIMITER ;
 
@@ -104,17 +102,20 @@ CREATE TRIGGER update_rule_gwgroup2lb
   FOR EACH ROW
 BEGIN
   DECLARE v_gwgroupid varchar(64) DEFAULT NULL;
-  DECLARE v_ruleid varchar(64) DEFAULT NULL;
   DECLARE v_description varchar(255) DEFAULT '';
+  DECLARE v_groupid varchar(255) DEFAULT '';
 
-  SET v_ruleid = CAST(COALESCE(NEW.ruleid, OLD.ruleid) AS char);
   SET v_gwgroupid = REPLACE(COALESCE(NEW.gwlist, OLD.gwlist), '#', '');
   SET v_description = COALESCE(NEW.description, OLD.description);
+  SET v_groupid = CAST(COALESCE(NEW.groupid, OLD.groupid) AS int);
 
-  IF (v_description LIKE '%lb_enabled:1%') THEN
-    UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
-  ELSE
-    UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = v_gwgroupid;
+  -- only inbound/outbound rules can have load balancing
+  IF (v_groupid = 8000 OR v_groupid = 9000) THEN
+    IF (v_description LIKE '%lb_enabled:1%') THEN
+      UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
+    ELSE
+      UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = v_gwgroupid;
+    END IF;
   END IF;
 END; //
 DELIMITER ;
@@ -127,8 +128,9 @@ CREATE TRIGGER delete_rule_gwgroup2lb
   ON dr_rules
   FOR EACH ROW
 BEGIN
-  IF (OLD.description LIKE '%lb_enabled:1%') THEN
-    UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = OLD.ruleid;
+  -- if it is the last rule for the gwgroup then delete load balancing entry
+  IF ((SELECT COUNT(ruleid) FROM dr_rules WHERE gwlist=OLD.gwlist AND groupid=OLD.groupid AND ruleid!=OLD.ruleid) = 0) THEN
+    DELETE FROM dsip_gwgroup2lb WHERE gwgroupid=REPLACE(OLD.gwlist, '#', '');
   END IF;
 END; //
 DELIMITER ;

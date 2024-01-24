@@ -146,7 +146,7 @@
       modal_body.find("select.ff_gwgroupid").val(ff_gwgroupid);
       if (lb_enabled) {
         modal_body.find("select.gwgroupid option").filter(function() {
-          return this.value.indexOf('lb_') !== -1;
+          return this.value.indexOf('lb_'+gwgroupid) !== -1;
         }).prop("selected", true);
       }
 
