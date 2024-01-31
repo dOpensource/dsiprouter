@@ -219,18 +219,16 @@
           <div class="alert alert-warning pre-scrollable">
             <strong>
               You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
-              Replace &lt;ip address&gt; with the ip address of this server.
             </strong>
 	    <pre><code class="bash">DSIPROUTER_IP={{dsiprouter_ip}}
-sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
+sed  -i -r "s/^#?listen_addresses[ \t]?=[ \t]?.*/listen_addresses = '*'/m" /etc/postgresql/*/main/postgresql.conf
 iptables -A INPUT -p tcp -s $DSIPROUTER_IP/32 --dport 5432 -j ACCEPT
-iptables-save > /etc/iptables/rules.v4
+iptables-save &gt;/etc/iptables/rules.v4
 # Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
-echo -e "host    all             all            $DSIPROUTER_IP/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
-/etc/init.d/postgresql restart
+echo -e "host    all             all            $DSIPROUTER_IP/32            trust" &gt;&gt;/etc/postgresql/*/main/pg_hba.conf
+systemctl restart postgresql
 # Run this command if your using fail2ban
-sed -i -r "s|(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
-sed -i -r "s|#ignoreip|ignoreip|" /etc/fail2ban/jail.conf
+sed -i -r "s|^#?(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
           <div class="form-group">
@@ -253,10 +251,14 @@ systemctl restart fail2ban</code></pre>
               Run these commands as root on the FreePBX server.
               Replace values within angle brackets '&lt;value&gt;' with your own values.
             </strong>
-            <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
-iptables-save
+            <pre><code class="bash">DSIPROUTER_IP={{dsiprouter_ip}}
+PBX_SIP_PORTS=(5060 5080)
+for PORT in ${PBX_SIP_PORTS[@]}; do
+    iptables -A INPUT -p udp -s $DSIPROUTER_IP/32 --dport $PORT -j ACCEPT
+done
+iptables-save &gt;/etc/iptables/rules.v4
 # Run this command if your using fail2ban
-sed -i -r "s|(ignoreip = .*)|\1 {{dsiprouter_ip}}/32|" /etc/fail2ban/jail.conf
+sed -i -r "s|(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of freepbx tab -->
@@ -443,18 +445,16 @@ systemctl restart fail2ban</code></pre>
           <div class="alert alert-warning pre-scrollable">
             <strong>
               You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
-              Replace &lt;ip address&gt; with the ip address of this server.
             </strong>
 	    <pre><code class="bash">DSIPROUTER_IP={{dsiprouter_ip}}
 sed  -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/"  /etc/postgresql/*/main/postgresql.conf
 iptables -A INPUT -p tcp -s $DSIPROUTER_IP/32 --dport 5432 -j ACCEPT
-iptables-save > /etc/iptables/rules.v4
+iptables-save &gt;/etc/iptables/rules.v4
 # Run this command if your don't want to enter a password for the FusionPBX Database(DB) Password
-echo -e "host    all             all            $DSIPROUTER_IP/32            trust" >> /etc/postgresql/*/main/pg_hba.conf
-/etc/init.d/postgresql restart
+echo -e "host    all             all            $DSIPROUTER_IP/32            trust" &gt;&gt;/etc/postgresql/*/main/pg_hba.conf
+systemctl restart postgresql
 # Run this command if your using fail2ban
-sed -i -r "s|(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
-sed -i -r "s|#ignoreip|ignoreip|" /etc/fail2ban/jail.conf
+sed -i -r "s|^#?(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
           <div class="form-group">
@@ -475,12 +475,16 @@ systemctl restart fail2ban</code></pre>
           <div class="alert alert-warning pre-scrollable">
             <strong>
               Run these commands as root on the FreePBX server.
-              Replace values within angle brackets '&lt;value&gt;' with your own values.
+              Replace PBX_SIP_PORTS with your own values if they are not set to the defaults.
             </strong>
-            <pre><code class="bash">iptables -A INPUT -p udp -s &lt;dsip ip address&gt;/32 --dport &lt;pbx sip port&gt; -j ACCEPT
-iptables-save
+            <pre><code class="bash">DSIPROUTER_IP={{dsiprouter_ip}}
+PBX_SIP_PORTS=(5060 5080)
+for PORT in ${PBX_SIP_PORTS[@]}; do
+    iptables -A INPUT -p udp -s $DSIPROUTER_IP/32 --dport $PORT -j ACCEPT
+done
+iptables-save &gt;/etc/iptables/rules.v4
 # Run this command if your using fail2ban
-sed -i -r "s|(ignoreip = .*)|\1 &lt;{{dsiprouter_ip}}&gt;/32|" /etc/fail2ban/jail.conf
+sed -i -r "s|(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of freepbx tab -->
