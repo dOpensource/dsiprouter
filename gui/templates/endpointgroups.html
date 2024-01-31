@@ -454,6 +454,7 @@ echo -e "host    all             all            $DSIPROUTER_IP/32            tru
 /etc/init.d/postgresql restart
 # Run this command if your using fail2ban
 sed -i -r "s|(ignoreip = .*)|\1 $DSIPROUTER_IP/32|" /etc/fail2ban/jail.conf
+sed -i -r "s|#ignoreip|ignoreip|" /etc/fail2ban/jail.conf
 systemctl restart fail2ban</code></pre>
           </div>
           <div class="form-group">
