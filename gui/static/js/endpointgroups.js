@@ -459,37 +459,37 @@
 
     /* listener for fusionPBX toggle */
     $('.modal-body .toggleFusionPBXDomain').change(function() {
-      var modal = $(this).closest('div.modal');
+      var self = $(this);
+      var modal = self.closest('div.modal');
       var modal_body = modal.find('.modal-body');
 
-      if ($(this).is(":checked") || $(this).prop("checked")) {
+      if (self.is(":checked") || self.prop("checked")) {
         modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
         modal_body.find('.fusionpbx_db_enabled').val(1);
-
-        /* uncheck other toggles */
-        //modal_body.find(".toggleFreePBXDomain").bootstrapToggle('off');
+        self.bootstrapToggle('on');
       }
       else {
         modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
         modal_body.find('.fusionpbx_db_enabled').val(0);
+        self.bootstrapToggle('off');
       }
     });
 
     /* listener for freePBX toggle */
     $('.modal-body .toggleFreePBXDomain').change(function() {
-      var modal = $(this).closest('div.modal');
+      var self = $(this);
+      var modal = self.closest('div.modal');
       var modal_body = modal.find('.modal-body');
 
-      if ($(this).is(":checked") || $(this).prop("checked")) {
+      if (self.is(":checked") || self.prop("checked")) {
         modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
         modal_body.find('.freepbx_enabled').val(1);
-
-        /* uncheck other toggles */
-        modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
+        self.bootstrapToggle('on');
       }
       else {
         modal_body.find('.FreePBXDomainOptions').addClass("hidden");
         modal_body.find('.freepbx_enabled').val(0);
+        self.bootstrapToggle('off');
       }
     });
 
