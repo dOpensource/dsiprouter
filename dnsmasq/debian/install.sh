@@ -38,31 +38,46 @@ function install() {
     rm -f /etc/resolv.conf
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
 
-    # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
-    mkdir -p /etc/systemd/resolved.conf.d/
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+    # debian used resolvconf up to debian12 when they switch to systemd-resolved
+    if (( $DISTRO_VER < 12 )); then
+        export DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
 
-    # for some reason the defaults on systemd-networkd are not followed after changing the above
-    # so we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the ifaces
-    # see systemd.network and systemd.networkd for more information
-    mkdir -p /etc/systemd/network/
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemd.network /etc/systemd/network/99-dsiprouter.network
+        # setup resolvconf to work with dnsmasq
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_def /etc/default/resolvconf &&
+        rm -f /etc/resolvconf/update.d/dnsmasq &&
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_upd /etc/resolvconf/update.d/dnsmasq &&
+        chmod +x /etc/resolvconf/update.d/dnsmasq &&
+        resolvconf -u || {
+            printerr 'failed loading new resolvconf network configurations..'
+        }
+    else
+        export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
 
-    # restart systemd network services
-    systemctl restart systemd-networkd &&
-    systemctl restart systemd-resolved || {
-        printerr 'failed loading new systemd network configurations..'
-        printwarn 'reverting network changes and aborting dnsmasq install'
-        cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
-        rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
-        rm -f /etc/systemd/network/99-dsiprouter.network
-        systemctl restart systemd-networkd
-        systemctl restart systemd-resolved
-        return 1
-    }
+        # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
+        mkdir -p /etc/systemd/resolved.conf.d/
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
 
-    # tell dnsmasq to grab dns servers from systemd-resolved
-    export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
+        # for some reason the defaults on systemd-networkd are not followed after changing the above
+        # so we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the ifaces
+        # see systemd.network and systemd.networkd for more information
+        mkdir -p /etc/systemd/network/
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemd.network /etc/systemd/network/99-dsiprouter.network
+
+        # restart systemd network services
+        systemctl restart systemd-networkd &&
+        systemctl restart systemd-resolved || {
+            printerr 'failed loading new systemd network configurations..'
+            printwarn 'reverting network changes and aborting dnsmasq install'
+            cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
+            rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+            rm -f /etc/systemd/network/99-dsiprouter.network
+            systemctl restart systemd-networkd
+            systemctl restart systemd-resolved
+            return 1
+        }
+    fi
+
+    # tell dnsmasq to grab dns servers found via dhcp
     envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
 
     return 0
