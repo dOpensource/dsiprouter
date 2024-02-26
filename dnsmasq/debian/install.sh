@@ -9,6 +9,18 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
+    # make sure the dns stack is installed (minimal images do not include these packages)
+    # debian used resolvconf up to debian12 when they switch to systemd-resolved
+    if (( $DISTRO_VER < 12 )); then
+        apt-get install -y resolvconf
+
+        resolvconf -u
+    else
+        apt-get install -y systemd-resolved libnss-resolve
+
+        systemctl restart systemd-resolved
+    fi
+
     # mask the service before running package manager to avoid faulty startup errors
     systemctl mask dnsmasq.service
 
@@ -38,7 +50,7 @@ function install() {
     rm -f /etc/resolv.conf
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
 
-    # debian used resolvconf up to debian12 when they switch to systemd-resolved
+    # update the dnsmasq settings
     if (( $DISTRO_VER < 12 )); then
         export DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
 
