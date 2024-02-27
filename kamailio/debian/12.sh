@@ -22,6 +22,9 @@ function install() {
         return 1
     fi
 
+    # Configure OpenSSL to a default provider
+    sed -i -e 's/# providers =/providers =/' -e 's/# \[provider_sect/\[provider_sect/' -e 's/# default =/default =/' -e 's/# \[default_sect/\[default_sect/' -e 's/# activate/activate/' /etc/ssl/openssl.cnf
+
     # create kamailio user and group
     mkdir -p /var/run/kamailio
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
