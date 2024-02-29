@@ -1735,9 +1735,6 @@ function installDsiprouter() {
     # configure dsiprouter modules
     installModules
 
-    updateDsiprouterConfig
-    updateDsiprouterStartup
-
     # Set dsip private key (used for encryption across services) by following precedence:
     # 1:    set via cmdline arg
     # 2:    set prior to externally
@@ -1779,7 +1776,15 @@ function installDsiprouter() {
     fi
 
     # pass the variables on to setCredentials()
+    SERVICE_RELOAD_DISABLED=1
     setCredentials
+    unset SERVICE_RELOAD_DISABLED
+
+    # update the rest of the settings
+    updateDsiprouterConfig
+
+    # update systemd startup dependencies
+    updateDsiprouterStartup
 
     # NOTE: some of the previous files/dirs get updated here to allow dsiprouter access
     updatePermissions -certs -kamailio -dsiprouter
@@ -1850,7 +1855,10 @@ EOF
         make -j $(nproc) html >/dev/null 2>&1
     )
 
-    # Restart dSIPRouter / nginx / Kamailio with new configurations
+    # Restart mysql / dSIPRouter / nginx / Kamailio with new configurations
+    if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled ]]; then
+        systemctl restart mariadb
+    fi
     if [[ -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled ]]; then
         systemctl restart nginx
     fi
@@ -2386,6 +2394,7 @@ function setCredentials() {
     # SET_ROOT_DB_PORT
     # SET_ROOT_DB_NAME
     # SET_DSIP_SESSION_KEY
+    # SERVICE_RELOAD_DISABLED
     if [[ -z ${SET_ROOT_DB_HOST+unset} && -n ${SET_KAM_DB_HOST+set} ]]; then
         SET_ROOT_DB_HOST="$SET_KAM_DB_HOST"
     fi
@@ -2400,8 +2409,12 @@ function setCredentials() {
     # 0 == no reload required, 1 == hot reload required, 2 == service reload required
     # note that parsing variables for higher numbered reloading should take precedence
     local DSIP_RELOAD_TYPE=1 KAM_RELOAD_TYPE=0 MYSQL_RELOAD_TYPE=0
+    # if calling script does not want changes propagated yet, set this variable
+    local SERVICE_RELOAD_DISABLED=${SERVICE_RELOAD_DISABLED:-0}
     # whether or not we will be running logic to update settings on the DB
     local RUN_SQL_STATEMENTS=1
+    # the type of mysql DB server detected
+    local MYSQL_VARIANT='mariadb'
     local TMP_VAL
 
     # sanity check, can we connect to the DB as the root user?
@@ -2436,6 +2449,14 @@ function setCredentials() {
         fi
         # no DB updates necessary
         RUN_SQL_STATEMENTS=0
+    fi
+
+    # determine type of DB server if we need to make updates
+    if (( $RUN_SQL_STATEMENTS == 1 )); then
+        if ! withRootDBConn mysql -se 'SELECT PASSWORD('');' &>/dev/null; then
+            MYSQL_VARIANT='mysql'
+        fi
+        sqlAsTransaction --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$ROOT_DB_HOST" --port="$ROOT_DB_PORT" "${SQL_STATEMENTS[@]}"
     fi
 
     # update non-encrypted settings locally and gather statements for updating DB
@@ -2510,8 +2531,13 @@ function setCredentials() {
         KAM_RELOAD_TYPE=2
     fi
     if [[ -n ${SET_KAM_DB_PASS+set} ]]; then
-        DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'localhost' = PASSWORD('$SET_KAM_DB_PASS');")
-        DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' = PASSWORD('$SET_KAM_DB_PASS');")
+        if [[ "$MYSQL_VARIANT" == 'mysql' ]]; then
+            DEFERRED_SQL_STATEMENTS+=("ALTER USER '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'localhost' IDENTIFIED BY '$SET_KAM_DB_PASS';")
+            DEFERRED_SQL_STATEMENTS+=("ALTER USER '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' IDENTIFIED BY '$SET_KAM_DB_PASS';")
+        else
+            DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'localhost' = PASSWORD('$SET_KAM_DB_PASS');")
+            DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' = PASSWORD('$SET_KAM_DB_PASS');")
+        fi
 
         TMP_VAL=$(encryptCreds "$SET_KAM_DB_PASS")
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET KAM_DB_PASS='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
@@ -2558,14 +2584,19 @@ function setCredentials() {
     fi
     if [[ -n ${SET_ROOT_DB_PASS+set} ]]; then
         if [[ -n ${SET_ROOT_DB_USER+set} ]]; then
-            DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$SET_ROOT_DB_USER'@'localhost' = PASSWORD('$SET_ROOT_DB_PASS');")
-            if checkDBUserExists "${SET_ROOT_DB_USER}@%"; then
-                DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$SET_ROOT_DB_USER'@'%' = PASSWORD('$SET_ROOT_DB_PASS');")
+            TMP_VAL="$SET_ROOT_DB_USER"
+        else
+            TMP_VAL="$ROOT_DB_USER"
+        fi
+        if [[ "$MYSQL_VARIANT" == 'mysql' ]]; then
+            DEFERRED_SQL_STATEMENTS+=("ALTER USER '$TMP_VAL'@'localhost' IDENTIFIED BY '$SET_ROOT_DB_PASS';")
+            if checkDBUserExists "$TMP_VAL@%"; then
+                DEFERRED_SQL_STATEMENTS+=("ALTER USER '$TMP_VAL'@'%' IDENTIFIED BY '$SET_ROOT_DB_PASS';")
             fi
         else
-            DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$ROOT_DB_USER'@'localhost' = PASSWORD('$SET_ROOT_DB_PASS');")
-            if checkDBUserExists "${ROOT_DB_USER}@%"; then
-                DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$ROOT_DB_USER'@'%' = PASSWORD('$SET_ROOT_DB_PASS');")
+            DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$TMP_VAL'@'localhost' = PASSWORD('$SET_ROOT_DB_PASS');")
+            if checkDBUserExists "$TMP_VAL@%"; then
+                DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '$TMP_VAL'@'%' = PASSWORD('$SET_ROOT_DB_PASS');")
             fi
         fi
 
@@ -2630,25 +2661,27 @@ function setCredentials() {
     # reload/synchronize settings for each service
     # note: we reload the service only if it is currently running (otherwise it messes with boot ordering)
     # note: updateKamailioConfig() combines configuring kam config and hot reloading in the same function
-    if (( ${MYSQL_RELOAD_TYPE} == 2 )); then
-        if systemctl is-active --quiet mariadb; then
-            systemctl restart mariadb
+    if (( $SERVICE_RELOAD_DISABLED == 0 )); then
+        if (( ${MYSQL_RELOAD_TYPE} == 2 )); then
+            if systemctl is-active --quiet mariadb; then
+                systemctl restart mariadb
+            fi
         fi
-    fi
-    if (( ${KAM_RELOAD_TYPE} > 0 )); then
-        updateKamailioConfig
-    fi
-    if (( ${KAM_RELOAD_TYPE} == 2 )); then
-        if systemctl is-active --quiet kamailio; then
-            systemctl restart kamailio
+        if (( ${KAM_RELOAD_TYPE} > 0 )); then
+            updateKamailioConfig
         fi
-    fi
-    if (( ${DSIP_RELOAD_TYPE} == 1 )); then
-        # synchronize settings (between local disk, DB, and cluster)
-        systemctl kill -s SIGUSR1 dsiprouter
-    elif (( ${DSIP_RELOAD_TYPE} == 2 )); then
-        if systemctl is-active --quiet dsiprouter; then
-            systemctl restart dsiprouter
+        if (( ${KAM_RELOAD_TYPE} == 2 )); then
+            if systemctl is-active --quiet kamailio; then
+                systemctl restart kamailio
+            fi
+        fi
+        if (( ${DSIP_RELOAD_TYPE} == 1 )); then
+            # synchronize settings (between local disk, DB, and cluster)
+            systemctl kill -s SIGUSR1 dsiprouter
+        elif (( ${DSIP_RELOAD_TYPE} == 2 )); then
+            if systemctl is-active --quiet dsiprouter; then
+                systemctl restart dsiprouter
+            fi
         fi
     fi
 
@@ -3745,11 +3778,26 @@ function processCMD() {
                             shift
                         fi
 
-                        TMP_VAL=$(parseDBConnURI -user "$DB_CONN_URI") && export SET_KAM_DB_USER="$TMP_VAL"
-                        TMP_VAL=$(parseDBConnURI -pass "$DB_CONN_URI") && export SET_KAM_DB_PASS="$TMP_VAL"
-                        TMP_VAL=$(parseDBConnURI -host "$DB_CONN_URI") && export SET_KAM_DB_HOST="$TMP_VAL"
-                        TMP_VAL=$(parseDBConnURI -port "$DB_CONN_URI") && export SET_KAM_DB_PORT="$TMP_VAL"
-                        TMP_VAL=$(parseDBConnURI -name "$DB_CONN_URI") && export SET_KAM_DB_NAME="$TMP_VAL"
+                        TMP_VAL=$(parseDBConnURI -user "$DB_CONN_URI") && {
+                            export SET_KAM_DB_USER="$TMP_VAL"
+                            export KAM_DB_USER="$TMP_VAL"
+                        }
+                        TMP_VAL=$(parseDBConnURI -pass "$DB_CONN_URI") && {
+                            export SET_KAM_DB_PASS="$TMP_VAL"
+                            export KAM_DB_PASS="$TMP_VAL"
+                        }
+                        TMP_VAL=$(parseDBConnURI -host "$DB_CONN_URI") && {
+                            export SET_KAM_DB_HOST="$TMP_VAL"
+                            export KAM_DB_HOST="$TMP_VAL"
+                        }
+                        TMP_VAL=$(parseDBConnURI -port "$DB_CONN_URI") && {
+                            export SET_KAM_DB_PORT="$TMP_VAL"
+                            export KAM_DB_PORT="$TMP_VAL"
+                        }
+                        TMP_VAL=$(parseDBConnURI -name "$DB_CONN_URI") && {
+                            export SET_KAM_DB_NAME="$TMP_VAL"
+                            export KAM_DB_NAME="$TMP_VAL"
+                        }
                         ;;
                     -dsipcid|--dsip-clusterid=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then

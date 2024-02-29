@@ -1077,13 +1077,18 @@ function dumpDBUser() {
 }
 export -f dumpDBUser
 
-# usage: sqlAsTransaction [options] <database>
-# options:  --user=<mysql user>
-#           --pass=<mysql password>
-#           --host=<mysql host>
-#           --port=<mysql port>
-#           --db=<mysql database name>
-# returns:  0 if DB exists, 1 otherwise
+# usage:
+#   sqlAsTransaction [options] <database> <sql statements>
+#   echo 'sql statements' | sqlAsTransaction [options] <database>
+# options:
+#   --user=<mysql user>
+#   --pass=<mysql password>
+#   --host=<mysql host>
+#   --port=<mysql port>
+#   --db=<mysql database name>
+# returns:
+#   0 == statements executed successfully
+#   1 == error occurred running statements
 function sqlAsTransaction() {
     local TMP
     local DB_SET=0
