@@ -29,6 +29,10 @@ if __name__ == '__main__':
             from modules.api.cron_functions import cleanupLeases
             cleanupLeases()
             sys.exit(0)
+        elif cmd == 'synclicenses':
+            from modules.api.licensemanager.functions import syncLicensesToGlobalState
+            syncLicensesToGlobalState()
+            sys.exit(0)
 
     elif mod == 'cdr':
         if cmd == 'sendreport' and len(args) > 0:

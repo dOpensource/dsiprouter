@@ -117,7 +117,7 @@
           <select class="authtype form-control" name="authtype">
             <option value="">Select Domain Type</option>
             <option value="passthru">Pass Thru to PBX</option>
-            {% if licenseValid(state.msteams_license_status) == False %}(Subscription Required)
+            {% if licenseValid('DSIP_MSTEAMS') == False %}(Subscription Required)
               <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
             {% else %}
               <option value="msteams">Microsoft Teams Direct Routing</option>
@@ -182,7 +182,7 @@
           <select class="authtype form-control" name="authtype">
             <option value="">Select Domain Type</option>
             <option value="passthru">Pass Thru to PBX</option>
-            {% if licenseValid(state.msteams_license_status) == False %}
+            {% if licenseValid('DSIP_MSTEAMS') == False %}
               <option value="msteams-nosub">Microsoft Teams Direct Routing (Subscription Required)</option>
             {% else %}
               <option value="msteams">Microsoft Teams Direct Routing</option>

@@ -1,12 +1,10 @@
 # make sure the generated source files are imported instead of the template ones
 import sys
 
-import sqlalchemy.engine
-
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, inspect
+import base64, bson, inspect, os
 from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
@@ -14,7 +12,7 @@ from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sq
 from sqlalchemy.orm import registry, sessionmaker, scoped_session
 from sqlalchemy.sql import text
 import settings
-from shared import IO, debugException, dictToStrFields, rowToDict
+from shared import IO, debugException, dictToStrFields, rowToDict, objToDict
 from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
 
@@ -496,7 +494,7 @@ class DsipSettings(OrderedDict):
     pass
 
 
-# TODO: switch to from sqlalchemy.engine.URL API
+# TODO: switch to sqlalchemy.engine.URL API
 def createDBURI(db_driver=None, db_type=None, db_user=None, db_pass=None, db_host=None, db_port=None, db_name=None, db_charset='utf8mb4'):
     """
     Get any and all DB Connection URI's
@@ -576,8 +574,7 @@ def createValidEngine(uri_list):
             # test connection
             _ = db_engine.connect()
             # conn good return it
-            caller_globals[DB_ENGINE_NAME] = db_engine
-            return caller_globals[DB_ENGINE_NAME]
+            return db_engine
         except Exception as ex:
             errors.append(ex)
 
@@ -685,7 +682,14 @@ def createSessionObjects():
     # })
 
     session_loader = scoped_session(sessionmaker(bind=db_engine))
-    return db_engine, session_loader
+
+    # load them into the top level module global namespace
+    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+    caller_globals[DB_ENGINE_NAME] = db_engine
+    caller_globals[SESSION_LOADER_NAME] = session_loader
+
+    # return references for the calling function
+    return caller_globals[DB_ENGINE_NAME], caller_globals[SESSION_LOADER_NAME]
 
 
 # TODO: change to the global define pattern instead of instantiating dummy objects
@@ -785,97 +789,104 @@ class DummySession():
         pass
 
 
-def settingsToTableFormat(settings):
-    # convert db specific fields
-    if isinstance(settings.KAM_DB_HOST, (list, tuple)):
-        kam_db_host = ','.join(settings.KAM_DB_HOST)
-    else:
-        kam_db_host = settings.KAM_DB_HOST
+def settingsToTableFormat(settings, updates=None):
+    data = objToDict(settings)
+    if updates is not None:
+        data.update()
+
+    # translate db specific fields
+    if isinstance(data['KAM_DB_HOST'], (list, tuple)):
+        data['KAM_DB_HOST'] = ','.join(data['KAM_DB_HOST'])
+    data['DSIP_LICENSE_STORE'] = base64.b64encode(bson.dumps(data['DSIP_LICENSE_STORE']))
 
     # order matters here, as this is used to update table settings as well
     return DsipSettings([
-        ('DSIP_ID', settings.DSIP_ID),
-        ('DSIP_CLUSTER_ID', settings.DSIP_CLUSTER_ID),
-        ('DSIP_CLUSTER_SYNC', settings.DSIP_CLUSTER_SYNC),
-        ('DSIP_PROTO', settings.DSIP_PROTO),
-        ('DSIP_PORT', settings.DSIP_PORT),
-        ('DSIP_USERNAME', settings.DSIP_USERNAME),
-        ('DSIP_PASSWORD', settings.DSIP_PASSWORD),
-        ('DSIP_IPC_PASS', settings.DSIP_IPC_PASS),
-        ('DSIP_API_PROTO', settings.DSIP_API_PROTO),
-        ('DSIP_API_PORT', settings.DSIP_API_PORT),
-        ('DSIP_PRIV_KEY', settings.DSIP_PRIV_KEY),
-        ('DSIP_PID_FILE', settings.DSIP_PID_FILE),
-        ('DSIP_UNIX_SOCK', settings.DSIP_UNIX_SOCK),
-        ('DSIP_IPC_SOCK', settings.DSIP_IPC_SOCK),
-        ('DSIP_API_TOKEN', settings.DSIP_API_TOKEN),
-        ('DSIP_LOG_LEVEL', settings.DSIP_LOG_LEVEL),
-        ('DSIP_LOG_FACILITY', settings.DSIP_LOG_FACILITY),
-        ('DSIP_SSL_KEY', settings.DSIP_SSL_KEY),
-        ('DSIP_SSL_CERT', settings.DSIP_SSL_CERT),
-        ('DSIP_SSL_CA', settings.DSIP_SSL_CA),
-        ('DSIP_SSL_EMAIL', settings.DSIP_SSL_EMAIL),
-        ('DSIP_CERTS_DIR', settings.DSIP_CERTS_DIR),
-        ('VERSION', settings.VERSION),
-        ('DEBUG', settings.DEBUG),
-        ('ROLE', settings.ROLE),
-        ('GUI_INACTIVE_TIMEOUT', settings.GUI_INACTIVE_TIMEOUT),
-        ('KAM_DB_HOST', kam_db_host),
-        ('KAM_DB_DRIVER', settings.KAM_DB_DRIVER),
-        ('KAM_DB_TYPE', settings.KAM_DB_TYPE),
-        ('KAM_DB_PORT', settings.KAM_DB_PORT),
-        ('KAM_DB_NAME', settings.KAM_DB_NAME),
-        ('KAM_DB_USER', settings.KAM_DB_USER),
-        ('KAM_DB_PASS', settings.KAM_DB_PASS),
-        ('KAM_KAMCMD_PATH', settings.KAM_KAMCMD_PATH),
-        ('KAM_CFG_PATH', settings.KAM_CFG_PATH),
-        ('KAM_TLSCFG_PATH', settings.KAM_TLSCFG_PATH),
-        ('RTP_CFG_PATH', settings.RTP_CFG_PATH),
-        ('FLT_CARRIER', settings.FLT_CARRIER),
-        ('FLT_PBX', settings.FLT_PBX),
-        ('FLT_MSTEAMS', settings.FLT_MSTEAMS),
-        ('FLT_OUTBOUND', settings.FLT_OUTBOUND),
-        ('FLT_INBOUND', settings.FLT_INBOUND),
-        ('FLT_LCR_MIN', settings.FLT_LCR_MIN),
-        ('FLT_FWD_MIN', settings.FLT_FWD_MIN),
-        ('DEFAULT_AUTH_DOMAIN', settings.DEFAULT_AUTH_DOMAIN),
-        ('TELEBLOCK_GW_ENABLED', settings.TELEBLOCK_GW_ENABLED),
-        ('TELEBLOCK_GW_IP', settings.TELEBLOCK_GW_IP),
-        ('TELEBLOCK_GW_PORT', settings.TELEBLOCK_GW_PORT),
-        ('TELEBLOCK_MEDIA_IP', settings.TELEBLOCK_MEDIA_IP),
-        ('TELEBLOCK_MEDIA_PORT', settings.TELEBLOCK_MEDIA_PORT),
-        ('FLOWROUTE_ACCESS_KEY', settings.FLOWROUTE_ACCESS_KEY),
-        ('FLOWROUTE_SECRET_KEY', settings.FLOWROUTE_SECRET_KEY),
-        ('FLOWROUTE_API_ROOT_URL', settings.FLOWROUTE_API_ROOT_URL),
-        ('HOMER_ID', settings.HOMER_ID),
-        ('HOMER_HEP_HOST', settings.HOMER_HEP_HOST),
-        ('HOMER_HEP_PORT', settings.HOMER_HEP_PORT),
-        ('NETWORK_MODE', settings.NETWORK_MODE),
-        ('IPV6_ENABLED', settings.IPV6_ENABLED),
-        ('INTERNAL_IP_ADDR', settings.INTERNAL_IP_ADDR),
-        ('INTERNAL_IP_NET', settings.INTERNAL_IP_NET),
-        ('INTERNAL_IP6_ADDR', settings.INTERNAL_IP6_ADDR),
-        ('INTERNAL_IP6_NET', settings.INTERNAL_IP6_NET),
-        ('INTERNAL_FQDN', settings.INTERNAL_FQDN),
-        ('EXTERNAL_IP_ADDR', settings.EXTERNAL_IP_ADDR),
-        ('EXTERNAL_IP6_ADDR', settings.EXTERNAL_IP6_ADDR),
-        ('EXTERNAL_FQDN', settings.EXTERNAL_FQDN),
-        ('PUBLIC_IFACE', settings.PUBLIC_IFACE),
-        ('PRIVATE_IFACE', settings.PRIVATE_IFACE),
-        ('UPLOAD_FOLDER', settings.UPLOAD_FOLDER),
-        ('MAIL_SERVER', settings.MAIL_SERVER),
-        ('MAIL_PORT', settings.MAIL_PORT),
-        ('MAIL_USE_TLS', settings.MAIL_USE_TLS),
-        ('MAIL_USERNAME', settings.MAIL_USERNAME),
-        ('MAIL_PASSWORD', settings.MAIL_PASSWORD),
-        ('MAIL_ASCII_ATTACHMENTS', settings.MAIL_ASCII_ATTACHMENTS),
-        ('MAIL_DEFAULT_SENDER', settings.MAIL_DEFAULT_SENDER),
-        ('MAIL_DEFAULT_SUBJECT', settings.MAIL_DEFAULT_SUBJECT),
-        ('DSIP_CORE_LICENSE', settings.DSIP_CORE_LICENSE),
-        ('DSIP_STIRSHAKEN_LICENSE', settings.DSIP_STIRSHAKEN_LICENSE),
-        ('DSIP_TRANSNEXUS_LICENSE', settings.DSIP_TRANSNEXUS_LICENSE),
-        ('DSIP_MSTEAMS_LICENSE', settings.DSIP_MSTEAMS_LICENSE),
+        ('DSIP_ID', data['DSIP_ID']),
+        ('DSIP_CLUSTER_ID', data['DSIP_CLUSTER_ID']),
+        ('DSIP_CLUSTER_SYNC', data['DSIP_CLUSTER_SYNC']),
+        ('DSIP_PROTO', data['DSIP_PROTO']),
+        ('DSIP_PORT', data['DSIP_PORT']),
+        ('DSIP_USERNAME', data['DSIP_USERNAME']),
+        ('DSIP_PASSWORD', data['DSIP_PASSWORD']),
+        ('DSIP_IPC_PASS', data['DSIP_IPC_PASS']),
+        ('DSIP_API_PROTO', data['DSIP_API_PROTO']),
+        ('DSIP_API_PORT', data['DSIP_API_PORT']),
+        ('DSIP_PRIV_KEY', data['DSIP_PRIV_KEY']),
+        ('DSIP_PID_FILE', data['DSIP_PID_FILE']),
+        ('DSIP_UNIX_SOCK', data['DSIP_UNIX_SOCK']),
+        ('DSIP_IPC_SOCK', data['DSIP_IPC_SOCK']),
+        ('DSIP_API_TOKEN', data['DSIP_API_TOKEN']),
+        ('DSIP_LOG_LEVEL', data['DSIP_LOG_LEVEL']),
+        ('DSIP_LOG_FACILITY', data['DSIP_LOG_FACILITY']),
+        ('DSIP_SSL_KEY', data['DSIP_SSL_KEY']),
+        ('DSIP_SSL_CERT', data['DSIP_SSL_CERT']),
+        ('DSIP_SSL_CA', data['DSIP_SSL_CA']),
+        ('DSIP_SSL_EMAIL', data['DSIP_SSL_EMAIL']),
+        ('DSIP_CERTS_DIR', data['DSIP_CERTS_DIR']),
+        ('VERSION', data['VERSION']),
+        ('DEBUG', data['DEBUG']),
+        ('ROLE', data['ROLE']),
+        ('GUI_INACTIVE_TIMEOUT', data['GUI_INACTIVE_TIMEOUT']),
+        ('KAM_DB_HOST', data['KAM_DB_HOST']),
+        ('KAM_DB_DRIVER', data['KAM_DB_DRIVER']),
+        ('KAM_DB_TYPE', data['KAM_DB_TYPE']),
+        ('KAM_DB_PORT', data['KAM_DB_PORT']),
+        ('KAM_DB_NAME', data['KAM_DB_NAME']),
+        ('KAM_DB_USER', data['KAM_DB_USER']),
+        ('KAM_DB_PASS', data['KAM_DB_PASS']),
+        ('KAM_KAMCMD_PATH', data['KAM_KAMCMD_PATH']),
+        ('KAM_CFG_PATH', data['KAM_CFG_PATH']),
+        ('KAM_TLSCFG_PATH', data['KAM_TLSCFG_PATH']),
+        ('RTP_CFG_PATH', data['RTP_CFG_PATH']),
+        ('FLT_CARRIER', data['FLT_CARRIER']),
+        ('FLT_PBX', data['FLT_PBX']),
+        ('FLT_MSTEAMS', data['FLT_MSTEAMS']),
+        ('FLT_OUTBOUND', data['FLT_OUTBOUND']),
+        ('FLT_INBOUND', data['FLT_INBOUND']),
+        ('FLT_LCR_MIN', data['FLT_LCR_MIN']),
+        ('FLT_FWD_MIN', data['FLT_FWD_MIN']),
+        ('DEFAULT_AUTH_DOMAIN', data['DEFAULT_AUTH_DOMAIN']),
+        ('TELEBLOCK_GW_ENABLED', data['TELEBLOCK_GW_ENABLED']),
+        ('TELEBLOCK_GW_IP', data['TELEBLOCK_GW_IP']),
+        ('TELEBLOCK_GW_PORT', data['TELEBLOCK_GW_PORT']),
+        ('TELEBLOCK_MEDIA_IP', data['TELEBLOCK_MEDIA_IP']),
+        ('TELEBLOCK_MEDIA_PORT', data['TELEBLOCK_MEDIA_PORT']),
+        ('FLOWROUTE_ACCESS_KEY', data['FLOWROUTE_ACCESS_KEY']),
+        ('FLOWROUTE_SECRET_KEY', data['FLOWROUTE_SECRET_KEY']),
+        ('FLOWROUTE_API_ROOT_URL', data['FLOWROUTE_API_ROOT_URL']),
+        ('HOMER_ID', data['HOMER_ID']),
+        ('HOMER_HEP_HOST', data['HOMER_HEP_HOST']),
+        ('HOMER_HEP_PORT', data['HOMER_HEP_PORT']),
+        ('NETWORK_MODE', data['NETWORK_MODE']),
+        ('IPV6_ENABLED', data['IPV6_ENABLED']),
+        ('INTERNAL_IP_ADDR', data['INTERNAL_IP_ADDR']),
+        ('INTERNAL_IP_NET', data['INTERNAL_IP_NET']),
+        ('INTERNAL_IP6_ADDR', data['INTERNAL_IP6_ADDR']),
+        ('INTERNAL_IP6_NET', data['INTERNAL_IP6_NET']),
+        ('INTERNAL_FQDN', data['INTERNAL_FQDN']),
+        ('EXTERNAL_IP_ADDR', data['EXTERNAL_IP_ADDR']),
+        ('EXTERNAL_IP6_ADDR', data['EXTERNAL_IP6_ADDR']),
+        ('EXTERNAL_FQDN', data['EXTERNAL_FQDN']),
+        ('PUBLIC_IFACE', data['PUBLIC_IFACE']),
+        ('PRIVATE_IFACE', data['PRIVATE_IFACE']),
+        ('UPLOAD_FOLDER', data['UPLOAD_FOLDER']),
+        ('MAIL_SERVER', data['MAIL_SERVER']),
+        ('MAIL_PORT', data['MAIL_PORT']),
+        ('MAIL_USE_TLS', data['MAIL_USE_TLS']),
+        ('MAIL_USERNAME', data['MAIL_USERNAME']),
+        ('MAIL_PASSWORD', data['MAIL_PASSWORD']),
+        ('MAIL_ASCII_ATTACHMENTS', data['MAIL_ASCII_ATTACHMENTS']),
+        ('MAIL_DEFAULT_SENDER', data['MAIL_DEFAULT_SENDER']),
+        ('MAIL_DEFAULT_SUBJECT', data['MAIL_DEFAULT_SUBJECT']),
+        ('DSIP_LICENSE_STORE', data['DSIP_LICENSE_STORE']),
     ])
+
+
+def settingsTableToDict(table_values):
+    if ',' in table_values['KAM_DB_HOST']:
+        table_values['KAM_DB_HOST'] = table_values['KAM_DB_HOST'].split(',')
+    table_values['DSIP_LICENSE_STORE'] = bson.loads(base64.b64decode(table_values['DSIP_LICENSE_STORE']))
+    return table_values
 
 
 def updateDsipSettingsTable(fields):
@@ -894,14 +905,13 @@ def updateDsipSettingsTable(fields):
         if isinstance(fields, DsipSettings):
             db_fields = fields
         else:
-            db_fields = settingsToTableFormat(settings)
-            db_fields.update(fields)
+            db_fields = settingsToTableFormat(settings, updates=fields)
         field_mapping = ', '.join([':{}'.format(x, x) for x in db_fields.keys()])
 
         db = startSession()
         db.execute(
             text('CALL update_dsip_settings({})'.format(field_mapping)),
-            db_fields
+            params=db_fields
         )
         db.commit()
     except sql_exceptions.SQLAlchemyError:
@@ -916,12 +926,14 @@ def getDsipSettingsTableAsDict(dsip_id):
     db = DummySession()
     try:
         db = startSession()
-        return rowToDict(
+        data = rowToDict(
             db.execute(
                 text('SELECT * FROM dsip_settings WHERE DSIP_ID=:dsip_id'),
                 params={'dsip_id': dsip_id}
             ).first()
         )
+        # translate db specific fields
+        return settingsTableToDict(data)
     except sql_exceptions.SQLAlchemyError:
         raise
     finally:

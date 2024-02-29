@@ -8,7 +8,8 @@ from flask import request, Blueprint, render_template, redirect, session, url_fo
 from sqlalchemy import exc as sql_exceptions
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
-from modules.api.licensemanager.functions import WoocommerceError
+from modules.api.licensemanager.classes import WoocommerceError
+from modules.api.licensemanager.functions import getLicenseStatus
 from database import startSession, DummySession, Domain, DomainAttrs, Dispatcher, Gateways, Address
 from modules.api.api_routes import addEndpointGroups
 from shared import debugException, debugEndpoint, showError, strFieldsToDict, stripDictVals
@@ -160,7 +161,7 @@ def configureMSTeams(id):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['msteams_license_status']
+        license_status = getLicenseStatus('DSIP_MSTEAMS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -246,7 +247,7 @@ def displayDomains():
                 'notes': notes
             }
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['msteams_license_status']
+        license_status = getLicenseStatus('DSIP_MSTEAMS')
         if license_status == 0:
             return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 

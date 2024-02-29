@@ -24,7 +24,7 @@ from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
-from database import DummySession, createSessionObjects, startSession, \
+from database import DummySession, createSessionObjects, startSession, settingsTableToDict, \
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
     Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, Dispatcher
@@ -34,7 +34,9 @@ from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
-from modules.api.licensemanager.functions import WoocommerceError, licenseToGlobalStateVariable
+from modules.api.licensemanager.classes import WoocommerceError
+from modules.api.licensemanager.functions import licenseDictToStateDict, getLicenseStatusFromStateDict, \
+    getLicenseStatus
 from modules.api.licensemanager.routes import license_manager
 from modules.api.auth.routes import user
 from util.security import Credentials, urandomChars, AES_CTR
@@ -1866,7 +1868,7 @@ def displayTransNexus(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['transnexus_license_status']
+        license_status = getLicenseStatus('DSIP_TRANSNEXUS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -1915,7 +1917,7 @@ def addUpdateTransNexus():
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['transnexus_license_status']
+        license_status = getLicenseStatus('DSIP_TRANSNEXUS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2264,7 +2266,7 @@ def displayStirShaken(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['stirshaken_license_status']
+        license_status = getLicenseStatus('DSIP_STIRSHAKEN')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2313,7 +2315,7 @@ def addUpdateStirShaken():
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['stirshaken_license_status']
+        license_status = getLicenseStatus('DSIP_STIRSHAKEN')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2380,7 +2382,7 @@ def displayUpgrade(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status']
+        license_status = getLicenseStatus('DSIP_CORE')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
         if license_status == 1:
@@ -2445,7 +2447,7 @@ def startUpgrade():
         if (settings.DEBUG):
             debugEndpoint()
 
-        if getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'] != 3:
+        if getLicenseStatus('DSIP_CORE') != 3:
             raise WoocommerceError('invalid license')
 
         IO.loginfo("starting upgrade")
@@ -2700,23 +2702,18 @@ def syncSettings(new_fields={}, update_net=False):
         if settings.LOAD_SETTINGS_FROM == 'file':
 
             # format fields for DB
-            fields = settingsToTableFormat(settings)
-            fields.update(new_fields)
+            fields = settingsToTableFormat(settings, updates=new_fields)
 
             # update the table
             updateDsipSettingsTable(fields)
 
-            # revert db specific fields
-            if ',' in fields['KAM_DB_HOST']:
-                fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
+            # revert db formatting
+            fields = settingsTableToDict(fields)
 
         # sync settings from dsip_settings table
         elif settings.LOAD_SETTINGS_FROM == 'db':
             fields = getDsipSettingsTableAsDict(settings.DSIP_ID)
-            fields.update(new_fields)
-
-            if ',' in fields['KAM_DB_HOST']:
-                fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
+            fields.update(settingsTableToDict(new_fields))
 
         # no configured storage device to sync settings to/from
         else:
@@ -2825,10 +2822,7 @@ def intializeGlobalState():
         state = {}
 
     # license checks are always performed on startup, not loaded from state file
-    state['core_license_status'] = licenseToGlobalStateVariable(settings.DSIP_CORE_LICENSE)
-    state['stirshaken_license_status'] = licenseToGlobalStateVariable(settings.DSIP_STIRSHAKEN_LICENSE)
-    state['transnexus_license_status'] = licenseToGlobalStateVariable(settings.DSIP_TRANSNEXUS_LICENSE)
-    state['msteams_license_status'] = licenseToGlobalStateVariable(settings.DSIP_MSTEAMS_LICENSE)
+    state['dsip_license_store'] = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
     state['kam_reload_required'] = state.get('kam_reload_required', False)
     state['dsip_reload_required'] = state.get('dsip_reload_required', False)
     state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
@@ -2838,6 +2832,11 @@ def intializeGlobalState():
 
     if settings.DEBUG:
         IO.printinfo(f'global state initialized: {state}')
+
+
+def guiLicenseCheck(tag):
+    global state
+    return getLicenseStatusFromStateDict(state['dsip_license_store'], tag)
 
 
 def initApp(flask_app):
@@ -2867,7 +2866,7 @@ def initApp(flask_app):
     # Add jinja2 functions
     flask_app.jinja_env.globals.update(zip=zip)
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
-    flask_app.jinja_env.globals.update(licenseValid=lambda x: x==3)
+    flask_app.jinja_env.globals.update(licenseValid=guiLicenseCheck)
 
     # Dynamically update settings
     intializeGlobalSettings()
@@ -2951,12 +2950,6 @@ def teardown():
         pass
     try:
         os.remove(settings.DSIP_PID_FILE)
-    except:
-        pass
-    # TODO: multiprocessing and bjoern modules try to handle this in the ExitException handlers
-    #       marked for review...
-    try:
-        os.remove(settings.DSIP_UNIX_SOCK)
     except:
         pass
 

@@ -1,6 +1,7 @@
 acme
 ansi2html
 bjoern
+bson
 cron_descriptor
 cryptography
 dnspython

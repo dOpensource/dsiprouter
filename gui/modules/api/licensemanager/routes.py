@@ -7,9 +7,9 @@ from flask import Blueprint, jsonify, request
 from werkzeug import exceptions as http_exceptions
 from database import updateDsipSettingsTable
 from shared import debugEndpoint, debugException, StatusCodes, getRequestData, updateConfig
-from util.security import api_security
-from modules.api.api_functions import showApiError
-from modules.api.licensemanager.functions import WoocommerceLicense, WoocommerceError
+from modules.api.api_functions import showApiError, api_security
+from modules.api.licensemanager.classes import WoocommerceLicense, WoocommerceError
+from modules.api.licensemanager.functions import searchLicenses
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
@@ -31,14 +31,14 @@ license_manager = Blueprint('licensing', '__name__')
 # data:       data returned, if any
 #=================================================================================
 # TODO: standardize response payloads using new createApiResponse()
-#       marked for implementation in v0.74
+#       marked for implementation in v0.76
 #=================================================================================
 
 def showWoocommerceError(ex):
     debugException(ex)
     payload = {
         'error': 'woocommerce',
-        'msg': ex.response.json()['message'],
+        'msg': ex.response.json()['data'].get('errors', {}).get('lmfwc_rest_data_error', [''])[0],
         'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'],
         'data': []
     }
@@ -87,27 +87,6 @@ def validateRequestArgs(data, allowed_args=dict(), required_args=set(), strict_m
             pass
 
 
-def cmpDsipLicense(lc, payload=None):
-    if payload is None:
-        payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
-
-    settings_lc_combo = getattr(settings, lc.type)
-    if len(settings_lc_combo) == 0:
-        payload['data'].append(False)
-        payload['msg'] = 'license is not registered to this node'
-        return payload
-
-    settings_lc = WoocommerceLicense(key_combo=settings_lc_combo, decrypt=True)
-    if lc != settings_lc:
-        payload['data'].append(False)
-        payload['msg'] = 'license is not registered to this node'
-        return payload
-
-    payload['data'].append(True)
-    payload['msg'] = 'license is valid'
-    return payload
-
-
 @license_manager.route('/api/v1/licensing/validate', methods=['GET'])
 @api_security
 def validateLicense():
@@ -150,20 +129,27 @@ def validateLicense():
         # sanity checks (whitelist of acceptable args in the request body)
         validateRequestArgs(data, allowed_args={'license_key': str, 'key_encrypted': bool}, required_args={'license_key'})
 
-        # retrieve the license and validate
+        # retrieve the license
         if data.get('key_encrypted', False):
-            lc = WoocommerceLicense(key_combo=data['license_key'], decrypt=True)
+            matches = searchLicenses(key_combo=data['license_key'], decrypt=True)
         else:
-            lc = WoocommerceLicense(data['license_key'])
+            matches = searchLicenses(data['license_key'])
 
-        # remote woocommerce validation
+        if len(matches) == 0:
+            response_payload['data'].append(False)
+            response_payload['msg'] = 'license does not exist'
+            return jsonify(response_payload), StatusCodes.HTTP_NOT_FOUND
+
+        lc = matches[0]
         if not lc.active:
             response_payload['data'].append(False)
             response_payload['msg'] = 'license has not been activated'
             return jsonify(response_payload), StatusCodes.HTTP_OK
 
-        # local dsip validation
-        response_payload = cmpDsipLicense(lc, response_payload)
+        if not lc.machine_match:
+            response_payload['data'].append(False)
+            response_payload['msg'] = 'license is not registered to this node'
+            return jsonify(response_payload), StatusCodes.HTTP_OK
 
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -223,17 +209,16 @@ def retrieveLicense():
         validateRequestArgs(data, allowed_args={'license_key': str, 'key_encrypted': bool}, required_args={'license_key'})
 
         if data.get('key_encrypted', False):
-            lc = WoocommerceLicense(key_combo=data['license_key'], decrypt=True)
+            matches = searchLicenses(key_combo=data['license_key'], decrypt=True)
         else:
-            lc = WoocommerceLicense(data['license_key'])
+            matches = searchLicenses(data['license_key'])
 
-        lc_dict = dict(lc)
-        if cmpDsipLicense(lc)['data'][0]:
-            lc_dict['valid'] = True
-        else:
-            lc_dict['valid'] = False
+        if len(matches) == 0:
+            response_payload['data'].append({})
+            response_payload['msg'] = 'license does not exist'
+            return jsonify(response_payload), StatusCodes.HTTP_NOT_FOUND
 
-        response_payload['data'].append(lc_dict)
+        response_payload['data'].append(dict(matches[0]))
         response_payload['msg'] = 'successfully retrieved license'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -278,19 +263,7 @@ def listLicenses():
         if settings.DEBUG:
             debugEndpoint()
 
-        for t in set(WoocommerceLicense.TYPE.values()):
-            license = getattr(settings, t)
-            if len(license) != 0:
-                lc = WoocommerceLicense(key_combo=license, decrypt=True)
-
-                lc_dict = dict(lc)
-                if cmpDsipLicense(lc)['data'][0]:
-                    lc_dict['valid'] = True
-                else:
-                    lc_dict['valid'] = False
-
-                response_payload['data'].append(lc_dict)
-
+        response_payload['data'] = [dict(lc) for lc in searchLicenses()]
         response_payload['msg'] = 'successfully retrieved licenses'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -351,32 +324,25 @@ def activateLicense():
         validateRequestArgs(data, allowed_args={'license_key': str, 'key_encrypted': bool}, required_args={'license_key'})
 
         if data.get('key_encrypted', False):
-            lc = WoocommerceLicense(key_combo=data['license_key'], decrypt=True)
+            args = dict(key_combo=data['license_key'], decrypt=True)
         else:
-            lc = WoocommerceLicense(data['license_key'])
+            args = dict(license_key=data['license_key'])
 
-        # if that type of key exists already simply return an error
-        if len(getattr(settings, lc.type)) != 0:
-            response_payload['error'] = 'other'
-            response_payload['msg'] = 'submitted key conflicts with existing key'
-            return jsonify(response_payload), StatusCodes.HTTP_OK
+        matches = searchLicenses(**args)
+        if len(matches) == 0:
+            lc = WoocommerceLicense(**args)
+        else:
+            lc = matches[0]
 
-        if not lc.activate():
-            response_payload['error'] = 'other'
-            response_payload['msg'] = 'activation failed'
-            return jsonify(response_payload), StatusCodes.HTTP_OK
+        lc.activate()
 
+        settings.DSIP_LICENSE_STORE[str(lc.id)] = lc.encrypt()
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'][lc.license_key] = lc
         if settings.LOAD_SETTINGS_FROM == 'db':
-            updateDsipSettingsTable({lc.type: lc.encrypt()})
-        updateConfig(settings, {lc.type: lc.encrypt()}, hot_reload=True)
+            updateDsipSettingsTable({'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE})
+        updateConfig(settings, {'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE}, hot_reload=True)
 
-        lc_dict = dict(lc)
-        lc_dict['valid'] = True
-
-        # update global state
-        getSharedMemoryDict(STATE_SHMEM_NAME)[WoocommerceLicense.STATE_MAPPING[lc.type]] = 3
-
-        response_payload['data'].append(lc_dict)
+        response_payload['data'].append(dict(lc))
         response_payload['msg'] = 'activation succeeded'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
@@ -429,27 +395,25 @@ def deactivateLicense():
         validateRequestArgs(data, allowed_args={'license_key': str, 'key_encrypted': bool}, required_args={'license_key'})
 
         if data.get('key_encrypted', False):
-            lc = WoocommerceLicense(key_combo=data['license_key'], decrypt=True)
+            args = dict(key_combo=data['license_key'], decrypt=True)
         else:
-            lc = WoocommerceLicense(data['license_key'])
+            args = dict(license_key=data['license_key'])
 
-        # if that key does not exist simply return an error
-        if len(getattr(settings, lc.type)) == 0:
+        matches = searchLicenses(**args)
+        if len(matches) == 0:
             response_payload['error'] = 'other'
             response_payload['msg'] = 'submitted key does not exist on this system'
-            return jsonify(response_payload), StatusCodes.HTTP_OK
+            return jsonify(response_payload), StatusCodes.HTTP_NOT_FOUND
+        else:
+            lc = matches[0]
 
-        if not lc.deactivate():
-            response_payload['error'] = 'other'
-            response_payload['msg'] = 'deactivation failed'
-            return jsonify(response_payload), StatusCodes.HTTP_OK
+        lc.deactivate()
 
+        settings.DSIP_LICENSE_STORE.pop(str(lc.id))
+        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'].pop(lc.license_key)
         if settings.LOAD_SETTINGS_FROM == 'db':
-            updateDsipSettingsTable({lc.type: ''})
-        updateConfig(settings, {lc.type: ''}, hot_reload=True)
-
-        # update global state
-        getSharedMemoryDict(STATE_SHMEM_NAME)[WoocommerceLicense.STATE_MAPPING[lc.type]] = 0
+            updateDsipSettingsTable({'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE})
+        updateConfig(settings, {'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE}, hot_reload=True)
 
         response_payload['msg'] = 'deactivation succeeded'
         return jsonify(response_payload), StatusCodes.HTTP_OK

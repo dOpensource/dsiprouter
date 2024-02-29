@@ -7,10 +7,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 import os, hashlib, binascii, string, ssl, OpenSSL, secrets, re
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from functools import wraps
-from flask import render_template, request, session
 from shared import updateConfig, StatusCodes
-from modules.api.api_functions import createApiResponse
 import settings
 
 
@@ -242,41 +239,6 @@ class APIToken:
             return False
         except:
             return False
-
-
-def api_security(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        apiToken = APIToken(request)
-        accept_header = request.headers.get('Accept', '')
-
-        # If user is logged into a session return right away
-        if session.get('logged_in'):
-            return func(*args, **kwargs)
-        else:
-            if 'text/html' in accept_header:
-                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
-
-        # If API Request check for license
-        if not re.match('text/html|text/css', accept_header, flags=re.IGNORECASE):
-            # Check if they have a Core Subscription
-            if settings.DSIP_CORE_LICENSE is None or not isinstance(settings.DSIP_CORE_LICENSE, bytes):
-                return createApiResponse(
-                    error='http',
-                    msg='Unauthorized - Core Subscription Requried.  Purchase from https://dopensource.com/product/dsiprouter-core/',
-                    status_code=StatusCodes.HTTP_UNAUTHORIZED
-                )
-            # Check if token is valid
-            elif not apiToken.isValid():
-                return createApiResponse(
-                    error='http',
-                    msg='Unauthorized',
-                    status_code=StatusCodes.HTTP_UNAUTHORIZED
-                )
-            # checks succeeded allow the request
-            return func(*args, **kwargs)
-
-    return wrapper
 
 
 class CryptoLibInfo():

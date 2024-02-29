@@ -79,30 +79,32 @@ def getExternalIP(ip_ver=''):
     :rtype:         str|None
     """
 
-    tasks = []
+    task_args = []
     _allowed_gai_family = urllib3_conn.allowed_gai_family
 
     # redundancy in case a service provider goes down
     ipv4_resolvers = (
-        ('https://icanhazip.com',),
-        ('https://ipecho.net/plain',),
-        ('https://myexternalip.com/raw',),
-        ('https://api.ipify.org',),
-        ('https://bot.whatismyipaddress.com',)
+        'https://icanhazip.com',
+        'https://ipecho.net/plain',
+        'https://myexternalip.com/raw',
+        'https://api.ipify.org',
+        'https://bot.whatismyipaddress.com',
     )
     ipv6_resolvers = (
-        ('https://icanhazip.com',),
-        ('https://bot.whatismyipaddress.com',),
-        ('https://ifconfig.co',),
-        ('https://ident.me',),
-        ('https://api6.ipify.org',)
+        'https://icanhazip.com',
+        'https://bot.whatismyipaddress.com',
+        'https://ifconfig.co',
+        'https://ident.me',
+        'https://api6.ipify.org'
     )
 
     # task performed by each thread
-    def getip(url):
+    def getip(sock_type, url):
+        urllib3_conn.allowed_gai_family = lambda: sock_type
+        iptest = ipv6Test if sock_type == socket.AF_INET6 else ipv4Test
         try:
             ip = requests.get(url, timeout=2.0).text.strip()
-            if isValidIP(ip):
+            if iptest(ip):
                 return ip
         except:
             pass
@@ -111,12 +113,10 @@ def getExternalIP(ip_ver=''):
     # DNS exceptions can take a while to resolve, so instead we run all requests
     # in parallel and filter out the first good external IP (ipv4 given priority)
     if ip_ver == '4' or len(ip_ver) == 0:
-        urllib3_conn.allowed_gai_family = lambda: socket.AF_INET
-        tasks.extend(mtexec(getip, ipv4_resolvers))
+        task_args.extend((socket.AF_INET, resolver) for resolver in ipv4_resolvers)
     if ip_ver == '6' or len(ip_ver) == 0:
-        urllib3_conn.allowed_gai_family = lambda: socket.AF_INET6
-        tasks.extend(mtexec(getip, ipv6_resolvers))
-    results = [task.result() for task in tasks]
+        task_args.extend((socket.AF_INET6, resolver) for resolver in ipv6_resolvers)
+    results = mtexec(getip, task_args)
 
     # undo urllib monkey patch
     urllib3_conn.allowed_gai_family = _allowed_gai_family

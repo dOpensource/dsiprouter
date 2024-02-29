@@ -4,11 +4,16 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-from flask import jsonify
+import re
+from functools import wraps
+from flask import jsonify, render_template, request, session
 from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from shared import debugException, StatusCodes
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+from util.security import APIToken
+from modules.api.licensemanager.functions import getLicenseStatus
+import settings
 
 
 def createApiResponse(error=None, msg=None, kamreload=None, dsipreload=None, data=None,
@@ -81,3 +86,37 @@ def showApiError(ex, payload=None):
         status_code = StatusCodes.HTTP_INTERNAL_SERVER_ERROR
 
     return createApiResponse(**payload, status_code=status_code)
+
+def api_security(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        apiToken = APIToken(request)
+        accept_header = request.headers.get('Accept', '')
+
+        # If user is logged into a session return right away
+        if session.get('logged_in'):
+            return func(*args, **kwargs)
+        else:
+            if 'text/html' in accept_header:
+                return render_template('index.html', version=settings.VERSION), StatusCodes.HTTP_UNAUTHORIZED
+
+        # If API Request check for license
+        if not re.match('text/html|text/css', accept_header, flags=re.IGNORECASE):
+            # Check if they have a Core Subscription
+            if getLicenseStatus('DSIP_CORE') != 3:
+                return createApiResponse(
+                    error='http',
+                    msg='Unauthorized - Core Subscription Required. Purchase from https://dopensource.com/product/dsiprouter-core/',
+                    status_code=StatusCodes.HTTP_UNAUTHORIZED
+                )
+            # Check if token is valid
+            elif not apiToken.isValid():
+                return createApiResponse(
+                    error='http',
+                    msg='Unauthorized',
+                    status_code=StatusCodes.HTTP_UNAUTHORIZED
+                )
+            # checks succeeded allow the request
+            return func(*args, **kwargs)
+
+    return wrapper

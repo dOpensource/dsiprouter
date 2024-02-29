@@ -53,6 +53,19 @@
       padding: 0;
     }
 
+    #licensing > tbody > tr > td > .dt-resize-height input.key {
+      padding: 0 2em 0 0;
+      box-sizing: border-box;
+    }
+
+    #licensing > tbody > tr > td > .dt-resize-height textarea {
+      background-color: rgba(0, 0, 0, 0);
+      border: 0;
+      text-align: center;
+      padding: 0;
+      resize: none;
+    }
+
     #licensing > tbody > tr > td > .dt-resize-height input:focus,
     #licensing > tbody > tr > td > .dt-resize-height input:focus-visible {
       outline: none;
@@ -86,7 +99,7 @@
   <table id="licensing" class="table table-striped table-centered">
     <thead>
     <tr class='element-row'>
-      <th data-field="type">License Type</th>
+      <th data-field="tags">License Type</th>
       <th data-field="key">License Key</th>
       <th data-field="active">Active</th>
       <th data-field="active">Valid</th>

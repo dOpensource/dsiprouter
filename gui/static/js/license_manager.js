@@ -18,8 +18,10 @@
   }
 
   // global variables/constants for this script
-  var license_table = $('').DataTable();
+  var license_table = {};
+  var loading_spinner = $('#loading-spinner');
 
+  // TODO: add laading animation while waiting on woocommerce query to finish
   function activateLicense() {
     var selector = "#add";
     var modal_body = $(selector + ' .modal-body');
@@ -44,16 +46,21 @@
         showNotification(response.msg);
 
         license_table.row.add({
-          "type": response.data[0].type,
+          "tags": response.data[0].tags,
           "license_key": response.data[0].license_key,
           "active": response.data[0].active,
           "valid": response.data[0].valid,
           "expires": response.data[0].expires,
         }).draw();
       },
+      error: function(xhr, msg, error_msg) {
+        error_msg = JSON.parse(xhr.responseText)["msg"];
+        showNotification(error_msg, true);
+      },
     })
   }
 
+  // TODO: add laading animation while waiting on woocommerce query to finish
   function deactivateLicense() {
     var modal_body = $('#delete .modal-body');
 
@@ -82,6 +89,10 @@
         license_table.row(function(idx, data, node) {
           return data.license_key === license_key;
         }).remove().draw();
+      },
+      error: function(xhr, msg, error_msg) {
+        error_msg = JSON.parse(xhr.responseText)["msg"];
+        showNotification(error_msg, true);
       },
     });
   }
@@ -165,6 +176,13 @@
       '</div>';
   }
 
+  function createReadonlyTextArea(data, type, row, meta) {
+    return '' +
+      '<div class="dt-resize-height">' +
+      '  <textarea readonly>' + data.join('\n') + '</textarea>' +
+      '</div>';
+  }
+
   function dtDrawCallback(settings) {
     var rows = $('#licensing > tbody > tr');
     var row_height = rows.eq(0).find('td:eq(0)').get(0).clientHeight;
@@ -194,7 +212,7 @@
         }
       },
       "columns": [
-        {"data": "type", "render": createReadonlyInputField},
+        {"data": "tags", "render": createReadonlyTextArea},
         {"data": "license_key", "render": createLicenseKeyField},
         {"data": "active", "render": createReadonlyInputField},
         {"data": "valid", "render": createReadonlyInputField},

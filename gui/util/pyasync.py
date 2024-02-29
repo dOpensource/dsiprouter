@@ -1,4 +1,4 @@
-import os, subprocess
+import subprocess
 from functools import wraps
 from threading import Thread, Lock
 from multiprocessing import Process
@@ -92,9 +92,9 @@ def mpexec(func, args=None, kwargs=None, workers=None, callback=None):
     :param func:        callable function to execute
     :param args:        list of arg lists for each function execution
     :param kwargs:      list of kwarg dicts for each function execution
-    :param workers:     number of workers processes to use
+    :param workers:     number of worker processes to use (or rounds to execute when args not provided)
     :param callback:    callable function to execute after each completion
-    :return:            list of running tasks
+    :return:            list of results returned by executing tasks
     """
 
     with ProcessPoolExecutor(max_workers=workers) as executor:
@@ -118,7 +118,7 @@ def mpexec(func, args=None, kwargs=None, workers=None, callback=None):
             else:
                 tasks = [executor.submit(func, *func_args, **func_kwargs) for func_args, func_kwargs in zip(args, kwargs)]
 
-    return tasks
+    return [task.result() for task in tasks]
 
 
 def mtexec(func, args=None, kwargs=None, workers=None, callback=None):
@@ -128,9 +128,9 @@ def mtexec(func, args=None, kwargs=None, workers=None, callback=None):
     :param func:        callable function to execute
     :param args:        list of arg lists for each function execution
     :param kwargs:      list of kwarg dicts for each function execution
-    :param workers:     number of workers threads to use
+    :param workers:     number of worker processes to use (or rounds to execute when args not provided)
     :param callback:    callable function to execute after each completion
-    :return:            list of running tasks
+    :return:            list of results returned by executing tasks
     """
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
@@ -154,4 +154,4 @@ def mtexec(func, args=None, kwargs=None, workers=None, callback=None):
             else:
                 tasks = [executor.submit(func, *func_args, **func_kwargs) for func_args, func_kwargs in zip(args, kwargs)]
 
-    return tasks
+    return [task.result() for task in tasks]

@@ -142,11 +142,9 @@ MAIL_ASCII_ATTACHMENTS = False
 MAIL_DEFAULT_SENDER = 'dSIPRouter <donotreply@sip.dsiprouter.org>'
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
-# dSIPRouter licensing
-DSIP_CORE_LICENSE = ''
-DSIP_STIRSHAKEN_LICENSE = ''
-DSIP_TRANSNEXUS_LICENSE = ''
-DSIP_MSTEAMS_LICENSE = ''
+# dSIPRouter licenses associated with this node
+# stored as hash_str: key_combo
+DSIP_LICENSE_STORE = {}
 
 ################# End DB-Backed Settings #################
 

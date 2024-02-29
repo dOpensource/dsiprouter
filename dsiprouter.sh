@@ -2885,8 +2885,8 @@ function upgrade() {
         if [[ $(${PYTHON_CMD} -c "
 import os
 os.chdir('${DSIP_PROJECT_DIR}/gui')
-from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-print(getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'])
+from modules.api.licensemanager.functions import getLicenseStatus
+print(getLicenseStatus('DSIP_CORE'))
         ") != "3" ]]; then
             printerr 'dSPIRouter core license is not valid'
             exit 1
@@ -2897,9 +2897,9 @@ print(getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'])
 import os, sys
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 sys.path.insert(0, '${DSIP_SYSTEM_CONFIG_DIR}/gui')
-from modules.api.licensemanager.functions import licenseToGlobalStateVariable
+from modules.api.licensemanager.functions import licenseDictToStateDict, getLicenseStatusFromStateDict
 import settings
-print(licenseToGlobalStateVariable(settings.DSIP_CORE_LICENSE))
+print(getLicenseStatusFromStateDict(licenseDictToStateDict(settings.DSIP_LICENSE_STORE), 'DSIP_CORE'))
         ") != "3" ]]; then
             printerr 'dSPIRouter core license is not valid'
             exit 1
@@ -3657,7 +3657,6 @@ function preprocessCMD() {
 # process the commands to be executed
 # TODO: add help options for each command (with subsection usage info for that command)
 # TODO: move cli arg parsing to start of dsiprouter.sh (split out into its own file)
-# TODO: separate settings.py generation/config/update
 # TODO: move cli arg/option definitions to separate shared JSON file
 function processCMD() {
     # pre-processing / initial checks

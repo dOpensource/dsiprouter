@@ -3,9 +3,8 @@ from flask import Blueprint, jsonify
 from database import startSession, DummySession, GatewayGroups
 from shared import debugEndpoint, StatusCodes, getRequestData, strFieldsToDict
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from util.security import api_security
 from util.networking import getExternalIP
-from modules.api.api_functions import showApiError
+from modules.api.api_functions import showApiError, api_security
 from modules.api.carriergroups.functions import addUpdateCarrierGroups, addUpdateCarriers
 import settings
 

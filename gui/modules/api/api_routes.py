@@ -19,11 +19,11 @@ from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugE
     strFieldsToDict, getRequestData, IO
 from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from modules.api.api_functions import createApiResponse, showApiError
+from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.kamailio.functions import reloadKamailio
 from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
 from util.notifications import sendEmail
-from util.security import AES_CTR, urandomChars, KeyCertPair, api_security
+from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
