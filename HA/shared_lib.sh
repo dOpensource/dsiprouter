@@ -84,16 +84,6 @@ pathCheck() {
     esac
 }
 
-# $1 == crontab entry to append
-cronAppend() {
-    crontab -l | { cat; echo "$1"; } | crontab -
-}
-
-# $1 == crontab entry to remove
-cronRemove() {
-    crontab -l | grep -v -F -w "$1" | crontab -
-}
-
 # $1 == delimeter to join args with
 # $* == strings to join
 # usage: STR=$(join ',' ${ARR[@]})
@@ -155,14 +145,21 @@ checkConn() {
 
 # $@ == ssh command to test
 # returns: 0 == ssh connected, 1 == ssh could not connect
-checkSSH() {
+checkSsh() {
     local SSH_CMD="$@ -o ConnectTimeout=5 -q 'exit 0'"
+    bash -c "${SSH_CMD}" 2>&1 > /dev/null; return $?
+}
+
+# $@ == ssh command to test
+# returns: 0 == user can escalate privileges, 1 == user could not escalate privileges
+checkSshSudo() {
+    local SSH_CMD="$@ -o ConnectTimeout=5 -q 'sudo -n echo'"
     bash -c "${SSH_CMD}" 2>&1 > /dev/null; return $?
 }
 
 # Notes: prints generated password
 createPass() {
-    tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 16 | head -n 1
+    tr -dc 'a-zA-Z0-9' </dev/urandom | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null
 }
 
 # usage: getPkgVer [--opt] <arg>
@@ -358,7 +355,7 @@ dumpMysqlDatabases() {
 }
 
 detectServiceMan() {
-    INIT_PROC=$(readlink -f $(readlink -f /proc/1/exe))
+    INIT_PROC=$(sudo -n readlink -f $(sudo -n readlink -f /proc/1/exe))
 
     case "$INIT_PROC" in
         *systemd)
@@ -422,6 +419,16 @@ ipv6Test() {
     return 1
 }
 
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+ipv4TestRFC1918() {
+    local IP="$1"
+    if [[ $IP =~ ^(10\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|172\.(1[6-9]|2[0-9]|3[01])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|192\.168\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))$ ]]; then
+        return 0
+    fi
+    return 1
+}
+
 # notes: prints external ip, or empty string if not available
 # notes: below we have measurements for average time of each service
 #        over 10 non-cached requests, in seconds, round trip
@@ -476,8 +483,8 @@ getExternalIP() {
 
 # prints internal ip address for the default route
 getInternalIP() {
-    INTERFACE=$(ip -4 route show default | awk '{print $5}')
-    ip addr show $INTERFACE | awk '/^[ \t]+inet / {print $2}' | cut -f1 -d'/' | head -1
+    local IFACE=$(ip -4 route show default | awk '{print $5}' | head -1)
+    ip -4 -o addr show $IFACE | awk '{split($4,a,"/"); print a[1];}' | head -1
 }
 
 # automate mysql_secure_installation
@@ -541,7 +548,7 @@ getConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    local VALUE=$(sudo -n grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
     printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
 }
 
@@ -561,7 +568,7 @@ setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
-    sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
+    sudo -n sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # $1 == cmd as executed in systemd (by ExecStart=)
@@ -571,15 +578,15 @@ setConfigAttrib() {
 addExcStartCmd() {
     local CMD=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
     local SVC_FILE="$2"
-    local TMP_FILE="${SVC_FILE}.tmp"
+    local TMP_FILE="/tmp/${SVC_FILE}"
 
     # sanity check, does the entry already exist?
     grep -q -oP "^ExecStart\=.*${CMD}.*" 2>/dev/null ${SVC_FILE} && return 0
 
     tac ${SVC_FILE} | sed -r "0,\|^ExecStart\=.*|{s|^ExecStart\=.*|ExecStart=${CMD}\n&|}" | tac > ${TMP_FILE}
-    mv -f ${TMP_FILE} ${SVC_FILE}
+    sudo -n mv -f ${TMP_FILE} ${SVC_FILE}
 
-    systemctl daemon-reload
+    sudo -n systemctl daemon-reload
 }
 
 # $1 == string to match for removal (after ExecStart=)
@@ -588,8 +595,8 @@ removeExecStartCmd() {
     local STR=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
     local SVC_FILE="$2"
 
-    sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${SVC_FILE}
-    systemctl daemon-reload
+    sudo -n sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${SVC_FILE}
+    sudo -n systemctl daemon-reload
 }
 
 # $1 == service name (full name with target) to be dependent
@@ -603,8 +610,8 @@ addDependsOnService() {
     # sanity check, does the entry already exist?
     grep -q -oP "^(Before\=|Wants\=).*${SERVICE}.*" 2>/dev/null ${SVC_FILE} && return 0
 
-    perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${SVC_FILE}
-    systemctl daemon-reload
+    sudo -n perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${SVC_FILE}
+    sudo -n systemctl daemon-reload
 }
 
 # $1 == service name (full name with target) to remove dependency on
@@ -613,6 +620,11 @@ removeDependsOnService() {
     local SERVICE="$1"
     local SVC_FILE="$2"
 
-    perl -i -e "\$service='$SERVICE';" -pe 's%^((?:Before\=|Wants\=).*?)( ${service}|${service} |${service})(.*)%\1\3%g;' ${SVC_FILE}
-    systemctl daemon-reload
+    sudo -n perl -i -e "\$service='$SERVICE';" -pe 's%^((?:Before\=|Wants\=).*?)( ${service}|${service} |${service})(.*)%\1\3%g;' ${SVC_FILE}
+    sudo -n systemctl daemon-reload
+}
+
+# output: all physical network interfaces on this machine
+getPhysicalIfaces() {
+    ( cd /sys/class/net && dirname */device; )
 }

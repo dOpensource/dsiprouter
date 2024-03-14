@@ -6,6 +6,8 @@
 #           you must be able to ssh to every node in the cluster from where script is run
 #           supported ssh authentication methods: password, pubkey
 #           supported DB configurations: central, active/active
+#           a secondary private IP address on a dedicated subnet is the preferred method
+#           for communication between the pacemaker nodes
 ##
 # TODO:     support active/passive galera replication
 #           https://mariadb.com/kb/en/changing-a-replica-to-become-the-primary/
@@ -36,14 +38,14 @@ DSIP_PROJECT_DIR="/opt/dsiprouter"
 DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
 STATIC_NETWORKING_MODE=1
 RETRY_CLUSTER_START=3
-RETRY_SHH_CONNECT=3 # TODO: implement this
+RETRY_SSH_CONNECT=3 # TODO: implement this
+PKG_MGR_TIMEOUT=300
 
 # global variables used throughout script
 SSH_KEY_FILE=""
 NODE_NAMES=()
 HOST_LIST=()
 USERHOST_LIST=()
-INT_IP_LIST=()
 CLUSTER_NODE_ADDRS=()
 declare -A CLOUD_DICT
 CLOUD_PLATFORM=""
@@ -60,6 +62,8 @@ printUsage() {
     pprint "    -debug"
     pprint "    -i <ssh key file>"
     pprint "    --do-token=<your token>"
+    pprint "    --aws-access-key=<your key>"
+    pprint "    --aws-secret-key=<your key>"
     pprint "REQUIRED OPTIONS (one of):"
     pprint "    -vip <virtual ip>"
     pprint "    -net <subnet cidr>"
@@ -98,6 +102,14 @@ while (( $# > 0 )); do
             ;;
         --do-token=*)
             DO_TOKEN=$(cut -s -d '=' -f 2 <<<"$1")
+            shift
+            ;;
+        --aws-access-key=*)
+            AWS_ACCESS_KEY=$(cut -s -d '=' -f 2 <<<"$1")
+            shift
+            ;;
+        --aws-secret-key=*)
+            AWS_SECRET_TOKEN=$(cut -s -d '=' -f 2 <<<"$1")
             shift
             ;;
         *)  # add to list of args
@@ -152,8 +164,8 @@ fi
 # notes: prints first available ip in subnet
 # notes: assumes .1 is used as default gw in net
 findAvailableIP() {
-    local NET_TAKEN_LIST=$(nmap -n -sP -T 5 "$1" -oG - | awk '/Up$/{print $2}')
-    local NET_ADDR_LIST=$(nmap -n -sL "$1" | grep "Nmap scan report" | awk '{print $NF}' | tail -n +3 | sed '$ d')
+    local NET_TAKEN_LIST=$(sudo nmap -n -sP -T 5 "$1" -oG - | awk '/Up$/{print $2}')
+    local NET_ADDR_LIST=$(sudo nmap -n -sL "$1" | grep "Nmap scan report" | awk '{print $NF}' | tail -n +3 | sed '$ d')
     for IP in ${NET_ADDR_LIST[@]}; do
         for ip in ${NET_TAKEN_LIST[@]}; do
             if [[ "$IP" != "$ip" ]]; then
@@ -174,7 +186,7 @@ findResource() {
 
     timeout "$RESOURCE_FIND_TIMEOUT" bash <<EOF 2>/dev/null
 while true; do
-    NODE=\$(pcs status resources | awk '\$2=="'$1'" && \$4=="Started" {print \$5}')
+    NODE=\$(sudo -u hacluster -n pcs status resources | awk '\$2=="'$1'" && \$4=="Started" {print \$5}')
     if [[ -n "\$NODE" ]]; then
         echo "\$NODE"
         break
@@ -190,10 +202,10 @@ EOF
 # notes: block while waiting for resources to come online until timeout
 waitResources() {
     timeout "$1" bash <<'EOF' 2>/dev/null
-RESOURCES_DOWN=$(pcs status resources | grep -v -F 'Resource Group' | awk '$4!="Started" {print $2}' | wc -l)
+RESOURCES_DOWN=$(sudo -u hacluster -n pcs status resources | grep -v -F 'Resource Group' | awk '$4!="Started" {print $2}' | wc -l)
 while (( $RESOURCES_DOWN > 0 )); do
     sleep 1
-    RESOURCES_DOWN=$(pcs status resources | grep -v -F 'Resource Group' | awk '$4!="Started" {print $2}' | wc -l)
+    RESOURCES_DOWN=$(sudo -u hacluster -n pcs status resources | grep -v -F 'Resource Group' | awk '$4!="Started" {print $2}' | wc -l)
 done
 EOF
     return $?
@@ -201,18 +213,18 @@ EOF
 
 # notes: prints out detailed info about cluster
 showClusterStatus() {
-    corosync-cfgtool -s
-    pcs status --full
+    sudo -u hacluster -n corosync-cfgtool -s
+    sudo -u hacluster -n pcs status --full
 }
 
 setFirewallRules() {
     for PORT in ${PACEMAKER_TCP_PORTS[@]}; do
-        firewall-cmd --zone=public --add-port=${PORT}/tcp --permanent
+        sudo -n firewall-cmd --zone=public --add-port=${PORT}/tcp --permanent
     done
     for PORT in ${PACEMAKER_UDP_PORTS[@]}; do
-        firewall-cmd --zone=public --add-port=${PORT}/udp --permanent
+        sudo -n firewall-cmd --zone=public --add-port=${PORT}/udp --permanent
     done
-    firewall-cmd --reload
+    sudo -n firewall-cmd --reload
 }
 
 addDefRoute() {
@@ -223,8 +235,8 @@ addDefRoute() {
     local DEF_IF=$(printf '%s' "${ROUTE_INFO}" | grep -oP 'dev \K\w+')
     local VIP_ROUTE_INFO=$(printf '%s' "${ROUTE_INFO}" | sed -r "s|8.8.8.8|0.0.0.0/1|; s|dev [\w\d]+|dev ${DEF_IF}|; s|src [\w\d]+|src ${IP}|")
 
-    ip address add $VIP_CIDR dev $DEF_IF
-    ip route add $VIP_ROUTE_INFO
+    sudo -n ip address add $VIP_CIDR dev $DEF_IF
+    sudo -n ip route add $VIP_ROUTE_INFO
 }
 
 removeDefRoute() {
@@ -233,14 +245,53 @@ removeDefRoute() {
     local ROUTE_INFO=$(ip route get 8.8.8.8 | head -1)
     local DEF_IF=$(printf '%s' "${ROUTE_INFO}" | grep -oP 'dev \K\w+')
 
-    ip address del $VIP_CIDR dev $DEF_IF
-    ip route del 0.0.0.0/1
+    sudo -n ip address del $VIP_CIDR dev $DEF_IF
+    sudo -n ip route del 0.0.0.0/1
+}
+
+# find the first private IP address (reverse order) on a physical interface
+# this is typically the secondary interface or secondary IP on the primary interface
+# sourced here to allow easier declaration on remote node
+source <(
+    cat <<EOF
+    getPacemakerInternalIP() {
+        $(declare -f getPhysicalIfaces)
+        $(declare -f ipv4TestRFC1918)
+EOF
+    cat <<'EOF'
+        for IP in $(
+            for IFACE in $(getPhysicalIfaces | sort -r); do
+                ip -4 -o addr show $IFACE | awk '{split($4,a,"/"); print a[1];}'
+            done
+        ); do
+            if ipv4TestRFC1918 "$IP"; then
+                echo "$IP"
+                return 0
+            fi
+        done
+        return 1
+    }
+EOF
+)
+
+# get the current region via the metadata api
+awsGetCurrentRegion() {
+    RET=$(curl -s -o /dev/null -w '%{http_code}' http://169.254.169.254/latest/meta-data/ami-id 2>/dev/null)
+    if (( $RET == 200 )); then
+        curl -s -f http://169.254.169.254/latest/meta-data/placement/region 2>/dev/null
+    elif (( $RET == 401 )); then
+        TOKEN=$(curl -s -X PUT --connect-timeout 2 -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' http://169.254.169.254/latest/api/token 2>/dev/null)
+        curl -s -f --connect-timeout 2 -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region 2>/dev/null
+    else
+        return 1
+    fi
+    return 0
 }
 
 # loop through args and gather variables
 i=0
 for NODE in ${NODES[@]}; do
-    SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x)
+    SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x -T)
     RSYNC_OPTS=()
 
     NODE_NAME="${CLUSTER_NAME}-node$((i+1))"
@@ -290,8 +341,12 @@ for NODE in ${NODES[@]}; do
     SSH_OPTS+=(-p ${PORT})
 
     printdbg 'validating unattended ssh connection'
-    if ! checkSSH ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
+    if ! checkSsh ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
         printerr "Could not establish unattended ssh connection to [${USERHOST_LIST[$i]}] on port [${PORT}]"
+        exit 1
+    fi
+    if ! checkSshSudo ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
+        printerr "User [${USERHOST_LIST[$i]}] does not have sufficient privileges (add them to sudoers)"
         exit 1
     fi
 
@@ -300,7 +355,7 @@ for NODE in ${NODES[@]}; do
     RSYNC_CMD_LIST+=( "${RSYNC_CMD} ${RSYNC_OPTS[*]}" )
 
     # install requirements for the next commands
-    ${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    ${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash -l <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
@@ -321,12 +376,11 @@ for NODE in ${NODES[@]}; do
         # curl is required for getCloudPlatform()
         # rsync is required to for the main script
         if cmdExists 'apt-get'; then
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get install -y gawk curl rsync
+            sudo -n apt-get -o DPkg::Lock::Timeout=$PKG_MGR_TIMEOUT install -y gawk curl rsync
         elif cmdExists 'dnf'; then
-            dnf install -y gawk curl rsync
+            sudo -n dnf install -y gawk curl rsync
         elif cmdExists 'yum'; then
-            yum install -y gawk curl rsync
+            sudo -n yum install -y gawk curl rsync
         else
             printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
             exit 1
@@ -344,30 +398,28 @@ EOSSH
 
     # warn the user if we don't have an integration setup for this provider yet
     case "${CLOUD_LIST[$i]}" in
-        AWS|GCE|AZURE|VULTR|OCE)
+        GCE|AZURE|VULTR|OCE)
             printwarn 'support for virtual IP assignment on this cloud platform has not been tested'
             printwarn 'attempting install anyways'
             ;;
     esac
 
     # find the internal IP that the cluster will communicate over
-    INT_IP_LIST+=($(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getInternalIP); getInternalIP;"))
-
-    if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
-        CLUSTER_NODE_ADDRS+=($(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "curl -s http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address;"))
-    else
-        CLUSTER_NODE_ADDRS+=( "${INT_IP_LIST[$i]}" )
-    fi
+    # this secondary interface is where the node will attach the floating IP
+    CLUSTER_NODE_ADDRS+=( $(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getPacemakerInternalIP); getPacemakerInternalIP;") )
 
     # find which resources we will be configuring
     if (( $i == 0 )); then
-        if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
-            CLUSTER_RESOURCES+=(cluster_vip)
-        else
-            CLUSTER_RESOURCES+=(cluster_vip cluster_srcaddr)
-        fi
+        case "$CLOUD_PLATFORM" in
+            DO|AWS)
+                CLUSTER_RESOURCES+=(cluster_vip)
+                ;;
+            *)
+                CLUSTER_RESOURCES+=(cluster_vip cluster_srcaddr)
+                ;;
+        esac
 
-        CLUSTER_RESOURCES+=($(${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+        CLUSTER_RESOURCES+=($(${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash -l <<- EOSSH
             if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
                 echo 'rtpengine_service'
             fi
@@ -395,6 +447,9 @@ fi
 if [[ "$CLOUD_PLATFORM" == "DO" ]] && [[ -z "$DO_TOKEN" ]]; then
     printerr '--do-token is required when deploying on digital ocean'
     exit 1
+elif [[ "$CLOUD_PLATFORM" == "AWS" ]] && [[ -z "$AWS_ACCESS_KEY" || -z "$AWS_SECRET_TOKEN" ]]; then
+    printerr '--aws-access-key and --aws-secret-key are required when deploying on amazon web services'
+    exit 1
 fi
 
 # installs requirements and enables services
@@ -412,13 +467,13 @@ while (( $i < ${#NODES[@]} )); do
     fi
 
     # run commands through ssh
-    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash -l <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
 
         # re-declare functions and vars we pass to remote server
-        # note that variables in function definitions (from calling environement)
+        # note that variables in function definitions (from calling environment)
         # lose scope unless local to function, they must be passed to remote
         ESC_SEQ="\033["
         ANSI_NONE="\${ESC_SEQ}39;49;00m" # Reset colors
@@ -442,12 +497,11 @@ while (( $i < ${#NODES[@]} )); do
 
         printdbg 'installing requirements'
         if cmdExists 'apt-get'; then
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get install -y corosync pacemaker pcs firewalld jq perl dnsutils sed
+            sudo -n apt-get  -o DPkg::Lock::Timeout=$PKG_MGR_TIMEOUT install -y corosync pacemaker pcs firewalld jq perl dnsutils sed unzip
         elif cmdExists 'dnf'; then
-            dnf install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
+            sudo -n dnf install -y corosync pacemaker pcs firewalld jq perl bind-utils sed unzip
         elif cmdExists 'yum'; then
-            yum install -y corosync pacemaker pcs firewalld jq perl bind-utils sed
+            sudo -n yum install -y corosync pacemaker pcs firewalld jq perl bind-utils sed unzip
         else
             printerr "OS on remote node [${HOST_LIST[$i]}] is currently not supported"
             exit 1
@@ -464,8 +518,8 @@ while (( $i < ${#NODES[@]} )); do
         setFirewallRules
 
         printdbg 'setting up cluster password'
-        echo "${CLUSTER_PASS}" | passwd -q --stdin hacluster 2>/dev/null ||
-            echo "hacluster:${CLUSTER_PASS}" | chpasswd 2>/dev/null ||
+        echo "${CLUSTER_PASS}" | sudo -n passwd -q --stdin hacluster 2>/dev/null ||
+            echo "hacluster:${CLUSTER_PASS}" | sudo -n chpasswd 2>/dev/null ||
             { printerr "could not change hacluster user password"; exit 1; }
 
         printdbg 'setting up cluster hostname resolution'
@@ -474,22 +528,34 @@ while (( $i < ${#NODES[@]} )); do
         # this will cause issues when adding nodes to the cluster
         # ref: https://serverfault.com/questions/363095/why-does-my-hostname-appear-with-the-address-127-0-1-1-rather-than-127-0-0-1-in
         grep -v -E '^127\.0\.1\.1' /etc/hosts >/tmp/hosts &&
-            mv -f /tmp/hosts /etc/hosts
+            sudo -n mv -f /tmp/hosts /etc/hosts
 
-        # hostnames are required even if not DNS resolvable (on each node)
-        j=0
-        while (( \$j < \${#CLUSTER_NODE_ADDRS[@]} )); do
-            if ! grep -q -F "\${NODE_NAMES[\$j]}" /etc/hosts 2>/dev/null; then
-                echo "\${CLUSTER_NODE_ADDRS[\$j]} \${NODE_NAMES[\$j]}" >>/etc/hosts
-            fi
-            j=\$((j+1))
-        done
+        # add section for the pacemaker hostnames
+        if ! grep -q 'PACEMAKER_CONFIG_START' /etc/hosts 2>/dev/null; then
+            sudo -n bash -c "(
+                echo ''
+                echo '#####PACEMAKER_CONFIG_START'
+            )>>/etc/hosts"
+            j=0
+            while (( \$j < \${#CLUSTER_NODE_ADDRS[@]} )); do
+                sudo -n bash -c "echo '\${CLUSTER_NODE_ADDRS[\$j]} \${NODE_NAMES[\$j]}' >>/etc/hosts"
+                j=\$((j+1))
+            done
+            sudo -n bash -c "echo '#####PACEMAKER_CONFIG_END' >>/etc/hosts"
+        else
+            j=0; tmp='';
+            while (( \$j < \${#CLUSTER_NODE_ADDRS[@]} )); do
+                tmp+="\${CLUSTER_NODE_ADDRS[\$j]} \${NODE_NAMES[\$j]}\\n"
+                j=\$((j+1))
+            done
+            sudo -n perl -0777 -i -pe "s|(#+PACEMAKER_CONFIG_START).*?(#+PACEMAKER_CONFIG_END)|\\1\\n\${tmp}\\2|gms" /etc/hosts
+        fi
 
         printdbg 'configuring floating IP support on server'
 
         # enable binding to floating ip (on each node)
-        echo '1' > /proc/sys/net/ipv4/ip_nonlocal_bind
-        echo 'net.ipv4.ip_nonlocal_bind = 1' > /etc/sysctl.d/99-non-local-bind.conf
+        sudo -n bash -c "echo '1' >/proc/sys/net/ipv4/ip_nonlocal_bind"
+        sudo -n bash -c "echo 'net.ipv4.ip_nonlocal_bind = 1' >/etc/sysctl.d/99-non-local-bind.conf"
 
         # change kamcfg and rtpenginecfg to use floating ip (on each node)
         if [[ -e "${DSIP_SYSTEM_CONFIG_DIR}" ]]; then
@@ -497,7 +563,7 @@ while (( $i < ${#NODES[@]} )); do
 
             DSIP_INIT_PATH=\$(systemctl show -P FragmentPath dsip-init)
 
-            if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
+            if [[ -n "$CLOUD_PLATFORM" ]]; then
                 DSIP_VERSION=\$(getConfigAttrib 'VERSION' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py)
                 DSIP_MAJ_VER=\$(perl -pe 's%([0-9]+)\..*%\1%' <<<"\$DSIP_VERSION")
                 DSIP_MIN_VER=\$(perl -pe 's%[0-9]+\.([0-9]).*%\1%' <<<"\$DSIP_VERSION")
@@ -512,6 +578,7 @@ while (( $i < ${#NODES[@]} )); do
                     removeExecStartCmd 'dsiprouter.sh updatedsipconfig' \${DSIP_INIT_PATH}
                 fi
 
+                setConfigAttrib 'INTERNAL_IP_ADDR' '${CLUSTER_NODE_ADDRS[$i]}' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
                 setConfigAttrib 'EXTERNAL_IP_ADDR' '$KAM_VIP' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
                 NEW_EXT_FQDN=$(dig +short -x $KAM_VIP)
                 if [[ -n "\$NEW_EXT_FQDN" ]]; then
@@ -521,13 +588,13 @@ while (( $i < ${#NODES[@]} )); do
 
                 # update the settings in the various services
                 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
-                    dsiprouter updatedsipconfig
+                    sudo -n dsiprouter updatedsipconfig
                 fi
                 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
-                    dsiprouter updatekamconfig
+                    sudo -n dsiprouter updatekamconfig
                 fi
                 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
-                    dsiprouter updatertpconfig
+                    sudo -n dsiprouter updatertpconfig
                 fi
             else
                 # manually add default route to vip before updating settings
@@ -535,13 +602,13 @@ while (( $i < ${#NODES[@]} )); do
 
                 # TODO: enable kamailio to listen to both ip's (maybe??)
                 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
-                    dsiprouter updatedsipconfig
+                    sudo -n dsiprouter updatedsipconfig
                 fi
                 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
-                    dsiprouter updatekamconfig
+                    sudo -n dsiprouter updatekamconfig
                 fi
                 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
-                    dsiprouter updatertpconfig
+                    sudo -n dsiprouter updatertpconfig
                 fi
 
                 removeDefRoute "${KAM_VIP}"
@@ -550,18 +617,18 @@ while (( $i < ${#NODES[@]} )); do
             # systemd services will be managed by corosync/pacemaker instead of dsip-init
             if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
                 removeDependsOnService "dsiprouter.service" \${DSIP_INIT_PATH}
-                systemctl stop dsiprouter
-                systemctl disable dsiprouter
+                sudo -n systemctl stop dsiprouter
+                sudo -n systemctl disable dsiprouter
             fi
             if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]]; then
                 removeDependsOnService "kamailio.service" \${DSIP_INIT_PATH}
-                systemctl stop kamailio
-                systemctl disable kamailio
+                sudo -n systemctl stop kamailio
+                sudo -n systemctl disable kamailio
             fi
             if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
                 removeDependsOnService "rtpengine.service" \${DSIP_INIT_PATH}
-                systemctl stop rtpengine
-                systemctl disable rtpengine
+                sudo -n systemctl stop rtpengine
+                sudo -n systemctl disable rtpengine
             fi
 
             addDependsOnService "corosync.service" \${DSIP_INIT_PATH}
@@ -569,20 +636,20 @@ while (( $i < ${#NODES[@]} )); do
         fi
 
         printdbg 'configuring systemd services for pacemaker cluster'
-        systemctl enable pcsd
-        systemctl enable corosync
-        systemctl enable pacemaker
-        systemctl start pcsd
+        sudo -n systemctl enable pcsd
+        sudo -n systemctl enable corosync
+        sudo -n systemctl enable pacemaker
+        sudo -n systemctl start pcsd
 
         printdbg 'removing any previous corosync configurations'
         PCS_MAJMIN_VER=\$(pcs --version | cut -d '.' -f -2 | tr -d '.')
 
         if (( \$((10#\$PCS_MAJMIN_VER)) >= 10 )); then
-            pcs host deauth 2>/dev/null
-            pcs cluster destroy 2>/dev/null
+            sudo -n pcs host deauth 2>/dev/null
+            sudo -n pcs cluster destroy 2>/dev/null
         else
-            pcs pcsd clear-auth 2>/dev/null
-            pcs cluster destroy 2>/dev/null
+            sudo -n pcs pcsd clear-auth 2>/dev/null
+            sudo -n pcs cluster destroy 2>/dev/null
         fi
 
         exit 0
@@ -600,7 +667,7 @@ printdbg 'initializing pacemaker cluster'
 i=0
 while (( $i < ${#NODES[@]} )); do
     # run commands through ssh
-    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash -l <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
@@ -614,33 +681,38 @@ while (( $i < ${#NODES[@]} )); do
         ANSI_GREEN="\${ESC_SEQ}1;32m"
         $(typeset -f printdbg)
         $(typeset -f printerr)
+        $(typeset -f cmdExists)
+        $(typeset -f awsGetCurrentRegion)
 
         PCS_MAJMIN_VER=\$(pcs --version | cut -d '.' -f -2 | tr -d '.')
 
+        printdbg 'authenticating hacluster user to pcsd'
+        sudo -u hacluster -n pcs client local-auth -u hacluster -p ${CLUSTER_PASS}
+
         if (( \$((10#\$PCS_MAJMIN_VER)) >= 10 )); then
             printdbg 'authenticating nodes to pcsd'
-            pcs host auth -u hacluster -p ${CLUSTER_PASS} ${NODE_NAMES[@]} || {
+            sudo -n pcs host auth -u hacluster -p ${CLUSTER_PASS} ${NODE_NAMES[@]} || {
                 printerr "Cluster auth failed"
                 exit 1
             }
 
             if (( $i == ${#NODES[@]} - 1 )); then
                 printdbg 'creating the cluster'
-                pcs cluster setup --force --enable ${CLUSTER_NAME} ${NODE_NAMES[@]} ${CLUSTER_OPTIONS[@]} || {
+                sudo -n pcs cluster setup --force --enable ${CLUSTER_NAME} ${NODE_NAMES[@]} ${CLUSTER_OPTIONS[@]} || {
                     printerr "Cluster creation failed"
                     exit 1
                 }
             fi
         else
             printdbg 'authenticating nodes to pcsd'
-            pcs cluster auth --force -u hacluster -p ${CLUSTER_PASS} ${NODE_NAMES[@]} || {
+            sudo -n pcs cluster auth --force -u hacluster -p ${CLUSTER_PASS} ${NODE_NAMES[@]} || {
                 printerr "Cluster auth failed"
                 exit 1
             }
 
             if (( $i == ${#NODES[@]} - 1 )); then
                 printdbg 'creating the cluster'
-                pcs cluster setup --force --enable --name ${CLUSTER_NAME} ${NODE_NAMES[@]} ${CLUSTER_OPTIONS[@]} || {
+                sudo -n pcs cluster setup --force --enable --name ${CLUSTER_NAME} ${NODE_NAMES[@]} ${CLUSTER_OPTIONS[@]} || {
                     printerr "Cluster creation failed"
                     exit 1
                 }
@@ -651,7 +723,7 @@ while (( $i < ${#NODES[@]} )); do
         if (( $i == ${#NODES[@]} - 1 )); then
             j=0
             while (( \$j < $RETRY_CLUSTER_START )); do
-                pcs cluster start --all --request-timeout=15 --wait=15 &&
+                sudo -n pcs cluster start --all --request-timeout=15 --wait=15 &&
                     break
                 j=\$((j+1))
             done
@@ -662,14 +734,37 @@ while (( $i < ${#NODES[@]} )); do
             fi
         fi
 
-        # setup any cloud provider specific configuration files
-        if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
-            cp -f /tmp/cloud/assign-ip /usr/local/bin/assign-ip
-            chmod +x /usr/local/bin/assign-ip
-            mkdir -p /usr/lib/ocf/resource.d/digitalocean
-            cp -f /tmp/cloud/ocf-floatip /usr/lib/ocf/resource.d/digitalocean/floatip
-            chmod +x /usr/lib/ocf/resource.d/digitalocean/floatip
-        fi
+        # setup any cloud provider specific configurations
+        case "$CLOUD_PLATFORM" in
+            DO)
+                sudo -n cp -f /tmp/cloud/assign-ip /usr/local/bin/assign-ip
+                sudo -n chmod +x /usr/local/bin/assign-ip
+                sudo -n mkdir -p /usr/lib/ocf/resource.d/digitalocean
+                sudo -n cp -f /tmp/cloud/ocf-floatip /usr/lib/ocf/resource.d/digitalocean/floatip
+                sudo -n chmod +x /usr/lib/ocf/resource.d/digitalocean/floatip
+                ;;
+            AWS)
+                if ! cmdExists 'aws'; then
+                    cd /tmp &&
+                    curl 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o awscli.zip &&
+                    unzip -qo awscli.zip &&
+                    rm -f awscli.zip &&
+                    sudo -n ./aws/install -b /usr/bin
+                fi
+
+                AWS_REGION=\$(awsGetCurrentRegion) || {
+                    printerr "Could not determine current AWS region"
+                    exit 1
+                }
+                sudo -n aws configure set aws_access_key_id $AWS_ACCESS_KEY
+                sudo -n aws configure set aws_secret_access_key $AWS_SECRET_TOKEN
+                sudo -n aws configure set region \$AWS_REGION
+
+                sudo -n mkdir -p /usr/lib/ocf/resource.d/aws
+                sudo -n cp -f /tmp/cloud/ocf-floatip /usr/lib/ocf/resource.d/aws/floatip
+                sudo -n chmod +x /usr/lib/ocf/resource.d/aws/floatip
+                ;;
+        esac
 
         exit 0
 EOSSH
@@ -688,7 +783,7 @@ printdbg 'configuring pacemaker cluster'
 i=0
 while (( $i < ${#NODES[@]} )); do
     # run commands through ssh
-    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash -l <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
@@ -711,36 +806,47 @@ while (( $i < ${#NODES[@]} )); do
             printdbg 'configuring pacemaker cluster'
 
             # disabling stonith/quorum for now because it has caused issues in the past (on first node)
-            pcs property set stonith-enabled=false
-            pcs property set no-quorum-policy=ignore
+            sudo -n pcs property set stonith-enabled=false
+            sudo -n pcs property set no-quorum-policy=ignore
 
             printdbg 'Setting up the virtual ip address resource'
             # create resource for services and virtual ip and default route (on first node)
-            if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
-                pcs resource create cluster_vip ocf:digitalocean:floatip \\
-                    do_token=${DO_TOKEN} floating_ip=${KAM_VIP} \\
-                    op monitor interval=15s timeout=15s \\
-                    op start interval=0 timeout=30s \\
-                    meta resource-stickiness=100 \\
-                    --group vip_group
-            else
-                pcs resource create cluster_vip ocf:heartbeat:IPaddr2 \\
-                    ip=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} \\
-                    op monitor interval=15s timeout=15s \\
-                    op start interval=0 timeout=30s \\
-                    meta resource-stickiness=100 \\
-                    --group vip_group
-                pcs resource create cluster_srcaddr ocf:heartbeat:IPsrcaddr \\
-                    ipaddress=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} \\
-                    op monitor interval=15s timeout=15s \\
-                    op start interval=0 timeout=30s \\
-                    meta resource-stickiness=100 \\
-                    --group vip_group
-            fi
+            case "$CLOUD_PLATFORM" in
+                DO)
+                    sudo -n pcs resource create cluster_vip ocf:digitalocean:floatip \\
+                        do_token=${DO_TOKEN} floating_ip=${KAM_VIP} \\
+                        op monitor interval=15s timeout=15s \\
+                        op start interval=0 timeout=30s \\
+                        meta resource-stickiness=100 \\
+                        --group vip_group
+                    ;;
+                AWS)
+                    sudo -n pcs resource create cluster_vip ocf:aws:floatip \\
+                        elastic_ip=${KAM_VIP} \\
+                        op monitor interval=15s timeout=15s \\
+                        op start interval=0 timeout=30s \\
+                        meta resource-stickiness=100 \\
+                        --group vip_group
+                    ;;
+                *)
+                    sudo -n pcs resource create cluster_vip ocf:heartbeat:IPaddr2 \\
+                        ip=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} \\
+                        op monitor interval=15s timeout=15s \\
+                        op start interval=0 timeout=30s \\
+                        meta resource-stickiness=100 \\
+                        --group vip_group
+                    sudo -n pcs resource create cluster_srcaddr ocf:heartbeat:IPsrcaddr \\
+                        ipaddress=${KAM_VIP} cidr_netmask=${CIDR_NETMASK} \\
+                        op monitor interval=15s timeout=15s \\
+                        op start interval=0 timeout=30s \\
+                        meta resource-stickiness=100 \\
+                        --group vip_group
+                    ;;
+            esac
 
             printdbg 'Setting up resources for dsiprouter services'
             if grep -q 'rtpengine_service' 2>/dev/null <<<"${CLUSTER_RESOURCES[@]}"; then
-                pcs resource create rtpengine_service systemd:rtpengine \\
+                sudo -n pcs resource create rtpengine_service systemd:rtpengine \\
                     op monitor interval=30s timeout=15s \\
                     op start interval=0 timeout=30s on-fail=restart \\
                     op stop interval=0 timeout=30s \\
@@ -748,7 +854,7 @@ while (( $i < ${#NODES[@]} )); do
                     --group dsip_group
             fi
             if grep -q 'kamailio_service' 2>/dev/null <<<"${CLUSTER_RESOURCES[@]}"; then
-                pcs resource create kamailio_service systemd:kamailio \\
+                sudo -n pcs resource create kamailio_service systemd:kamailio \\
                     op monitor interval=30s timeout=15s \\
                     op start interval=0 timeout=30s on-fail=restart \\
                     op stop interval=0 timeout=30s \\
@@ -756,7 +862,7 @@ while (( $i < ${#NODES[@]} )); do
                     --group dsip_group
             fi
             if grep -q 'dsiprouter_service' 2>/dev/null <<<"${CLUSTER_RESOURCES[@]}"; then
-                pcs resource create dsiprouter_service systemd:dsiprouter \\
+                sudo -n pcs resource create dsiprouter_service systemd:dsiprouter \\
                     op monitor interval=60s timeout=15s \\
                     op start interval=0 timeout=30s on-fail=restart \\
                     op stop interval=0 timeout=30s \\
@@ -765,10 +871,10 @@ while (( $i < ${#NODES[@]} )); do
             fi
 
             printdbg 'colocating resources on the same node'
-            pcs constraint colocation set vip_group dsip_group \\
+            sudo -n pcs constraint colocation set vip_group dsip_group \\
                 sequential=true \\
                 setoptions score=INFINITY
-            pcs constraint order set vip_group dsip_group \\
+            sudo -n pcs constraint order set vip_group dsip_group \\
                 action=start sequential=true require-all=true \\
                 setoptions symmetrical=false kind=Mandatory
         fi
@@ -782,13 +888,13 @@ while (( $i < ${#NODES[@]} )); do
             CURRENT_RESOURCE_LOCATIONS=()
             PREVIOUS_RESOURCE_LOCATIONS=()
 
-            # wait on resources to come online (original node)
+            # wait on resources to come online
             waitResources ${RESOURCE_STARTUP_TIMEOUT} || {
                 printerr "Cluster resources failed to start within ${RESOURCE_STARTUP_TIMEOUT} seconds"
                 exit 1
             }
 
-            # grab operation data for tests (last node)
+            # grab operation data for tests
             # TODO: error checking for resources not yet started
             for RESOURCE in \${RESOURCES[@]}; do
                 PREVIOUS_RESOURCE_LOCATIONS+=( \$(findResource \${RESOURCE}) )
@@ -798,9 +904,9 @@ while (( $i < ${#NODES[@]} )); do
             printdbg "setting \${PREVIOUS_RESOURCE_LOCATIONS[0]} to standby"
 
             if (( \$((10#\$PCS_MAJMIN_VER)) >= 10 )); then
-                pcs node standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+                sudo -u hacluster -n pcs node standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
             else
-                pcs cluster standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+                sudo -u hacluster -n pcs cluster standby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
             fi
 
             # wait for transfer to finish (to another node)
@@ -817,9 +923,9 @@ while (( $i < ${#NODES[@]} )); do
             printdbg "resetting \${PREVIOUS_RESOURCE_LOCATIONS[0]}"
 
             if (( \$(pcs --version | cut -d '.' -f 2- | tr -d '.') >= 100 )); then
-                pcs node unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+                sudo -u hacluster -n pcs node unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
             else
-                pcs cluster unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
+                sudo -u hacluster -n pcs cluster unstandby \${PREVIOUS_RESOURCE_LOCATIONS[0]}
             fi
 
             # wait for transfer to finish (to another node, could be original)
@@ -828,7 +934,7 @@ while (( $i < ${#NODES[@]} )); do
                 exit 1
             }
 
-            # run tests to make sure operations worked (last node)
+            # run tests to make sure operations worked
             i=0
             while (( \$i < \${#RESOURCES[@]} )); do
                 if [[ \${PREVIOUS_RESOURCE_LOCATIONS[\$i]} != \${PREVIOUS_RESOURCE_LOCATIONS[\$((i+1))]:-\${PREVIOUS_RESOURCE_LOCATIONS[0]}} ]]; then
@@ -850,10 +956,9 @@ while (( $i < ${#NODES[@]} )); do
             done
 
             printdbg 'Any non-critical resource errors are shown below:'
-            pcs resource failcount show
+            sudo -u hacluster -n pcs resource failcount show
             printdbg 'Clearing any non-critical resource errors'
-            pcs resource cleanup vip_group
-            pcs resource cleanup dsip_group
+            sudo -u hacluster -n pcs resource cleanup
 
             # show status to user
             printdbg 'cluster info:'

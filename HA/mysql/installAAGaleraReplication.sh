@@ -211,7 +211,7 @@ for NODE in ${NODES[@]}; do
     SSH_OPTS+=(-p ${PORT})
 
     printdbg 'validating unattended ssh connection'
-    if ! checkSSH ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
+    if ! checkSsh ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
         printerr "Could not establish unattended ssh connection to [${USERHOST_LIST[$i]}] on port [${PORT}]"
         exit 1
     fi

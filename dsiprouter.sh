@@ -1026,6 +1026,9 @@ function updateRtpengineStartup() {
 }
 
 # updates DNSmasq configs from DB
+# TODO: dynamically update pacemaker IPs in /etc/hosts using getPacemakerInternalIP()
+#       they would need loaded in the DB prior on boot (can not wait for dsiprouter.py)
+#       because the pacemaker and corosync services start prior to dsiprouter.service
 function updateDnsConfig() {
     local KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
     local KAM_DB_PORT=${KAM_DB_PORT:-$(getConfigAttrib 'KAM_DB_PORT' ${DSIP_CONFIG_FILE})}
@@ -2144,6 +2147,12 @@ function installDnsmasq() {
             "${EXTERNAL_IP_ADDR} ${EXTERNAL_FQDN} local.cluster" \
             '#####DSIP_CONFIG_END' >>/etc/hosts
     fi
+    # add section for the pacemaker features
+    if ! grep -q 'PACEMAKER_CONFIG_START' /etc/hosts 2>/dev/null; then
+        printf '\n%s\n%s\n' \
+            '#####PACEMAKER_CONFIG_START' \
+            '#####PACEMAKER_CONFIG_END' >>/etc/hosts
+    fi
 
     # update DNS hosts prior to dSIPRouter startup
     addInitCmd "/usr/bin/dsiprouter updatednsconfig"
@@ -2186,6 +2195,8 @@ function uninstallDnsmasq() {
 
     # remove cluster hosts from /etc/hosts
     sed -ir -e '/#+DSIP_CONFIG_START/,/#+DSIP_CONFIG_END/d' /etc/hosts
+    # remove pacemaker section from /etc/hosts
+    sed -ir -e '/#+PACEMAKER_CONFIG_START/,/#+PACEMAKER_CONFIG_END/d' /etc/hosts
 
     # remove cron job and init command
     removeInitCmd "/usr/bin/dsiprouter updatednsconfig"
@@ -2807,7 +2818,7 @@ function createInitService() {
     # configure cloud-init to work with alongside our init services
     if [[ -n "$CLOUD_PLATFORM" ]]; then
         cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/configs/${CLOUD_PLATFORM}.cfg /etc/cloud/cloud.cfg.d/99-dsip-init.cfg
-        cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/templates/hosts.${DISTRO}.tmpl /etc/cloud/templates/hosts.tmpl
+        cp -f ${DSIP_PROJECT_DIR}/cloud/cloud-init/templates/hosts.${DISTRO}.tmpl $(${DSIP_PROJECT_DIR}/cloud/find_hosts_tmpl.sh)
 
         # patch for cloud-init.service circular ordering dependency
         # TODO: commit this upstream to cloud-init project

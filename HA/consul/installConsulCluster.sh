@@ -234,7 +234,7 @@ for NODE in ${ARGS[@]}; do
     SCP_CMD="${SCP_CMD} ${SCP_OPTS}"
 
     # validate unattended ssh connection
-    if ! checkSSH ${SSH_CMD}; then
+    if ! checkSsh ${SSH_CMD}; then
         printerr "Could not establish unattended ssh connection to [${SSH_REMOTE_HOST}] on port [${PORT}]" && exit 1
     fi
 
