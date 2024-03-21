@@ -201,6 +201,12 @@ MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com","sip2.pstnhub.microsoft.com
 MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70","52.114.32.169"]
 #MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]
 
+# kamailio jsonrpc settings
+KAM_JSONRPC_ROOTPATH = '/api/kamailio'
+KAM_JSONRPC_VERSION = '2.0'
+KAM_JSONRPC_ID = 1
+KAM_JSONRPC_TIMEOUT = 15
+
 # root DB credentials
 ROOT_DB_HOST = 'localhost'
 ROOT_DB_PORT = ''
