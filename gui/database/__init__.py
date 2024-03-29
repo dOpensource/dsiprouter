@@ -67,8 +67,12 @@ class GatewayGroups(object):
     Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-gw-lists>`_
     """
 
-    def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER):
-        self.description = "name:{},type:{}".format(name, type)
+    def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER, dlg_timeout=None):
+        description = {'name': name, 'type': type}
+        if dlg_timeout is not None:
+            description['dlg_timeout'] = dlg_timeout
+
+        self.description = dictToStrFields(description)
         self.gwlist = ",".join(str(gw) for gw in gwlist)
 
     pass
@@ -268,16 +272,15 @@ class dSIPMaintModes(object):
     pass
 
 
-class dSIPCallLimits(object):
+class dSIPCallSettings(object):
     """
-    Schema for dsip_calllimit table\n
+    Schema for dsip_call_settings table\n
     """
 
-    def __init__(self, gwgroupid, limit, status=1):
+    def __init__(self, gwgroupid, limit=None, timeout=None):
         self.gwgroupid = gwgroupid
         self.limit = limit
-        self.status = status
-        self.createdate = datetime.now()
+        self.timeout = timeout
 
     pass
 
@@ -633,7 +636,7 @@ def createSessionObjects():
     dispatcher = Table('dispatcher', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_endpoint_lease = Table('dsip_endpoint_lease', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_maintmode = Table('dsip_maintmode', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
-    dsip_calllimit = Table('dsip_calllimit', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    dsip_call_settings = Table('dsip_call_settings', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_notification = Table('dsip_notification', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_hardfwd = Table('dsip_hardfwd', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_failfwd = Table('dsip_failfwd', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
@@ -667,7 +670,7 @@ def createSessionObjects():
     mapper.map_imperatively(Dispatcher, dispatcher)
     mapper.map_imperatively(dSIPLeases, dsip_endpoint_lease)
     mapper.map_imperatively(dSIPMaintModes, dsip_maintmode)
-    mapper.map_imperatively(dSIPCallLimits, dsip_calllimit)
+    mapper.map_imperatively(dSIPCallSettings, dsip_call_settings)
     mapper.map_imperatively(dSIPNotification, dsip_notification)
     mapper.map_imperatively(dSIPHardFwd, dsip_hardfwd)
     mapper.map_imperatively(dSIPFailFwd, dsip_failfwd)

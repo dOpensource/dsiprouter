@@ -27,7 +27,7 @@
 
   // Add EndpointGroup
   function addEndpointGroup(action) {
-    var selector, modal_body, url;
+    var selector, modal_body, url, tmp;
 
     // The default action is a POST (creating a new EndpointGroup)
     if (typeof action === "undefined") {
@@ -53,13 +53,15 @@
 
     var requestPayload = {};
     requestPayload.name = modal_body.find(".name").val();
-    var call_limit = modal_body.find(".calllimit").val();
-    if (call_limit.length > 0) {
-      requestPayload.calllimit = parseInt(call_limit, 10);
-    }
+
+    var call_settings = {};
+    tmp = modal_body.find(".call_limit").val();
+    call_settings.limit = tmp === '' ? null : tmp;
+    tmp = modal_body.find(".call_timeout").val();
+    call_settings.timeout = tmp === '' ? null : tmp;
+    requestPayload.call_settings = call_settings;
 
     var auth = {};
-
     if (action === "POST") {
       if ($('input#ip.authtype').is(':checked')) {
         auth.type = "ip";
@@ -81,7 +83,6 @@
 
     auth.user = modal_body.find(".auth_username").val();
     auth.domain = modal_body.find(".auth_domain").val();
-
     requestPayload.auth = auth;
 
     requestPayload.strip = modal_body.find(".strip").val();
@@ -90,7 +91,6 @@
     var notifications = {};
     notifications.overmaxcalllimit = modal_body.find(".email_over_max_calls").val();
     notifications.endpointfailure = modal_body.find(".email_endpoint_failure").val();
-
     requestPayload.notifications = notifications;
 
     var cdr = {};
@@ -100,7 +100,6 @@
         modal_body.find(".cdr_send_day").val() + ' ' +
         modal_body.find(".cdr_send_month").val() + ' ' +
         modal_body.find(".cdr_send_weekday").val();
-
     requestPayload.cdr = cdr;
 
     var fusionpbx = {};
@@ -109,7 +108,6 @@
     fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
     fusionpbx.dbpass = modal_body.find(".fusionpbx_db_password").val();
     fusionpbx.clustersupport = modal_body.find(".fusionpbx_clustersupport").val();
-
     requestPayload.fusionpbx = fusionpbx;
 
     /* Process endpoints (empty endpoints are ignored) */
@@ -202,7 +200,8 @@
     modal_body.find(".auth_username").val('');
     modal_body.find(".auth_password").val('');
     modal_body.find(".auth_domain").val('');
-    modal_body.find(".calllimit").val('');
+    modal_body.find(".call_limit").val('');
+    modal_body.find(".call_timeout").val('');
     modal_body.find(".email_over_max_calls").val('');
     modal_body.find(".email_endpoint_failure").val('');
     modal_body.find(".cdr_email").val('');
@@ -256,7 +255,8 @@
     var modal_body = $('#edit .modal-body');
     modal_body.find(".name").val(gwgroup_data.name);
     modal_body.find(".gwgroupid").val(gwgroup_data.gwgroupid);
-    modal_body.find(".calllimit").val(gwgroup_data.calllimit);
+    modal_body.find(".call_limit").val(gwgroup_data.call_settings.limit);
+    modal_body.find(".call_timeout").val(gwgroup_data.call_settings.timeout);
 
     if (gwgroup_data.auth.type == "ip") {
       $('#ip2.authtype').prop('checked', true);

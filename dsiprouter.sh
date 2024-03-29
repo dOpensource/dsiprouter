@@ -1229,9 +1229,9 @@ function configureKamailioDB() {
     withRootDBConn --db="$KAM_DB_NAME" mysql \
         < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_maintmode.sql
 
-    # Install schema for Call Limit
+    # Install schema for gwgroup call settings
     withRootDBConn --db="$KAM_DB_NAME" mysql \
-        < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_calllimit.sql
+        < ${PROJECT_DSIP_DEFAULTS_DIR}/dsip_call_settings.sql
 
     # Install schema for Notifications
     withRootDBConn --db="$KAM_DB_NAME" mysql \
