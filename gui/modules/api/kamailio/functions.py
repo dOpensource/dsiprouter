@@ -111,8 +111,8 @@ def reloadKamailio():
         if 'WITH_DISPATCHER' in features_enabled:
             rpc_args.append(('127.0.0.1', 'dispatcher.reload'))
             rpc_args.append(('127.0.0.1', 'keepalive.flush'))
-        if 'WITH_CALLLIMIT' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'htable.reload', ('calllimit')))
+        if 'WITH_CALL_SETTINGS' in features_enabled:
+            rpc_args.append(('127.0.0.1', 'htable.reload', ('call_settings')))
         if 'WITH_MULTIDOMAIN' in features_enabled:
             rpc_args.append(('127.0.0.1', 'domain.reload'))
         if 'WITH_TELEBLOCK' in features_enabled:

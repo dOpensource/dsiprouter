@@ -13,7 +13,7 @@ from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
-    GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallLimits, InboundMapping, dSIPCDRInfo, \
+    GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallSettings, InboundMapping, dSIPCDRInfo, \
     dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
     strFieldsToDict, getRequestData, IO
@@ -658,9 +658,9 @@ def deleteEndpointGroup(gwgroupid):
         else:
             raise http_exceptions.NotFound("The endpoint group doesn't exist")
 
-        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == str(gwgroupid))
-        if calllimit is not None:
-            calllimit.delete(synchronize_session=False)
+        call_settings = db.query(dSIPCallSettings).filter(dSIPCallSettings.gwgroupid == gwgroupid)
+        if call_settings is not None:
+            call_settings.delete(synchronize_session=False)
 
         subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwgroupid)
         if subscriber is not None:
@@ -753,11 +753,16 @@ def getEndpointGroup(gwgroupid):
         # Send back the gateway groupid that was requested
         gwgroup_data['gwgroupid'] = gwgroupid
 
-        calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == str(gwgroupid)).first()
-        if calllimit is not None:
-            gwgroup_data['calllimit'] = calllimit.limit
+        call_settings = db.query(dSIPCallSettings).filter(dSIPCallSettings.gwgroupid == gwgroupid).first()
+        if call_settings is not None:
+            gwgroup_data['call_settings'] = {
+                'limit': call_settings.limit,
+                'timeout': call_settings.timeout
+            }
+        else:
+            gwgroup_data['call_settings'] = {}
 
-        # Check to see if a subscriber record exists.  If so, auth is userpwd
+            # Check to see if a subscriber record exists.  If so, auth is userpwd
         auth = {}
         subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
         if subscriber is not None:
@@ -900,7 +905,10 @@ def updateEndpointGroups(gwgroupid=None):
 
         {
             name: <string>,
-            calllimit: <int>,
+            call_settings: {
+                limit: <int>,
+                timeout: <int>
+            },
             auth: {
                 type: "ip"|"userpwd",
                 user: <string>
@@ -959,7 +967,7 @@ def updateEndpointGroups(gwgroupid=None):
     db = DummySession()
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
-    VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "calllimit": int, "auth": dict,
+    VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "call_settings": dict, "auth": dict,
                                "strip": int, "prefix": str, "notifications": dict, "cdr": dict,
                                "fusionpbx": dict, "endpoints": list}
 
@@ -1017,19 +1025,16 @@ def updateEndpointGroups(gwgroupid=None):
         Gwgroup.description = dictToStrFields(gwgroup_desc_dict)
         db.flush()
 
-        # Update concurrent call limit
-        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else None
-        if calllimit is not None and calllimit > -1:
-            if db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid).update(
-                {'limit': calllimit}, synchronize_session=False):
-                pass
-            else:
-                CallLimit = dSIPCallLimits(gwgroupid_str, str(calllimit))
-                db.add(CallLimit)
+        # Update the gateway group call settings
+        call_settings_data = request_payload['call_settings'] if 'call_settings' in request_payload else {}
+        if db.query(dSIPCallSettings).filter(dSIPCallSettings.gwgroupid == gwgroupid).update({
+            'limit': call_settings_data['limit'],
+            'timeout': call_settings_data['timeout']
+        }, synchronize_session=False):
+            pass
         else:
-            Calllimit = db.query(dSIPCallLimits).filter(dSIPCallLimits.gwgroupid == gwgroupid)
-            if Calllimit is not None:
-                Calllimit.delete(synchronize_session=False)
+            call_settings = dSIPCallSettings(gwgroupid, **call_settings_data)
+            db.add(call_settings)
 
         # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
@@ -1468,7 +1473,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         {
             "name": "example",
-            "calllimit": 0,
+            "call_settings": {
+                limit: 5,
+                timeout: 3600
+            },
             "auth": {
                 "type": "userpwd",
                 "user": "example",
@@ -1524,7 +1532,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
-        "name": str, "calllimit": int, "auth": dict, "strip": int, "prefix": str,
+        "name": str, "call_settings": dict, "auth": dict, "strip": int, "prefix": str,
         "notifications": dict, "cdr": dict, "fusionpbx": dict, "endpoints": list
     }
 
@@ -1568,10 +1576,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
         gwgroupid = Gwgroup.id
         gwgroup_data['gwgroupid'] = gwgroupid
 
-        calllimit = request_payload['calllimit'] if 'calllimit' in request_payload else None
-        if calllimit is not None and calllimit > -1:
-            CallLimit = dSIPCallLimits(gwgroupid, calllimit)
-            db.add(CallLimit)
+        # create the call settings for the new gateway group
+        call_settings_data = request_payload['call_settings'] if 'call_settings' in request_payload else {}
+        call_settings = dSIPCallSettings(gwgroupid, **call_settings_data)
+        db.add(call_settings)
 
         # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
