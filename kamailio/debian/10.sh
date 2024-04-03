@@ -18,7 +18,8 @@ function install {
     update-alternatives --set iptables /usr/sbin/iptables-legacy
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
-    # Install Dependencies
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
         libcurl4-openssl-dev libjansson-dev cmake build-essential pkg-config \
         zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libsqlite3-dev libreadline-dev \

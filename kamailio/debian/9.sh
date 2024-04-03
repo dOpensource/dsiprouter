@@ -12,9 +12,10 @@ function install {
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
 
-    # Install Dependencies
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
-        libcurl4-openssl-dev libjansson-dev cmake firewalld python3 python3-venv
+        libcurl4-openssl-dev libjansson-dev cmake firewalld python3 python3-venv &&
     apt-get install -y -t buster build-essential
 
     if (( $? != 0 )); then
