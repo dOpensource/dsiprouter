@@ -122,9 +122,10 @@ EOF
         return 1
     }
 
+    # Remove ufw if installed
+    apt-get remove -y ufw
     # Enable and start firewalld if not already running
     systemctl enable firewalld
-    systemctl start firewalld
 
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
@@ -132,7 +133,10 @@ EOF
     firewall-cmd --zone=public --add-port=${KAM_SIPS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
+    firewall-cmd --zone=public --add-port=22/tcp --permanent
     firewall-cmd --reload
+
+    systemctl start firewalld
 
     # Configure Kamailio systemd service
     cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
