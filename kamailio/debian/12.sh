@@ -13,7 +13,8 @@ function install() {
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
     local NPROC=$(nproc)
 
-    # Install Dependencies
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
         libcurl4-openssl-dev libjansson-dev cmake firewalld build-essential certbot
 

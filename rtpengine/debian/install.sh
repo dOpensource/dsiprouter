@@ -106,16 +106,18 @@ function install {
     local MISSING_PKGS
     local NPROC=$(nproc)
 
-    # Install required packages
+    # Install required packages and remove conflicting packages
     case "${DISTRO_VER}" in
         10)
-            apt-get install -y git logrotate rsyslog dpkg-dev
+            apt-get remove -y ufw &&
+            apt-get install -y git logrotate rsyslog dpkg-dev &&
             apt-get install -y -t bullseye libbcg729-0 libbcg729-dev debhelper dkms libglib2.0-dev libncurses-dev \
                 zlib1g-dev default-libmysqlclient-dev libmariadb-dev firewalld python3 python3-dev python3-websockets \
                 perl libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libnet-interface-perl \
                 libsocket6-perl libdigest-hmac-perl libio-multiplex-perl libio-socket-inet6-perl libjson-perl libtest2-suite-perl
             ;;
         *)
+            apt-get remove -y ufw &&
             apt-get install -y git logrotate rsyslog firewalld dpkg-dev
             ;;
     esac

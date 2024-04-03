@@ -15,10 +15,11 @@ function install() {
     userdel dsiprouter &>/dev/null; groupdel dsiprouter &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
-    # Install dependencies for dSIPRouter
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
     apt-get install -y build-essential curl python3 python3-pip python-dev python3-openssl \
         python3-venv libpq-dev firewalld sudo
-    apt-get install -y --allow-unauthenticated libmariadbclient-dev
+    apt-get install -y --allow-unauthenticated libmariadbclient-dev &&
     apt-get install -y logrotate rsyslog perl sngrep libev-dev uuid-runtime libpq-dev
 
     if (( $? != 0 )); then

@@ -9,61 +9,22 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    # make sure the dns stack is installed (minimal images do not include these packages)
-    # debian used resolvconf up to debian12 when they switch to systemd-resolved
-    if (( $DISTRO_VER < 12 )); then
-        apt-get install -y resolvconf
-
-        resolvconf -u
-    else
-        apt-get install -y systemd-resolved libnss-resolve
-
-        systemctl restart systemd-resolved
-    fi
-
-    # mask the service before running package manager to avoid faulty startup errors
-    systemctl mask dnsmasq.service
-
-    apt-get install -y dnsmasq
-
-    if (( $? != 0 )); then
-        printerr 'Failed installing new dns stack'
-        return 1
-    fi
-
-    # make sure we unmask before configuring the service ourselves
-    systemctl unmask dnsmasq.service
-
-    # configure dnsmasq systemd service
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /lib/systemd/system/dnsmasq.service
-    chmod 644 /lib/systemd/system/dnsmasq.service
-    systemctl daemon-reload
-    systemctl enable dnsmasq
-
     # backup the original resolv.conf
     [[ ! -e "${BACKUPS_DIR}/etc/resolv.conf" ]] && {
         mkdir -p ${BACKUPS_DIR}/etc/
         cp -df /etc/resolv.conf ${BACKUPS_DIR}/etc/resolv.conf
     }
 
-    # make dnsmasq the DNS provider
-    rm -f /etc/resolv.conf
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
-
-    # update the dnsmasq settings
+    # make sure the dns stack is installed (minimal images do not include these packages)
+    # debian used resolvconf up to debian12 when they switch to systemd-resolved
     if (( $DISTRO_VER < 12 )); then
-        export DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
+        apt-get purge -y systemd-resolved libnss-resolve
+        apt-get install -y resolvconf
 
-        # setup resolvconf to work with dnsmasq
-        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_def /etc/default/resolvconf &&
-        rm -f /etc/resolvconf/update.d/dnsmasq &&
-        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_upd /etc/resolvconf/update.d/dnsmasq &&
-        chmod +x /etc/resolvconf/update.d/dnsmasq &&
-        resolvconf -u || {
-            printerr 'failed loading new resolvconf network configurations..'
-        }
+        resolvconf -u
     else
-        export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
+        apt-get purge -y resolvconf
+        apt-get install -y systemd-resolved libnss-resolve
 
         # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
         mkdir -p /etc/systemd/resolved.conf.d/
@@ -87,6 +48,45 @@ function install() {
             systemctl restart systemd-resolved
             return 1
         }
+    fi
+
+    # mask the service before running package manager to avoid faulty startup errors
+    systemctl mask dnsmasq.service
+
+    apt-get install -y dnsmasq
+
+    if (( $? != 0 )); then
+        printerr 'Failed installing new dns stack'
+        return 1
+    fi
+
+    # make sure we unmask before configuring the service ourselves
+    systemctl unmask dnsmasq.service
+
+    # configure dnsmasq systemd service
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /lib/systemd/system/dnsmasq.service
+    chmod 644 /lib/systemd/system/dnsmasq.service
+    systemctl daemon-reload
+    systemctl enable dnsmasq
+
+    # make dnsmasq the DNS provider
+    rm -f /etc/resolv.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
+
+    # update the dnsmasq settings
+    if (( $DISTRO_VER < 12 )); then
+        export DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
+
+        # setup resolvconf to work with dnsmasq
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_def /etc/default/resolvconf &&
+        rm -f /etc/resolvconf/update.d/dnsmasq &&
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolvconf_upd /etc/resolvconf/update.d/dnsmasq &&
+        chmod +x /etc/resolvconf/update.d/dnsmasq &&
+        resolvconf -u || {
+            printerr 'failed loading new resolvconf network configurations..'
+        }
+    else
+        export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
     fi
 
     # tell dnsmasq to grab dns servers found via dhcp
