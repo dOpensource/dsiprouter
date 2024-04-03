@@ -60,6 +60,9 @@ EOF
     # Update repo sources cache
     apt-get update -y
 
+    # Remove ufw if installed
+    apt-get remove -y ufw
+    
     # Install Kamailio packages
     apt-get install -y kamailio kamailio-mysql-modules kamailio-extra-modules \
         kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules \
@@ -122,8 +125,6 @@ EOF
         return 1
     }
 
-    # Remove ufw if installed
-    apt-get remove -y ufw
     # Enable and start firewalld if not already running
     systemctl enable firewalld
 
