@@ -217,6 +217,15 @@ function setDynamicScriptSettings() {
             # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
         fi
+	
+	# set the external fqdn to the internal fqdn if the hostname contain vultrusercontent
+	# Kamailio doesn't like hostname names with dots and LetsEncrypt can't create certs for that domain
+	grep vultrusercontent <<< "$EXTERNAL_FQDN" >/dev/null
+	if (( $? == 0 ));then
+            export EXTERNAL_FQDN="$INTERNAL_FQDN"
+	
+	fi
+
     # network settings pulled from env variables or from config file
     elif (( $NETWORK_MODE == 1 )); then
         export INTERNAL_IP_ADDR=${INTERNAL_IP_ADDR:-$(getConfigAttrib 'INTERNAL_IP_ADDR' ${DSIP_CONFIG_FILE})}
@@ -2114,7 +2123,11 @@ function installDnsmasq() {
     useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
 
     printdbg "Attempting to install DNSmasq..."
-    ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh install
+    if (( ${DISTRO_VER} == 12 )); then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_VER}.sh install
+    else
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh install
+    fi
 
     if (( $? != 0 )); then
         printerr "DNSmasq install failed - OS install script failure"
