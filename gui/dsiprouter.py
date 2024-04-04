@@ -1878,18 +1878,9 @@ def displayTransNexus(msg=None):
         if license_status == 2:
             return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
-        if settings.TRANSNEXUS_AUTHSERVICE_ENABLED == 1:
-            authservice_checked = 'checked'
-            transnexusOptions_hidden = 'hidden'
-        else:
-            authservice_checked = ''
-            transnexusOptions_hidden = ''
-
         return render_template(
             'transnexus.html',
-            msg=msg,
-            authservice_checked=authservice_checked,
-            transnexusOptions_hidden=transnexusOptions_hidden
+            msg=msg
         )
 
     except WoocommerceError as ex:
@@ -1933,12 +1924,16 @@ def addUpdateTransNexus():
         tn_settings = {}
         if 'authservice_enabled' in form:
             tn_settings['TRANSNEXUS_AUTHSERVICE_ENABLED'] = int(form['authservice_enabled'])
+            tn_settings["TRANSNEXUS_AUTHSERVICE_HOST"] = form['authservice_host']
         else:
             # It was disabled so the form field was not sent over
             tn_settings['TRANSNEXUS_AUTHSERVICE_ENABLED'] = 0
-
-        if 'authservice_host' in form:
-            tn_settings["TRANSNEXUS_AUTHSERVICE_HOST"] = form['authservice_host']
+        if 'verifyservice_enabled' in form:
+            tn_settings['TRANSNEXUS_VERIFYSERVICE_ENABLED'] = int(form['verifyservice_enabled'])
+            tn_settings["TRANSNEXUS_VERIFYSERVICE_HOST"] = form['verifyservice_host']
+        else:
+            # It was disabled so the form field was not sent over
+            tn_settings['TRANSNEXUS_VERIFYSERVICE_ENABLED'] = 0
 
         if len(tn_settings) != 0:
             updateConfig(settings, tn_settings, hot_reload=True)
