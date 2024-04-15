@@ -2026,8 +2026,9 @@ def addUpateOutboundRoutes():
             # no from_prefix we can update outbound route and remove any LCR entries
             if from_prefix is None and prefix is not None:
                 oldgroupid = groupid
-                if (groupid is None) or (groupid == "None"):
-                    groupid = settings.FLT_OUTBOUND
+                groupid = settings.FLT_OUTBOUND
+                #if (groupid is None) or (groupid == "None"):
+                #    groupid = settings.FLT_OUTBOUND
 
                 # Convert the dr_rule back to a default carrier rule
                 db.query(OutboundRoutes).filter(OutboundRoutes.ruleid == ruleid).update({
