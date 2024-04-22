@@ -2501,7 +2501,7 @@ function setCredentials() {
 
     # determine type of DB server if we need to make updates
     if (( $RUN_SQL_STATEMENTS == 1 )); then
-        if ! withRootDBConn mysql -se 'SELECT PASSWORD('');' &>/dev/null; then
+        if ! withRootDBConn mysql -se "SELECT PASSWORD('');" &>/dev/null; then
             MYSQL_VARIANT='mysql'
         fi
         sqlAsTransaction --user="$ROOT_DB_USER" --pass="$ROOT_DB_PASS" --host="$ROOT_DB_HOST" --port="$ROOT_DB_PORT" "${SQL_STATEMENTS[@]}"
@@ -2709,14 +2709,14 @@ function setCredentials() {
     # reload/synchronize settings for each service
     # note: we reload the service only if it is currently running (otherwise it messes with boot ordering)
     # note: updateKamailioConfig() combines configuring kam config and hot reloading in the same function
+    if (( ${KAM_RELOAD_TYPE} > 0 )); then
+        updateKamailioConfig
+    fi
     if (( $SERVICE_RELOAD_DISABLED == 0 )); then
         if (( ${MYSQL_RELOAD_TYPE} == 2 )); then
             if systemctl is-active --quiet mariadb; then
                 systemctl restart mariadb
             fi
-        fi
-        if (( ${KAM_RELOAD_TYPE} > 0 )); then
-            updateKamailioConfig
         fi
         if (( ${KAM_RELOAD_TYPE} == 2 )); then
             if systemctl is-active --quiet kamailio; then

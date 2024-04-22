@@ -54,7 +54,7 @@ function install() {
     # make sure it does not take over DNS resolution if installed
     mkdir -p /etc/NetworkManager/conf.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
-    if systemctl is-active -q NetworkManager 2>/dev/null; then
+    if systemctl is-active -q NetworkManager &>/dev/null; then
         systemctl restart NetworkManager
     fi
 
@@ -111,6 +111,9 @@ function uninstall() {
     # uninstall packages
     apt-get remove -y --purge dnsmasq
 
+    # remove network manager config
+    rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
+
     # remove our systemd-resolved configurations
     rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
 
@@ -120,11 +123,16 @@ function uninstall() {
     # restore original resolv.conf
     cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
 
-    # restart systemd.networkd with the original rules
-    systemctl restart systemd-networkd
-
-    # update resolv.conf / restart systemd-resolved with new configs
-    systemctl restart systemd-resolved
+    # restart related services
+    if (( $DISTRO_VER < 12 )); then
+        resolvconf -u
+    else
+        systemctl restart systemd-networkd
+        systemctl restart systemd-resolved
+    fi
+    if systemctl is-active -q NetworkManager &>/dev/null; then
+        systemctl restart NetworkManager
+    fi
 
     # cleanup backup files
     rm -f ${BACKUPS_DIR}/etc/resolv.conf
