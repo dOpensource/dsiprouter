@@ -1071,19 +1071,18 @@ def updateEndpointGroups(gwgroupid=None):
             # Get the existing username and domain_name if it exists
             currentSubscriberInfo = db.query(Subscribers).filter(Subscribers.rpid == gwgroupid).first()
             if currentSubscriberInfo is not None:
-                if authuser == currentSubscriberInfo.username and authpass == currentSubscriberInfo.password \
-                    and authdomain == currentSubscriberInfo.domain:
-                    pass  # The subscriber info is the same - no need to update
                 # Check if the new username and domain is unique
+                if db.query(Subscribers).filter(
+                    Subscribers.username == authuser,
+                    Subscribers.domain == authdomain,
+                    Subscribers.id != currentSubscriberInfo.id
+                ).scalar():
+                    raise http_exceptions.BadRequest("Subscriber username already taken")
+                # Update the Subscriber Info
                 else:
-                    if db.query(Subscribers).filter(Subscribers.username == authuser,
-                        Subscribers.domain == authdomain).scalar():
-                        raise http_exceptions.BadRequest("Subscriber username already taken")
-                    # Update the Subscriber Info
-                    else:
-                        currentSubscriberInfo.username = authuser
-                        currentSubscriberInfo.password = authpass
-                        currentSubscriberInfo.domain = authdomain
+                    currentSubscriberInfo.username = authuser
+                    currentSubscriberInfo.password = authpass
+                    currentSubscriberInfo.domain = authdomain
             # Create a new Suscriber entry
             else:
                 Subscriber = Subscribers(authuser, authpass, authdomain, gwgroupid_str)
