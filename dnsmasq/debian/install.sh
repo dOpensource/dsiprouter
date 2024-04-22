@@ -50,6 +50,14 @@ function install() {
         }
     fi
 
+    # gnome depends on NetworkManager
+    # make sure it does not take over DNS resolution if installed
+    mkdir -p /etc/NetworkManager/conf.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+    if systemctl is-active -q NetworkManager 2>/dev/null; then
+        systemctl restart NetworkManager
+    fi
+
     # mask the service before running package manager to avoid faulty startup errors
     systemctl mask dnsmasq.service
 
