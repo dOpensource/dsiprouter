@@ -6,6 +6,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 
 # all of our standard and project file imports
 import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time
+import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
 from importlib import reload
@@ -225,6 +226,24 @@ def login():
                 session['logged_in'] = True
                 session['username'] = form['username']
                 return redirect(url_for('index'))
+       
+        # Check for user in other auth modules
+       
+        # Returns the Base directory of this file
+        base_dir = os.path.dirname(__file__)
+       
+        if settings.AUTH_MODULES is not None:
+            for authModule in settings.AUTH_MODULES:
+                print(getattr(settings,authModule))
+                # Get the name of the auth module in lowercase (ex. AUTH_LDAP equals ldap)
+                authModuleName = authModule.split("_")[1]
+                print("authModuleName:{}".format(authModuleName.lower()))
+                # Use the Base Dir to specify the location of the plugin required for this domain
+                spec = importlib.util.spec_from_file_location("plugin.{}".format(authModuleName.lower()), "{}/modules/api/auth/{}/interface.py".format(base_dir,authModuleName.lower()))
+                authPlugin = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(authPlugin)
+                print("***{} Plugin was loaded***".format(authPlugin.name))
+
 
         # if we got here auth failed
         flash('Wrong Username or Password')
