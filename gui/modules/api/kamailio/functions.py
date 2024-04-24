@@ -60,7 +60,7 @@ def sendJsonRpcCmd(host, method, params=()):
             break
         except requests.exceptions.HTTPError as ex:
             if ex.response.status_code == 500 and ex.response.json()['error']['message'] == 'ongoing reload':
-                sleep(0.5)
+                sleep(settings.KAM_JSONRPC_RETRYIVAL)
                 continue
             raise
 

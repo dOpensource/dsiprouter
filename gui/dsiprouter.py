@@ -2615,9 +2615,11 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectGlobals():
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
     return {
         'settings': settings,
-        'state': getSharedMemoryDict(STATE_SHMEM_NAME),
+        'state': state,
+        'licenseValid': lambda tag: getLicenseStatusFromStateDict(state['dsip_license_store'], tag)
     }
 
 
@@ -2835,6 +2837,14 @@ def guiLicenseCheck(tag):
 
 
 def initApp(flask_app):
+    # trap signals we handle as soon as possible.
+    # we do not want any allocated shared memory / DB connections / socket files hanging around on startup failure
+    signal.signal(signal.SIGHUP, sigHandler)
+    signal.signal(signal.SIGUSR1, sigHandler)
+    signal.signal(signal.SIGUSR2, sigHandler)
+    signal.signal(signal.SIGINT, sigHandler)
+    signal.signal(signal.SIGTERM, sigHandler)
+
     # load the DB objects into memory
     global global_db_engine, global_session_loader
     global_db_engine, global_session_loader = createSessionObjects()
@@ -2858,10 +2868,9 @@ def initApp(flask_app):
     flask_app.jinja_env.filters["imgFilter"] = imgFilter
     flask_app.jinja_env.filters["domainTypeFilter"] = domainTypeFilter
 
-    # Add jinja2 functions
+    # Add jinja2 functions (these must be independent from the context processor)
     flask_app.jinja_env.globals.update(zip=zip)
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
-    flask_app.jinja_env.globals.update(licenseValid=guiLicenseCheck)
 
     # Dynamically update settings
     intializeGlobalSettings()
@@ -2893,13 +2902,6 @@ def initApp(flask_app):
 
     # Setup ProxyFix middleware
     flask_app = ProxyFix(flask_app, 1, 1, 1, 1, 1)
-
-    # trap signals we handle
-    signal.signal(signal.SIGHUP, sigHandler)
-    signal.signal(signal.SIGUSR1, sigHandler)
-    signal.signal(signal.SIGUSR2, sigHandler)
-    signal.signal(signal.SIGINT, sigHandler)
-    signal.signal(signal.SIGTERM, sigHandler)
 
     # change umask to 660 before creating sockets
     # this allows members of the dsiprouter group access

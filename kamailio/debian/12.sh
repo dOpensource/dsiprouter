@@ -108,9 +108,10 @@ EOF
 
     # in mariadb ver >= 10.6.1 --port= now defaults to transport=tcp
     # we want socket connections for root as default so apply our patch to kamdbctl
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
     (
         cd /usr/lib/x86_64-linux-gnu/kamailio/kamctl &&
-        patch -p3 -N <${DSIP_PROJECT_DIR}/kamailio/debian/kamdbctl.patch
+        patch -p3 -N <${DSIP_PROJECT_DIR}/kamailio/kamdbctl.patch
     )
     if (( $? > 1 )); then
         printerr 'Failed patching kamdbctl'
@@ -222,6 +223,18 @@ EOF
     ) &&
     cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
         printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
+
+    # patch uac module to support reload_delta
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/uac &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch &&
+        make -j $NPROC
+    ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/ || {
+        printerr 'Failed to patch uac module'
         return 1
     }
 

@@ -59,9 +59,10 @@ class WoocommerceLicense(object):
             self._license_key = license_key
 
             with open('/etc/machine-id', 'r') as f:
-                self.__machine_id = f.read(WoocommerceLicense.MACHINE_ID_LEN)
-                if len(self.__machine_id) != WoocommerceLicense.MACHINE_ID_LEN:
+                server_machine_id = f.read(WoocommerceLicense.MACHINE_ID_LEN)
+                if len(server_machine_id) != WoocommerceLicense.MACHINE_ID_LEN:
                     raise Exception("the server machine-id is invalid")
+                self.__machine_id = server_machine_id
                 self.__machine_match = True
         elif key_combo is not None:
             if isinstance(key_combo, str):
@@ -86,8 +87,10 @@ class WoocommerceLicense(object):
                 raise ValueError('key_combo is invalid')
 
             with open('/etc/machine-id', 'r') as f:
-                machine_id = f.read(WoocommerceLicense.MACHINE_ID_LEN)
-                self.__machine_match = len(machine_id) != WoocommerceLicense.MACHINE_ID_LEN and self.__machine_id != machine_id
+                server_machine_id = f.read(WoocommerceLicense.MACHINE_ID_LEN)
+                if len(server_machine_id) != WoocommerceLicense.MACHINE_ID_LEN:
+                    raise Exception("the server machine-id is invalid")
+                self.__machine_match = self.__machine_id == server_machine_id
         else:
             raise ValueError('one of license_key or key_combo is required')
 

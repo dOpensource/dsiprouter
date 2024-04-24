@@ -152,7 +152,38 @@ EOF
     ln -s /etc/ssl/certs/ca-bundle.crt ${DSIP_SSL_CA}
     updateCACertsDir
 
-    # setup dSIPRouter module for kamailio
+    # setup STIR/SHAKEN module for kamailio
+    ## compile and install libks
+    if [[ ! -d ${SRC_DIR}/libks ]]; then
+        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
+    fi
+    (
+        cd ${SRC_DIR}/libks &&
+        cmake -DCMAKE_BUILD_TYPE=Release . &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libks'
+        return 1
+    }
+
+    ## compile and install libstirshaken
+    if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
+    fi
+    (
+        cd ${SRC_DIR}/libstirshaken &&
+        ./bootstrap.sh &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 &&
+        make -j $NPROC &&
+        make -j $NPROC install &&
+        ldconfig
+    ) || {
+        printerr 'Failed to compile and install libstirshaken'
+        return 1
+    }
+
+    ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
         if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
@@ -162,35 +193,26 @@ EOF
     else
         git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&
+        make -j $NPROC
+    ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
+        printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
 
-    # setup STIR/SHAKEN module for kamailio
-    ## compile and install libjwt
-    if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
-    fi
-    ( cd ${SRC_DIR}/libjwt && autoreconf -i && ./configure --prefix=/usr --libdir=/usr/lib64 && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libjwt'; return 1; }
-
-    ## compile and install libks
-    if [[ ! -d ${SRC_DIR}/libks ]]; then
-        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
-    fi
-    ( cd ${SRC_DIR}/libks && cmake -DCMAKE_INSTALL_PREFIX=/usr . && make install &&
-        ln -sft /usr/lib64/ /usr/lib/libks.so* && ln -sft /usr/lib64/pkgconfig/ /usr/lib/pkgconfig/libks.pc; exit $?;
-    ) || { printerr 'Failed to compile and install libks'; return 1; }
-
-    ## compile and install libstirshaken
-    if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
-    fi
-    ( cd ${SRC_DIR}/libstirshaken && ./bootstrap.sh && ./configure --prefix=/usr --libdir=/usr/lib64 &&
-        make && make install && ldconfig; exit $?;
-    ) || { printerr 'Failed to compile and install libstirshaken'; return 1; }
-
-    ## compile and install STIR/SHAKEN module
-    ( cd ${SRC_DIR}/kamailio/src/modules/stirshaken && make; exit $?; ) &&
-    cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ ||
-    { printerr 'Failed to compile and install STIR/SHAKEN module'; return 1; }
+    # patch uac module to support reload_delta
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/uac &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch &&
+        make -j $NPROC
+    ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/ || {
+        printerr 'Failed to patch uac module'
+        return 1
+    }
 
     return 0
 }
