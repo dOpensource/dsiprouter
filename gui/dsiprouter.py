@@ -126,8 +126,7 @@ def index():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -155,9 +154,8 @@ def backupandrestore():
             return render_template('backupandrestore.html', show_add_onload=action, version=settings.VERSION)
 
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
-        return showError(type=error)
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
@@ -176,10 +174,10 @@ def certificates():
             action = request.args.get('action')
             return render_template('certificates.html', show_add_onload=action, version=settings.VERSION)
 
+
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
-        return showError(type=error)
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
@@ -232,8 +230,7 @@ def login():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -252,8 +249,7 @@ def logout():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -304,10 +300,7 @@ def displayCarrierGroups(gwgroup=None):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -431,10 +424,9 @@ def addUpdateCarrierGroups():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -494,10 +486,9 @@ def deleteCarrierGroups():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -586,10 +577,9 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -738,10 +728,9 @@ def addUpdateCarriers():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -834,10 +823,9 @@ def deleteCarriers():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -867,8 +855,7 @@ def displayEndpointGroups():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -892,8 +879,7 @@ def displayNumberEnrichment():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -916,8 +902,7 @@ def displayCDRS():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -941,8 +926,7 @@ def displayLicenseManager():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1006,10 +990,9 @@ def addUpdateEndpointGroups():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1080,10 +1063,9 @@ def deletePBX():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1147,7 +1129,7 @@ SELECT * FROM (
                 dids = numbers_api.getNumbers()
             except http_exceptions.HTTPException as ex:
                 debugException(ex)
-                return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
+                return showError(type="http", code=ex.code, msg="Flowroute Credentials Not Valid")
 
         return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids, gatewayList=gatewayList)
 
@@ -1159,10 +1141,9 @@ SELECT * FROM (
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1585,10 +1566,9 @@ def addUpdateInboundMapping():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1667,10 +1647,9 @@ def deleteInboundMapping():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1716,10 +1695,9 @@ def processInboundMappingImport(filename, override_gwgroupid, name, db):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1771,10 +1749,9 @@ def importInboundMapping():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1809,8 +1786,7 @@ def displayTeleBlock():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1847,8 +1823,7 @@ def addUpdateTeleBlock():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1887,8 +1862,7 @@ def displayTransNexus(msg=None):
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1945,8 +1919,7 @@ def addUpdateTransNexus():
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2008,10 +1981,9 @@ def displayOutboundRoutes():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2176,10 +2148,9 @@ def addUpateOutboundRoutes():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2234,10 +2205,9 @@ def deleteOutboundRoute():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2289,8 +2259,7 @@ def displayStirShaken(msg=None):
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2356,8 +2325,7 @@ def addUpdateStirShaken():
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2402,8 +2370,7 @@ def displayUpgrade(msg=None):
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2459,8 +2426,7 @@ def startUpgrade():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2546,8 +2512,7 @@ def getUpgradeLog():
         return 'File not found', 404
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
