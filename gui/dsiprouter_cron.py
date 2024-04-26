@@ -10,6 +10,7 @@
 #   fusionpbx
 # supported commands:
 #   api         -   cleanleases
+#               -   synclicenses
 #   cdr         -   sendreport <gwgroupid>
 #   fusionpbx   -   sync
 #

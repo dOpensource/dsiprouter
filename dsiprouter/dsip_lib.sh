@@ -522,17 +522,47 @@ function getInstanceID() {
 }
 export -f getInstanceID
 
-# $1 == crontab entry to append
+# summary:  append a crontab entry
+# usage:    cronAppend [options] <crontab entry>
+# options:  -u <crontab user>
 function cronAppend() {
-    local ENTRY="$1"
-    crontab -l 2>/dev/null | { cat; echo "$ENTRY"; } | crontab -
+    local ENTRY USER_ARGS=()
+
+    case "$1" in
+        -u)
+            shift
+            USER_ARGS=(-u "$1")
+            shift
+            ENTRY="$1"
+            ;;
+        *)
+            ENTRY="$1"
+            ;;
+    esac
+
+    crontab ${USER_ARGS[@]} -l 2>/dev/null | { cat; echo "$ENTRY"; } | crontab ${USER_ARGS[@]} -
 }
 export -f cronAppend
 
-# $1 == crontab entry to remove
+# summary:  remove crontab entries matching search
+# usage:    cronRemove [options] <search string>
+# options:  -u <crontab user>
 function cronRemove() {
-    local ENTRY="$1"
-    crontab -l 2>/dev/null | grep -v -F -w "$ENTRY" | crontab -
+    local SEARCH USER_ARGS=()
+
+    case "$1" in
+        -u)
+            shift
+            USER_ARGS=(-u "$1")
+            shift
+            SEARCH="$1"
+            ;;
+        *)
+            SEARCH="$1"
+            ;;
+    esac
+
+    crontab ${USER_ARGS[@]} -l 2>/dev/null | grep -v -F -w "$SEARCH" | crontab ${USER_ARGS[@]} -
 }
 export -f cronRemove
 

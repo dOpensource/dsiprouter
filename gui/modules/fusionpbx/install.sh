@@ -95,9 +95,14 @@ EOF
     #docker run --name docker-nginx -p 80:80  -v ${FUSIONPBX_DIR}/dsiprouter.nginx:/etc/nginx/conf.d/default.conf  -d nginx
 
     # Install a default self signed certificate for spinning up NGINX
-    openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/C=US/ST=MI/L=Detroit/O=dopensource.com/CN=dSIPRouter" -keyout ${FUSIONPBX_DIR}/certs/cert.key -out ${FUSIONPBX_DIR}/certs/cert_combined.crt
+    mkdir -p ${DSIP_CERTS_DIR}/fusionpbx/ &&
+    openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 \
+        -subj "/C=US/ST=MI/L=Detroit/O=dopensource.com/CN=dSIPRouter" \
+        -keyout ${DSIP_CERTS_DIR}/fusionpbx/cert.key \
+        -out ${DSIP_CERTS_DIR}/fusionpbx/cert_combined.crt
 
-    cronAppend "*/1 * * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py fusionpbx sync"
+    cronRemove -u dsiprouter 'dsiprouter_cron.py fusionpbx'
+    cronAppend -u dsiprouter "*/1 * * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py fusionpbx sync"
 
     printdbg "FusionPBX module installed"
     return 0
@@ -148,8 +153,8 @@ function uninstall {
     firewall-cmd --permanent --zone=public --remove-port=443/tcp
     firewall-cmd --reload
 
-    rm -f ${FUSIONPBX_DIR}/certs/*{.key/.crt}
-    cronRemove 'dsiprouter_cron.py fusionpbx sync'
+    rm -rf ${DSIP_CERTS_DIR}/fusionpbx/
+    cronRemove -u dsiprouter 'dsiprouter_cron.py fusionpbx'
 
     printdbg "FusionPBX module uninstalled"
     return 0

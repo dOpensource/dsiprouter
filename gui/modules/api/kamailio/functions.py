@@ -86,15 +86,15 @@ def reloadKamailio():
 
         # data that is always reloaded, part of core dsiprouter
         rpc_args = [
-            ('127.0.0.1', 'cfg.sets', ('server', 'role', settings.ROLE)),
-            ('127.0.0.1', 'cfg.sets', ('server', 'api_server', dsip_api_url)),
-            ('127.0.0.1', 'cfg.sets', ('server', 'api_token', dsip_api_token)),
-            ('127.0.0.1', 'htable.reload', ('maintmode')),
-            ('127.0.0.1', 'htable.reload', ('gw2gwgroup')),
-            ('127.0.0.1', 'htable.reload', ('gwgroup2lb')),
-            ('127.0.0.1', 'htable.reload', ('inbound_hardfwd')),
-            ('127.0.0.1', 'htable.reload', ('inbound_failfwd')),
-            ('127.0.0.1', 'htable.reload', ('inbound_prefixmap')),
+            ('127.0.0.1', 'cfg.sets', ['server', 'role', settings.ROLE]),
+            ('127.0.0.1', 'cfg.sets', ['server', 'api_server', dsip_api_url]),
+            ('127.0.0.1', 'cfg.sets', ['server', 'api_token', dsip_api_token]),
+            ('127.0.0.1', 'htable.reload', ['maintmode']),
+            ('127.0.0.1', 'htable.reload', ['gw2gwgroup']),
+            ('127.0.0.1', 'htable.reload', ['gwgroup2lb']),
+            ('127.0.0.1', 'htable.reload', ['inbound_hardfwd']),
+            ('127.0.0.1', 'htable.reload', ['inbound_failfwd']),
+            ('127.0.0.1', 'htable.reload', ['inbound_prefixmap']),
         ]
 
         # reload data depending on the features enabled
@@ -112,43 +112,43 @@ def reloadKamailio():
             rpc_args.append(('127.0.0.1', 'dispatcher.reload'))
             rpc_args.append(('127.0.0.1', 'keepalive.flush'))
         if 'WITH_CALL_SETTINGS' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'htable.reload', ('call_settings')))
+            rpc_args.append(('127.0.0.1', 'htable.reload', ['call_settings']))
         if 'WITH_MULTIDOMAIN' in features_enabled:
             rpc_args.append(('127.0.0.1', 'domain.reload'))
         if 'WITH_TELEBLOCK' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED))))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]))
         if 'WITH_LCR' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'htable.reload', ('tofromprefix')))
+            rpc_args.append(('127.0.0.1', 'htable.reload', ['tofromprefix']))
         if 'WITH_TLS' in features_enabled:
             rpc_args.append(('127.0.0.1', 'tls.reload'))
         if 'WITH_WEBSOCKETS' in features_enabled:
             rpc_args.append(('127.0.0.1', 'ws.enable'))
         if 'WITH_DNID_LNP_ENRICHMENT' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'htable.reload', ('enrichdnid_lnpmap')))
+            rpc_args.append(('127.0.0.1', 'htable.reload', ['enrichdnid_lnpmap']))
         if 'WITH_RTPENGINE' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'rtpengine.enable', ('all', '1')))
+            rpc_args.append(('127.0.0.1', 'rtpengine.enable', ['all', '1']))
         if 'WITH_TRANSNEXUS' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('transnexus', 'verifyservice_enabled', str(settings.TRANSNEXUS_VERIFYSERVICE_ENABLED))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('transnexus', 'verifyservice_host', str(settings.TRANSNEXUS_VERIFYSERVICE_HOST))))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['transnexus', 'verifyservice_enabled', str(settings.TRANSNEXUS_VERIFYSERVICE_ENABLED)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['transnexus', 'verifyservice_host', str(settings.TRANSNEXUS_VERIFYSERVICE_HOST)]))
         if 'WITH_STIRSHAKEN' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_enabled', str(settings.STIR_SHAKEN_ENABLED))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_prefix_a', str(settings.STIR_SHAKEN_PREFIX_A))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_prefix_b', str(settings.STIR_SHAKEN_PREFIX_B))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_prefix_c', str(settings.STIR_SHAKEN_PREFIX_C))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_prefix_invalid', str(settings.STIR_SHAKEN_PREFIX_INVALID))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_key_path', str(settings.STIR_SHAKEN_KEY_PATH))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL))))
-            rpc_args.append(('127.0.0.1', 'htable.reload', ('dr_rules')))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_enabled', str(settings.STIR_SHAKEN_ENABLED)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_prefix_a', str(settings.STIR_SHAKEN_PREFIX_A)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_prefix_b', str(settings.STIR_SHAKEN_PREFIX_B)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_prefix_c', str(settings.STIR_SHAKEN_PREFIX_C)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_prefix_invalid', str(settings.STIR_SHAKEN_PREFIX_INVALID)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_key_path', str(settings.STIR_SHAKEN_KEY_PATH)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL)]))
+            rpc_args.append(('127.0.0.1', 'htable.reload', ['dr_rules']))
 
         # data that is conditionally reloaded based on dsiprouter settings
         if settings.TELEBLOCK_GW_ENABLED:
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP))))
-            rpc_args.append(('127.0.0.1', 'cfg.sets', ('teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT))))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'gw_ip', str(settings.TELEBLOCK_GW_IP)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'gw_port', str(settings.TELEBLOCK_GW_PORT)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'media_ip', str(settings.TELEBLOCK_MEDIA_IP)]))
+            rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'media_port', str(settings.TELEBLOCK_MEDIA_PORT)]))
 
         # send off all the jsonrpc requests and handle any failures if possible
         for cmdset in rpc_args:

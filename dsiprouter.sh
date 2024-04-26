@@ -817,8 +817,8 @@ function configureSSL() {
     fi
 
     # Add Nightly Cronjob to renew certs if not already there
-    if ! crontab -l | grep -q "/usr/bin/dsiprouter renewsslcert" 2>/dev/null; then
-        cronAppend "0 0 * * * /usr/bin/dsiprouter renewsslcert"
+    if ! crontab -u root -l 2>/dev/null | grep -q '/usr/bin/dsiprouter renewsslcert' 2>/dev/null; then
+        cronAppend -u root '0 0 * * * /usr/bin/dsiprouter renewsslcert'
     fi
     updatePermissions -certs
 
@@ -1939,9 +1939,10 @@ function uninstallDsiprouter() {
         exit 1
     fi
 
-    # Remove dsiprouter crontab entries
+    # Remove all dsiprouter crontab entries
     printdbg "Removing dsiprouter crontab entries"
-    cronRemove 'dsiprouter_cron.py'
+    cronRemove -u root 'dsiprouter_cron.py'
+    cronRemove -u dsiprouter 'dsiprouter_cron.py'
 
     # Remove dsip private key
     rm -f ${DSIP_PRIV_KEY}
@@ -2037,9 +2038,6 @@ function uninstallKamailio() {
 
 
 function installModules() {
-    # Remove any previous dsiprouter cronjobs
-    cronRemove 'dsiprouter_cron.py'
-
     # Install / Uninstall dSIPModules
     for dir in ${DSIP_PROJECT_DIR}/gui/modules/*; do
         if [[ -e ${dir}/install.sh ]]; then
@@ -2194,8 +2192,8 @@ function installDnsmasq() {
     # update DNS hosts prior to dSIPRouter startup
     addInitCmd "/usr/bin/dsiprouter updatednsconfig"
     # update DNS hosts every minute
-    if ! crontab -l 2>/dev/null | grep -q "/usr/bin/dsiprouter updatednsconfig"; then
-        cronAppend "0 * * * * /usr/bin/dsiprouter updatednsconfig"
+    if ! crontab -u root -l 2>/dev/null | grep -q '/usr/bin/dsiprouter updatednsconfig' 2>/dev/null; then
+        cronAppend -u root '0 * * * * /usr/bin/dsiprouter updatednsconfig'
     fi
 
     systemctl restart dnsmasq
@@ -2237,7 +2235,7 @@ function uninstallDnsmasq() {
 
     # remove cron job and init command
     removeInitCmd "/usr/bin/dsiprouter updatednsconfig"
-    cronRemove "/usr/bin/dsiprouter updatednsconfig"
+    cronRemove -u root '/usr/bin/dsiprouter updatednsconfig'
 
     # Remove the hidden installed file, which denotes if it's installed or not
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
@@ -2803,8 +2801,8 @@ EOF
     case "$DISTRO" in
         amzn|rhel|almalinux|rocky)
             /etc/update-motd.d/00-dsiprouter > /etc/motd
-            if ! crontab -l | grep -q "/etc/update-motd.d/00-dsiprouter" 2>/dev/null; then
-                cronAppend "*/5 * * * *  /etc/update-motd.d/00-dsiprouter >/etc/motd"
+            if ! crontab -u root -l 2>/dev/null | grep -q "/etc/update-motd.d/00-dsiprouter" 2>/dev/null; then
+                cronAppend -u root '*/5 * * * *  /etc/update-motd.d/00-dsiprouter >/etc/motd'
             fi
             ;;
     esac
@@ -2819,7 +2817,7 @@ function revertBanner() {
     # remove cron entry for rhel-based distros
     case "$DISTRO" in
         amzn|rhel|almalinux|rocky)
-            cronRemove '/etc/update-motd.d/00-dsiprouter'
+            cronRemove -u root '/etc/update-motd.d/00-dsiprouter'
             ;;
     esac
 }
@@ -3502,6 +3500,8 @@ function updatePermissions() {
         chown -R dsiprouter:root ${DSIP_SYSTEM_CONFIG_DIR}/gui/
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
 
+        # project files can only be edited by root
+        chown -R root:root ${DSIP_PROJECT_DIR}/
         # files that should be executable
         chmod +x ${DSIP_PROJECT_DIR}/dsiprouter.sh
         chmod +x ${DSIP_PROJECT_DIR}/resources/upgrade/*/scripts/migrate.sh
