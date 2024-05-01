@@ -398,17 +398,17 @@ function validateOSInfo() {
     if [[ "$DISTRO" == "debian" ]]; then
         case "$DISTRO_VER" in
             12)
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=500 APT_BOOKWORM_PRIORITY=990
                 ;;
             11)
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=990 APT_BOOKWORM_PRIORITY=500
                 ;;
             10)
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=990 APT_BULLSEYE_PRIORITY=500 APT_BOOKWORM_PRIORITY=100
                 ;;
@@ -425,7 +425,7 @@ function validateOSInfo() {
     elif [[ "$DISTRO" == "centos" ]]; then
         case "$DISTRO_VER" in
             8|9)
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 ;;
             7)
@@ -441,7 +441,7 @@ function validateOSInfo() {
     elif [[ "$DISTRO" == "amzn" ]]; then
         case "$DISTRO_VER" in
             2)
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
                 ;;
             *)
@@ -453,13 +453,13 @@ function validateOSInfo() {
         case "$DISTRO_VER" in
             22.04)
                 printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 export APT_FOCAL_PRIORITY=100 APT_JAMMY_PRIORITY=990
                 ;;
             20.04)
                 printwarn "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 ;;
             *)
@@ -471,7 +471,7 @@ function validateOSInfo() {
         case "$DISTRO_MAJOR_VER" in
             8)
                 printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
-                KAM_VERSION=${KAM_VERSION:-57}
+                KAM_VERSION=${KAM_VERSION:-58}
                 RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
                 ;;
             *)
