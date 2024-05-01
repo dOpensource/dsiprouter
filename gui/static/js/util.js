@@ -248,12 +248,12 @@
   window.reloadKamRequired = function(required = true) {
     var reload_btn = $('#reload');
     var split_btn = $('#reload-split');
-    var kamailio_btn = $('#reloadkam');
+    var kamailio_btn = $('#reload_kam');
 
     if (required) {
       reload_btn.removeClass('btn-primary');
       split_btn.removeClass('btn-primary');
-      kamailio_btn.removeClass('btn-primary');
+      kamailio_btn.removeClass('btn-secondary');
       reload_btn.addClass('btn-warning');
       split_btn.addClass('btn-warning');
       kamailio_btn.addClass('btn-warning');
@@ -264,7 +264,7 @@
       kamailio_btn.removeClass('btn-warning');
       reload_btn.addClass('btn-primary');
       split_btn.addClass('btn-primary');
-      kamailio_btn.addClass('btn-primary');
+      kamailio_btn.addClass('btn-secondary');
     }
   };
 
@@ -273,25 +273,25 @@
    * @param {Boolean} required    whether a reload is required
    */
   window.reloadDsipRequired = function(required = true) {
-    var reload_btn = $('#reload_dsip');
+    var reload_btn = $('#reload');
     var split_btn = $('#reload-split');
-    var kamailio_btn = $('#reloadkam');
+    var dsiprouter_btn = $('#reload_dsip');
 
     if (required) {
       reload_btn.removeClass('btn-primary');
       split_btn.removeClass('btn-primary');
-      kamailio_btn.removeClass('btn-primary');
+      dsiprouter_btn.removeClass('btn-secondary');
       reload_btn.addClass('btn-warning');
       split_btn.addClass('btn-warning');
-      kamailio_btn.addClass('btn-warning');
+      dsiprouter_btn.addClass('btn-warning');
     }
     else {
       reload_btn.removeClass('btn-warning');
       split_btn.removeClass('btn-warning');
-      kamailio_btn.removeClass('btn-warning');
+      dsiprouter_btn.removeClass('btn-warning');
       reload_btn.addClass('btn-primary');
       split_btn.addClass('btn-primary');
-      kamailio_btn.addClass('btn-primary');
+      dsiprouter_btn.addClass('btn-secondary');
     }
   };
 

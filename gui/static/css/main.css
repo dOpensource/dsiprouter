@@ -666,6 +666,6 @@ table.dataTable {
   }
 }
 
-#reloadkam, #reload_dsip {
+#reload_kam, #reload_dsip {
   cursor: pointer;
 }
