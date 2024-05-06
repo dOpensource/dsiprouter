@@ -8,7 +8,7 @@ import base64, bson, inspect, os
 from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions
+from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer
 from sqlalchemy.orm import registry, sessionmaker, scoped_session
 from sqlalchemy.sql import text
 import settings
@@ -16,6 +16,9 @@ from shared import IO, debugException, dictToStrFields, rowToDict, objToDict
 from util.networking import safeUriToHost, safeFormatSipUri
 from util.security import AES_CTR
 
+
+# DB specific settings
+UnsignedInt = Integer()
 if settings.KAM_DB_TYPE == "mysql":
     try:
         import MySQLdb as db_driver
@@ -31,10 +34,12 @@ if settings.KAM_DB_TYPE == "mysql":
                 if settings.DEBUG:
                     debugException(ex)
                 raise
+    from sqlalchemy.dialects.mysql import INTEGER
+    UnsignedInt = UnsignedInt.with_variant(INTEGER(unsigned=True), 'mysql', 'mariadb')
 
+# global constants
 DB_ENGINE_NAME = 'global_db_engine'
 SESSION_LOADER_NAME = 'global_session_loader'
-
 
 class Gateways(object):
     """
@@ -44,7 +49,10 @@ class Gateways(object):
     The address field can be a full SIP URI, partial URI, or only host; where host portion is an IP or FQDN
     """
 
-    def __init__(self, name, address, strip, prefix, type, gwgroup=None, addr_id=None, attrs=''):
+    gwid = Column(UnsignedInt, primary_key=True, autoincrement=True, nullable=False)
+
+    def __init__(self, name, address, strip, prefix, type=0, gwgroup=None, addr_id=None,
+                 msteams_domain='', signalling='proxy', media='proxy'):
         description = {"name": name}
         if gwgroup is not None:
             description["gwgroup"] = str(gwgroup)
@@ -55,10 +63,23 @@ class Gateways(object):
         self.address = address
         self.strip = strip
         self.pri_prefix = prefix
-        self.attrs = attrs
+        self.attrs = Gateways.buildAttrs(0, type, msteams_domain, signalling, media)
         self.description = dictToStrFields(description)
 
-    pass
+    @staticmethod
+    def buildAttrs(gwid=0, type=0, msteams_domain='', signalling='proxy', media='proxy'):
+        # gwid in dr_attrs is updated via trigger before insert/update
+        return ','.join([str(gwid), str(type), msteams_domain, signalling, media])
+
+    def attrsToDict(self):
+        attrs_list = self.attrs.split(',')
+        return {
+            'gwid': int(attrs_list[0]),
+            'type': int(attrs_list[1]),
+            'msteams_domain': attrs_list[2],
+            'signalling': attrs_list[3],
+            'media': attrs_list[4]
+        }
 
 
 class GatewayGroups(object):
@@ -459,15 +480,30 @@ class Dispatcher(object):
     Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dispatcher>`_
     """
 
-    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, description=''):
+    def __init__(self, setid, destination, flags=None, priority=None, description='', rweight=0, signalling='proxy', media='proxy'):
         self.setid = setid
         self.destination = safeFormatSipUri(destination)
         self.flags = flags
         self.priority = priority
-        self.attrs = attrs
+        self.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
         self.description = description
 
-    pass
+    @staticmethod
+    def buildAttrs(rweight=0, signalling='proxy', media='proxy'):
+        attrs = {'signalling': signalling, 'media': media, 'rweight': str(rweight)}
+        return ';'.join('{}={}'.format(x, str(y)) for x, y in attrs.items())
+
+    def attrsToDict(self):
+        attrs = {}
+        for attr in self.attrs.split(';'):
+            attr = attr.split('=', maxsplit=1)
+            if len(attr) != 2 or attr[1] == '':
+                continue
+            if attr[1].isnumeric():
+                attrs[attr[0]] = int(attr[1])
+            else:
+                attrs[attr[0]] = attr[1]
+        return attrs
 
 
 # TODO: create class for dsip_settings table

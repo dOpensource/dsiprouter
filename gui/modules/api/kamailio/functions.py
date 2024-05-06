@@ -30,6 +30,9 @@ def sendJsonRpcCmd(host, method, params=()):
     :raises Exception:                              for any other error
     """
 
+    if settings.DEBUG:
+        IO.printdbg(f'sending jsonrpc command to {host}: {method} {str(params)}')
+
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json"

@@ -51,7 +51,7 @@ EOF
     dnf makecache -y
     dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
-        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json
+        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-sctp
 
     # workaround for kamailio rpm transaction failures
     if (( $? != 0 )); then

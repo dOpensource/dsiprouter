@@ -529,6 +529,11 @@ a.navlink {
   resize: both;
 }
 
+/* make the modal dialogs relatively larger */
+.modal-dialog {
+  width: 50vw;
+}
+
 /* fix bootstrap modals when stacking */
 .modal-open.modal {
   overflow-x: hidden;

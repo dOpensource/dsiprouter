@@ -134,17 +134,45 @@
           <table id="endpoint-table" class="table">
             <thead>
             <tr>
-              <th>PBX ID</th>
-              <th>Hostname/IP</th>
+              <th>ID</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="hostname or IP address to route to (and/or) authenticate endpoint">
+                  Host
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="port to use when routing to endpoint">
+                  Port
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="signalling transport for calls to endpoint">
+                  Signalling
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="media transport for calls to endpoint">
+                  Media
+                </span>
+              </th>
               <th>Description</th>
-              <th>Weight</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="relative weight (load balancing only) out of sum of endpoint weights in this group.
+                      value must be 1-100 or 0 to disable load balancing on this endpoint">
+                  Weight
+                </span>
+              </th>
               <th>
                 <button class="btn btn-success btn-md" type="button" id="updateEndpointRow">Add Row</button>
               </th>
             </tr>
             </thead>
             <tbody id="endpoint-tablebody">
-
             </tbody>
           </table>
         </div> <!-- enf of endpoints tab -->
@@ -365,10 +393,39 @@ systemctl restart fail2ban</code></pre>
           <table id="endpoint-table2" class="table">
             <thead>
             <tr>
-              <th>PBX ID</th>
-              <th>Hostname/IP</th>
+              <th>ID</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="hostname or IP address to route to (and/or) authenticate endpoint">
+                  Host
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="port to use when routing to endpoint">
+                  Port
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="signalling transport for calls to endpoint">
+                  Signalling
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="media transport for calls to endpoint">
+                  Media
+                </span>
+              </th>
               <th>Description</th>
-              <th>Weight</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="relative weight (load balancing only) out of sum of endpoint weights in this group.
+                      value must be 1-100 or 0 to disable load balancing on this endpoint">
+                  Weight
+                </span>
+              </th>
               <th>
                 <button class="btn btn-success btn-md" type="button" id="addEndpointRow">Add Row</button>
               </th>

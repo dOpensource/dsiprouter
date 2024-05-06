@@ -90,7 +90,8 @@ EOF
         return 1
     }
     apt-get install -y kamailio-mysql-modules kamailio-extra-modules kamailio-tls-modules \
-        kamailio-websocket-modules kamailio-presence-modules kamailio-json-modules
+        kamailio-websocket-modules kamailio-presence-modules kamailio-json-modules \
+        kamailio-sctp-modules
 
     if (( $? != 0 )); then
         printerr "failed installing kamailio modules from packages"

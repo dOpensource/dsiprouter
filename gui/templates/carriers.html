@@ -15,7 +15,13 @@
     <th data-field="ip_addr">Hostname/IP</th>
     <th data-field="strip">Strip</th>
     <th data-field="prefix">Prefix</th>
-    <th data-field="weight">Weight</th>
+    <th data-field="rweight">
+      <span data-toggle="tooltip" data-placement="top" title=""
+            data-original-title="relative weight (load balancing only) out of sum of carrier weights in this group.
+            value must be 1-100 or 0 to disable load balancing on this carrier">
+        Weight
+      </span>
+    </th>
     <th colspan="2"></th>
   </tr>
   </thead>
@@ -32,7 +38,7 @@
       <td class='ip_addr'>{{ row.address }}</td>
       <td class='strip'>{{ row.strip }}</td>
       <td class='prefix'>{{ row.pri_prefix }}</td>
-      <td class='weight'>{{ row.weight|attrFilter('weight') }}</td>
+      <td class='rweight'>{{ row.dispatcher_attrs|attrFilter('rweight') }}</td>
       <td class='related_rules hidden'>{{ related_rules }}</td>
       <td>
         <p data-placement="top" data-toggle="tooltip" title="Edit">
