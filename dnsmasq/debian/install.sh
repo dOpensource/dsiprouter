@@ -1,4 +1,57 @@
 #!/usr/bin/env bash
+#
+# dSIPRouter DNS Resolution - How it Works
+#
+# Many of the cluster features require a multiple IP addresses to be associated with a local hostname.
+# To make these checks performant and not rely on external DNS, a local stub resolver supporting
+# multiple IPs per host is required (dnsmasq). This is equivalent to having multiple A / AAAA records
+# on an external DNS server. The difference here is that the entries are read locally from /etc/hosts.
+# A hostname is first checked locally, and before trying to resolve via the external DNS servers.
+#
+# By default DNS resolution via other applications is bypassed. DNSMasq is therefore the primary DNS
+# resolver for the entire system (even for glibc).
+# Upstream DNS resolvers (external, other stub resolvers, etc..) are attempted only after the DNSMasq
+# stub resolver checks local records from /etc/hosts.
+#
+# References:
+# dnsmasq(8)        https://manpages.debian.org/stable/dnsmasq-base/dnsmasq.8.en.html
+# resolv.conf(5)    https://man7.org/linux/man-pages/man5/resolv.conf.5.html
+# hosts(5)          https://man7.org/linux/man-pages/man5/hosts.5.html
+#
+# dSIPRouter Network Configuration - How it Works
+#
+# To support a variety of deployment environments the network stack is strictly configured on install.
+# The goal is to make builds as reproducible as possible in any environment, without concern for the
+# OS provider's (downstream, VM image, etc..) chosen network stack.
+# Therefore, to customize your network configuration, make sure your network configurations operate on
+# the supported network applications outlined here.
+#
+# Here is a summary of how the installed network stack works on debian-based OS:
+# 1. ignore cloud-init network configurations
+# 2. try configuring the network via network-manager
+# 3. try configuring the network via systemd-networkd
+# 4. try configuring the network via ifupdown
+#
+# By default network-manager / systemd-networkd will try to assign IPs based on DHCP.
+# By default ifupdown is left unaltered.
+#
+# References:
+# cloud-init(1)             https://manpages.debian.org/stable/cloud-init/cloud-init.1.en.html
+# systemd-networkd(8)       https://man7.org/linux/man-pages/man8/systemd-networkd.service.8.html
+# networkd-dispatcher(8)    https://manpages.debian.org/stable/networkd-dispatcher/networkd-dispatcher.8.en.html
+# interfaces(5)             https://manpages.debian.org/stable/ifupdown/interfaces.5.en.html
+#
+# TODO: Currently this is implemented with systemd service drop-ins but this is very hacky and does not allow
+#       fine grain control over timing and service status / network availability checks throughout the startup
+#       ordering chain.
+#       The preferred method we will implement in the future, will be using network-manager to load the rest of
+#       the possible network management services.
+#       I.E. instead of trying network-manager then waiting for it to timeout and trying systemd-networkd, the
+#       network manager would try each plugin (plugins=keyfile,networkd,ifupdown) in order, until one is successful.
+#       The network manager project currently only supports keyfile.ifupdown above. networkd support needs implemented.
+#       Other plugins can be used as an example for the new implementation:
+#       https://github.com/NetworkManager/NetworkManager/tree/main/src/core/settings/plugins
+#
 
 # Debug this script if in debug mode
 (( $DEBUG == 1 )) && set -x
@@ -9,54 +62,83 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    # backup the original resolv.conf
-    [[ ! -e "${BACKUPS_DIR}/etc/resolv.conf" ]] && {
-        mkdir -p ${BACKUPS_DIR}/etc/
-        cp -df /etc/resolv.conf ${BACKUPS_DIR}/etc/resolv.conf
+    # backup somer configuration files we will replace
+    [[ ! -e "${BACKUPS_DIR}/network/" ]] && {
+        mkdir -p ${BACKUPS_DIR}/network/
+        cp -df /etc/resolv.conf ${BACKUPS_DIR}/network/resolv.conf
+        cp -df /etc/default/networking ${BACKUPS_DIR}/network/networking
     }
 
     # make sure the dns stack is installed (minimal images do not include these packages)
     # debian used resolvconf up to debian12 when they switch to systemd-resolved
     if (( $DISTRO_VER < 12 )); then
         apt-get purge -y systemd-resolved libnss-resolve
-        apt-get install -y resolvconf
+        apt-get install -y resolvconf ifupdown network-manager
 
         resolvconf -u
     else
         apt-get purge -y resolvconf
-        apt-get install -y systemd-resolved libnss-resolve
+        apt-get install -y systemd-resolved libnss-resolve ifupdown network-manager
 
         # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
         mkdir -p /etc/systemd/resolved.conf.d/
-        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved/dsiprouter.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
 
-        # for some reason the defaults on systemd-networkd are not followed after changing the above
-        # so we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the ifaces
-        # see systemd.network and systemd.networkd for more information
-        mkdir -p /etc/systemd/network/
-        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemd.network /etc/systemd/network/99-dsiprouter.network
-
-        # restart systemd network services
-        systemctl restart systemd-networkd &&
-        systemctl restart systemd-resolved || {
-            printerr 'failed loading new systemd network configurations..'
-            printwarn 'reverting network changes and aborting dnsmasq install'
-            cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
-            rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
-            rm -f /etc/systemd/network/99-dsiprouter.network
-            systemctl restart systemd-networkd
-            systemctl restart systemd-resolved
-            return 1
-        }
+        systemctl restart systemd-resolved
     fi
 
-    # gnome depends on NetworkManager
-    # make sure it does not take over DNS resolution if installed
+    # for some reason the defaults on systemd-networkd are not followed after changing the above
+    # so we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the ifaces
+    # see systemd.network and systemd.networkd for more information
+    mkdir -p /etc/systemd/network/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/dsiprouter.network /etc/systemd/network/99-dsiprouter.network
+
+    # configure NetworkManager
     mkdir -p /etc/NetworkManager/conf.d/
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
-    if systemctl is-active -q NetworkManager &>/dev/null; then
-        systemctl restart NetworkManager
-    fi
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/dsiprouter.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+
+    # systemd-networkd and networking service ordering
+    mkdir -p /etc/systemd/system/systemd-networkd.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/override.conf /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
+    mkdir -p /etc/systemd/system/networking.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/override.conf /etc/systemd/system/networking.service.d/00-dsiprouter.conf
+
+    # adjusting the service timeouts and interface management
+    mkdir -p /etc/systemd/system/systemd-networkd-wait-online.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/wait-override.conf /etc/systemd/system/systemd-networkd-wait-online.service.d/00-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/NetworkManager-unmanage.service /etc/systemd/system/NetworkManager-unmanage.service
+    mkdir -p /etc/systemd/system/NetworkManager-wait-online.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/wait-override.conf /etc/systemd/system/NetworkManager-wait-online.service.d/00-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/default.conf /etc/default/networking
+
+    systemctl daemon-reload
+    systemctl enable NetworkManager
+    systemctl enable systemd-networkd
+    systemctl enable networking
+
+    # restart network services. if we fail, revert and exit.
+    # TODO: we can not ensure the network stack is properly reverted without tracking the original set of packages and reverting them as well
+    systemctl restart NetworkManager &&
+    systemctl restart systemd-networkd &&
+    systemctl restart networking || {
+        printerr 'failed loading updated network configurations..'
+        printwarn 'reverting network changes and aborting dnsmasq install'
+        cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
+        cp -df ${BACKUPS_DIR}/network/networking /etc/default/networking
+        rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+        rm -f /etc/systemd/network/99-dsiprouter.network
+        rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
+        rm -f /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
+        rm -f /etc/systemd/system/networking.service.d/00-dsiprouter.conf
+        rm -f /etc/systemd/system/NetworkManager-unmanage.service
+        rm -f /etc/systemd/system/NetworkManager-wait-online.service.d/00-dsiprouter.conf
+        systemctl daemon-reload
+        systemctl revert NetworkManager
+        systemctl revert systemd-networkd
+        systemctl revert networking
+        systemctl restart NetworkManager || systemctl restart systemd-networkd || systemctl restart networking
+        return 1
+    }
 
     # mask the service before running package manager to avoid faulty startup errors
     systemctl mask dnsmasq.service

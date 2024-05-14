@@ -1,0 +1,7 @@
+[Unit]
+Description=Stop Network Manager From Managing Interfaces
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nmcli networking off
+RemainAfterExit=no

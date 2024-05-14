@@ -3576,7 +3576,10 @@ function createSwapFile() {
         chmod 600 ${SWAP_FILE} &&
         mkswap ${SWAP_FILE} &&
         swapon ${SWAP_FILE} &&
-        echo "${SWAP_FILE} none swap sw 0 0" >>/etc/fstab &&
+        (
+            grep -vF "$SWAP_FILE" /etc/fstab
+            echo "${SWAP_FILE} none swap sw 0 0"
+        ) >/etc/fstab &&
         printdbg 'swapfile created successfully'
     fi
 

@@ -26,10 +26,10 @@
     "sip_udp": "SIP over UDP",
     "sip_tcp": "SIP over TCP",
     "sip_sctp": "SIP over SCTP",
-    "sip_ws": "SIP over WS",
+    // "sip_ws": "SIP over WS",
     "sips_tls": "SIPS over TLS",
     "sips_sctp": "SIPS over SCTP",
-    "sips_wss": "SIPS over WSS"
+    // "sips_wss": "SIPS over WSS"
   };
   const SIGNAL_OPTIONS_STR = JSON.stringify(SIGNAL_OPTIONS);
   // TODO: think of a more user friendly description for these options
