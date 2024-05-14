@@ -105,6 +105,11 @@ function install() {
         exit 1
     fi
 
+    # enable sctp
+    echo 'sctp' >/etc/modules-load.d/sctp.conf
+    sed -i -re 's%^blacklist sctp%#blacklist sctp%g' /etc/modprobe.d/*
+    modprobe sctp
+
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | awk '/^version:/ {print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)

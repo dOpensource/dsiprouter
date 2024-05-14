@@ -26,6 +26,21 @@ function install() {
     /opt/certbot/bin/pip install certbot
     ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
+    yum install -y kernel-modules-extra-$(uname -r) || {
+        printwarn 'could not install kernel modules for current kernel'
+        echo 'upgrading kernel and installing new modules'
+        printwarn 'you will need to reboot the machine for changes to take effect'
+        yum install -y kernel-modules-extra
+    }
+
+    if (( $? == 0 )); then
+        echo 'sctp' >/etc/modules-load.d/sctp.conf
+        sed -i -re 's%^blacklist sctp%#blacklist sctp%g' /etc/modprobe.d/*
+        modprobe sctp
+    else
+        printwarn 'Could not install kernel modules for SCTP support. Continuing installation...'
+    fi
+
     # create kamailio user and group
     mkdir -p /var/run/kamailio
     # sometimes locks aren't properly removed (this seems to happen often on VM's)

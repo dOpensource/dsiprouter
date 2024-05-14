@@ -22,6 +22,21 @@ function install() {
         return 1
     fi
 
+    dnf install -y kernel-modules-extra-$(uname -r) || {
+        printwarn 'could not install kernel modules for current kernel'
+        echo 'upgrading kernel and installing new modules'
+        printwarn 'you will need to reboot the machine for changes to take effect'
+        dnf install -y kernel-modules-extra
+    }
+
+    if (( $? == 0 )); then
+        echo 'sctp' >/etc/modules-load.d/sctp.conf
+        sed -i -re 's%^blacklist sctp%#blacklist sctp%g' /etc/modprobe.d/*
+        modprobe sctp
+    else
+        printwarn 'Could not install kernel modules for SCTP support. Continuing installation...'
+    fi
+
     KAM_VERSION_DOTTED=$(perl -pe 's%([0-9])([0-9])%\1.\2%' <<<"$KAM_VERSION")
     RHEL_BASE_VER=$(rpm -E %{rhel})
     NPROC=$(nproc)
