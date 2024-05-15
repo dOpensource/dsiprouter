@@ -234,16 +234,19 @@ def login():
        
         if settings.AUTH_MODULES is not None:
             for authModule in settings.AUTH_MODULES:
-                print(getattr(settings,authModule))
                 # Get the name of the auth module in lowercase (ex. AUTH_LDAP equals ldap)
-                authModuleName = authModule.split("_")[1]
+                auth,authModuleName = authModule.split("_")
                 print("authModuleName:{}".format(authModuleName.lower()))
                 # Use the Base Dir to specify the location of the plugin required for this domain
                 spec = importlib.util.spec_from_file_location("plugin.{}".format(authModuleName.lower()), "{}/modules/api/auth/{}/interface.py".format(base_dir,authModuleName.lower()))
                 authPlugin = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(authPlugin)
-                print("***{} Plugin was loaded***".format(authPlugin.name))
-
+                print("***{} Plugin was loaded***".format(authPlugin.pluginName))
+                authPlugin.init()
+                if authPlugin.auth(form['username'],form['password'],settings.AUTH_LDAP['LDAP_REQUIRED_GROUP'],form['username']):
+                    session['logged_in'] = True
+                    session['username'] = form['username']
+                    return redirect(url_for('index'))
 
         # if we got here auth failed
         flash('Wrong Username or Password')
