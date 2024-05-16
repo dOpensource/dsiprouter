@@ -223,4 +223,8 @@ LOAD_SETTINGS_FROM = 'file'
 # where upgrades will be pulled from
 GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
 GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
+
+# auth modules
+AUTH_MODULES = ["AUTH_LDAP"]
+AUTH_LDAP = { "LDAP_HOST":"ldap://ldap.dopensource.com", "LDAP_USER_SEARCH_BASE":"ou=People,dc=dopensource,dc=com","LDAP_GROUP_SEARCH_BASE":"dc=dopensource,dc=com","LDAP_GROUP_MEMBER_ATTRIBUTE":"memberUid","LDAP_REQUIRED_GROUP":"dev","LDAP_USER_ATTRIBUTE":"uid"}
 ############### End Local-Only Settings ##################
