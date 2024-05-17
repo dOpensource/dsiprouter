@@ -72,14 +72,29 @@ class Gateways(object):
         return ','.join([str(gwid), str(type), msteams_domain, signalling, media])
 
     def attrsToDict(self):
+        attrs_dict = {}
         attrs_list = self.attrs.split(',')
-        return {
-            'gwid': int(attrs_list[0]),
-            'type': int(attrs_list[1]),
-            'msteams_domain': attrs_list[2],
-            'signalling': attrs_list[3],
-            'media': attrs_list[4]
-        }
+        try:
+            attrs_dict['gwid'] = int(attrs_list[0])
+        except IndexError:
+            attrs_dict['gwid'] = 0
+        try:
+            attrs_dict['type'] = int(attrs_list[1])
+        except IndexError:
+            attrs_dict['type'] = 0
+        try:
+            attrs_dict['msteams_domain'] = attrs_list[2]
+        except IndexError:
+            attrs_dict['msteams_domain'] = ''
+        try:
+            attrs_dict['signalling'] = attrs_list[3]
+        except IndexError:
+            attrs_dict['signalling'] = 'proxy'
+        try:
+            attrs_dict['media'] = attrs_list[4]
+        except IndexError:
+            attrs_dict['media'] = 'proxy'
+        return attrs_dict
 
 
 class GatewayGroups(object):
