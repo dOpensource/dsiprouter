@@ -165,39 +165,6 @@ function install() {
 
     # update the dnsmasq settings
     if (( $DISTRO_VER < 12 )); then
-        apt-get purge -y systemd-resolved libnss-resolve
-        apt-get install -y resolvconf
-
-        resolvconf -u
-    else
-        export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
-    fi
-
-    # mask the service before running package manager to avoid faulty startup errors
-    systemctl mask dnsmasq.service
-
-    apt-get install -y dnsmasq
-
-    if (( $? != 0 )); then
-        printerr 'Failed installing new dns stack'
-        return 1
-    fi
-
-    # make sure we unmask before configuring the service ourselves
-    systemctl unmask dnsmasq.service
-
-    # configure dnsmasq systemd service
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /lib/systemd/system/dnsmasq.service
-    chmod 644 /lib/systemd/system/dnsmasq.service
-    systemctl daemon-reload
-    systemctl enable dnsmasq
-
-    # make dnsmasq the DNS provider
-    rm -f /etc/resolv.conf
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
-
-    # update the dnsmasq settings
-    if (( $DISTRO_VER < 12 )); then
         export DNSMASQ_RESOLV_FILE="/run/dnsmasq/resolv.conf"
 
         # setup resolvconf to work with dnsmasq
