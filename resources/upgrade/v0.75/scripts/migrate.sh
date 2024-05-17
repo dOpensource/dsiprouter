@@ -49,17 +49,18 @@ export SET_DSIP_MAIL_PASS=$(decryptConfigAttrib 'MAIL_PASSWORD' ${DSIP_CONFIG_FI
 export MAIL_PASSWORD="$DSIP_MAIL_PASS"
 export SET_DSIP_IPC_TOKEN=$(decryptConfigAttrib 'DSIP_IPC_PASS' ${DSIP_CONFIG_FILE})
 export DSIP_IPC_PASS="$SET_DSIP_IPC_TOKEN"
+DSIP_CORE_LICENSE=$(decryptConfigAttrib 'DSIP_CORE_LICENSE' ${DSIP_CONFIG_FILE} | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null)
+DSIP_STIRSHAKEN_LICENSE=$(decryptConfigAttrib 'DSIP_STIRSHAKEN_LICENSE' ${DSIP_CONFIG_FILE} | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null)
+DSIP_TRANSNEXUS_LICENSE=$(decryptConfigAttrib 'DSIP_TRANSNEXUS_LICENSE' ${DSIP_CONFIG_FILE} | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null)
+DSIP_MSTEAMS_LICENSE=$(decryptConfigAttrib 'DSIP_MSTEAMS_LICENSE' ${DSIP_CONFIG_FILE} | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null)
 
 printdbg 'preparing for migration'
-REINSTALL_DNSMASQ=0
+REINSTALL_DNSMASQ=1
 REINSTALL_NGINX=0
 REINSTALL_KAMAILIO=0
 REINSTALL_DSIPROUTER=0
 REINSTALL_RTPENGINE=0
 INSTALL_OPTS=()
-if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]]; then
-    REINSTALL_DNSMASQ=1
-fi
 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
     REINSTALL_NGINX=1
 fi
@@ -76,6 +77,11 @@ if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
     INSTALL_OPTS+=(-rtp)
 fi
 mkdir -p $CURR_BACKUP_DIR
+
+# removes the old licenses from the database dump so we can re-add them in the new format
+filterLicenseFromDataDump() {
+    perl -pe 's%(INSERT .*?INTO `dsip_settings` VALUES \()(.*)'"'[^']*','[^']*','[^']*','[^']*'"'(\)\;)%\1\2'"'BQAAAAA='"'\3%g' </dev/stdin
+}
 
 # if the state files for the services to upgrade were there before
 # and we fail, put them back so the system can recover
@@ -105,7 +111,7 @@ resetConfigsHandler() {
         withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql
     fi
 
-    # not included in the restrt() function from dsiprouter.sh
+    # not included in the restart() function from dsiprouter.sh
     # so we always restart to get config changes
     if (( $REINSTALL_DNSMASQ == 1 )); then
         systemctl restart dnsmasq
@@ -166,10 +172,17 @@ if (( $REINSTALL_RTPENGINE == 1 )); then
     systemctl mask rtpengine.service
 fi
 
+printdbg 'storing kamailio database data'
+(
+    withRootDBConn mysqldump --single-transaction --skip-opt --skip-triggers --no-create-db --no-create-info \
+        --insert-ignore --hex-blob --skip-comments --databases "$KAM_DB_NAME"
+) >${CURR_BACKUP_DIR}/data.sql
+
 printdbg 'migrating dSIPRouter project files'
 cp -rf ${NEW_PROJECT_DIR}/. ${DSIP_PROJECT_DIR}/
 rm -rf ${NEW_PROJECT_DIR}
 cd ${DSIP_PROJECT_DIR}/
+export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
 
 # source the new dsip_lib functions
 # WARNING: from here on we are explicitly using the NEW definitions of the dsip_lib funcs
@@ -185,21 +198,55 @@ if (( $? != 0 )); then
 fi
 
 if (( $REINSTALL_KAMAILIO == 1 )); then
-    printdbg 'restoring kamailio database'
-    withRootDBConn mysql <${CURR_BACKUP_DIR}/db.sql &&
-    withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql || {
-        printerr 'failed restoring kamailio database'
+    printdbg 'migrating kamailio database'
+    withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql &&
+    withRootDBConn mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/clear_defaults.sql &&
+    withRootDBConn mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/pre_import_data.sql &&
+    filterLicenseFromDataDump <${CURR_BACKUP_DIR}/data.sql | withRootDBConn mysql &&
+    withRootDBConn mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/migrate_data.sql || {
+        printerr 'failed migrating kamailio database'
         exit 1
     }
 fi
 
 if (( $REINSTALL_DSIPROUTER == 1 )); then
     printdbg 'updating dSIPRouter version'
-    setConfigAttrib 'VERSION' '0.74' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py -q || {
+    setConfigAttrib 'VERSION' '0.75' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py -q || {
         printerr 'failed updating dSIPRouter version'
         exit 1
     }
-fi
+
+    printsbg 'migrating licenses to the new format'
+    printwarn 'if your license is still missing a "License Type" a.k.a. tag,'
+    printwarn 'please open a ticket: https://support.dopensource.com/'
+    for LICENSE in ; do
+        ${PYTHON_CMD} <<EOPY
+import sys
+sys.path = [*['${DSIP_SYSTEM_CONFIG_DIR}/gui', '${DSIP_PROJECT_DIR}/gui'], *sys.path[1:]]
+from database import updateDsipSettingsTable
+from shared import updateConfig
+from modules.api.licensemanager.classes import WoocommerceLicense
+from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
+import settings
+
+for lc_key in [
+    "$DSIP_CORE_LICENSE",
+    "$DSIP_STIRSHAKEN_LICENSE",
+    "$DSIP_TRANSNEXUS_LICENSE",
+    "$DSIP_MSTEAMS_LICENSE"
+]:
+    if len(lc_key) == 0:
+        continue
+
+    lc = WoocommerceLicense(license_key=lc_key)
+    settings.DSIP_LICENSE_STORE[str(lc.id)] = lc.encrypt()
+    getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'][lc.license_key] = lc
+
+if settings.LOAD_SETTINGS_FROM == 'db':
+    updateDsipSettingsTable({'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE})
+updateConfig(settings, {'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE}, hot_reload=True)
+EOPY
+    fi
 
 printdbg 'unmasking services'
 if (( $REINSTALL_NGINX == 1 )); then
