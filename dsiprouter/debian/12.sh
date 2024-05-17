@@ -21,7 +21,7 @@ function install() {
         firewalld sudo libmariadb-dev logrotate rsyslog perl sngrep libev-dev uuid-runtime pkg-config
 
     # Install libraries needed to install the python-ldap package
-    apt-get install libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
+    apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
