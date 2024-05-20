@@ -37,7 +37,7 @@ function install() {
     systemctl enable dnsmasq
 
     # tell network manager to use dnsmasq instead
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/dsiprouter.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
 
     return 0
 }

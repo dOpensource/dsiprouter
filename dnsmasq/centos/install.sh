@@ -40,7 +40,7 @@ function install() {
 
     # tell NetworkManager we will manage the DNS servers
     mkdir -p /etc/NetworkManager/conf.d/
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/dsiprouter.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
 
     # make sure the NetworkManager resolv.conf is recreated with the new configuration options
     systemctl restart NetworkManager
