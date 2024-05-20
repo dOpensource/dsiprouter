@@ -247,10 +247,11 @@ EOF
     # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
     (
         cd ${SRC_DIR}/kamailio/src/modules/uac &&
-        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch &&
-        make -j $NPROC
-    ) &&
-    cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/ || {
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
         printerr 'Failed to patch uac module'
         return 1
     }

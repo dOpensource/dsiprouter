@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+(( ${DEBUG:-0} == 1 )) && set -x
+
 # where the new project files were downloaded
 NEW_PROJECT_DIR=${NEW_PROJECT_DIR:-/tmp/dsiprouter}
 # whether or not this was called from the GUI
@@ -12,6 +14,13 @@ export DSIP_PROJECT_DIR='/opt/dsiprouter'
 # import dsip_lib utility / shared functions (we are using old functions on purpose here)
 # WARNING: from here on we are explicitly using the OLD definitions of the dsip_lib funcs
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+
+# make sure the updates are downloaded and in the correct location
+[[ ! -e "$NEW_PROJECT_DIR" ]] && {
+    printerr 'could not find repo to upgrade from'
+    echo "expected updated repo to be here: $NEW_PROJECT_DIR"
+    exit 1
+}
 
 printdbg 'retrieving system info'
 export DISTRO=$(getDistroName)
@@ -80,7 +89,7 @@ mkdir -p $CURR_BACKUP_DIR
 
 # removes the old licenses from the database dump so we can re-add them in the new format
 filterLicenseFromDataDump() {
-    perl -pe 's%(INSERT .*?INTO `dsip_settings` VALUES \()(.*)'"'[^']*','[^']*','[^']*','[^']*'"'(\)\;)%\1\2'"'BQAAAAA='"'\3%g' </dev/stdin
+    perl -pe 's%(INSERT .*?INTO `dsip_settings` VALUES \()(.*?)[^,]*?,[^,]*?,[^,]*?,[^,]*?(\)\;)%\1\2'"'BQAAAAA='"'\3%g' </dev/stdin
 }
 
 # if the state files for the services to upgrade were there before
@@ -180,7 +189,6 @@ printdbg 'storing kamailio database data'
 
 printdbg 'migrating dSIPRouter project files'
 cp -rf ${NEW_PROJECT_DIR}/. ${DSIP_PROJECT_DIR}/
-rm -rf ${NEW_PROJECT_DIR}
 cd ${DSIP_PROJECT_DIR}/
 export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
 
@@ -199,11 +207,11 @@ fi
 
 if (( $REINSTALL_KAMAILIO == 1 )); then
     printdbg 'migrating kamailio database'
-    withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql &&
-    withRootDBConn mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/clear_defaults.sql &&
-    withRootDBConn mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/pre_import_data.sql &&
-    filterLicenseFromDataDump <${CURR_BACKUP_DIR}/data.sql | withRootDBConn mysql &&
-    withRootDBConn mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/migrate_data.sql || {
+    withRootDBConn --db="$KAM_DB_NAME" mysql <${CURR_BACKUP_DIR}/user.sql &&
+    withRootDBConn --db="$KAM_DB_NAME" mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/clear_defaults.sql &&
+    withRootDBConn --db="$KAM_DB_NAME" mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/pre_import_data.sql &&
+    filterLicenseFromDataDump <${CURR_BACKUP_DIR}/data.sql | withRootDBConn --db="$KAM_DB_NAME" mysql &&
+    withRootDBConn --db="$KAM_DB_NAME" mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.75/migrate_data.sql || {
         printerr 'failed migrating kamailio database'
         exit 1
     }
@@ -216,11 +224,10 @@ if (( $REINSTALL_DSIPROUTER == 1 )); then
         exit 1
     }
 
-    printsbg 'migrating licenses to the new format'
+    printdbg 'migrating licenses to the new format'
     printwarn 'if your license is still missing a "License Type" a.k.a. tag,'
     printwarn 'please open a ticket: https://support.dopensource.com/'
-    for LICENSE in ; do
-        ${PYTHON_CMD} <<EOPY
+    ${PYTHON_CMD} <<EOPY
 import sys
 sys.path = [*['${DSIP_SYSTEM_CONFIG_DIR}/gui', '${DSIP_PROJECT_DIR}/gui'], *sys.path[1:]]
 from database import updateDsipSettingsTable
