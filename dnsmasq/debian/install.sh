@@ -98,16 +98,19 @@ function install() {
     mkdir -p /etc/NetworkManager/conf.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/dsiprouter.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
 
-    # systemd-networkd and networking service ordering
+    # systemd-networkd and networking service customizations
     mkdir -p /etc/systemd/system/systemd-networkd.service.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/override.conf /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/networkd-pre.sh /usr/libexec/networkd-pre
+    chmod +x /usr/libexec/networkd-pre
     mkdir -p /etc/systemd/system/networking.service.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/override.conf /etc/systemd/system/networking.service.d/00-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/networking-pre.sh /usr/libexec/networking-pre
+    chmod +x /usr/libexec/networking-pre
 
-    # adjusting the service timeouts and interface management
+    # adjusting the service timeouts "online"
     mkdir -p /etc/systemd/system/systemd-networkd-wait-online.service.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/wait-override.conf /etc/systemd/system/systemd-networkd-wait-online.service.d/00-dsiprouter.conf
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/NetworkManager-unmanage.service /etc/systemd/system/NetworkManager-unmanage.service
     mkdir -p /etc/systemd/system/NetworkManager-wait-online.service.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/wait-override.conf /etc/systemd/system/NetworkManager-wait-online.service.d/00-dsiprouter.conf
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/default.conf /etc/default/networking
