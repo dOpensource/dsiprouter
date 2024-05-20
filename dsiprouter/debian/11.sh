@@ -19,7 +19,9 @@ function install() {
     apt-get remove -y ufw &&
     apt-get install -y build-essential curl python3 python3-pip python3-dev python3-venv \
         libpq-dev firewalld sudo logrotate rsyslog perl sngrep libev-dev uuid-runtime \
-        libmariadb-dev pkg-config
+        libmariadb-dev pkg-config &&
+    # Install libraries needed to install the python-ldap package
+    apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

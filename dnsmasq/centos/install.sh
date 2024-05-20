@@ -35,6 +35,8 @@ function install() {
     }
 
     # make dnsmasq the DNS provider
+    # centos uses a static resolv.conf by default, which dnsmasq will use for its upstream DNS servers
+    cp -df /etc/resolv.conf /etc/dnsmasq_resolv.conf
     rm -f /etc/resolv.conf
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
 
@@ -46,7 +48,7 @@ function install() {
     systemctl restart NetworkManager
 
     # tell dnsmasq to grab dynamic DNS servers from dhclient
-    export DNSMASQ_RESOLV_FILE="/run/NetworkManager/no-stub-resolv.conf"
+    export DNSMASQ_RESOLV_FILE="/etc/dnsmasq_resolv.conf"
     envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
 
     return 0

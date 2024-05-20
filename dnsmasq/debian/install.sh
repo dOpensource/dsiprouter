@@ -87,10 +87,11 @@ function install() {
         systemctl restart systemd-resolved
     fi
 
-    # for some reason the defaults on systemd-networkd are not followed after changing the above
-    # so we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the ifaces
+    # we give the interfaces explicit rules to make sure DNS servers are resolved via DHCP on the interfaces
+    # docker interfaces are managed by docker services so we also make sure systemd-networkd does not manage those
     # see systemd.network and systemd.networkd for more information
     mkdir -p /etc/systemd/network/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/docker.network /etc/systemd/network/98-docker.network
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/dsiprouter.network /etc/systemd/network/99-dsiprouter.network
 
     # configure NetworkManager
@@ -126,6 +127,7 @@ function install() {
         cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
         cp -df ${BACKUPS_DIR}/network/networking /etc/default/networking
         rm -f /etc/systemd/resolved.conf.d/99-dsiprouter.conf
+        rm -f /etc/systemd/network/98-docker.network
         rm -f /etc/systemd/network/99-dsiprouter.network
         rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
         rm -f /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
