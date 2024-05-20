@@ -2880,7 +2880,7 @@ function upgrade() {
         exit 1
     }
 
-    if (( $RUN_FROM_GUI == 0 )); then
+    if (( ${RUN_FROM_GUI:-0} == 0 )); then
         # check shared memory
         if [[ $(${PYTHON_CMD} -c "
 import os
@@ -4070,7 +4070,7 @@ function processCMD() {
             # use latest release if none specified
             if [[ -z "$UPGRADE_RELEASE" ]]; then
                 TMP=$(curl -s "$UPGRADE_RELEASE_URL") &&
-                TMP=$(jq -e -r  '.[].tag_name | gsub("^v(?<tag>[0-9]+\\.[0-9]+).*?$"; "\(.tag)")' <<<"$TMP") &&
+                TMP=$(jq -e -r  '.[].tag_name | gsub("^(?<rel>v[0-9]+\\.[0-9]+).*?$"; .rel)' <<<"$TMP") &&
                 UPGRADE_RELEASE=$(sort -gur <<<"$TMP" | head -1) || {
                     printerr "Could not retrieve latest release candidate"
                     exit 1
