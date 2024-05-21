@@ -900,6 +900,11 @@ function updateKamailioConfig() {
     if [[ -n "$HOMER_ID" && "$HOMER_ID" != "None" ]]; then
         setKamailioConfigSubst 'HOMER_ID' "$HOMER_ID" ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    if lsmod | awk '$1 == "sctp" {rc=1; exit;}; END {exit !rc;}'; then
+        enableKamailioConfigAttrib 'WITH_SCTP' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_SCTP' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
     setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}

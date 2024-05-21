@@ -135,8 +135,9 @@ function install() {
         rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
         rm -f /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
         rm -f /etc/systemd/system/networking.service.d/00-dsiprouter.conf
-        rm -f /etc/systemd/system/NetworkManager-unmanage.service
         rm -f /etc/systemd/system/NetworkManager-wait-online.service.d/00-dsiprouter.conf
+        rm -f /usr/libexec/networkd-pre
+        rm -f /usr/libexec/networking-pre
         systemctl daemon-reload
         systemctl revert NetworkManager
         systemctl revert systemd-networkd
