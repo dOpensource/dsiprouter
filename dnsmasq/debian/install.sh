@@ -101,12 +101,12 @@ function install() {
     # systemd-networkd and networking service customizations
     mkdir -p /etc/systemd/system/systemd-networkd.service.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/override.conf /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/networkd-pre.sh /usr/libexec/networkd-pre
-    chmod +x /usr/libexec/networkd-pre
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdnetworkd/networkd-pre.sh /usr/lib/systemd/networkd-pre
+    chmod +x /usr/lib/systemd/networkd-pre
     mkdir -p /etc/systemd/system/networking.service.d/
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/override.conf /etc/systemd/system/networking.service.d/00-dsiprouter.conf
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/networking-pre.sh /usr/libexec/networking-pre
-    chmod +x /usr/libexec/networking-pre
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/ifupdown/networking-pre.sh /usr/lib/ifupdown/networking-pre
+    chmod +x /usr/lib/ifupdown/networking-pre
 
     # adjusting the service timeouts "online"
     mkdir -p /etc/systemd/system/systemd-networkd-wait-online.service.d/
@@ -136,8 +136,8 @@ function install() {
         rm -f /etc/systemd/system/systemd-networkd.service.d/00-dsiprouter.conf
         rm -f /etc/systemd/system/networking.service.d/00-dsiprouter.conf
         rm -f /etc/systemd/system/NetworkManager-wait-online.service.d/00-dsiprouter.conf
-        rm -f /usr/libexec/networkd-pre
-        rm -f /usr/libexec/networking-pre
+        rm -f /usr/lib/systemd/networkd-pre
+        rm -f /usr/lib/ifupdown/networking-pre
         systemctl daemon-reload
         systemctl revert NetworkManager
         systemctl revert systemd-networkd
