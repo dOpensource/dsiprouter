@@ -60,7 +60,7 @@ _dsiprouter() {
     )
     # available long options (without value) for each cmd
     declare -A lopts=(
-        [install]='--all --kamailio --dsiprouter --rtpengine'
+        [install]='--all --kamailio --dsiprouter --rtpengine --dnsmasq'
         [uninstall]='--all --kamailio --dsiprouter --rtpengine'
         [clusterinstall]='--'
         [upgrade]=''
@@ -84,7 +84,7 @@ _dsiprouter() {
     )
     # available short options (with or without value) for each cmd
     declare -A sopts=(
-        [install]='-debug -all -kam -dsip -rtp -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev -dmz -netm -homer'
+        [install]='-debug -all -kam -dsip -rtp -dns -db -dsipcid -dbadmin -dsipcsync -dsipkey -with_lcr -with_dev -dmz -netm -homer'
         [uninstall]='-debug -all -kam -dsip -rtp'
         [clusterinstall]='-debug -i'
         [upgrade]='-debug -dsipcid -rel -url'

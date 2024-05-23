@@ -3398,7 +3398,7 @@ EOSSH
             export SET_ROOT_DB_NAME="$CLUSTER_ROOT_DB_NAME"
 
             # run script command
-            ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${SSH_SYNC_ARGS[@]}
+            ${DSIP_PROJECT_DIR}/dsiprouter.sh install -dns ${SSH_SYNC_ARGS[@]}
 EOSSH
 
         # sanity check, was the install script successful?
@@ -3625,7 +3625,7 @@ function usageOptions() {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|" \
+        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
         " " "-dmz <pub iface>,<priv iface>|--dmz=<pub iface>,<priv iface>|-netm <mode>|--network-mode=<mode>|-homer <homerhost[:heplifyport]>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user[:pass]@]dbhost[:port][/dbname]>|--database-admin=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcsync <num>|" \
@@ -3779,9 +3779,12 @@ function processCMD() {
                         set -x
                         shift
                         ;;
+                    -dns|--dnsmasq)
+                        RUN_COMMANDS+=(installDnsmasq)
+                        shift
+                        ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        #RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio)
                         RUN_COMMANDS+=(installSipsak installCron installMysql installKamailio)
                         shift
                         ;;
@@ -3799,7 +3802,6 @@ function processCMD() {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        #RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         RUN_COMMANDS+=(installSipsak installCron installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
@@ -3973,7 +3975,7 @@ function processCMD() {
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
                 DISPLAY_LOGIN_INFO=1
-                RUN_COMMANDS+=(installSipsak installDnsmasq installMysql installKamailio installNginx installDsiprouter)
+                RUN_COMMANDS+=(installSipsak installMysql installKamailio installNginx installDsiprouter)
             fi
 
             # add displaying logo and login info to deferred commands
@@ -3994,6 +3996,10 @@ function processCMD() {
                         set -x
                         shift
                         ;;
+                    -dns|--dnsmasq)
+                        RUN_COMMANDS+=(uninstallDnsmasq)
+                        shift
+                        ;;
                     -rtp|--rtpengine)
                         DEFAULT_SERVICES=0
                         RUN_COMMANDS+=(uninstallRTPEngine)
@@ -4006,7 +4012,7 @@ function processCMD() {
                         ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallKamailio uninstallDnsmasq)
+                        RUN_COMMANDS+=(uninstallKamailio)
                         shift
                         ;;
                     # only remove init and system config dir if all services will be removed (dependency for others)
@@ -4027,7 +4033,7 @@ function processCMD() {
 
             # only use defaults if no discrete services specified
             if (( ${DEFAULT_SERVICES} == 1 )); then
-                RUN_COMMANDS+=(uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeSwapFile removeInitService)
+                RUN_COMMANDS+=(uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallSipsak uninstallDsiprouterCli removeSwapFile removeInitService)
             fi
 
             # clean dev environment if configured
