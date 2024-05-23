@@ -3781,7 +3781,8 @@ function processCMD() {
                         ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio)
+                        #RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio)
+                        RUN_COMMANDS+=(installSipsak installCron installMysql installKamailio)
                         shift
                         ;;
                     -dsip|--dsiprouter)
@@ -3798,7 +3799,8 @@ function processCMD() {
                     -all|--all)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
+                        #RUN_COMMANDS+=(installSipsak installCron installDnsmasq installMysql installKamailio installNginx installDsiprouter installRTPEngine)
+                        RUN_COMMANDS+=(installSipsak installCron installMysql installKamailio installNginx installDsiprouter installRTPEngine)
                         shift
                         ;;
                     # DEPRECATED: marked for removal in v0.80
