@@ -12,8 +12,8 @@ Description=dSIPRouter Service
 DefaultDependencies=no
 Requires=basic.target network.target
 After=network.target network-online.target systemd-journald.socket basic.target
-After=rsyslog.service mariadb.service nginx.service
-Wants=nginx.service mariadb.service
+After=rsyslog.service mariadb.service nginx.service kamailio.service
+Wants=nginx.service mariadb.service kamailio.service
 StartLimitIntervalSec=30
 StartLimitBurst=3
 
