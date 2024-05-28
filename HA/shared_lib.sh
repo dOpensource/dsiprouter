@@ -628,3 +628,29 @@ removeDependsOnService() {
 getPhysicalIfaces() {
     ( cd /sys/class/net && dirname */device; )
 }
+
+# usage:    runas [options] <command>
+# options:  -u <run user>
+# notes:    default runas user is root
+# returns:  255 == failed before running command, else == exit code of command
+runas() {
+    local RUN_USER="root"
+    if [[ "$1" == "-u" ]]; then
+        shift
+        RUN_USER="$1"
+        shift
+    fi
+
+    if command -v 'sudo' &>/dev/null; then
+        sudo -u "$RUN_USER" "$@"
+    elif command -v 'su' &>/dev/null; then
+        su "$RUN_USER" -s /bin/bash -c "$*"
+    else
+        if [[ $(id -u "$RUN_USER" 2>/dev/null) == $(id -u "$RUN_USER" 2>/dev/null) ]]; then
+            "$@"
+        else
+            echo "$0: could not run command as user '$RUN_USER'"
+            return 255
+        fi
+    fi
+}
