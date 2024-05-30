@@ -193,7 +193,7 @@ EOF
 # loop through args and gather variables
 i=0
 for NODE in ${NODES[@]}; do
-    SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x)
+    SSH_OPTS=( ${DEFAULT_SSH_OPTS[@]} )
     RSYNC_OPTS=()
 
     NODE_NAME="${CLUSTER_NAME}-node$((i+1))"

@@ -8,9 +8,9 @@
 # we should also put them in a central location such as: <project dir>/bashlibs
 #
 
-###################
-# Color constants #
-###################
+#############
+# Constants #
+#############
 
 # Ansi Colors
 ESC_SEQ="\033["
@@ -19,6 +19,9 @@ ANSI_RED="${ESC_SEQ}1;31m"
 ANSI_GREEN="${ESC_SEQ}1;32m"
 ANSI_YELLOW="${ESC_SEQ}1;33m"
 ANSI_CYAN="${ESC_SEQ}1;36m"
+
+# Shared Script Defaults
+DEFAULT_SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x -t)
 
 ##############################################
 # Printing functions and String Manipulation #
@@ -131,6 +134,30 @@ setOSInfo() {
     fi
 }
 
+# usage:    runas [options] <command>
+# options:  -u <run user>
+# notes:    default runas user is root
+# returns:  255 == failed before running command, else == exit code of command
+runas() {
+    local RUN_USER="root"
+    if [[ "$1" == "-u" ]]; then
+        shift
+        RUN_USER="$1"
+        shift
+    fi
+
+    if [[ $(id -u "$RUN_USER" 2>/dev/null) == $(id -u "$RUN_USER" 2>/dev/null) ]]; then
+        "$@"
+    elif command -v 'sudo' &>/dev/null; then
+        sudo -u "$RUN_USER" "$@"
+    elif command -v 'su' &>/dev/null; then
+        su "$RUN_USER" -s /bin/bash -c "$*"
+    else
+        echo "$0: could not run command as user '$RUN_USER'"
+        return 255
+    fi
+}
+
 # $1 == ip or hostname
 # $2 == port
 # returns: 0 == connection good, 1 == connection bad
@@ -152,9 +179,9 @@ checkSsh() {
 
 # $@ == ssh command to test
 # returns: 0 == user can escalate privileges, 1 == user could not escalate privileges
-checkSshSudo() {
-    local SSH_CMD="$@ -o ConnectTimeout=5 -q 'sudo -n echo'"
-    bash -c "${SSH_CMD}" 2>&1 > /dev/null; return $?
+checkSshRunas() {
+    local SSH_CMD="$@ -o ConnectTimeout=5 -q '$(typeset -f runas); runas echo -n'"
+    bash -c "trap 'exit 1' SIGINT; ${SSH_CMD}"; return $?
 }
 
 # Notes: prints generated password
@@ -355,7 +382,7 @@ dumpMysqlDatabases() {
 }
 
 detectServiceMan() {
-    INIT_PROC=$(sudo -n readlink -f $(sudo -n readlink -f /proc/1/exe))
+    INIT_PROC=$(runas readlink -f $(runas readlink -f /proc/1/exe))
 
     case "$INIT_PROC" in
         *systemd)
@@ -487,6 +514,24 @@ getInternalIP() {
     ip -4 -o addr show $IFACE | awk '{split($4,a,"/"); print a[1];}' | head -1
 }
 
+# $1 == cidr subnet
+# returns: 0 == success, 1 == failure
+# notes: prints first available ip in subnet
+# notes: assumes .1 is used as default gw in net
+findAvailableIP() {
+    local NET_TAKEN_LIST=$(runas nmap -n -sP -T 5 "$1" -oG - | awk '/Up$/{print $2}')
+    local NET_ADDR_LIST=$(runas nmap -n -sL "$1" | grep "Nmap scan report" | awk '{print $NF}' | tail -n +3 | sed '$ d')
+    for IP in ${NET_ADDR_LIST[@]}; do
+        for ip in ${NET_TAKEN_LIST[@]}; do
+            if [[ "$IP" != "$ip" ]]; then
+                printf '%s' "$IP"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
 # automate mysql_secure_installation
 # original: https://gist.github.com/kahidna/512b0d507ac90d1cbbf6b0230d38a502
 # $1 == new root password
@@ -548,7 +593,7 @@ getConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
 
-    local VALUE=$(sudo -n grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
+    local VALUE=$(runas grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
     printf '%s' "${VALUE}" | perl -0777 -pe 's~^b?["'"'"']+(.*?)["'"'"']+$|(.*)~\1\2~g'
 }
 
@@ -568,7 +613,7 @@ setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
-    sudo -n sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
+    runas sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 
 # $1 == cmd as executed in systemd (by ExecStart=)
@@ -584,9 +629,9 @@ addExcStartCmd() {
     grep -q -oP "^ExecStart\=.*${CMD}.*" 2>/dev/null ${SVC_FILE} && return 0
 
     tac ${SVC_FILE} | sed -r "0,\|^ExecStart\=.*|{s|^ExecStart\=.*|ExecStart=${CMD}\n&|}" | tac > ${TMP_FILE}
-    sudo -n mv -f ${TMP_FILE} ${SVC_FILE}
+    runas mv -f ${TMP_FILE} ${SVC_FILE}
 
-    sudo -n systemctl daemon-reload
+    runas systemctl daemon-reload
 }
 
 # $1 == string to match for removal (after ExecStart=)
@@ -595,8 +640,8 @@ removeExecStartCmd() {
     local STR=$(printf '%s' "$1" | sed -e 's|[\/&]|\\&|g') # escape string
     local SVC_FILE="$2"
 
-    sudo -n sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${SVC_FILE}
-    sudo -n systemctl daemon-reload
+    runas sed -i -r "\|^ExecStart\=.*${STR}.*|d" ${SVC_FILE}
+    runas systemctl daemon-reload
 }
 
 # $1 == service name (full name with target) to be dependent
@@ -610,8 +655,8 @@ addDependsOnService() {
     # sanity check, does the entry already exist?
     grep -q -oP "^(Before\=|Wants\=).*${SERVICE}.*" 2>/dev/null ${SVC_FILE} && return 0
 
-    sudo -n perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${SVC_FILE}
-    sudo -n systemctl daemon-reload
+    runas perl -i -e "\$service='$SERVICE';" -pe 's%^(Before\=|Wants\=)(.*)%length($2)==0 ? "${1}${service}" : "${1}${2} ${service}"%ge;' ${SVC_FILE}
+    runas systemctl daemon-reload
 }
 
 # $1 == service name (full name with target) to remove dependency on
@@ -620,37 +665,11 @@ removeDependsOnService() {
     local SERVICE="$1"
     local SVC_FILE="$2"
 
-    sudo -n perl -i -e "\$service='$SERVICE';" -pe 's%^((?:Before\=|Wants\=).*?)( ${service}|${service} |${service})(.*)%\1\3%g;' ${SVC_FILE}
-    sudo -n systemctl daemon-reload
+    runas perl -i -e "\$service='$SERVICE';" -pe 's%^((?:Before\=|Wants\=).*?)( ${service}|${service} |${service})(.*)%\1\3%g;' ${SVC_FILE}
+    runas systemctl daemon-reload
 }
 
 # output: all physical network interfaces on this machine
 getPhysicalIfaces() {
     ( cd /sys/class/net && dirname */device; )
-}
-
-# usage:    runas [options] <command>
-# options:  -u <run user>
-# notes:    default runas user is root
-# returns:  255 == failed before running command, else == exit code of command
-runas() {
-    local RUN_USER="root"
-    if [[ "$1" == "-u" ]]; then
-        shift
-        RUN_USER="$1"
-        shift
-    fi
-
-    if command -v 'sudo' &>/dev/null; then
-        sudo -u "$RUN_USER" "$@"
-    elif command -v 'su' &>/dev/null; then
-        su "$RUN_USER" -s /bin/bash -c "$*"
-    else
-        if [[ $(id -u "$RUN_USER" 2>/dev/null) == $(id -u "$RUN_USER" 2>/dev/null) ]]; then
-            "$@"
-        else
-            echo "$0: could not run command as user '$RUN_USER'"
-            return 255
-        fi
-    fi
 }
