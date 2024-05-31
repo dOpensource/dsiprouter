@@ -99,7 +99,7 @@ function install {
         dnf install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         dnf --enablerepo=crb install -y ladspa libuv-devel xmlrpc-c-devel opus-devel
         dnf install -y ffmpeg ffmpeg-devel &&
-        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel curl libcurl libcurl-devel \
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
@@ -111,21 +111,24 @@ function install {
         dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
         dnf install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         dnf install -y ffmpeg ffmpeg-devel &&
-        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel curl libcurl libcurl-devel \
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
             libwebsockets-devel opus-devel xmlrpc-c-devel gcc-toolset-13 pandoc &&
         source scl_source enable gcc-toolset-13
     else
+        yum-config-manager --enable centos-sclo-rh >/dev/null &&
         yum install -y epel-release &&
-        rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro &&
-        rpm -Uh http://li.nux.ro/download/nux/dextop/el${DISTRO_VER}/${OS_ARCH}/nux-dextop-release-0-5.el${DISTRO_VER}.nux.noarch.rpm &&
+        yum install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
+        yum install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         yum install -y ffmpeg ffmpeg-devel &&
-        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel mariadb-devel \
+        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre2 pcre2-devel curl libcurl libcurl-devel mariadb-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel xmlrpc-c-devel gperf redhat-lsb nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog \
-            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel
+            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel \
+            mosquitto-devel opus-devel devtoolset-11 pandoc
+        source scl_source enable devtoolset-11
     fi
 
     if (( $? != 0 )); then
@@ -152,6 +155,31 @@ function install {
     if (( $? != 0 )); then
         printerr "Could not install kernel headers"
         exit 1
+    fi
+
+    # rtpengine >= mr11.3.1.1 requires curl >= 7.43.0
+    if versionCompare "$(tr -d '[a-zA-Z]' <<<"$RTPENGINE_VER")" gteq "11.3.1.1"; then
+        if versionCompare "$(curl -V | head -1 | awk '{print $2}')" lt "7.43.0"; then
+            printdbg 'curl version is not recent enough.. compiling curl 7.8.0'
+            if [[ ! -d ${SRC_DIR}/curl ]]; then
+                (
+                    cd ${SRC_DIR} &&
+                    curl -sL https://curl.haxx.se/download/curl-7.80.0.tar.gz 2>/dev/null |
+                    tar -xzf - --transform 's%curl-7.80.0%curl%';
+                )
+            fi
+            (
+                cd ${SRC_DIR}/curl &&
+                ./configure --prefix=/usr --libdir=/usr/lib64 --with-ssl &&
+                make -j $NRPOC &&
+                make -j $NPROC install &&
+                ldconfig
+            )
+            if (( $? != 0 )); then
+                printerr 'Failed to compile curl'
+                return 1
+            fi
+        fi
     fi
 
     # create rtpengine user and group
@@ -181,10 +209,12 @@ function install {
         cd ${SRC_DIR} &&
         tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz \
             --transform="s%^rtpengine%ngcp-rtpengine-$RTPENGINE_RPM_VER%g" rtpengine/ &&
-        echo "%__make /usr/bin/make -j $NPROC" >~/.rpmmacros &&
+        echo "%__make $(which make) -j $NPROC" >~/.rpmmacros &&
+        # fix for BUG: "exec_prefix: command not found"
+        function exec_prefix() { echo -n '/usr'; } && export -f exec_prefix &&
         # build the RPM's
         rpmbuild -ba ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
-        rm -f ~/.rpmmacros &&
+        rm -f ~/.rpmmacros && unset -f exec_prefix &&
         systemctl mask ngcp-rtpengine-daemon.service
 
         # install the RPM's
