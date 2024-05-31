@@ -24,7 +24,8 @@ function install() {
         exit 1
     fi
 
-    KAM_VERSION_DOTTED=$(perl -pe 's%([0-9])([0-9])%\1.\2%' <<<"$KAM_VERSION")
+    # hardcoded to the latest release available for centos (patch updates broken)
+    KAM_VERSION_DOTTED='5.7.4'
     RHEL_BASE_VER=$(rpm -E %{rhel})
     NPROC=$(nproc)
 
@@ -263,6 +264,18 @@ EOF
     ) &&
     cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
         printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
+
+    # patch htable module to support coldelim/colnull on kamailio v5.7.x
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/htable &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/htable-kam57.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch htable module'
         return 1
     }
 
