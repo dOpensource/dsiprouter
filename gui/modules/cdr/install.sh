@@ -35,10 +35,12 @@ function installSQL {
 
 function install {
     installSQL
+    enableKamailioConfigAttrib 'WITH_CDRS' ${DSIP_KAMAILIO_CONFIG_FILE}
     printdbg "CDR module installed"
 }
 
 function uninstall {
+    disableKamailioConfigAttrib 'WITH_CDRS' ${DSIP_KAMAILIO_CONFIG_FILE}
     printdbg "CDR module uninstalled"
 }
 

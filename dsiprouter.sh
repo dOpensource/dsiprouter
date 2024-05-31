@@ -1157,6 +1157,9 @@ function generateKamailioConfig() {
     if (( ${KAM_VERSION} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    if (( ${KAM_VERSION} <= 57 )); then
+        sed -i -r -e 's~#*(modparam\(["'"'"']rtpengine["'"'"'], ?["'"'"']ping_mode["'"'"'], ?[0-9]\))~#\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
 
     # Fix the mpath and export $mpath
     fixMPATH
@@ -1780,9 +1783,6 @@ function installDsiprouter() {
         generateDsiprouterConfig
     fi
 
-    # configure dsiprouter modules
-    installModules
-
     # Set dsip private key (used for encryption across services) by following precedence:
     # 1:    set via cmdline arg
     # 2:    set prior to externally
@@ -1827,6 +1827,9 @@ function installDsiprouter() {
     SERVICE_RELOAD_DISABLED=1
     setCredentials
     unset SERVICE_RELOAD_DISABLED
+
+    # configure dsiprouter modules (must be run after potential credential updates above)
+    installModules
 
     # update the rest of the settings
     updateDsiprouterConfig
@@ -2052,6 +2055,14 @@ function installModules() {
             ${dir}/install.sh
         fi
     done
+    # priming function restart() to start/stop services
+    # restart() may or may not be called after this depending on context
+    STOP_DSIPROUTER=1
+    START_DSIPROUTER=1
+    STOP_KAMAILIO=1
+    START_KAMAILIO=1
+    STOP_RTPENGINE=0
+    START_RTPENGINE=0
 }
 
 function installCron() {
@@ -2538,15 +2549,15 @@ function setCredentials() {
         SHELL_CMDS+=("setConfigAttrib 'MAIL_USERNAME' '$SET_DSIP_MAIL_USER' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n ${SET_DSIP_MAIL_PASS+set} ]]; then
-        TMP_VAL=$(encryptCreds "$SET_DSIP_MAIL_PASS")
+        TMP_VAL=$(encryptCreds -kf "$DSIP_PRIV_KEY" "$SET_DSIP_MAIL_PASS")
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_PASSWORD='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
         if (( $DSIP_CLUSTER_SYNC == 1 )); then
             SQL_STATEMENTS+=("update kamailio.dsip_settings SET MAIL_PASSWORD='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
         fi
-        SHELL_CMDS+=("setConfigAttrib 'MAIL_PASSWORD' '$TMP_VAL' ${DSIP_CONFIG_FILE} -q;")
+        SHELL_CMDS+=("setConfigAttrib 'MAIL_PASSWORD' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
     fi
     if [[ -n ${SET_DSIP_API_TOKEN+set} ]]; then
-        TMP_VAL=$(encryptCreds "$SET_DSIP_API_TOKEN")
+        TMP_VAL=$(encryptCreds -kf "$DSIP_PRIV_KEY" "$SET_DSIP_API_TOKEN")
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_API_TOKEN='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
         if (( $DSIP_CLUSTER_SYNC == 1 )); then
             SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_API_TOKEN='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
@@ -2556,7 +2567,7 @@ function setCredentials() {
         KAM_RELOAD_TYPE=1
     fi
     if [[ -n ${SET_DSIP_IPC_TOKEN+set} ]]; then
-        TMP_VAL=$(encryptCreds "$SET_DSIP_IPC_TOKEN")
+        TMP_VAL=$(encryptCreds -kf "$DSIP_PRIV_KEY" "$SET_DSIP_IPC_TOKEN")
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_IPC_PASS='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
         if (( $DSIP_CLUSTER_SYNC == 1 )); then
             SQL_STATEMENTS+=("update kamailio.dsip_settings SET DSIP_IPC_PASS='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
@@ -2593,7 +2604,7 @@ function setCredentials() {
             DEFERRED_SQL_STATEMENTS+=("SET PASSWORD FOR '${SET_KAM_DB_USER:-$KAM_DB_USER}'@'%' = PASSWORD('$SET_KAM_DB_PASS');")
         fi
 
-        TMP_VAL=$(encryptCreds "$SET_KAM_DB_PASS")
+        TMP_VAL=$(encryptCreds -kf "$DSIP_PRIV_KEY" "$SET_KAM_DB_PASS")
         SQL_STATEMENTS+=("update kamailio.dsip_settings SET KAM_DB_PASS='$TMP_VAL' WHERE DSIP_ID='$DSIP_ID';")
         if (( $DSIP_CLUSTER_SYNC == 1 )); then
             SQL_STATEMENTS+=("update kamailio.dsip_settings SET KAM_DB_PASS='$TMP_VAL' WHERE DSIP_CLUSTER_ID='$DSIP_CLUSTER_ID' AND DSIP_CLUSTER_SYNC='1' AND DSIP_ID!='$DSIP_ID';")
@@ -2628,10 +2639,13 @@ function setCredentials() {
         DSIP_RELOAD_TYPE=2
         KAM_RELOAD_TYPE=2
     fi
-    if [[ -n ${SET_ROOT_DB_USER+set} ]]; then
-        DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'localhost' TO '${SET_ROOT_DB_USER}'@'localhost';")
+    # we do not support creating new root accounts, therefore we have a few extra checks here
+    if [[ -n ${SET_ROOT_DB_USER+set} ]] && [[ "$ROOT_DB_USER" != "$SET_ROOT_DB_USER" ]]; then
+        if checkDBUserExists "${ROOT_DB_USER}@localhost"; then
+            DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'localhost' TO '${SET_ROOT_DB_USER}'@'localhost';")
+        fi
         if checkDBUserExists "${ROOT_DB_USER}@%"; then
-            DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'%' TO '${SET_ROOT_DB_USER}'@'localhost';")
+            DEFERRED_SQL_STATEMENTS+=("RENAME USER '${ROOT_DB_USER}'@'%' TO '${SET_ROOT_DB_USER}'@'%';")
         fi
 
         SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_USER' '$SET_ROOT_DB_USER' ${DSIP_CONFIG_FILE} -q;")
@@ -2654,7 +2668,7 @@ function setCredentials() {
             fi
         fi
 
-        TMP_VAL=$(encryptCreds "$SET_ROOT_DB_PASS")
+        TMP_VAL=$(encryptCreds -kf "$DSIP_PRIV_KEY" "$SET_ROOT_DB_PASS")
         SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_PASS' '$TMP_VAL' ${DSIP_CONFIG_FILE} -qb;")
     fi
     if [[ -n ${SET_ROOT_DB_HOST+set} ]]; then
@@ -2667,7 +2681,7 @@ function setCredentials() {
         SHELL_CMDS+=("setConfigAttrib 'ROOT_DB_NAME' '$SET_ROOT_DB_NAME' ${DSIP_CONFIG_FILE} -q;")
     fi
     if [[ -n ${SET_DSIP_SESSION_KEY+set} ]]; then
-        TMP_VAL=$(encryptCreds "$SET_DSIP_SESSION_KEY")
+        TMP_VAL=$(encryptCreds -kf "$DSIP_PRIV_KEY" "$SET_DSIP_SESSION_KEY")
         SHELL_CMDS+=("setConfigAttrib 'DSIP_SESSION_KEY' '$TMP_VAL' ${DSIP_CONFIG_FILE} -q;")
 
         DSIP_RELOAD_TYPE=2
@@ -3374,31 +3388,56 @@ EOSSH
             fi
 
             # setting up project files on node
-            rm -rf ${DSIP_PROJECT_DIR} 2>/dev/null
-            mv -f /tmp/dsiprouter ${DSIP_PROJECT_DIR}
+            mkdir -p ${DSIP_PROJECT_DIR}
+            cp -af /tmp/dsiprouter/. ${DSIP_PROJECT_DIR}/
+            rm -rf /tmp/dsiprouter
 
-            # setup cluster private key on node
-            mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
-            mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
-            chown root:root ${DSIP_PRIV_KEY}
-            chmod 0400 ${DSIP_PRIV_KEY}
+            if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.clusterinstallcomplete" ]; then
+                # setup cluster private key on node
+                mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
+                mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
+                chown root:root ${DSIP_PRIV_KEY}
+                chmod 0400 ${DSIP_PRIV_KEY}
 
-            # export any settings we wish to change in the install script
-            export SET_DSIP_GUI_USER="$CLUSTER_GUI_USER"
-            export SET_DSIP_GUI_PASS="$CLUSTER_GUI_PASS"
-            export SET_DSIP_API_TOKEN="$CLUSTER_API_TOKEN"
-            export SET_DSIP_MAIL_USER="$CLUSTER_MAIL_USER"
-            export SET_DSIP_MAIL_PASS="$CLUSTER_MAIL_PASS"
-            export SET_DSIP_IPC_TOKEN="$CLUSTER_IPC_TOKEN"
-            export SET_KAM_DB_USER="$CLUSTER_KAM_DB_USER"
-            export SET_KAM_DB_PASS="$CLUSTER_KAM_DB_PASS"
-            export SET_KAM_DB_NAME="$CLUSTER_KAM_DB_NAME"
-            export SET_ROOT_DB_USER="$CLUSTER_ROOT_DB_USER"
-            export SET_ROOT_DB_PASS="$CLUSTER_ROOT_DB_PASS"
-            export SET_ROOT_DB_NAME="$CLUSTER_ROOT_DB_NAME"
+                # export any settings we wish to override in the install script
+                # these settings are usually set after the first node (in cluster sync mode) is done installing
+                [[ -n "$CLUSTER_GUI_USER" ]] && export SET_DSIP_GUI_USER="$CLUSTER_GUI_USER"
+                [[ -n "$CLUSTER_GUI_PASS" ]] && export SET_DSIP_GUI_PASS="$CLUSTER_GUI_PASS"
+                [[ -n "$CLUSTER_API_TOKEN" ]] && export SET_DSIP_API_TOKEN="$CLUSTER_API_TOKEN"
+                [[ -n "$CLUSTER_MAIL_USER" ]] && export SET_DSIP_MAIL_USER="$CLUSTER_MAIL_USER"
+                [[ -n "$CLUSTER_MAIL_PASS" ]] && export SET_DSIP_MAIL_PASS="$CLUSTER_MAIL_PASS"
+                [[ -n "$CLUSTER_IPC_TOKEN" ]] && export SET_DSIP_IPC_TOKEN="$CLUSTER_IPC_TOKEN"
+                [[ -n "$CLUSTER_KAM_DB_USER" ]] && export SET_KAM_DB_USER="$CLUSTER_KAM_DB_USER"
+                [[ -n "$CLUSTER_KAM_DB_PASS" ]] && export SET_KAM_DB_PASS="$CLUSTER_KAM_DB_PASS"
+                [[ -n "$CLUSTER_KAM_DB_NAME" ]] && export SET_KAM_DB_NAME="$CLUSTER_KAM_DB_NAME"
+                [[ -n "$CLUSTER_ROOT_DB_USER" ]] && export SET_ROOT_DB_USER="$CLUSTER_ROOT_DB_USER"
+                [[ -n "$CLUSTER_ROOT_DB_PASS" ]] && export SET_ROOT_DB_PASS="$CLUSTER_ROOT_DB_PASS"
+                [[ -n "$CLUSTER_ROOT_DB_NAME" ]] && export SET_ROOT_DB_NAME="$CLUSTER_ROOT_DB_NAME"
 
-            # run script command
-            ${DSIP_PROJECT_DIR}/dsiprouter.sh install -dns ${SSH_SYNC_ARGS[@]}
+                # run script command
+                ${DSIP_PROJECT_DIR}/dsiprouter.sh install -dns ${SSH_SYNC_ARGS[@]}
+
+                # create indicator in case we iterate over this node again (if this command is re-run)
+                RETVAL=$?
+                (( $RETVAL == 0 )) && touch ${DSIP_SYSTEM_CONFIG_DIR}/.clusterinstallcomplete
+                exit $RETVAL
+            else
+                # if this node was already configured, reconfigure the encrypted credentials to use the new private key
+                source ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
+                export SET_DSIP_API_TOKEN=\${SET_DSIP_API_TOKEN:-\$(decryptConfigAttrib DSIP_API_TOKEN ${DSIP_CONFIG_FILE})}
+                export SET_DSIP_MAIL_PASS=\${SET_DSIP_MAIL_PASS:-\$(decryptConfigAttrib MAIL_PASSWORD ${DSIP_CONFIG_FILE})}
+                export SET_DSIP_IPC_TOKEN=\${SET_DSIP_IPC_TOKEN:-\$(decryptConfigAttrib DSIP_IPC_PASS ${DSIP_CONFIG_FILE})}
+                export SET_KAM_DB_PASS=\${SET_KAM_DB_PASS:-\$(decryptConfigAttrib KAM_DB_PASS ${DSIP_CONFIG_FILE})}
+                export SET_ROOT_DB_PASS=\${SET_ROOT_DB_PASS:-\$(decryptConfigAttrib ROOT_DB_PASS ${DSIP_CONFIG_FILE})}
+
+                # setup cluster private key on node
+                mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}
+                mv -f ${TMP_PRIV_KEY} ${DSIP_PRIV_KEY}
+                chown root:root ${DSIP_PRIV_KEY}
+                chmod 0400 ${DSIP_PRIV_KEY}
+
+                dsiprouter setcredentials
+            fi
 EOSSH
 
         # sanity check, was the install script successful?
@@ -4481,7 +4520,7 @@ function processCMD() {
             ;;
         installmodules)
             # reconfigure dsiprouter modules
-            RUN_COMMANDS+=(installModules)
+            RUN_COMMANDS+=(installModules restart)
             shift
 
             while (( $# > 0 )); do
