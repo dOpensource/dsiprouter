@@ -1674,25 +1674,46 @@ function installDsiprouterCli() {
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
         printwarn "dSIPRouter CLI is already installed"
         return
+    fi
+
+    # TODO: add support for 'su' privilege escalation
+    printdbg "Installing dSIPRouter CLI"
+    if cmdExists 'apt-get'; then
+        apt-get install -y sudo
+    elif cmdExists 'dnf'; then
+        dnf install -y sudo
+    elif cmdExists 'yum'; then
+        yum install -y sudo
     else
-        printdbg "Installing dSIPRouter CLI"
+        printerr 'Could not install dSIPRouter CLI - failed installing required packages'
+        exit 1
     fi
 
     # add dsiprouter CLI command to the path
     ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+    # add specific commands to sudoers that dsiprouter can run with escalated privileges
+    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
+
+    printdbg "Installing 'dsiprouter' tab completion"
+    if cmdExists 'apt-get'; then
+        apt-get install -y bash-completion
+    elif cmdExists 'dnf'; then
+        dnf install -y bash-completion
+    elif cmdExists 'yum'; then
+        yum install -y bash-completion
+    else
+        printerr 'Could not install bash tab completion - failed installing required packages'
+        exit 1
+    fi
+
     # enable bash command line completion if not already
     if [[ -f /etc/bash.bashrc ]]; then
         perl -i -0777 -pe 's%#(if ! shopt -oq posix; then\n)#([ \t]+if \[ -f /usr/share/bash-completion/bash_completion \]; then\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)#(.*?\n)%\1\2\3\4\5\6\7%s' /etc/bash.bashrc
     fi
     # add command line completion for dsiprouter CLI
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip_completion.sh /etc/bash_completion.d/dsiprouter
-    # TODO: has no effect when executing script, user has to log out and log in for changes to take effect
-    #. /etc/bash_completion
 
-    # add specific commands to sudoers that dsiprouter can run with escalated privileges
-    cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
-
-    printdbg "installing dSIPRouter manpages"
+    printdbg "Installing 'dsiprouter' manpages"
     if cmdExists 'apt-get'; then
         apt-get install -y manpages man-db
     elif cmdExists 'dnf'; then
@@ -1700,22 +1721,21 @@ function installDsiprouterCli() {
     elif cmdExists 'yum'; then
         yum install -y man-pages man-db man
     else
-        ( exit 1; )
+        printerr 'Could not install manpages - failed installing required packages'
+        exit 1
     fi
 
-    # if manpages fail it is not a critical error
-    if (( $? != 0 )); then
-        printwarn 'failed installing manpages'
-    else
-        cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_PROGS_DIR}/ &&
-        gzip -f ${MAN_PROGS_DIR}/dsiprouter.1 &&
-        mandb &&
-        printdbg "dSIPRouter manpage installed" ||
-        printwarn 'failed installing manpages'
-    fi
+    # setup the manpages
+    cp -f ${DSIP_PROJECT_DIR}/resources/man/dsiprouter.1 ${MAN_PROGS_DIR}/ &&
+    gzip -f ${MAN_PROGS_DIR}/dsiprouter.1 &&
+    mandb ||
+    printwarn 'Updating the mandb failed. Continuing the installation..'
 
     touch "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled"
     printdbg "dSIPRouter CLI installed"
+    echo ''
+    printbold "To enable tab completion in this terminal session run:"
+    echo -ne "source /etc/bash_completion\n\n"
 }
 
 function uninstallDsiprouterCli() {
