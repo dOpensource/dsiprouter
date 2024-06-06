@@ -83,6 +83,7 @@ csrf.exempt(user)
 csrf.exempt(license_manager)
 numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)
+auth_modules = []
 
 
 @app.before_first_request
@@ -226,25 +227,11 @@ def login():
                 return redirect(url_for('index'))
        
         # Check for user in other auth modules
-       
-        # Returns the Base directory of this file
-        base_dir = os.path.dirname(__file__)
-       
-        if settings.AUTH_MODULES is not None:
-            for authModule in settings.AUTH_MODULES:
-                # Get the name of the auth module in lowercase (ex. AUTH_LDAP equals ldap)
-                auth,authModuleName = authModule.split("_")
-                print("authModuleName:{}".format(authModuleName.lower()))
-                # Use the Base Dir to specify the location of the plugin required for this domain
-                spec = importlib.util.spec_from_file_location("plugin.{}".format(authModuleName.lower()), "{}/modules/api/auth/{}/interface.py".format(base_dir,authModuleName.lower()))
-                authPlugin = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(authPlugin)
-                print("***{} Plugin was loaded***".format(authPlugin.pluginName))
-                authPlugin.init()
-                if authPlugin.auth(form['username'],form['password'],settings.AUTH_LDAP['LDAP_REQUIRED_GROUP'],form['username']):
-                    session['logged_in'] = True
-                    session['username'] = form['username']
-                    return redirect(url_for('index'))
+        for auth_mod in auth_modules:
+            if auth_mod.authenticate(form['username'], form['password']):
+                session['logged_in'] = True
+                session['username'] = form['username']
+                return redirect(url_for('index'))
 
         # if we got here auth failed
         flash('Wrong Username or Password')
@@ -2809,6 +2796,19 @@ def intializeGlobalState():
     if settings.DEBUG:
         IO.printinfo(f'global state initialized: {state}')
 
+def intializeAuthModules():
+    global auth_modules
+
+    for modname in settings.AUTH_MODULES.keys():
+        # Use the Base Dir to specify the location of the plugin required for this domain
+        spec = importlib.util.spec_from_file_location(
+            f'auth.{modname}',
+            f'{settings.DSIP_PROJECT_DIR}/gui/modules/api/auth/{modname}/interface.py'
+        )
+        auth_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(auth_mod)
+        auth_mod.initialize()
+        auth_modules.append(auth_mod)
 
 def guiLicenseCheck(tag):
     global state
@@ -2893,6 +2893,9 @@ def initApp(flask_app):
     # Initialize global variables based on persistent state
     intializeGlobalState()
 
+    # Initialize authentication modules
+    intializeAuthModules()
+
     # write out the main proc's PID
     with open(settings.DSIP_PID_FILE, 'w') as pidfd:
         pidfd.write(str(os.getpid()))
@@ -2906,6 +2909,11 @@ def teardown():
 
     try:
         setPersistentState(objToDict(globals))
+    except:
+        pass
+    try:
+        for auth_mod in auth_modules:
+            auth_mod.teardown()
     except:
         pass
     try:

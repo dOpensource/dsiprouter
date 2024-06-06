@@ -225,6 +225,8 @@ GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
 GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 
 # auth modules
-AUTH_MODULES = ["AUTH_LDAP"]
-AUTH_LDAP = { "LDAP_HOST":"ldap://ldap.dopensource.com", "LDAP_USER_SEARCH_BASE":"ou=People,dc=dopensource,dc=com","LDAP_GROUP_SEARCH_BASE":"dc=dopensource,dc=com","LDAP_GROUP_MEMBER_ATTRIBUTE":"memberUid","LDAP_REQUIRED_GROUP":"dev","LDAP_USER_ATTRIBUTE":"uid"}
+# a dictionary of authentication modules to load and their corresponding settings
+# example for ldap module:
+# AUTH_MODULES = {"ldap": {"LDAP_HOST":"ldap://ldap.dopensource.com", "USER_SEARCH_BASE":"ou=People,dc=dopensource,dc=com", "GROUP_SEARCH_BASE":"dc=dopensource,dc=com", "GROUP_MEMBER_ATTRIBUTE":"memberUid", "REQUIRED_GROUP":"support", "USER_ATTRIBUTE":"uid"}}
+AUTH_MODULES = {}
 ############### End Local-Only Settings ##################
