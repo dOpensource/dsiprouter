@@ -2,7 +2,7 @@
 Description=Kamailio - the Open Source SIP Server
 Requires=basic.target network.target
 After=network.target network-online.target systemd-journald.socket basic.target
-After=rsyslog.service dnsmasq.service mariadb.service
+After=rsyslog.service dnsmasq.service mariadb.service rtpengine.service
 Wants=mariadb.service
 DefaultDependencies=no
 
