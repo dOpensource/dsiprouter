@@ -22,7 +22,7 @@
 
   // global constants for this script
   const SIGNAL_OPTIONS = {
-    "proxy": "unaltered",
+    "proxy": "Unaltered",
     "sip_udp": "SIP over UDP",
     "sip_tcp": "SIP over TCP",
     "sip_sctp": "SIP over SCTP",
@@ -34,17 +34,17 @@
   const SIGNAL_OPTIONS_STR = JSON.stringify(SIGNAL_OPTIONS);
   // TODO: think of a more user friendly description for these options
   const MEDIA_OPTIONS = {
-    "proxy": "proxy media",
-    "bvpass": "bypass media",
+    "proxy": "Proxy Media",
+    "bvpass": "Bypass Media",
     "rtp_avp": "RTP/AVP",
     "rtp_savp": "RTP/SAVP",
     "rtp_avpf": "RTP/AVPF",
     "rtp_savpf": "RTP/SAVPF",
     "rtp_avp_any": "UDP/TLS/RTP/SAVP",
     "rtp_avpf_any": "UDP/TLS/RTP/SAVPF",
-    "udptl": "UDPTL",
-    "osrtp_avp": "RTP/SAVP/OSRTP",
-    "osrtp_avpf": "RTP/SAVPF/OSRTP"
+    "udptl": "T.38 over UDPTL",
+    "osrtp_avp": "OSRTP over RTP/AVP",
+    "osrtp_avpf": "OSRTP over RTP/AVPF"
   };
   const MEDIA_OPTIONS_STR = JSON.stringify(MEDIA_OPTIONS);
 
