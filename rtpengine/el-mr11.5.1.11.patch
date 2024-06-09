@@ -1,0 +1,71 @@
+Subject: [PATCH] support multiple kernel versions
+change defaults config path
+---
+Index: el/rtpengine.spec
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/el/rtpengine.spec b/el/rtpengine.spec
+--- a/el/rtpengine.spec	(revision a6631401498937d0c03e63931e601c40fcbfa2e7)
++++ b/el/rtpengine.spec	(date 1717911032998)
+@@ -179,9 +179,9 @@
+ sed -i -e "s/#MODULE_VERSION#/%{version}-%{release}/g" %{buildroot}%{_usrsrc}/%{name}-%{version}-%{release}/dkms.conf
+ 
+ %pre
+-getent group %{name} >/dev/null || /usr/sbin/groupadd -r %{name}
+-getent passwd %{name} >/dev/null || /usr/sbin/useradd -r -g %{name} \
+-	-s /sbin/nologin -c "%{name} daemon" -d %{_sharedstatedir}/%{name} %{name}
++getent group rtpengine >/dev/null || /usr/sbin/groupadd -r rtpengine
++getent passwd rtpengine >/dev/null || /usr/sbin/useradd -r -g rtpengine \
++	-s /sbin/nologin -c "rtpengine daemon" -d %{_sharedstatedir}/%{name} rtpengine
+ 
+ 
+ %post
+@@ -198,17 +198,23 @@
+ # Add to DKMS registry, build, and install module
+ # The kernel version can be overridden with "--define kversion foo" on rpmbuild,
+ # e.g. --define "kversion 2.6.32-696.23.1.el6.x86_64"
++# Multiple kernel versions can be set by delimiting them with ","
++# e.g. --define "kversion 5.14.0-325.el9.x86_64,5.14.0-325.el9.x86_64"
+ %{!?kversion: %define kversion %{nil}}
+ 
+ %if "%{kversion}" != ""
+-  dkms add -m %{name} -v %{version}-%{release} --rpm_safe_upgrade &&
+-  dkms build -m %{name} -v %{version}-%{release} -k %{kversion} --rpm_safe_upgrade &&
+-  dkms install -m %{name} -v %{version}-%{release} -k %{kversion} --rpm_safe_upgrade --force
++%if 0%{?lua:print(1)}
++%define kparams %{lua: t = {}; k = rpm.expand("%{kversion}"); for s in string.gmatch(k, "[^,]+") do table.insert(t, "-k "..s) end; print(table.concat(t, " "))}
++%else
++%define kparams %(RES=(); IFS=',' read -ra ARR <<<"%{kversion}"; for STR in "${ARR[@]}"; do RES+=("-k $STR"); done; IFS=' ' echo -n "${RES[@]}")
++%endif
+ %else
+-  dkms add -m %{name} -v %{version}-%{release} --rpm_safe_upgrade &&
+-  dkms build -m %{name} -v %{version}-%{release} --rpm_safe_upgrade &&
+-  dkms install -m %{name} -v %{version}-%{release} --rpm_safe_upgrade --force
++%define kparams %{nil}
+ %endif
++
++dkms add -m %{name} -v %{version}-%{release} --rpm_safe_upgrade &&
++dkms build -m %{name} -v %{version}-%{release} %{kparams} --rpm_safe_upgrade &&
++dkms install -m %{name} -v %{version}-%{release} %{kparams} --rpm_safe_upgrade --force
+ true
+ 
+ 
+Index: el/ngcp-rtpengine-iptables-setup
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/el/ngcp-rtpengine-iptables-setup b/el/ngcp-rtpengine-iptables-setup
+--- a/el/ngcp-rtpengine-iptables-setup	(revision a6631401498937d0c03e63931e601c40fcbfa2e7)
++++ b/el/ngcp-rtpengine-iptables-setup	(date 1717809128848)
+@@ -4,7 +4,7 @@
+ MODNAME=xt_RTPENGINE
+ MANAGE_IPTABLES=yes
+ 
+-DEFAULTS=/etc/sysconfig/rtpengine
++DEFAULTS=/etc/default/rtpengine.conf
+ 
+ # Load startup options if available
+ if [ -f "$DEFAULTS" ]; then

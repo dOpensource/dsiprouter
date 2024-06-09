@@ -272,7 +272,7 @@ EOF
 
     # Reconfigure systemd service files
     rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /lib/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
     chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
 
