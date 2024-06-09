@@ -129,7 +129,7 @@ def reloadKamailio():
         if 'WITH_DNID_LNP_ENRICHMENT' in features_enabled:
             rpc_args.append(('127.0.0.1', 'htable.reload', ['enrichdnid_lnpmap']))
         if 'WITH_RTPENGINE' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'rtpengine.enable', ['all', '1']))
+            rpc_args.append(('127.0.0.1', 'rtpengine.enable', ['all', 1]))
         if 'WITH_TRANSNEXUS' in features_enabled:
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['transnexus', 'authservice_enabled', str(settings.TRANSNEXUS_AUTHSERVICE_ENABLED)]))
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['transnexus', 'authservice_host', str(settings.TRANSNEXUS_AUTHSERVICE_HOST)]))
