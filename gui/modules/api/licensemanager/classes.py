@@ -133,7 +133,10 @@ class WoocommerceLicense(object):
     def expires(self):
         if self._expires_at is not None:
             return datetime.datetime.strptime(self._expires_at, '%Y-%m-%d %H:%M:%S')
-        return datetime.datetime.strptime(self._created_at, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=self._valid_for)
+        if self._valid_for is not None:
+            return datetime.datetime.strptime(self._created_at, '%Y-%m-%d %H:%M:%S') + datetime.timedelta(days=self._valid_for)
+        # no expires set, it is valid forever
+        return datetime.datetime.max
 
     @property
     def active(self):
