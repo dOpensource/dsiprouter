@@ -5,7 +5,7 @@ import settings
 from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
 from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
+from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort, encodeSipUser
 
 def addUpdateCarrierGroups(data=None):
     """
@@ -33,7 +33,7 @@ def addUpdateCarrierGroups(data=None):
         new_name = form['new_name'] if 'new_name' in form else ''
         plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
         authtype = form['authtype'] if 'authtype' in form else ''
-        r_username = form['r_username'] if 'r_username' in form else ''
+        username = form['r_username'] if 'r_username' in form else ''
         auth_username = form['auth_username'] if 'auth_username' in form else ''
         auth_password = form['auth_password'] if 'auth_password' in form else ''
         auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
@@ -51,11 +51,12 @@ def addUpdateCarrierGroups(data=None):
                 raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
             if len(auth_proxy) == 0:
                 auth_proxy = auth_domain
-            auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
+            auth_proxy = safeFormatSipUri(auth_proxy)
             if auth_proxy is None:
                 raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
             if len(auth_username) == 0:
-                auth_username = r_username
+                auth_username = username
+            auth_username = encodeSipUser(auth_username)
 
         # Adding
         if len(gwgroup) <= 0:
@@ -66,7 +67,7 @@ def addUpdateCarrierGroups(data=None):
 
             # Add auth_domain(aka registration server) to the gateway list
             if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
-                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_realm, auth_username=auth_username, auth_proxy=auth_proxy,
+                Uacreg = UAC(gwgroup, username, auth_password, realm=auth_realm, auth_username=auth_username, auth_proxy=auth_proxy,
                     local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                 Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                 db.add(Uacreg)
@@ -92,10 +93,14 @@ def addUpdateCarrierGroups(data=None):
             if authtype == "userpwd" and (plugin_name is None or plugin_name == ''):
                 # update uacreg if exists, otherwise create
                 if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                    {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
+                    {
+                        'l_username': username, 'r_username': username, 'auth_username': auth_username,
                         'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_realm,
-                        'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
-                    Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
+                        'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value
+                    },
+                    synchronize_session=False
+                ):
+                    Uacreg = UAC(gwgroup, username, auth_password, realm=auth_domain, auth_username=auth_username,
                                     auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
                     db.add(Uacreg)
 
@@ -141,6 +146,8 @@ def addUpdateCarriers(data=None):
     """
     Add or Update a carrier
     """
+
+    global displayCarriers
 
     db = DummySession()
     newgwid = None

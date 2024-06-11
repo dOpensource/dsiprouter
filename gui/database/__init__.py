@@ -8,14 +8,13 @@ import base64, bson, inspect, os
 from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer
+from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer, event
 from sqlalchemy.orm import registry, sessionmaker, scoped_session
 from sqlalchemy.sql import text
 import settings
 from shared import IO, debugException, dictToStrFields, rowToDict, objToDict
-from util.networking import safeUriToHost, safeFormatSipUri
+from util.networking import safeUriToHost, safeFormatSipUri, encodeSipUser
 from util.security import AES_CTR
-
 
 # DB specific settings
 UnsignedInt = Integer()
@@ -35,11 +34,13 @@ if settings.KAM_DB_TYPE == "mysql":
                     debugException(ex)
                 raise
     from sqlalchemy.dialects.mysql import INTEGER
+
     UnsignedInt = UnsignedInt.with_variant(INTEGER(unsigned=True), 'mysql', 'mariadb')
 
 # global constants
 DB_ENGINE_NAME = 'global_db_engine'
 SESSION_LOADER_NAME = 'global_session_loader'
+
 
 class Gateways(object):
     """
@@ -432,13 +433,8 @@ class UAC(object):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
-        if flags == self.FLAGS.REG_DISABLED.value:
-            self.r_username = ""
-            self.auth_username = ""
-        else:
-            self.r_username = username
-            self.auth_username = auth_username
-
+        self.r_username = encodeSipUser(username)
+        self.auth_username = auth_username
         self.r_domain = remote_domain
         self.realm = realm
         self.auth_password = password
@@ -449,7 +445,9 @@ class UAC(object):
         self.reg_delay = 0
         self.socket = ''
 
-    pass
+@event.listens_for(UAC, 'before_update')
+def beforeUpdateUAC(mapper, connection, target):
+    target.r_username = encodeSipUser(target.r_username)
 
 
 class Domain(object):

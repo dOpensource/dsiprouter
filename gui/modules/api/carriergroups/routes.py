@@ -192,7 +192,7 @@ def addCarrierGroups(id=None):
         data['strip'] = request_payload['strip'] if 'strip' in request_payload else ''
         data['prefix'] = request_payload['prefix'] if 'prefix' in request_payload else ''
 
-        auth  = request_payload['auth'] if 'auth' in request_payload else ''
+        auth  = request_payload['auth'] if 'auth' in request_payload else None
         if auth:
             data['authtype'] = auth['type']
             data['r_username'] = auth['r_username'] if 'r_username' in auth else ''
