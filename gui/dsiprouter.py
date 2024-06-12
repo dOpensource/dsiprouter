@@ -1811,7 +1811,7 @@ def addUpdateTeleBlock():
 
         # Update the teleblock settings
         teleblock = {}
-        teleblock['TELEBLOCK_GW_ENABLED'] = form.get('gw_enabled', 0)
+        teleblock['TELEBLOCK_GW_ENABLED'] = int(form.get('gw_enabled', 0))
         teleblock['TELEBLOCK_GW_IP'] = form['gw_ip']
         teleblock['TELEBLOCK_GW_PORT'] = form['gw_port']
         teleblock['TELEBLOCK_MEDIA_IP'] = form['media_ip']
