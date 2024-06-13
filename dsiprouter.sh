@@ -1918,11 +1918,11 @@ EOF
     fi
 
     # generate documentation for the GUI
-    # TODO: we should fix these errors instead of masking them
+    # TODO: we should fix these errors
     # TODO: we should move generated docs to DSIP_LIB_DIR to keep clean repo
     (
         cd ${DSIP_PROJECT_DIR}/docs &&
-        make -j $(nproc) html >/dev/null 2>&1
+        make -j $(nproc) html
     )
 
     # Restart mysql / dSIPRouter / nginx / Kamailio with new configurations
