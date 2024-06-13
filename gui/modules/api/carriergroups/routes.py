@@ -185,6 +185,7 @@ def addCarrierGroups(id=None):
         # get request data
         request_payload = getRequestData()
         data['name'] = request_payload['name']
+        data['lb_enabled'] = int(request_payload['lb_enabled']) if 'lb_enabled' in request_payload else 0
         if id == None:
             data['gwgroup'] = request_payload['gwgroup'] if 'gwgroup' in request_payload else ''
         else:

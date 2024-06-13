@@ -280,6 +280,7 @@
       return false;
     });
 
+    /* listener for plguin dropdown changes */
     plugin_name_sel.change(function() {
       var modal_body = $('#add-group .modal-body');
 
@@ -289,6 +290,19 @@
       }
       else {
         modal_body.find('#plugin_creds').removeClass('hidden');
+      }
+    });
+
+    /* listener for load balancing toggle */
+    $('.modal-body .toggle-loadbalancing').change(function() {
+      var modal = $(this).closest('div.modal');
+      var modal_body = modal.find('.modal-body');
+
+      if ($(this).is(":checked") || $(this).prop("checked")) {
+        modal_body.find('.lb_enabled').val(1);
+      }
+      else {
+        modal_body.find('.lb_enabled').val(0);
       }
     });
 
@@ -303,6 +317,12 @@
       modal_body.find(".auth_password").val('');
       modal_body.find(".auth_domain").val('');
       modal_body.find(".auth_proxy").val('');
+
+      /* reset plugin selections */
+      plugin_name_sel.val('').change();
+
+      /* reset toggle buttons */
+      modal_body.find("input.toggle-loadbalancing").bootstrapToggle('off');
 
       // update gwgroup for all modals
       $('.modal-body').find(".gwgroup").each(function() {
@@ -325,27 +345,11 @@
       var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
       var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
       var auth_proxy = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+      var lb_enabled = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
 
       // grab modals to change
       var modal_body = $('#edit-group .modal-body');
       var modal_bodies = $('.modal-body');
-
-      /* clear out the modal */
-      modal_body.find(".name").val('');
-      modal_body.find(".new_name").val('');
-      modal_body.find(".gwlist").val('');
-      modal_body.find(".authtype").val('');
-      modal_body.find(".r_username").val('');
-      modal_body.find(".auth_password").val('');
-      modal_body.find(".auth_domain").val('');
-      modal_body.find(".auth_username").val('');
-      modal_body.find(".auth_proxy").val('');
-      plugin_name_sel.val('').change();
-
-      // update gwgroup for all modals
-      modal_bodies.find(".gwgroup").each(function() {
-        $(this).val('');
-      });
 
       /* update modal fields */
       modal_body.find(".name").val(name);
@@ -357,6 +361,14 @@
       modal_body.find(".auth_domain").val(auth_domain);
       modal_body.find(".auth_username").val(auth_username);
       modal_body.find(".auth_proxy").val(auth_proxy);
+
+      /* update toggle buttons */
+      if (lb_enabled === '1') {
+        modal_body.find("input.toggle-loadbalancing").bootstrapToggle('on');
+      }
+      else {
+        modal_body.find("input.toggle-loadbalancing").bootstrapToggle('off');
+      }
 
       // update gwgroup for all modals
       modal_bodies.find(".gwgroup").each(function() {

@@ -1,5 +1,5 @@
 from flask import request
-from sqlalchemy import exc as sql_exceptions
+from sqlalchemy import exc as sql_exceptions, text
 from werkzeug import exceptions as http_exceptions
 import settings
 from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
@@ -30,6 +30,7 @@ def addUpdateCarrierGroups(data=None):
 
         gwgroup = form['gwgroup']
         name = form['name']
+        lb_enabled = int(form['lb_enabled']) if 'lb_enabled' in form else 0
         new_name = form['new_name'] if 'new_name' in form else ''
         plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
         authtype = form['authtype'] if 'authtype' in form else ''
@@ -113,6 +114,18 @@ def addUpdateCarrierGroups(data=None):
                 # delete uacreg and address if they exist
                 db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
                 db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
+
+        # toggle load balancing based on user input
+        # TODO: this WILL be changed in the future when we refactor load balancing
+        fields = strFieldsToDict(Gwgroup.description)
+        fields['lb'] = gwgroup
+        Gwgroup.description = dictToStrFields(fields)
+        if lb_enabled:
+            db.flush()
+            db.execute(
+                text("UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = :gwgroupid"),
+                {'gwgroupid': gwgroup}
+            )
 
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True

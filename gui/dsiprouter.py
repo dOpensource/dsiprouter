@@ -14,9 +14,9 @@ from flask import Flask, render_template, request, redirect, flash, session, url
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from pygtail import Pygtail
-from sqlalchemy import func, exc as sql_exceptions
+from sqlalchemy import exc as sql_exceptions, Integer
 from sqlalchemy.orm import load_only
-from sqlalchemy.sql import text, func
+from sqlalchemy.sql import text, func, cast
 from sqlalchemy.orm.session import close_all_sessions
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
@@ -28,7 +28,8 @@ from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
 from database import DummySession, createSessionObjects, startSession, settingsTableToDict, \
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
-    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, Dispatcher
+    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
+    Dispatcher, DsipGwgroup2LB
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -288,16 +289,33 @@ def displayCarrierGroups(gwgroup=None):
 
         typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
 
+        query = db.query(
+            GatewayGroups.id,
+            GatewayGroups.description,
+            GatewayGroups.gwlist,
+            UAC.r_username,
+            UAC.auth_password,
+            UAC.r_domain,
+            UAC.auth_username,
+            UAC.auth_proxy,
+            cast(DsipGwgroup2LB.enabled, Integer).label('lb_enabled')
+        ).outerjoin(
+            UAC, GatewayGroups.id == UAC.l_uuid
+        ).outerjoin(
+            DsipGwgroup2LB, GatewayGroups.id == DsipGwgroup2LB.gwgroupid
+        ).filter(
+            GatewayGroups.description.like(typeFilter)
+        )
+
         # res must be a list()
         if gwgroup is not None and gwgroup != "":
-            res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
-                GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(
-                GatewayGroups.id == gwgroup).first()]
+            res = [
+                query.filter(
+                    GatewayGroups.id == gwgroup
+                ).first()
+            ]
         else:
-            res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
-                GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
+            res = query.all()
 
         return render_template('carriergroups.html', rows=res)
 
@@ -328,123 +346,6 @@ def addUpdateCarrierGroups():
 
     return addCarrierGroups()
 
-    db = DummySession()
-
-    try:
-        if not session.get('logged_in'):
-            return redirect(url_for('index'))
-
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        db = startSession()
-
-        form = stripDictVals(request.form.to_dict())
-
-        gwgroup = form['gwgroup']
-        name = form['name']
-        new_name = form['new_name'] if 'new_name' in form else ''
-        authtype = form['authtype'] if 'authtype' in form else ''
-        r_username = form['r_username'] if 'r_username' in form else ''
-        auth_username = form['auth_username'] if 'auth_username' in form else ''
-        auth_password = form['auth_password'] if 'auth_password' in form else ''
-        auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
-        auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
-        plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
-        plugin_account_sid = form['plugin_account_sid'] if 'plugin_account_sid' in form else ''
-        plugin_account_token = form['plugin_account_token'] if 'plugin_account_token' in form else ''
-
-        # format data
-        if authtype == "userpwd":
-            auth_domain = safeUriToHost(auth_domain)
-            if auth_domain is None:
-                raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
-            if len(auth_proxy) == 0:
-                auth_proxy = auth_domain
-            auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
-            if auth_proxy is None:
-                raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
-            if len(auth_username) == 0:
-                auth_username = r_username
-
-        # Adding
-        if len(gwgroup) <= 0:
-            Gwgroup = GatewayGroups(name, type=settings.FLT_CARRIER)
-            db.add(Gwgroup)
-            db.flush()
-            gwgroup = Gwgroup.id
-
-            # Add auth_domain(aka registration server) to the gateway list
-            if authtype == "userpwd":
-                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
-                    local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
-                Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                db.add(Uacreg)
-                db.add(Addr)
-
-
-        # Updating
-        else:
-            # config form
-            if len(new_name) > 0:
-                Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-                gwgroup_fields = strFieldsToDict(Gwgroup.description)
-                old_name = gwgroup_fields['name']
-                gwgroup_fields['name'] = new_name
-                Gwgroup.description = dictToStrFields(gwgroup_fields)
-
-                Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(old_name))).first()
-                if Addr is not None:
-                    addr_fields = strFieldsToDict(Addr.tag)
-                    addr_fields['name'] = 'name:{}-uac'.format(new_name)
-                    Addr.tag = dictToStrFields(addr_fields)
-
-            # auth form
-            else:
-                if authtype == "userpwd":
-                    # update uacreg if exists, otherwise create
-                    if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                            'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                            'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
-                        Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
-                            auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
-                        db.add(Uacreg)
-
-                    # update address if exists, otherwise create
-                    if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                        {'ip_addr': auth_domain}, synchronize_session=False):
-                        Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                        db.add(Addr)
-                else:
-                    # delete uacreg and address if they exist
-                    db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
-                    db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
-
-        db.commit()
-        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
-        return displayCarrierGroups()
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        db.rollback()
-        db.flush()
-        return showError(type='http', code=ex.code, msg=ex.description)
-    except Exception as ex:
-        debugException(ex)
-        error = "server"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    finally:
-        db.close()
-
 
 @app.route('/carriergroupdelete', methods=['POST'])
 def deleteCarrierGroups():
@@ -468,19 +369,24 @@ def deleteCarrierGroups():
         gwgroup = form['gwgroup']
         gwlist = form['gwlist'] if 'gwlist' in form else ''
 
-        Addrs = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(gwgroup)))
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup)
         gwgroup_row = Gwgroup.first()
-        if gwgroup_row is not None:
-            Uac = db.query(UAC).filter(UAC.l_uuid == gwgroup_row.id)
-            Uac.delete(synchronize_session=False)
+        if gwgroup_row is None:
+            return displayCarrierGroups()
 
+        db.query(Address).filter(
+            Address.tag.contains("gwgroup:{}".format(gwgroup))
+        ).delete(synchronize_session=False)
+        db.query(UAC).filter(
+            UAC.l_uuid == gwgroup_row.id
+        ).delete(synchronize_session=False)
+        db.query(Dispatcher).filter(
+            Dispatcher.setid == gwgroup
+        ).delete(synchronize_session=False)
         # validate this group has gateways assigned to it
         if len(gwlist) > 0:
             GWs = db.query(Gateways).filter(Gateways.gwid.in_(list(map(int, gwlist.split(",")))))
             GWs.delete(synchronize_session=False)
-
-        Addrs.delete(synchronize_session=False)
         Gwgroup.delete(synchronize_session=False)
 
         db.commit()
