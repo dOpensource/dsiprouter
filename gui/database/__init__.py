@@ -8,14 +8,13 @@ import base64, bson, inspect, os
 from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer
+from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer, event
 from sqlalchemy.orm import registry, sessionmaker, scoped_session
 from sqlalchemy.sql import text
 import settings
 from shared import IO, debugException, dictToStrFields, rowToDict, objToDict
-from util.networking import safeUriToHost, safeFormatSipUri
+from util.networking import safeUriToHost, safeFormatSipUri, encodeSipUser
 from util.security import AES_CTR
-
 
 # DB specific settings
 UnsignedInt = Integer()
@@ -35,11 +34,13 @@ if settings.KAM_DB_TYPE == "mysql":
                     debugException(ex)
                 raise
     from sqlalchemy.dialects.mysql import INTEGER
+
     UnsignedInt = UnsignedInt.with_variant(INTEGER(unsigned=True), 'mysql', 'mariadb')
 
 # global constants
 DB_ENGINE_NAME = 'global_db_engine'
 SESSION_LOADER_NAME = 'global_session_loader'
+
 
 class Gateways(object):
     """
@@ -103,6 +104,8 @@ class GatewayGroups(object):
     Documentation: `dr_gw_lists table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dr-gw-lists>`_
     """
 
+    id = Column(UnsignedInt, primary_key=True, autoincrement=True, nullable=False)
+
     def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER, dlg_timeout=None):
         description = {'name': name, 'type': type}
         if dlg_timeout is not None:
@@ -110,8 +113,6 @@ class GatewayGroups(object):
 
         self.description = dictToStrFields(description)
         self.gwlist = ",".join(str(gw) for gw in gwlist)
-
-    pass
 
 
 class Address(object):
@@ -432,13 +433,8 @@ class UAC(object):
         self.l_uuid = uuid
         self.l_username = username
         self.l_domain = local_domain
-        if flags == self.FLAGS.REG_DISABLED.value:
-            self.r_username = ""
-            self.auth_username = ""
-        else:
-            self.r_username = username
-            self.auth_username = auth_username
-
+        self.r_username = encodeSipUser(username)
+        self.auth_username = auth_username
         self.r_domain = remote_domain
         self.realm = realm
         self.auth_password = password
@@ -449,7 +445,11 @@ class UAC(object):
         self.reg_delay = 0
         self.socket = ''
 
-    pass
+def uacMapperEventHandler(mapper, connection, target):
+    target.r_username = encodeSipUser(target.r_username)
+
+event.listen(UAC, 'before_insert', uacMapperEventHandler)
+event.listen(UAC, 'before_update', uacMapperEventHandler)
 
 
 class Domain(object):
@@ -540,6 +540,10 @@ class dSIPUser(object):
 
     pass
 
+
+# TODO: this is temporary and will be refactored
+class DsipGwgroup2LB(object):
+    pass
 
 class DsipSettings(OrderedDict):
     """
@@ -695,6 +699,8 @@ def createSessionObjects():
     dsip_certificates = Table('dsip_certificates', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_dnid_enrichment = Table('dsip_dnid_enrich_lnp', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     dsip_user = Table('dsip_user', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    # TODO: this is temporary and will be refactored
+    dsip_gwgroup2lb = Table('dsip_gwgroup2lb', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -729,6 +735,8 @@ def createSessionObjects():
     mapper.map_imperatively(dSIPCertificates, dsip_certificates)
     mapper.map_imperatively(dSIPDNIDEnrichment, dsip_dnid_enrichment)
     mapper.map_imperatively(dSIPUser, dsip_user)
+    # TODO: this is temporary and will be refactored
+    mapper.map_imperatively(DsipGwgroup2LB, dsip_gwgroup2lb)
 
     # mapper.map_imperatively(GatewayGroups, gw_join, properties={
     #     'id': [dr_groups.c.id, dr_gw_lists_alias.c.drlist_id],

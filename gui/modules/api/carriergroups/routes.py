@@ -168,6 +168,8 @@ def addCarrierGroups(id=None):
         }
     """
 
+    db = DummySession()
+
     try:
         if settings.DEBUG:
             debugEndpoint()
@@ -183,6 +185,7 @@ def addCarrierGroups(id=None):
         # get request data
         request_payload = getRequestData()
         data['name'] = request_payload['name']
+        data['lb_enabled'] = int(request_payload['lb_enabled']) if 'lb_enabled' in request_payload else 0
         if id == None:
             data['gwgroup'] = request_payload['gwgroup'] if 'gwgroup' in request_payload else ''
         else:
@@ -190,7 +193,7 @@ def addCarrierGroups(id=None):
         data['strip'] = request_payload['strip'] if 'strip' in request_payload else ''
         data['prefix'] = request_payload['prefix'] if 'prefix' in request_payload else ''
 
-        auth  = request_payload['auth'] if 'auth' in request_payload else ''
+        auth  = request_payload['auth'] if 'auth' in request_payload else None
         if auth:
             data['authtype'] = auth['type']
             data['r_username'] = auth['r_username'] if 'r_username' in auth else ''
@@ -200,34 +203,32 @@ def addCarrierGroups(id=None):
             data['auth_proxy'] = auth['auth_proxy'] if 'auth_proxy' in auth  else ''
 
         plugin = request_payload['plugin'] if 'plugin' in request_payload else None
-        if plugin and plugin != "None":
+        plugin_made_updates = False
+        if plugin is not None:
             data['plugin_name'] = plugin['name']
-            data['plugin_prefix'] = plugin['plugin_prefix'] if 'plugin_prefix' in plugin else ''
+            data['plugin_prefix'] = plugin['plugin_prefix'] if 'plugin_prefix' in plugin else 'dsip-'
             data['plugin_account_sid'] = plugin['account_sid'] if 'account_sid' in plugin else ''
             data['plugin_account_token'] = plugin['account_token'] if 'account_token' in plugin else ''
 
-        endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else ''
+            if data['plugin_name'] != "":
+                # Import Plugin
+                from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
+                client = init(data['plugin_account_sid'], data['plugin_account_token'])
 
-        if plugin and plugin != "None" and data['plugin_name'] != "":
-            # Import Plugin
-            #from "modules.api.carriergroups.plugin.{}".format(lower(plugin_name)) import init, createTrunk
-            from modules.api.carriergroups.plugin.twilio.interface import init, createTrunk, createIPAccessControlList
-            client=init(data['plugin_account_sid'],data['plugin_account_token'])
+                if client:
+                    trunk_name = "{}{}".format(data['plugin_prefix'], data['name'])
+                    trunk_sid = createTrunk(client, trunk_name, getExternalIP())
+                    if trunk_sid:
+                        createIPAccessControlList(client, trunk_name, getExternalIP())
+                        plugin_made_updates = True
 
-            if client:
-                if (len(data['plugin_prefix']) == 0):
-                    plugin_prefix = "dsip"
-
-                trunk_name = "{}{}".format(plugin_prefix,data['name'])
-                trunk_sid = createTrunk(client,trunk_name, getExternalIP())
-                if trunk_sid:
-                    createIPAccessControlList(client,trunk_name,getExternalIP())
+        endpoints = request_payload['endpoints'] if 'endpoints' in request_payload else []
 
         # This creates the carrier group only
         gwgroupid = addUpdateCarrierGroups(data)
 
         # This creates the Twilio Elastic SIP Entry in the Carrier Group
-        if gwgroupid and plugin and plugin != "None" and data['plugin_name'] != "":
+        if plugin_made_updates:
             carrier_data = {}
             carrier_data['gwgroup'] = gwgroupid
             carrier_data['name'] = trunk_name
@@ -235,7 +236,6 @@ def addCarrierGroups(id=None):
             carrier_data['strip'] = ''
             carrier_data['prefix'] = ''
             addUpdateCarriers(carrier_data)
-
 
         # Add endpoints
         for endpoint in endpoints:

@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
+SPHINXBUILD   = /opt/dsiprouter/venv/bin/python -m sphinx
 SOURCEDIR     = source
 BUILDDIR      = build
 

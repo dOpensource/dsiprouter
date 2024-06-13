@@ -5,7 +5,7 @@ CREATE TABLE dsip_gwgroup2lb (
   enabled char(1) NOT NULL DEFAULT '0',
   key_type varchar(64) NOT NULL DEFAULT '0',
   value_type varchar(64) NOT NULL DEFAULT '0',
-  PRIMARY KEY (gwgroupid, setid)
+  PRIMARY KEY (gwgroupid)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -56,7 +56,8 @@ BEGIN
     -- make sure we have a setid
     IF NEW.description REGEXP '(?:lb:|lb_ext:)([0-9]+)' THEN
       SET v_setid = REGEXP_REPLACE(NEW.description, '.*(?:lb:|lb_ext:)([0-9]+).*', '\\1');
-      INSERT INTO dsip_gwgroup2lb VALUES(v_gwgroupid, v_setid, DEFAULT, DEFAULT, DEFAULT);
+      INSERT INTO dsip_gwgroup2lb VALUES(v_gwgroupid, v_setid, DEFAULT, DEFAULT, DEFAULT)
+                                  ON DUPLICATE KEY UPDATE setid=v_setid;
     END IF;
   END IF;
 END; //
@@ -82,8 +83,8 @@ CREATE TRIGGER insert_rule_gwgroup2lb
   ON dr_rules
   FOR EACH ROW
 BEGIN
-  -- only inbound/outbound rules can have load balancing
-  IF (NEW.groupid = 8000 OR NEW.groupid = 9000) THEN
+  -- only inbound routes can have load balancing associated with it
+  IF (NEW.groupid = 9000) THEN
     IF (NEW.description LIKE '%lb_enabled:1%') THEN
       UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
     ELSE
@@ -109,8 +110,8 @@ BEGIN
   SET v_description = COALESCE(NEW.description, OLD.description);
   SET v_groupid = CAST(COALESCE(NEW.groupid, OLD.groupid) AS int);
 
-  -- only inbound/outbound rules can have load balancing
-  IF (v_groupid = 8000 OR v_groupid = 9000) THEN
+  -- only inbound routes can have load balancing associated with it
+  IF (v_groupid = 9000) THEN
     IF (v_description LIKE '%lb_enabled:1%') THEN
       UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
     ELSE
@@ -128,9 +129,12 @@ CREATE TRIGGER delete_rule_gwgroup2lb
   ON dr_rules
   FOR EACH ROW
 BEGIN
-  -- if it is the last rule for the gwgroup then delete load balancing entry
-  IF ((SELECT COUNT(ruleid) FROM dr_rules WHERE gwlist=OLD.gwlist AND groupid=OLD.groupid AND ruleid!=OLD.ruleid) = 0) THEN
-    DELETE FROM dsip_gwgroup2lb WHERE gwgroupid=REPLACE(OLD.gwlist, '#', '');
+  -- only inbound routes can have load balancing associated with it
+  IF (OLD.groupid = 9000) THEN
+    -- if it is the last rule for the gwgroup then delete load balancing entry
+    IF ((SELECT COUNT(ruleid) FROM dr_rules WHERE gwlist=OLD.gwlist AND groupid=OLD.groupid AND ruleid!=OLD.ruleid) = 0) THEN
+      DELETE FROM dsip_gwgroup2lb WHERE gwgroupid=REPLACE(OLD.gwlist, '#', '');
+    END IF;
   END IF;
 END; //
 DELIMITER ;

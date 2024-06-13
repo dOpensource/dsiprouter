@@ -1659,7 +1659,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 # Add the FusionPBX server as an Endpoint if it's not just the DB server
                 if fusionpbxclustersupport is None or fusionpbxclustersupport == False:
                     endpoint = {}
-                    endpoint['hostname'] = fusionpbxdbhost
+                    endpoint['host'] = fusionpbxdbhost
                     endpoint['description'] = "FusionPBX Server"
                     if "endpoints" not in request_payload:
                         request_payload['endpoints'] = []

@@ -139,19 +139,24 @@
       throw new Error("validateFields(): invalid selector argument");
     }
 
-    /* grab the fields */
-    var elems = select_node.find('input,textarea,select,output').filter(':not(:hidden)').get();
+    /* grab the fields as a jquery object */
+    var field_elem_list = select_node.find('input,textarea,select,output').filter(':not(:hidden)').get();
 
     /* check the builtin form validation */
-    for (var i = 0; i < elems.length; i++) {
-      if (!elems[i].reportValidity()) {
+    for (var i = 0; i < field_elem_list.length; i++) {
+      if (!field_elem_list[i].reportValidity()) {
         return false;
       }
     }
 
     /* if supplied, run the custom test function */
     if (typeof test === 'function') {
-      var resp = test(elems);
+      // convert the array of DOM elements into a Map of "name" => jQuery(elem) key pairs
+      var fields = new Map(field_elem_list.map(function(elem) {
+        return [elem.getAttribute('name'), $(elem)];
+      }));
+
+      var resp = test(fields);
       if (resp.result === false) {
         var err_elem = null;
         if (resp.err_node instanceof jQuery) {

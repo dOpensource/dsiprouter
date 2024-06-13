@@ -3,7 +3,7 @@
 {% block title %}Certificates{% endblock %}
 
 {% block custom_css %}
- {{ link_tag('certificates') }}
+  {{ link_tag('certificates') }}
 {% endblock %}
 
 {% block table_headers %}
@@ -14,7 +14,7 @@
   <div class="tableAddButton">
     <button id='open-Add' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal"
             data-target="#add">
-     Add
+      Add
     </button>
   </div>
 {% endblock %}
@@ -42,58 +42,60 @@
 -->
 {% block edit_modal %}
 
-<div class="modal-header">
-  <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-      class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-  <h4 class="modal-title custom_align" id="Heading">Update Certificate
-  <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete"
-          data-toggle="modal" data-target="#delete"><span class="glyphicon glyphicon-trash"></span>
-  </button>
-  </h4>
-</div>
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <h4 class="modal-title custom_align" id="Heading">Update Certificate
+      <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete"
+              data-toggle="modal" data-target="#delete"><span class="glyphicon glyphicon-trash"></span>
+      </button>
+    </h4>
+  </div>
 
-<div class="modal-body">
-  <form id="editCertificateForm" action="#" method="POST" role="form" enctype="multipart/form-data">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <div class="modal-body">
+    <form id="editCertificateForm" action="#" method="POST" role="form" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
-    <div class="form-group">
-      <input class="form-control" type="text" id="domain2" name="domain" placeholder="Domain name for the certificate"
-             autofocus="autofocus">
-    </div>
-    <div class="form-group">
-          <div id="certtypeoptions2" class="btn-group" data-toggle="buttons">
-            <label><input type="radio" name="certtype" id="certtype_generate2" value="generated" checked>
-            Generate
-            </label>
-            <label><input type="radio" name="certtype" id="certtype_upload2" value="uploaded">
+      <div class="form-group">
+        <input class="form-control" type="text" id="domain2" name="domain" placeholder="Domain name for the certificate"
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <div id="certtypeoptions2" class="btn-group" data-toggle="buttons">
+{#          <label>#}
+{#            <input type="radio" name="certtype" id="certtype_generate2" value="generated" checked>#}
+{#            Generate#}
+{#          </label>#}
+          <label>
+            <input type="radio" name="certtype" id="certtype_upload2" value="uploaded">
             Upload
-      </label>
-          </div>
-     </div>
-    <div id="generate2">
-      <div class="alert alert-warning pre-scrollable hide" id="terminalDiv2">
-          <strong>
-      Access this server via ssh and execute the command below.  Follow the instructions and upload the certificate<br><br>
-          </strong>
-    <pre><code class="bash" id="terminalCommand2">
-
-         </code></pre>
+          </label>
         </div>
-      </div><!-- end of generate tab -->
+      </div>
+{#      <div id="generate2">#}
+{#        <div class="alert alert-warning pre-scrollable hide" id="terminalDiv2">#}
+{#          <strong>#}
+{#            Access this server via ssh and execute the command below. Follow the instructions and upload the certificate<br><br>#}
+{#          </strong>#}
+{#          <pre><code class="bash" id="terminalCommand2">#}
+{##}
+{#         </code></pre>#}
+{#        </div>#}
+{#      </div><!-- end of generate tab -->#}
 
-    <div id="uploaded2" class="form-group hide">
+      <div id="uploaded2" class="form-group hide">
 
         <input type="file" name="certandkey" multiple>
 
-    </div> <!-- end of upload tab -->
+      </div> <!-- end of upload tab -->
 
-    <div class="modal-footer ">
-      <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-          class="glyphicon glyphicon-ok-sign"></span> Update Certificate
-      </button>
-    </div>
-  </form>
-</div>
+      <div class="modal-footer ">
+        <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
+            class="glyphicon glyphicon-ok-sign"></span> Update Certificate
+        </button>
+      </div>
+    </form>
+  </div>
 
 {% endblock %}
 
@@ -114,34 +116,39 @@
                autofocus="autofocus">
       </div>
       <div class="form-check">
-	<input type="checkbox" class="form-check-input" id="replace_default_cert" name="replace_default_cert"  value="true" checked>
-	<label class="form-check-label" for="replace_default_cert">Replace the default certificate</label>
+        <input type="checkbox" class="form-check-input" id="replace_default_cert" name="replace_default_cert"
+               value="true" checked>
+        <label class="form-check-label" for="replace_default_cert">Replace the default certificate</label>
       </div>
       <div class="form-group">
-            <div id="certtypeoptions" class="btn-group" data-toggle="buttons">
-              <label><input type="radio" name="certtype" id="certtype_generate" value="generated">
-              Generate
-              </label>
-              <label><input type="radio" name="certtype" id="certtype_upload" value="uploaded" checked>
-              Upload
-	      </label>
-            </div>
-       </div>
-      <div id="generate">
-      	<div class="alert alert-warning pre-scrollable hide" id="terminalDiv">
-            <strong>
-		    Access this server via ssh and execute the command below.  Follow the instructions and upload the certificate<br><br>
-            </strong>
-	    <pre><code class="bash" id="terminalCommand">
-	    dsiprouter generatecert
-           </code></pre>
-          </div>
-        </div><!-- end of generate tab -->
+        <div id="certtypeoptions" class="btn-group" data-toggle="buttons">
+{#          <label>#}
+{#            <input type="radio" name="certtype" id="certtype_generate" value="generated">#}
+{#            Generate#}
+{#          </label>#}
+          <label>
+            <input type="radio" name="certtype" id="certtype_upload" value="uploaded" checked>
+            Upload
+          </label>
+        </div>
+      </div>
+{#      <div id="generate">#}
+{#        <div class="alert alert-warning pre-scrollable hide" id="terminalDiv">#}
+{#          <strong>#}
+{#            Access this server via ssh and execute the command below. Follow the instructions and upload the certificate<br><br>#}
+{#          </strong>#}
+{#          <pre><code class="bash" id="terminalCommand">#}
+{#dsiprouter generatecert#}
+{#           </code></pre>#}
+{#        </div>#}
+{#      </div><!-- end of generate tab -->#}
 
       <div id="uploaded" class="form-group hide">
 
-	  <label class="form-check-label" for="certandkey">Select certificate (.crt or .cert) and private key file (.key or .pem)</label>
-          <input type="file" id="certandkey" name="certandkey" multiple>
+        <label class="form-check-label" for="certandkey">
+          Select certificate (.crt or .cert) and private key file (.key or .pem)
+        </label>
+        <input type="file" id="certandkey" name="certandkey" multiple>
 
       </div> <!-- end of upload tab -->
 

@@ -2,12 +2,30 @@ import socket, binascii, requests, re
 import requests.packages.urllib3.util.connection as urllib3_conn
 from util.pyasync import mtexec
 
-
 # constants
-RTF_UP = 0x0001                         # route usable
-RTF_GATEWAY = 0x0002                    # destination is a gateway
-RTF_HOST = 0x0004                       # host entry (net otherwise)
-DSIP_DNS_ALIASES = ['local.cluster']    # special purpose dsip hostnames
+RTF_UP = 0x0001  # route usable
+RTF_GATEWAY = 0x0002  # destination is a gateway
+RTF_HOST = 0x0004  # host entry (net otherwise)
+DSIP_DNS_ALIASES = ['local.cluster']  # special purpose dsip hostnames
+RFC2396_USER_TRANSLATION = {
+    0: '%00', 1: '%01', 2: '%02', 3: '%03', 4: '%04', 5: '%05', 6: '%06', 7: '%07', 8: '%08', 9: '%09', 10: '%0a', 11: '%0b', 12: '%0c', 13: '%0d',
+    14: '%0e', 15: '%0f', 16: '%10', 17: '%11', 18: '%12', 19: '%13', 20: '%14', 21: '%15', 22: '%16', 23: '%17', 24: '%18', 25: '%19', 26: '%1a',
+    27: '%1b', 28: '%1c', 29: '%1d', 30: '%1e', 31: '%1f', 32: '%20', 34: '%22', 35: '%23', 37: '%25', 47: '%2f', 60: '%3c', 62: '%3e', 63: '%3f',
+    64: '%40', 91: '%5b', 92: '%5c', 93: '%5d', 94: '%5e', 96: '%60', 123: '%7b', 124: '%7c', 125: '%7d', 127: '%7f', 128: '%80', 129: '%81',
+    130: '%82', 131: '%83', 132: '%84', 133: '%85', 134: '%86', 135: '%87', 136: '%88', 137: '%89', 138: '%8a', 139: '%8b', 140: '%8c', 141: '%8d',
+    142: '%8e', 143: '%8f', 144: '%90', 145: '%91', 146: '%92', 147: '%93', 148: '%94', 149: '%95', 150: '%96', 151: '%97', 152: '%98', 153: '%99',
+    154: '%9a', 155: '%9b', 156: '%9c', 157: '%9d', 158: '%9e', 159: '%9f', 160: '%a0', 161: '%a1', 162: '%a2', 163: '%a3', 164: '%a4', 165: '%a5',
+    166: '%a6', 167: '%a7', 168: '%a8', 169: '%a9', 170: '%aa', 171: '%ab', 172: '%ac', 173: '%ad', 174: '%ae', 175: '%af', 176: '%b0', 177: '%b1',
+    178: '%b2', 179: '%b3', 180: '%b4', 181: '%b5', 182: '%b6', 183: '%b7', 184: '%b8', 185: '%b9', 186: '%ba', 187: '%bb', 188: '%bc', 189: '%bd',
+    190: '%be', 191: '%bf', 192: '%c0', 193: '%c1', 194: '%c2', 195: '%c3', 196: '%c4', 197: '%c5', 198: '%c6', 199: '%c7', 200: '%c8', 201: '%c9',
+    202: '%ca', 203: '%cb', 204: '%cc', 205: '%cd', 206: '%ce', 207: '%cf', 208: '%d0', 209: '%d1', 210: '%d2', 211: '%d3', 212: '%d4', 213: '%d5',
+    214: '%d6', 215: '%d7', 216: '%d8', 217: '%d9', 218: '%da', 219: '%db', 220: '%dc', 221: '%dd', 222: '%de', 223: '%df', 224: '%e0', 225: '%e1',
+    226: '%e2', 227: '%e3', 228: '%e4', 229: '%e5', 230: '%e6', 231: '%e7', 232: '%e8', 233: '%e9', 234: '%ea', 235: '%eb', 236: '%ec', 237: '%ed',
+    238: '%ee', 239: '%ef', 240: '%f0', 241: '%f1', 242: '%f2', 243: '%f3', 244: '%f4', 245: '%f5', 246: '%f6', 247: '%f7', 248: '%f8', 249: '%f9',
+    250: '%fa', 251: '%fb', 252: '%fc', 253: '%fd', 254: '%fe', 255: '%ff'
+}
+RFC2396_USER_ESCAPE_REGEX = re.compile(r'%[a-fA-F0-9][a-fA-F0-9]')
+
 
 def ipv4Test(address):
     try:
@@ -22,12 +40,14 @@ def ipv4Test(address):
         return False
     return True
 
+
 def ipv6Test(address):
     try:
         socket.inet_pton(socket.AF_INET6, address)
     except socket.error:  # not a valid address
         return False
     return True
+
 
 def isValidIP(address, ip_ver=''):
     """ Determine if ip address is valid """
@@ -39,6 +59,7 @@ def isValidIP(address, ip_ver=''):
         if not ipv4Test(address) and not ipv6Test(address):
             return False
         return True
+
 
 def getInternalIP(ip_ver=''):
     """
@@ -68,6 +89,7 @@ def getInternalIP(ip_ver=''):
             pass
 
     return None
+
 
 def getExternalIP(ip_ver=''):
     """
@@ -150,6 +172,7 @@ def hostToIP(host, ip_ver=''):
             raise Exception("Endpoint hostname/address is malformed or not working:{0}".format(host))
     return None
 
+
 def ipToHost(ip, exclude_dsip_aliases=True):
     """
     Converts IP Address to hostname\n
@@ -168,6 +191,13 @@ def ipToHost(ip, exclude_dsip_aliases=True):
         return host
     except:
         return None
+
+
+def encodeSipUser(user):
+    return user.translate(RFC2396_USER_TRANSLATION)
+
+def decodeSipUser(user):
+    return RFC2396_USER_ESCAPE_REGEX.sub(lambda m: chr(int(m.group()[1:], base=16)), user)
 
 def parseSipUri(uri):
     """
@@ -214,6 +244,7 @@ def parseSipUri(uri):
             res['params'] = {x[0]: (x[1] if len(x) == 2 else True) for x in [y.split('=', 1) for y in res['params'].split(';')]}
         return res
     return None
+
 
 def parseGenericUri(uri):
     """
@@ -303,6 +334,7 @@ def safeUriToHost(uri, default_port=None):
         res = '{}:{}'.format(res, port)
     return res
 
+
 def safeStripPort(address):
     """
     Strip port from address\n
@@ -327,6 +359,7 @@ def safeStripPort(address):
     else:
         res = address
     return res
+
 
 def safeFormatSipUri(uri, default_proto='sip', default_user='', default_port=5060, default_params={}):
     """
@@ -364,10 +397,13 @@ def safeFormatSipUri(uri, default_proto='sip', default_user='', default_port=506
     port = str(parts['port']) if parts['port'] is not None else str(default_port)
 
     tmp = parts['params'] if parts['params'] is not None else default_params
-    params = ';'.join([('='.join([x[0],str(x[1])]) if not isinstance(x[1], bool) else x[0]) for x in tmp.items()])
+    params = ';'.join([('='.join([x[0], str(x[1])]) if not isinstance(x[1], bool) else x[0]) for x in tmp.items()])
 
-    return proto + ':' + (user + '@' if len(user) > 0 else '') + \
-           host + ':' + port + (';' + params if len(params) > 0 else '')
+    return proto + ':' + \
+           (encodeSipUser(user) + '@' if len(user) > 0 else '') + \
+           host + ':' + \
+           port + (';' + params if len(params) > 0 else '')
+
 
 def getRoutingTableIPv4():
     """
@@ -385,18 +421,19 @@ def getRoutingTableIPv4():
             for line in fp:
                 fields = line.strip().split()
                 rt_entries.append({
-                    'iface': fields[0],             # interface name
-                    'dst_addr': int(fields[1], 16), # destination network/host address
+                    'iface': fields[0],  # interface name
+                    'dst_addr': int(fields[1], 16),  # destination network/host address
                     'gw_addr': int(fields[2], 16),  # gateway address
-                    'flags': int(fields[3], 16),    # routing flags
-                    'use': int(fields[5]),          # number of lookups for this route
-                    'metric': int(fields[6]),       # hops to target address
-                    'mask': int(fields[7], 16),     # network mask for destination
-                    'mtu': int(fields[8])           # max packet size for this route
+                    'flags': int(fields[3], 16),  # routing flags
+                    'use': int(fields[5]),  # number of lookups for this route
+                    'metric': int(fields[6]),  # hops to target address
+                    'mask': int(fields[7], 16),  # network mask for destination
+                    'mtu': int(fields[8])  # max packet size for this route
                 })
     except:
         pass
     return rt_entries
+
 
 def getRoutingTableIPv6():
     """
@@ -414,19 +451,20 @@ def getRoutingTableIPv6():
             for line in fp:
                 fields = line.strip().split()
                 rt_entries.append({
-                    'iface': fields[9],                 # interface name
-                    'dst_addr': int(fields[0], 16),     # destination network/host address
-                    'dst_plen': int(fields[1], 16),     # destination address prefix length
-                    'src_addr': int(fields[2], 16),     # source network/host address
-                    'src_plen': int(fields[3], 16),     # source address prefix length
-                    'next_hop': int(fields[4], 16),     # gateway / next hop address
-                    'metric': int(fields[5], 16),       # hops to target address
-                    'use': int(fields[7], 16),          # number of lookups for this route
-                    'flags': int(fields[8], 16),        # routing flags
+                    'iface': fields[9],  # interface name
+                    'dst_addr': int(fields[0], 16),  # destination network/host address
+                    'dst_plen': int(fields[1], 16),  # destination address prefix length
+                    'src_addr': int(fields[2], 16),  # source network/host address
+                    'src_plen': int(fields[3], 16),  # source address prefix length
+                    'next_hop': int(fields[4], 16),  # gateway / next hop address
+                    'metric': int(fields[5], 16),  # hops to target address
+                    'use': int(fields[7], 16),  # number of lookups for this route
+                    'flags': int(fields[8], 16),  # routing flags
                 })
     except:
         pass
     return rt_entries
+
 
 # Inspired By: `Python CookBook <https://www.safaribooksonline.com/library/view/python-cookbook/0596001673/ch10s06.html>`_
 def ipToInt(ip_str):
@@ -447,6 +485,7 @@ def ipToInt(ip_str):
             pass
     raise ValueError("invalid IP address")
 
+
 def ipToStr(ip_int):
     """
     Convert integer IP to string
@@ -465,6 +504,7 @@ def ipToStr(ip_int):
             pass
     raise ValueError("invalid IP address")
 
+
 def netMaskToPrefixLen(mask):
     """
     Convert a network address mask to a CIDR prefix length\n
@@ -481,6 +521,7 @@ def netMaskToPrefixLen(mask):
     if isinstance(mask, str):
         mask = ipToInt(mask)
     return str(len(bin(mask)[2:]))
+
 
 def prefixLenToNetMask(prefixlen):
     """
@@ -500,6 +541,7 @@ def prefixLenToNetMask(prefixlen):
     mask = int('1' * 128, 2) & int('1' * prefixlen, 2)
     return ipToStr(mask)
 
+
 def getInternalCIDR(ip_ver=''):
     """
     Get internal IP and network prefix length as CIDR address
@@ -517,7 +559,7 @@ def getInternalCIDR(ip_ver=''):
             if len(rt_entries) == 0:
                 raise Exception()
             def_iface = next(x for x in rt_entries \
-                             if x['dst_addr'] == 0 and x['flags'] & (RTF_UP | RTF_GATEWAY))['iface']
+                if x['dst_addr'] == 0 and x['flags'] & (RTF_UP | RTF_GATEWAY))['iface']
             net_mask = next(x for x in rt_entries if x['gw_addr'] == 0 and x['iface'] == def_iface)['mask']
             prefix_len = netMaskToPrefixLen(net_mask)
             ip = getInternalIP(ip_ver='4')
@@ -531,13 +573,12 @@ def getInternalCIDR(ip_ver=''):
             if len(rt_entries) == 0:
                 raise Exception()
             def_iface = next(x for x in rt_entries \
-                             if x['dst_addr'] == 0 and x['flags'] & (RTF_UP | RTF_GATEWAY))['iface']
+                if x['dst_addr'] == 0 and x['flags'] & (RTF_UP | RTF_GATEWAY))['iface']
             prefix_len = str(next(x for x in rt_entries \
-                               if x['dst_addr'] != 0 and x['next_hop'] != 0 \
-                               and x['iface'] == def_iface)['dst_plen'])
+                if x['dst_addr'] != 0 and x['next_hop'] != 0 \
+                   and x['iface'] == def_iface)['dst_plen'])
             ip = getInternalIP(ip_ver='6')
             return '{}/{}'.format(ip, prefix_len)
         except:
             pass
     return None
-

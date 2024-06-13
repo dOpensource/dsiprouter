@@ -12,7 +12,7 @@ from modules.api.kamailio.errors import NoDispatcherSets, KamailioError
 import settings
 
 
-def sendJsonRpcCmd(host, method, params=()):
+def sendJsonRpcCmd(host, method, params=(), timeout=settings.KAM_JSONRPC_TIMEOUT):
     """
     Send a JSONRPC command to Kamailio
 
@@ -22,6 +22,8 @@ def sendJsonRpcCmd(host, method, params=()):
     :type method:     str
     :param params:    parameters for the command
     :type params:     tuple|list
+    :param timeout:   timeout in seconds for command to finish
+    :type timeout:    int
     :return:          The result from Kamailio
     :rtype:           dict
     :raises requests.exceptions.HTTPError:          if an HTTP error occurred
@@ -50,13 +52,12 @@ def sendJsonRpcCmd(host, method, params=()):
             f'http://{host}:5060{settings.KAM_JSONRPC_ROOTPATH}',
             headers=headers,
             json=payload,
-            timeout=settings.KAM_JSONRPC_TIMEOUT,
+            timeout=timeout,
         )
 
-    timeout = time() + settings.KAM_JSONRPC_TIMEOUT
-
     r: Union[requests.Response, None] = None
-    while time() < timeout:
+    cutoff_time = time() + timeout
+    while time() < cutoff_time:
         try:
             r = sendit(host)
             r.raise_for_status()
@@ -123,7 +124,8 @@ def reloadKamailio():
         if 'WITH_LCR' in features_enabled:
             rpc_args.append(('127.0.0.1', 'htable.reload', ['tofromprefix']))
         if 'WITH_TLS' in features_enabled:
-            rpc_args.append(('127.0.0.1', 'tls.reload'))
+            # TODO: tls.reload is VERY slow on some systems
+            rpc_args.append(('127.0.0.1', 'tls.reload', [], 20))
         if 'WITH_WEBSOCKETS' in features_enabled:
             rpc_args.append(('127.0.0.1', 'ws.enable'))
         if 'WITH_DNID_LNP_ENRICHMENT' in features_enabled:

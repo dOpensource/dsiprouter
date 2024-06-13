@@ -34,6 +34,7 @@
       <th class="hidden"></th>
       <th class="hidden"></th>
       <th class="hidden"></th>
+      <th class="hidden"></th>
       <th></th>
       <th></th>
     </tr>
@@ -51,6 +52,7 @@
         <td class='auth_domain hide'>{{ row.r_domain|noneFilter() }}</td>
         <td class='auth_username hide'>{{ row.auth_username|noneFilter() }}</td>
         <td class='auth_proxy hide'>{{ row.auth_proxy|noneFilter() }}</td>
+        <td class='lb_enabled hide'>{{ row.lb_enabled|noneFilter() }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
@@ -206,27 +208,28 @@
         </div>
 
         <div class="modal-body">
-          <form class="gwgroupform" action="/carriergroups" method="POST" onsubmit="event.preventDefault();" role="form">
-          <!-- nav tabs -->
-          <div id="carrier-nav" class="navbar">
-            <ul class="nav nav-tabs">
-              <li role="presentation" class="nav-item">
-                <a href="#" name="auth-toggle" data-type="toggle" class="nav-link">Auth</a>
-              </li>
-              <li role="presentation" class="nav-item">
-                <a href="#" name="config-toggle" data-type="toggle" class="nav-link">Config</a>
-              </li>
-              <li role="presentation" class="nav-item">
-                <a href="#" name="carriers-toggle" data-type="toggle" class="nav-link">Endpoints</a>
-              </li>
-              {#              <li role="presentation" class="nav-item">#}
-              {#                <a href="/carriers" name="carriers-link" data-type="link" class="nav-link">Endpoints</a>#}
-              {#              </li>#}
-            </ul>
-          </div>
+          <form class="gwgroupform" action="/carriergroups" method="POST" onsubmit="event.preventDefault();"
+                role="form">
+            <!-- nav tabs -->
+            <div id="carrier-nav" class="navbar">
+              <ul class="nav nav-tabs">
+                <li role="presentation" class="nav-item">
+                  <a href="#" name="auth-toggle" data-type="toggle" class="nav-link">Auth</a>
+                </li>
+                <li role="presentation" class="nav-item">
+                  <a href="#" name="config-toggle" data-type="toggle" class="nav-link">Config</a>
+                </li>
+                <li role="presentation" class="nav-item">
+                  <a href="#" name="carriers-toggle" data-type="toggle" class="nav-link">Endpoints</a>
+                </li>
+                {#              <li role="presentation" class="nav-item">#}
+                {#                <a href="/carriers" name="carriers-link" data-type="link" class="nav-link">Endpoints</a>#}
+                {#              </li>#}
+              </ul>
+            </div>
 
-           <!-- config form -->
-          <div class="hidden" name="config-toggle" style="padding-top: 15px;">
+            <!-- config form -->
+            <div class="hidden" name="config-toggle" style="padding-top: 15px;">
 
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" class="gwgroup" name="gwgroup">
@@ -237,10 +240,23 @@
                 <input class="form-control new_name" type="text" name="new_name" placeholder="Group Name"
                        autofocus="autofocus" required="required">
               </div>
-          </div>
 
-          <!-- auth form -->
-          <div class="hidden" name="auth-toggle">
+              <div class="form-group">
+                <div class="checkbox">
+                  <label class="label-toggle">
+                    <input class="toggle-loadbalancing" type="checkbox" data-toggle="toggle" value="1"
+                           data-on="<span class='icon-icon-load_balance'></span> Enabled"
+                           data-off="<span class='icon-icon-load_balance'></span> Disabled"
+                           data-width="125px">
+                    Load Balancing
+                  </label>
+                </div>
+                <input class="lb_enabled" type="hidden" name="lb_enabled" value="0">
+              </div>
+            </div>
+
+            <!-- auth form -->
+            <div class="hidden" name="auth-toggle">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" class="gwgroup" name="gwgroup">
               <input type="hidden" class="name" name="name">
@@ -270,7 +286,7 @@
                          placeholder="Registration Server or Domain">
                 </div>
                 <div class="form-group">
-          	      <h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
+                  <h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
                 </div>
                 <div class="form-group">
                   <input class="form-control auth_username" type="text" name="auth_username"
@@ -281,34 +297,34 @@
                          placeholder="Outbound Proxy">
                 </div>
               </div>
-          </div>
-          <!-- carriers table -->
-          <div class="hidden" name="carriers-toggle">
-            <div class="wrapper-horizontal edge-centered">
+            </div>
+            <!-- carriers table -->
+            <div class="hidden" name="carriers-toggle">
+              <div class="wrapper-horizontal edge-centered">
 
-              <div class="tableAddButton">
-                <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
-                        data-target="#add"> Add
-                </button>
+                <div class="tableAddButton">
+                  <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
+                          data-target="#add"> Add
+                  </button>
+                </div>
+
+                <div class="navBarButtons">
+                </div>
               </div>
 
-              <div class="navBarButtons">
+              <div id="carriers-table" class="table-responsive">
+                <div id="carriers-loading wrapper-vertical centered">
+                  <div class="spinner spinner-circle"></div>
+                  <h5>Loading Your Carriers..</h5>
+                </div>
               </div>
             </div>
-
-            <div id="carriers-table" class="table-responsive">
-              <div id="carriers-loading wrapper-vertical centered">
-                <div class="spinner spinner-circle"></div>
-                <h5>Loading Your Carriers..</h5>
-              </div>
+            <div class="modal-footer ">
+              <button type="submit" id="updateGroupButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
+                  class="glyphicon glyphicon-ok-sign"></span> Update
+              </button>
             </div>
-          </div>
-          <div class="modal-footer ">
-            <button type="submit" id="updateGroupButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
-                class="glyphicon glyphicon-ok-sign"></span> Update
-            </button>
-          </div>
-        </form>
+          </form>
         </div><!-- /.modal-body -->
 
       </div><!-- /.modal-content -->
@@ -336,26 +352,41 @@
             <div class="form-group">
               <input class="form-control name" type="text" id="name" name="name" placeholder="Group Name"
                      autofocus="autofocus" required="required">
-      	    </div>
-	          <div class="form-group">
-              <select class="form-control plugin_name" id="plugin_name" name="plugin_name" title="plugin_name" required="required">
-          		<option value="None" selected="">Select Carrier Plugin (Optional)</option>
-          		<option value="None"> None</option>
-          		<option value="Twilio">Twilio</option>
+            </div>
+
+            <div class="form-group">
+              <div class="checkbox">
+                <label class="label-toggle">
+                  <input class="toggle-loadbalancing" type="checkbox" data-toggle="toggle" value="1"
+                         data-on="<span class='icon-icon-load_balance'></span> Enabled"
+                         data-off="<span class='icon-icon-load_balance'></span> Disabled"
+                         data-width="125px">
+                  Load Balancing
+                </label>
+              </div>
+              <input class="lb_enabled" type="hidden" name="lb_enabled" value="0">
+            </div>
+
+            <div class="form-group">
+              <select class="form-control plugin_name" id="plugin_name" name="plugin_name" title="plugin_name">
+                <option value="" selected="">Select Carrier Plugin (Optional)</option>
+                <option value="Twilio">Twilio</option>
               </select>
             </div>
 
-	          <div class="form-group plugin_creds hidden" id="plugin_creds" name="plugin_creds" value="0">
+            <div class="form-group plugin_creds hidden" id="plugin_creds" name="plugin_creds" value="0">
               <p>Please enter the plugin credentials.</p>
               <div class="form-group">
-                <input class="form-control plugin_account_sid" id="plugin_account_sid" type="text" name="plugin_account_sid"
+                <input class="form-control plugin_account_sid" id="plugin_account_sid" type="text"
+                       name="plugin_account_sid"
                        placeholder="Account SID" autofocus="autofocus">
               </div>
               <div class="form-group">
-                <input class="form-control plugin_account_token" id="plugin_account_token" type="password" name="plugin_account_token"
+                <input class="form-control plugin_account_token" id="plugin_account_token" type="password"
+                       name="plugin_account_token"
                        placeholder="Account Token" autofocus="autofocus">
               </div>
-	          </div>
+            </div>
 
             <div class="form-group">
               <div class="authoptions radio">
@@ -368,30 +399,30 @@
 
             <div class="form-group hidden" id="userpwd_enabled" name="userpwd_enabled" value="0">
               <p>Please enter the registration username and password provided by the carrier.</p>
-                <div class="form-group">
-                  <input class="form-control r_username" type="text" name="r_username"
-                         placeholder="Username" autofocus="autofocus">
-                </div>
-                <div class="form-group">
-                  <input class="form-control auth_password" type="password" name="auth_password"
-                         placeholder="Auth Password">
-                </div>
-                <div class="form-group">
-                  <input class="form-control auth_domain" type="text" name="auth_domain"
-                         placeholder="Registration Server or Domain">
-                </div>
-                <div class="form-group">
-          	      <h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
-                </div>
-                <div class="form-group">
-                  <input class="form-control auth_username" type="text" name="auth_username"
-                         placeholder="Auth Username">
-                </div>
-                <div class="form-group">
-                  <input class="form-control auth_proxy" type="text" name="auth_proxy"
-                         placeholder="Outbound Proxy">
-                </div>
+              <div class="form-group">
+                <input class="form-control r_username" type="text" name="r_username"
+                       placeholder="Username" autofocus="autofocus">
               </div>
+              <div class="form-group">
+                <input class="form-control auth_password" type="password" name="auth_password"
+                       placeholder="Auth Password">
+              </div>
+              <div class="form-group">
+                <input class="form-control auth_domain" type="text" name="auth_domain"
+                       placeholder="Registration Server or Domain">
+              </div>
+              <div class="form-group">
+                <h5 class="modal-title custom_align" id="Heading">Optional Credentials</h5>
+              </div>
+              <div class="form-group">
+                <input class="form-control auth_username" type="text" name="auth_username"
+                       placeholder="Auth Username">
+              </div>
+              <div class="form-group">
+                <input class="form-control auth_proxy" type="text" name="auth_proxy"
+                       placeholder="Outbound Proxy">
+              </div>
+            </div>
 
             <div class="modal-footer ">
               <button type="submit" id="addButton" class="btn btn-lg btn-primary" style="width: 100%;"><span

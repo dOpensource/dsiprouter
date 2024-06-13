@@ -1,84 +1,93 @@
 {
   "selection": [
     {
-      "order": 24,
+      "order": 6,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "fusionpbx_full"
     },
     {
-      "order": 25,
+      "order": 7,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "gryphon"
     },
     {
-      "order": 26,
+      "order": 8,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "fusionpbx"
     },
     {
-      "order": 27,
+      "order": 9,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "asterisk"
     },
     {
-      "order": 28,
+      "order": 10,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "kamailio"
     },
     {
-      "order": 29,
+      "order": 11,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "flowroute"
     },
     {
-      "order": 30,
+      "order": 12,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "freepbx"
     },
     {
-      "order": 31,
+      "order": 13,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "zencommunication"
     },
     {
-      "order": 32,
+      "order": 14,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "circle-up"
     },
     {
-      "order": 33,
+      "order": 15,
       "ligatures": "",
-      "prevSize": 32,
+      "prevSize": 20,
       "name": "circle-down"
     },
     {
-      "order": 34,
+      "order": 16,
       "name": "call_failfwd",
-      "prevSize": 32
+      "prevSize": 20
     },
     {
-      "order": 35,
+      "order": 17,
       "name": "call_hardfwd",
-      "prevSize": 32
+      "prevSize": 20
     },
     {
-      "order": 37,
+      "order": 18,
       "name": "transnexus",
-      "prevSize": 32
+      "prevSize": 20,
+      "codes": [
+        59658,
+        59659
+      ]
+    },
+    {
+      "order": 5,
+      "prevSize": 20,
+      "name": "load_balance"
     }
   ],
   "metadata": {
     "name": "icomoon",
-    "iconsHash": 567315672
+    "iconsHash": 866368128
   },
   "height": 1024,
   "prevSize": 32,
@@ -92,7 +101,7 @@
         "fusionpbx_full"
       ],
       "defaultCode": 59648,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -103,7 +112,7 @@
         "gryphon"
       ],
       "defaultCode": 59649,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -113,7 +122,7 @@
         "fusionpbx"
       ],
       "defaultCode": 59650,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -124,7 +133,7 @@
         "asterisk"
       ],
       "defaultCode": 59651,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -135,7 +144,7 @@
         "kamailio"
       ],
       "defaultCode": 59652,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -145,7 +154,7 @@
         "flowroute"
       ],
       "defaultCode": 59653,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -156,7 +165,7 @@
         "freepbx"
       ],
       "defaultCode": 59654,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -167,7 +176,7 @@
         "zencommunication"
       ],
       "defaultCode": 59655,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -177,7 +186,7 @@
         "circle-up"
       ],
       "defaultCode": 59969,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -187,7 +196,7 @@
         "circle-down"
       ],
       "defaultCode": 59971,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -198,7 +207,7 @@
         "call_failfwd"
       ],
       "defaultCode": 59656,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -209,7 +218,7 @@
         "call_hardfwd"
       ],
       "defaultCode": 59657,
-      "grid": 0
+      "grid": 20
     },
     {
       "paths": [
@@ -225,10 +234,6 @@
         }
       ],
       "isMulticolor": true,
-      "grid": 0,
-      "tags": [
-        "transnexus"
-      ],
       "colorPermutations": {
         "2552552551781681": [
           {
@@ -238,9 +243,41 @@
             "f": 1
           }
         ]
-      }
+      },
+      "tags": [
+        "transnexus"
+      ],
+      "grid": 20,
+      "defaultCode": 59658
+    },
+    {
+      "paths": [
+        "M870.4 614.4h-307.2v204.8h51.2v204.8h-204.8v-204.8h51.2v-204.8h-307.2v204.8h51.2v204.8h-204.8v-204.8h51.2v-204.8c0-56.554 45.846-102.4 102.4-102.4v0h307.2v-204.8h-102.4v-307.2h307.2v307.2h-102.4v204.8h307.2c56.554 0 102.4 45.846 102.4 102.4v0 204.8h51.2v204.8h-204.8v-204.8h51.2v-204.8z"
+      ],
+      "tags": [
+        "load_balance"
+      ],
+      "grid": 20,
+      "defaultCode": 57617
     }
   ],
+  "colorThemes": [
+    [
+      [
+        0,
+        78,
+        168,
+        1
+      ],
+      [
+        255,
+        255,
+        255,
+        1
+      ]
+    ]
+  ],
+  "colorThemeIdx": 0,
   "preferences": {
     "showGlyphs": true,
     "showQuickUse": true,
@@ -249,23 +286,14 @@
     "fontPref": {
       "prefix": "icon-",
       "metadata": {
-        "fontFamily": "icomoon",
-        "majorVersion": 1,
-        "minorVersion": 0
+        "fontFamily": "icomoon"
       },
       "metrics": {
         "emSize": 1024,
         "baseline": 6.25,
         "whitespace": 50
       },
-      "embed": false,
-      "showSelector": false,
-      "showMetrics": false,
-      "showMetadata": false,
-      "showVersion": false,
-      "includeMetadata": true,
-      "ie7": false,
-      "noie8": false
+      "embed": false
     },
     "imagePref": {
       "prefix": "icon-",
@@ -273,11 +301,7 @@
       "useClassSelector": true,
       "color": 0,
       "bgColor": 16777215,
-      "classSelector": ".icon",
-      "name": "icomoon",
-      "height": 32,
-      "columns": 16,
-      "margin": 16
+      "classSelector": ".icon"
     },
     "historySize": 50,
     "showCodes": true,

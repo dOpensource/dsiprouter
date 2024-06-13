@@ -1,6 +1,6 @@
 ;(function(window, document) {
   'use strict';
-  
+
   // throw an error if required functions not defined
   if (typeof validateFields === "undefined") {
     throw new Error("validateFields() is required and is not defined");
@@ -10,6 +10,9 @@
   }
   if (typeof toggleElemDisabled === "undefined") {
     throw new Error("toggleElemDisabled() is required and is not defined");
+  }
+  if (typeof validateFields === "undefined") {
+    throw new Error("validateFields() is required and is not defined");
   }
 
   // throw an error if required globals not defined
@@ -21,8 +24,42 @@
     throw new Error("GUI_BASE_URL is required and is not defined");
   }
 
+  // globals
   var gwgroupid;
   var gwgroup_table = $('').DataTable();
+  var plugin_name_sel = $('#plugin_name');
+  var plugin_name_regex = new RegExp('^([a-zA-Z0-9.-])+$');
+
+  // when using twilio plugin we need to do some extra validation for
+  function validatePluginData(fields) {
+    if (plugin_name_sel.val() === "Twilio") {
+      if (!plugin_name_regex.test(fields.get('name').val())) {
+        return {
+          result: false,
+          err_node: fields.get('name'),
+          err_msg: "Endpoint Group Name must be a valid hostname for the Twilio plugin"
+        };
+      }
+      if (fields.get('plugin_account_sid').val() === '') {
+        return {
+          result: false,
+          err_node: fields.get('plugin_account_sid'),
+          err_msg: "Account SID is required for the Twilio plugin"
+        };
+      }
+      if (fields.get('plugin_account_token').val() === '') {
+        return {
+          result: false,
+          err_node: fields.get('plugin_account_token'),
+          err_msg: "Account Token is required for the Twilio plugin"
+        };
+      }
+    }
+
+    return {
+      result: true
+    };
+  }
 
   // Add EndpointGroup
   function addCarrierGroup(action) {
@@ -33,13 +70,13 @@
       action = "POST";
     }
 
+    // set the query parameters
     if (action === "POST") {
       action = "POST";
       selector = "#add-group";
       modal_body = $(selector + ' .modal-body');
       url = API_BASE_URL + "carriergroups";
     }
-    // Grab the Gateway Group ID if updating using a PUT
     else if (action === "PUT") {
       selector = "#edit-group";
       modal_body = $(selector + ' .modal-body');
@@ -55,30 +92,27 @@
     if (action === "PUT") {
       requestPayload.name = modal_body.find('.new_name').val();
     }
-    var plugin_name = modal_body.find('.plugin_name').val();
-    
-    if (plugin_name != "None") {
-	    var plugin = {};
-	    plugin.name = plugin_name;
-	    plugin.account_sid = modal_body.find(".plugin_account_sid").val();
-	    plugin.account_token = modal_body.find(".plugin_account_token").val();
+
+    if (plugin_name_sel.val() === "Twilio") {
+      requestPayload.plugin = {
+        name: plugin_name_sel.val(),
+        account_sid: modal_body.find(".plugin_account_sid").val(),
+        account_token: modal_body.find(".plugin_account_token").val(),
+      };
     }
 
-    requestPayload.plugin = plugin;
-    
-	  
     var auth = {};
     if (action === "POST") {
-        auth.type = modal_body.find(".authtype").val();
-	if (auth.type == "userpwd") {
-        	auth.pass = modal_body.find(".auth_password").val();
-     	 }
+      auth.type = modal_body.find(".authtype").val();
+      if (auth.type == "userpwd") {
+        auth.pass = modal_body.find(".auth_password").val();
+      }
     }
     else if (action === "PUT") {
-        auth.type = modal_body.find(".authtype").val();
-	if (auth.type == "userpwd") {
-        	auth.pass = modal_body.find(".auth_password").val();
-     	 }
+      auth.type = modal_body.find(".authtype").val();
+      if (auth.type == "userpwd") {
+        auth.pass = modal_body.find(".auth_password").val();
+      }
     }
 
     auth.r_username = modal_body.find(".r_username").val();
@@ -123,7 +157,7 @@
             "name": requestPayload.name,
             "gwgroupid": gwgroupid_int
           }).draw();
-          location.reload(true); 
+          location.reload(true);
         }
         else {
           /*
@@ -133,12 +167,11 @@
             "name": requestPayload.name,
             "gwgroupid": gwgroupid_int
           }).draw(); */
-          location.reload(true); 
+          location.reload(true);
         }
       }
     })
   }
-
 
   function updateCarrierGroup() {
     addCarrierGroup("PUT");
@@ -149,7 +182,7 @@
     /* prevent form default submit */
     ev.preventDefault();
 
-    if (validateFields('#add-group')) {
+    if (validateFields('#add-group', validatePluginData)) {
       addCarrierGroup();
       // hide the modal after 1.5 sec
       setTimeout(function() {
@@ -161,25 +194,25 @@
     }
   });
 
- /* validate fields before submitting api request */
-    $('#updateGroupButton').click(function(ev) {
-      /* prevent form default submit */
-      ev.preventDefault();
+  /* validate fields before submitting api request */
+  $('#updateGroupButton').click(function(ev) {
+    /* prevent form default submit */
+    ev.preventDefault();
 
-      if (validateFields('#edit-group')) {
-        updateCarrierGroup();
-        // hide the modal after 1.5 sec
-        setTimeout(function() {
-          var edit_modal = $('#edit-group');
-          if (edit_modal.is(':visible')) {
-            edit_modal.modal('hide');
-          }
-        }, 1500);
-      }
+    if (validateFields('#edit-group')) {
+      updateCarrierGroup();
+      // hide the modal after 1.5 sec
+      setTimeout(function() {
+        var edit_modal = $('#edit-group');
+        if (edit_modal.is(':visible')) {
+          edit_modal.modal('hide');
+        }
+      }, 1500);
+    }
 
-      /* prevent page reload */
-      return false;
-    });
+    /* prevent page reload */
+    return false;
+  });
 
   function setCarrierGroupHandlers() {
     var carriergroups_tbody = $('#carrier-groups tbody');
@@ -247,16 +280,30 @@
       return false;
     });
 
-    $('.plugin_name').change(function() {
-
+    /* listener for plguin dropdown changes */
+    plugin_name_sel.change(function() {
       var modal_body = $('#add-group .modal-body');
-      modal_body.find(".authoptions").addClass('hidden');
-      // Todo: Use the carriergroup plugin architecture to get meta data about the plugin
-      if ($('.plugin_name').val() != 'None')
-        modal_body.find('.plugin_creds').removeClass('hidden');
-      else
-        modal_body.find('.authoptions').addClass('hidden');;
-      
+
+      // TODO: Use the carriergroup plugin architecture to get meta data about the plugin
+      if ($(this).val() === '') {
+        modal_body.find('#plugin_creds').addClass('hidden');
+      }
+      else {
+        modal_body.find('#plugin_creds').removeClass('hidden');
+      }
+    });
+
+    /* listener for load balancing toggle */
+    $('.modal-body .toggle-loadbalancing').change(function() {
+      var modal = $(this).closest('div.modal');
+      var modal_body = modal.find('.modal-body');
+
+      if ($(this).is(":checked") || $(this).prop("checked")) {
+        modal_body.find('.lb_enabled').val(1);
+      }
+      else {
+        modal_body.find('.lb_enabled').val(0);
+      }
     });
 
     $('#open-CarrierGroupAdd').click(function() {
@@ -270,6 +317,12 @@
       modal_body.find(".auth_password").val('');
       modal_body.find(".auth_domain").val('');
       modal_body.find(".auth_proxy").val('');
+
+      /* reset plugin selections */
+      plugin_name_sel.val('').change();
+
+      /* reset toggle buttons */
+      modal_body.find("input.toggle-loadbalancing").bootstrapToggle('off');
 
       // update gwgroup for all modals
       $('.modal-body').find(".gwgroup").each(function() {
@@ -292,26 +345,11 @@
       var auth_domain = $(c).find('tr:eq(' + row_index + ') td:eq(7)').text();
       var auth_username = $(c).find('tr:eq(' + row_index + ') td:eq(8)').text();
       var auth_proxy = $(c).find('tr:eq(' + row_index + ') td:eq(9)').text();
+      var lb_enabled = $(c).find('tr:eq(' + row_index + ') td:eq(10)').text();
 
       // grab modals to change
       var modal_body = $('#edit-group .modal-body');
       var modal_bodies = $('.modal-body');
-
-      /* clear out the modal */
-      modal_body.find(".name").val('');
-      modal_body.find(".new_name").val('');
-      modal_body.find(".gwlist").val('');
-      modal_body.find(".authtype").val('');
-      modal_body.find(".r_username").val('');
-      modal_body.find(".auth_password").val('');
-      modal_body.find(".auth_domain").val('');
-      modal_body.find(".auth_username").val('');
-      modal_body.find(".auth_proxy").val('');
-
-      // update gwgroup for all modals
-      modal_bodies.find(".gwgroup").each(function() {
-        $(this).val('');
-      });
 
       /* update modal fields */
       modal_body.find(".name").val(name);
@@ -323,6 +361,14 @@
       modal_body.find(".auth_domain").val(auth_domain);
       modal_body.find(".auth_username").val(auth_username);
       modal_body.find(".auth_proxy").val(auth_proxy);
+
+      /* update toggle buttons */
+      if (lb_enabled === '1') {
+        modal_body.find("input.toggle-loadbalancing").bootstrapToggle('on');
+      }
+      else {
+        modal_body.find("input.toggle-loadbalancing").bootstrapToggle('off');
+      }
 
       // update gwgroup for all modals
       modal_bodies.find(".gwgroup").each(function() {
@@ -352,7 +398,7 @@
       $('#carrier-nav > .nav-tabs').find('a').first().trigger('click');
     });
 
-    carriergroups_tbody.on('click','#open-Delete', function() {
+    carriergroups_tbody.on('click', '#open-Delete', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('carrier-groups');
       var gwgroup = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -431,10 +477,10 @@
       if (Object.keys(related_rules).length > 0) {
         /* create an alert and append it to the DOM */
         var html_string = '<div class="alert alert-warning centered" role="alert">' +
-            '<h4>Deleting this rule will cause the following Global Outbound Routes to be deleted</h4>' +
-            '<hr>' + '<div class="table-responsive">' +
-            '<table class="table table-centered" style="margin-bottom: 0;">' +
-            '<thead><tr><th>RULE ID</th><th>NAME</th></tr></thead><tbody>';
+          '<h4>Deleting this rule will cause the following Global Outbound Routes to be deleted</h4>' +
+          '<hr>' + '<div class="table-responsive">' +
+          '<table class="table table-centered" style="margin-bottom: 0;">' +
+          '<thead><tr><th>RULE ID</th><th>NAME</th></tr></thead><tbody>';
         for (var key in related_rules) {
           html_string += '<tr><td>' + key + '</td><td>' + related_rules[key] + '</td></tr>';
         }

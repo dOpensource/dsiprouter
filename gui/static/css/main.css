@@ -1,11 +1,11 @@
 /* custom icons */
 @font-face {
   font-family: 'icomoon';
-  src: url('/static/fonts/icomoon.eot?8ena16');
-  src: url('/static/fonts/icomoon.eot?8ena16#iefix') format('embedded-opentype'),
-  url('/static/fonts/icomoon.ttf?8ena16') format('truetype'),
-  url('/static/fonts/icomoon.woff?8ena16') format('woff'),
-  url('/static/fonts/icomoon.svg?8ena16#icomoon') format('svg');
+  src: url('/static/fonts/icomoon.eot?wmk8iu');
+  src: url('/static/fonts/icomoon.eot?wmk8iu#iefix') format('embedded-opentype'),
+  url('/static/fonts/icomoon.ttf?wmk8iu') format('truetype'),
+  url('/static/fonts/icomoon.woff?wmk8iu') format('woff'),
+  url('/static/fonts/icomoon.svg?wmk8iu#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -70,6 +70,9 @@
   content: "\e90b";
   margin-left: -1em;
   color: rgb(255, 255, 255);
+}
+.icon-load_balance:before {
+  content: "\e111";
 }
 
 .wrap {
