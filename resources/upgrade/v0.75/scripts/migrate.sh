@@ -40,8 +40,11 @@ printdbg 'retrieving current system settings'
 # NOTE: some magic is being done here to reset specific settings next install
 export PYTHON_CMD=python3
 DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
+DSIP_LIB_DIR='/var/lib/dsiprouter'
 DSIP_CONFIG_FILE=${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
 DSIP_KAMAILIO_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/kamailio/kamailio.cfg"
+SYSTEM_KAMAILIO_CONFIG_DIR='/etc/kamailio'
+SYSTEM_RTPENGINE_CONFIG_DIR='/etc/rtpengine'
 export ROOT_DB_PASS=$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})
 export ROOT_DB_HOST=$(getConfigAttrib 'ROOT_DB_HOST' ${DSIP_CONFIG_FILE})
 export ROOT_DB_PORT=$(getConfigAttrib 'ROOT_DB_PORT' ${DSIP_CONFIG_FILE})
@@ -63,13 +66,25 @@ DSIP_STIRSHAKEN_LICENSE=$(decryptConfigAttrib 'DSIP_STIRSHAKEN_LICENSE' ${DSIP_C
 DSIP_TRANSNEXUS_LICENSE=$(decryptConfigAttrib 'DSIP_TRANSNEXUS_LICENSE' ${DSIP_CONFIG_FILE} | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null)
 DSIP_MSTEAMS_LICENSE=$(decryptConfigAttrib 'DSIP_MSTEAMS_LICENSE' ${DSIP_CONFIG_FILE} | dd if=/dev/stdin of=/dev/stdout bs=1 count=32 2>/dev/null)
 
+printdbg 'validating system system configuration'
+if [[ -z "$DSIP_CORE_LICENSE" ]]; then
+    printerr 'A DSIP_CORE license is required to use the auto upgrade feature'
+    echo 'Consider supporting the hard working engineers maintaining this software if you would like to use this feature'
+    exit 1
+fi
+
+
 printdbg 'preparing for migration'
-REINSTALL_DNSMASQ=1
+REINSTALL_DNSMASQ=0
 REINSTALL_NGINX=0
 REINSTALL_KAMAILIO=0
 REINSTALL_DSIPROUTER=0
 REINSTALL_RTPENGINE=0
 INSTALL_OPTS=()
+if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]]; then
+    REINSTALL_DNSMASQ=1
+    INSTALL_OPTS+=(-dns)
+fi
 if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
     REINSTALL_NGINX=1
 fi
@@ -85,7 +100,63 @@ if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]]; then
     REINSTALL_RTPENGINE=1
     INSTALL_OPTS+=(-rtp)
 fi
+
+printdbg 'backing up configs just in case the upgrade fails'
 mkdir -p $CURR_BACKUP_DIR
+# TODO: make the destination paths use our static variables as well
+mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/dsiprouter,etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
+#    mkdir -p ${CURR_BACKUP_DIR}/{var/lib/mysql,${HOME}}
+cp -af ${DSIP_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
+cp -af ${DSIP_LIB_DIR}/. ${CURR_BACKUP_DIR}/var/lib/dsiprouter/
+cp -af ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
+cp -af ${DSIP_SYSTEM_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/dsiprouter/
+cp -af ${SYSTEM_RTPENGINE_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/rtpengine/
+#    cp -af /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
+#    cp -af /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
+#    cp -af /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
+#    cp -af ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
+cp -af /etc/dnsmasq.conf ${CURR_BACKUP_DIR}/etc/
+cp -af /etc/systemd/system/{nginx,dsiprouter,dnsmasq,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/etc/systemd/system/ 2>/dev/null
+cp -af /lib/systemd/system/{nginx,dsiprouter,dnsmasq,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/lib/systemd/system/ 2>/dev/null
+cp -af /etc/default/{kamailio,rtpengine}* ${CURR_BACKUP_DIR}/etc/default/
+printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
+
+# shim any functions that would be missing from older versions
+declare -F withRootDBConn >/dev/null || {
+    function withRootDBConn() {
+        local TMP CMD
+        local CONN_OPTS=()
+
+        case "$1" in
+            --db=*)
+                TMP=$(cut -d '=' -f 2- <<<"$1")
+                [[ -n "$TMP" ]] && CONN_OPTS+=( "--database=${TMP}" )
+                shift
+                CMD="$1"
+                shift
+                ;;
+            *)
+                CMD="$1"
+                shift
+                if [[ "$CMD" == "mysql" ]]; then
+                    [[ -n "$ROOT_DB_NAME" ]] && CONN_OPTS+=( "--database=${ROOT_DB_NAME}" )
+                fi
+                ;;
+        esac
+
+        [[ -n "$ROOT_DB_HOST" ]] && CONN_OPTS+=( "--host=${ROOT_DB_HOST}" )
+        [[ -n "$ROOT_DB_PORT" ]] && CONN_OPTS+=( "--port=${ROOT_DB_PORT}" )
+        [[ -n "$ROOT_DB_USER" ]] && CONN_OPTS+=( "--user=${ROOT_DB_USER}" )
+        [[ -n "$ROOT_DB_PASS" ]] && CONN_OPTS+=( "--password=${ROOT_DB_PASS}" )
+
+        if [[ -p /dev/stdin ]]; then
+            ${CMD} "${CONN_OPTS[@]}" "$@" </dev/stdin
+        else
+            ${CMD} "${CONN_OPTS[@]}" "$@"
+        fi
+        return $?
+    }
+}
 
 # removes the old licenses from the database dump so we can re-add them in the new format
 filterLicenseFromDataDump() {
@@ -97,6 +168,9 @@ filterLicenseFromDataDump() {
 resetConfigsHandler() {
     printwarn 'upgrade failed, resetting system to previous state'
 
+    if (( $REINSTALL_NGINX == 1 )); then
+        systemctl unmask nginx.service
+    fi
     if (( $REINSTALL_KAMAILIO == 1 )); then
         systemctl unmask kamailio.service
     fi
@@ -115,9 +189,8 @@ resetConfigsHandler() {
 
     if (( $REINSTALL_KAMAILIO == 1 )); then
         # automatically created in dsiprouter.sh when installKamailio() runs
-        [[ -e ${CURR_BACKUP_DIR}/db.sql ]] &&
-        withRootDBConn mysql <${CURR_BACKUP_DIR}/db.sql &&
-        withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql
+        [[ -e ${CURR_BACKUP_DIR}/db.sql ]] && withRootDBConn mysql <${CURR_BACKUP_DIR}/db.sql
+        [[ -e ${CURR_BACKUP_DIR}/user.sql ]] && withRootDBConn mysql <${CURR_BACKUP_DIR}/user.sql
     fi
 
     # not included in the restart() function from dsiprouter.sh
@@ -142,6 +215,7 @@ resetConfigsHandler() {
     fi
 
     trap - EXIT SIGHUP SIGINT SIGQUIT SIGTERM
+    exit 1
 }
 trap 'resetConfigsHandler $?' EXIT SIGHUP SIGINT SIGQUIT SIGTERM
 
@@ -156,8 +230,7 @@ if (( $REINSTALL_NGINX == 1 )); then
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled
 
     if [[ -f /etc/systemd/system/nginx.service ]]; then
-        mv -f /etc/systemd/system/nginx.service /lib/systemd/system/nginx.service
-        systemctl daemon-reload
+        rm -f /etc/systemd/system/nginx.service
     fi
 
     systemctl mask nginx.service
@@ -166,6 +239,10 @@ if (( $REINSTALL_KAMAILIO == 1 )); then
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled
     rm -rf ${SRC_DIR}/kamailio
     rm -f "$DSIP_KAMAILIO_CONFIG_FILE"
+
+    if [[ -f /etc/systemd/system/kamailio.service ]]; then
+        rm -f /etc/systemd/system/kamailio.service
+    fi
 
     systemctl mask kamailio.service
 fi
@@ -177,6 +254,10 @@ fi
 if (( $REINSTALL_RTPENGINE == 1 )); then
     rm -rf ${SRC_DIR}/rtpengine
     rm -f ${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled
+
+    if [[ -f /etc/systemd/system/rtpengine.service ]]; then
+        rm -f /etc/systemd/system/rtpengine.service
+    fi
 
     systemctl mask rtpengine.service
 fi
@@ -190,15 +271,17 @@ printdbg 'storing kamailio database data'
 printdbg 'migrating dSIPRouter project files'
 cp -rf ${NEW_PROJECT_DIR}/. ${DSIP_PROJECT_DIR}/
 cd ${DSIP_PROJECT_DIR}/
-export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
 
 # source the new dsip_lib functions
 # WARNING: from here on we are explicitly using the NEW definitions of the dsip_lib funcs
 # NOTE: resetConfigsHandler() above will still use the new definitions (lazy loading)
+export PYTHON_CMD="${DSIP_PROJECT_DIR}/venv/bin/python"
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
 printdbg 'upgrading services'
-${DSIP_PROJECT_DIR}/dsiprouter.sh install ${INSTALL_OPTS[@]}
+# we clear environment here to make sure we get new static settings on install
+env -i CURR_BACKUP_DIR="$CURR_BACKUP_DIR" HOME="$HOME" LANG="$LANG" LANGUAGE="$LANGUAGE" LC_ALL="$LC_ALL" PATH="$PATH" PWD="$PWD" \
+    ${DSIP_PROJECT_DIR}/dsiprouter.sh install ${INSTALL_OPTS[@]}
 
 if (( $? != 0 )); then
     printerr 'failed upgrading services'
@@ -218,42 +301,48 @@ if (( $REINSTALL_KAMAILIO == 1 )); then
 fi
 
 if (( $REINSTALL_DSIPROUTER == 1 )); then
-    printdbg 'updating dSIPRouter version'
-    setConfigAttrib 'VERSION' '0.75' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py -q || {
-        printerr 'failed updating dSIPRouter version'
-        exit 1
-    }
-
-    printdbg 'migrating licenses to the new format'
-    printwarn 'if your license is still missing a "License Type" a.k.a. tag,'
-    printwarn 'please open a ticket: https://support.dopensource.com/'
-    ${PYTHON_CMD} <<EOPY
+    printdbg 'migrating dSIPRouter settings'
+    (
+        # magic bash hacking
+        function exit() { :; }
+        export -f exit
+        source ${CURR_BACKUP_DIR}/opt/dsiprouter/dsiprouter.sh
+        unset -f exit
+        setStaticScriptSettings
+        setDynamicScriptSettings
+        # more magic environment munging
+        dsiprouter configuredsip
+    ) &&
+    setConfigAttrib 'VERSION' '0.75' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py -q &&
+    ${PYTHON_CMD} <<EOPY || { printerr 'Failed migrating dSIPRouter settings'; exit 1; }
 import sys
 sys.path = [*['${DSIP_SYSTEM_CONFIG_DIR}/gui', '${DSIP_PROJECT_DIR}/gui'], *sys.path[1:]]
 from database import updateDsipSettingsTable
 from shared import updateConfig
 from modules.api.licensemanager.classes import WoocommerceLicense
-from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
-for lc_key in [
+keys = [
     "$DSIP_CORE_LICENSE",
     "$DSIP_STIRSHAKEN_LICENSE",
     "$DSIP_TRANSNEXUS_LICENSE",
     "$DSIP_MSTEAMS_LICENSE"
-]:
-    if len(lc_key) == 0:
+]
+for k in keys:
+    if len(k) == 0:
         continue
 
     lc = WoocommerceLicense(license_key=lc_key)
     settings.DSIP_LICENSE_STORE[str(lc.id)] = lc.encrypt()
-    getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'][lc.license_key] = lc
-
+else:
+    if keys[0] == '':
+        sys.exit(1)
+    if not keys[0].active:
+        sys.exit(1)
 if settings.LOAD_SETTINGS_FROM == 'db':
     updateDsipSettingsTable({'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE})
 updateConfig(settings, {'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE}, hot_reload=True)
 EOPY
-    fi
 
 printdbg 'unmasking services'
 if (( $REINSTALL_NGINX == 1 )); then
@@ -271,6 +360,13 @@ fi
 
 if (( $RUN_FROM_GUI == 0 )); then
     printdbg 'restarting services'
+    if (( $REINSTALL_NGINX == 1 )); then
+        systemctl restart nginx
+        if ! systemctl is-active -q nginx; then
+            printerr 'could not start nginx service'
+            exit 1
+        fi
+    fi
     if (( $REINSTALL_KAMAILIO == 1 )); then
         systemctl restart kamailio
         if ! systemctl is-active -q kamailio; then
