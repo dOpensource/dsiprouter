@@ -292,7 +292,11 @@ function install {
 
     # Reconfigure systemd service files
     rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    if (( ${DISTRO_VER} > 7 )); then
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
+    else
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    fi
 
     # Reload systemd configs
     systemctl daemon-reload

@@ -27,7 +27,11 @@ function install() {
     systemctl unmask dnsmasq.service
 
     # configure dnsmasq systemd service
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v2.service /lib/systemd/system/dnsmasq.service
+    if (( ${DISTRO_VER} > 7 )); then
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v2.service /lib/systemd/system/dnsmasq.service
+    else
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v3.service /lib/systemd/system/dnsmasq.service
+    fi
     chmod 644 /lib/systemd/system/dnsmasq.service
     systemctl daemon-reload
     systemctl enable dnsmasq

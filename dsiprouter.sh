@@ -3503,22 +3503,19 @@ function updatePermissions() {
     setDnsmasqPerms() {
         mkdir -p /run/dnsmasq
         chown -R dnsmasq:dnsmasq /run/dnsmasq
-        chown dnsmasq:root /run/dnsmasq
-        chmod 771 /run/dnsmasq
+        chmod 770 /run/dnsmasq
     }
     # set permissions for files/dirs used by nginx
     setNginxPerms() {
         mkdir -p /run/nginx
         chown -R nginx:nginx /run/nginx
-        chown nginx:root /run/nginx
-        chmod 771 /run/nginx
+        chmod 770 /run/nginx
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
         mkdir -p /run/kamailio
         chown -R kamailio:kamailio /run/kamailio
-        chown kamailio:root /run/kamailio
-        chmod 771 /run/kamailio
+        chmod 770 /run/kamailio
 
         # dsiprouter needs to have control over the kamailio dir
         # this allows dsiprouter to update kamailio dynamically
@@ -3535,8 +3532,7 @@ function updatePermissions() {
     setDsiprouterPerms() {
         mkdir -p ${DSIP_RUN_DIR}
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-        chown dsiprouter:root ${DSIP_RUN_DIR}
-        chmod 771 ${DSIP_RUN_DIR}
+        chmod 770 ${DSIP_RUN_DIR}
 
         # dsiprouter user is the only one making backups
         chown -R dsiprouter:root ${BACKUPS_DIR}
@@ -3557,8 +3553,7 @@ function updatePermissions() {
     setRtpenginePerms() {
         mkdir -p /run/rtpengine
         chown -R rtpengine:rtpengine /run/rtpengine
-        chown rtpengine:root /run/rtpengine
-        chmod 771 /run/rtpengine
+        chmod 770 /run/rtpengine
     }
 
     # no args given set permissions for all services
