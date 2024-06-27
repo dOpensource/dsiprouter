@@ -50,9 +50,6 @@ BEGIN
     -- in case the gwgroupid changed
     SET v_gwgroupid = CAST(COALESCE(NEW.id, OLD.id) AS char);
 
-    -- it is safer to always delete the entry then create new one if setid provided
-    DELETE FROM dsip_gwgroup2lb WHERE gwgroupid = v_gwgroupid;
-
     -- make sure we have a setid
     IF NEW.description REGEXP '(?:lb:|lb_ext:)([0-9]+)' THEN
       SET v_setid = REGEXP_REPLACE(NEW.description, '.*(?:lb:|lb_ext:)([0-9]+).*', '\\1');
