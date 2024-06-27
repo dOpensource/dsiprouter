@@ -3026,25 +3026,6 @@ print(getLicenseStatusFromStateDict(licenseDictToStateDict(settings.DSIP_LICENSE
         fi
     fi
 
-    printdbg 'backing up configs just in case the upgrade fails'
-    # TODO: make the destination paths use our static variables as well
-    mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/dsiprouter,etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
-#    mkdir -p ${CURR_BACKUP_DIR}/{var/lib/mysql,${HOME}}
-    cp -af ${DSIP_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
-    cp -af ${DSIP_LIB_DIR}/. ${CURR_BACKUP_DIR}/var/lib/dsiprouter/
-    cp -af ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
-    cp -af ${DSIP_SYSTEM_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/dsiprouter/
-    cp -af ${SYSTEM_RTPENGINE_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/rtpengine/
-#    cp -af /var/lib/mysql/. ${CURR_BACKUP_DIR}/var/lib/mysql/
-#    cp -af /etc/my.cnf ${CURR_BACKUP_DIR}/etc/ 2>/dev/null
-#    cp -af /etc/mysql/. ${CURR_BACKUP_DIR}/etc/mysql/
-#    cp -af ${HOME}/.my.cnf ${CURR_BACKUP_DIR}/${HOME}/ 2>/dev/null
-    cp -af /etc/dnsmasq.conf ${CURR_BACKUP_DIR}/etc/
-    cp -af /etc/systemd/system/{nginx,dsiprouter,dnsmasq,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/etc/systemd/system/ 2>/dev/null
-    cp -af /lib/systemd/system/{nginx,dsiprouter,dnsmasq,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/lib/systemd/system/ 2>/dev/null
-    cp -af /etc/default/{kamailio,rtpengine}.conf ${CURR_BACKUP_DIR}/etc/default/
-    printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
-
     printdbg "starting migration from $CURRENT_VERSION to $UPGRADE_VER"
     ${NEW_PROJECT_DIR}/resources/upgrade/${UPGRADE_RELEASE}/scripts/migrate.sh
     return $?
@@ -3522,22 +3503,19 @@ function updatePermissions() {
     setDnsmasqPerms() {
         mkdir -p /run/dnsmasq
         chown -R dnsmasq:dnsmasq /run/dnsmasq
-        chown dnsmasq:root /run/dnsmasq
-        chmod 771 /run/dnsmasq
+        chmod 770 /run/dnsmasq
     }
     # set permissions for files/dirs used by nginx
     setNginxPerms() {
         mkdir -p /run/nginx
         chown -R nginx:nginx /run/nginx
-        chown nginx:root /run/nginx
-        chmod 771 /run/nginx
+        chmod 770 /run/nginx
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
         mkdir -p /run/kamailio
         chown -R kamailio:kamailio /run/kamailio
-        chown kamailio:root /run/kamailio
-        chmod 771 /run/kamailio
+        chmod 770 /run/kamailio
 
         # dsiprouter needs to have control over the kamailio dir
         # this allows dsiprouter to update kamailio dynamically
@@ -3554,8 +3532,7 @@ function updatePermissions() {
     setDsiprouterPerms() {
         mkdir -p ${DSIP_RUN_DIR}
         chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
-        chown dsiprouter:root ${DSIP_RUN_DIR}
-        chmod 771 ${DSIP_RUN_DIR}
+        chmod 770 ${DSIP_RUN_DIR}
 
         # dsiprouter user is the only one making backups
         chown -R dsiprouter:root ${BACKUPS_DIR}
@@ -3576,8 +3553,7 @@ function updatePermissions() {
     setRtpenginePerms() {
         mkdir -p /run/rtpengine
         chown -R rtpengine:rtpengine /run/rtpengine
-        chown rtpengine:root /run/rtpengine
-        chmod 771 /run/rtpengine
+        chmod 770 /run/rtpengine
     }
 
     # no args given set permissions for all services

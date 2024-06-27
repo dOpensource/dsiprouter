@@ -854,7 +854,7 @@ class DummySession():
 def settingsToTableFormat(settings, updates=None):
     data = objToDict(settings)
     if updates is not None:
-        data.update()
+        data.update(updates)
 
     # translate db specific fields
     if isinstance(data['KAM_DB_HOST'], (list, tuple)):
@@ -944,7 +944,10 @@ def settingsToTableFormat(settings, updates=None):
     ])
 
 
-def settingsTableToDict(table_values):
+def settingsTableToDict(table_values, updates=None):
+    if updates is not None:
+        table_values.update(updates)
+
     if ',' in table_values['KAM_DB_HOST']:
         table_values['KAM_DB_HOST'] = table_values['KAM_DB_HOST'].split(',')
     table_values['DSIP_LICENSE_STORE'] = bson.loads(base64.b64decode(table_values['DSIP_LICENSE_STORE']))
@@ -984,7 +987,7 @@ def updateDsipSettingsTable(fields):
         db.close()
 
 
-def getDsipSettingsTableAsDict(dsip_id):
+def getDsipSettingsTableAsDict(dsip_id, updates=None):
     db = DummySession()
     try:
         db = startSession()
@@ -995,7 +998,7 @@ def getDsipSettingsTableAsDict(dsip_id):
             ).first()
         )
         # translate db specific fields
-        return settingsTableToDict(data)
+        return settingsTableToDict(data, updates=updates)
     except sql_exceptions.SQLAlchemyError:
         raise
     finally:

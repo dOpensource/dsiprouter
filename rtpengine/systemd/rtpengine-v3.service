@@ -9,7 +9,6 @@ DefaultDependencies=no
 
 [Service]
 Type=forking
-PermissionsStartOnly=true
 EnvironmentFile=/etc/default/rtpengine.conf
 User=rtpengine
 Group=rtpengine
@@ -22,10 +21,10 @@ PIDFile=/run/rtpengine/rtpengine.pid
 AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_NICE
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_NICE
 # ExecStart* requires an absolute path for the program
-ExecStartPre=/usr/bin/dsiprouter chown -rtpengine
-ExecStartPre=/usr/sbin/ngcp-rtpengine-iptables-setup start
+ExecStartPre=!-/usr/bin/dsiprouter chown -rtpengine
+ExecStartPre=+/usr/sbin/ngcp-rtpengine-iptables-setup start
 ExecStart=/usr/bin/rtpengine --config-file=${CONFIG_FILE} --pidfile=${PID_FILE}
-ExecStopPost=/usr/sbin/ngcp-rtpengine-iptables-setup stop
+ExecStopPost=+/usr/sbin/ngcp-rtpengine-iptables-setup stop
 Restart=on-failure
 
 [Install]

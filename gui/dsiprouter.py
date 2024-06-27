@@ -2581,8 +2581,7 @@ def syncSettings(new_fields={}, update_net=False):
 
         # sync settings from dsip_settings table
         elif settings.LOAD_SETTINGS_FROM == 'db':
-            fields = getDsipSettingsTableAsDict(settings.DSIP_ID)
-            fields.update(settingsTableToDict(new_fields))
+            fields = getDsipSettingsTableAsDict(settings.DSIP_ID, updates=new_fields)
 
         # no configured storage device to sync settings to/from
         else:
