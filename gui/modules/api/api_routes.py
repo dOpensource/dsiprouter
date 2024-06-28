@@ -749,6 +749,8 @@ def getEndpointGroup(gwgroupid):
 
         db = startSession()
 
+        gwgroupid = int(gwgroupid)
+
         endpointgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if endpointgroup is not None:
             gwgroup_data['name'] = strFieldsToDict(endpointgroup.description)['name']
@@ -780,15 +782,26 @@ def getEndpointGroup(gwgroupid):
         gwgroup_data['auth'] = auth
 
         gwgroup_data['endpoints'] = []
-        weightList = {}
-        endpoints = db.query(Gateways).filter(Gateways.gwid.in_(endpointgroup.gwlist.split(','))).all()
-        dispatcher_rows = db.query(Dispatcher).filter(Dispatcher.setid == gwgroupid).all()
+        endpoint_weights = {}
+        endpoint_keepalives = {}
+        endpoints = db.query(Gateways).filter(
+            Gateways.gwid.in_(endpointgroup.gwlist.split(','))
+        ).all()
+        dispatcher_rows = db.query(Dispatcher).filter(
+            (Dispatcher.setid == gwgroupid) |
+            (Dispatcher.setid == gwgroupid + 1000)
+        ).all()
         if dispatcher_rows is not None:
             for row in dispatcher_rows:
                 dst_host = row.destination.split(':', maxsplit=1)[1]
                 attrs = row.attrsToDict()
                 if attrs.get('rweight', None) is not None:
-                    weightList[dst_host] = attrs['rweight']
+                    endpoint_weights[dst_host] = attrs['rweight']
+                # TODO: make this check part of the DB object methods
+                if Dispatcher.FLAGS['KEEP_ALIVE'] & row.flags:
+                    endpoint_keepalives[dst_host] = 1
+                else:
+                    endpoint_keepalives[dst_host] = 0
         for endpoint in endpoints:
             host_split = endpoint.address.split(':')
             attrs_dict = endpoint.attrsToDict()
@@ -799,7 +812,8 @@ def getEndpointGroup(gwgroupid):
                 'signalling': attrs_dict['signalling'],
                 'media': attrs_dict['media'],
                 'description': strFieldsToDict(endpoint.description)['name'],
-                'rweight': weightList[endpoint.address] if endpoint.address in weightList else 0,
+                'rweight': endpoint_weights[endpoint.address] if endpoint.address in endpoint_weights else 0,
+                'keepalive': endpoint_keepalives[endpoint.address] if endpoint.address in endpoint_keepalives else 0,
                 'maintmode': ''
             })
             gwgroup_data['strip'] = endpoint.strip
@@ -920,8 +934,9 @@ def updateEndpointGroups(gwgroupid=None):
                     port:<int>,
                     signalling:<string>,
                     media:<string>,
-                    description:<string>
-                    rweight:<int>
+                    description:<string>,
+                    rweight:<int>,
+                    keepalive:<int>
                 },
                 ...
             ],
@@ -1044,8 +1059,8 @@ def updateEndpointGroups(gwgroupid=None):
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
 
         if 'fusionpbx' in request_payload:
-            fusionpbxenabled = request_payload['fusionpbx']['enabled'] \
-                if 'enabled' in request_payload['fusionpbx'] else None
+            fusionpbxenabled = int(request_payload['fusionpbx']['enabled']) \
+                if 'enabled' in request_payload['fusionpbx'] else 0
             fusionpbxdbhost = request_payload['fusionpbx']['dbhost'] \
                 if 'dbhost' in request_payload['fusionpbx'] else None
             fusionpbxdbuser = request_payload['fusionpbx']['dbuser'] \
@@ -1119,11 +1134,18 @@ def updateEndpointGroups(gwgroupid=None):
                     raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
                 host = endpoint['host']
-                port = endpoint['port'] if endpoint.get('port', None) is not None else 5060
+                port = int(endpoint['port']) if endpoint.get('port', None) is not None else 5060
                 signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
                 media = endpoint['media'] if 'media' in endpoint else 'proxy'
                 name = endpoint['description'] if 'description' in endpoint else ''
-                rweight = endpoint['rweight'] if endpoint.get('rweight', None) is not None else 0
+                rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
+                keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+
+                flags = 0
+                if keepalive > 0:
+                    flags += Dispatcher.FLAGS['KEEP_ALIVE']
+                if rweight == 0:
+                    flags += Dispatcher.FLAGS['DISABLED_DST']
 
                 sip_addr = safeUriToHost(host, default_port=port)
                 if sip_addr is None:
@@ -1145,15 +1167,18 @@ def updateEndpointGroups(gwgroupid=None):
                         signalling=signalling, media=media)
 
                 # Create dispatcher group with the set id being the gateway group id
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, description=name, rweight=rweight,
+                sip_uri = f'sip:{sip_addr}'
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, description=name, rweight=rweight,
                     signalling=signalling, media=media)
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
-                if int(fusionpbxenabled) > 0:
-                    sip_addr_external = safeUriToHost(host, default_port=5080)
+                if fusionpbxenabled:
+                    sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
+                    setid_ext = gwgroupid + 1000
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                    dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, description=name, rweight=rweight)
+                    dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name, rweight=rweight,
+                        signalling=signalling, media=media)
                     db.add(dispatcher)
 
                 db.add(Gateway)
@@ -1180,11 +1205,18 @@ def updateEndpointGroups(gwgroupid=None):
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
             host = endpoint['host']
-            port = endpoint['port'] if endpoint.get('port', None) is not None else 5060
+            port = int(endpoint['port']) if endpoint.get('port', None) is not None else 5060
             signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
             media = endpoint['media'] if 'media' in endpoint else 'proxy'
             name = endpoint['description'] if 'description' in endpoint else ''
-            rweight = endpoint['rweight'] if endpoint.get('rweight', None) is not None else 0
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+
+            flags = 0
+            if keepalive > 0:
+                flags += Dispatcher.FLAGS['KEEP_ALIVE']
+            if rweight == 0:
+                flags += Dispatcher.FLAGS['DISABLED_DST']
 
             sip_addr = safeUriToHost(host, default_port=port)
             if sip_addr is None:
@@ -1206,15 +1238,18 @@ def updateEndpointGroups(gwgroupid=None):
                     signalling=signalling, media=media)
 
             # Create dispatcher group with the set id being the gateway group id
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, description=name, rweight=rweight,
+            sip_uri = f'sip:{sip_addr}'
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, description=name, rweight=rweight,
                 signalling=signalling, media=media)
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
-            if int(fusionpbxenabled) > 0:
-                sip_addr_external = safeUriToHost(safeStripPort(host), default_port=5080)
+            if fusionpbxenabled:
+                sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
+                setid_ext = gwgroupid + 1000
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, description=name, rweight=rweight)
+                dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name, rweight=rweight,
+                    signalling=signalling, media=media)
                 db.add(dispatcher)
 
             # we ignore the given gwid and allow DB to assign one instead
@@ -1232,15 +1267,18 @@ def updateEndpointGroups(gwgroupid=None):
             # allow updating single fields (if not provided set to current value)
             host = endpoint['host'] if 'host' in endpoint else current_endpoint['address'].split(':')[0]
             if 'port' in endpoint and endpoint['port'] is not None:
-                port = endpoint['port']
+                port = int(endpoint['port'])
             else:
                 tmp = current_endpoint['address'].split(':')
                 port = int(tmp[1]) if len(tmp) > 1 else 5060
             signalling = endpoint['signalling'] if 'signalling' in endpoint else endpoint_attrs['signalling']
             media = endpoint['media'] if 'media' in endpoint else endpoint_attrs['media']
             name = endpoint['description'] if 'description' in endpoint else endpoint_fields['name']
-            rweight = endpoint['rweight'] if endpoint.get('rweight', None) is not None else 0
             endpoint_fields['name'] = name
+
+            # fields not in dr_gateways attributes we set to None if not updated and check it after querying dispatcher
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else None
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else None
 
             if len(host) == 0:
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
@@ -1282,43 +1320,75 @@ def updateEndpointGroups(gwgroupid=None):
                     # remove addr_id field from endpoint description
                     endpoint_fields.pop("addr_id", None)
 
-            # update the endpoint
-            db.query(Gateways).filter(Gateways.gwid == gwid).update({
-                "description": dictToStrFields(endpoint_fields),
-                "address": sip_addr,
-                "strip": strip,
-                "pri_prefix": prefix,
-                'attrs': Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media)
-            }, synchronize_session=False)
+            # find the current entry in dr_gateways
+            ep_gateway = db.query(Gateways).filter(Gateways.gwid == gwid).first()
+            old_sip_uri = f'sip:{ep_gateway.address}'
+            old_sip_uri_ext = f'sip:{safeStripPort(ep_gateway.address)}:5080'
 
-            # update the weight
-            DispatcherEntry = db.query(Dispatcher).filter(
-                (Dispatcher.setid == gwgroupid) & (Dispatcher.destination == "sip:{}".format(sip_addr))
+            # find the current dispatcher entry (load balancing one is always there and has same params as other "feature" sets)
+            ep_dispatcher = db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroupid) &
+                (Dispatcher.destination == old_sip_uri)
             ).first()
-            if DispatcherEntry is not None:
-                DispatcherEntry.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
-            else:
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, description=name, rweight=rweight,
-                    signalling=signalling, media=media)
-                db.add(dispatcher)
-
-            if int(fusionpbxenabled) > 0:
-                # update the weight for the external load balancer dispatcher set
-                sip_addr_external = safeUriToHost(safeStripPort(host), default_port=5080)
-                DispatcherEntry = db.query(Dispatcher).filter(
-                    (Dispatcher.setid == int(gwgroupid) + 1000) & (Dispatcher.destination == "sip:{}".format(sip_addr_external))
-                ).first()
+            if ep_dispatcher is not None:
                 if rweight is None:
-                    if DispatcherEntry is not None:
-                        db.delete(DispatcherEntry)
+                    rweight = ep_dispatcher.attrsToDict()['rweight']
+                if keepalive is None:
+                    keepalive = 8 & ep_dispatcher.flags
+            else:
+                if rweight is None:
+                    rweight = 0
+                if keepalive is None:
+                    keepalive = 0
+
+            flags = 0
+            if keepalive > 0:
+                flags += Dispatcher.FLAGS['KEEP_ALIVE']
+            if rweight == 0:
+                flags += Dispatcher.FLAGS['DISABLED_DST']
+
+            # update the endpoint in dispatcher
+            sip_uri = f'sip:{sip_addr}'
+            if ep_dispatcher is not None:
+                ep_dispatcher.destination = sip_uri
+                ep_dispatcher.flags = flags
+                ep_dispatcher.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
+                ep_dispatcher.description = name
+            else:
+                ep_dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, description=name,
+                    rweight=rweight, signalling=signalling, media=media)
+                db.add(ep_dispatcher)
+
+            # update the fusionpbx dispatcher entries for the endpoint
+            sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
+            setid_ext = int(gwgroupid) + 1000
+            if fusionpbxenabled:
+                ep_dispatcher_ext = db.query(Dispatcher).filter(
+                    (Dispatcher.setid == setid_ext) &
+                    (Dispatcher.destination == old_sip_uri_ext)
+                ).first()
+                if ep_dispatcher_ext is not None:
+                    ep_dispatcher_ext.destination = sip_uri_ext
+                    ep_dispatcher_ext.flags = flags
+                    ep_dispatcher_ext.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
+                    ep_dispatcher_ext.description = name
                 else:
-                    if DispatcherEntry is not None:
-                        DispatcherEntry.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
-                    else:
-                        # sip_addr_external  = safeUriToHost(hostname, default_port=5080)
-                        # dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, attrs="rweight={};".format(rweight),description=name)
-                        # db.add(dispatcher)
-                        pass
+                    ep_dispatcher_ext = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name,
+                        rweight=rweight, signalling=signalling, media=media)
+                    db.add(ep_dispatcher_ext)
+            else:
+                # remove the entries if fusionpbx integration is now disabled
+                db.query(Dispatcher).filter(
+                    (Dispatcher.setid == setid_ext) &
+                    (Dispatcher.destination == old_sip_uri_ext)
+                ).delete(synchronize_session=False)
+
+            # update the endpoint in dr_gateways
+            ep_gateway.description = dictToStrFields(endpoint_fields)
+            ep_gateway.address = sip_addr
+            ep_gateway.strip = strip
+            ep_gateway.pri_prefix = prefix
+            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media)
 
             gwlist.append(gwid)
 
@@ -1423,10 +1493,6 @@ def updateEndpointGroups(gwgroupid=None):
                         raise Exception('Crontab entry could not be deleted')
 
             # Update FusionPBX
-
-            # Convert fusionpbxenabled variable to int
-            if isinstance(fusionpbxenabled, str):
-                fusionpbxenabled = int(fusionpbxenabled)
             # Update
             if fusionpbxenabled == 1:
                 # Update
@@ -1504,7 +1570,8 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                     "signalling": "proxy",
                     "media": "proxy",
                     "description": "example",
-                    "rweight": 1
+                    "rweight": 1,
+                    "keepalive": 1
                 }
             ],
             "strip": 0,
@@ -1651,7 +1718,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             if isinstance(fusionpbxclustersupport, str):
                 fusionpbxclustersupport = int(fusionpbxclustersupport)
 
-            if fusionpbxenabled == 1:
+            if fusionpbxenabled:
                 if fusionpbxclustersupport == 1:
                     domainType = dSIPMultiDomainMapping.FLAGS.TYPE_FUSIONPBX_CLUSTER.value
                 else:
@@ -1682,11 +1749,18 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 raise http_exceptions.BadRequest("Endpoint hostname/address is required")
 
             host = endpoint['host']
-            port = endpoint['port'] if endpoint.get('port', None) is not None else 5060
+            port = int(endpoint['port']) if endpoint.get('port', None) is not None else 5060
             signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
             media = endpoint['media'] if 'media' in endpoint else 'proxy'
             name = endpoint['description'] if 'description' in endpoint else ''
-            rweight = endpoint['rweight'] if endpoint.get('rweight', None) is not None else 0
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+
+            flags = 0
+            if keepalive > 0:
+                flags += Dispatcher.FLAGS['KEEP_ALIVE']
+            if rweight == 0:
+                flags += Dispatcher.FLAGS['DISABLED_DST']
 
             sip_addr = safeUriToHost(host, default_port=port)
             if sip_addr is None:
@@ -1708,15 +1782,17 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             # Create dispatcher group with the set id being the gateway group id
             # Don't create a dispatcher set for endpoint groups that was created for MSTeams domains
             if endpointGroupType != "msteams":
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, description=name, rweight=rweight,
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, flags=flags, description=name, rweight=rweight,
                     signalling=signalling, media=media)
                 db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
             if fusionpbxenabled:
-                sip_addr_external = safeUriToHost(host, default_port=5080)
+                sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
+                setid_ext = gwgroupid + 1000
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=gwgroupid + 1000, destination=sip_addr_external, description=name, rweight=rweight)
+                dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name, rweight=rweight,
+                    signalling=signalling, media=media)
                 db.add(dispatcher)
 
             db.add(Gateway)

@@ -495,6 +495,22 @@ class Dispatcher(object):
     Documentation: `dispatcher table <https://kamailio.org/docs/db-tables/kamailio-db-5.5.x.html#gen-db-dispatcher>`_
     """
 
+    DST_ALG = {
+        'ROUND_ROBIN': 4,
+        'PRIORITY_BASED': 8,
+        'WEIGHT_BASED': 9,
+        'LOAD_DISTRIBUTION': 10,
+        'RELATIVE_WEIGHT': 11,
+        'PARALLEL_FORKING': 12
+    }
+    FLAGS = {
+        'INACTIVE_DST': 1,
+        'TRYING_DST': 2,
+        'DISABLED_DST': 4,
+        'KEEP_ALIVE': 8,
+        'SKIP_DNS': 16
+    }
+
     def __init__(self, setid, destination, flags=None, priority=None, description='', rweight=0, signalling='proxy', media='proxy'):
         self.setid = setid
         self.destination = safeFormatSipUri(destination)

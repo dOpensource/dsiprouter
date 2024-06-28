@@ -47,6 +47,11 @@
     "osrtp_avpf": "OSRTP over RTP/AVPF"
   };
   const MEDIA_OPTIONS_STR = JSON.stringify(MEDIA_OPTIONS);
+  const KEEPALIVE_OPTIONS = {
+    0: "disabled",
+    1: "enabled"
+  };
+  const KEEPALIVE_OPTIONS_STR = JSON.stringify(KEEPALIVE_OPTIONS);
 
   // global variables/constants for this script
   // TODO: find a way to pass these values around gwgroupid instead of using global
@@ -64,7 +69,8 @@
       signalling: jq_row.find('select[name="signalling"]').val(),
       media: jq_row.find('select[name="media"]').val(),
       description: jq_row.find('input[name="description"]').val(),
-      rweight: parseInt(jq_row.find('input[name="rweight"]').val(), 10)
+      rweight: parseInt(jq_row.find('input[name="rweight"]').val(), 10),
+      keepalive: parseInt(jq_row.find('select[name="keepalive"]').val(), 10),
     };
   }
 
@@ -83,6 +89,7 @@
         '<td name="media"></td>' +
         '<td name="description"></td>' +
         '<td name="rweight">1</td>' +
+        '<td name="keepalive"></td>' +
         '</tr>');
     }
     else {
@@ -94,6 +101,7 @@
         '<td name="media">' + MEDIA_OPTIONS[endpoint.media] + '</td>' +
         '<td name="description">' + endpoint.description + '</td>' +
         '<td name="rweight">' + endpoint.rweight.toString() + '</td>' +
+        '<td name="keepalive">' + KEEPALIVE_OPTIONS[endpoint.keepalive] + '</td>' +
         '</tr>');
     }
   }
@@ -110,7 +118,8 @@
           [3, 'signalling', SIGNAL_OPTIONS_STR],
           [4, 'media', MEDIA_OPTIONS_STR],
           [5, 'description'],
-          [6, 'rweight']
+          [6, 'rweight'],
+          [7, 'keepalive', KEEPALIVE_OPTIONS_STR],
         ],
         saveButton: true,
       },
@@ -418,6 +427,10 @@
       success: function(response, textStatus, jqXHR) {
         $('#delete').modal('hide');
         $('#edit').modal('hide');
+
+        // Update Reload buttons
+        reloadKamRequired(true);
+
         gwgroup_table.row(function(idx, data, node) {
           return data.gwgroupid === gwgroupid_int;
         }).remove().draw();
