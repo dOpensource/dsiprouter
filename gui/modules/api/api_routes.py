@@ -193,6 +193,11 @@ def getEndpointLease():
 
         db.commit()
 
+        # Install Cron job to clean up the leases
+        #cron_cmd = '{} cleanleases'.format(settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py')
+        #if not addTaggedCronjob("lease_management", "* * * * *", cron_cmd):
+        #    raise Exception('Crontab entry could not be created')
+
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
             msg='Lease created',
@@ -2634,7 +2639,7 @@ def getGatewayCDRS(gwid=None):
             "WHERE cdrs.src_ip=dr_gateways.address AND gwid=:gwid "
             "ORDER BY call_start_time DESC"
         )
-        cdrs = db.execute(query, gwid=gwid)
+        cdrs = db.execute(query, {'gwid':gwid})
 
         rows = []
         for cdr in cdrs:

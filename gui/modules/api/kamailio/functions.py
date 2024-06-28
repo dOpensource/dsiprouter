@@ -123,9 +123,9 @@ def reloadKamailio():
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['teleblock', 'gw_enabled', str(settings.TELEBLOCK_GW_ENABLED)]))
         if 'WITH_LCR' in features_enabled:
             rpc_args.append(('127.0.0.1', 'htable.reload', ['tofromprefix']))
-        if 'WITH_TLS' in features_enabled:
-            # TODO: tls.reload is VERY slow on some systems
-            rpc_args.append(('127.0.0.1', 'tls.reload', [], 20))
+        #if 'WITH_TLS' in features_enabled:
+        #    # TODO: tls.reload is VERY slow on some systems. Commented out until we get a resolution
+        #    rpc_args.append(('127.0.0.1', 'tls.reload', [], 20))
         if 'WITH_WEBSOCKETS' in features_enabled:
             rpc_args.append(('127.0.0.1', 'ws.enable'))
         if 'WITH_DNID_LNP_ENRICHMENT' in features_enabled:
