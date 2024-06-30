@@ -511,12 +511,15 @@ class Dispatcher(object):
         'SKIP_DNS': 16
     }
 
-    def __init__(self, setid, destination, flags=None, priority=None, description='', rweight=0, signalling='proxy', media='proxy'):
+    def __init__(self, setid, destination, flags=None, priority=None, description='', attrs=None, rweight=0, signalling='proxy', media='proxy'):
         self.setid = setid
         self.destination = safeFormatSipUri(destination)
         self.flags = flags
         self.priority = priority
-        self.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
+        if attrs:
+            self.attrs = attrs
+        else:
+            self.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
         self.description = description
 
     @staticmethod

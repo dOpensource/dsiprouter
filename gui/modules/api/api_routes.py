@@ -1780,7 +1780,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                     msteams_domain=msteams_domain, signalling=signalling, media=media)
 
             # Create dispatcher group with the set id being the gateway group id
-            # Don't create a dispatcher set for endpoint groups that was created for MSTeams domains
+            # Don't create a dispatcher set for endpoint groups that was created for MSTeams domains    
             if endpointGroupType != "msteams":
                 dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, flags=flags, description=name, rweight=rweight,
                     signalling=signalling, media=media)

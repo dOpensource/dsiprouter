@@ -89,7 +89,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 socket_addr = settings.EXTERNAL_IP_ADDR
             for hostname,sipuri in zip(settings.MSTEAMS_DNS_ENDPOINTS,msteams_endpoint_uris):
                 dispatcher = Dispatcher(setid=PBXDomain.id, destination=sipuri,
-                    attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),
+                    attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),flags=Dispatcher.FLAGS['KEEP_ALIVE'],
                     description='msteam_endpoint:{}'.format(hostname))
                 db.add(dispatcher)
 
@@ -118,7 +118,8 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 Addr = Address("msteams-sbc", hostname, 32, settings.FLT_MSTEAMS, gwgroup=0)
                 db.add(Addr)
             hostname="{}:{};{}".format(hostname,"5061","transport=tls")
-            endpoints.append({"hostname": hostname, "description": "msteams_endpoint", "maintmode": False})
+            endpoints.append({"host": hostname, "description": "msteams_endpoint", "maintmode": False, 
+            'keepalive': '1'})
 
         endpointGroup['endpoints'] = endpoints
         addEndpointGroups(endpointGroup, "msteams", domain)
