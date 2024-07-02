@@ -807,6 +807,10 @@ function configureSSL() {
         firewall-cmd --zone=public --add-port=80/tcp
     fi
 
+    # Override the hostname if -o or --override=<hostname> is provided
+    if [[ -n "${DNS_NAME_OVERRIDE}" ]]; then
+	EXTERNAL_FQDN=${DNS_NAME_OVERRIDE}
+    fi
     # Try to create cert using LetsEncrypt's first
     printdbg "Generating Certs for ${EXTERNAL_FQDN} using LetsEncrypt"
     certbot certonly --standalone --non-interactive --agree-tos -d ${EXTERNAL_FQDN} -m ${DSIP_SSL_EMAIL} \
@@ -3685,7 +3689,7 @@ function usageOptions() {
     printf "%-30s %s\n" \
         "renewsslcert" "[-debug]"
     printf "%-30s %s\n" \
-        "configuresslcert" "[-debug|-f|--force]"
+        "configuresslcert" "[-debug|-f|--force|-o|--override=<[FQDN]>]"
     printf "%-30s %s\n" \
         "installmodules" "[-debug]"
     printf "%-30s %s\n" \
@@ -4504,6 +4508,16 @@ function processCMD() {
                         rm -f $DSIP_CERTS_DIR/dsiprouter-key.pem
                         shift
                         ;;
+		    -o|--override=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            DNS_NAME_OVERRIDE=$(echo "$1" | cut -d '=' -f 2)
+                            shift
+                        else
+                            shift
+                            DNS_NAME_OVERRIDE="$1"
+                            shift
+                        fi
+			;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
