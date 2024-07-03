@@ -979,7 +979,7 @@ function withKamDB() {
     [[ -n "$KAM_DB_PORT" ]] && CONN_OPTS+=( "--port=${KAM_DB_PORT}" )
     [[ -n "$KAM_DB_USER" ]] && CONN_OPTS+=( "--user=${KAM_DB_USER}" )
     [[ -n "$KAM_DB_PASS" ]] && CONN_OPTS+=( "--password=${KAM_DB_PASS}" )
-    if [[ "$1" == "mysql" ]]; then
+    if [[ "$CMD" == "mysql" ]]; then
         [[ -n "$KAM_DB_NAME" ]] && CONN_OPTS+=( "--database=${KAM_DB_NAME}" )
     fi
 
