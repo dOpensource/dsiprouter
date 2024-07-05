@@ -20,14 +20,119 @@
     throw new Error("API_BASE_URL is required and is not defined");
   }
 
+  // global constants for this script
+  const SIGNAL_OPTIONS = {
+    "proxy": "Unaltered",
+    "sip_udp": "SIP over UDP",
+    "sip_tcp": "SIP over TCP",
+    "sip_sctp": "SIP over SCTP",
+    // "sip_ws": "SIP over WS",
+    "sips_tls": "SIPS over TLS",
+    "sips_sctp": "SIPS over SCTP",
+    // "sips_wss": "SIPS over WSS"
+  };
+  const SIGNAL_OPTIONS_STR = JSON.stringify(SIGNAL_OPTIONS);
+  // TODO: think of a more user friendly description for these options
+  const MEDIA_OPTIONS = {
+    "proxy": "Proxy Media",
+    "bvpass": "Bypass Media",
+    "rtp_avp": "RTP/AVP",
+    "rtp_savp": "RTP/SAVP",
+    "rtp_avpf": "RTP/AVPF",
+    "rtp_savpf": "RTP/SAVPF",
+    "rtp_avp_any": "UDP/TLS/RTP/SAVP",
+    "rtp_avpf_any": "UDP/TLS/RTP/SAVPF",
+    "udptl": "T.38 over UDPTL",
+    "osrtp_avp": "OSRTP over RTP/AVP",
+    "osrtp_avpf": "OSRTP over RTP/AVPF"
+  };
+  const MEDIA_OPTIONS_STR = JSON.stringify(MEDIA_OPTIONS);
+  const KEEPALIVE_OPTIONS = {
+    0: "disabled",
+    1: "enabled"
+  };
+  const KEEPALIVE_OPTIONS_STR = JSON.stringify(KEEPALIVE_OPTIONS);
+
   // global variables/constants for this script
   // TODO: find a way to pass these values around gwgroupid instead of using global
   var gwgroupid;
-  var gwgroup_table = $('').DataTable();
+  var endpoint_table1;
+  var endpoint_table2;
+  var gwgroup_table;
+
+  function generateEndpointObject(row) {
+    var jq_row = $(row);
+    return {
+      gwid: parseInt(jq_row.find('input[name="gwid"]').val(), 10),
+      host: jq_row.find('input[name="host"]').val(),
+      port: parseInt(jq_row.find('input[name="port"]').val(), 10),
+      signalling: jq_row.find('select[name="signalling"]').val(),
+      media: jq_row.find('select[name="media"]').val(),
+      description: jq_row.find('input[name="description"]').val(),
+      rweight: parseInt(jq_row.find('input[name="rweight"]').val(), 10),
+      keepalive: parseInt(jq_row.find('select[name="keepalive"]').val(), 10),
+    };
+  }
+
+  /**
+   * Generate the markup for an endpoint wrapped in a query object
+   * @param endpoint
+   * @returns jQuery
+   */
+  function generateEndpointMarkup(endpoint = null) {
+    if (endpoint === null) {
+      return $('<tr class="endpoint">' +
+        '<td name="gwid"></td>' +
+        '<td name="host"></td>' +
+        '<td name="port"></td>' +
+        '<td name="signalling"></td>' +
+        '<td name="media"></td>' +
+        '<td name="description"></td>' +
+        '<td name="rweight">1</td>' +
+        '<td name="keepalive"></td>' +
+        '</tr>');
+    }
+    else {
+      return $('<tr class="endpoint">' +
+        '<td name="gwid">' + endpoint.gwid.toString() + '</td>' +
+        '<td name="host">' + endpoint.host + '</td>' +
+        '<td name="port">' + endpoint.port + '</td>' +
+        '<td name="signalling">' + SIGNAL_OPTIONS[endpoint.signalling] + '</td>' +
+        '<td name="media">' + MEDIA_OPTIONS[endpoint.media] + '</td>' +
+        '<td name="description">' + endpoint.description + '</td>' +
+        '<td name="rweight">' + endpoint.rweight.toString() + '</td>' +
+        '<td name="keepalive">' + KEEPALIVE_OPTIONS[endpoint.keepalive] + '</td>' +
+        '</tr>');
+    }
+  }
+
+  function generateEndpointTable(selector) {
+    var endpoint_table = $(selector);
+
+    endpoint_table.Tabledit({
+      columns: {
+        identifier: [0, 'gwid'],
+        editable: [
+          [1, 'host'],
+          [2, 'port'],
+          [3, 'signalling', SIGNAL_OPTIONS_STR],
+          [4, 'media', MEDIA_OPTIONS_STR],
+          [5, 'description'],
+          [6, 'rweight'],
+          [7, 'keepalive', KEEPALIVE_OPTIONS_STR],
+        ],
+        saveButton: true,
+      },
+      ajaxDisabled: true,
+      restoreButton: false
+    });
+
+    return endpoint_table;
+  }
 
   // Add EndpointGroup
   function addEndpointGroup(action) {
-    var selector, modal_body, url;
+    var selector, modal_body, url, tmp;
 
     // The default action is a POST (creating a new EndpointGroup)
     if (typeof action === "undefined") {
@@ -53,13 +158,15 @@
 
     var requestPayload = {};
     requestPayload.name = modal_body.find(".name").val();
-    var call_limit = modal_body.find(".calllimit").val();
-    if (call_limit.length > 0) {
-      requestPayload.calllimit = parseInt(call_limit, 10);
-    }
+
+    var call_settings = {};
+    tmp = modal_body.find(".call_limit").val();
+    call_settings.limit = tmp === '' ? null : tmp;
+    tmp = modal_body.find(".call_timeout").val();
+    call_settings.timeout = tmp === '' ? null : tmp;
+    requestPayload.call_settings = call_settings;
 
     var auth = {};
-
     if (action === "POST") {
       if ($('input#ip.authtype').is(':checked')) {
         auth.type = "ip";
@@ -81,7 +188,6 @@
 
     auth.user = modal_body.find(".auth_username").val();
     auth.domain = modal_body.find(".auth_domain").val();
-
     requestPayload.auth = auth;
 
     requestPayload.strip = modal_body.find(".strip").val();
@@ -90,17 +196,15 @@
     var notifications = {};
     notifications.overmaxcalllimit = modal_body.find(".email_over_max_calls").val();
     notifications.endpointfailure = modal_body.find(".email_endpoint_failure").val();
-
     requestPayload.notifications = notifications;
 
     var cdr = {};
     cdr.cdr_email = modal_body.find(".cdr_email").val();
     cdr.cdr_send_interval = modal_body.find(".cdr_send_minute").val() + ' ' +
-        modal_body.find(".cdr_send_hour").val() + ' ' +
-        modal_body.find(".cdr_send_day").val() + ' ' +
-        modal_body.find(".cdr_send_month").val() + ' ' +
-        modal_body.find(".cdr_send_weekday").val();
-
+      modal_body.find(".cdr_send_hour").val() + ' ' +
+      modal_body.find(".cdr_send_day").val() + ' ' +
+      modal_body.find(".cdr_send_month").val() + ' ' +
+      modal_body.find(".cdr_send_weekday").val();
     requestPayload.cdr = cdr;
 
     var fusionpbx = {};
@@ -109,27 +213,12 @@
     fusionpbx.dbuser = modal_body.find(".fusionpbx_db_username").val();
     fusionpbx.dbpass = modal_body.find(".fusionpbx_db_password").val();
     fusionpbx.clustersupport = modal_body.find(".fusionpbx_clustersupport").val();
-
     requestPayload.fusionpbx = fusionpbx;
 
     /* Process endpoints (empty endpoints are ignored) */
-    var endpoints = [];
-    $("tr.endpoint").each(function(i, row) {
-      var endpoint = {};
-      var gwid = $(this).find('td').eq(0).text();
-      if (gwid.length > 0) {
-        endpoint.gwid = parseInt(gwid, 10);
-      }
-      endpoint.hostname = $(this).find('td').eq(1).text();
-      endpoint.description = $(this).find('td').eq(2).text();
-      endpoint.weight = $(this).find('td').eq(3).text();
-      //endpoint.maintmode = $(this).find('td').eq(3).text();
-
-      if (!(endpoint.hostname.length === 0 && endpoint.description.length === 0)) {
-        endpoints.push(endpoint);
-      }
-    });
-    requestPayload.endpoints = endpoints;
+    requestPayload.endpoints = $("tr.endpoint").map(function(idx, row) {
+      return generateEndpointObject(row);
+    }).get();
 
     // set payload defaults for numbers
     // doing it here allows us to keep placeholder on the input
@@ -162,8 +251,8 @@
         btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
         btn.attr("disabled", true);
 
-	      // Update Reload buttons
-	      reloadKamRequired(true);
+        // Update Reload buttons
+        reloadKamRequired(true);
 
         if (action === "POST") {
           gwgroup_table.row.add({
@@ -202,7 +291,8 @@
     modal_body.find(".auth_username").val('');
     modal_body.find(".auth_password").val('');
     modal_body.find(".auth_domain").val('');
-    modal_body.find(".calllimit").val('');
+    modal_body.find(".call_limit").val('');
+    modal_body.find(".call_timeout").val('');
     modal_body.find(".email_over_max_calls").val('');
     modal_body.find(".email_endpoint_failure").val('');
     modal_body.find(".cdr_email").val('');
@@ -256,7 +346,8 @@
     var modal_body = $('#edit .modal-body');
     modal_body.find(".name").val(gwgroup_data.name);
     modal_body.find(".gwgroupid").val(gwgroup_data.gwgroupid);
-    modal_body.find(".calllimit").val(gwgroup_data.calllimit);
+    modal_body.find(".call_limit").val(gwgroup_data.call_settings.limit);
+    modal_body.find(".call_timeout").val(gwgroup_data.call_settings.timeout);
 
     if (gwgroup_data.auth.type == "ip") {
       $('#ip2.authtype').prop('checked', true);
@@ -302,18 +393,10 @@
     updatebtn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
 
     if (gwgroup_data.endpoints) {
-      var table = $('#endpoint-table');
-      var body = $('#endpoint-tablebody');
-
       for (var i = 0; i < gwgroup_data.endpoints.length; i++) {
-        var row = '<tr class="endpoint"><td name="gwid">' + gwgroup_data.endpoints[i].gwid.toString() + '</td>';
-        row += '<td name="hostname">' + gwgroup_data.endpoints[i].hostname + '</td>';
-        row += '<td name="description">' + gwgroup_data.endpoints[i].description + '</td>';
-        row += '<td name="weight">' + gwgroup_data.endpoints[i].weight + '</td></tr>';
-        table.append($(row));
+        endpoint_table1.append(generateEndpointMarkup(gwgroup_data.endpoints[i]));
       }
-
-      table.data('Tabledit').reload();
+      endpoint_table1.data('Tabledit').reload();
     }
 
     if (gwgroup_data.fusionpbx.enabled) {
@@ -322,7 +405,6 @@
     else {
       modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
     }
-
 
     if (gwgroup_data.auth.type == "userpwd") {
       /* userpwd auth enabled, Set the radio button to true */
@@ -345,8 +427,12 @@
       success: function(response, textStatus, jqXHR) {
         $('#delete').modal('hide');
         $('#edit').modal('hide');
-        gwgroup_table.row(function (idx, data, node) {
-            return data.gwgroupid === gwgroupid_int;
+
+        // Update Reload buttons
+        reloadKamRequired(true);
+
+        gwgroup_table.row(function(idx, data, node) {
+          return data.gwgroupid === gwgroupid_int;
         }).remove().draw();
       }
     });
@@ -384,28 +470,10 @@
     });
 
     /* edit modal tabledit init */
-    var endpoint_table1 = $('#endpoint-table');
-    endpoint_table1.Tabledit({
-      columns: {
-        identifier: [0, 'gwid'],
-        editable: [[1, 'hostname'], [2, 'description'], [3, 'weight']],
-        saveButton: true,
-      },
-      ajaxDisabled: true,
-      restoreButton: false
-    });
+    endpoint_table1 = generateEndpointTable('#endpoint-table');
 
     /* add modal tabledit init */
-    var endpoint_table2 = $('#endpoint-table2');
-    endpoint_table2.Tabledit({
-      columns: {
-        identifier: [0, 'gwid'],
-        editable: [[1, 'hostname'], [2, 'description'], [3, 'weight']],
-        saveButton: true,
-      },
-      ajaxDisabled: true,
-      restoreButton: false
-    });
+    endpoint_table2 = generateEndpointTable('#endpoint-table2');
 
     $('#edit').on('show.bs.modal', function() {
       clearEndpointGroupModal('#edit');
@@ -427,34 +495,27 @@
     });
 
     $('#addEndpointRow').on('click', function() {
-      var table = $('#endpoint-table2');
-      //var body = $('#endpoint-tablebody2');
-      //var nextId = body.find('tr').length + 1;
-      table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td><td name="weight"></td></tr>'));
-      table.data('Tabledit').reload();
-      $("#endpoint-table2" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
+      endpoint_table2.append(generateEndpointMarkup());
+      endpoint_table2.data('Tabledit').reload();
+      endpoint_table2.find("tbody tr:last td:last .tabledit-edit-button").trigger("click");
     });
 
     $('#updateEndpointRow').on('click', function() {
-      var table = $('#endpoint-table');
-      //var body = $('#endpoint-tablebody');
-      //var nextId = body.find('tr').length + 1;
-      //table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td></tr>'));
-      table.append($('<tr class="endpoint"><td name="gwid"></td><td name="hostname"></td><td name="description"></td><td name="weight"></td></tr>'));
-      table.data('Tabledit').reload();
-      $("#endpoint-table" + " tbody tr:last td:last .tabledit-edit-button").trigger("click");
+      endpoint_table1.append(generateEndpointMarkup());
+      endpoint_table1.data('Tabledit').reload();
+      endpoint_table1.find("tbody tr:last td:last .tabledit-edit-button").trigger("click");
     });
 
     $('.modal-body .fusionpbx_clustersupport').change(function() {
       var modal = $(this).closest('div.modal');
       var modal_body = modal.find('.modal-body');
-	
+
       if ($(this).is(":checked") || $(this).prop("checked")) {
-        	modal_body.find('.fusionpbx_clustersupport').val(1);
+        modal_body.find('.fusionpbx_clustersupport').val(1);
       }
       else {
-        	modal_body.find('.fusionpbx_clustersupport').val(0);
-	}
+        modal_body.find('.fusionpbx_clustersupport').val(0);
+      }
     });
 
     /* listener for fusionPBX toggle */

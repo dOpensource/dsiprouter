@@ -1,0 +1,31 @@
+[Unit]
+Description=RTPEngine proxy for RTP and other media streams
+Requires=basic.target network.target
+After=network.target network-online.target systemd-journald.socket basic.target
+After=iptables.service redis.service rsyslog.service
+# iptables.service is required only if the RTPEngine uses its kernel module.
+# redis.service is required if the Redis server is working on the same machine along with the RTPEngine
+DefaultDependencies=no
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/default/rtpengine.conf
+User=rtpengine
+Group=rtpengine
+# runtime only directory /run/rtpengine
+RuntimeDirectory=rtpengine
+RuntimeDirectoryMode=0770
+# PIDFile requires an absolute path
+PIDFile=/run/rtpengine/rtpengine.pid
+# process capabilities
+AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_NICE
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_NICE
+# ExecStart* requires an absolute path for the program
+ExecStartPre=!-/usr/bin/dsiprouter chown -rtpengine
+ExecStartPre=+/usr/sbin/ngcp-rtpengine-iptables-setup start
+ExecStart=/usr/bin/rtpengine --config-file=${CONFIG_FILE} --pidfile=${PID_FILE}
+ExecStopPost=+/usr/sbin/ngcp-rtpengine-iptables-setup stop
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,47 @@
+diff --git a/src/modules/uac/uac_reg.c b/src/modules/uac/uac_reg.c
+--- a/src/modules/uac/uac_reg.c	(revision aa335e6138414f764dcf7287db271207f76bc6d8)
++++ b/src/modules/uac/uac_reg.c	(date 1713982080938)
+@@ -63,6 +63,7 @@
+ #define UAC_REG_DB_COLS_NUM 15
+ 
+ int _uac_reg_gc_interval = 150;
++int _uac_reg_reload_delta = 30;
+ 
+ typedef struct _reg_uac
+ {
+@@ -393,11 +394,11 @@
+ 	tn = time(NULL);
+ 
+ 	lock_get(_reg_htable_gc_lock);
+-	if(_reg_htable_gc->stime > tn - _uac_reg_gc_interval) {
++	if(_reg_htable_gc->stime > tn - _uac_reg_reload_delta) {
+ 		lock_release(_reg_htable_gc_lock);
+ 		LM_ERR("shifting in-memory table is not possible in less than %d "
+ 			   "secs\n",
+-				_uac_reg_gc_interval);
++			   _uac_reg_reload_delta);
+ 		return -1;
+ 	}
+ 	uac_reg_reset_ht_gc();
+diff --git a/src/modules/uac/uac.c b/src/modules/uac/uac.c
+--- a/src/modules/uac/uac.c	(revision aa335e6138414f764dcf7287db271207f76bc6d8)
++++ b/src/modules/uac/uac.c	(date 1713982956895)
+@@ -115,6 +115,7 @@
+ extern int reg_timer_interval;
+ extern int _uac_reg_gc_interval;
+ extern int _uac_reg_use_domain;
++extern int _uac_reg_reload_delta;
+ 
+ static pv_export_t mod_pvs[] = {
+ 		{{"uac_req", sizeof("uac_req") - 1}, PVT_OTHER, pv_get_uac_req,
+@@ -187,7 +188,9 @@
+ 		{"reg_hash_size", INT_PARAM, &reg_htable_size},
+ 		{"reg_use_domain", PARAM_INT, &_uac_reg_use_domain},
+ 		{"default_socket", PARAM_STR, &uac_default_socket},
+-		{"event_callback", PARAM_STR, &uac_event_callback}, {0, 0, 0}};
++		{"event_callback", PARAM_STR, &uac_event_callback},
++		{"reload_delta", INT_PARAM, &_uac_reg_reload_delta},
++		{0, 0, 0}};
+ 
+ 
+ struct module_exports exports = {"uac", /* module name */

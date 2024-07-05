@@ -48,14 +48,14 @@
                 {% if state.kam_reload_required == True %}
                   {% set kam_reload_state="btn-warning" %}
                 {% else %}
-                  {% set kam_reload_state="" %}
+                  {% set kam_reload_state="btn-secondary" %}
                 {% endif %}
                 {% if state.dsip_reload_required == True %}
                   {% set dsip_reload_state="btn-warning" %}
                 {% else %}
-                  {% set dsip_reload_state="" %}
+                  {% set dsip_reload_state="btn-secondary" %}
                 {% endif %}
-                <li><a class="dropdown-item {{ kam_reload_state }}" id="reloadkam">Reload Kamailio</a></li>
+                <li><a class="dropdown-item {{ kam_reload_state }}" id="reload_kam">Reload Kamailio</a></li>
                 <li><a class="dropdown-item {{ dsip_reload_state }}" id="reload_dsip">Reload dSIPRouter</a></li>
               </ul>
             </div>

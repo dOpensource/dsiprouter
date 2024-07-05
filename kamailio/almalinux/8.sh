@@ -27,6 +27,21 @@ function install() {
     /opt/certbot/bin/pip install certbot
     ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
+    dnf install -y kernel-modules-extra-$(uname -r) || {
+        printwarn 'could not install kernel modules for current kernel'
+        echo 'upgrading kernel and installing new modules'
+        printwarn 'you will need to reboot the machine for changes to take effect'
+        dnf install -y kernel-modules-extra
+    }
+
+    if (( $? == 0 )); then
+        echo 'sctp' >/etc/modules-load.d/sctp.conf
+        sed -i -re 's%^blacklist sctp%#blacklist sctp%g' /etc/modprobe.d/*
+        modprobe sctp
+    else
+        printwarn 'Could not install kernel modules for SCTP support. Continuing installation...'
+    fi
+
     # create kamailio user and group
     mkdir -p /var/run/kamailio
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
@@ -51,7 +66,8 @@ EOF
     yum makecache -y
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket \
         kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls \
-        kamailio-presence kamailio-outbound kamailio-gzcompress kamailio-http_async_client kamailio-dmq_userloc
+        kamailio-presence kamailio-outbound kamailio-gzcompress kamailio-http_async_client kamailio-dmq_userloc \
+        kamailio-sctp
 
     # workaround for kamailio rpm transaction failures
     if (( $? != 0 )); then
@@ -152,6 +168,70 @@ EOF
     mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs/stirshaken
     ln -s /etc/ssl/certs/ca-bundle.crt ${DSIP_SSL_CA}
     updateCACertsDir
+
+
+    # setup STIR/SHAKEN module for kamailio
+    ## compile and install libks
+    if [[ ! -d ${SRC_DIR}/libks ]]; then
+        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
+    fi
+    (
+        cd ${SRC_DIR}/libks &&
+        cmake -DCMAKE_BUILD_TYPE=Release . &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libks'
+        return 1
+    }
+
+    ## compile and install libstirshaken
+    if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
+    fi
+    (
+        cd ${SRC_DIR}/libstirshaken &&
+        ./bootstrap.sh &&
+        ./configure --prefix=/usr --libdir=/usr/lib64 &&
+        make -j $NPROC &&
+        make -j $NPROC install &&
+        ldconfig
+    ) || {
+        printerr 'Failed to compile and install libstirshaken'
+        return 1
+    }
+
+    ## compile and install STIR/SHAKEN module
+    ## reuse repo if it exists and matches version we want to install
+    if [[ -d ${SRC_DIR}/kamailio ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
+            rm -rf ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        fi
+    else
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+    fi
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&
+        make -j $NPROC
+    ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
+        printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
+
+    # patch uac module to support reload_delta
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/uac &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch uac module'
+        return 1
+    }
 
     return 0
 }

@@ -15,9 +15,12 @@ function install() {
     userdel dsiprouter &>/dev/null; groupdel dsiprouter &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
-    # Install dependencies for dSIPRouter
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
     apt-get install -y build-essential curl python3 python3-pip python3-dev libpq-dev python3-venv \
-        firewalld sudo libmariadb-dev logrotate rsyslog perl sngrep libev-dev uuid-runtime pkg-config
+        firewalld sudo libmariadb-dev logrotate rsyslog perl sngrep libev-dev uuid-runtime pkg-config &&
+    # Install libraries needed to install the python-ldap package
+    apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

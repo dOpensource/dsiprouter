@@ -188,22 +188,65 @@ function setConfigAttrib() {
 export -f setConfigAttrib
 
 # $1 == credentials to encrypt
+# usage:
+#   encryptCreds [options] <plaintext credentials>
+#   echo 'plaintext credentials' | encryptCreds [options]
+# options:
+#   -pk <private key string>
+#   -kf <private key file>
+# notes:
+#   one of "-pk" or "-kf" options must be given
+# returns:
+#   0 == successfully encrypted credentials
+#   1 == failed encrypting credentials
+# outputs:
+#   <nonce>:<ciphertext credentials>
 function encryptCreds() {
-    local PT_CREDS="$1"
-    # this is the file not the raw key
-    local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")}
-    local NONCE CT_HEX
+    local TMP PT_CREDS NONCE CT_HEX PK_HEX
+
+    while (( $# > 0 )); do
+        case "$1" in
+            -pk)
+                shift
+                PK_HEX=$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <<<"$1")
+                shift
+                ;;
+            -kf)
+                shift
+                PK_HEX=$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"$1")
+                shift
+                ;;
+            *)
+                PT_CREDS="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [[ -z "$PK_HEX" ]] && return 1
+
+    # if credentials were piped to stdin use that instead of positional args
+    if [[ -p /dev/stdin ]]; then
+        read -r -d '' TMP
+        [[ -n "$TMP" ]] && PT_CREDS="$TMP"
+    fi
 
     # openssl version - depends on openssl, xxd, and sed
-    NONCE=$(openssl rand -hex $AES_CTR_NONCE_SIZE)
+    NONCE=$(openssl rand -hex $AES_CTR_NONCE_SIZE) &&
     CT_HEX=$(
+        set -o pipefail;
         openssl enc -aes-256-ctr -e \
             -iv "$NONCE" \
-            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${DSIP_PRIV_KEY}")" \
+            -K "$PK_HEX" \
             < <(echo -n "$PT_CREDS") \
-            2>/dev/null | xxd -p -c $AESCTR_CREDS_ENCODED_MAX_LEN
+            2>/dev/null |
+        xxd -p -c $AESCTR_CREDS_ENCODED_MAX_LEN
     )
+
+    (( $? != 0 )) && return 1
+
     echo -n "${NONCE}${CT_HEX}"
+    return 0
 }
 export -f encryptCreds
 
@@ -215,9 +258,10 @@ function encryptConfigAttrib() {
     local VALUE="$2"
     local CONFIG_FILE="$3"
     local CT_CREDS
+    local PK_FILE=$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")
 
     # openssl version - depends on openssl, xxd, and sed
-    CT_CREDS=$(encryptCreds "$VALUE")
+    CT_CREDS=$(encryptCreds -kf "$PK_FILE" "$VALUE")
     setConfigAttrib "$NAME" "$CT_CREDS" "$CONFIG_FILE" -qb
     # python version - depends on dsiprouter's python3 venv and pycryptodome
 #    ${PYTHON_CMD} <<EOPY
@@ -252,7 +296,7 @@ function decryptConfigAttrib() {
     local NAME="$1"
     local CONFIG_FILE="$2"
     # this is the file not the raw key
-    local DSIP_PRIV_KEY=${DSIP_PRIV_KEY:-$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")}
+    local PK_FILE=$(getConfigAttrib 'DSIP_PRIV_KEY' "$CONFIG_FILE")
     local NONCE NONCE_OFFSET
 
     local VALUE=$(grep -oP '^(?!#)(?:'${NAME}')[ \t]*=[ \t]*\K(?:\w+\(.*\)[ \t\v]*$|[\w\d\.]+[ \t]*$|\{.*\}|\[.*\][ \t]*$|\(.*\)[ \t]*$|b?""".*"""[ \t]*$|'"b?'''.*'''"'[ \v]*$|b?".*"[ \t]*$|'"b?'.*'"')' ${CONFIG_FILE})
@@ -266,7 +310,7 @@ function decryptConfigAttrib() {
         NONCE=${VALUE:0:$NONCE_OFFSET}
         openssl enc -aes-256-ctr -d \
             -iv "$NONCE" \
-            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${DSIP_PRIV_KEY}")" \
+            -K "$(xxd -p -l $AES_CTR_KEY_SIZE -c $AES_CTR_KEY_SIZE <"${PK_FILE}")" \
             < <(echo -n "${VALUE:$NONCE_OFFSET}" | xxd -r -p -c $AESCTR_CREDS_ENCODED_MAX_LEN) \
             2>/dev/null
         # python version - depends on dsiprouter's python3 venv and pycryptodome
@@ -522,17 +566,47 @@ function getInstanceID() {
 }
 export -f getInstanceID
 
-# $1 == crontab entry to append
+# summary:  append a crontab entry
+# usage:    cronAppend [options] <crontab entry>
+# options:  -u <crontab user>
 function cronAppend() {
-    local ENTRY="$1"
-    crontab -l 2>/dev/null | { cat; echo "$ENTRY"; } | crontab -
+    local ENTRY USER_ARGS=()
+
+    case "$1" in
+        -u)
+            shift
+            USER_ARGS=(-u "$1")
+            shift
+            ENTRY="$1"
+            ;;
+        *)
+            ENTRY="$1"
+            ;;
+    esac
+
+    crontab ${USER_ARGS[@]} -l 2>/dev/null | { cat; echo "$ENTRY"; } | crontab ${USER_ARGS[@]} -
 }
 export -f cronAppend
 
-# $1 == crontab entry to remove
+# summary:  remove crontab entries matching search
+# usage:    cronRemove [options] <search string>
+# options:  -u <crontab user>
 function cronRemove() {
-    local ENTRY="$1"
-    crontab -l 2>/dev/null | grep -v -F -w "$ENTRY" | crontab -
+    local SEARCH USER_ARGS=()
+
+    case "$1" in
+        -u)
+            shift
+            USER_ARGS=(-u "$1")
+            shift
+            SEARCH="$1"
+            ;;
+        *)
+            SEARCH="$1"
+            ;;
+    esac
+
+    crontab ${USER_ARGS[@]} -l 2>/dev/null | grep -v -F -w "$SEARCH" | crontab ${USER_ARGS[@]} -
 }
 export -f cronRemove
 
@@ -905,7 +979,7 @@ function withKamDB() {
     [[ -n "$KAM_DB_PORT" ]] && CONN_OPTS+=( "--port=${KAM_DB_PORT}" )
     [[ -n "$KAM_DB_USER" ]] && CONN_OPTS+=( "--user=${KAM_DB_USER}" )
     [[ -n "$KAM_DB_PASS" ]] && CONN_OPTS+=( "--password=${KAM_DB_PASS}" )
-    if [[ "$1" == "mysql" ]]; then
+    if [[ "$CMD" == "mysql" ]]; then
         [[ -n "$KAM_DB_NAME" ]] && CONN_OPTS+=( "--database=${KAM_DB_NAME}" )
     fi
 
@@ -1077,13 +1151,18 @@ function dumpDBUser() {
 }
 export -f dumpDBUser
 
-# usage: sqlAsTransaction [options] <database>
-# options:  --user=<mysql user>
-#           --pass=<mysql password>
-#           --host=<mysql host>
-#           --port=<mysql port>
-#           --db=<mysql database name>
-# returns:  0 if DB exists, 1 otherwise
+# usage:
+#   sqlAsTransaction [options] <database> <sql statements>
+#   echo 'sql statements' | sqlAsTransaction [options] <database>
+# options:
+#   --user=<mysql user>
+#   --pass=<mysql password>
+#   --host=<mysql host>
+#   --port=<mysql port>
+#   --db=<mysql database name>
+# returns:
+#   0 == statements executed successfully
+#   1 == error occurred running statements
 function sqlAsTransaction() {
     local TMP
     local DB_SET=0

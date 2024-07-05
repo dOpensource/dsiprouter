@@ -74,11 +74,6 @@
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div> -->
 
-      <div class="form-group">
-        <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls"
-               autocomplete="off">
-      </div>
-
       <!-- nav tabs -->
       <div id="endpoint-nav" class="navbar">
         <ul class="nav nav-tabs">
@@ -89,7 +84,7 @@
             <a href="#endpoints" name="endpoints-toggle" data-toggle="tab">Endpoints</a>
           </li>
           <li role="presentation">
-            <a href="#config" name="config-toggle" data-toggle="tab">Config</a>
+            <a href="#call_settings" name="settings-toggle" data-toggle="tab">Call Settings</a>
           </li>
           <li role="presentation">
             <a href="#notifications" name="notifications-toggle" data-toggle="tab">Notifications</a>
@@ -139,22 +134,57 @@
           <table id="endpoint-table" class="table">
             <thead>
             <tr>
-              <th>PBX ID</th>
-              <th>Hostname/IP</th>
+              <th>ID</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="hostname or IP address to route to (and/or) authenticate endpoint">
+                  Host
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="port to use when routing to endpoint">
+                  Port
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="signalling transport for calls to endpoint">
+                  Signalling
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="media transport for calls to endpoint">
+                  Media
+                </span>
+              </th>
               <th>Description</th>
-              <th>Weight</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="relative weight (load balancing only) out of sum of endpoint weights in this group.
+                      value must be 1-100 or 0 to disable load balancing on this endpoint">
+                  Weight
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="when enabled, the gateway is sent keepalive messages (at a default interval of 60 seconds).
+                      if disabled, the destination is always attempted when routing">
+                  Keepalive
+                </span>
+              </th>
               <th>
                 <button class="btn btn-success btn-md" type="button" id="updateEndpointRow">Add Row</button>
               </th>
             </tr>
             </thead>
             <tbody id="endpoint-tablebody">
-
             </tbody>
           </table>
         </div> <!-- enf of endpoints tab -->
 
-        <div id="config" class="tab-pane fade in" name="config-toggle">
+        <div id="call_settings" class="tab-pane fade in" name="settings-toggle">
           <div class="form-group">
             <input class="strip form-control" type="text" name="strip"
                    placeholder="# of characters to strip from RURI (inbound calls)">
@@ -163,7 +193,15 @@
             <input class="prefix form-control" type="text" name="prefix"
                    placeholder="The characters to prefix to a RURI (inbound calls)">
           </div>
-        </div> <!-- end of config tab -->
+          <div class="form-group">
+            <input class="call_limit form-control" type="number" name="call_limit" placeholder="Max Concurrent Calls"
+                   autocomplete="off" min="0">
+          </div>
+          <div class="form-group">
+            <input class="call_timeout form-control" type="number" name="call_timeout" placeholder="Maximum Call Length (seconds)"
+                   autocomplete="off" min="0">
+          </div>
+        </div> <!-- end of call settings tab -->
 
         <div id="notifications" class="tab-pane fade in" name="notifications-toggle">
           <div class="form-group">
@@ -297,13 +335,11 @@ systemctl restart fail2ban</code></pre>
         <input class="name form-control" type="text" name="name" placeholder="Friendly Name(Optional)"
                autofocus="autofocus">
       </div>
+
       <!-- <div class="form-group">
         <input class="ip_addr form-control" type="text" name="ip_addr" placeholder="IP Address">
       </div> -->
-      <div class="form-group">
-        <input class="calllimit form-control" type="text" name="calllimit" placeholder="Max Concurrent Calls"
-               autocomplete="off">
-      </div>
+
       <!-- nav tabs -->
       <div id="endpoint-nav" class="navbar">
         <ul class="nav nav-tabs">
@@ -314,7 +350,7 @@ systemctl restart fail2ban</code></pre>
             <a href="#endpoints2" name="endpoints-toggle" data-toggle="tab">Endpoints</a>
           </li>
           <li role="presentation">
-            <a href="#config2" name="config-toggle" data-toggle="tab">Config</a>
+            <a href="#call_settings2" name="settings-toggle" data-toggle="tab">Config</a>
           </li>
           <li role="presentation">
             <a href="#notifications2" name="notifications-toggle" data-toggle="tab">Notifications</a>
@@ -364,10 +400,46 @@ systemctl restart fail2ban</code></pre>
           <table id="endpoint-table2" class="table">
             <thead>
             <tr>
-              <th>PBX ID</th>
-              <th>Hostname/IP</th>
+              <th>ID</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="hostname or IP address to route to (and/or) authenticate endpoint">
+                  Host
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="port to use when routing to endpoint">
+                  Port
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="signalling transport for calls to endpoint">
+                  Signalling
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="media transport for calls to endpoint">
+                  Media
+                </span>
+              </th>
               <th>Description</th>
-              <th>Weight</th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="relative weight (load balancing only) out of sum of endpoint weights in this group.
+                      value must be 1-100 or 0 to disable load balancing on this endpoint">
+                  Weight
+                </span>
+              </th>
+              <th>
+                <span data-toggle="tooltip" data-placement="top" title=""
+                      data-original-title="when enabled, the gateway is sent keepalive messages (at a default interval of 60 seconds).
+                      if disabled, the destination is always attempted when routing">
+                  Keepalive
+                </span>
+              </th>
               <th>
                 <button class="btn btn-success btn-md" type="button" id="addEndpointRow">Add Row</button>
               </th>
@@ -379,7 +451,7 @@ systemctl restart fail2ban</code></pre>
           </table>
         </div> <!-- enf of endpoints tab -->
 
-        <div id="config2" class="tab-pane fade in" name="config-toggle">
+        <div id="call_settings2" class="tab-pane fade in" name="settings-toggle">
           <div class="form-group">
             <input class="strip form-control" type="text" name="strip"
                    placeholder="# of characters to strip from RURI (inbound calls)">
@@ -388,7 +460,15 @@ systemctl restart fail2ban</code></pre>
             <input class="prefix form-control" type="text" name="prefix"
                    placeholder="The characters to prefix to a RURI (inbound calls)">
           </div>
-        </div> <!-- end of config tab -->
+          <div class="form-group">
+            <input class="call_limit form-control" type="number" name="call_limit" placeholder="Max Concurrent Calls"
+                   autocomplete="off" min="0">
+          </div>
+          <div class="form-group">
+            <input class="call_timeout form-control" type="number" name="call_timeout" placeholder="Maximum Call Length (seconds)"
+                   autocomplete="off" min="0">
+          </div>
+        </div> <!-- end of call settings tab -->
 
         <div id="notifications2" class="tab-pane fade in" name="notifications-toggle">
           <div class="form-group">

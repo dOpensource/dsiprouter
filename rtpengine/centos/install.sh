@@ -85,7 +85,8 @@ fi
 
 # compile and install rtpengine from RPM's
 function install {
-    local RTPENGINE_RPM_VER TMP
+    local RTPENGINE_RPM_VER TMP BUILD_KERN_VERSIONS
+    local REBOOT_REQUIRED=0
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
     local RHEL_BASE_VER=$(rpm -E %{rhel})
@@ -99,7 +100,7 @@ function install {
         dnf install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         dnf --enablerepo=crb install -y ladspa libuv-devel xmlrpc-c-devel opus-devel
         dnf install -y ffmpeg ffmpeg-devel &&
-        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel curl libcurl libcurl-devel \
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
@@ -111,21 +112,24 @@ function install {
         dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
         dnf install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         dnf install -y ffmpeg ffmpeg-devel &&
-        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+        dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel curl libcurl libcurl-devel \
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
             libwebsockets-devel opus-devel xmlrpc-c-devel gcc-toolset-13 pandoc &&
         source scl_source enable gcc-toolset-13
     else
+        yum-config-manager --enable centos-sclo-rh >/dev/null &&
         yum install -y epel-release &&
-        rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro &&
-        rpm -Uh http://li.nux.ro/download/nux/dextop/el${DISTRO_VER}/${OS_ARCH}/nux-dextop-release-0-5.el${DISTRO_VER}.nux.noarch.rpm &&
+        yum install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
+        yum install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         yum install -y ffmpeg ffmpeg-devel &&
-        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel mariadb-devel \
+        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre2 pcre2-devel curl libcurl libcurl-devel mariadb-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel xmlrpc-c-devel gperf redhat-lsb nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog \
-            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel
+            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel \
+            mosquitto-devel opus-devel devtoolset-11 pandoc
+        source scl_source enable devtoolset-11
     fi
 
     if (( $? != 0 )); then
@@ -135,6 +139,7 @@ function install {
 
     if (( ${DISTRO_VER} >= 8 )); then
         dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
+            REBOOT_REQUIRED=1
             printwarn 'could not install kernel headers for current kernel'
             echo 'upgrading kernel and installing new headers'
             printwarn 'you will need to reboot the machine for changes to take effect'
@@ -142,6 +147,7 @@ function install {
         }
     else
         yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
+            REBOOT_REQUIRED=1
             printwarn 'could not install kernel headers for current kernel'
             echo 'upgrading kernel and installing new headers'
             printwarn 'you will need to reboot the machine for changes to take effect'
@@ -154,11 +160,32 @@ function install {
         exit 1
     fi
 
-    # create rtpengine user and group
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
-    userdel rtpengine &>/dev/null; groupdel rtpengine &>/dev/null
-    useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
+    BUILD_KERN_VERSIONS=$(joinwith '' ',' '' $(rpm -q kernel-headers | sed 's/kernel-headers-//g'))
+
+    # rtpengine >= mr11.3.1.1 requires curl >= 7.43.0
+    if versionCompare "$(tr -d '[a-zA-Z]' <<<"$RTPENGINE_VER")" gteq "11.3.1.1"; then
+        if versionCompare "$(curl -V | head -1 | awk '{print $2}')" lt "7.43.0"; then
+            printdbg 'curl version is not recent enough.. compiling curl 7.8.0'
+            if [[ ! -d ${SRC_DIR}/curl ]]; then
+                (
+                    cd ${SRC_DIR} &&
+                    curl -sL https://curl.haxx.se/download/curl-7.80.0.tar.gz 2>/dev/null |
+                    tar -xzf - --transform 's%curl-7.80.0%curl%';
+                )
+            fi
+            (
+                cd ${SRC_DIR}/curl &&
+                ./configure --prefix=/usr --libdir=/usr/lib64 --with-ssl &&
+                make -j $NRPOC &&
+                make -j $NPROC install &&
+                ldconfig
+            )
+            if (( $? != 0 )); then
+                printerr 'Failed to compile curl'
+                return 1
+            fi
+        fi
+    fi
 
     # reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
@@ -170,21 +197,30 @@ function install {
         git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
 
+    # apply our patches
+    (
+        cd ${SRC_DIR}/rtpengine &&
+        patch -p1 -N <${DSIP_PROJECT_DIR}/rtpengine/el-${RTPENGINE_VER}.patch
+    )
+    if (( $? > 1 )); then
+        printerr 'Failed patching RTPEngine files prior to build'
+        return 1
+    fi
+
     RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ${SRC_DIR}/rtpengine/el/rtpengine.spec)
     RPM_BUILD_ROOT="${HOME}/rpmbuild"
     rm -rf ${RPM_BUILD_ROOT} 2>/dev/null
     mkdir -p ${RPM_BUILD_ROOT}/SOURCES &&
     (
-        # some packages had to be compiled from source and therefore the default rpm build will fail
-        # we remove these from the the rpm spec files so we can still reliably install the other deps
-        # this also allows us to keep the standard post/pre build configurations from the spec file
         cd ${SRC_DIR} &&
         tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz \
             --transform="s%^rtpengine%ngcp-rtpengine-$RTPENGINE_RPM_VER%g" rtpengine/ &&
-        echo "%__make /usr/bin/make -j $NPROC" >~/.rpmmacros &&
+        echo "%__make $(which make) -j $NPROC" >~/.rpmmacros &&
+        # fix for BUG: "exec_prefix: command not found"
+        function exec_prefix() { echo -n '/usr'; } && export -f exec_prefix &&
         # build the RPM's
-        rpmbuild -ba ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
-        rm -f ~/.rpmmacros &&
+        rpmbuild -ba --define "kversion $BUILD_KERN_VERSIONS" ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
+        rm -f ~/.rpmmacros && unset -f exec_prefix &&
         systemctl mask ngcp-rtpengine-daemon.service
 
         # install the RPM's
@@ -204,18 +240,14 @@ function install {
         exit 1
     fi
 
-    # make sure RTPEngine kernel module configured
-    # skip if the kernel headers were not installed
-    if rpm -qa | grep -q "kernel-headers-$(uname -r)"; then
-        if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko*' 2>/dev/null)" ]]; then
-            printerr "Problem installing RTPEngine kernel module"
-            exit 1
-        fi
+    # warn user if kernel module not loaded yet
+    if (( $REBOOT_REQUIRED == 1 )); then
+        printwarn "A reboot is required to load the RTPEngine kernel module"
     fi
 
     # ensure config dirs exist
     mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
-    chown -R rtpengine:rtpengine /var/run/rtpengine
+    chown -R rtpengine:rtpengine /run/rtpengine
 
     # rtpengine config file
     # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
@@ -256,13 +288,15 @@ function install {
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/rtpengine /etc/logrotate.d/rtpengine
 
     # Setup tmp files
-    echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
+    echo "d /run/rtpengine/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
     rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
-    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
+    if (( ${DISTRO_VER} > 7 )); then
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
+    else
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    fi
 
     # Reload systemd configs
     systemctl daemon-reload

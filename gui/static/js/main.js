@@ -224,7 +224,7 @@ $(document).ready(function() {
   }
 
   /* kam reload button listener */
-  $('#reloadkam').click(function() {
+  $('#reload_kam').click(function() {
     reloading_overlay.removeClass('hidden');
 
     $.ajax({
@@ -303,6 +303,12 @@ $(document).ready(function() {
     });
   });
 
+  /* clicks on "reload" button go to the drowdon instead */
+  $('#reload').click(function(ev){
+    ev.stopPropagation();
+    $('#reload-split').trigger('click');
+  });
+
   /* listener for authtype radio buttons */
   $('.authoptions.radio').get().forEach(function(elem) {
     elem.addEventListener('click', function(e) {
@@ -373,6 +379,9 @@ $(document).ready(function() {
   $('.modal').on('shown.bs.modal', function() {
     $(this).find('[autofocus]').focus();
   });
+
+  /* enable bootstrap tooltips */
+  $('[data-toggle="tooltip"]').tooltip();
 });
 
 /* handle multiple modal stacking */

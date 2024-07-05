@@ -8,7 +8,8 @@ from flask import request, Blueprint, render_template, redirect, session, url_fo
 from sqlalchemy import exc as sql_exceptions
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
-from modules.api.licensemanager.functions import WoocommerceError
+from modules.api.licensemanager.classes import WoocommerceError
+from modules.api.licensemanager.functions import getLicenseStatus
 from database import startSession, DummySession, Domain, DomainAttrs, Dispatcher, Gateways, Address
 from modules.api.api_routes import addEndpointGroups
 from shared import debugException, debugEndpoint, showError, strFieldsToDict, stripDictVals
@@ -88,7 +89,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 socket_addr = settings.EXTERNAL_IP_ADDR
             for hostname,sipuri in zip(settings.MSTEAMS_DNS_ENDPOINTS,msteams_endpoint_uris):
                 dispatcher = Dispatcher(setid=PBXDomain.id, destination=sipuri,
-                    attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),
+                    attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),flags=Dispatcher.FLAGS['KEEP_ALIVE'],
                     description='msteam_endpoint:{}'.format(hostname))
                 db.add(dispatcher)
 
@@ -117,7 +118,8 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 Addr = Address("msteams-sbc", hostname, 32, settings.FLT_MSTEAMS, gwgroup=0)
                 db.add(Addr)
             hostname="{}:{};{}".format(hostname,"5061","transport=tls")
-            endpoints.append({"hostname": hostname, "description": "msteams_endpoint", "maintmode": False})
+            endpoints.append({"host": hostname, "description": "msteams_endpoint", "maintmode": False, 
+            'keepalive': '1'})
 
         endpointGroup['endpoints'] = endpoints
         addEndpointGroups(endpointGroup, "msteams", domain)
@@ -160,7 +162,7 @@ def configureMSTeams(id):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['msteams_license_status']
+        license_status = getLicenseStatus('DSIP_MSTEAMS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -246,7 +248,7 @@ def displayDomains():
                 'notes': notes
             }
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['msteams_license_status']
+        license_status = getLicenseStatus('DSIP_MSTEAMS')
         if license_status == 0:
             return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 

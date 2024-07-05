@@ -24,7 +24,8 @@ function install() {
         exit 1
     fi
 
-    KAM_VERSION_DOTTED=$(perl -pe 's%([0-9])([0-9])%\1.\2%' <<<"$KAM_VERSION")
+    # hardcoded to the latest release available for centos (patch updates broken)
+    KAM_VERSION_DOTTED='5.7.4'
     RHEL_BASE_VER=$(rpm -E %{rhel})
     NPROC=$(nproc)
 
@@ -98,12 +99,17 @@ function install() {
     yum-config-manager --enable "kamailio-$KAM_VERSION_DOTTED" >/dev/null &&
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
-        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid
+        kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid kamailio-sctp
 
     if (( $? != 0 )); then
         printerr 'Failed installing kamailio packages'
         exit 1
     fi
+
+    # enable sctp
+    echo 'sctp' >/etc/modules-load.d/sctp.conf
+    sed -i -re 's%^blacklist sctp%#blacklist sctp%g' /etc/modprobe.d/*
+    modprobe sctp
 
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | awk '/^version:/ {print $3}')
@@ -258,6 +264,31 @@ EOF
     ) &&
     cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
         printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
+
+    # patch htable module to support coldelim/colnull on kamailio v5.7.x
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/htable &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/htable-kam57.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch htable module'
+        return 1
+    }
+
+    # patch uac module to support reload_delta
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/uac &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch uac module'
         return 1
     }
 

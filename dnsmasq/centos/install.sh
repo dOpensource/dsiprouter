@@ -12,7 +12,11 @@ function install() {
     # mask the service before running package manager to avoid faulty startup errors
     systemctl mask dnsmasq.service
 
-    dnf install -y dnsmasq
+    if (( ${DISTRO_VER} >= 8 )); then
+        dnf install -y dnsmasq
+    else
+        yum install -y dnsmasq
+    fi
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -23,7 +27,11 @@ function install() {
     systemctl unmask dnsmasq.service
 
     # configure dnsmasq systemd service
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v2.service /lib/systemd/system/dnsmasq.service
+    if (( ${DISTRO_VER} > 7 )); then
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v2.service /lib/systemd/system/dnsmasq.service
+    else
+        cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v3.service /lib/systemd/system/dnsmasq.service
+    fi
     chmod 644 /lib/systemd/system/dnsmasq.service
     systemctl daemon-reload
     systemctl enable dnsmasq
@@ -35,18 +43,22 @@ function install() {
     }
 
     # make dnsmasq the DNS provider
+    # centos uses a static resolv.conf by default, which dnsmasq will use for its upstream DNS servers
+    [[ ! -e /etc/dnsmasq_resolv.conf ]] && {
+        cp -df /etc/resolv.conf /etc/dnsmasq_resolv.conf
+    }
     rm -f /etc/resolv.conf
     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/resolv.conf /etc/resolv.conf
 
     # tell NetworkManager we will manage the DNS servers
     mkdir -p /etc/NetworkManager/conf.d/
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/networkmanager/dsiprouter.conf /etc/NetworkManager/conf.d/99-dsiprouter.conf
 
     # make sure the NetworkManager resolv.conf is recreated with the new configuration options
     systemctl restart NetworkManager
 
     # tell dnsmasq to grab dynamic DNS servers from dhclient
-    export DNSMASQ_RESOLV_FILE="/run/NetworkManager/no-stub-resolv.conf"
+    export DNSMASQ_RESOLV_FILE="/etc/dnsmasq_resolv.conf"
     envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
 
     return 0
@@ -58,7 +70,11 @@ function uninstall {
     systemctl stop dnsmasq
 
     # uninstall packages
-    dnf remove -y dnsmasq
+    if (( ${DISTRO_VER} >= 8 )); then
+        dnf remove -y dnsmasq
+    else
+        yum remove -y dnsmasq
+    fi
 
     # remove our NetworkManager configurations
     rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf

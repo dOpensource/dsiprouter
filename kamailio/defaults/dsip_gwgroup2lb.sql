@@ -5,7 +5,7 @@ CREATE TABLE dsip_gwgroup2lb (
   enabled char(1) NOT NULL DEFAULT '0',
   key_type varchar(64) NOT NULL DEFAULT '0',
   value_type varchar(64) NOT NULL DEFAULT '0',
-  PRIMARY KEY (gwgroupid, setid)
+  PRIMARY KEY (gwgroupid)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -50,13 +50,11 @@ BEGIN
     -- in case the gwgroupid changed
     SET v_gwgroupid = CAST(COALESCE(NEW.id, OLD.id) AS char);
 
-    -- it is safer to always delete the entry then create new one if setid provided
-    DELETE FROM dsip_gwgroup2lb WHERE gwgroupid = v_gwgroupid;
-
     -- make sure we have a setid
     IF NEW.description REGEXP '(?:lb:|lb_ext:)([0-9]+)' THEN
       SET v_setid = REGEXP_REPLACE(NEW.description, '.*(?:lb:|lb_ext:)([0-9]+).*', '\\1');
-      INSERT INTO dsip_gwgroup2lb VALUES(v_gwgroupid, v_setid, DEFAULT, DEFAULT, DEFAULT);
+      INSERT INTO dsip_gwgroup2lb VALUES(v_gwgroupid, v_setid, DEFAULT, DEFAULT, DEFAULT)
+                                  ON DUPLICATE KEY UPDATE setid=v_setid;
     END IF;
   END IF;
 END; //
@@ -82,16 +80,14 @@ CREATE TRIGGER insert_rule_gwgroup2lb
   ON dr_rules
   FOR EACH ROW
 BEGIN
-  SET @new_ruleid := COALESCE(NEW.ruleid, @new_ruleid, (
-    SELECT auto_increment
-    FROM information_schema.tables
-    WHERE table_name = 'dr_rules' AND table_schema = DATABASE()));
-
-  IF (NEW.description LIKE '%lb_enabled:1%') THEN
-    UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+  -- only inbound routes can have load balancing associated with it
+  IF (NEW.groupid = 9000) THEN
+    IF (NEW.description LIKE '%lb_enabled:1%') THEN
+      UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+    ELSE
+      UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
+    END IF;
   END IF;
-
-  SET @new_ruleid = @new_ruleid + 1;
 END; //
 DELIMITER ;
 
@@ -104,17 +100,20 @@ CREATE TRIGGER update_rule_gwgroup2lb
   FOR EACH ROW
 BEGIN
   DECLARE v_gwgroupid varchar(64) DEFAULT NULL;
-  DECLARE v_ruleid varchar(64) DEFAULT NULL;
   DECLARE v_description varchar(255) DEFAULT '';
+  DECLARE v_groupid varchar(255) DEFAULT '';
 
-  SET v_ruleid = CAST(COALESCE(NEW.ruleid, OLD.ruleid) AS char);
   SET v_gwgroupid = REPLACE(COALESCE(NEW.gwlist, OLD.gwlist), '#', '');
   SET v_description = COALESCE(NEW.description, OLD.description);
+  SET v_groupid = CAST(COALESCE(NEW.groupid, OLD.groupid) AS int);
 
-  IF (v_description LIKE '%lb_enabled:1%') THEN
-    UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
-  ELSE
-    UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = v_gwgroupid;
+  -- only inbound routes can have load balancing associated with it
+  IF (v_groupid = 9000) THEN
+    IF (v_description LIKE '%lb_enabled:1%') THEN
+      UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
+    ELSE
+      UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = v_gwgroupid;
+    END IF;
   END IF;
 END; //
 DELIMITER ;
@@ -127,8 +126,12 @@ CREATE TRIGGER delete_rule_gwgroup2lb
   ON dr_rules
   FOR EACH ROW
 BEGIN
-  IF (OLD.description LIKE '%lb_enabled:1%') THEN
-    UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = OLD.ruleid;
+  -- only inbound routes can have load balancing associated with it
+  IF (OLD.groupid = 9000) THEN
+    -- if it is the last rule for the gwgroup then delete load balancing entry
+    IF ((SELECT COUNT(ruleid) FROM dr_rules WHERE gwlist=OLD.gwlist AND groupid=OLD.groupid AND ruleid!=OLD.ruleid) = 0) THEN
+      DELETE FROM dsip_gwgroup2lb WHERE gwgroupid=REPLACE(OLD.gwlist, '#', '');
+    END IF;
   END IF;
 END; //
 DELIMITER ;

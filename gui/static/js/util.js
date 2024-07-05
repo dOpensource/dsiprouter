@@ -139,19 +139,24 @@
       throw new Error("validateFields(): invalid selector argument");
     }
 
-    /* grab the fields */
-    var elems = select_node.find('input,textarea,select,output').filter(':not(:hidden)').get();
+    /* grab the fields as a jquery object */
+    var field_elem_list = select_node.find('input,textarea,select,output').filter(':not(:hidden)').get();
 
     /* check the builtin form validation */
-    for (var i = 0; i < elems.length; i++) {
-      if (!elems[i].reportValidity()) {
+    for (var i = 0; i < field_elem_list.length; i++) {
+      if (!field_elem_list[i].reportValidity()) {
         return false;
       }
     }
 
     /* if supplied, run the custom test function */
     if (typeof test === 'function') {
-      var resp = test(elems);
+      // convert the array of DOM elements into a Map of "name" => jQuery(elem) key pairs
+      var fields = new Map(field_elem_list.map(function(elem) {
+        return [elem.getAttribute('name'), $(elem)];
+      }));
+
+      var resp = test(fields);
       if (resp.result === false) {
         var err_elem = null;
         if (resp.err_node instanceof jQuery) {
@@ -248,12 +253,12 @@
   window.reloadKamRequired = function(required = true) {
     var reload_btn = $('#reload');
     var split_btn = $('#reload-split');
-    var kamailio_btn = $('#reloadkam');
+    var kamailio_btn = $('#reload_kam');
 
     if (required) {
       reload_btn.removeClass('btn-primary');
       split_btn.removeClass('btn-primary');
-      kamailio_btn.removeClass('btn-primary');
+      kamailio_btn.removeClass('btn-secondary');
       reload_btn.addClass('btn-warning');
       split_btn.addClass('btn-warning');
       kamailio_btn.addClass('btn-warning');
@@ -264,7 +269,7 @@
       kamailio_btn.removeClass('btn-warning');
       reload_btn.addClass('btn-primary');
       split_btn.addClass('btn-primary');
-      kamailio_btn.addClass('btn-primary');
+      kamailio_btn.addClass('btn-secondary');
     }
   };
 
@@ -273,25 +278,25 @@
    * @param {Boolean} required    whether a reload is required
    */
   window.reloadDsipRequired = function(required = true) {
-    var reload_btn = $('#reload_dsip');
+    var reload_btn = $('#reload');
     var split_btn = $('#reload-split');
-    var kamailio_btn = $('#reloadkam');
+    var dsiprouter_btn = $('#reload_dsip');
 
     if (required) {
       reload_btn.removeClass('btn-primary');
       split_btn.removeClass('btn-primary');
-      kamailio_btn.removeClass('btn-primary');
+      dsiprouter_btn.removeClass('btn-secondary');
       reload_btn.addClass('btn-warning');
       split_btn.addClass('btn-warning');
-      kamailio_btn.addClass('btn-warning');
+      dsiprouter_btn.addClass('btn-warning');
     }
     else {
       reload_btn.removeClass('btn-warning');
       split_btn.removeClass('btn-warning');
-      kamailio_btn.removeClass('btn-warning');
+      dsiprouter_btn.removeClass('btn-warning');
       reload_btn.addClass('btn-primary');
       split_btn.addClass('btn-primary');
-      kamailio_btn.addClass('btn-primary');
+      dsiprouter_btn.addClass('btn-secondary');
     }
   };
 

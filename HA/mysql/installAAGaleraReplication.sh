@@ -39,6 +39,14 @@ SSH_KEY_FILE=""
 MYSQL_REQ_VER="10.1"
 DEBUG=0
 
+# global variables used throughout script
+NODE_NAMES=()
+HOST_LIST=()
+CLUSTER_NODE_ADDRS=()
+declare -A CLOUD_DICT
+CLOUD_PLATFORM=""
+CLUSTER_RESOURCES=(cluster_vip cluster_srcaddr)
+SSH_CMD_LIST=()
 
 printUsage() {
     pprint "Usage: $0 [-h|--help|-debug|-remotedb] [-i <ssh key file>] <[sshuser1[:sshpass1]@]node1[:sshport1]> <[sshuser2[:sshpass2]@]node2[:sshport2]> ..."
@@ -84,16 +92,15 @@ if (( ${#NODES[@]} < 2 )); then
 fi
 
 # install local requirements for script
-# TODO: validate sudo exists, if not and user=root then install, otherwise fail
 if ! cmdExists 'ssh' || ! cmdExists 'sshpass' || ! cmdExists 'nmap' || ! cmdExists 'sed' || ! cmdExists 'awk'; then
     printdbg 'Installing local requirements for cluster install'
 
     if cmdExists 'apt-get'; then
-        sudo apt-get install -y openssh-client sshpass gawk
+        runas apt-get install -y openssh-client sshpass gawk
     elif cmdExists 'dnf'; then
-        sudo dnf install -y openssh-clients sshpass gawk
+        runas dnf install -y openssh-clients sshpass gawk
     elif cmdExists 'yum'; then
-        sudo yum install --enablerepo=epel -y openssh-clients sshpass gawk
+        runas yum install --enablerepo=epel -y openssh-clients sshpass gawk
     else
         printerr "Your local OS is not currently not supported"
         exit 1
@@ -109,25 +116,25 @@ fi
 # prints number of nodes in cluster
 getClusterSize() {
     local OPT=""
-    local MYSQL_USER='' MYSQL_PASS='' MYSQL_HOST='' MYSQL_PORT=''
+    local MYSQL_PARAMS=()
 
     while (( $# > 0 )); do
         OPT="$1"
         case $OPT in
             --user*)
-                MYSQL_USER=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                MYSQL_PARAMS+=( --user=$(printf '%s' "$1" | cut -d '=' -f 2-) )
                 shift
                 ;;
             --pass*)
-                MYSQL_PASS=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                MYSQL_PARAMS+=( --password=$(printf '%s' "$1" | cut -d '=' -f 2-) )
                 shift
                 ;;
             --host*)
-                MYSQL_HOST=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                MYSQL_PARAMS+=( --host=$(printf '%s' "$1" | cut -d '=' -f 2-) )
                 shift
                 ;;
             --port*)
-                MYSQL_PORT=$(printf '%s' "$1" | cut -d '=' -f 2-)
+                MYSQL_PARAMS+=( --port=$(printf '%s' "$1" | cut -d '=' -f 2-) )
                 shift
                 ;;
             *)  # no valid args skip
@@ -136,7 +143,7 @@ getClusterSize() {
         esac
     done
 
-    mysql -sN --user="${MYSQL_USER}" --password="${MYSQL_PASS}" --port="${MYSQL_PORT}" --host="${MYSQL_HOST}" \
+    mysql -sN ${MYSQL_PARAMS[@]} \
         -e "select VARIABLE_VALUE from information_schema.GLOBAL_STATUS where VARIABLE_NAME='wsrep_cluster_size'" \
         || echo '0'
 }
@@ -151,17 +158,42 @@ setFirewallRules() {
     firewall-cmd --reload
 }
 
+# find the first private IP address (reverse order) on a physical interface
+# this is typically the secondary interface or secondary IP on the primary interface
+# if no RFC1918 address is found use the IP associated with the default route
+# NOTE: sourced here to allow easier declaration on remote node
+source <(
+    cat <<EOF
+    getGaleraInternalIP() {
+        $(declare -f getPhysicalIfaces)
+        $(declare -f ipv4TestRFC1918)
+        $(declare -f getInternalIP)
+EOF
+    cat <<'EOF'
+        for IP in $(
+            for IFACE in $(getPhysicalIfaces | sort -r); do
+                ip -4 -o addr show $IFACE | awk '{split($4,a,"/"); print a[1];}'
+            done
+        ); do
+            if ipv4TestRFC1918 "$IP"; then
+                echo "$IP"
+                return 0
+            fi
+        done
+        IP="$(getInternalIP)"
+        [[ -n "$IP" ]] && {
+            echo "$IP"
+            return 0
+        }
+        return 1
+    }
+EOF
+)
+
 # loop through args and gather variables
-NODE_NAMES=()
-HOST_LIST=()
-INT_IP_LIST=()
-declare -A CLOUD_DICT
-CLOUD_PLATFORM=""
-CLUSTER_RESOURCES=(cluster_vip cluster_srcaddr)
-SSH_CMD_LIST=()
 i=0
 for NODE in ${NODES[@]}; do
-    SSH_OPTS=(-o StrictHostKeyChecking=no -o CheckHostIp=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -x)
+    SSH_OPTS=( ${DEFAULT_SSH_OPTS[@]} )
     RSYNC_OPTS=()
 
     NODE_NAME="${CLUSTER_NAME}-node$((i+1))"
@@ -211,7 +243,7 @@ for NODE in ${NODES[@]}; do
     SSH_OPTS+=(-p ${PORT})
 
     printdbg 'validating unattended ssh connection'
-    if ! checkSSH ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
+    if ! checkSsh ${SSH_CMD} ${SSH_OPTS[@]} ${USERHOST_LIST[$i]}; then
         printerr "Could not establish unattended ssh connection to [${USERHOST_LIST[$i]}] on port [${PORT}]"
         exit 1
     fi
@@ -220,7 +252,7 @@ for NODE in ${NODES[@]}; do
     SSH_CMD_LIST+=( "${SSH_CMD} ${SSH_OPTS[*]}" )
     RSYNC_CMD_LIST+=( "${RSYNC_CMD} ${RSYNC_OPTS[*]}" )
 
-    ${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    ${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} "$(typeset -f runas); runas bash"  <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
@@ -264,7 +296,7 @@ EOSSH
 
     printdbg 'checking if node is deployed on a supported cloud platform'
     CLOUD_PLATFORM=$(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getCloudPlatform); getCloudPlatform;")
-    CLOUD_DICT[$CLOUD_PLATFORM]=1
+    [[ -n "$CLOUD_PLATFORM" ]] && CLOUD_DICT[$CLOUD_PLATFORM]=1
 
     # warn the user if we don't have an integration setup for this provider yet
     case "${CLOUD_LIST[$i]}" in
@@ -275,11 +307,8 @@ EOSSH
     esac
 
     # find the internal IP that the cluster will communicate over
-    if [[ "$CLOUD_PLATFORM" == "DO" ]]; then
-        INT_IP_LIST+=($(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "curl -s http://169.254.169.254/metadata/v1/interfaces/private/0/ipv4/address;"))
-    else
-        INT_IP_LIST+=($(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getInternalIP); getInternalIP;"))
-    fi
+    # this secondary interface is where the node will attach the floating IP
+    CLUSTER_NODE_ADDRS+=( $(${SSH_CMD_LIST[$i]} -q ${USERHOST_LIST[$i]} "$(typeset -f getGaleraInternalIP); getGaleraInternalIP;") )
 
     i=$((i+1))
 done
@@ -295,7 +324,7 @@ fi
 i=0
 while (( $i < ${#NODES[@]} )); do
     # run commands through ssh
-    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} "$(typeset -f runas); runas bash" <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
@@ -314,8 +343,9 @@ while (( $i < ${#NODES[@]} )); do
         GALERA_INCR_PORT="$GALERA_INCR_PORT"
         GALERA_SNAP_PORT="$GALERA_SNAP_PORT"
         NODE_NAMES=( ${NODE_NAMES[@]} )
-        INT_IP_LIST=( ${INT_IP_LIST[@]} )
+        CLUSTER_NODE_ADDRS=( ${CLUSTER_NODE_ADDRS[@]} )
         $(typeset -f printdbg)
+        $(typeset -f printwarn)
         $(typeset -f printerr)
         $(typeset -f cmdExists)
         $(typeset -f getPkgVer)
@@ -343,14 +373,26 @@ while (( $i < ${#NODES[@]} )); do
         grep -v -E '^127\.0\.1\.1' /etc/hosts >/tmp/hosts &&
             mv -f /tmp/hosts /etc/hosts
 
-        # hostnames are required even if not DNS resolvable (on each node)
-        j=0
-        while (( \$j < \${#INT_IP_LIST[@]} )); do
-            if ! grep -q -F "\${NODE_NAMES[\$j]}" /etc/hosts 2>/dev/null; then
-                echo "\${INT_IP_LIST[\$j]} \${NODE_NAMES[\$j]}" >>/etc/hosts
-            fi
-            j=\$((j+1))
-        done
+        # add section for the galera hostnames
+        if ! grep -q 'MYSQL_CONFIG_START' /etc/hosts 2>/dev/null; then
+            bash -c "(
+                echo ''
+                echo '#####MYSQL_CONFIG_START'
+            )>>/etc/hosts"
+            j=0
+            while (( \$j < \${#CLUSTER_NODE_ADDRS[@]} )); do
+                bash -c "echo '\${CLUSTER_NODE_ADDRS[\$j]} \${NODE_NAMES[\$j]}' >>/etc/hosts"
+                j=\$((j+1))
+            done
+            bash -c "echo '#####MYSQL_CONFIG_END' >>/etc/hosts"
+        else
+            j=0; tmp='';
+            while (( \$j < \${#CLUSTER_NODE_ADDRS[@]} )); do
+                tmp+="\${CLUSTER_NODE_ADDRS[\$j]} \${NODE_NAMES[\$j]}\\n"
+                j=\$((j+1))
+            done
+            perl -0777 -i -pe "s|(#+MYSQL_CONFIG_START).*?(#+MYSQL_CONFIG_END)|\\1\\n\${tmp}\\2|gms" /etc/hosts
+        fi
 
         # backup dirs we will be using
         mkdir -p ${MYSQL_BACKUP_DIR}/{etc,var/lib,\${HOME},dumps,state}
@@ -713,7 +755,7 @@ done
 i=0
 while (( $i < ${#NODES[@]} )); do
     # run commands through ssh
-    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} bash <<- EOSSH
+    (${SSH_CMD_LIST[$i]} ${USERHOST_LIST[$i]} "$(typeset -f runas); runas bash"  <<- EOSSH
         if (( $DEBUG == 1 )); then
             set -x
         fi
@@ -745,10 +787,10 @@ while (( $i < ${#NODES[@]} )); do
         SQLCREDS=()
         case \$MYSQL_MERGE_ACTION in
             0)
-                printdbg 'no database export needed on ${HOST_LIST[$i]} using address ${INT_IP_LIST[$i]}'
+                printdbg 'no database export needed on ${HOST_LIST[$i]} using address ${CLUSTER_NODE_ADDRS[$i]}'
                 ;;
             1)
-                printdbg 'exporting database overwrite on ${HOST_LIST[$i]} using address ${INT_IP_LIST[$i]}'
+                printdbg 'exporting database overwrite on ${HOST_LIST[$i]} using address ${CLUSTER_NODE_ADDRS[$i]}'
                 dumpMysqlDatabases --full ${MYSQL_USER}:${MYSQL_PASS}@localhost:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/primary.sql &&
                 dumpMysqlDatabases --grants ${MYSQL_USER}:${MYSQL_PASS}@localhost:${MYSQL_PORT} >>${MYSQL_BACKUP_DIR}/dumps/primary.sql || {
                     printerr 'failed exporting databases'
@@ -756,9 +798,9 @@ while (( $i < ${#NODES[@]} )); do
                 }
                 ;;
             2)
-                printdbg 'exporting merged databases on ${HOST_LIST[$i]} using address ${INT_IP_LIST[$i]}'
+                printdbg 'exporting merged databases on ${HOST_LIST[$i]} using address ${CLUSTER_NODE_ADDRS[$i]}'
 
-                for IP in ${INT_IP_LIST[@]}; do
+                for IP in ${CLUSTER_NODE_ADDRS[@]}; do
                     SQLCREDS+=(${MYSQL_USER}:${MYSQL_PASS}@\${IP}:${MYSQL_PORT})
                 done
 
@@ -780,22 +822,22 @@ while (( $i < ${#NODES[@]} )); do
 
             case \$MYSQL_MERGE_ACTION in
                 0)
-                    dumpMysqlDatabases --grants ${MYSQL_USER}:${MYSQL_PASS}@${INT_IP_LIST[0]}:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/import.sql &&
+                    dumpMysqlDatabases --grants ${MYSQL_USER}:${MYSQL_PASS}@${CLUSTER_NODE_ADDRS[0]}:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/import.sql &&
                     mysql <${MYSQL_BACKUP_DIR}/dumps/import.sql || {
                         printerr 'failed importing databases'
                         exit 1
                     }
                     ;;
                 1)
-                    dumpMysqlDatabases --full ${MYSQL_USER}:${MYSQL_PASS}@${INT_IP_LIST[0]}:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/import.sql &&
-                    dumpMysqlDatabases --grants ${MYSQL_USER}:${MYSQL_PASS}@${INT_IP_LIST[0]}:${MYSQL_PORT} >>${MYSQL_BACKUP_DIR}/dumps/import.sql &&
+                    dumpMysqlDatabases --full ${MYSQL_USER}:${MYSQL_PASS}@${CLUSTER_NODE_ADDRS[0]}:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/import.sql &&
+                    dumpMysqlDatabases --grants ${MYSQL_USER}:${MYSQL_PASS}@${CLUSTER_NODE_ADDRS[0]}:${MYSQL_PORT} >>${MYSQL_BACKUP_DIR}/dumps/import.sql &&
                     mysql <${MYSQL_BACKUP_DIR}/dumps/import.sql || {
                         printerr 'failed importing databases'
                         exit 1
                     }
                     ;;
                 2)
-                    dumpMysqlDatabases --full ${MYSQL_USER}:${MYSQL_PASS}@${INT_IP_LIST[0]}:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/import.sql &&
+                    dumpMysqlDatabases --full ${MYSQL_USER}:${MYSQL_PASS}@${CLUSTER_NODE_ADDRS[0]}:${MYSQL_PORT} >${MYSQL_BACKUP_DIR}/dumps/import.sql &&
                     dumpMysqlDatabases --grants ${MYSQL_USER}:${MYSQL_PASS}@localhost:${MYSQL_PORT} >>${MYSQL_BACKUP_DIR}/dumps/import.sql &&
                     mysql <${MYSQL_BACKUP_DIR}/dumps/import.sql || {
                         printerr 'failed importing databases'

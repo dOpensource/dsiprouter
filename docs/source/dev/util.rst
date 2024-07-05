@@ -20,15 +20,6 @@ util.cron
    :private-members:
    :special-members:
 
-util.decorator
-==============
-
-.. automodule:: util.decorator
-   :members:
-   :undoc-members:
-   :private-members:
-   :special-members:
-
 util.file_handling
 ==================
 
@@ -65,6 +56,15 @@ util.letsencrypt
    :private-members:
    :special-members:
 
+util.networking
+===============
+
+.. automodule:: util.networking
+   :members:
+   :undoc-members:
+   :private-members:
+   :special-members:
+
 util.notifications
 ==================
 
@@ -78,6 +78,24 @@ util.parse_json
 ===============
 
 .. automodule:: util.parse_json
+   :members:
+   :undoc-members:
+   :private-members:
+   :special-members:
+
+util.persistence
+================
+
+.. automodule:: util.persistence
+   :members:
+   :undoc-members:
+   :private-members:
+   :special-members:
+
+util.pyasync
+============
+
+.. automodule:: util.pyasync
    :members:
    :undoc-members:
    :private-members:

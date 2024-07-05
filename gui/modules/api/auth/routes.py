@@ -5,11 +5,11 @@ if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
 import datetime, uuid
-from flask import Blueprint, render_template, abort, jsonify
-from util.security import api_security, AES_CTR
+from flask import Blueprint, jsonify
+from util.security import AES_CTR
 from shared import debugEndpoint, StatusCodes, getRequestData
 from database import DummySession, startSession, dSIPUser
-from modules.api.api_functions import showApiError, createApiResponse
+from modules.api.api_functions import showApiError, createApiResponse, api_security
 from modules.api.auth.functions import addDSIPUser
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings

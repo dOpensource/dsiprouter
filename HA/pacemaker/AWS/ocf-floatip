@@ -1,0 +1,310 @@
+#!/bin/sh
+#
+#
+# Manage Elastic IP with Pacemaker
+#
+#
+# Copyright 2016-2018 guessi <guessi@gmail.com>
+# Copyright 2024 Tyler Moore <tmoore@dopensource.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+#
+#
+# Prerequisites:
+#   - preconfigured AWS CLI running environment (AccessKey, SecretAccessKey, etc.) or
+#     (AWSRole) Setup up relevant AWS Policies to allow agent related functions to be executed.
+#   - a reserved secondary private IP address for EC2 instances high availability
+#     this secondary IP should be assigned to the primary NIC
+#   - IAM user role with the following permissions:
+#     * DescribeInstances
+#     * AssociateAddress
+#     * DescribeAddresses
+#     * DisassociateAddress
+#   - jq is required for parsing json
+#
+
+#######################################################################
+# Initialization:
+
+: ${OCF_ROOT=${OCF_ROOT:-"/usr/lib/ocf"}}
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/resource.d/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
+
+#######################################################################
+
+#
+# Defaults
+#
+OCF_RESKEY_awscli_default="/usr/bin/aws"
+OCF_RESKEY_auth_type_default="key"
+OCF_RESKEY_profile_default="default"
+OCF_RESKEY_region_default=""
+OCF_RESKEY_api_delay_default="3"
+
+: ${OCF_RESKEY_awscli=${OCF_RESKEY_awscli_default}}
+: ${OCF_RESKEY_auth_type=${OCF_RESKEY_auth_type_default}}
+: ${OCF_RESKEY_profile=${OCF_RESKEY_profile_default}}
+: ${OCF_RESKEY_region=${OCF_RESKEY_region_default}}
+: ${OCF_RESKEY_api_delay=${OCF_RESKEY_api_delay_default}}
+
+meta_data() {
+    cat <<XML
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="aws_floatip" version="0.1">
+  <version>1.0</version>
+  <longdesc lang="en">
+  Resource Agent for Amazon AWS Elastic IP Addresses.
+
+  It manages AWS Elastic IP Addresses with awscli.
+
+  Credentials needs to be setup by running "aws configure", or by using AWS Policies.
+
+  See https://aws.amazon.com/cli/ for more information about awscli.
+  </longdesc>
+  <shortdesc lang="en">Amazon AWS Elastic IP Address Resource Agent</shortdesc>
+  <parameters>
+    <parameter name="awscli" unique="0">
+      <longdesc lang="en">
+      Path to the "aws" executable.
+      </longdesc>
+      <shortdesc lang="en">aws cli</shortdesc>
+      <content type="string" default="${OCF_RESKEY_awscli_default}"/>
+    </parameter>
+    <parameter name="auth_type">
+      <longdesc lang="en">
+      Authentication type "key" for AccessKey and SecretAccessKey set via "aws configure",
+      or "role" to use AWS Policies.
+      </longdesc>
+      <shortdesc lang="en">Authentication type</shortdesc>
+      <content type="string" default="${OCF_RESKEY_auth_type_default}"/>
+    </parameter>
+    <parameter name="profile">
+      <longdesc lang="en">
+      Valid AWS CLI profile name (see ~/.aws/config and 'aws configure')
+      </longdesc>
+      <shortdesc lang="en">profile name</shortdesc>
+      <content type="string" default="${OCF_RESKEY_profile_default}"/>
+    </parameter>
+    <parameter name="elastic_ip" unique="1" required="1">
+      <longdesc lang="en">
+      Reserved elastic IP for ec2 instance.
+      </longdesc>
+      <shortdesc lang="en">reserved elastic ip address</shortdesc>
+      <content type="string" default="" />
+    </parameter>
+    <parameter name="private_ip" unique="1" required="0">
+      <longdesc lang="en">
+      Secondary private ip address for ec2 instance to bind elastic IP to.
+      If not set, the resource will attempt to resolve it from the pacemaker configs.
+      </longdesc>
+      <shortdesc lang="en">secondary private ip address</shortdesc>
+      <content type="string" default=""/>
+    </parameter>
+    <parameter name="region" required="0">
+      <longdesc lang="en">
+      Region for AWS resource (required for role-based authentication).
+      </longdesc>
+      <shortdesc lang="en">Region</shortdesc>
+      <content type="string" default="${OCF_RESKEY_region_default}"/>
+    </parameter>
+    <parameter name="api_delay" unique="0">
+      <longdesc lang="en">
+      A short delay between API calls, to avoid sending API too quick.
+      </longdesc>
+      <shortdesc lang="en">a short delay between API calls</shortdesc>
+      <content type="integer" default="${OCF_RESKEY_api_delay_default}"/>
+    </parameter>
+  </parameters>
+  <actions>
+    <action name="start"        timeout="30s"/>
+    <action name="stop"         timeout="30s"/>
+    <action name="monitor"      timeout="30s" interval="20s" depth="0"/>
+    <action name="migrate_to"   timeout="30s"/>
+    <action name="migrate_from" timeout="30s"/>
+    <action name="meta-data"    timeout="5s"/>
+    <action name="validate"     timeout="10s"/>
+    <action name="validate-all" timeout="10s"/>
+  </actions>
+</resource-agent>
+XML
+}
+
+#######################################################################
+
+
+
+awseip_usage() {
+    echo "usage: $0 {start|stop|monitor|migrate_to|migrate_from|validate|validate-all|meta-data}"
+}
+
+awseip_start() {
+    awseip_monitor && return $OCF_SUCCESS
+
+    if [ -z "${PRIVATE_IP}" ]; then
+        # TODO: make this the secondary / float ip, probably set in /etc/hosts
+        PRIVATE_IP=$(getent hosts "$(crm_node -n)" 2>/dev/null | awk '{print $1}' | head -1)
+    fi
+
+    local ENI_MAC=$(
+        ip -j address show |
+        jq -re --arg ip $PRIVATE_IP '.[] | select(.addr_info[].local==$ip).address'
+    )
+    if [ -z "$ENI_MAC" ]; then
+        ocf_log info "NIC for private IP ($PRIVATE_IP) not found while starting aws_floatip"
+        return $OCF_NOT_RUNNING
+    fi
+
+    local ENI_ID=$(
+        curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+            "http://169.254.169.254/latest/meta-data/network/interfaces/macs/${ENI_MAC}/interface-id"
+    )
+
+    $AWSCLI_CMD ec2 associate-address  \
+        --allocation-id ${ALLOCATION_ID} \
+        --network-interface-id ${ENI_ID} \
+        --private-ip-address ${PRIVATE_IP}
+    RET=$?
+
+    # delay to avoid sending request too fast
+    sleep ${OCF_RESKEY_api_delay}
+
+    if [ $RET -ne 0 ]; then
+        return $OCF_NOT_RUNNING
+    fi
+
+    ocf_log info "aws_floatip has been successfully brought up (${ELASTIC_IP})"
+    return $OCF_SUCCESS
+}
+
+awseip_stop() {
+    awseip_monitor || return $OCF_SUCCESS
+
+    local ASSOCIATION_ID=$(
+        $AWSCLI_CMD ec2 describe-addresses --allocation-id "$ALLOCATION_ID" --output json |
+         jq -re '.Addresses[0].AssociationId'
+    )
+
+    if [ -z "$ASSOCIATION_ID" ]; then
+        ocf_log info "ASSOCIATION_ID not found while stopping aws_floatip"
+        return $OCF_NOT_RUNNING
+    fi
+
+    $AWSCLI_CMD ec2 disassociate-address --association-id "$ASSOCIATION_ID"
+    RET=$?
+
+    # delay to avoid sending request too fast
+    sleep ${OCF_RESKEY_api_delay}
+
+    if [ $RET -ne 0 ]; then
+        return $OCF_NOT_RUNNING
+    fi
+
+    ocf_log info "elastic_ip has been successfully brought down (${ELASTIC_IP})"
+    return $OCF_SUCCESS
+}
+
+awseip_monitor() {
+    $AWSCLI_CMD ec2 describe-instances --instance-id "$INSTANCE_ID" --output json |
+    jq -re '.Reservations[].Instances[0].NetworkInterfaces[].PrivateIpAddresses[].Association.PublicIp | select(. == "3.19.8.113")' >/dev/null
+
+    if [ $? -eq 0 ]; then
+        return $OCF_SUCCESS
+    fi
+
+    return $OCF_NOT_RUNNING
+}
+
+awseip_validate() {
+    check_binary "${OCF_RESKEY_awscli}"
+
+    if [ "x${OCF_RESKEY_auth_type}" = "xkey" ] && [ -z "$OCF_RESKEY_profile" ]; then
+        ocf_exit_reason "profile parameter not set"
+        return $OCF_ERR_CONFIGURED
+    fi
+
+    if [ -z "${INSTANCE_ID}" ]; then
+        ocf_exit_reason "instance_id not found. Is this a EC2 instance?"
+        return $OCF_ERR_GENERIC
+    fi
+
+    return $OCF_SUCCESS
+}
+
+case $__OCF_ACTION in
+    meta-data)
+        meta_data
+        exit $OCF_SUCCESS
+        ;;
+    usage|help)
+        awseip_usage
+        exit $OCF_SUCCESS
+        ;;
+esac
+
+AWSCLI_CMD="${OCF_RESKEY_awscli}"
+if [ "x${OCF_RESKEY_auth_type}" = "xkey" ]; then
+	AWSCLI_CMD="$AWSCLI_CMD --profile ${OCF_RESKEY_profile}"
+elif [ "x${OCF_RESKEY_auth_type}" = "xrole" ]; then
+	if [ -z "${OCF_RESKEY_region}" ]; then
+		ocf_exit_reason "region needs to be set when using role-based authentication"
+		exit $OCF_ERR_CONFIGURED
+	fi
+else
+	ocf_exit_reason "Incorrect auth_type: ${OCF_RESKEY_auth_type}"
+	exit $OCF_ERR_CONFIGURED
+fi
+if [ -n "${OCF_RESKEY_region}" ]; then
+	AWSCLI_CMD="$AWSCLI_CMD --region ${OCF_RESKEY_region}"
+fi
+ELASTIC_IP="${OCF_RESKEY_elastic_ip}"
+PRIVATE_IP="${OCF_RESKEY_private_ip}"
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+INSTANCE_ID=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id" -H "X-aws-ec2-metadata-token: $TOKEN")
+ALLOCATION_ID=$($AWSCLI_CMD ec2 describe-addresses --public-ips "$ELASTIC_IP" --output json | jq -re '.Addresses[0].AllocationId')
+
+case $__OCF_ACTION in
+    start)
+        awseip_validate
+        awseip_start
+        ;;
+    stop)
+        awseip_stop
+        ;;
+    monitor)
+        awseip_monitor
+        ;;
+    migrate_to)
+        ocf_log info "Migrating ${OCF_RESOURCE_INSTANCE} to ${OCF_RESKEY_CRM_meta_migrate_target}."
+        awseip_stop
+        ;;
+    migrate_from)
+        ocf_log info "Migrating ${OCF_RESOURCE_INSTANCE} from ${OCF_RESKEY_CRM_meta_migrate_source}."
+        awseip_start
+        ;;
+    reload)
+        ocf_log info "Reloading ${OCF_RESOURCE_INSTANCE} ..."
+        ;;
+    validate|validate-all)
+        awseip_validate
+        ;;
+    *)
+        awseip_usage
+        exit $OCF_ERR_UNIMPLEMENTED
+        ;;
+esac
+
+rc=$?
+ocf_log debug "${OCF_RESOURCE_INSTANCE} $__OCF_ACTION : $rc"
+exit $rc

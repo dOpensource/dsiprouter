@@ -10,6 +10,7 @@
 #   fusionpbx
 # supported commands:
 #   api         -   cleanleases
+#               -   synclicenses
 #   cdr         -   sendreport <gwgroupid>
 #   fusionpbx   -   sync
 #
@@ -28,6 +29,10 @@ if __name__ == '__main__':
         if cmd == 'cleanleases':
             from modules.api.cron_functions import cleanupLeases
             cleanupLeases()
+            sys.exit(0)
+        elif cmd == 'synclicenses':
+            from modules.api.licensemanager.functions import syncLicensesToGlobalState
+            syncLicensesToGlobalState()
             sys.exit(0)
 
     elif mod == 'cdr':

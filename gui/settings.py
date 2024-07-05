@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.74'
+VERSION = '0.75'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -142,11 +142,9 @@ MAIL_ASCII_ATTACHMENTS = False
 MAIL_DEFAULT_SENDER = 'dSIPRouter <donotreply@sip.dsiprouter.org>'
 MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 
-# dSIPRouter licensing
-DSIP_CORE_LICENSE = ''
-DSIP_STIRSHAKEN_LICENSE = ''
-DSIP_TRANSNEXUS_LICENSE = ''
-DSIP_MSTEAMS_LICENSE = ''
+# dSIPRouter licenses associated with this node
+# stored as hash_str: key_combo
+DSIP_LICENSE_STORE = {}
 
 ################# End DB-Backed Settings #################
 
@@ -203,6 +201,13 @@ MSTEAMS_DNS_ENDPOINTS = ["sip.pstnhub.microsoft.com","sip2.pstnhub.microsoft.com
 MSTEAMS_IP_ENDPOINTS = ["52.114.148.0","52.114.132.46","52.114.75.24","52.114.76.76","52.114.7.24","52.114.14.70","52.114.32.169"]
 #MSTEAMS_IP_ENDPOINTS = ["52.127.64.33","52.127.88.59","52.127.64.34","52.127.92.64"]
 
+# kamailio jsonrpc settings
+KAM_JSONRPC_ROOTPATH = '/api/kamailio'
+KAM_JSONRPC_VERSION = '2.0'
+KAM_JSONRPC_ID = 1
+KAM_JSONRPC_TIMEOUT = 15
+KAM_JSONRPC_RETRYIVAL = 1.0
+
 # root DB credentials
 ROOT_DB_HOST = 'localhost'
 ROOT_DB_PORT = ''
@@ -218,4 +223,10 @@ LOAD_SETTINGS_FROM = 'file'
 # where upgrades will be pulled from
 GIT_REPO_URL = 'https://github.com/dOpensource/dsiprouter.git'
 GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
+
+# auth modules
+# a dictionary of authentication modules to load and their corresponding settings
+# example for ldap module:
+# AUTH_MODULES = {"ldap": {"LDAP_HOST":"ldap://ldap.dopensource.com", "USER_SEARCH_BASE":"ou=People,dc=dopensource,dc=com", "GROUP_SEARCH_BASE":"dc=dopensource,dc=com", "GROUP_MEMBER_ATTRIBUTE":"memberUid", "REQUIRED_GROUP":"support", "USER_ATTRIBUTE":"uid"}}
+AUTH_MODULES = {}
 ############### End Local-Only Settings ##################

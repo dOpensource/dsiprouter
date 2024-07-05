@@ -17,7 +17,7 @@ meta_data() {
   cat <<END
 <?xml version="1.0"?>
 <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-<resource-agent name="foobar" version="0.1">
+<resource-agent name="floatip" version="1.0">
   <version>0.1</version>
   <longdesc lang="en">
 floatip ocf resource agent for claiming a specified Floating IP via the DigitalOcean API</longdesc>

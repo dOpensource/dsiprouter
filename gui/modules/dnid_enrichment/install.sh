@@ -10,7 +10,6 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function installSQL {
-    # Check to see if the acc table or cdr tables are in use
     MERGE_DATA=0
     count=$(withRootDBConn --db="$KAM_DB_NAME" mysql -sN -e "select count(*) from dsip_dnid_enrich_lnp limit 1" 2> /dev/null)
     if [ ${count:-0} -gt 0 ]; then
@@ -34,28 +33,13 @@ function installSQL {
 function install {
     installSQL
     enableKamailioConfigAttrib 'WITH_DNID_LNP_ENRICHMENT' ${DSIP_KAMAILIO_CONFIG_FILE}
-
-    systemctl restart kamailio
-    if systemctl is-active --quiet kamailio; then
-        printdbg "DNID LNP Enrichment module installed"
-        return 0
-    else
-        printerr "Could not restart kamailio after module configuration"
-        return 1
-    fi
+    printdbg "DNID LNP Enrichment module installed"
+    return 0
 }
 
 function uninstall {
     disableKamailioConfigAttrib 'WITH_DNID_LNP_ENRICHMENT' ${DSIP_KAMAILIO_CONFIG_FILE}
-
-    systemctl restart kamailio
-    if systemctl is-active --quiet kamailio; then
-        printdbg "DNID LNP Enrichment module uninstalled"
-        return 0
-    else
-        printerr "Could not restart kamailio after module configuration"
-        return 1
-    fi
+    return 0
 }
 
 function main {

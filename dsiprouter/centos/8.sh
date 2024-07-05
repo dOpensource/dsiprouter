@@ -15,7 +15,7 @@ function install {
     dnf install -y yum-utils &&
     dnf groupinstall -y "Development Tools" &&
     dnf install -y firewalld logrotate rsyslog perl libev-devel util-linux postgresql-devel \
-        bzip2-devel libffi-devel zlib-devel curl
+        bzip2-devel libffi-devel zlib-devel curl openldap-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

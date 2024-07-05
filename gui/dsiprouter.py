@@ -6,6 +6,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 
 # all of our standard and project file imports
 import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time
+import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
 from importlib import reload
@@ -13,9 +14,9 @@ from flask import Flask, render_template, request, redirect, flash, session, url
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from pygtail import Pygtail
-from sqlalchemy import func, exc as sql_exceptions
+from sqlalchemy import exc as sql_exceptions, Integer
 from sqlalchemy.orm import load_only
-from sqlalchemy.sql import text
+from sqlalchemy.sql import text, func, cast
 from sqlalchemy.orm.session import close_all_sessions
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
@@ -24,17 +25,20 @@ from sysloginit import initSyslogLogger
 from shared import updateConfig, getCustomRoutes, debugException, debugEndpoint, \
     stripDictVals, strFieldsToDict, dictToStrFields, allowed_file, showError, IO, objToDict, StatusCodes
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort
-from database import DummySession, createSessionObjects, startSession, \
+from database import DummySession, createSessionObjects, startSession, settingsTableToDict, \
     DB_ENGINE_NAME, SESSION_LOADER_NAME, settingsToTableFormat, getDsipSettingsTableAsDict, \
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
-    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable
+    Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
+    Dispatcher, DsipGwgroup2LB
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.kamailio.functions import reloadKamailio
-from modules.api.licensemanager.functions import WoocommerceError, licenseToGlobalStateVariable
+from modules.api.licensemanager.classes import WoocommerceError
+from modules.api.licensemanager.functions import licenseDictToStateDict, getLicenseStatusFromStateDict, \
+    getLicenseStatus
 from modules.api.licensemanager.routes import license_manager
 from modules.api.auth.routes import user
 from util.security import Credentials, urandomChars, AES_CTR
@@ -80,6 +84,7 @@ csrf.exempt(user)
 csrf.exempt(license_manager)
 numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)
+auth_modules = []
 
 
 @app.before_first_request
@@ -124,8 +129,7 @@ def index():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -153,9 +157,8 @@ def backupandrestore():
             return render_template('backupandrestore.html', show_add_onload=action, version=settings.VERSION)
 
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
-        return showError(type=error)
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
@@ -174,10 +177,10 @@ def certificates():
             action = request.args.get('action')
             return render_template('certificates.html', show_add_onload=action, version=settings.VERSION)
 
+
     except http_exceptions.HTTPException as ex:
-        debugException(ex, log_ex=False, print_ex=True, showstack=False)
-        error = "http"
-        return showError(type=error)
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex, log_ex=False, print_ex=True, showstack=False)
         error = "server"
@@ -223,6 +226,13 @@ def login():
                 session['logged_in'] = True
                 session['username'] = form['username']
                 return redirect(url_for('index'))
+       
+        # Check for user in other auth modules
+        for auth_mod in auth_modules:
+            if auth_mod.authenticate(form['username'], form['password']):
+                session['logged_in'] = True
+                session['username'] = form['username']
+                return redirect(url_for('index'))
 
         # if we got here auth failed
         flash('Wrong Username or Password')
@@ -230,8 +240,7 @@ def login():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -250,8 +259,7 @@ def logout():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -281,16 +289,33 @@ def displayCarrierGroups(gwgroup=None):
 
         typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
 
+        query = db.query(
+            GatewayGroups.id,
+            GatewayGroups.description,
+            GatewayGroups.gwlist,
+            UAC.r_username,
+            UAC.auth_password,
+            UAC.r_domain,
+            UAC.auth_username,
+            UAC.auth_proxy,
+            cast(DsipGwgroup2LB.enabled, Integer).label('lb_enabled')
+        ).outerjoin(
+            UAC, GatewayGroups.id == UAC.l_uuid
+        ).outerjoin(
+            DsipGwgroup2LB, GatewayGroups.id == DsipGwgroup2LB.gwgroupid
+        ).filter(
+            GatewayGroups.description.like(typeFilter)
+        )
+
         # res must be a list()
         if gwgroup is not None and gwgroup != "":
-            res = [db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
-                GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(
-                GatewayGroups.id == gwgroup).first()]
+            res = [
+                query.filter(
+                    GatewayGroups.id == gwgroup
+                ).first()
+            ]
         else:
-            res = db.query(GatewayGroups).outerjoin(UAC, GatewayGroups.id == UAC.l_uuid).add_columns(
-                GatewayGroups.id, GatewayGroups.gwlist, GatewayGroups.description,
-                UAC.r_username, UAC.auth_password, UAC.r_domain, UAC.auth_username, UAC.auth_proxy).filter(GatewayGroups.description.like(typeFilter))
+            res = query.all()
 
         return render_template('carriergroups.html', rows=res)
 
@@ -302,10 +327,7 @@ def displayCarrierGroups(gwgroup=None):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -323,124 +345,6 @@ def addUpdateCarrierGroups():
     """
 
     return addCarrierGroups()
-
-    db = DummySession()
-
-    try:
-        if not session.get('logged_in'):
-            return redirect(url_for('index'))
-
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        db = startSession()
-
-        form = stripDictVals(request.form.to_dict())
-
-        gwgroup = form['gwgroup']
-        name = form['name']
-        new_name = form['new_name'] if 'new_name' in form else ''
-        authtype = form['authtype'] if 'authtype' in form else ''
-        r_username = form['r_username'] if 'r_username' in form else ''
-        auth_username = form['auth_username'] if 'auth_username' in form else ''
-        auth_password = form['auth_password'] if 'auth_password' in form else ''
-        auth_domain = form['auth_domain'] if 'auth_domain' in form else settings.DEFAULT_AUTH_DOMAIN
-        auth_proxy = form['auth_proxy'] if 'auth_proxy' in form else ''
-        plugin_name = form['plugin_name'] if 'plugin_name' in form else ''
-        plugin_account_sid = form['plugin_account_sid'] if 'plugin_account_sid' in form else ''
-        plugin_account_token = form['plugin_account_token'] if 'plugin_account_token' in form else ''
-
-        # format data
-        if authtype == "userpwd":
-            auth_domain = safeUriToHost(auth_domain)
-            if auth_domain is None:
-                raise http_exceptions.BadRequest("Auth domain hostname/address is malformed")
-            if len(auth_proxy) == 0:
-                auth_proxy = auth_domain
-            auth_proxy = safeFormatSipUri(auth_proxy, default_user=r_username)
-            if auth_proxy is None:
-                raise http_exceptions.BadRequest('Auth domain or proxy is malformed')
-            if len(auth_username) == 0:
-                auth_username = r_username
-
-        # Adding
-        if len(gwgroup) <= 0:
-            Gwgroup = GatewayGroups(name, type=settings.FLT_CARRIER)
-            db.add(Gwgroup)
-            db.flush()
-            gwgroup = Gwgroup.id
-
-            # Add auth_domain(aka registration server) to the gateway list
-            if authtype == "userpwd":
-                Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username, auth_proxy=auth_proxy,
-                    local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
-                Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                db.add(Uacreg)
-                db.add(Addr)
-
-
-        # Updating
-        else:
-            # config form
-            if len(new_name) > 0:
-                Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-                gwgroup_fields = strFieldsToDict(Gwgroup.description)
-                old_name = gwgroup_fields['name']
-                gwgroup_fields['name'] = new_name
-                Gwgroup.description = dictToStrFields(gwgroup_fields)
-
-                Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(old_name))).first()
-                if Addr is not None:
-                    addr_fields = strFieldsToDict(Addr.tag)
-                    addr_fields['name'] = 'name:{}-uac'.format(new_name)
-                    Addr.tag = dictToStrFields(addr_fields)
-
-            # auth form
-            else:
-                if authtype == "userpwd":
-                    # update uacreg if exists, otherwise create
-                    if not db.query(UAC).filter(UAC.l_uuid == gwgroup).update(
-                        {'l_username': r_username, 'r_username': r_username, 'auth_username': auth_username,
-                            'auth_password': auth_password, 'r_domain': auth_domain, 'realm': auth_domain,
-                            'auth_proxy': auth_proxy, 'flags': UAC.FLAGS.REG_ENABLED.value}, synchronize_session=False):
-                        Uacreg = UAC(gwgroup, r_username, auth_password, realm=auth_domain, auth_username=auth_username,
-                            auth_proxy=auth_proxy, local_domain=settings.EXTERNAL_FQDN, remote_domain=auth_domain)
-                        db.add(Uacreg)
-
-                    # update address if exists, otherwise create
-                    if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                        {'ip_addr': auth_domain}, synchronize_session=False):
-                        Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                        db.add(Addr)
-                else:
-                    # delete uacreg and address if they exist
-                    db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
-                    db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
-
-        db.commit()
-        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
-        return displayCarrierGroups()
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        error = "http"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    except Exception as ex:
-        debugException(ex)
-        error = "server"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    finally:
-        db.close()
 
 
 @app.route('/carriergroupdelete', methods=['POST'])
@@ -465,19 +369,24 @@ def deleteCarrierGroups():
         gwgroup = form['gwgroup']
         gwlist = form['gwlist'] if 'gwlist' in form else ''
 
-        Addrs = db.query(Address).filter(Address.tag.contains("gwgroup:{}".format(gwgroup)))
         Gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup)
         gwgroup_row = Gwgroup.first()
-        if gwgroup_row is not None:
-            Uac = db.query(UAC).filter(UAC.l_uuid == gwgroup_row.id)
-            Uac.delete(synchronize_session=False)
+        if gwgroup_row is None:
+            return displayCarrierGroups()
 
+        db.query(Address).filter(
+            Address.tag.contains("gwgroup:{}".format(gwgroup))
+        ).delete(synchronize_session=False)
+        db.query(UAC).filter(
+            UAC.l_uuid == gwgroup_row.id
+        ).delete(synchronize_session=False)
+        db.query(Dispatcher).filter(
+            Dispatcher.setid == gwgroup
+        ).delete(synchronize_session=False)
         # validate this group has gateways assigned to it
         if len(gwlist) > 0:
             GWs = db.query(Gateways).filter(Gateways.gwid.in_(list(map(int, gwlist.split(",")))))
             GWs.delete(synchronize_session=False)
-
-        Addrs.delete(synchronize_session=False)
         Gwgroup.delete(synchronize_session=False)
 
         db.commit()
@@ -492,10 +401,9 @@ def deleteCarrierGroups():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -549,7 +457,9 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             # check if any endpoints in group b4 converting to list(int)
             if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
                 gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
-                carriers = db.query(Gateways).filter(Gateways.gwid.in_(gwlist)).all()
+                carriers =  db.query(Gateways.gwid,Gateways.attrs,Gateways.address,Gateways.strip,Gateways.pri_prefix,Dispatcher.attrs.label("dispatcher_attrs")).\
+                    filter(Gateways.gwid.in_(gwlist)).\
+                    outerjoin(Dispatcher, Gateways.address == func.substr(Dispatcher.destination,5)).all()
                 rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                 for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
                     gateway_rules = {}
@@ -560,7 +470,9 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
 
         # get all carriers
         else:
-            carriers = db.query(Gateways).filter(Gateways.type == settings.FLT_CARRIER).all()
+            carriers = db.query(Gateways.gwid,Gateways.attrs,Gateways.address,Gateways.strip,Gateways.pri_prefix,Dispatcher.attrs.label("dispatcher_attrs")).\
+                filter(Gateways.type == settings.FLT_CARRIER).\
+                outerjoin(Dispatcher, Gateways.address == func.substr(Dispatcher.destination,5)).all()
             rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
             for gateway in carriers:
                 gateway_rules = {}
@@ -568,7 +480,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                     if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
                         gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
                 carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-
+       
         return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
             kam_reload_required=getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'])
 
@@ -580,10 +492,9 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -622,6 +533,7 @@ def addUpdateCarriers():
         hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
+        rweight = form['rweight'] if len(form['rweight']) > 0 else 0
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
@@ -649,6 +561,11 @@ def addUpdateCarriers():
                 gwlist.append(gwid)
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
+                # Create dispatcher group with the set id being the gateway group id
+                # The weight field has to be set
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, description=name, rweight=rweight)
+                db.add(dispatcher)
+
             else:
                 Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
                 db.add(Addr)
@@ -668,6 +585,13 @@ def addUpdateCarriers():
             gw_fields['name'] = name
             if len(gwgroup) <= 0:
                 gw_fields['gwgroup'] = gwgroup
+
+            # update dispatcher entry
+            db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))
+            ).update({
+                "attrs": Dispatcher.buildAttrs(rweight=rweight)
+            }, synchronize_session=False)
 
             # if address exists update
             address_exists = False
@@ -712,10 +636,9 @@ def addUpdateCarriers():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -746,8 +669,11 @@ def deleteCarriers():
         form = stripDictVals(request.form.to_dict())
 
         gwid = form['gwid']
+        hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
         related_rules = json.loads(form['related_rules']) if 'related_rules' in form else ''
+
+        sip_addr = safeUriToHost(hostname, default_port=5060)
 
         Gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
         Gateway_Row = Gateway.first()
@@ -770,6 +696,11 @@ def deleteCarriers():
 
         # remove gateway
         Gateway.delete(synchronize_session=False)
+
+        # remove from carrier from dispatcher
+        db.query(Dispatcher).filter(
+            (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))
+        ).delete(synchronize_session=False)
 
         # remove carrier from gwlist in carrier group
         for Gatewaygroup in Gatewaygroups:
@@ -799,10 +730,9 @@ def deleteCarriers():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -832,8 +762,7 @@ def displayEndpointGroups():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -857,8 +786,7 @@ def displayNumberEnrichment():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -881,8 +809,7 @@ def displayCDRS():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -906,8 +833,7 @@ def displayLicenseManager():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -971,10 +897,9 @@ def addUpdateEndpointGroups():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1045,10 +970,9 @@ def deletePBX():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1112,7 +1036,7 @@ SELECT * FROM (
                 dids = numbers_api.getNumbers()
             except http_exceptions.HTTPException as ex:
                 debugException(ex)
-                return showError(type="http", code=ex.status_code, msg="Flowroute Credentials Not Valid")
+                return showError(type="http", code=ex.code, msg="Flowroute Credentials Not Valid")
 
         return render_template('inboundmapping.html', rows=res, gwgroups=gwgroups, epgroups=epgroups, imported_dids=dids, gatewayList=gatewayList)
 
@@ -1124,10 +1048,9 @@ SELECT * FROM (
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1283,6 +1206,23 @@ def addUpdateInboundMapping():
 
             db.add_all(inserts)
 
+            # enabling/disabling load balancing on one route must enable them all due to current limitations
+            db.flush()
+            if desc_dict['lb_enabled'] == '1':
+                lb_find = 'lb_enabled:0'
+                lb_repl = 'lb_enabled:1'
+            else:
+                lb_find = 'lb_enabled:1'
+                lb_repl = 'lb_enabled:0'
+            for row in db.query(InboundMapping).filter(
+                InboundMapping.groupid == settings.FLT_INBOUND
+            ).filter(
+                InboundMapping.gwlist == IMap.gwlist
+            ).filter(
+                InboundMapping.ruleid != IMap.ruleid
+            ):
+                row.description = row.description.replace(lb_find, lb_repl)
+
         # Updating
         else:
             inserts = []
@@ -1334,8 +1274,10 @@ def addUpdateInboundMapping():
             # except sql_exceptions.MultipleResultsFound as ex:
             #     logging.info("Multiple Address rows found")
 
-            db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).update(
-                {'prefix': prefix, 'gwlist': gwlist, 'description': description}, synchronize_session=False)
+            IMap = db.query(InboundMapping).filter(InboundMapping.ruleid == ruleid).first()
+            IMap.prefix = prefix
+            IMap.gwlist = gwlist
+            IMap.description = description
 
             hardfwd_exists = True if db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).scalar() else False
             db.flush()
@@ -1502,6 +1444,23 @@ def addUpdateInboundMapping():
             if len(inserts) > 0:
                 db.add_all(inserts)
 
+            # enabling/disabling load balancing on one route must enable them all due to current limitations
+            db.flush()
+            if desc_dict['lb_enabled'] == '1':
+                lb_find = 'lb_enabled:0'
+                lb_repl = 'lb_enabled:1'
+            else:
+                lb_find = 'lb_enabled:1'
+                lb_repl = 'lb_enabled:0'
+            for row in db.query(InboundMapping).filter(
+                InboundMapping.groupid == settings.FLT_INBOUND
+            ).filter(
+                InboundMapping.gwlist == IMap.gwlist
+            ).filter(
+                InboundMapping.ruleid != IMap.ruleid
+            ):
+                row.description = row.description.replace(lb_find, lb_repl)
+
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return displayInboundMapping()
@@ -1514,10 +1473,9 @@ def addUpdateInboundMapping():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1596,10 +1554,9 @@ def deleteInboundMapping():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1645,10 +1602,9 @@ def processInboundMappingImport(filename, override_gwgroupid, name, db):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1700,10 +1656,9 @@ def importInboundMapping():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1738,8 +1693,7 @@ def displayTeleBlock():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1763,7 +1717,7 @@ def addUpdateTeleBlock():
 
         # Update the teleblock settings
         teleblock = {}
-        teleblock['TELEBLOCK_GW_ENABLED'] = form.get('gw_enabled', 0)
+        teleblock['TELEBLOCK_GW_ENABLED'] = int(form.get('gw_enabled', 0))
         teleblock['TELEBLOCK_GW_IP'] = form['gw_ip']
         teleblock['TELEBLOCK_GW_PORT'] = form['gw_port']
         teleblock['TELEBLOCK_MEDIA_IP'] = form['media_ip']
@@ -1776,8 +1730,7 @@ def addUpdateTeleBlock():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1797,7 +1750,7 @@ def displayTransNexus(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['transnexus_license_status']
+        license_status = getLicenseStatus('DSIP_TRANSNEXUS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -1807,26 +1760,16 @@ def displayTransNexus(msg=None):
         if license_status == 2:
             return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
 
-        if settings.TRANSNEXUS_AUTHSERVICE_ENABLED == 1:
-            authservice_checked = 'checked'
-            transnexusOptions_hidden = 'hidden'
-        else:
-            authservice_checked = ''
-            transnexusOptions_hidden = ''
-
         return render_template(
             'transnexus.html',
-            msg=msg,
-            authservice_checked=authservice_checked,
-            transnexusOptions_hidden=transnexusOptions_hidden
+            msg=msg
         )
 
     except WoocommerceError as ex:
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1846,7 +1789,7 @@ def addUpdateTransNexus():
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['transnexus_license_status']
+        license_status = getLicenseStatus('DSIP_TRANSNEXUS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -1862,12 +1805,16 @@ def addUpdateTransNexus():
         tn_settings = {}
         if 'authservice_enabled' in form:
             tn_settings['TRANSNEXUS_AUTHSERVICE_ENABLED'] = int(form['authservice_enabled'])
+            tn_settings["TRANSNEXUS_AUTHSERVICE_HOST"] = form['authservice_host']
         else:
             # It was disabled so the form field was not sent over
             tn_settings['TRANSNEXUS_AUTHSERVICE_ENABLED'] = 0
-
-        if 'authservice_host' in form:
-            tn_settings["TRANSNEXUS_AUTHSERVICE_HOST"] = form['authservice_host']
+        if 'verifyservice_enabled' in form:
+            tn_settings['TRANSNEXUS_VERIFYSERVICE_ENABLED'] = int(form['verifyservice_enabled'])
+            tn_settings["TRANSNEXUS_VERIFYSERVICE_HOST"] = form['verifyservice_host']
+        else:
+            # It was disabled so the form field was not sent over
+            tn_settings['TRANSNEXUS_VERIFYSERVICE_ENABLED'] = 0
 
         if len(tn_settings) != 0:
             updateConfig(settings, tn_settings, hot_reload=True)
@@ -1879,8 +1826,7 @@ def addUpdateTransNexus():
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -1942,10 +1888,9 @@ def displayOutboundRoutes():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2111,10 +2056,9 @@ def addUpateOutboundRoutes():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2169,10 +2113,9 @@ def deleteOutboundRoute():
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2196,7 +2139,7 @@ def displayStirShaken(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['stirshaken_license_status']
+        license_status = getLicenseStatus('DSIP_STIRSHAKEN')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2224,8 +2167,7 @@ def displayStirShaken(msg=None):
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2245,7 +2187,7 @@ def addUpdateStirShaken():
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['stirshaken_license_status']
+        license_status = getLicenseStatus('DSIP_STIRSHAKEN')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2291,8 +2233,7 @@ def addUpdateStirShaken():
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2312,7 +2253,7 @@ def displayUpgrade(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status']
+        license_status = getLicenseStatus('DSIP_CORE')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
         if license_status == 1:
@@ -2337,8 +2278,7 @@ def displayUpgrade(msg=None):
         return render_template('license_required.html', msg=str(ex))
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2377,7 +2317,7 @@ def startUpgrade():
         if (settings.DEBUG):
             debugEndpoint()
 
-        if getSharedMemoryDict(STATE_SHMEM_NAME)['core_license_status'] != 3:
+        if getLicenseStatus('DSIP_CORE') != 3:
             raise WoocommerceError('invalid license')
 
         IO.loginfo("starting upgrade")
@@ -2394,8 +2334,7 @@ def startUpgrade():
 
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2481,8 +2420,7 @@ def getUpgradeLog():
         return 'File not found', 404
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
@@ -2508,7 +2446,13 @@ def attrFilter(list, field):
     if list is None:
         return ""
     if ":" in list:
-        d = dict(item.split(":") for item in list.split(","))
+        d = dict(item.split(":", maxsplit=1) for item in list.split(","))
+        try:
+            return d[field]
+        except:
+            return
+    elif "=" in list:
+        d = dict(item.split("=", maxsplit=1) for item in list.split(","))
         try:
             return d[field]
         except:
@@ -2544,9 +2488,11 @@ def imgFilter(name):
 # custom jinja context processors
 @app.context_processor
 def injectGlobals():
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
     return {
         'settings': settings,
-        'state': getSharedMemoryDict(STATE_SHMEM_NAME),
+        'state': state,
+        'licenseValid': lambda tag: getLicenseStatusFromStateDict(state['dsip_license_store'], tag)
     }
 
 
@@ -2626,23 +2572,17 @@ def syncSettings(new_fields={}, update_net=False):
         if settings.LOAD_SETTINGS_FROM == 'file':
 
             # format fields for DB
-            fields = settingsToTableFormat(settings)
-            fields.update(new_fields)
+            fields = settingsToTableFormat(settings, updates=new_fields)
 
             # update the table
             updateDsipSettingsTable(fields)
 
-            # revert db specific fields
-            if ',' in fields['KAM_DB_HOST']:
-                fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
+            # revert db formatting
+            fields = settingsTableToDict(fields)
 
         # sync settings from dsip_settings table
         elif settings.LOAD_SETTINGS_FROM == 'db':
-            fields = getDsipSettingsTableAsDict(settings.DSIP_ID)
-            fields.update(new_fields)
-
-            if ',' in fields['KAM_DB_HOST']:
-                fields['KAM_DB_HOST'] = fields['KAM_DB_HOST'].split(',')
+            fields = getDsipSettingsTableAsDict(settings.DSIP_ID, updates=new_fields)
 
         # no configured storage device to sync settings to/from
         else:
@@ -2751,10 +2691,7 @@ def intializeGlobalState():
         state = {}
 
     # license checks are always performed on startup, not loaded from state file
-    state['core_license_status'] = licenseToGlobalStateVariable(settings.DSIP_CORE_LICENSE)
-    state['stirshaken_license_status'] = licenseToGlobalStateVariable(settings.DSIP_STIRSHAKEN_LICENSE)
-    state['transnexus_license_status'] = licenseToGlobalStateVariable(settings.DSIP_TRANSNEXUS_LICENSE)
-    state['msteams_license_status'] = licenseToGlobalStateVariable(settings.DSIP_MSTEAMS_LICENSE)
+    state['dsip_license_store'] = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
     state['kam_reload_required'] = state.get('kam_reload_required', False)
     state['dsip_reload_required'] = state.get('dsip_reload_required', False)
     state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
@@ -2765,8 +2702,34 @@ def intializeGlobalState():
     if settings.DEBUG:
         IO.printinfo(f'global state initialized: {state}')
 
+def intializeAuthModules():
+    global auth_modules
+
+    for modname in settings.AUTH_MODULES.keys():
+        # Use the Base Dir to specify the location of the plugin required for this domain
+        spec = importlib.util.spec_from_file_location(
+            f'auth.{modname}',
+            f'{settings.DSIP_PROJECT_DIR}/gui/modules/api/auth/{modname}/interface.py'
+        )
+        auth_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(auth_mod)
+        auth_mod.initialize()
+        auth_modules.append(auth_mod)
+
+def guiLicenseCheck(tag):
+    global state
+    return getLicenseStatusFromStateDict(state['dsip_license_store'], tag)
+
 
 def initApp(flask_app):
+    # trap signals we handle as soon as possible.
+    # we do not want any allocated shared memory / DB connections / socket files hanging around on startup failure
+    signal.signal(signal.SIGHUP, sigHandler)
+    signal.signal(signal.SIGUSR1, sigHandler)
+    signal.signal(signal.SIGUSR2, sigHandler)
+    signal.signal(signal.SIGINT, sigHandler)
+    signal.signal(signal.SIGTERM, sigHandler)
+
     # load the DB objects into memory
     global global_db_engine, global_session_loader
     global_db_engine, global_session_loader = createSessionObjects()
@@ -2790,10 +2753,9 @@ def initApp(flask_app):
     flask_app.jinja_env.filters["imgFilter"] = imgFilter
     flask_app.jinja_env.filters["domainTypeFilter"] = domainTypeFilter
 
-    # Add jinja2 functions
+    # Add jinja2 functions (these must be independent from the context processor)
     flask_app.jinja_env.globals.update(zip=zip)
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
-    flask_app.jinja_env.globals.update(licenseValid=lambda x: x==3)
 
     # Dynamically update settings
     intializeGlobalSettings()
@@ -2826,13 +2788,6 @@ def initApp(flask_app):
     # Setup ProxyFix middleware
     flask_app = ProxyFix(flask_app, 1, 1, 1, 1, 1)
 
-    # trap signals we handle
-    signal.signal(signal.SIGHUP, sigHandler)
-    signal.signal(signal.SIGUSR1, sigHandler)
-    signal.signal(signal.SIGUSR2, sigHandler)
-    signal.signal(signal.SIGINT, sigHandler)
-    signal.signal(signal.SIGTERM, sigHandler)
-
     # change umask to 660 before creating sockets
     # this allows members of the dsiprouter group access
     os.umask(~0o660 & 0o777)
@@ -2843,6 +2798,9 @@ def initApp(flask_app):
 
     # Initialize global variables based on persistent state
     intializeGlobalState()
+
+    # Initialize authentication modules
+    intializeAuthModules()
 
     # write out the main proc's PID
     with open(settings.DSIP_PID_FILE, 'w') as pidfd:
@@ -2857,6 +2815,11 @@ def teardown():
 
     try:
         setPersistentState(objToDict(globals))
+    except:
+        pass
+    try:
+        for auth_mod in auth_modules:
+            auth_mod.teardown()
     except:
         pass
     try:
@@ -2877,12 +2840,6 @@ def teardown():
         pass
     try:
         os.remove(settings.DSIP_PID_FILE)
-    except:
-        pass
-    # TODO: multiprocessing and bjoern modules try to handle this in the ExitException handlers
-    #       marked for review...
-    try:
-        os.remove(settings.DSIP_UNIX_SOCK)
     except:
         pass
 

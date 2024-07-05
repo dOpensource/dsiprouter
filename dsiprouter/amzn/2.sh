@@ -21,7 +21,7 @@ function install() {
     yum install -y yum-utils &&
     yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools' &&
     yum install -y firewalld logrotate rsyslog perl libev-devel util-linux postgresql-devel \
-        bzip2-devel libffi-devel zlib-devel curl
+        bzip2-devel libffi-devel zlib-devel curl openldap-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

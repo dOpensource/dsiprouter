@@ -1,9 +1,8 @@
 import importlib.util, os
-from flask import Blueprint, render_template, abort, jsonify
-from util.security import api_security
+from flask import Blueprint, jsonify
 from database import startSession, DummySession, dSIPMultiDomainMapping
 from shared import debugEndpoint,StatusCodes, getRequestData
-from modules.api.api_functions import showApiError
+from modules.api.api_functions import showApiError, api_security
 from werkzeug import exceptions as http_exceptions
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings

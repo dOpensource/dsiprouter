@@ -1,6 +1,7 @@
 acme
 ansi2html
 bjoern
+bson
 cron_descriptor
 cryptography
 dnspython
@@ -20,6 +21,7 @@ pycryptodome
 pygtail
 PyMySQL
 pyOpenSSL
+python-ldap==3.4.4
 python_crontab
 pytz
 recommonmark

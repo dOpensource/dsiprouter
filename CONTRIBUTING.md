@@ -137,7 +137,7 @@ curl --insecure -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOST
 ```
 
 
-### Useability
+### Usability
 
  - Web GUI
  - REST API

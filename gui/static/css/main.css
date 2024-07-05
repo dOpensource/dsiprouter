@@ -1,19 +1,20 @@
 /* custom icons */
 @font-face {
   font-family: 'icomoon';
-  src: url('/static/fonts/icomoon.eot?flwvm');
-  src: url('/static/fonts/icomoon.eot?flwvm#iefix') format('embedded-opentype'),
-  url('/static/fonts/icomoon.ttf?flwvm') format('truetype'),
-  url('/static/fonts/icomoon.woff?flwvm') format('woff'),
-  url('/static/fonts/icomoon.svg?flwvm#icomoon') format('svg');
+  src: url('/static/fonts/icomoon.eot?wmk8iu');
+  src: url('/static/fonts/icomoon.eot?wmk8iu#iefix') format('embedded-opentype'),
+  url('/static/fonts/icomoon.ttf?wmk8iu') format('truetype'),
+  url('/static/fonts/icomoon.woff?wmk8iu') format('woff'),
+  url('/static/fonts/icomoon.svg?wmk8iu#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
+  font-display: block;
 }
 
 [class^="icon-"], [class*=" icon-"] {
   /* use !important to prevent issues with browser extensions that change fonts */
   font-family: 'icomoon' !important;
-  speak: none;
+  speak: never;
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -28,49 +29,50 @@
 .icon-fusionpbx_full:before {
   content: "\e900";
 }
-
 .icon-gryphon:before {
   content: "\e901";
 }
-
 .icon-fusionpbx:before {
   content: "\e902";
 }
-
 .icon-asterisk:before {
   content: "\e903";
 }
-
 .icon-kamailio:before {
   content: "\e904";
 }
-
 .icon-flowroute:before {
   content: "\e905";
 }
-
 .icon-freepbx:before {
   content: "\e906";
 }
-
 .icon-zencommunication:before {
   content: "\e907";
 }
-
-.icon-call_failfwd:before {
-  content: "\e908";
-}
-
-.icon-call_hardfwd:before {
-  content: "\e909";
-}
-
 .icon-circle-up:before {
   content: "\ea41";
 }
-
 .icon-circle-down:before {
   content: "\ea43";
+}
+.icon-call_failfwd:before {
+  content: "\e908";
+}
+.icon-call_hardfwd:before {
+  content: "\e909";
+}
+.icon-transnexus .path1:before {
+  content: "\e90a";
+  color: rgb(0, 78, 168);
+}
+.icon-transnexus .path2:before {
+  content: "\e90b";
+  margin-left: -1em;
+  color: rgb(255, 255, 255);
+}
+.icon-load_balance:before {
+  content: "\e111";
 }
 
 .wrap {
@@ -530,6 +532,11 @@ a.navlink {
   resize: both;
 }
 
+/* make the modal dialogs relatively larger */
+.modal-dialog {
+  width: 50vw;
+}
+
 /* fix bootstrap modals when stacking */
 .modal-open.modal {
   overflow-x: hidden;
@@ -667,6 +674,6 @@ table.dataTable {
   }
 }
 
-#reloadkam, #reload_dsip {
+#reload_kam, #reload_dsip {
   cursor: pointer;
 }

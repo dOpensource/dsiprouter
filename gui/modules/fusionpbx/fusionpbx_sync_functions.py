@@ -1,11 +1,13 @@
-import os, psycopg2, hashlib, MySQLdb, subprocess, docker,shutil
-from database import dSIPMultiDomainMapping
+import os, psycopg2, hashlib, MySQLdb, shutil
 from util.security import AES_CTR
 from util.networking import safeUriToHost, hostToIP
+from modules.api.kamailio.functions import sendJsonRpcCmd
 
 # TODO: error handling here is pretty bad, we need to establish connection from main func and pass conn/cursors to sub funcs
 #       I implemented an exmaple in sync_needed() of proper connection / cursor handling, we need to move that to the entry func
 #       i.e. run_sync() should utilize the proper handling of the connections/cursors and pass them to sub functions
+
+FUSIONPBX_SYNC_LOCK = '/run/dsiprouter/fusionsync.lock'
 
 # Obtain a set of FusionPBX systems that contains domains that Kamailio will route traffic to.
 def get_sources(db):
@@ -210,11 +212,9 @@ def sync_db(source, dest):
             kam_conn.close()
 
 
-def reloadkam(kamcmd_path):
+def reloadkam():
     try:
-        # subprocess.call(['kamcmd' ,'permissions.addressReload'])
-        # subprocess.call(['kamcmd','drouting.reload'])
-        subprocess.call([kamcmd_path, 'domain.reload'])
+        sendJsonRpcCmd('127.0.0.1', 'domain.reload')
         return True
     except:
         return False
@@ -240,7 +240,7 @@ def update_nginx(sources):
 #                    print("Stopped nginx container")
 #            return
 #    except Exception as e:
-#        os.remove("./.sync-lock")
+#        os.remove(FUSIONPBX_SYNC_LOCK)
 #        print(e)
 
     # Create the Nginx file
@@ -272,7 +272,7 @@ def update_nginx(sources):
         os.system('systemctl reload nginx')
     
     except Exception as e:
-        os.remove("./.sync-lock")
+        os.remove(FUSIONPBX_SYNC_LOCK)
         print(e)
 
 #    Depricating the use of docker containers - logic will be removed during the next release
@@ -316,7 +316,7 @@ def update_nginx(sources):
 #                              detach=True)
 #        print("created a container")
 #    except Exception as e:
-#        os.remove("./.sync-lock")
+#        os.remove(FUSIONPBX_SYNC_LOCK)
 #        print(str(e))
 
 
@@ -420,11 +420,11 @@ def run_sync(settings):
         # The Kamailio DB in our case
 
         # If already running - don't run
-        if os.path.isfile("./.sync-lock"):
+        if os.path.exists(FUSIONPBX_SYNC_LOCK):
             print("Already running")
             return
         else:
-            f = open("./.sync-lock", "w+")
+            f = open(FUSIONPBX_SYNC_LOCK, "w+")
             f.close()
 
         # need to decrypt password if encrypted
@@ -451,7 +451,7 @@ def run_sync(settings):
                 print("[run_sync] No changes - no sync needed for source: {}".format(sources[key][1]))
 
         # Reload Kamailio
-        reloadkam(settings.KAM_KAMCMD_PATH)
+        reloadkam()
 
         # Update Nginx configuration file for HTTP Provisioning and start docker container if we have FusionPBX systems
         # update_nginx(sources[key])
@@ -462,4 +462,4 @@ def run_sync(settings):
         print(str(e))
     finally:
         # Remove lock file
-        os.remove("./.sync-lock")
+        os.remove(FUSIONPBX_SYNC_LOCK)

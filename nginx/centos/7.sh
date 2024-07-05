@@ -119,8 +119,8 @@ function install {
         ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
 
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-stop.sh /usr/sbin/nginx-stop
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v2.service /lib/systemd/system/nginx.service
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher-v2.service /lib/systemd/system/nginx-watcher.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v1.service /lib/systemd/system/nginx.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher-v1.service /lib/systemd/system/nginx-watcher.service
     perl -p \
         -e "s%PathChanged\=.*%PathChanged=${DSIP_CERTS_DIR}/%;" \
         ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.path >/lib/systemd/system/nginx-watcher.path

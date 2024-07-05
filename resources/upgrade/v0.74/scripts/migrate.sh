@@ -44,7 +44,7 @@ export KAM_DB_USER=$(getConfigAttrib 'KAM_DB_USER' ${DSIP_CONFIG_FILE})
 export SET_KAM_DB_PASS=$(decryptConfigAttrib 'KAM_DB_PASS' ${DSIP_CONFIG_FILE})
 export KAM_DB_PASS="$SET_KAM_DB_PASS"
 export SET_DSIP_API_TOKEN=$(decryptConfigAttrib 'DSIP_API_TOKEN' ${DSIP_CONFIG_FILE})
-export DSIP_IPC_PASS="$SET_DSIP_API_TOKEN"
+export DSIP_API_TOKEN="$SET_DSIP_API_TOKEN"
 export SET_DSIP_MAIL_PASS=$(decryptConfigAttrib 'MAIL_PASSWORD' ${DSIP_CONFIG_FILE})
 export MAIL_PASSWORD="$DSIP_MAIL_PASS"
 export SET_DSIP_IPC_TOKEN=$(decryptConfigAttrib 'DSIP_IPC_PASS' ${DSIP_CONFIG_FILE})
@@ -92,10 +92,10 @@ resetConfigsHandler() {
         systemctl unmask rtpengine.service
     fi
 
-    cp -af ${CURR_BACKUP_DIR}/opt/. /etc/
-    cp -af ${CURR_BACKUP_DIR}/opt/. /lib/
+    cp -af ${CURR_BACKUP_DIR}/etc/. /etc/
+    cp -af ${CURR_BACKUP_DIR}/lib/. /lib/
     cp -af ${CURR_BACKUP_DIR}/opt/. /opt/
-    cp -af ${CURR_BACKUP_DIR}/opt/. /var/
+    cp -af ${CURR_BACKUP_DIR}/var/. /var/
     systemctl daemon-reload
 
     if (( $REINSTALL_KAMAILIO == 1 )); then

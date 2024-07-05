@@ -1,0 +1,5 @@
+[Match]
+Name=docker*
+
+[Link]
+Unmanaged=yes

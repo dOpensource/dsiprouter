@@ -106,16 +106,18 @@ function install {
     local MISSING_PKGS
     local NPROC=$(nproc)
 
-    # Install required packages
+    # Install required packages and remove conflicting packages
     case "${DISTRO_VER}" in
         10)
-            apt-get install -y git logrotate rsyslog dpkg-dev
+            apt-get remove -y ufw &&
+            apt-get install -y git logrotate rsyslog dpkg-dev &&
             apt-get install -y -t bullseye libbcg729-0 libbcg729-dev debhelper dkms libglib2.0-dev libncurses-dev \
                 zlib1g-dev default-libmysqlclient-dev libmariadb-dev firewalld python3 python3-dev python3-websockets \
                 perl libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libnet-interface-perl \
                 libsocket6-perl libdigest-hmac-perl libio-multiplex-perl libio-socket-inet6-perl libjson-perl libtest2-suite-perl
             ;;
         *)
+            apt-get remove -y ufw &&
             apt-get install -y git logrotate rsyslog firewalld dpkg-dev
             ;;
     esac
@@ -146,12 +148,6 @@ function install {
         exit 1
     fi
 
-    # create rtpengine user and group
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
-    userdel rtpengine &>/dev/null; groupdel rtpengine &>/dev/null
-    useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
-
     ## compile and install RTPEngine as a DEB package
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
@@ -162,6 +158,18 @@ function install {
     else
         git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
+
+    # apply our patches
+    (
+        cd ${SRC_DIR}/rtpengine &&
+        patch -p1 -N <${DSIP_PROJECT_DIR}/rtpengine/deb-${RTPENGINE_VER}.patch
+    )
+    if (( $? > 1 )); then
+        printerr 'Failed patching RTPEngine files prior to build'
+        return 1
+    fi
+
+    # build and install using dpkg
     (
         cd ${SRC_DIR}/rtpengine
 
@@ -198,9 +206,6 @@ function install {
 
     # rtpengine config file
     # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
-    # TODO: move from 2 seperate config files to generating entire config
-    #       1st we should change to generating config using rtpengine-start-pre
-    #       eventually we should create a config parser similar to how kamailio config is parsed
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
     # setup rtpengine defaults file
@@ -227,9 +232,7 @@ function install {
 
     # Reconfigure systemd service files
     rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
-    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
 
     # Reload systemd configs
     systemctl daemon-reload

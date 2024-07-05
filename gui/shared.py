@@ -39,8 +39,18 @@ def objToDict(obj):
     """
     converts an arbitrary object to dict
     """
-    return dict((attr, getattr(obj, attr)) for attr in dir(obj) if
-                not attr.startswith('__') and not inspect.ismethod(getattr(obj, attr)) and not inspect.isfunction(getattr(obj, attr)))
+    if isinstance(obj, dict):
+        return obj
+
+    vals = []
+    for attr in dir(obj):
+        if attr.startswith('__'):
+            continue
+        val = getattr(obj, attr)
+        if inspect.ismethod(val) or inspect.isfunction(val) or inspect.isbuiltin(val):
+            continue
+        vals.append((attr, val))
+    return dict(vals)
 
 def rowToDict(row):
     """

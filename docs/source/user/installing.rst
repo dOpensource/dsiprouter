@@ -49,7 +49,7 @@ Debian 10 (buster)                      STABLE
 Debian 9 (stretch)                      DEPRECATED
 CentOS 9 (stream)                       STABLE
 CentOS 8 (stream)                       STABLE
-CentOS 7                                DEPRECATED
+CentOS 7                                STABLE
 RedHat Linux 8                          ALPHA
 Alma Linux 8                            ALPHA
 Rocky Linux 8                           ALPHA

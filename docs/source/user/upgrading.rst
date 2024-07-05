@@ -6,16 +6,41 @@ Upgrading dSIPRouter
 Auto Upgrade Feature
 --------------------
 
-The dSIPRouter auto upgrade feature was released in 0.72 but was not feature complete until 0.73.
-It allows you to upgrade dSIPRouter from the User Interface (UI) and the command line (CLI).
+The dSIPRouter auto upgrade feature allows you to upgrade dSIPRouter from the User Interface (UI) and the command line (CLI).
 If you are upgrading from 0.70, 0.72, or 0.721 you can boostrap to the latest release to get the auto-upgrade feature.
 
 Upgrading to 0.73 doesn't require a dSIPRouter Core Subscription license because the auto-upgrade framework was not yet feature complete.
-However, future releases of dSIPRouter will require a Core Subscription License to use the auto-upgrade feature.
+However, all subsequent releases of dSIPRouter require a Core Subscription License to use the auto-upgrade feature.
 A core license can be purchased from the `dSIPRouter Marketplace <https://dopensource.com/product/dsiprouter-core/>`_.
 
 .. image:: images/upgrade_up_to_date.png
         :align: center
+
+Upgrade to 0.75
+---------------
+
+Upgrading to 0.75 can be done from a version greater than or equal to 0.72.
+Upgrading from version 0.73 or 0.74 can be done using the UI:
+
+.. image:: images/upgrade_available.png
+        :align: center
+
+Or by using the CLI:
+
+.. code-block:: bash
+
+   dsiprouter upgrade
+
+To upgrade from 0.72 or 0.721 use the command below to bootstrap the upgrade:
+
+.. code-block:: bash
+
+   curl -s https://raw.githubusercontent.com/dOpensource/dsiprouter/v0.75/resources/upgrade/v0.75/scripts/bootstrap.sh | bash
+
+Upgrade 0.73 to 0.74
+--------------------
+
+Upgrading from version 0.73 to 0.74 can be done using the auto upgrade feature via the UI or CLI.
 
 Upgrade 0.72x to 0.73
 ---------------------

@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, abort
-from util.security import api_security
+from flask import Blueprint
+from modules.api.api_functions import api_security
 
 
 new_api = Blueprint('new_api','__name__')
@@ -16,4 +16,4 @@ def getEntity():
         description: 'April and Mack Co', \
         config_id: 64 \
         }"
-    return result;
+    return result

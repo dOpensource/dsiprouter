@@ -1,0 +1,19 @@
+Subject: [PATCH] change defaults config path
+---
+Index: debian/ngcp-rtpengine-iptables-setup
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/debian/ngcp-rtpengine-iptables-setup b/debian/ngcp-rtpengine-iptables-setup
+--- a/debian/ngcp-rtpengine-iptables-setup	(revision a6631401498937d0c03e63931e601c40fcbfa2e7)
++++ b/debian/ngcp-rtpengine-iptables-setup	(date 1717809128862)
+@@ -4,7 +4,7 @@
+ MODNAME=xt_RTPENGINE
+ MANAGE_IPTABLES=yes
+ 
+-DEFAULTS=/etc/default/ngcp-rtpengine-daemon
++DEFAULTS=/etc/default/rtpengine.conf
+ 
+ # Load startup options if available
+ if [ -f "$DEFAULTS" ]; then

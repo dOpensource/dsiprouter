@@ -35,11 +35,14 @@ function installSQL {
 
 function install {
     installSQL
-    cronAppend "*/1 * * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py api cleanleases"
+    cronRemove -u dsiprouter 'dsiprouter_cron.py api'
+    cronAppend -u dsiprouter "*/1 * * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py api cleanleases"
+    cronAppend -u dsiprouter "0 0 * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py api synclicenses"
     printdbg "API module installed"
 }
 
 function uninstall {
+    cronRemove -u dsiprouter 'dsiprouter_cron.py api'
     printdbg "API module uninstalled"
 }
 

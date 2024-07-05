@@ -18,7 +18,8 @@ function install() {
     update-alternatives --set iptables /usr/sbin/iptables-legacy
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
-    # Install Dependencies
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
         libcurl4-openssl-dev libjansson-dev cmake firewalld python3 build-essential python3-venv
 
@@ -71,7 +72,8 @@ EOF
 
     # Install Kamailio packages
     apt-get install -y kamailio kamailio-mysql-modules kamailio-extra-modules \
-        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules kamailio-json-modules
+        kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules \
+        kamailio-json-modules kamailio-sctp-modules
 
     # get info about the kamailio install for later use in script
     KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
@@ -215,6 +217,19 @@ EOF
     ) &&
     cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
         printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
+
+    # patch uac module to support reload_delta
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/uac &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch uac module'
         return 1
     }
 

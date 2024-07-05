@@ -8,17 +8,24 @@ After=iptables.service redis.service rsyslog.service
 DefaultDependencies=no
 
 [Service]
-Type=simple
-Environment='CFGFILE=/etc/default/rtpengine.conf'
-Environment='RUNDIR=/run/rtpengine'
-EnvironmentFile=-$RUNDIR/daemon.conf
+Type=forking
+PermissionsStartOnly=true
+EnvironmentFile=/etc/default/rtpengine.conf
+User=rtpengine
+Group=rtpengine
+# runtime only directory /run/rtpengine
+RuntimeDirectory=rtpengine
+RuntimeDirectoryMode=0770
 # PIDFile requires an absolute path
 PIDFile=/run/rtpengine/rtpengine.pid
+# process capabilities
+AmbientCapabilities=CAP_NET_ADMIN CAP_SYS_NICE
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_NICE
 # ExecStart* requires an absolute path for the program
-ExecStartPre=!-/usr/bin/dsiprouter chown -rtpengine
-ExecStartPre=/usr/sbin/rtpengine-start-pre $CFGFILE
-ExecStart=/usr/bin/rtpengine -f $OPTIONS
-ExecStopPost=/usr/sbin/rtpengine-stop-post $CFGFILE
+ExecStartPre=/usr/bin/dsiprouter chown -rtpengine
+ExecStartPre=/usr/sbin/ngcp-rtpengine-iptables-setup start
+ExecStart=/usr/bin/rtpengine --config-file=${CONFIG_FILE} --pidfile=${PID_FILE}
+ExecStopPost=/usr/sbin/ngcp-rtpengine-iptables-setup stop
 Restart=on-failure
 
 [Install]
