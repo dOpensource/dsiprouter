@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+#
+# adapted from build_instance.sh in the github repo
+#
+
+function cmdExists() {
+    if command -v "$1" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# wait for any other programs using package manager to complete
+if cmdExists "apt-get"; then
+    while fuser /var/lib/apt/lists/lock >/dev/null 2>&1; do
+        sleep 1
+    done
+
+    # make package manager quieter
+    export DEBIAN_FRONTEND="noninteractive"
+    export DEBIAN_PRIORITY="critical"
+
+    apt-get update -qq -y >/dev/null
+    apt-get install -qq -y git perl >/dev/null
+
+    # TODO: move to installScriptRequirements()
+    # make sure english UTF-8 locale is installed
+    if ! locale -a 2>/dev/null | grep -q 'en_US.UTF-8'; then
+          perl -i -pe 's%# (en_US\.UTF-8 UTF-8)%\1%' /etc/locale.gen
+          locale-gen
+    fi
+elif cmdExists "yum"; then
+    while [ -f /var/run/yum.pid ]; do
+        sleep 1
+    done
+
+    yum makecache -y -q -e 0 >/dev/null
+    yum install -y -q -e 0 git >/dev/null
+fi
+
+# clone and install
+git clone --depth 1 -c advice.detachedHead=false ${dsip_repo} -b ${dsip_ver} ${dsip_dir} || exit 1
+${dsip_dir}/dsiprouter.sh ${build_options} | tee /var/log/dsip-install.log
+# note the "$${}" escaping of template interpolation
+(( $${PIPESTATUS[0]} == 0 )) || exit 1
+# additional commands to setup this box
+${additional_commands} || exit 1
+exit 0

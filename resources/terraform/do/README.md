@@ -7,7 +7,7 @@
 3. Obtain a Digital Ocean API key and store the key as an environment variable
 
 ```
-
+export DIGITALOCEAN_TOKEN=...
 ```
 
 4. Copy terraform.tfvars.sample to terraform.tfvars
@@ -28,17 +28,17 @@ All of the variables and any default values can be found in variables.tf.
 
 6. Create a new instance of dSIPRouter
 
-The following command will create a new instance of dSIPRouter based on the master branch.  The OS image will be Debian 11 and the dsiprouter_prefix will be overriden by demo.
+The following command will create a new instance of dSIPRouter based on the master branch.  The OS image will be Debian 12 and the dsiprouter_prefix will be overriden by demo.
 
 
 ```
-terraform apply -var branch=master -var dsiprouter_prefix=demo -var image=debian-11-x64
+terraform apply -var dsip_ver=master -var dsiprouter_prefix=demo -var image=debian-12-x64
 ```
 
 If you want to create a demo instance of dSIPRouter in your Digitalocean environment with a DNS record use this.  Note, you will need to change the dns_demo_domain variable to a domain that you have hosted with DigitalOcean.
 
 ```
-terraform apply -var branch=master -var image=debian-11-x64 -var dsiprouter_prefix=demo -var additional_commands='dsiprouter setcredentials -dc admin:ZmIwMTdmY2I5NjE4' -var dns_demo_enabled=1 -var dns_demo_domain=dsiprouter.org -var dns_demo_hostname=demo
+terraform apply -var dsip_ver=master -var image=debian-12-x64 -var dsiprouter_prefix=demo -var additional_commands='dsiprouter setcredentials -dc admin:ZmIwMTdmY2I5NjE4' -var dns_demo_enabled=1 -var dns_demo_domain=dsiprouter.org -var dns_demo_hostname=demo
 ```
 
 7. Destroy your instance if you are done with it by using the terraform destory command
