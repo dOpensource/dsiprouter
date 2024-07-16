@@ -443,7 +443,18 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
 
         # get carrier by id
         if gwid is not None:
-            carriers = [db.query(Gateways).filter(Gateways.gwid == gwid).first()]
+            carriers = [
+                db.query(
+                    Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                    Dispatcher.attrs.label("dispatcher_attrs")
+                ).filter(
+                    Gateways.gwid == gwid
+                ).outerjoin(
+                    Dispatcher,
+                    Gateways.description.regexp_match(func.concat('.*gwgroup:', Dispatcher.setid, '.*')) &
+                    (Dispatcher.destination == func.concat('sip:', Gateways.address))
+                ).first()
+            ]
             rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
             gateway_rules = {}
             for rule in rules:
@@ -457,9 +468,15 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             # check if any endpoints in group b4 converting to list(int)
             if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
                 gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
-                carriers =  db.query(Gateways.gwid,Gateways.attrs,Gateways.address,Gateways.strip,Gateways.pri_prefix,Dispatcher.attrs.label("dispatcher_attrs")).\
-                    filter(Gateways.gwid.in_(gwlist)).\
-                    outerjoin(Dispatcher, Gateways.address == func.substr(Dispatcher.destination,5)).all()
+                carriers =  db.query(
+                    Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                    Dispatcher.attrs.label("dispatcher_attrs")
+                ).filter(
+                    Gateways.gwid.in_(gwlist)
+                ).outerjoin(
+                    Dispatcher,
+                    (Dispatcher.setid == gwgroup) & (Dispatcher.destination == func.concat('sip:', Gateways.address))
+                ).all()
                 rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                 for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
                     gateway_rules = {}
@@ -470,9 +487,16 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
 
         # get all carriers
         else:
-            carriers = db.query(Gateways.gwid,Gateways.attrs,Gateways.address,Gateways.strip,Gateways.pri_prefix,Dispatcher.attrs.label("dispatcher_attrs")).\
-                filter(Gateways.type == settings.FLT_CARRIER).\
-                outerjoin(Dispatcher, Gateways.address == func.substr(Dispatcher.destination,5)).all()
+            carriers = db.query(
+                Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                Dispatcher.attrs.label("dispatcher_attrs")
+            ).filter(
+                Gateways.type == settings.FLT_CARRIER
+            ).outerjoin(
+                Dispatcher,
+                Gateways.description.regexp_match(func.concat('.*gwgroup:', Dispatcher.setid, '.*')) &
+                (Dispatcher.destination == func.concat('sip:', Gateways.address))
+            ).all()
             rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
             for gateway in carriers:
                 gateway_rules = {}
@@ -2441,23 +2465,15 @@ def noneFilter(list):
         return list
 
 
-def attrFilter(list, field):
-    if list is None:
-        return ""
-    if ":" in list:
-        d = dict(item.split(":", maxsplit=1) for item in list.split(","))
-        try:
-            return d[field]
-        except:
-            return
-    elif "=" in list:
-        d = dict(item.split("=", maxsplit=1) for item in list.split(","))
-        try:
-            return d[field]
-        except:
-            return
-    else:
-        return list
+def attrFilter(s, attr, delims=(',', ':')):
+    if s is None:
+        return ''
+    try:
+        return dict(
+            item.split(delims[1], maxsplit=1) for item in s.split(delims[0])
+        )[attr]
+    except:
+        return ''
 
 
 def domainTypeFilter(list):
