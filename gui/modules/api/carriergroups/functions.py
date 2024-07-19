@@ -3,7 +3,7 @@ from sqlalchemy import exc as sql_exceptions, text
 from werkzeug import exceptions as http_exceptions
 import settings
 from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
-from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups
+from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups, Dispatcher
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort, encodeSipUser
 
@@ -166,7 +166,6 @@ def addUpdateCarriers(data=None):
     newgwid = None
 
     try:
-
         if (settings.DEBUG):
             debugEndpoint()
 
@@ -175,14 +174,11 @@ def addUpdateCarriers(data=None):
         if data is not None:
             # Set the form variables to data parameter
             form = data
-            # Convert gwgroup to a string
-            gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
-            if gwgroup is not None:
-                form['gwgroup'] = str(gwgroup)
+            # match what the gui would send us
+            if 'gwgroup' in form:
+                form['gwgroup'] = str(form['gwgroup'])
         else:
             form = stripDictVals(request.form.to_dict())
-
-
 
         gwid = form['gwid'] if 'gwid' in form else ''
         gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
@@ -190,6 +186,7 @@ def addUpdateCarriers(data=None):
         hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
+        rweight = form['rweight'] if len(form['rweight']) > 0 else 0
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
@@ -217,6 +214,10 @@ def addUpdateCarriers(data=None):
                 gwlist.append(gwid)
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
+                # Create dispatcher group with the set id being the gateway group id
+                # The weight field has to be set
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, description=name, rweight=rweight)
+                db.add(dispatcher)
             else:
                 Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
                 db.add(Addr)
@@ -236,6 +237,13 @@ def addUpdateCarriers(data=None):
             gw_fields['name'] = name
             if len(gwgroup) <= 0:
                 gw_fields['gwgroup'] = gwgroup
+
+            # update dispatcher entry
+            db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))
+            ).update({
+                "attrs": Dispatcher.buildAttrs(rweight=rweight)
+            }, synchronize_session=False)
 
             # if address exists update
             address_exists = False
@@ -270,8 +278,10 @@ def addUpdateCarriers(data=None):
 
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+
         if data is None:
             return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
+        return gwid
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -281,10 +291,9 @@ def addUpdateCarriers(data=None):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"

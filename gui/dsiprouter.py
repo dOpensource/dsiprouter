@@ -35,6 +35,7 @@ from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
+from modules.api.carriergroups.functions import addUpdateCarriers
 from modules.api.kamailio.functions import reloadKamailio
 from modules.api.licensemanager.classes import WoocommerceError
 from modules.api.licensemanager.functions import licenseDictToStateDict, getLicenseStatusFromStateDict, \
@@ -344,6 +345,10 @@ def addUpdateCarrierGroups():
     Add or Update a group of carriers
     """
 
+    # TODO: toss this in a decorator func with error handling and use for gui auth checks
+    if not session.get('logged_in'):
+        return redirect(url_for('index'))
+
     return addCarrierGroups()
 
 
@@ -530,147 +535,16 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
 
 
 @app.route('/carriers', methods=['POST'])
-def addUpdateCarriers():
+def guiAddUpdateCarriers():
     """
     Add or Update a carrier
     """
 
-    # carriergroups.addUpdateCarriers()
+    # TODO: toss this in a decorator func with error handling and use for gui auth checks
+    if not session.get('logged_in'):
+        return redirect(url_for('index'))
 
-    db = DummySession()
-    newgwid = None
-
-    try:
-        if not session.get('logged_in'):
-            return redirect(url_for('index'))
-
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        db = startSession()
-
-        form = stripDictVals(request.form.to_dict())
-
-        gwid = form['gwid']
-        gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
-        name = form['name'] if len(form['name']) > 0 else ''
-        hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
-        strip = form['strip'] if len(form['strip']) > 0 else '0'
-        prefix = form['prefix'] if len(form['prefix']) > 0 else ''
-        rweight = form['rweight'] if len(form['rweight']) > 0 else 0
-
-        if len(hostname) == 0:
-            raise http_exceptions.BadRequest("Carrier hostname/address is required")
-
-        sip_addr = safeUriToHost(hostname, default_port=5060)
-        if sip_addr is None:
-            raise http_exceptions.BadRequest("Endpoint hostname/address is malformed")
-        host_addr = safeStripPort(sip_addr)
-
-        # Adding
-        if len(gwid) <= 0:
-            if len(gwgroup) > 0:
-                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                db.add(Addr)
-                db.flush()
-
-                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
-                db.add(Gateway)
-                db.flush()
-
-                newgwid = Gateway.gwid
-                gwid = str(newgwid)
-                Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-                gwlist = list(filter(None, Gatewaygroup.gwlist.split(",")))
-                gwlist.append(gwid)
-                Gatewaygroup.gwlist = ','.join(gwlist)
-
-                # Create dispatcher group with the set id being the gateway group id
-                # The weight field has to be set
-                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, description=name, rweight=rweight)
-                db.add(dispatcher)
-
-            else:
-                Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
-                db.add(Addr)
-                db.flush()
-
-                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
-                db.add(Gateway)
-
-        # Updating
-        else:
-            Gateway = db.query(Gateways).filter(Gateways.gwid == gwid).first()
-            Gateway.address = sip_addr
-            Gateway.strip = strip
-            Gateway.pri_prefix = prefix
-
-            gw_fields = strFieldsToDict(Gateway.description)
-            gw_fields['name'] = name
-            if len(gwgroup) <= 0:
-                gw_fields['gwgroup'] = gwgroup
-
-            # update dispatcher entry
-            db.query(Dispatcher).filter(
-                (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))
-            ).update({
-                "attrs": Dispatcher.buildAttrs(rweight=rweight)
-            }, synchronize_session=False)
-
-            # if address exists update
-            address_exists = False
-            if 'addr_id' in gw_fields and len(gw_fields['addr_id']) > 0:
-                Addr = db.query(Address).filter(Address.id == gw_fields['addr_id']).first()
-
-                # if entry is non existent handle in next block
-                if Addr is not None:
-                    address_exists = True
-
-                    Addr.ip_addr = host_addr
-                    addr_fields = strFieldsToDict(Addr.tag)
-                    addr_fields['name'] = name
-
-                    if len(gwgroup) > 0:
-                        addr_fields['gwgroup'] = gwgroup
-                    Addr.tag = dictToStrFields(addr_fields)
-
-            # otherwise create the address
-            if not address_exists:
-                if len(gwgroup) > 0:
-                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
-                else:
-                    Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
-
-                db.add(Addr)
-                db.flush()
-                gw_fields['addr_id'] = str(Addr.id)
-
-            # gw_fields may be updated above so set after
-            Gateway.description = dictToStrFields(gw_fields)
-
-        db.commit()
-        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
-        return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        db.rollback()
-        db.flush()
-        return showError(type='http', code=ex.code, msg=ex.description)
-    except Exception as ex:
-        debugException(ex)
-        error = "server"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    finally:
-        db.close()
+    return addUpdateCarriers()
 
 
 @app.route('/carrierdelete', methods=['POST'])
