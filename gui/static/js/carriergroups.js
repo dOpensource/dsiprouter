@@ -561,7 +561,8 @@
         gwid = $(data).find('tr.new_gw').data('gwid');
         gwgroup = modal.find('.gwgroup').val();
         td_gwlist = $('#carrier-groups').find('tr[data-gwgroup="' + gwgroup + '"] > td.gwlist');
-        gwlist_arr = td_gwlist.text().split(',');
+        gwlist = td_gwlist.text();
+        gwlist_arr = gwlist === '' ? [] : gwlist.split(',');
         gwlist_arr.push(gwid);
         gwlist = gwlist_arr.join(',');
         td_gwlist.text(gwlist);
@@ -570,7 +571,8 @@
         gwid = modal.find('.gwid').val();
         gwgroup = modal.find('.gwgroup').val();
         td_gwlist = $('#carrier-groups').find('tr[data-gwgroup="' + gwgroup + '"] > td.gwlist');
-        gwlist_arr = td_gwlist.text().split(',');
+        gwlist = td_gwlist.text();
+        gwlist_arr = gwlist === '' ? [] : gwlist.split(',');
         gwlist_arr.splice(gwlist_arr.indexOf(gwid), 1);
         gwlist = gwlist_arr.join(',');
         td_gwlist.text(gwlist);
