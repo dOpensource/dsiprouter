@@ -35,7 +35,7 @@ from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
 from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
-from modules.api.carriergroups.functions import addUpdateCarriers
+from modules.api.carriergroups.functions import addUpdateCarriers, displayCarrierGroups, displayCarriers
 from modules.api.kamailio.functions import reloadKamailio
 from modules.api.licensemanager.classes import WoocommerceError
 from modules.api.licensemanager.functions import licenseDictToStateDict, getLicenseStatusFromStateDict, \
@@ -267,76 +267,8 @@ def logout():
         return showError(type=error)
 
 
-@app.route('/carriergroups')
-@app.route('/carriergroups/<int:gwgroup>')
-def displayCarrierGroups(gwgroup=None):
-    """
-    Display the carrier groups in the view
-    :param gwgroup:
-    """
-
-    # TODO: track related dr_rules and update lists on delete
-
-    db = DummySession()
-
-    try:
-        if not session.get('logged_in'):
-            return redirect(url_for('index'))
-
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        db = startSession()
-
-        typeFilter = "%type:{}%".format(settings.FLT_CARRIER)
-
-        query = db.query(
-            GatewayGroups.id,
-            GatewayGroups.description,
-            GatewayGroups.gwlist,
-            UAC.r_username,
-            UAC.auth_password,
-            UAC.r_domain,
-            UAC.auth_username,
-            UAC.auth_proxy,
-            cast(DsipGwgroup2LB.enabled, Integer).label('lb_enabled')
-        ).outerjoin(
-            UAC, GatewayGroups.id == UAC.l_uuid
-        ).outerjoin(
-            DsipGwgroup2LB, GatewayGroups.id == DsipGwgroup2LB.gwgroupid
-        ).filter(
-            GatewayGroups.description.like(typeFilter)
-        )
-
-        # res must be a list()
-        if gwgroup is not None and gwgroup != "":
-            res = [
-                query.filter(
-                    GatewayGroups.id == gwgroup
-                ).first()
-            ]
-        else:
-            res = query.all()
-
-        return render_template('carriergroups.html', rows=res)
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        return showError(type='http', code=ex.code, msg=ex.description)
-    except Exception as ex:
-        debugException(ex)
-        error = "server"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    finally:
-        db.close()
+app.add_url_rule('/carriergroups', view_func=displayCarrierGroups, methods=['GET'])
+app.add_url_rule('/carriergroups/<int:gwgroup>', view_func=displayCarrierGroups, methods=['GET'])
 
 
 @app.route('/carriergroups', methods=['POST'])
@@ -380,7 +312,7 @@ def deleteCarrierGroups():
             return displayCarrierGroups()
 
         db.query(Address).filter(
-            Address.tag.contains("gwgroup:{}".format(gwgroup))
+            Address.tag.regexp_match(f'gwgroup:{gwgroup}(,|$)')
         ).delete(synchronize_session=False)
         db.query(UAC).filter(
             UAC.l_uuid == gwgroup_row.id
@@ -419,132 +351,10 @@ def deleteCarrierGroups():
         db.close()
 
 
-@app.route('/carriers')
-@app.route('/carriers/<int:gwid>')
-@app.route('/carriers/group/<int:gwgroup>')
-def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
-    """
-    Display the carriers table
-    :param gwid:
-    :param gwgroup:
-    :param newgwid:
-    """
-
-    db = DummySession()
-
-    try:
-        if not session.get('logged_in'):
-            return redirect(url_for('index'))
-
-        if (settings.DEBUG):
-            debugEndpoint()
-
-        db = startSession()
-
-        # carriers is a list of carriers matching query
-        # carrier_routes is a list of associated rules for each carrier
-        carriers = []
-        carrier_rules = []
-
-        # get carrier by id
-        if gwid is not None:
-            carriers = [
-                db.query(
-                    Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
-                    Dispatcher.attrs.label("dispatcher_attrs")
-                ).filter(
-                    Gateways.gwid == gwid
-                ).outerjoin(
-                    Dispatcher,
-                    Gateways.description.regexp_match(func.concat('.*gwgroup:', Dispatcher.setid, '.*')) &
-                    (Dispatcher.destination == func.concat('sip:', Gateways.address))
-                ).first()
-            ]
-            rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
-            gateway_rules = {}
-            for rule in rules:
-                if str(gwid) in filter(None, rule.gwlist.split(',')):
-                    gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-            carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-
-        # get carriers by carrier group
-        elif gwgroup is not None:
-            Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
-            # check if any endpoints in group b4 converting to list(int)
-            if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
-                gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
-                carriers =  db.query(
-                    Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
-                    Dispatcher.attrs.label("dispatcher_attrs")
-                ).filter(
-                    Gateways.gwid.in_(gwlist)
-                ).outerjoin(
-                    Dispatcher,
-                    (Dispatcher.setid == gwgroup) & (Dispatcher.destination == func.concat('sip:', Gateways.address))
-                ).all()
-                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
-                for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
-                    gateway_rules = {}
-                    for rule in rules:
-                        if gateway_id in filter(None, rule.gwlist.split(',')):
-                            gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-                    carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-
-        # get all carriers
-        else:
-            carriers = db.query(
-                Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
-                Dispatcher.attrs.label("dispatcher_attrs")
-            ).filter(
-                Gateways.type == settings.FLT_CARRIER
-            ).outerjoin(
-                Dispatcher,
-                Gateways.description.regexp_match(func.concat('.*gwgroup:', Dispatcher.setid, '.*')) &
-                (Dispatcher.destination == func.concat('sip:', Gateways.address))
-            ).all()
-            rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
-            for gateway in carriers:
-                gateway_rules = {}
-                for rule in rules:
-                    if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
-                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
-                carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
-       
-        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
-            kam_reload_required=getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'])
-
-    except sql_exceptions.SQLAlchemyError as ex:
-        debugException(ex)
-        error = "db"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    except http_exceptions.HTTPException as ex:
-        debugException(ex)
-        db.rollback()
-        db.flush()
-        return showError(type='http', code=ex.code, msg=ex.description)
-    except Exception as ex:
-        debugException(ex)
-        error = "server"
-        db.rollback()
-        db.flush()
-        return showError(type=error)
-    finally:
-        db.close()
-
-
-@app.route('/carriers', methods=['POST'])
-def guiAddUpdateCarriers():
-    """
-    Add or Update a carrier
-    """
-
-    # TODO: toss this in a decorator func with error handling and use for gui auth checks
-    if not session.get('logged_in'):
-        return redirect(url_for('index'))
-
-    return addUpdateCarriers()
+app.add_url_rule('/carriers', view_func=displayCarriers, methods=['GET'])
+app.add_url_rule('/carriers/<int:gwid>', view_func=displayCarriers, methods=['GET'])
+app.add_url_rule('/carriers/group/<int:gwgroup>', view_func=displayCarriers, methods=['GET'])
+app.add_url_rule('/carriers', view_func=addUpdateCarriers, methods=['POST'])
 
 
 @app.route('/carrierdelete', methods=['POST'])
@@ -833,7 +643,9 @@ def deletePBX():
 
         gateway = db.query(Gateways).filter(Gateways.gwid == gwid)
         gateway.delete(synchronize_session=False)
-        address = db.query(Address).filter(Address.tag.contains("name:{}".format(name)))
+        address = db.query(Address).filter(
+            Address.tag.regexp_match(f'name:{name}(,|$)')
+        )
         address.delete(synchronize_session=False)
         subscriber = db.query(Subscribers).filter(Subscribers.rpid == gwid)
         subscriber.delete(synchronize_session=False)
@@ -900,9 +712,6 @@ def displayInboundMapping():
 
         db = startSession()
 
-        endpoint_filter = "%type:{}%".format(settings.FLT_PBX)
-        carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
-
         res = db.execute(
             text("""
 SELECT * FROM (
@@ -917,9 +726,12 @@ SELECT * FROM (
     SELECT ff.dr_ruleid AS ff_ruleid, ff.dr_groupid AS ff_groupid, ff.did AS ff_fwddid, NULL AS ff_gwgroupid FROM dsip_failfwd AS ff LEFT JOIN dr_rules AS r ON ff.dr_ruleid = r.ruleid WHERE ff.dr_groupid = :flt_outbound
 ) AS t3 ON t1.ruleid = t3.ff_ruleid"""), {"flt_inbound": settings.FLT_INBOUND, "flt_outbound": settings.FLT_OUTBOUND})
 
-        epgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(endpoint_filter)).all()
+        epgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT.value)
+        ).all()
         gwgroups = db.query(GatewayGroups).filter(
-            (GatewayGroups.description.like(endpoint_filter)) | (GatewayGroups.description.like(carrier_filter))).all()
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT_OR_CARRIER.value)
+        ).all()
 
         gatewayList = db.query(Gateways).all()
 
@@ -1750,8 +1562,6 @@ def displayOutboundRoutes():
 
         db = startSession()
 
-        carrier_filter = "%type:{}%".format(settings.FLT_CARRIER)
-
         rows = db.query(OutboundRoutes).filter(
             (OutboundRoutes.groupid == settings.FLT_OUTBOUND) |
             ((OutboundRoutes.groupid >= settings.FLT_LCR_MIN) &
@@ -1763,7 +1573,9 @@ def displayOutboundRoutes():
             OutboundRoutes.timerec, OutboundRoutes.priority, OutboundRoutes.description,
             GatewayGroups.description.label('gwgroup_description'), GatewayGroups.gwlist)
 
-        cgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(carrier_filter)).all()
+        cgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.CARRIER.value)
+        ).all()
 
         # sort carrier groups by name
         cgroups.sort(key=lambda x: strFieldsToDict(x.description)['name'].lower())

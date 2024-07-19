@@ -671,8 +671,9 @@ def deleteEndpointGroup(gwgroupid):
         if subscriber is not None:
             subscriber.delete(synchronize_session=False)
 
-        typeFilter = "%gwgroup:{}%".format(gwgroupid)
-        endpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
+        endpoints = db.query(Gateways).filter(
+            Gateways.description.regexp_match(f'gwgroup:{gwgroupid}(,|$)')
+        )
         if endpoints is not None:
             address_ids = []
             for endpoint in endpoints:
@@ -867,7 +868,6 @@ def listEndpointGroups():
     db = DummySession()
 
     response_data = []
-    typeFilter = "%type:{}%".format(str(settings.FLT_PBX))
 
     try:
         if settings.DEBUG:
@@ -875,7 +875,9 @@ def listEndpointGroups():
 
         db = startSession()
 
-        endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
+        endpointgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT.value)
+        ).all()
 
         for endpointgroup in endpointgroups:
             # Grap the description field, which is comma seperated key/value pair
@@ -1115,10 +1117,17 @@ def updateEndpointGroups(gwgroupid=None):
         # Update endpoints
         # Get List of existing endpoints
         # If endpoint sent over is not in the existing endpoint list then remove it
-        gwgroup_filter = "%gwgroup:{}%".format(gwgroupid_str)
+        gwgroup_filter = f'gwgroup:{gwgroupid_str}(,|$)'
         current_endpoints_lut = {
-            x.gwid: {'address': x.address, 'type': x.type, 'description_dict': strFieldsToDict(x.description), 'attrs_dict': x.attrsToDict()} \
-            for x in db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).all()
+            x.gwid: {
+                'address': x.address,
+                'type': x.type,
+                'description_dict': strFieldsToDict(x.description),
+                'attrs_dict': x.attrsToDict()
+            } \
+            for x in db.query(Gateways).filter(
+                Gateways.description.regexp_match(gwgroup_filter)
+            ).all()
         }
         updated_endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
         unprocessed_endpoints_lut = {}
@@ -1394,15 +1403,15 @@ def updateEndpointGroups(gwgroupid=None):
 
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
-        del_gateways = db.query(Gateways).filter(and_( \
-            Gateways.gwid.in_(del_gwids), \
-            Gateways.address != "localhost" \
-            ))
-        del_gateways_cleanup = db.query(Gateways).filter(and_( \
-            Gateways.description.like(gwgroup_filter), \
-            Gateways.gwid.notin_(gwlist), \
-            Gateways.address != "localhost" \
-            ))
+        del_gateways = db.query(Gateways).filter(
+            Gateways.gwid.in_(del_gwids) &
+            (Gateways.address != "localhost")
+        )
+        del_gateways_cleanup = db.query(Gateways).filter(
+            Gateways.description.regexp_match(gwgroup_filter) &
+            Gateways.gwid.notin_(gwlist) &
+            (Gateways.address != "localhost")
+        )
         # make sure we delete any associated address entries
         del_addr_ids = []
         for gateway in del_gateways.union(del_gateways_cleanup):

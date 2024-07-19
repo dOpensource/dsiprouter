@@ -57,7 +57,6 @@ def listCarrierGroups():
 
     # defaults.. keep data returned separate from returned metadata
     response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
-    typeFilter = "%type:{}%".format(str(settings.FLT_CARRIER))
 
     try:
         if settings.DEBUG:
@@ -65,7 +64,9 @@ def listCarrierGroups():
 
         db = startSession()
 
-        carriergroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
+        carriergroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.CARRIER.value)
+        ).all()
 
         for carriergroup in carriergroups:
             # Grap the description field, which is comma seperated key/value pair

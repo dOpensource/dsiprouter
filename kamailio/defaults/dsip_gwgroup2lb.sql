@@ -82,7 +82,7 @@ CREATE TRIGGER insert_rule_gwgroup2lb
 BEGIN
   -- only inbound routes can have load balancing associated with it
   IF (NEW.groupid = 9000) THEN
-    IF (NEW.description LIKE '%lb_enabled:1%') THEN
+    IF (NEW.description REGEXP 'lb_enabled:1(,|$)') THEN
       UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
     ELSE
       UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = REPLACE(NEW.gwlist, '#', '');
@@ -109,7 +109,7 @@ BEGIN
 
   -- only inbound routes can have load balancing associated with it
   IF (v_groupid = 9000) THEN
-    IF (v_description LIKE '%lb_enabled:1%') THEN
+    IF (v_description REGEXP 'lb_enabled:1(,|$)') THEN
       UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = v_gwgroupid;
     ELSE
       UPDATE dsip_gwgroup2lb SET enabled = '0' WHERE gwgroupid = v_gwgroupid;

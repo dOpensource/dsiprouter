@@ -106,6 +106,12 @@ class GatewayGroups(object):
 
     id = Column(UnsignedInt, primary_key=True, autoincrement=True, nullable=False)
 
+    class FILTER(Enum):
+        ENDPOINT = f'type:{settings.FLT_PBX}(,|$)'
+        CARRIER = f'type:{settings.FLT_CARRIER}(,|$)'
+        MSTEAMS = f'type:{settings.FLT_MSTEAMS}(,|$)'
+        ENDPOINT_OR_CARRIER = f'type:({settings.FLT_PBX}|{settings.FLT_CARRIER})(,|$)'
+
     def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER, dlg_timeout=None):
         description = {'name': name, 'type': type}
         if dlg_timeout is not None:
