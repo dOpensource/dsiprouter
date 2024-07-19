@@ -88,6 +88,7 @@
     }
 
     var requestPayload = {};
+
     requestPayload.name = modal_body.find('.name').val();
     if (action === "PUT") {
       requestPayload.name = modal_body.find('.new_name').val();
@@ -114,18 +115,16 @@
         auth.pass = modal_body.find(".auth_password").val();
       }
     }
-
     auth.r_username = modal_body.find(".r_username").val();
     auth.auth_username = modal_body.find(".auth_username").val();
     auth.auth_password = auth.pass
     auth.auth_domain = modal_body.find(".auth_domain").val();
     auth.auth_proxy = modal_body.find(".auth_proxy").val();
-
     requestPayload.auth = auth;
 
+    requestPayload.lb_enabled = modal_body.find('.lb_enabled').val();
     requestPayload.strip = modal_body.find(".strip").val();
     requestPayload.prefix = modal_body.find(".prefix").val();
-
 
     // Put into JSON Message and send over
     $.ajax({
