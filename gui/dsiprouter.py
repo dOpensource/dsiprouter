@@ -407,7 +407,7 @@ def deleteCarriers():
 
         # remove from carrier from dispatcher
         db.query(Dispatcher).filter(
-            (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))
+            Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
         ).delete(synchronize_session=False)
 
         # remove carrier from gwlist in carrier group

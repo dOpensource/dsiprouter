@@ -87,10 +87,14 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 socket_addr = settings.INTERNAL_IP_ADDR
             else:
                 socket_addr = settings.EXTERNAL_IP_ADDR
-            for hostname,sipuri in zip(settings.MSTEAMS_DNS_ENDPOINTS,msteams_endpoint_uris):
-                dispatcher = Dispatcher(setid=PBXDomain.id, destination=sipuri,
-                    attrs="socket=tls:{}:5061;ping_from=sip:{}".format(socket_addr, domain),flags=Dispatcher.FLAGS['KEEP_ALIVE'],
-                    description='msteam_endpoint:{}'.format(hostname))
+            for hostname, sipuri in zip(settings.MSTEAMS_DNS_ENDPOINTS,msteams_endpoint_uris):
+                dispatcher = Dispatcher(
+                    setid=PBXDomain.id,
+                    destination=sipuri,
+                    attrs=f'socket=tls:{socket_addr}:5061;ping_from=sip:{domain}',
+                    flags=Dispatcher.FLAGS['KEEP_ALIVE'],
+                    name=hostname
+                )
                 db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
@@ -124,7 +128,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
         endpointGroup['endpoints'] = endpoints
         addEndpointGroups(endpointGroup, "msteams", domain)
 
-    # Implement external authentiction to either Realtime DB or Local Subscriber table
+    # Implement external authentication to either Realtime DB or Local Subscriber table
     else:
         # Attributes to specify that the domain was created manually
         PBXDomainAttr1 = DomainAttrs(did=domain, name='pbx_list', value=str(pbx_list))
@@ -138,7 +142,11 @@ def addDomain(domain, authtype, pbxs, notes, db):
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
         PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
         for pbx_id in pbx_list:
-            dispatcher = Dispatcher(setid=PBXDomain.id, destination=gatewayIdToIP(pbx_id, db), description='pbx_id:{}'.format(pbx_id))
+            dispatcher = Dispatcher(
+                setid=PBXDomain.id,
+                destination=gatewayIdToIP(pbx_id, db),
+                gwid=pbx_id
+            )
             db.add(dispatcher)
 
         db.add(PBXDomainAttr1)

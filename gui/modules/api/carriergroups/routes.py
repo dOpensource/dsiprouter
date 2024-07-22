@@ -1,4 +1,7 @@
-import os, importlib.util
+import sys, os, importlib.util
+# make sure the generated source files are imported instead of the template ones
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 from flask import Blueprint, jsonify
 from database import startSession, DummySession, GatewayGroups
 from shared import debugEndpoint, StatusCodes, getRequestData, strFieldsToDict
@@ -240,15 +243,7 @@ def addCarrierGroups(id=None):
 
         # Add endpoints
         for endpoint in endpoints:
-            carrier_data = {}
-            carrier_data['gwgroup'] = gwgroupid
-            carrier_data['name'] = endpoint['name'] if 'name' in endpoint else ''
-            carrier_data['ip_addr'] = endpoint['hostname'] if 'hostname' in endpoint else ''
-            carrier_data['strip'] = endpoint['strip'] if 'strip' in endpoint else data['strip']
-            # Convert to a string
-            carrier_data['strip'] = str(carrier_data['strip'])
-            carrier_data['prefix'] = endpoint['prefix'] if 'prefix' in endpoint else data['prefix']
-            addUpdateCarriers(carrier_data)
+            addUpdateCarriers(endpoint)
 
         gwgroup_data = {}
         gwgroup_data['gwgroupid'] = gwgroupid

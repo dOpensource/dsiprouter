@@ -1,7 +1,10 @@
-import json
+import json, sys
 from flask import request, session, redirect, url_for, render_template
 from sqlalchemy import exc as sql_exceptions, text, cast, Integer, func
 from werkzeug import exceptions as http_exceptions
+# make sure the generated source files are imported instead of the template ones
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 import settings
 from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
 from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups, Dispatcher, DsipGwgroup2LB, \
@@ -268,8 +271,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                     Gateways.gwid == gwid
                 ).outerjoin(
                     Dispatcher,
-                    Gateways.description.regexp_match(func.concat('gwgroup:', Dispatcher.setid, '(,|$)')) &
-                    (Dispatcher.destination == func.concat('sip:', Gateways.address))
+                    Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
                 ).first()
             ]
             rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
@@ -292,7 +294,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                     Gateways.gwid.in_(gwlist)
                 ).outerjoin(
                     Dispatcher,
-                    (Dispatcher.setid == gwgroup) & (Dispatcher.destination == func.concat('sip:', Gateways.address))
+                    Dispatcher.description.regexp_match(func.CONCAT('gwid=', Gateways.gwid, '(;|$)'))
                 ).all()
                 rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
                 for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
@@ -311,8 +313,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 Gateways.type == settings.FLT_CARRIER
             ).outerjoin(
                 Dispatcher,
-                Gateways.description.regexp_match(func.concat('gwgroup:', Dispatcher.setid, '(,|$)')) &
-                (Dispatcher.destination == func.concat('sip:', Gateways.address))
+                Dispatcher.description.regexp_match(func.CONCAT('gwid=', Gateways.gwid, '(;|$)'))
             ).all()
             rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
             for gateway in carriers:
@@ -408,8 +409,7 @@ def addUpdateCarriers(data=None):
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
                 # Create dispatcher group with the set id being the gateway group id
-                # The weight field has to be set
-                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, description=name, rweight=rweight)
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
                 db.add(dispatcher)
             else:
                 Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
@@ -433,7 +433,7 @@ def addUpdateCarriers(data=None):
 
             # update dispatcher entry
             db.query(Dispatcher).filter(
-                (Dispatcher.setid == gwgroup) & (Dispatcher.destination == "sip:{}".format(sip_addr))
+                Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
             ).update({
                 "attrs": Dispatcher.buildAttrs(rweight=rweight)
             }, synchronize_session=False)
