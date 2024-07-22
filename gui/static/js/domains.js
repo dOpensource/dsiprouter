@@ -17,8 +17,27 @@
       modal_body.find(".pbx_list").attr('disabled', false);
       modal_body.find(".notes").attr('disabled', false);
       modal_body.find(":submit").attr('disabled', false);
-
     }
+  }
+
+  /* validate domain form fields before submitting */
+  function validateDomainFormFields(fields) {
+    var domainlist_obj = fields.get('domainlist');
+    // empty string will return [''] here
+    var domains = domainlist_obj.val().split(',');
+    for (var i=0; i<domains.length; i++) {
+      if (domains[i].trim() === '') {
+        return {
+          result: false,
+          err_node: domainlist_obj,
+          err_msg: "Domain can not be an empty string"
+        };
+      }
+    }
+
+    return {
+      result: true
+    };
   }
 
   $(document).ready(function() {
@@ -120,5 +139,20 @@
       processDomainType(type);
     });
 
+    $('#addDomainForm').submit(function(ev) {
+      if (!validateFields(this, validateDomainFormFields)) {
+        // prevent form from submitting if it failed
+        ev.preventDefault();
+        // prevent jquery from propagating event
+        return false;
+      }
+    });
+
+    $('#updateDomainForm').submit(function(ev) {
+      if (!validateFields(this, validateDomainFormFields)) {
+        ev.preventDefault();
+        return false;
+      }
+    });
   });
 })(window, document);

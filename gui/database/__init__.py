@@ -9,7 +9,7 @@ from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer, event
-from sqlalchemy.orm import registry, sessionmaker, scoped_session
+from sqlalchemy.orm import registry, sessionmaker, scoped_session, validates
 from sqlalchemy.sql import text
 import settings
 from shared import IO, debugException, dictToStrFields, rowToDict, objToDict
@@ -471,7 +471,11 @@ class Domain(object):
         self.did = did
         self.last_modified = last_modified
 
-    pass
+    @validates("domain")
+    def __validateDomain(self, key, domain):
+        if domain == '':
+            raise ValueError('empty string is an invalid domain')
+        return domain
 
 
 class DomainAttrs(object):

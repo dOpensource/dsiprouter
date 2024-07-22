@@ -313,10 +313,9 @@ def addUpdateDomain():
 
         # Adding
         if len(domain_id) <= 0:
-            domainlist = domainlist.split(",")
-
-            for domain in domainlist:
-                addDomain(domain.strip(), authtype, pbxs, notes, db)
+            domains = [domain.strip() for domain in domainlist.split(",")]
+            for domain in domains:
+                addDomain(domain, authtype, pbxs, notes, db)
         # Updating
         else:
             # remove old entries and add new ones
