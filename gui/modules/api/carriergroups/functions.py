@@ -202,12 +202,11 @@ def addUpdateCarrierGroups(data=None):
         fields = strFieldsToDict(Gwgroup.description)
         fields['lb'] = gwgroup
         Gwgroup.description = dictToStrFields(fields)
-        if lb_enabled:
-            db.flush()
-            db.execute(
-                text("UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = :gwgroupid"),
-                {'gwgroupid': gwgroup}
-            )
+        db.flush()
+        db.execute(
+            text("UPDATE dsip_gwgroup2lb SET enabled = :enabled WHERE gwgroupid = :gwgroupid"),
+            {'enabled': lb_enabled, 'gwgroupid': gwgroup}
+        )
 
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
