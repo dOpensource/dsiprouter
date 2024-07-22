@@ -11,9 +11,6 @@
   if (typeof toggleElemDisabled === "undefined") {
     throw new Error("toggleElemDisabled() is required and is not defined");
   }
-  if (typeof validateFields === "undefined") {
-    throw new Error("validateFields() is required and is not defined");
-  }
 
   // throw an error if required globals not defined
   if (typeof API_BASE_URL === "undefined") {
