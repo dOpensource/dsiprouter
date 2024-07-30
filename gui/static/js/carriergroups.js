@@ -11,9 +11,6 @@
   if (typeof toggleElemDisabled === "undefined") {
     throw new Error("toggleElemDisabled() is required and is not defined");
   }
-  if (typeof validateFields === "undefined") {
-    throw new Error("validateFields() is required and is not defined");
-  }
 
   // throw an error if required globals not defined
   if (typeof API_BASE_URL === "undefined") {
@@ -88,6 +85,7 @@
     }
 
     var requestPayload = {};
+
     requestPayload.name = modal_body.find('.name').val();
     if (action === "PUT") {
       requestPayload.name = modal_body.find('.new_name').val();
@@ -114,18 +112,16 @@
         auth.pass = modal_body.find(".auth_password").val();
       }
     }
-
     auth.r_username = modal_body.find(".r_username").val();
     auth.auth_username = modal_body.find(".auth_username").val();
     auth.auth_password = auth.pass
     auth.auth_domain = modal_body.find(".auth_domain").val();
     auth.auth_proxy = modal_body.find(".auth_proxy").val();
-
     requestPayload.auth = auth;
 
+    requestPayload.lb_enabled = modal_body.find('.lb_enabled').val();
     requestPayload.strip = modal_body.find(".strip").val();
     requestPayload.prefix = modal_body.find(".prefix").val();
-
 
     // Put into JSON Message and send over
     $.ajax({
@@ -562,7 +558,8 @@
         gwid = $(data).find('tr.new_gw').data('gwid');
         gwgroup = modal.find('.gwgroup').val();
         td_gwlist = $('#carrier-groups').find('tr[data-gwgroup="' + gwgroup + '"] > td.gwlist');
-        gwlist_arr = td_gwlist.text().split(',');
+        gwlist = td_gwlist.text();
+        gwlist_arr = gwlist === '' ? [] : gwlist.split(',');
         gwlist_arr.push(gwid);
         gwlist = gwlist_arr.join(',');
         td_gwlist.text(gwlist);
@@ -571,7 +568,8 @@
         gwid = modal.find('.gwid').val();
         gwgroup = modal.find('.gwgroup').val();
         td_gwlist = $('#carrier-groups').find('tr[data-gwgroup="' + gwgroup + '"] > td.gwlist');
-        gwlist_arr = td_gwlist.text().split(',');
+        gwlist = td_gwlist.text();
+        gwlist_arr = gwlist === '' ? [] : gwlist.split(',');
         gwlist_arr.splice(gwlist_arr.indexOf(gwid), 1);
         gwlist = gwlist_arr.join(',');
         td_gwlist.text(gwlist);

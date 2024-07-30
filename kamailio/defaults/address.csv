@@ -1,75 +1,75 @@
-null;FLT_MSTEAMS;52.114.132.46;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.14.70;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.148.0;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.16.74;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.20.29;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.7.24;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.75.24;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.114.76.76;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.127.64.33;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.127.64.34;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.127.88.59;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;52.127.92.64;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;sip.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;sip2.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;sip3.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;sip.pstnhub.dod.teams.microsoft.us;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_MSTEAMS;sip.pstnhub.gov.teams.microsoft.us;32;0;name:msteams-sbc,gwgroup:0
-null;FLT_CARRIER;54.172.60.0;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.172.60.1;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.172.60.2;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.172.60.3;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.0;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.1;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.2;32;0;name:Twilio NA Inbound,gwgroup:1
-null;FLT_CARRIER;54.244.51.3;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.60.0;23;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;34.203.250.0;23;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;54.244.51.0;24;0;name:Twilio NA Inbound Carrier,gwgroup:1
-null;FLT_CARRIER;52.41.52.34;32;0;name:Skyetel North West Inbound,gwgroup:2
-null;FLT_CARRIER;52.8.201.128;32;0;name:Skyetel South West Inbound,gwgroup:2
-null;FLT_CARRIER;52.60.138.31;32;0;name:Skyetel North East Inbound,gwgroup:2
-null;FLT_CARRIER;50.17.48.216;32;0;name:Skyetel South East Inbound,gwgroup:2
-null;FLT_CARRIER;35.156.192.164;32;0;name:Skyetel Europe Inbound,gwgroup:2
-null;FLT_CARRIER;term.skyetel.com;32;0;name:Skyetel 1st Priority Outbound Call,gwgroup:2
-null;FLT_CARRIER;52.41.52.34;32;0;name:Skyetel 2nd Priority Outbound Call,gwgroup:2
-null;FLT_CARRIER;52.8.201.128;32;0;name:Skyetel 3rd Priority Outbound Call,gwgroup:2
-null;FLT_CARRIER;50.17.48.216;32;0;name:Skyetel 4rd Priority Outbound Call,gwgroup:2
-null;FLT_CARRIER;52.32.223.28;32;0;name:Skyetel North West High Cost Outbound Traffic,gwgroup:2
-null;FLT_CARRIER;52.4.178.107;32;0;name:Skyetel South East High Cost Outbound Traffic,gwgroup:2
-null;FLT_CARRIER;147.75.60.160;32;0;name:Flowroute US-West-WA,gwgroup:3
-null;FLT_CARRIER;34.210.91.112;32;0;name:Flowroute US-West-OR,gwgroup:3
-null;FLT_CARRIER;147.75.65.192;32;0;name:Flowroute US-East-NJ,gwgroup:3
-null;FLT_CARRIER;34.226.36.32;32;0;name:Flowroute US-East-VA,gwgroup:3
-null;FLT_CARRIER;81.201.82.45;32;0;name:Voxbone Belgium,gwgroup:4
-null;FLT_CARRIER;81.201.84.195;32;0;name:Voxbone LA,gwgroup:4
-null;FLT_CARRIER;81.201.85.45;32;0;name:Voxbone NYC,gwgroup:4
-null;FLT_CARRIER;81.201.83.45;32;0;name:Voxbone Germany,gwgroup:4
-null;FLT_CARRIER;81.201.86.45;32;0;name:Voxbone Hong Kong,gwgroup:4
-null;FLT_CARRIER;81.201.84.195;32;0;name:Voxbone Australia,gwgroup:4
-null;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.173.22;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;209.166.128.200;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;192.240.151.100;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.173.31;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.174.20;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;209.166.154.70;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.174.65;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.173.23;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;209.166.128.201;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;192.240.151.101;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.173.65;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.174.65;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.174.21;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;209.166.154.71;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
-null;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
-null;FLT_CARRIER;64.136.173.22;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
-null;FLT_CARRIER;209.166.128.200;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
-null;FLT_CARRIER;192.240.151.100;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
-null;FLT_CARRIER;72.15.219.140;32;0;name:Thinq Carrier,gwgroup:7
-null;FLT_CARRIER;216.147.191.157;32;0;name:Voxtelesys Carrier,gwgroup:8
-null;FLT_CARRIER;64.34.181.47;32;0;name:Les.net Carrier,gwgroup:9
-null;FLT_CARRIER;206.80.250.100;32;0;name:ThinkTel,gwgroup:10
-null;FLT_CARRIER;208.68.17.52;32;0;name:ThinkTel,gwgroup:10
-null;FLT_CARRIER;209.197.130.80;32;0;name:ThinkTel,gwgroup:10
+1;FLT_MSTEAMS;52.114.132.46;32;0;name:msteams-sbc,gwgroup:0
+2;FLT_MSTEAMS;52.114.14.70;32;0;name:msteams-sbc,gwgroup:0
+3;FLT_MSTEAMS;52.114.148.0;32;0;name:msteams-sbc,gwgroup:0
+4;FLT_MSTEAMS;52.114.16.74;32;0;name:msteams-sbc,gwgroup:0
+5;FLT_MSTEAMS;52.114.20.29;32;0;name:msteams-sbc,gwgroup:0
+6;FLT_MSTEAMS;52.114.7.24;32;0;name:msteams-sbc,gwgroup:0
+7;FLT_MSTEAMS;52.114.75.24;32;0;name:msteams-sbc,gwgroup:0
+8;FLT_MSTEAMS;52.114.76.76;32;0;name:msteams-sbc,gwgroup:0
+9;FLT_MSTEAMS;52.127.64.33;32;0;name:msteams-sbc,gwgroup:0
+10;FLT_MSTEAMS;52.127.64.34;32;0;name:msteams-sbc,gwgroup:0
+11;FLT_MSTEAMS;52.127.88.59;32;0;name:msteams-sbc,gwgroup:0
+12;FLT_MSTEAMS;52.127.92.64;32;0;name:msteams-sbc,gwgroup:0
+13;FLT_MSTEAMS;sip.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:0
+14;FLT_MSTEAMS;sip2.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:0
+15;FLT_MSTEAMS;sip3.pstnhub.microsoft.com;32;0;name:msteams-sbc,gwgroup:0
+16;FLT_MSTEAMS;sip.pstnhub.dod.teams.microsoft.us;32;0;name:msteams-sbc,gwgroup:0
+17;FLT_MSTEAMS;sip.pstnhub.gov.teams.microsoft.us;32;0;name:msteams-sbc,gwgroup:0
+18;FLT_CARRIER;54.172.60.0;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+19;FLT_CARRIER;54.172.60.1;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+20;FLT_CARRIER;54.172.60.2;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+21;FLT_CARRIER;54.172.60.3;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+22;FLT_CARRIER;54.244.51.0;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+23;FLT_CARRIER;54.244.51.1;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+24;FLT_CARRIER;54.244.51.2;32;0;name:Twilio NA Inbound,gwgroup:1
+25;FLT_CARRIER;54.244.51.3;32;0;name:Twilio NA Inbound Carrier,gwgroup:1
+26;FLT_CARRIER;54.244.60.0;23;0;name:Twilio NA Inbound Carrier,gwgroup:1
+27;FLT_CARRIER;34.203.250.0;23;0;name:Twilio NA Inbound Carrier,gwgroup:1
+28;FLT_CARRIER;54.244.51.0;24;0;name:Twilio NA Inbound Carrier,gwgroup:1
+29;FLT_CARRIER;52.41.52.34;32;0;name:Skyetel North West Inbound,gwgroup:2
+30;FLT_CARRIER;52.8.201.128;32;0;name:Skyetel South West Inbound,gwgroup:2
+31;FLT_CARRIER;52.60.138.31;32;0;name:Skyetel North East Inbound,gwgroup:2
+32;FLT_CARRIER;50.17.48.216;32;0;name:Skyetel South East Inbound,gwgroup:2
+33;FLT_CARRIER;35.156.192.164;32;0;name:Skyetel Europe Inbound,gwgroup:2
+34;FLT_CARRIER;term.skyetel.com;32;0;name:Skyetel 1st Priority Outbound Call,gwgroup:2
+35;FLT_CARRIER;52.41.52.34;32;0;name:Skyetel 2nd Priority Outbound Call,gwgroup:2
+36;FLT_CARRIER;52.8.201.128;32;0;name:Skyetel 3rd Priority Outbound Call,gwgroup:2
+37;FLT_CARRIER;50.17.48.216;32;0;name:Skyetel 4rd Priority Outbound Call,gwgroup:2
+38;FLT_CARRIER;52.32.223.28;32;0;name:Skyetel North West High Cost Outbound Traffic,gwgroup:2
+39;FLT_CARRIER;52.4.178.107;32;0;name:Skyetel South East High Cost Outbound Traffic,gwgroup:2
+40;FLT_CARRIER;147.75.60.160;32;0;name:Flowroute US-West-WA,gwgroup:3
+41;FLT_CARRIER;34.210.91.112;32;0;name:Flowroute US-West-OR,gwgroup:3
+42;FLT_CARRIER;147.75.65.192;32;0;name:Flowroute US-East-NJ,gwgroup:3
+43;FLT_CARRIER;34.226.36.32;32;0;name:Flowroute US-East-VA,gwgroup:3
+44;FLT_CARRIER;81.201.82.45;32;0;name:Voxbone Belgium,gwgroup:4
+45;FLT_CARRIER;81.201.84.195;32;0;name:Voxbone LA,gwgroup:4
+46;FLT_CARRIER;81.201.85.45;32;0;name:Voxbone NYC,gwgroup:4
+47;FLT_CARRIER;81.201.83.45;32;0;name:Voxbone Germany,gwgroup:4
+48;FLT_CARRIER;81.201.86.45;32;0;name:Voxbone Hong Kong,gwgroup:4
+49;FLT_CARRIER;81.201.84.195;32;0;name:Voxbone Australia,gwgroup:4
+50;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+51;FLT_CARRIER;64.136.173.22;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+52;FLT_CARRIER;209.166.128.200;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+53;FLT_CARRIER;192.240.151.100;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+54;FLT_CARRIER;64.136.173.31;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+55;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+56;FLT_CARRIER;64.136.174.20;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+57;FLT_CARRIER;209.166.154.70;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+58;FLT_CARRIER;64.136.174.65;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+59;FLT_CARRIER;64.136.173.23;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+60;FLT_CARRIER;209.166.128.201;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+61;FLT_CARRIER;192.240.151.101;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+62;FLT_CARRIER;64.136.173.65;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+63;FLT_CARRIER;64.136.174.65;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+64;FLT_CARRIER;64.136.174.21;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+65;FLT_CARRIER;209.166.154.71;32;0;name:VoIP Innovations Inbound Carrier,gwgroup:5
+66;FLT_CARRIER;64.136.174.30;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
+67;FLT_CARRIER;64.136.173.22;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
+68;FLT_CARRIER;209.166.128.200;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
+69;FLT_CARRIER;192.240.151.100;32;0;name:VoIP Innovations Outbound Conversational Carrier,gwgroup:6
+70;FLT_CARRIER;72.15.219.140;32;0;name:Thinq Carrier,gwgroup:7
+71;FLT_CARRIER;216.147.191.157;32;0;name:Voxtelesys Carrier,gwgroup:8
+72;FLT_CARRIER;64.34.181.47;32;0;name:Les.net Carrier,gwgroup:9
+73;FLT_CARRIER;206.80.250.100;32;0;name:ThinkTel,gwgroup:10
+74;FLT_CARRIER;208.68.17.52;32;0;name:ThinkTel,gwgroup:10
+75;FLT_CARRIER;209.197.130.80;32;0;name:ThinkTel,gwgroup:10

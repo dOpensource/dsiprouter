@@ -1,18 +1,89 @@
-from flask import request
-from sqlalchemy import exc as sql_exceptions, text
+import json, sys
+from flask import request, session, redirect, url_for, render_template
+from sqlalchemy import exc as sql_exceptions, text, cast, Integer, func
 from werkzeug import exceptions as http_exceptions
+# make sure the generated source files are imported instead of the template ones
+if sys.path[0] != '/etc/dsiprouter/gui':
+    sys.path.insert(0, '/etc/dsiprouter/gui')
 import settings
 from shared import debugException, debugEndpoint, stripDictVals, strFieldsToDict, dictToStrFields, showError
-from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups
+from database import startSession, DummySession, Gateways, Address, UAC, GatewayGroups, Dispatcher, DsipGwgroup2LB, \
+    OutboundRoutes
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from util.networking import safeUriToHost, safeFormatSipUri, safeStripPort, encodeSipUser
+
+
+def displayCarrierGroups(gwgroup=None):
+    """
+    Display the carrier groups in the view
+    :param gwgroup:
+    """
+
+    # TODO: track related dr_rules and update lists on delete
+
+    db = DummySession()
+
+    try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
+
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        db = startSession()
+
+        query = db.query(
+            GatewayGroups.id,
+            GatewayGroups.description,
+            GatewayGroups.gwlist,
+            UAC.r_username,
+            UAC.auth_password,
+            UAC.r_domain,
+            UAC.auth_username,
+            UAC.auth_proxy,
+            cast(DsipGwgroup2LB.enabled, Integer).label('lb_enabled')
+        ).outerjoin(
+            UAC, GatewayGroups.id == UAC.l_uuid
+        ).outerjoin(
+            DsipGwgroup2LB, GatewayGroups.id == DsipGwgroup2LB.gwgroupid
+        ).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.CARRIER.value)
+        )
+
+        # res must be a list()
+        if gwgroup is not None and gwgroup != "":
+            res = [
+                query.filter(
+                    GatewayGroups.id == gwgroup
+                ).first()
+            ]
+        else:
+            res = query.all()
+
+        return render_template('carriergroups.html', rows=res)
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
 
 def addUpdateCarrierGroups(data=None):
     """
     Add or Update a group of carriers
     """
-
-    global displayCarrierGroups
 
     db = DummySession()
 
@@ -22,11 +93,17 @@ def addUpdateCarrierGroups(data=None):
 
         db = startSession()
 
-        if data is not None:
+        if data is None:
+            # called from flask url router, make sure user is logged in
+            # TODO: toss this in a decorator func with error handling and use for gui auth checks
+            if not session.get('logged_in'):
+                return redirect(url_for('index'))
+
+            # grab data from gui form
+            form = stripDictVals(request.form.to_dict())
+        else:
             # Set the form variables to data parameter
             form = data
-        else:
-            form = stripDictVals(request.form.to_dict())
 
         gwgroup = form['gwgroup']
         name = form['name']
@@ -84,7 +161,9 @@ def addUpdateCarrierGroups(data=None):
                 gwgroup_fields['name'] = name
                 Gwgroup.description = dictToStrFields(gwgroup_fields)
 
-                Addr = db.query(Address).filter(Address.tag.contains("name:{}-uac".format(old_name))).first()
+                Addr = db.query(Address).filter(
+                    Address.tag.regexp_match(f'name:{old_name}-uac(,|$)')
+                ).first()
                 if Addr is not None:
                     addr_fields = strFieldsToDict(Addr.tag)
                     addr_fields['name'] = 'name:{}-uac'.format(new_name)
@@ -106,26 +185,28 @@ def addUpdateCarrierGroups(data=None):
                     db.add(Uacreg)
 
                 # update address if exists, otherwise create
-                if not db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).update(
-                    {'ip_addr': auth_domain}, synchronize_session=False):
+                if not db.query(Address).filter(
+                    Address.tag.contains("name:{}-uac".format(name))
+                ).update({'ip_addr': auth_domain}, synchronize_session=False):
                     Addr = Address(name + "-uac", auth_domain, 32, settings.FLT_CARRIER, gwgroup=gwgroup)
                     db.add(Addr)
             else:
                 # delete uacreg and address if they exist
                 db.query(UAC).filter(UAC.l_uuid == gwgroup).delete(synchronize_session=False)
-                db.query(Address).filter(Address.tag.contains("name:{}-uac".format(name))).delete(synchronize_session=False)
+                db.query(Address).filter(
+                    Address.tag.regexp_match(f'name:{name}-uac(,|$)')
+                ).delete(synchronize_session=False)
 
         # toggle load balancing based on user input
         # TODO: this WILL be changed in the future when we refactor load balancing
         fields = strFieldsToDict(Gwgroup.description)
         fields['lb'] = gwgroup
         Gwgroup.description = dictToStrFields(fields)
-        if lb_enabled:
-            db.flush()
-            db.execute(
-                text("UPDATE dsip_gwgroup2lb SET enabled = '1' WHERE gwgroupid = :gwgroupid"),
-                {'gwgroupid': gwgroup}
-            )
+        db.flush()
+        db.execute(
+            text("UPDATE dsip_gwgroup2lb SET enabled = :enabled WHERE gwgroupid = :gwgroupid"),
+            {'enabled': lb_enabled, 'gwgroupid': gwgroup}
+        )
 
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
@@ -155,34 +236,142 @@ def addUpdateCarrierGroups(data=None):
     finally:
         db.close()
 
-def addUpdateCarriers(data=None):
+def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
     """
-    Add or Update a carrier
+    Display the carriers table
+    :param gwid:
+    :param gwgroup:
+    :param newgwid:
     """
-
-    global displayCarriers
 
     db = DummySession()
-    newgwid = None
 
     try:
+        if not session.get('logged_in'):
+            return redirect(url_for('index'))
 
         if (settings.DEBUG):
             debugEndpoint()
 
         db = startSession()
 
-        if data is not None:
+        # carriers is a list of carriers matching query
+        # carrier_routes is a list of associated rules for each carrier
+        carriers = []
+        carrier_rules = []
+
+        # get carrier by id
+        if gwid is not None:
+            carriers = [
+                db.query(
+                    Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                    Dispatcher.attrs.label("dispatcher_attrs")
+                ).filter(
+                    Gateways.gwid == gwid
+                ).outerjoin(
+                    Dispatcher,
+                    Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
+                ).first()
+            ]
+            rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+            gateway_rules = {}
+            for rule in rules:
+                if str(gwid) in filter(None, rule.gwlist.split(',')):
+                    gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+            carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
+
+        # get carriers by carrier group
+        elif gwgroup is not None:
+            Gatewaygroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroup).first()
+            # check if any endpoints in group b4 converting to list(int)
+            if Gatewaygroup is not None and Gatewaygroup.gwlist != "":
+                gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
+                carriers = db.query(
+                    Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                    Dispatcher.attrs.label("dispatcher_attrs")
+                ).filter(
+                    Gateways.gwid.in_(gwlist)
+                ).outerjoin(
+                    Dispatcher,
+                    Dispatcher.description.regexp_match(func.CONCAT('gwid=', Gateways.gwid, '(;|$)'))
+                ).all()
+                rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+                for gateway_id in filter(None, Gatewaygroup.gwlist.split(",")):
+                    gateway_rules = {}
+                    for rule in rules:
+                        if gateway_id in filter(None, rule.gwlist.split(',')):
+                            gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                    carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
+
+        # get all carriers
+        else:
+            carriers = db.query(
+                Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                Dispatcher.attrs.label("dispatcher_attrs")
+            ).filter(
+                Gateways.type == settings.FLT_CARRIER
+            ).outerjoin(
+                Dispatcher,
+                Dispatcher.description.regexp_match(func.CONCAT('gwid=', Gateways.gwid, '(;|$)'))
+            ).all()
+            rules = db.query(OutboundRoutes).filter(OutboundRoutes.groupid == settings.FLT_OUTBOUND).all()
+            for gateway in carriers:
+                gateway_rules = {}
+                for rule in rules:
+                    if str(gateway.gwid) in filter(None, rule.gwlist.split(',')):
+                        gateway_rules[rule.ruleid] = strFieldsToDict(rule.description)['name']
+                carrier_rules.append(json.dumps(gateway_rules, separators=(',', ':')))
+
+        return render_template('carriers.html', rows=carriers, routes=carrier_rules, gwgroup=gwgroup, new_gwid=newgwid,
+            kam_reload_required=getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'])
+
+    except sql_exceptions.SQLAlchemyError as ex:
+        debugException(ex)
+        error = "db"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        db.rollback()
+        db.flush()
+        return showError(type='http', code=ex.code, msg=ex.description)
+    except Exception as ex:
+        debugException(ex)
+        error = "server"
+        db.rollback()
+        db.flush()
+        return showError(type=error)
+    finally:
+        db.close()
+
+def addUpdateCarriers(data=None):
+    """
+    Add or Update a carrier
+    """
+
+    db = DummySession()
+    newgwid = None
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        db = startSession()
+
+        if data is None:
+            # called from flask url router, make sure user is logged in
+            # TODO: toss this in a decorator func with error handling and use for gui auth checks
+            if not session.get('logged_in'):
+                return redirect(url_for('index'))
+            # grab data from gui form
+            form = stripDictVals(request.form.to_dict())
+        else:
             # Set the form variables to data parameter
             form = data
-            # Convert gwgroup to a string
-            gwgroup = form['gwgroup'] if 'gwgroup' in form else ''
-            if gwgroup is not None:
-                form['gwgroup'] = str(gwgroup)
-        else:
-            form = stripDictVals(request.form.to_dict())
-
-
+            # match what the gui would send us
+            if 'gwgroup' in form:
+                form['gwgroup'] = str(form['gwgroup'])
 
         gwid = form['gwid'] if 'gwid' in form else ''
         gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
@@ -190,6 +379,7 @@ def addUpdateCarriers(data=None):
         hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
+        rweight = form['rweight'] if len(form['rweight']) > 0 else 0
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
@@ -217,6 +407,9 @@ def addUpdateCarriers(data=None):
                 gwlist.append(gwid)
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
+                # Create dispatcher group with the set id being the gateway group id
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
+                db.add(dispatcher)
             else:
                 Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
                 db.add(Addr)
@@ -236,6 +429,13 @@ def addUpdateCarriers(data=None):
             gw_fields['name'] = name
             if len(gwgroup) <= 0:
                 gw_fields['gwgroup'] = gwgroup
+
+            # update dispatcher entry
+            db.query(Dispatcher).filter(
+                Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
+            ).update({
+                "attrs": Dispatcher.buildAttrs(rweight=rweight)
+            }, synchronize_session=False)
 
             # if address exists update
             address_exists = False
@@ -270,8 +470,10 @@ def addUpdateCarriers(data=None):
 
         db.commit()
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+
         if data is None:
             return displayCarriers(gwgroup=gwgroup, newgwid=newgwid)
+        return gwid
 
     except sql_exceptions.SQLAlchemyError as ex:
         debugException(ex)
@@ -281,10 +483,9 @@ def addUpdateCarriers(data=None):
         return showError(type=error)
     except http_exceptions.HTTPException as ex:
         debugException(ex)
-        error = "http"
         db.rollback()
         db.flush()
-        return showError(type=error)
+        return showError(type='http', code=ex.code, msg=ex.description)
     except Exception as ex:
         debugException(ex)
         error = "server"
