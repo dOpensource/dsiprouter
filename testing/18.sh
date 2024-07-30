@@ -31,6 +31,6 @@ kamcmd htable.delete ipban $source_ip
 # TODO: Add a test to validate that the Server user agent is no longer sento
 
 # Remove IP from Carrier table
-mysql kamailio -e "delete from address where tag like '%Smoke Test Carrier%';"
+mysql kamailio -e "DELETE FROM address WHERE tag LIKE '%name:Smoke Test Carrier%';"
 
 process_result "$unitname" $ret 
