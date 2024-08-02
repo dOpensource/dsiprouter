@@ -3575,11 +3575,21 @@ function updatePermissions() {
 
     # no args given set permissions for all services
     if (( $# == 0 )); then
-        setDnsmasqPerms
-        setNginxPerms
-        setKamailioPerms
-        setDsiprouterPerms
-        setRtpenginePerms
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
+            setDnsmasqPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]; then
+            setNginxPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+            setKamailioPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+            setDsiprouterPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]; then
+            setRtpenginePerms
+        fi
         setCertPerms
         return 0
     fi
