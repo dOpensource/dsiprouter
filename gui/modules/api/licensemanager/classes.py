@@ -21,6 +21,8 @@ def wcApiPropagateHttpError(method):
 class WoocommerceError(requests.HTTPError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+    def __str__(self):
+        return '\n'.join(self.response.json()['data']['errors']['lmfwc_rest_data_error'])
 
 class WoocommerceLicense(object):
     # this API key is locked down to only allow functionality below
@@ -173,7 +175,7 @@ class WoocommerceLicense(object):
         # self._order_id = r_json['data']["orderId"]
         # self._user_id = r_json['data']["userId"]
         self._expires_at = r_json['data']["expiresAt"]
-        self._valid_for = r_json['data']["validFor"]
+        self._valid_for = r_json['data']["validFor"] if r_json['data']["validFor"] != 0 else None
         # self._source = r_json['data']["source"]
         self._status = r_json['data']["status"]
         self._times_activated = r_json['data']["timesActivated"]
