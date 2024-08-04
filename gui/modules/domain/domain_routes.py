@@ -162,7 +162,7 @@ def configureMSTeams(id):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getLicenseStatus('DSIP_MSTEAMS')
+        license_status = getLicenseStatus(license_tag='DSIP_MSTEAMS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -248,7 +248,7 @@ def displayDomains():
                 'notes': notes
             }
 
-        license_status = getLicenseStatus('DSIP_MSTEAMS')
+        license_status = getLicenseStatus(license_tag='DSIP_MSTEAMS')
         if license_status == 0:
             return render_template('domains.html', rows=res, pbxlookup=pbx_lookup, hc=False)
 

@@ -3017,13 +3017,13 @@ function upgrade() {
         exit 1
     }
 
-    if (( ${RUN_FROM_GUI:-0} == 0 )); then
+    if systemctl is-active -q dsiprouter; then
         # check shared memory
         if [[ $(${PYTHON_CMD} -c "
 import os
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 from modules.api.licensemanager.functions import getLicenseStatus
-print(getLicenseStatus('DSIP_CORE'))
+print(getLicenseStatus(license_tag='DSIP_CORE'))
         ") != "3" ]]; then
             printerr 'dSPIRouter core license is not valid'
             exit 1
