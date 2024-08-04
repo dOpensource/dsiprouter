@@ -27,6 +27,7 @@ _dsiprouter() {
         installmodules
         resetpassword
         setcredentials
+        licensemanager
         help
         -h
         --help
@@ -51,6 +52,7 @@ _dsiprouter() {
         [installmodules]=''
         [resetpassword]=''
         [setcredentials]='--dsip-creds= --api-creds= --kam-creds= --mail-creds= --ipc-creds= --db-admin-creds= --session-creds='
+        [licensemanager]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -75,6 +77,7 @@ _dsiprouter() {
         [installmodules]=''
         [resetpassword]='--all --dsip-creds --api-creds --kam-creds --ipc-creds --force-instance-id'
         [setcredentials]=''
+        [licensemanager]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -99,6 +102,7 @@ _dsiprouter() {
         [installmodules]='-debug'
         [resetpassword]='-debug -q -all -dc -ac -kc -ic -fid'
         [setcredentials]='-debug --dc -ac -kc -mc -ic -dac -sc'
+        [licensemanager]='-debug -retrieve -list -activate -import -deactivate -clear -check'
         [help]=''
         [-h]=''
         [--help]=''

@@ -39,6 +39,8 @@ Install / uninstall dSIPRouter modules.
 Generate new unique credentials for dSIPRouter services.
 .IP setcredentials
 Set credentials for dSIPRouter services manually.
+.IP licensemanager
+Manage the dSIPRouter licenses for this system.
 .IP version|-v|--version
 Show the currently installed dSIPRouter version.
 .IP help|-h|--help
@@ -174,7 +176,7 @@ Restart rtpengine.
 
 .IP "configurekam options"
 -debug
-Debug mode to display configuring kamailio step by step.
+Show detailed info while configuring kamailio settings.
 
 .IP "renewsslcert options"
 -debug
@@ -238,9 +240,36 @@ Update the root/admin database connection settings.
 -sc <key>|--session-creds=<key>
 Used to set the key for the flask session manager manually.
 
-.IP "configurekam options"
+.IP "licensemanager options"
 -debug
-Show detailed info while configuring kamailio settings.
+Show detailed info while running licensemanager commands.
+
+-list
+List all the licenses associated with this machine.
+
+
+-retrieve <license_key or 'tag=<tag>'>
+Get detailed information about the license(s) either by key or by tag.
+To filter by tag the argument should be passed as "tag=THE_TAG_TO_FILTER_ON".
+Similar filtering is done for options that support filtering by tag below.
+
+-activate <license_key>
+Associate and activate a license on this system.
+
+-import <file containing keys>
+Import a file contianing license keys.
+The file should contain only license keys, one per line.
+
+-clear
+Remove all licenses associated with this machine.
+Note that this should be run before decommissioning an dSIPRouter instance.
+If the licenses are not cleared from the machine before de-provisioning then dOpenSource support staff will have to manually fix them.
+
+-deactivate <license_key or 'tag=<tag>'>
+Dissociate and deactivate a license that is currently installed on this system.
+
+-check <license_key or 'tag=<tag>'
+Check whether the license key(s) is valid and active on this machine.
 
 .SH BUGS
 Report to Github Issues: https://github.com/dOpensource/dsiprouter.git
