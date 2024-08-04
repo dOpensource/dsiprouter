@@ -69,9 +69,9 @@ KAM_TLSCFG_PATH = '/etc/kamailio/tls.cfg'
 RTP_CFG_PATH = '/etc/rtpengine/rtpengine.conf'
 
 # These constants shouldn't be modified
-# FLT_CARRIER/FLT_PBX:          type in dr_gateway table
-# FLT_OUTBOUND/FLT_INBOUND:     groupid in dr_rules table
-# FLT_LCR_MIN/FLT_FWD_MIN:      range of groupid in dr_rules table
+# FLT_CARRIER/FLT_PBX/FLT_MSTEAMS:  type in dr_gateway table
+# FLT_OUTBOUND/FLT_INBOUND:         groupid in dr_rules table
+# FLT_LCR_MIN/FLT_FWD_MIN:          range of groupid in dr_rules table
 FLT_CARRIER = 8
 FLT_PBX = 9
 FLT_MSTEAMS = 17

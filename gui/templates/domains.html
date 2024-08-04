@@ -102,7 +102,7 @@
   </div>
 
   <div class="modal-body">
-    <form action="/domains" method="POST" role="form">
+    <form id="updateDomainForm" action="/domains" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="domain_id" type="hidden" name="domain_id">
 
@@ -166,7 +166,7 @@
   </div>
 
   <div class="modal-body">
-    <form action="/domains" method="POST" role="form">
+    <form id="addDomainForm" action="/domains" method="POST" role="form">
       <input class="domain_id" type="hidden" name="domain_id">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 

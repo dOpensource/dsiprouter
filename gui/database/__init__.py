@@ -9,7 +9,7 @@ from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, MetaData, Table, Column, String, exc as sql_exceptions, Integer, event
-from sqlalchemy.orm import registry, sessionmaker, scoped_session
+from sqlalchemy.orm import registry, sessionmaker, scoped_session, validates
 from sqlalchemy.sql import text
 import settings
 from shared import IO, debugException, dictToStrFields, rowToDict, objToDict
@@ -105,6 +105,12 @@ class GatewayGroups(object):
     """
 
     id = Column(UnsignedInt, primary_key=True, autoincrement=True, nullable=False)
+
+    class FILTER(Enum):
+        ENDPOINT = f'type:{settings.FLT_PBX}(,|$)'
+        CARRIER = f'type:{settings.FLT_CARRIER}(,|$)'
+        MSTEAMS = f'type:{settings.FLT_MSTEAMS}(,|$)'
+        ENDPOINT_OR_CARRIER = f'type:({settings.FLT_PBX}|{settings.FLT_CARRIER})(,|$)'
 
     def __init__(self, name, gwlist=[], type=settings.FLT_CARRIER, dlg_timeout=None):
         description = {'name': name, 'type': type}
@@ -465,7 +471,11 @@ class Domain(object):
         self.did = did
         self.last_modified = last_modified
 
-    pass
+    @validates("domain")
+    def __validateDomain(self, key, domain):
+        if domain == '':
+            raise ValueError('empty string is an invalid domain')
+        return domain
 
 
 class DomainAttrs(object):
@@ -511,21 +521,32 @@ class Dispatcher(object):
         'SKIP_DNS': 16
     }
 
-    def __init__(self, setid, destination, flags=None, priority=None, description='', attrs=None, rweight=0, signalling='proxy', media='proxy'):
+    # TODO: setting attrs directly will be removed in the future and each possible attribute identified
+    def __init__(self, setid, destination, flags=None, priority=None, attrs=None, rweight=0, signalling='proxy', media='proxy',
+                 name=None, gwid=None):
         self.setid = setid
         self.destination = safeFormatSipUri(destination)
         self.flags = flags
         self.priority = priority
-        if attrs:
+        if attrs is not None:
             self.attrs = attrs
         else:
             self.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
-        self.description = description
+        self.description = Dispatcher.buildDescription(name, gwid)
 
     @staticmethod
     def buildAttrs(rweight=0, signalling='proxy', media='proxy'):
         attrs = {'signalling': signalling, 'media': media, 'rweight': str(rweight)}
-        return ';'.join('{}={}'.format(x, str(y)) for x, y in attrs.items())
+        return dictToStrFields(attrs, delims=(';', '='))
+
+    @staticmethod
+    def buildDescription(name=None, gwid=None):
+        description = {}
+        if name is not None:
+            description['name'] = name
+        if gwid is not None:
+            description['gwid'] = str(gwid)
+        return dictToStrFields(description, delims=(';', '='))
 
     def attrsToDict(self):
         attrs = {}

@@ -36,13 +36,13 @@ uriEncode() {
 # return the PBX ID
 addPBX() {
 	mysql kamailio -e "insert into dr_gateways values (null,9,'18.191.20.204',0,'','','name:Smoketest PBX');"
-	pbxid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest PBX%';"`
+	pbxid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description regexp 'name:Smoketest PBX(,|"'$'")';"`
 
 	return $pbxid
 }
 
 deletePBX() {
-	mysql kamailio -e "delete from dr_gateways where description like '%Smoketest PBX%';"
+	mysql kamailio -e "delete from dr_gateways where description regexp 'name:Smoketest PBX(,|"'$'")';"
 }
 
 addDomain() {

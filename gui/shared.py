@@ -73,16 +73,16 @@ def rowToDict(row):
 
     return d
 
-def strFieldsToDict(fields_str):
-    fields = {}
-    for field in fields_str.split(','):
-        if ':' in field:
-            tmp = field.split(':', 1)
-            fields[tmp[0]] = tmp[1]
-    return fields
+# TODO: we are letting these functions error out until the DB relations are refactored to support these delimiters
+def strFieldsToDict(fields_str, delims=(',', ':')):
+    return dict(
+        item.split(delims[1], maxsplit=1) for item in fields_str.split(delims[0])
+    )
 
-def dictToStrFields(fields_dict):
-    return ','.join("{}:{}".format(k, v) for k, v in fields_dict.items())
+def dictToStrFields(fields_dict, delims=(',', ':')):
+    return delims[0].join(
+        f'{k}{delims[1]}{v}' for k, v in fields_dict.items()
+    )
 
 def updateConfig(config_obj, field_dict, hot_reload=False):
     """

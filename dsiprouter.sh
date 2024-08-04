@@ -1330,11 +1330,13 @@ function configureKamailioDB() {
 
     # import default carriers
     withRootDBConn mysqlimport \
-        --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
-    withRootDBConn mysqlimport \
         --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gw_lists.csv
     withRootDBConn mysqlimport \
+        --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/address.csv
+    withRootDBConn mysqlimport \
         --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_gateways.csv
+    withRootDBConn mysqlimport \
+        --fields-terminated-by=',' --ignore-lines=0  -L $KAM_DB_NAME ${PROJECT_DSIP_DEFAULTS_DIR}/dispatcher.csv
     withRootDBConn mysqlimport \
         --fields-terminated-by=';' --ignore-lines=0  -L $KAM_DB_NAME /tmp/defaults/dr_rules.csv
 

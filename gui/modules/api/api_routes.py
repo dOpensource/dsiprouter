@@ -671,8 +671,9 @@ def deleteEndpointGroup(gwgroupid):
         if subscriber is not None:
             subscriber.delete(synchronize_session=False)
 
-        typeFilter = "%gwgroup:{}%".format(gwgroupid)
-        endpoints = db.query(Gateways).filter(Gateways.description.like(typeFilter))
+        endpoints = db.query(Gateways).filter(
+            Gateways.description.regexp_match(f'gwgroup:{gwgroupid}(,|$)')
+        )
         if endpoints is not None:
             address_ids = []
             for endpoint in endpoints:
@@ -718,7 +719,10 @@ def deleteEndpointGroup(gwgroupid):
             # Delete domain mapping, which will stop the fusionpbx sync
             domainmapping.delete(synchronize_session=False)
 
-        dispatcher = db.query(Dispatcher).filter(or_(Dispatcher.setid == gwgroupid, Dispatcher.setid == int(gwgroupid) + 1000))
+        dispatcher = db.query(Dispatcher).filter(
+            (Dispatcher.setid == gwgroupid) |
+            (Dispatcher.setid == int(gwgroupid) + 1000)
+        )
 
         if dispatcher is not None:
             dispatcher.delete(synchronize_session=False)
@@ -867,7 +871,6 @@ def listEndpointGroups():
     db = DummySession()
 
     response_data = []
-    typeFilter = "%type:{}%".format(str(settings.FLT_PBX))
 
     try:
         if settings.DEBUG:
@@ -875,7 +878,9 @@ def listEndpointGroups():
 
         db = startSession()
 
-        endpointgroups = db.query(GatewayGroups).filter(GatewayGroups.description.like(typeFilter)).all()
+        endpointgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT.value)
+        ).all()
 
         for endpointgroup in endpointgroups:
             # Grap the description field, which is comma seperated key/value pair
@@ -1115,10 +1120,17 @@ def updateEndpointGroups(gwgroupid=None):
         # Update endpoints
         # Get List of existing endpoints
         # If endpoint sent over is not in the existing endpoint list then remove it
-        gwgroup_filter = "%gwgroup:{}%".format(gwgroupid_str)
+        gwgroup_filter = f'gwgroup:{gwgroupid_str}(,|$)'
         current_endpoints_lut = {
-            x.gwid: {'address': x.address, 'type': x.type, 'description_dict': strFieldsToDict(x.description), 'attrs_dict': x.attrsToDict()} \
-            for x in db.query(Gateways).filter(Gateways.description.like(gwgroup_filter)).all()
+            x.gwid: {
+                'address': x.address,
+                'type': x.type,
+                'description_dict': strFieldsToDict(x.description),
+                'attrs_dict': x.attrsToDict()
+            } \
+            for x in db.query(Gateways).filter(
+                Gateways.description.regexp_match(gwgroup_filter)
+            ).all()
         }
         updated_endpoints = request_payload['endpoints'] if "endpoints" in request_payload else []
         unprocessed_endpoints_lut = {}
@@ -1166,10 +1178,13 @@ def updateEndpointGroups(gwgroupid=None):
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
                         signalling=signalling, media=media)
 
+                db.add(Gateway)
+                db.flush()
+
                 # Create dispatcher group with the set id being the gateway group id
                 sip_uri = f'sip:{sip_addr}'
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, description=name, rweight=rweight,
-                    signalling=signalling, media=media)
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, rweight=rweight,
+                    signalling=signalling, media=media, name=name, gwid=gwid)
                 db.add(dispatcher)
 
                 # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
@@ -1177,12 +1192,10 @@ def updateEndpointGroups(gwgroupid=None):
                     sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
                     setid_ext = gwgroupid + 1000
                     # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                    dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name, rweight=rweight,
-                        signalling=signalling, media=media)
+                    dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, rweight=rweight,
+                        signalling=signalling, media=media, name=name, gwid=gwid)
                     db.add(dispatcher)
 
-                db.add(Gateway)
-                db.flush()
                 gwlist.append(Gateway.gwid)
 
             # Process separately
@@ -1237,10 +1250,13 @@ def updateEndpointGroups(gwgroupid=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
                     signalling=signalling, media=media)
 
+            db.add(Gateway)
+            db.flush()
+
             # Create dispatcher group with the set id being the gateway group id
             sip_uri = f'sip:{sip_addr}'
-            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, description=name, rweight=rweight,
-                signalling=signalling, media=media)
+            dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, rweight=rweight,
+                signalling=signalling, media=media, name=name, gwid=gwid)
             db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
@@ -1248,13 +1264,11 @@ def updateEndpointGroups(gwgroupid=None):
                 sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
                 setid_ext = gwgroupid + 1000
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name, rweight=rweight,
-                    signalling=signalling, media=media)
+                dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, rweight=rweight,
+                    signalling=signalling, media=media, name=name, gwid=gwid)
                 db.add(dispatcher)
 
             # we ignore the given gwid and allow DB to assign one instead
-            db.add(Gateway)
-            db.flush()
             gwlist.append(Gateway.gwid)
 
         # conditional endpoints to update
@@ -1322,13 +1336,11 @@ def updateEndpointGroups(gwgroupid=None):
 
             # find the current entry in dr_gateways
             ep_gateway = db.query(Gateways).filter(Gateways.gwid == gwid).first()
-            old_sip_uri = f'sip:{ep_gateway.address}'
-            old_sip_uri_ext = f'sip:{safeStripPort(ep_gateway.address)}:5080'
 
             # find the current dispatcher entry (load balancing one is always there and has same params as other "feature" sets)
             ep_dispatcher = db.query(Dispatcher).filter(
                 (Dispatcher.setid == gwgroupid) &
-                (Dispatcher.destination == old_sip_uri)
+                Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
             ).first()
             if ep_dispatcher is not None:
                 if rweight is None:
@@ -1353,10 +1365,10 @@ def updateEndpointGroups(gwgroupid=None):
                 ep_dispatcher.destination = sip_uri
                 ep_dispatcher.flags = flags
                 ep_dispatcher.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
-                ep_dispatcher.description = name
+                ep_dispatcher.description = Dispatcher.buildDescription(name, gwid)
             else:
-                ep_dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags, description=name,
-                    rweight=rweight, signalling=signalling, media=media)
+                ep_dispatcher = Dispatcher(setid=gwgroupid, destination=sip_uri, flags=flags,
+                    rweight=rweight, signalling=signalling, media=media, name=name, gwid=gwid)
                 db.add(ep_dispatcher)
 
             # update the fusionpbx dispatcher entries for the endpoint
@@ -1365,22 +1377,22 @@ def updateEndpointGroups(gwgroupid=None):
             if fusionpbxenabled:
                 ep_dispatcher_ext = db.query(Dispatcher).filter(
                     (Dispatcher.setid == setid_ext) &
-                    (Dispatcher.destination == old_sip_uri_ext)
+                    Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
                 ).first()
                 if ep_dispatcher_ext is not None:
                     ep_dispatcher_ext.destination = sip_uri_ext
                     ep_dispatcher_ext.flags = flags
                     ep_dispatcher_ext.attrs = Dispatcher.buildAttrs(rweight, signalling, media)
-                    ep_dispatcher_ext.description = name
+                    ep_dispatcher_ext.description = Dispatcher.buildDescription(name, gwid)
                 else:
-                    ep_dispatcher_ext = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name,
-                        rweight=rweight, signalling=signalling, media=media)
+                    ep_dispatcher_ext = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags,
+                        rweight=rweight, signalling=signalling, media=media, name=name, gwid=gwid)
                     db.add(ep_dispatcher_ext)
             else:
                 # remove the entries if fusionpbx integration is now disabled
                 db.query(Dispatcher).filter(
                     (Dispatcher.setid == setid_ext) &
-                    (Dispatcher.destination == old_sip_uri_ext)
+                    Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
                 ).delete(synchronize_session=False)
 
             # update the endpoint in dr_gateways
@@ -1394,15 +1406,15 @@ def updateEndpointGroups(gwgroupid=None):
 
         # conditional endpoints to delete
         # we also cleanup house here in case of stray entries
-        del_gateways = db.query(Gateways).filter(and_( \
-            Gateways.gwid.in_(del_gwids), \
-            Gateways.address != "localhost" \
-            ))
-        del_gateways_cleanup = db.query(Gateways).filter(and_( \
-            Gateways.description.like(gwgroup_filter), \
-            Gateways.gwid.notin_(gwlist), \
-            Gateways.address != "localhost" \
-            ))
+        del_gateways = db.query(Gateways).filter(
+            Gateways.gwid.in_(del_gwids) &
+            (Gateways.address != "localhost")
+        )
+        del_gateways_cleanup = db.query(Gateways).filter(
+            Gateways.description.regexp_match(gwgroup_filter) &
+            Gateways.gwid.notin_(gwlist) &
+            (Gateways.address != "localhost")
+        )
         # make sure we delete any associated address entries
         del_addr_ids = []
         for gateway in del_gateways.union(del_gateways_cleanup):
@@ -1412,10 +1424,13 @@ def updateEndpointGroups(gwgroupid=None):
         db.query(Address).filter(Address.id.in_(del_addr_ids)).delete(synchronize_session=False)
 
         # delete the dispatcher entries that correspond to the endpoints/gateways that was Deleted
-        del_addrs = []
-        for gateway in del_gateways.union(del_gateways_cleanup):
-            del_addrs.append("sip:{}".format(gateway.address))
-        db.query(Dispatcher).filter(and_(Dispatcher.setid == gwgroupid, Dispatcher.destination.in_(del_addrs))).delete(synchronize_session=False)
+        del_gw_filters = [
+            f'gwid={gateway.gwid}(;|$)' for gateway in del_gateways.union(del_gateways_cleanup)
+        ]
+        db.query(Dispatcher).filter(
+            (Dispatcher.setid == gwgroupid) &
+            Dispatcher.description.regexp_match('|'.join(del_gw_filters))
+        ).delete(synchronize_session=False)
 
         del_gateways.delete(synchronize_session=False)
         del_gateways_cleanup.delete(synchronize_session=False)
@@ -1779,11 +1794,14 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
                     msteams_domain=msteams_domain, signalling=signalling, media=media)
 
+            db.add(Gateway)
+            db.flush()
+
             # Create dispatcher group with the set id being the gateway group id
             # Don't create a dispatcher set for endpoint groups that was created for MSTeams domains    
             if endpointGroupType != "msteams":
-                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, flags=flags, description=name, rweight=rweight,
-                    signalling=signalling, media=media)
+                dispatcher = Dispatcher(setid=gwgroupid, destination=sip_addr, flags=flags, rweight=rweight,
+                    signalling=signalling, media=media, name=name, gwid=Gateway.gwid)
                 db.add(dispatcher)
 
             # Create dispatcher for FusionPBX external interface if FusionPBX feature is enabled
@@ -1791,12 +1809,11 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 sip_uri_ext = f'sip:{safeStripPort(sip_addr)}:5080'
                 setid_ext = gwgroupid + 1000
                 # Add 1000 to the gwgroupid so that the setid for the FusionPBX external interface is 1000 apart
-                dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, description=name, rweight=rweight,
-                    signalling=signalling, media=media)
+                dispatcher = Dispatcher(setid=setid_ext, destination=sip_uri_ext, flags=flags, rweight=rweight,
+                    signalling=signalling, media=media, name=name, gwid=Gateway.gwid)
                 db.add(dispatcher)
 
-            db.add(Gateway)
-            db.flush()
+
             gwlist.append(Gateway.gwid)
 
         # set return gwlist and update the endpoint group's gwlist

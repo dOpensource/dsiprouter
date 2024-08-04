@@ -38,7 +38,7 @@
       <td class='ip_addr'>{{ row.address }}</td>
       <td class='strip'>{{ row.strip }}</td>
       <td class='prefix'>{{ row.pri_prefix }}</td>
-      <td class='rweight'>{{ row.dispatcher_attrs|attrFilter('rweight') }}</td>
+      <td class='rweight'>{{ row.dispatcher_attrs|attrFilter('rweight', delims=(';', '=')) }}</td>
       <td class='related_rules hidden'>{{ related_rules }}</td>
       <td>
         <p data-placement="top" data-toggle="tooltip" title="Edit">
