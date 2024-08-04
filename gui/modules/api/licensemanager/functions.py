@@ -201,8 +201,8 @@ def removeFromLicenseStore(license, state_dict=None):
         state_dict = getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store']
     license_store = settings.DSIP_LICENSE_STORE
 
-    license_store.pop(str(license.id))
-    state_dict.pop(license.license_key)
+    license_store.pop(str(license.id), None)
+    state_dict.pop(license.license_key, None)
     if settings.LOAD_SETTINGS_FROM == 'db':
         updateDsipSettingsTable({'DSIP_LICENSE_STORE': license_store})
     updateConfig(settings, {'DSIP_LICENSE_STORE': license_store}, hot_reload=True)
