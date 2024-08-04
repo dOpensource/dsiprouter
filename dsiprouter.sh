@@ -3017,7 +3017,7 @@ function upgrade() {
         exit 1
     }
 
-    if (( ${RUN_FROM_GUI:-0} == 0 )); then
+    if systemctl is-active -q dsiprouter; then
         # check shared memory
         if [[ $(${PYTHON_CMD} -c "
 import os

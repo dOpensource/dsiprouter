@@ -3,6 +3,8 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
+from database import updateDsipSettingsTable
+from shared import updateConfig
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from util.pyasync import mpexec
 from modules.api.licensemanager.classes import WoocommerceLicense, AES_CTR
@@ -65,22 +67,27 @@ def getLicenseStatusFromStateDict(license_state, tag):
         return 1
     return -1
 
-def searchLicenses(license_key=None, key_combo=None, decrypt=False):
+def searchLicenses(license_key=None, key_combo=None, decrypt=False, license_tag=None, state_dict=None):
     """
     Search licenses from the global state
 
-    :param license_key: license key to lookup
-    :type license_key:  str
-    :param key_combo:   license tag to lookup
-    :type key_combo:    str
-    :param decrypt:     whether to return only valid/invalid licenses
-    :type decrypt:      bool
-    :return:            matching licenses
-    :rtype:             list
+    :param license_key:     license key to lookup
+    :type license_key:      str|None
+    :param key_combo:       license key/machine ID to lookup
+    :type key_combo:        str|None
+    :param decrypt:         whether the key or key_combo provided needs decrypted
+    :type decrypt:          bool
+    :param license_tag:     license tag to lookup
+    :type license_tag:      str|None
+    :param state_dict:      the state dict to load the license from
+    :type state_dict:       dict|None
+    :return:                matching licenses
+    :rtype:                 list[WoocommerceLicense]
     """
 
-    if license_key is None and key_combo is None:
-        return list(getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'].values())
+    if state_dict is None:
+        state_dict = getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store']
+
     if license_key is not None:
         if key_combo is not None:
             raise ValueError('license_key and key_combo are mutually exclusive')
@@ -99,7 +106,13 @@ def searchLicenses(license_key=None, key_combo=None, decrypt=False):
                 license_key = license_key.decode('utf-8')
         else:
             raise ValueError('license_key must be a string or byte string')
-    elif key_combo is not None:
+
+        try:
+            return [state_dict[license_key]]
+        except KeyError:
+            return []
+
+    if key_combo is not None:
         if isinstance(key_combo, str):
             if len(key_combo) == 0:
                 raise ValueError('key_combo must not be empty')
@@ -119,20 +132,38 @@ def searchLicenses(license_key=None, key_combo=None, decrypt=False):
             license_key = key_combo[:-WoocommerceLicense.MACHINE_ID_LEN]
         except IndexError:
             raise ValueError('key_combo is invalid')
-    try:
-        return [getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'][license_key]]
-    except KeyError:
-        return []
+
+        try:
+            return [state_dict[license_key]]
+        except KeyError:
+            return []
+
+    if license_tag is not None:
+        return [
+            lc for lc in state_dict.values() if license_tag in lc.tags
+        ]
+
+    return list(state_dict.values())
 
 
-def getLicenseStatus(tag):
+def getLicenseStatus(license_key=None, license_tag=None, state_dict=None):
     """
-    Get license status from the global state by tag
+    Get license status directly or filtered by license tag
 
     :param tag: license tag to lookup
     :type tag:  str
     :return:    status of first license with that tag (valid licenses have priority)
     :rtype:     int
+
+
+    :param license_key:     license key to lookup
+    :type license_key:      str|None
+    :param license_tag:     license tag to lookup
+    :type license_tag:      str|None
+    :param state_dict:      the state dict to load the license from
+    :type state_dict:       dict|None
+    :return:            status of first license with that tag (valid licenses have priority)
+    :rtype:             int
 
     the license status corresponds to::
 
@@ -141,8 +172,7 @@ def getLicenseStatus(tag):
         2 == license present but associated with another machine
         3 == license present and valid
     """
-
-    res = [lc for lc in getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'].values() if tag in lc.tags]
+    res = searchLicenses(license_key=license_key, license_tag=license_tag, state_dict=state_dict)
     if len(res) == 0:
         return 0
     lic = next((lc for lc in res if lc.valid), None)
@@ -154,3 +184,25 @@ def getLicenseStatus(tag):
     if not lic.active:
         return 1
     raise Exception('could not determine status of license')
+
+def addToLicenseStore(license, state_dict=None):
+    if state_dict is None:
+        state_dict = getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store']
+    license_store = settings.DSIP_LICENSE_STORE
+
+    license_store[str(license.id)] = license.encrypt()
+    state_dict[license.license_key] = license
+    if settings.LOAD_SETTINGS_FROM == 'db':
+        updateDsipSettingsTable({'DSIP_LICENSE_STORE': license_store})
+    updateConfig(settings, {'DSIP_LICENSE_STORE': license_store}, hot_reload=True)
+
+def removeFromLicenseStore(license, state_dict=None):
+    if state_dict is None:
+        state_dict = getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store']
+    license_store = settings.DSIP_LICENSE_STORE
+
+    license_store.pop(str(license.id))
+    state_dict.pop(license.license_key)
+    if settings.LOAD_SETTINGS_FROM == 'db':
+        updateDsipSettingsTable({'DSIP_LICENSE_STORE': license_store})
+    updateConfig(settings, {'DSIP_LICENSE_STORE': license_store}, hot_reload=True)

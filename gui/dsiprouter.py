@@ -1750,7 +1750,7 @@ def displayTransNexus(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getLicenseStatus('DSIP_TRANSNEXUS')
+        license_status = getLicenseStatus(license_tag='DSIP_TRANSNEXUS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -1789,7 +1789,7 @@ def addUpdateTransNexus():
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getLicenseStatus('DSIP_TRANSNEXUS')
+        license_status = getLicenseStatus(license_tag='DSIP_TRANSNEXUS')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2139,7 +2139,7 @@ def displayStirShaken(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getLicenseStatus('DSIP_STIRSHAKEN')
+        license_status = getLicenseStatus(license_tag='DSIP_STIRSHAKEN')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2187,7 +2187,7 @@ def addUpdateStirShaken():
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getLicenseStatus('DSIP_STIRSHAKEN')
+        license_status = getLicenseStatus(license_tag='DSIP_STIRSHAKEN')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
 
@@ -2253,7 +2253,7 @@ def displayUpgrade(msg=None):
         if (settings.DEBUG):
             debugEndpoint()
 
-        license_status = getLicenseStatus('DSIP_CORE')
+        license_status = getLicenseStatus(license_tag='DSIP_CORE')
         if license_status == 0:
             return render_template('license_required.html', msg=None)
         if license_status == 1:
@@ -2317,16 +2317,14 @@ def startUpgrade():
         if (settings.DEBUG):
             debugEndpoint()
 
-        if getLicenseStatus('DSIP_CORE') != 3:
+        if getLicenseStatus(license_tag='DSIP_CORE') != 3:
             raise WoocommerceError('invalid license')
 
         IO.loginfo("starting upgrade")
 
         form = stripDictVals(request.form.to_dict())
         cmd = ['sudo', '-E', 'dsiprouter', 'upgrade', '-rel', f"{form['latest_version']}", '-url', settings.GIT_REPO_URL]
-        env = os.environ.copy()
-        env['RUN_FROM_GUI'] = '1'
-        runUpgrade(cmd, env)
+        runUpgrade(cmd, None)
 
         IO.loginfo("upgrade started")
 

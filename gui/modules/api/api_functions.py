@@ -104,7 +104,7 @@ def api_security(func):
         if not re.match('text/html|text/css', accept_header, flags=re.IGNORECASE):
             flask_rule = request.url_rule.rule if request.url_rule is not None else ''
             # Check if they have a Core Subscription
-            if flask_rule[:17] != '/api/v1/licensing' and getLicenseStatus('DSIP_CORE') != 3:
+            if flask_rule[:17] != '/api/v1/licensing' and getLicenseStatus(license_tag='DSIP_CORE') != 3:
                 return createApiResponse(
                     error='http',
                     msg='Unauthorized - Core Subscription Required. Purchase from https://dopensource.com/product/dsiprouter-core/',
