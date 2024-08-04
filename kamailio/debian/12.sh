@@ -12,12 +12,9 @@ function install() {
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
     local NPROC=$(nproc)
-    
-    # Remove ufw if installed
-    apt-get remove -y ufw
 
     # Install Dependencies and remove any conflicting packages
-    apt-get remove -y ufw &&
+    { dpkg -l ufw &>/dev/null && apt-get remove -y ufw || : } &&
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
         libcurl4-openssl-dev libjansson-dev cmake firewalld build-essential certbot
 
