@@ -16,11 +16,11 @@ mysql kamailio -e "insert into subscriber values (null,'$username','$host','$pas
 
 # Add Carrier Group
 mysql kamailio -e "insert into dr_gw_lists values (null,'','name:Smoketest CarrierGroup');"
-gwgroupid=`mysql kamailio -s -N -e "select id from dr_gw_lists where description like '%Smoketest%';"`
+gwgroupid=`mysql kamailio -s -N -e "select id from dr_gw_lists where description regexp 'name:Smoketest CarrierGroup(,|"'$'")';"`
 
 # Add Carrier
 mysql kamailio -e "insert into dr_gateways values (null,8,'demo.dsiprouter.org',0,'','','name:Smoketest Carrier,gwgroup:$gwgroupid');"
-gwid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description like '%Smoketest%';"`
+gwid=`mysql kamailio -s -N -e "select gwid from dr_gateways where description regexp 'name:Smoketest Carrier(,|"'$'")';"`
 
 # Update the Carrier Group with the Carrier id
 mysql kamailio -e "update dr_gw_lists set gwlist=$gwid where id=$gwgroupid;"

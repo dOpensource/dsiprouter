@@ -1,0 +1,55 @@
+1,1,sip:54.172.60.0:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Virginia Carrier;gwid=1
+2,1,sip:54.172.60.1:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Virginia  Carrier;gwid=2
+3,1,sip:54.172.60.2:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Virginia Carrier;gwid=3
+4,1,sip:54.172.60.3:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Virginia Carrier;gwid=4
+5,1,sip:54.244.51.0:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Oregon Carrier;gwid=5
+6,1,sip:54.244.51.1:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Oregon  Carrier;gwid=6
+7,1,sip:54.244.51.2:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Oregon Carrier;gwid=7
+8,1,sip:54.244.51.3:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Twilio NA-Oregon Carrier;gwid=8
+9,2,sip:52.41.52.34:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel North West Inbound;gwid=9
+10,2,sip:52.8.201.128:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel South West Inbound;gwid=10
+11,2,sip:52.60.138.31:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel North East Inbound;gwid=11
+12,2,sip:50.17.48.216:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel South East Inbound;gwid=12
+13,2,sip:35.156.192.164:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel Europe Inbound;gwid=13
+14,2,sip:term.skyetel.com:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel 1st Priority Outbound Call;gwid=14
+15,2,sip:52.41.52.34:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel 2nd Priority Outbound Call;gwid=15
+16,2,sip:52.8.201.128:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel 3rd Priority Outbound Call;gwid=16
+17,2,sip:50.17.48.216:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel 4rd Priority Outbound Call;gwid=17
+18,2,sip:52.32.223.28:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel North West High Cost Outbound Traffic;gwid=18
+19,2,sip:52.4.178.107:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Skyetel South East High Cost Outbound Traffic;gwid=19
+20,3,sip:147.75.60.160:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Flowroute US-West-WA;gwid=20
+21,3,sip:34.210.91.112:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Flowroute US-West-OR;gwid=21
+22,3,sip:147.75.65.192:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Flowroute US-East-NJ;gwid=22
+23,3,sip:34.226.36.32:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Flowroute US-East-VA;gwid=23
+24,4,sip:81.201.82.45:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxbone Belgium;gwid=24
+25,4,sip:81.201.84.195:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxbone LA;gwid=25
+26,4,sip:81.201.85.45:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxbone NYC;gwid=26
+27,4,sip:81.201.83.45:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxbone Germany;gwid=27
+28,4,sip:81.201.86.45:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxbone Hong Kong;gwid=28
+29,4,sip:81.201.84.195:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxbone Australia;gwid=29
+30,5,sip:64.136.174.30:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=30
+31,5,sip:64.136.173.22:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=31
+32,5,sip:209.166.128.200:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=32
+33,5,sip:192.240.151.100:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=33
+34,5,sip:64.136.173.31:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=34
+35,5,sip:64.136.174.30:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=35
+36,5,sip:64.136.174.20:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=36
+37,5,sip:209.166.154.70:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=37
+38,5,sip:64.136.174.65:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=38
+39,5,sip:64.136.173.23:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=39
+40,5,sip:209.166.128.201:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=40
+41,5,sip:192.240.151.101:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=41
+42,5,sip:64.136.173.65:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=42
+43,5,sip:64.136.174.65:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=43
+44,5,sip:64.136.174.21:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=44
+45,5,sip:209.166.154.71:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Inbound Carrier;gwid=45
+46,6,sip:64.136.174.30:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Outbound Conversational Carrier;gwid=46
+47,6,sip:64.136.173.22:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Outbound Conversational Carrier;gwid=47
+48,6,sip:209.166.128.200:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Outbound Conversational Carrier;gwid=48
+49,6,sip:192.240.151.100:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=VoIP Innovations Outbound Conversational Carrier;gwid=49
+50,7,sip:72.15.219.140:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Thinq Carrier;gwid=50
+51,8,sip:216.147.191.157:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Voxtelesys Carrier;gwid=51
+52,9,sip:64.34.181.47:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=Les.net Carrier;gwid=52
+53,10,sip:206.80.250.100:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=ThinkTel;gwid=53
+54,10,sip:208.68.17.52:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=ThinkTel;gwid=54
+55,10,sip:209.197.130.80:5060,0,0,signalling=proxy;media=proxy;rweight=1,name=ThinkTel;gwid=55

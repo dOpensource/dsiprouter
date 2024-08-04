@@ -35,7 +35,7 @@
   // TODO: think of a more user friendly description for these options
   const MEDIA_OPTIONS = {
     "proxy": "Proxy Media",
-    "bvpass": "Bypass Media",
+    "direct": "Direct Media",
     "rtp_avp": "RTP/AVP",
     "rtp_savp": "RTP/SAVP",
     "rtp_avpf": "RTP/AVPF",
