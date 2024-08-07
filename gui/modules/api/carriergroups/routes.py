@@ -191,9 +191,9 @@ def addCarrierGroups(id=None):
         data['name'] = request_payload['name']
         data['lb_enabled'] = int(request_payload['lb_enabled']) if 'lb_enabled' in request_payload else 0
         if id == None:
-            data['gwgroup'] = request_payload['gwgroup'] if 'gwgroup' in request_payload else ''
+            data['gwgroupid'] = request_payload['gwgroupid'] if 'gwgroupid' in request_payload else ''
         else:
-            data['gwgroup'] = id
+            data['gwgroupid'] = id
         data['strip'] = request_payload['strip'] if 'strip' in request_payload else ''
         data['prefix'] = request_payload['prefix'] if 'prefix' in request_payload else ''
 
@@ -234,7 +234,7 @@ def addCarrierGroups(id=None):
         # This creates the Twilio Elastic SIP Entry in the Carrier Group
         if plugin_made_updates:
             carrier_data = {}
-            carrier_data['gwgroup'] = gwgroupid
+            carrier_data['gwgroupid'] = gwgroupid
             carrier_data['name'] = trunk_name
             carrier_data['ip_addr'] = "{}.{}".format(trunk_name, "pstn.twilio.com")
             carrier_data['strip'] = ''
@@ -243,6 +243,8 @@ def addCarrierGroups(id=None):
 
         # Add endpoints
         for endpoint in endpoints:
+            #Add the gwgroupdid
+            endpoint['gwgroupid'] = gwgroupid
             addUpdateCarriers(endpoint)
 
         gwgroup_data = {}
