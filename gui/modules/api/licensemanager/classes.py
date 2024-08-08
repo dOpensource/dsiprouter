@@ -142,7 +142,7 @@ class WoocommerceLicense(object):
 
     @property
     def active(self):
-        return self._status == 3 and self._times_activated > 0 and self.expires > datetime.datetime.now()
+        return (self._status == 3 or self._status == 2) and self._times_activated > 0 and self.expires > datetime.datetime.now()
 
     @property
     def license_key(self):
