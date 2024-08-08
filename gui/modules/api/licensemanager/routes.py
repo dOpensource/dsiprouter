@@ -5,11 +5,10 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 
 from flask import Blueprint, jsonify, request
 from werkzeug import exceptions as http_exceptions
-from database import updateDsipSettingsTable
 from shared import debugEndpoint, debugException, StatusCodes, getRequestData, updateConfig
 from modules.api.api_functions import showApiError, api_security
 from modules.api.licensemanager.classes import WoocommerceLicense, WoocommerceError
-from modules.api.licensemanager.functions import searchLicenses
+from modules.api.licensemanager.functions import searchLicenses, addToLicenseStore, removeFromLicenseStore
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
@@ -335,12 +334,7 @@ def activateLicense():
             lc = matches[0]
 
         lc.activate()
-
-        settings.DSIP_LICENSE_STORE[str(lc.id)] = lc.encrypt()
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'][lc.license_key] = lc
-        if settings.LOAD_SETTINGS_FROM == 'db':
-            updateDsipSettingsTable({'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE})
-        updateConfig(settings, {'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE}, hot_reload=True)
+        addToLicenseStore(lc)
 
         response_payload['data'].append(dict(lc))
         response_payload['msg'] = 'activation succeeded'
@@ -408,12 +402,7 @@ def deactivateLicense():
             lc = matches[0]
 
         lc.deactivate()
-
-        settings.DSIP_LICENSE_STORE.pop(str(lc.id))
-        getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'].pop(lc.license_key)
-        if settings.LOAD_SETTINGS_FROM == 'db':
-            updateDsipSettingsTable({'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE})
-        updateConfig(settings, {'DSIP_LICENSE_STORE': settings.DSIP_LICENSE_STORE}, hot_reload=True)
+        removeFromLicenseStore(lc)
 
         response_payload['msg'] = 'deactivation succeeded'
         return jsonify(response_payload), StatusCodes.HTTP_OK

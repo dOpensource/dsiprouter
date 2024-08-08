@@ -3019,13 +3019,13 @@ function upgrade() {
         exit 1
     }
 
-    if (( ${RUN_FROM_GUI:-0} == 0 )); then
+    if systemctl is-active -q dsiprouter; then
         # check shared memory
         if [[ $(${PYTHON_CMD} -c "
 import os
 os.chdir('${DSIP_PROJECT_DIR}/gui')
 from modules.api.licensemanager.functions import getLicenseStatus
-print(getLicenseStatus('DSIP_CORE'))
+print(getLicenseStatus(license_tag='DSIP_CORE'))
         ") != "3" ]]; then
             printerr 'dSPIRouter core license is not valid'
             exit 1
@@ -3577,11 +3577,21 @@ function updatePermissions() {
 
     # no args given set permissions for all services
     if (( $# == 0 )); then
-        setDnsmasqPerms
-        setNginxPerms
-        setKamailioPerms
-        setDsiprouterPerms
-        setRtpenginePerms
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
+            setDnsmasqPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]; then
+            setNginxPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
+            setKamailioPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
+            setDsiprouterPerms
+        fi
+        if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]; then
+            setRtpenginePerms
+        fi
         setCertPerms
         return 0
     fi
@@ -3664,6 +3674,11 @@ function removeSwapFile() {
     rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.memupdatescomplete"
 }
 
+function licenseManager() {
+    ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/modules/api/licensemanager/cli.py "$@"
+    return $?
+}
+
 function usageOptions() {
     linebreak() {
         printf '_%.0s' $(seq 1 ${COLUMNS:-100}) && echo ''
@@ -3715,6 +3730,11 @@ function usageOptions() {
         " " "-mc <[user][:pass]>|--mail-creds=<[user][:pass]>|-ic <token>|--ipc-creds=<token>]|" \
         " " "-dac <[user[:pass]@]dbhost[:port][/dbname]>|--db-admin-creds=<[user[:pass]@]dbhost[:port][/dbname]>|" \
         " " "-sc <key>|--session-creds=<key>]"
+    printf "%-30s %s\n%-30s %s\n%-30s %s\n" \
+        "licensemanager" "[-debug] -list|-retrieve <license_key or 'tag=<tag>'>|" \
+        " " "-activate <license_key>|-import <file containing keys>|" \
+        " " "-clear|-deactivate <license_key or 'tag=<tag>'>|" \
+        " " "-check <license_key or 'tag=<tag>'>"
     printf "%-30s %s\n" \
         "version|-v|--version" ""
     printf "%-30s %s\n" \
@@ -3789,7 +3809,7 @@ function preprocessCMD() {
     # Do not run the extra prep on these commands
     # we only need a portion of the script settings
     case "$1" in
-        chown|exec|clusterinstall|version|-v|--version|help|-h|--help)
+        chown|exec|clusterinstall|licensemanager|version|-v|--version|help|-h|--help)
             setStaticScriptSettings
             ;;
         *)
@@ -4914,6 +4934,24 @@ function processCMD() {
                         ;;
                 esac
             done
+            ;;
+        licensemanager)
+            shift
+
+            # handle the debug option here
+            for OPT in "$@"; do
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                esac
+            done
+
+            # pass the rest of the user args to the local function
+            licenseManager "$@"
+            exit $?
             ;;
         version|-v|--version)
             printf '%s\n' "$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})"

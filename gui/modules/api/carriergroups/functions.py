@@ -105,7 +105,7 @@ def addUpdateCarrierGroups(data=None):
             # Set the form variables to data parameter
             form = data
 
-        gwgroup = form['gwgroup']
+        gwgroup = form['gwgroupid']
         name = form['name']
         lb_enabled = int(form['lb_enabled']) if 'lb_enabled' in form else 0
         new_name = form['new_name'] if 'new_name' in form else ''
@@ -369,14 +369,23 @@ def addUpdateCarriers(data=None):
         else:
             # Set the form variables to data parameter
             form = data
-            # match what the gui would send us
-            if 'gwgroup' in form:
-                form['gwgroup'] = str(form['gwgroup'])
+
+        
+        # match what the API would send us
+        if 'gwgroupid' in form:
+            form['gwgroupid'] = str(form['gwgroupid'])
+
+        # match what the UI would send us
+        if 'gwgroup' in form:
+            form['gwgroupid'] = str(form['gwgroup'])
+        if 'ip_addr' in form:
+            form['hostname'] = str(form['ip_addr'])
+
 
         gwid = form['gwid'] if 'gwid' in form else ''
-        gwgroup = form['gwgroup'] if len(form['gwgroup']) > 0 else ''
+        gwgroup = form['gwgroupid'] if len(form['gwgroupid']) > 0 else ''
         name = form['name'] if len(form['name']) > 0 else ''
-        hostname = form['ip_addr'] if len(form['ip_addr']) > 0 else ''
+        hostname = form['hostname'] if len(form['hostname']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
         rweight = form['rweight'] if len(form['rweight']) > 0 else 0
