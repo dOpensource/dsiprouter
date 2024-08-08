@@ -16,7 +16,7 @@ data "digitalocean_ssh_key" "ssh_key" {
 
 
 resource "digitalocean_droplet" "dsiprouter" {
-        name = "${var.dsiprouter_prefix}-dsip-${var.branch}${count.index}"
+        name = "${var.dns_demo_hostname}.${var.dns_demo_domain}"
         count = var.number_of_environments
         region = "tor1"
         size="1gb"
