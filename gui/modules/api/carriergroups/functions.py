@@ -369,9 +369,16 @@ def addUpdateCarriers(data=None):
         else:
             # Set the form variables to data parameter
             form = data
-            # match what the gui would send us
-            if 'gwgroupid' in form:
-                form['gwgroupid'] = str(form['gwgroupid'])
+        
+        # match what the API would send us
+        if 'gwgroupid' in form:
+            form['gwgroupid'] = str(form['gwgroupid'])
+
+        # match what the UI would send us
+        if 'gwgroup' in form:
+            form['gwgroupid'] = str(form['gwgroup'])
+        if 'ip_addr' in form:
+            form['hostname'] = str(form['ip_addr'])
 
         gwid = form['gwid'] if 'gwid' in form else ''
         gwgroup = form['gwgroupid'] if len(form['gwgroupid']) > 0 else ''
