@@ -230,8 +230,7 @@ function setDynamicScriptSettings() {
 	# Kamailio doesn't like hostname names with dots and LetsEncrypt can't create certs for that domain
 	grep vultrusercontent <<< "$EXTERNAL_FQDN" >/dev/null
 	if (( $? == 0 ));then
-            export EXTERNAL_FQDN="$INTERNAL_FQDN"
-	
+        export EXTERNAL_FQDN="$INTERNAL_FQDN"
 	fi
 
     # network settings pulled from env variables or from config file
@@ -3859,15 +3858,20 @@ function processCMD() {
                         RUN_COMMANDS+=(installDnsmasq)
                         shift
                         ;;
+                    -mysql|--mysql)
+                        DEFAULT_SERVICES=0
+                        RUN_CMMANDS+=(installMysql)
+                        shift
+                        ;;
                     -kam|--kamailio)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(installSipsak installCron installMysql installKamailio)
+                        RUN_COMMANDS+=(installSipsak installCron installKamailio)
                         shift
                         ;;
                     -dsip|--dsiprouter)
                         DEFAULT_SERVICES=0
                         DISPLAY_LOGIN_INFO=1
-                        RUN_COMMANDS+=(installSipsak installCron installMysql installNginx installDsiprouter)
+                        RUN_COMMANDS+=(installSipsak installCron installNginx installDsiprouter)
                         shift
                         ;;
                     -rtp|--rtpengine)

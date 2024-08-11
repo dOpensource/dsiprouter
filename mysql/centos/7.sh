@@ -30,7 +30,7 @@ function install() {
     }
 
     # install mysql packages
-    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
+    yum install -y mariadb mariadb-server
 
     if (( $? != 0 )); then
         printerr 'Failed installing mariadb packages'

@@ -17,7 +17,6 @@ function install() {
 
     # install mysql packages
     dnf install -y mariadb mariadb-server &&
-    dnf install -y --enablerepo=crb mariadb-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing mariadb packages'
