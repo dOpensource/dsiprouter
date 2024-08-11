@@ -29,6 +29,7 @@ function install {
     apt-get install -y libmysqlclient-dev
     apt-get install -y libmariadbclient-dev
     apt-get install -y default-libmysqlclient-dev
+    apt-get install -y libmariadbd-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
     apt-get install -y unzip
