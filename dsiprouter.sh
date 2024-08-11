@@ -638,6 +638,7 @@ function updateDsiprouterConfig() {
     fi
     [[ -n "$MAIL_USERNAME" ]] && setConfigAttrib 'MAIL_DEFAULT_SENDER' "dSIPRouter $EXTERNAL_FQDN <$MAIL_USERNAME>" ${DSIP_CONFIG_FILE} -q
     [[ -n "$MAIL_DEFAULT_SUBJECT" ]] && setConfigAttrib 'MAIL_DEFAULT_SUBJECT' "$MAIL_DEFAULT_SUBJECT" ${DSIP_CONFIG_FILE} -q
+    [[ -n "$RTPENGINE_URI" ]] && setConfigAttrib 'RTPENGINE_URI' "$RTPENGINE_URI" ${DSIP_CONFIG_FILE} -q
     [[ -n "$CLOUD_PLATFORM" ]] && setConfigAttrib 'CLOUD_PLATFORM' "$CLOUD_PLATFORM" ${DSIP_CONFIG_FILE} -q
     [[ -n "$BACKUPS_DIR" ]] && setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     [[ -n "$DID_PREFIX_ALLOWED_CHARS" ]] && setConfigAttrib 'DID_PREFIX_ALLOWED_CHARS' "$DID_PREFIX_ALLOWED_CHARS" ${DSIP_CONFIG_FILE}
@@ -875,6 +876,7 @@ function updateKamailioConfig() {
     local HOMER_HEP_HOST=${HOMER_HEP_HOST:-$(getConfigAttrib 'HOMER_HEP_HOST' ${DSIP_CONFIG_FILE})}
     local HOMER_HEP_PORT=${HOMER_HEP_PORT:-$(getConfigAttrib 'HOMER_HEP_PORT' ${DSIP_CONFIG_FILE})}
     local NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
+    local RTPENGINE_URI=${RTPENGINE_URI:-$(getConfigAttrib 'RTPENGINE_URI' ${DSIP_CONFIG_FILE})}
 
     # update kamailio config file
     if (( $DEBUG == 1 )); then
@@ -942,6 +944,7 @@ function updateKamailioConfig() {
     setKamailioConfigSubst 'DMQ_PORT' "${KAM_DMQ_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'HOMER_HOST' "${HOMER_HEP_HOST}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'HEP_PORT' "${HOMER_HEP_PORT}" ${DSIP_KAMAILIO_CONFIG_FILE}
+    setKamailioConfigSubst 'RTPENGINE_URI' "$RTPENGINE_URI" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_server' "${DSIP_API_BASEURL}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.api_token' "${DSIP_API_TOKEN}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigGlobal 'server.role' "${ROLE}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -4033,6 +4036,15 @@ function processCMD() {
                         # sanity check
                         if [[ -z "$HOMER_HEP_HOST" ]]; then
                             printerr 'Missing required argument <homer_host> to option -homer'
+                            exit 1
+                        fi
+                        ;;
+                    --rtpengine-uri=*)
+                        RTPENGINE_URI=$(cut -s -d '=' -f 2- <<<"$1")
+                        shift
+                        # sanity check
+                        if [[ -z "$RTPENGINE_URI" ]]; then
+                            printerr 'Missing required argument to option "--rtpengine-uri="'
                             exit 1
                         fi
                         ;;
