@@ -274,7 +274,7 @@ function encryptConfigAttrib() {
 #updateConfig(settings, {'$NAME': AES_CTR.encrypt('$VALUE')})
 #EOPY
 }
-export -f setConfigAttrib
+export -f encryptConfigAttrib
 
 # $1 == attribute name
 # $2 == python config file
@@ -1208,7 +1208,6 @@ EOF
 }
 export -f sqlAsTransaction
 
-# TODO: remove dependency on system python3
 # usage: parseDBConnURI <field> <connection uri>
 # field:    -user
 #           -pass
@@ -1249,16 +1248,17 @@ function parseDBConnURI() {
             ;;
     esac
 
-    # WARNING: we must use system python3 here (dsiprouter python venv may not exist)
-    python3 <<EOPY
-import re
-matches = re.search(r'[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*', '$1')
-if matches is None:
-    exit(1)
-if matches.groups()[$GROUP] is None:
-    exit(1)
-print(matches.groups()[$GROUP], end='')
-EOPY
+    perl -e '
+@matches = ($ARGV[0] =~ m"^[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*$");
+if ($matches[$ARGV[1]] ne "") {
+    print $matches[$ARGV[1]];
+    exit 0;
+}
+else {
+    exit 1;
+}
+' "$1" "$GROUP"
+
     return $?
 }
 export -f parseDBConnURI
