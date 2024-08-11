@@ -92,15 +92,17 @@ function install {
     amazon-linux-extras enable -y GraphicsMagick1.3 >/dev/null
     amazon-linux-extras enable -y redis6 >/dev/null
     amazon-linux-extras install -y epel >/dev/null
+    amazon-linux-extras enable mariadb10.5 >/dev/null
     yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools'
     yum install -y gcc glib2 glib2-devel zlib zlib-devel pcre pcre-devel libcurl libcurl-devel libjpeg-turbo-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent \
         libevent-devel iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build rpmrebuild cmake3 \
         pkgconfig freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd libtiff-devel \
-        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny \
+        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip perl-Config-Tiny \
         libbluray-devel libavcodec-devel libavformat-devel libavutil-devel libswresample-devel libavfilter-devel \
         libjpeg-turbo-devel mosquitto-devel glib2-devel xmlrpc-c-devel hiredis-devel libpcap-devel libevent-devel \
-        json-glib-devel gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel
+        json-glib-devel gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel \
+        mariadb-libs mariadb-devel
 
     if (( $? != 0 )); then
         printerr "Could not install the required libraries for RTPEngine"
