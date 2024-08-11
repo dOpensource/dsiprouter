@@ -104,7 +104,8 @@ function install {
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
-            libwebsockets-devel iptables-legacy-devel pandoc
+            libwebsockets-devel iptables-legacy-devel pandoc &&
+        dnf install -y --enablerepo=crb mariadb-devel
     elif (( ${DISTRO_VER} == 8 )); then
         dnf install -y epel-release &&
         dnf install -y epel-next-release &&
@@ -116,7 +117,7 @@ function install {
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
-            libwebsockets-devel opus-devel xmlrpc-c-devel gcc-toolset-13 pandoc &&
+            libwebsockets-devel opus-devel xmlrpc-c-devel gcc-toolset-13 pandoc mariadb-devel mariadb-libs &&
         source scl_source enable gcc-toolset-13
     else
         yum-config-manager --enable centos-sclo-rh >/dev/null &&
@@ -124,11 +125,11 @@ function install {
         yum install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
         yum install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         yum install -y ffmpeg ffmpeg-devel &&
-        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre2 pcre2-devel curl libcurl libcurl-devel mariadb-devel \
+        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre2 pcre2-devel curl libcurl libcurl-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel xmlrpc-c-devel gperf redhat-lsb nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel \
-            mosquitto-devel opus-devel devtoolset-11 pandoc
+            mosquitto-devel opus-devel devtoolset-11 pandoc mariadb-devel mariadb-libs &&
         source scl_source enable devtoolset-11
     fi
 
