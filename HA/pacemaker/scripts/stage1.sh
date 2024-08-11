@@ -116,9 +116,9 @@ if [[ -e "${DSIP_SYSTEM_CONFIG_DIR}" ]]; then
         if (( $DSIP_MAJ_VER > 0 )) || (( $DSIP_MAJ_VER == 0 && $DSIP_MIN_VER >= 7 )); then
             setConfigAttrib 'NETWORK_MODE' "$STATIC_NETWORKING_MODE" ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
         else
-            removeExecStartCmd 'dsiprouter.sh updatertpconfig' ${DSIP_INIT_PATH}
-            removeExecStartCmd 'dsiprouter.sh updatekamconfig' ${DSIP_INIT_PATH}
-            removeExecStartCmd 'dsiprouter.sh updatedsipconfig' ${DSIP_INIT_PATH}
+            removeExecStartCmd 'dsiprouter updatertpconfig' ${DSIP_INIT_PATH}
+            removeExecStartCmd 'dsiprouter updatekamconfig' ${DSIP_INIT_PATH}
+            removeExecStartCmd 'dsiprouter updatedsipconfig' ${DSIP_INIT_PATH}
         fi
 
         setConfigAttrib 'INTERNAL_IP_ADDR' '${CLUSTER_NODE_ADDRS[$i]}' ${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
