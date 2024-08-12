@@ -1337,6 +1337,8 @@ export -f sendKamCmd
 # TODO: improve performance of openssl native version and swap it out
 function hashCreds() {
 	local CREDS SALT DK_LEN
+	# we use system python3 if dsiprouter python venv does not yet exist
+	local PYTHON_CMD=${PYTHON_CMD:-python3}
 
 	# grab credentials from stdin if provided
 	if [[ -p /dev/stdin ]]; then
@@ -1377,8 +1379,7 @@ function hashCreds() {
 
 	# python native version
 	# no external dependencies other than vanilla python3
-	# WARNING: we must use system python3 here (dsiprouter python venv may not exist)
-	python3 <<EOPYTHON
+	${PYTHON_CMD} <<EOPYTHON
 import hashlib,binascii
 creds='$CREDS'.encode('utf-8')
 salt='$SALT'.encode('utf-8')
