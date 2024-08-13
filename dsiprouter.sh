@@ -3650,7 +3650,7 @@ function createSwapFile() {
         (
             grep -vF "$SWAP_FILE" /etc/fstab
             echo "${SWAP_FILE} none swap sw 0 0"
-        ) >/etc/fstab &&
+        ) >>/etc/fstab &&
         printdbg 'swapfile created successfully'
     fi
 
@@ -3839,7 +3839,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService createSwapFile installDsiprouterCli)
+            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installDsiprouterCli)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -4092,7 +4092,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeSwapFile removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeInitService removeDsipSystemConfig)
                         shift
                         ;;
                     *)  # fail on unknown option
