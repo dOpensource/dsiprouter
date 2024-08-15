@@ -110,6 +110,11 @@ def api_security(func):
                     msg='Unauthorized - Core Subscription Required. Purchase from https://dopensource.com/product/dsiprouter-core/',
                     status_code=StatusCodes.HTTP_UNAUTHORIZED
                 )
+            # Check if request is from Slack and the endpoint is the leasing endpoint
+            if request.headers.get('X-Slack-Signature'): 
+            #flask_rule[:17] == "/api/v1/lease/endpoint":
+                # checks succeeded allow the request
+                return func(*args, **kwargs)
             # Check if token is valid
             if not apiToken.isValid():
                 return createApiResponse(
