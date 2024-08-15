@@ -130,7 +130,7 @@ def handleReloadDsiprouter():
 #       it should be renamed and changed to use POST method
 # TODO: the last lease id/username generated must be tracked (just query DB)
 #       and used to determine next lease id, otherwise conflicts may occur
-@api.route("/api/v1/lease/endpoint", methods=['GET'])
+@api.route("/api/v1/lease/endpoint", methods=['GET','POST'])
 @api_security
 def getEndpointLease():
     db = DummySession()
@@ -149,9 +149,32 @@ def getEndpointLease():
         if not email:
             raise Exception("email parameter is missing")
 
-        ttl = request.args.get('ttl', None)
-        if ttl is None:
-            raise http_exceptions.BadRequest("time to live (ttl) parameter is missing")
+        # Grab ttl parameter from Slack
+        if request.headers.get('X-Slack-Signature'):
+            text = request.args.get('text', None)
+            if text is not None:
+                ttl = text
+            # Set the ttl to 5 minutes if no ttl from slack is sent
+            else:
+                ttl = "5m"
+        else:
+            ttl = request.args.get('ttl')
+            if ttl is None:
+                raise http_exceptions.BadRequest("time to live (ttl) parameter is missing")
+
+        type = request.args.get('type', None)
+        if type is None:
+            type = "userpwd"
+        elif type != "userpwd" and type != "ip":
+            raise http_exceptions.BadRequest("type can only have a value of ip or userpwd")
+        
+
+        auth_ip = request.args.get('auth_ip', None)
+        if type == "ip" and auth_ip is None:
+            raise http_exceptions.BadRequest("auth_ip must be provided if the type is ip")
+        elif type == "userpwd" and auth_ip is not None:
+            raise http_exceptions.BadRequest("auth_ip is not valid when type is userpwd")
+
 
         # Convert TTL to Seconds
         r = re.compile('\d*m|M')
@@ -161,33 +184,51 @@ def getEndpointLease():
         # Generate some values
         rand_num = random.randint(1, 200)
         name = "lease" + str(rand_num)
-        auth_username = name
-        auth_password = urandomChars(DEF_PASSWORD_LEN)
         auth_domain = settings.DEFAULT_AUTH_DOMAIN
+        
+        if type == "userpwd":
+            auth_username = name
+            auth_password = urandomChars(DEF_PASSWORD_LEN)
 
-        # Set some defaults
-        host_addr = ''
-        strip = 0
-        prefix = ''
+            # Set some defaults
+            host_addr = ''
+            strip = 0
+            prefix = ''
 
-        # Add the Gateways table
-        Gateway = Gateways(name, host_addr, strip, prefix, settings.FLT_PBX)
-        db.add(Gateway)
-        db.flush()
+            # Add the Gateways table
+            Gateway = Gateways(name, host_addr, strip, prefix, settings.FLT_PBX)
+            db.add(Gateway)
+            db.flush()
 
-        # Add the Subscribers table
-        Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid, email)
-        db.add(Subscriber)
-        db.flush()
+            # Add the Subscribers table
+            Subscriber = Subscribers(auth_username, auth_password, auth_domain, Gateway.gwid, email)
+            db.add(Subscriber)
+            db.flush()
+        
+            # Add to the Leases table
+            Lease = dSIPLeases(Gateway.gwid, Subscriber.id, int(ttl))
 
-        # Add to the Leases table
-        Lease = dSIPLeases(Gateway.gwid, Subscriber.id, int(ttl))
+        if type == "ip":
+            # TODO: address entries should include port user specified
+            Addr = Address(name, auth_ip, 32, settings.FLT_PBX, gwgroup=2200)
+            db.add(Addr)
+            db.flush()
+
+            # Add to the Leases table
+            Lease = dSIPLeases(gwid=0, sid=0, ttl=int(ttl), addrid=Addr.id)
+
+        
+
         db.add(Lease)
         db.flush()
 
         lease_data['leaseid'] = Lease.id
-        lease_data['username'] = auth_username
-        lease_data['password'] = auth_password
+        if type == "userpwd":
+            lease_data['username'] = auth_username
+            lease_data['password'] = auth_password
+        elif type == "ip":
+            lease_data['allowed_ip'] = auth_ip
+        
         lease_data['domain'] = auth_domain
         lease_data['ttl'] = ttl
 
@@ -198,11 +239,11 @@ def getEndpointLease():
         #if not addTaggedCronjob("lease_management", "* * * * *", cron_cmd):
         #    raise Exception('Crontab entry could not be created')
 
-        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+        getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = False
         return createApiResponse(
             msg='Lease created',
             data=[lease_data],
-            kamreload=True,
+            kamreload=False,
         )
 
     except Exception as ex:
