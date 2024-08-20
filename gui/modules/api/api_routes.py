@@ -157,6 +157,8 @@ def getEndpointLease():
             # Set the ttl to 5 minutes if no ttl from slack is sent
             else:
                 ttl = "5m"
+            #Set content type equal to application/json
+            request.ContentType = 'application/json'
         else:
             ttl = request.args.get('ttl')
             if ttl is None:
