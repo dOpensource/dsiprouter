@@ -21,7 +21,7 @@ from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
+from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort, isValidIP
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
@@ -145,37 +145,61 @@ def getEndpointLease():
 
         db = startSession()
 
-        email = request.args.get('email')
-        if not email:
-            raise Exception("email parameter is missing")
 
-        # Grab ttl parameter from Slack
+        # Grab the form parameters from Slack request
+        
+        # Set up some defaults
+        ttl = "5m"
+        type = "userpwd"
+        auth_ip = None
+
         if request.headers.get('X-Slack-Signature'):
-            text = request.args.get('text', None)
-            if text is not None:
-                ttl = text
-            # Set the ttl to 5 minutes if no ttl from slack is sent
-            else:
-                ttl = "5m"
+            text = request.form.get('text', None)
+            if text is not None and len(text) > 0:
+                print("**** {}".format(text))
+                # Split text up
+                x=text.split(" ")
+                for req in x:
+                    if "m" in req:
+                        ttl = req
+                    if "userpwd" == req or "ip" == req:
+                        type = req
+                    if "/" in req:
+                        ip,subnet=req.split("/")
+                        if isValidIP(ip):
+                            auth_ip = req
+                
+                if type == "ip" and auth_ip is None:
+                    raise http_exceptions.BadRequest("auth_ip must be provided if the type is ip")
+                elif type == "userpwd" and auth_ip is not None:
+                    raise http_exceptions.BadRequest("auth_ip is not valid when type is userpwd")
+
+            #Grab email address
+            email = request.form.get('email', None)
             #Set content type equal to application/json
             request.ContentType = 'application/json'
+        
+        # Grab request parameters from everywhere else
         else:
             ttl = request.args.get('ttl')
             if ttl is None:
                 raise http_exceptions.BadRequest("time to live (ttl) parameter is missing")
-
-        type = request.args.get('type', None)
-        if type is None:
-            type = "userpwd"
-        elif type != "userpwd" and type != "ip":
-            raise http_exceptions.BadRequest("type can only have a value of ip or userpwd")
         
+            email = request.args.get('email')
+            if not email:
+                raise Exception("email parameter is missing")
 
-        auth_ip = request.args.get('auth_ip', None)
-        if type == "ip" and auth_ip is None:
-            raise http_exceptions.BadRequest("auth_ip must be provided if the type is ip")
-        elif type == "userpwd" and auth_ip is not None:
-            raise http_exceptions.BadRequest("auth_ip is not valid when type is userpwd")
+            type = request.args.get('type', None)
+            if type is None:
+                type = "userpwd"
+            elif type != "userpwd" and type != "ip":
+                raise http_exceptions.BadRequest("type can only have a value of ip or userpwd")
+
+            auth_ip = request.args.get('auth_ip', None)
+            if type == "ip" and auth_ip is None:
+                raise http_exceptions.BadRequest("auth_ip must be provided if the type is ip")
+            elif type == "userpwd" and auth_ip is not None:
+                raise http_exceptions.BadRequest("auth_ip is not valid when type is userpwd")
 
 
         # Convert TTL to Seconds
@@ -211,8 +235,14 @@ def getEndpointLease():
             Lease = dSIPLeases(Gateway.gwid, Subscriber.id, int(ttl))
 
         if type == "ip":
-            # TODO: address entries should include port user specified
-            Addr = Address(name, auth_ip, 32, settings.FLT_PBX, gwgroup=2200)
+            # Check for Subnet
+            if "/" in auth_ip:
+                ip,subnet = auth_ip.split("/",1)
+            else:
+                ip = auth_ip
+                # Define a default subnet address of 32
+                subnet = 32
+            Addr = Address(name, ip, subnet, settings.FLT_PBX, gwgroup=2200)
             db.add(Addr)
             db.flush()
 
