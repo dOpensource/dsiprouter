@@ -11,7 +11,7 @@ from sqlalchemy import exc as sql_exceptions
 from werkzeug import exceptions as http_exceptions
 from shared import debugException, StatusCodes
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
-from util.security import APIToken
+from util.security import APIToken, validSlackSignature
 from modules.api.licensemanager.functions import getLicenseStatus
 import settings
 
@@ -113,8 +113,11 @@ def api_security(func):
             # Check if request is from Slack and the endpoint is the leasing endpoint
             if request.headers.get('X-Slack-Signature'): 
             #flask_rule[:17] == "/api/v1/lease/endpoint":
-                # checks succeeded allow the request
-                return func(*args, **kwargs)
+                if validSlackSignature(settings.SLACK_SIGNING_SECRET,request):
+                    # checks succeeded allow the request
+                     return func(*args, **kwargs)
+                else:
+                     return jsonify(msg='Unauthorized: Slack signing key is missing or invalid')
             # Check if token is valid
             if not apiToken.isValid():
                 return createApiResponse(
