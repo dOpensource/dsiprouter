@@ -496,7 +496,41 @@ If not testing, obtain a valid STIR/SHAKEN certificate and place them in the /et
 
 11. Click Save
 
-The STIR/SHAKEN page should look like this:
+Configure Dynamic SIP Credentials (SUBSCRIPTION REQUIRED)
+---------------------------------------------------------
 
-.. image:: images/stir_shaken_settings.png
-    :align: center
+dSIPRouter enables an organization to provide users and systems with SIP credentials that will expire after a time-to-live (ttl).  The goal is to minimize the attack surface and user error that would cause SIP credentials to become compromised. The steps to configure is below:
+
+1. Login to dSIPRouter
+2. Purchase a core subscription license from the `dSIPRouter Marketplace <https://dopensource.com/product-category/dsiprouter/>`_
+3. Click System Settings -> License Manager
+4. Add the license to the system
+5. Get or set the API Token.  You can set the API token using the command below:
+
+.. code-block:: bash
+	
+	DSIP_HOSTNAME=<your ip or hostname>
+	DSIP_TOKEN=<set your token>
+	dsiprouter setcredentials -ac $DSIP_TOKEN
+
+6. Invoke the Lease API, which can be found in the API section of the `dSIPRouter Postman <https://www.postman.com/dopensource/workspace/dsiprouter/collection/4319695-9c09dea3-0b4b-4a20-a615-fb8fc16811af>`_.  There are two types of SIP Credentials supported, user/pass credentials and IP based.
+
+User/Pass Credential
+
+.. code-block:: bash
+	
+	curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "https://$DSIP_HOSTNAME:5000/api/v1/lease/endpoint?ttl=15&email=mack@dsiprouter.org"
+
+IP Based Credential
+
+.. code-block:: bash
+	
+	curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X GET "https://$DSIP_HOSTNAME:5000/api/v1/lease/endpoint?email=mack@goflyball.com&ttl=15m&type=ip&auth_ip=172.145.24.2"
+
+7. You can revoke the lease id that was returned when the lease was created:
+
+.. code-block:: bash
+
+	curl -k -H "Authorization: Bearer $DSIP_TOKEN" -H "Content-Type: application/json" -X DELETE "https://$DSIP_HOSTNAME:5000/api/v1/lease/endpoint/<<lease id>/revoke"
+
+8. (Optional) You can set the SIP Domain used for generating the User/Pass credentials by changing the DEFAULT_AUTH_DOMAIN parameter in /etc/dsiprouter/gui/settings.py
