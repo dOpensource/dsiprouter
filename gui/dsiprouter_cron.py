@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/dsiprouter/venv/bin/python
 #
 # summary:
 #   dsiprouter cronjob interface script
