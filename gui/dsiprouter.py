@@ -1,3 +1,5 @@
+#!/opt/dsiprouter/venv/bin/python
+
 # make sure the generated source files are imported instead of the template ones
 import sys
 
