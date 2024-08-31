@@ -229,7 +229,10 @@ GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 
 # auth modules
 # a dictionary of authentication modules to load and their corresponding settings
-# example for ldap module:
-# AUTH_MODULES = {"ldap": {"LDAP_HOST":"ldap://ldap.dopensource.com", "USER_SEARCH_BASE":"ou=People,dc=dopensource,dc=com", "GROUP_SEARCH_BASE":"dc=dopensource,dc=com", "GROUP_MEMBER_ATTRIBUTE":"memberUid", "REQUIRED_GROUP":"support", "USER_ATTRIBUTE":"uid"}}
+# make sure these dicts are single line for now as dsip_lib.sh does not support set/get on multiline settings
 AUTH_MODULES = {}
+# example of using the ldap module for openldap authentication
+#{'ldap': {'ldap_urls':['ldap://ldap.dopensource.com'], 'required_group':'support', 'bind_filter':'uid=%s,dc=dopensource,dc=com', 'base_dn':'dc=dopensource,dc=com', 'user_filter':'(uid=%s)', 'user_attr':'distinguishedName'}}
+# example of using the ldap module for active directory authentication
+#{'ldap': {'ldap_urls': ['ldaps://ldap.dopensource.com:636'], 'bind_dn': 'example_user@ldap.dopensource.com', 'bind_pass': 'example_pass', 'base_dn': 'DC=dopensource,DC=com', 'referrals': 0, 'user_filter': '(& (memberof=CN=voice-team,OU=Telephony,DC=dopensource,DC=com) (SamAccountName=%s))', 'user_attr': 'userPrincipalName'}}
 ############### End Local-Only Settings ##################
