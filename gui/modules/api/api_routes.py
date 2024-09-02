@@ -2809,7 +2809,7 @@ def createBackup():
             kampass = settings.KAM_DB_PASS
 
         dumpcmd = ['/usr/bin/mysqldump', '--single-transaction', '--opt', '--routines', '--triggers', '--hex-blob',
-                   '-h', settings.KAM_DB_HOST, '-u',
+                   '--ignore-table=kamailio.dsip_prefix_mapping','--ignore-table=kamailio.dsip_dnid_lnp_mapping','--ignore-table=kamailio.dsip_call_settings_h','-h', settings.KAM_DB_HOST, '-u',
                    settings.KAM_DB_USER, '-p{}'.format(kampass), '-B', settings.KAM_DB_NAME]
         with open(backup_path, 'wb') as fp:
             dump = subprocess.Popen(dumpcmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]
@@ -2817,7 +2817,6 @@ def createBackup():
                 flags=re.MULTILINE)
             dump = re.sub(rb'ENGINE=MyISAM', b'ENGINE=InnoDB', dump, flags=re.MULTILINE)
             fp.write(dump)
-
         # lines = "It wrote the backup"
         # attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
         # headers={"Content-disposition":attachment}
@@ -2848,9 +2847,9 @@ def restoreBackup():
         KAM_DB_PASS = settings.KAM_DB_PASS
 
         if 'db_username' in data.keys():
-            KAM_DB_USER = str(data.get('db_username'))
+            KAM_DB_USER = ''.join(data['db_username'])
             if KAM_DB_USER != '':
-                KAM_DB_PASS = str(data.get('db_password'))
+                KAM_DB_PASS = ''.join(data['db_password'])
 
         if 'file' not in request.files:
             raise http_exceptions.BadRequest("No file was sent")
@@ -2870,15 +2869,19 @@ def restoreBackup():
         if len(KAM_DB_PASS) == 0:
             restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-D', settings.KAM_DB_NAME]
         else:
-            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-p{}'.format(KAM_DB_PASS),
+            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', str(KAM_DB_USER), '-p{}'.format(str(KAM_DB_PASS)),
                           '-D', settings.KAM_DB_NAME]
 
         with open(restore_path, 'rb') as fp:
-            subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
-
+            stdout, stderr = subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+            if len(stderr) > 0:
+                errorMessage = stdout
+                raise http_exceptions.BadRequest(stderr)
+            else:
+                errorMessage='The restore was successful'
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
-            msg='The restore was successful',
+            msg= errorMessage,
             kamreload=True,
         )
 
