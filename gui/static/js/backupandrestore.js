@@ -34,7 +34,9 @@
         showNotification("Database was restored");
       },
       error: function(xhr, text_status, error_msg) {
-        showNotification("Database was NOT restored", true);
+	      var string = JSON.stringify(xhr.responseJSON);
+	      var json_object = JSON.parse(string);
+              showNotification(json_object.msg, true);
       }
     });
 
