@@ -1036,6 +1036,8 @@ function updateKamailioStartup {
 function updateRtpengineConfig() {
     local INTERFACE=""
     local HOMER_ID=${HOMER_ID:-$(getConfigAttrib 'HOMER_ID' ${DSIP_CONFIG_FILE})}
+    local HOMER_HEP_HOST=${HOMER_HEP_HOST:-$(getConfigAttrib 'HOMER_HEP_HOST' ${DSIP_CONFIG_FILE})}
+    local HOMER_HEP_PORT=${HOMER_HEP_PORT:-$(getConfigAttrib 'HOMER_HEP_PORT' ${DSIP_CONFIG_FILE})}
     local RTP_PORT_MIN=${RTP_PORT_MIN:-$(getRtpengineConfigAttrib 'RTP_PORT_MIN' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
     local RTP_PORT_MAX=${RTP_PORT_MAX:-$(getRtpengineConfigAttrib 'RTP_PORT_MAX' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
 
@@ -1061,11 +1063,11 @@ function updateRtpengineConfig() {
     setRtpengineConfigAttrib 'port-min' "$RTP_PORT_MIN" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     setRtpengineConfigAttrib 'port-max' "$RTP_PORT_MAX" ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
-    if [[ -n "$HOMER_HEP_HOST" ]]; then
+    if [[ -n "$HOMER_HEP_HOST" && -n "$HOMER_HEP_PORT" ]]; then
         enableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         enableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         enableRtpengineConfigAttrib 'homer-id' ${SYSTEM_RTPENGINE_CONFIG_FILE}
-        setRtpengineConfigAttrib 'homer' "$HOMER_HEP_HOST" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+        setRtpengineConfigAttrib 'homer' "${HOMER_HEP_HOST}:${HOMER_HEP_PORT}" ${SYSTEM_RTPENGINE_CONFIG_FILE}
         setRtpengineConfigAttrib 'homer-id' "$HOMER_ID" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     else
         disableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
