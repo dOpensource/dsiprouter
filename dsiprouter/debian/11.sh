@@ -45,7 +45,7 @@ function install() {
     firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
-    python3 -m venv --system-site-packages --upgrade-deps ${PYTHON_VENV} &&
+    python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"

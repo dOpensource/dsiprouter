@@ -17,8 +17,9 @@ function install() {
 
     # Install Dependencies and remove any conflicting packages
     apt-get remove -y ufw &&
-    apt-get install -y build-essential curl python3 python3-pip python3-dev libpq-dev python3-venv \
-        firewalld sudo libmariadb-dev logrotate rsyslog perl sngrep libev-dev uuid-runtime pkg-config &&
+    apt-get install -y build-essential pkg-config python3-pip \
+        python3-dev libpq-dev python3-venv libev-dev libffi-dev libmariadb-dev \
+        curl python3 firewalld sudo logrotate rsyslog perl sngrep uuid-runtime &&
     # Install libraries needed to install the python-ldap package
     apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
