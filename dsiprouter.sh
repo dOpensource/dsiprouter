@@ -128,7 +128,6 @@ function setStaticScriptSettings() {
     export KAM_SIPS_PORT=5061
     export KAM_DMQ_PORT=5090
     export KAM_WSS_PORT=4443
-    export HOMER_HEP_PORT=9060
 
     export DSIP_PROTO='https'
     export DSIP_API_PROTO='https'
@@ -910,7 +909,7 @@ function updateKamailioConfig() {
         disableKamailioConfigAttrib 'WITH_DMQ' ${DSIP_KAMAILIO_CONFIG_FILE}
         setKamailioConfigSubst 'DMQ_REPLICATE_ENABLED' '0' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    if [[ -n "$HOMER_HEP_HOST" ]]; then
+    if [[ -n "$HOMER_HEP_HOST" && -n "$HOMER_HEP_PORT" ]]; then
         enableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
         disableKamailioConfigAttrib 'WITH_HOMER' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1035,11 +1034,11 @@ function updateKamailioStartup {
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig() {
     local INTERFACE=""
+    local RTP_PORT_MIN=${RTP_PORT_MIN:-$(getRtpengineConfigAttrib 'RTP_PORT_MIN' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
+    local RTP_PORT_MAX=${RTP_PORT_MAX:-$(getRtpengineConfigAttrib 'RTP_PORT_MAX' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
     local HOMER_ID=${HOMER_ID:-$(getConfigAttrib 'HOMER_ID' ${DSIP_CONFIG_FILE})}
     local HOMER_HEP_HOST=${HOMER_HEP_HOST:-$(getConfigAttrib 'HOMER_HEP_HOST' ${DSIP_CONFIG_FILE})}
     local HOMER_HEP_PORT=${HOMER_HEP_PORT:-$(getConfigAttrib 'HOMER_HEP_PORT' ${DSIP_CONFIG_FILE})}
-    local RTP_PORT_MIN=${RTP_PORT_MIN:-$(getRtpengineConfigAttrib 'RTP_PORT_MIN' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
-    local RTP_PORT_MAX=${RTP_PORT_MAX:-$(getRtpengineConfigAttrib 'RTP_PORT_MAX' ${SYSTEM_RTPENGINE_CONFIG_FILE})}
 
     if (( ${NETWORK_MODE} == 2 )); then
         # TODO: ipv6 support broken here
@@ -1062,13 +1061,16 @@ function updateRtpengineConfig() {
     setRtpengineConfigAttrib 'interface' "$INTERFACE" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     setRtpengineConfigAttrib 'port-min' "$RTP_PORT_MIN" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     setRtpengineConfigAttrib 'port-max' "$RTP_PORT_MAX" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    setRtpengineConfigAttrib 'homer' "${HOMER_HEP_HOST}:${HOMER_HEP_PORT}" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+
+    if [[ -n "$HOMER_ID" && "$HOMER_ID" != "None" ]]; then
+        setRtpengineConfigAttrib 'homer-id' "$HOMER_ID" ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    fi
 
     if [[ -n "$HOMER_HEP_HOST" && -n "$HOMER_HEP_PORT" ]]; then
         enableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         enableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         enableRtpengineConfigAttrib 'homer-id' ${SYSTEM_RTPENGINE_CONFIG_FILE}
-        setRtpengineConfigAttrib 'homer' "${HOMER_HEP_HOST}:${HOMER_HEP_PORT}" ${SYSTEM_RTPENGINE_CONFIG_FILE}
-        setRtpengineConfigAttrib 'homer-id' "$HOMER_ID" ${SYSTEM_RTPENGINE_CONFIG_FILE}
     else
         disableRtpengineConfigAttrib 'homer' ${SYSTEM_RTPENGINE_CONFIG_FILE}
         disableRtpengineConfigAttrib 'homer-protocol' ${SYSTEM_RTPENGINE_CONFIG_FILE}
@@ -2034,9 +2036,7 @@ function installKamailio() {
     if (( $? == 0 )); then
         configureSSL
         configureKamailioDB
-        if [[ ! -f "$DSIP_KAMAILIO_CONFIG_FILE" ]]; then
-            generateKamailioConfig
-        fi
+        generateKamailioConfig
         updateKamailioConfig
         updateKamailioStartup
     else
