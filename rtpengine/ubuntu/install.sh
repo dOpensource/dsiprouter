@@ -64,87 +64,67 @@ function install {
             "Pin-Priority: 750" > /etc/apt/preferences.d/debhelper
     fi
 
-    # create rtpengine user and group
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
-    useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
+   ## compile and install RTPEngine as a DEB package
+    ## reuse repo if it exists and matches version we want to install
+    if [[ -d ${SRC_DIR}/rtpengine ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/rtpengine)" != "${RTPENGINE_VER}" ]]; then
+            rm -rf ${SRC_DIR}/rtpengine
+            git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+        fi
+    else
+        git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+    fi
 
-    cd ${SRC_DIR}
-    rm -rf rtpengine.bak 2>/dev/null
-    mv -f rtpengine rtpengine.bak 2>/dev/null
-    git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
-    cd rtpengine
-    ./debian/flavors/no_ngcp
-    dpkg-buildpackage
-    cd ..
-    dpkg -i ngcp-rtpengine-daemon_*
-    dpkg -i ngcp-rtpengine-iptables_*
-    dpkg -i ngcp-rtpengine-kernel-source_*
-    dpkg -i ngcp-rtpengine-kernel-dkms_*
+    # apply our patches
+    (
+        cd ${SRC_DIR}/rtpengine &&
+        patch -p1 -N <${DSIP_PROJECT_DIR}/rtpengine/deb-${RTPENGINE_VER}.patch
+    )
+    if (( $? > 1 )); then
+        printerr 'Failed patching RTPEngine files prior to build'
+        return 1
+    fi
 
-    if [ $? -ne 0 ]; then
+    # build and install using dpkg
+    (
+        cd ${SRC_DIR}/rtpengine
+
+        # install all missing dependencies from the control file
+        MISSING_PKGS=$(getDebDependencies)
+        [[ -n "$MISSING_PKGS" ]] && apt-get install -y $MISSING_PKGS
+
+        dpkg-buildpackage -us -uc -sa --jobs=$NPROC || exit 1
+
+        systemctl mask ngcp-rtpengine-daemon.service
+
+        apt-get install -y ../ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
+            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
+        exit $?
+    )
+
+    if (( $? != 0 )); then
         printerr "Problem installing RTPEngine DEB's"
-        exit 1
+        return 1
+    fi
+
+    # make sure RTPEngine kernel module configured
+    # skip this check for older versions as we allow userspace forwarding
+    if (( ${DISTRO_VER} > 10 )); then
+        if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
+            printerr "Problem installing RTPEngine kernel module"
+            return 1
+        fi
     fi
 
     # ensure config dirs exist
-    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
-    chown -R rtpengine:rtpengine /var/run/rtpengine
+    mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    chown -R rtpengine:rtpengine /run/rtpengine
 
-    # Remove RTPEngine kernel module if previously inserted
-    if lsmod | grep 'xt_RTPENGINE'; then
-        rmmod xt_RTPENGINE
-    fi
-    # Load new RTPEngine kernel module
-    depmod -a &&
-    modprobe xt_RTPENGINE
-
-    # set the forwarding table for the kernel module
-    echo 'add 0' > /proc/rtpengine/control
-    iptables -I INPUT -p udp -j RTPENGINE --id 0
-    ip6tables -I INPUT -p udp -j RTPENGINE --id 0
-
-    if (( ${SERVERNAT:-0} == 0 )); then
-        INTERFACE="ipv4/${INTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
-        fi
-    else
-        INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
-        fi
-    fi
-
-    # rtpengine config file
-    # set table = 0 for kernel packet forwarding
-    (cat << EOF
-[rtpengine]
-table = 0
-interface = ${INTERFACE}
-listen-ng = 127.0.0.1:7722
-port-min = ${RTP_PORT_MIN}
-port-max = ${RTP_PORT_MAX}
-log-level = 7
-log-facility = local1
-log-facility-cdr = local1
-log-facility-rtcp = local1
-EOF
-    ) > ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    # allow root to fix permissions before starting services (required to work with SELinux enabled)
+    usermod -a -G rtpengine root
 
     # setup rtpengine defaults file
-    (cat << 'EOF'
-RUN_RTPENGINE=yes
-CONFIG_FILE=/etc/rtpengine/rtpengine.conf
-# CONFIG_SECTION=rtpengine
-PIDFILE=/var/run/rtpengine/rtpengine.pid
-MANAGE_IPTABLES=yes
-TABLE=0
-SET_USER=rtpengine
-SET_GROUP=rtpengine
-LOG_STDERR=yes
-EOF
-    ) > /etc/default/rtpengine.conf
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
@@ -164,52 +144,53 @@ EOF
 
     # Setup tmp files
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
-    systemctl stop ngcp-rtpengine-daemon
 
-    # Reconfigure systemd service files
-    rm -f /lib/systemd/system/rtpengine.service /etc/init.d/ngcp-rtpengine-daemon
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /lib/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
-    chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
+   # Reconfigure systemd service files
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    chmod 644 /lib/systemd/system/rtpengine.service
+    systemctl daemon-reload
+    systemctl enable rtpengine
 
     # Reload systemd configs
     systemctl daemon-reload
     # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
-    # Start RTPEngine
-    systemctl start rtpengine
 
-    # Start manually if the service fails to start
-    if [ $? -eq 1 ]; then
-        /usr/bin/rtpengine --config-file=${SYSTEM_RTPENGINE_CONFIG_FILE} --pidfile=/var/run/rtpengine/rtpengine.pid
-    fi
-
-    # File to signify that the install happened
-    if [ $? -eq 0 ]; then
-        touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
-        printdbg "RTPEngine has been installed!"
+    # preliminary check that rtpengine actually installed
+    if cmdExists rtpengine; then
+        return 0
     else
-        printerr "FAILED: RTPEngine could not be installed!"
+        return 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
     systemctl stop rtpengine
-    rm -f /usr/bin/rtpengine
-    rm -f /etc/rsyslog.d/rtpengine.conf
-    rm -f /etc/logrotate.d/rtpengine
-    printdbg "Removed RTPEngine for $DISTRO"
+    systemctl disable rtpengine
+    rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
+    systemctl daemon-reload
+
+    apt-get remove -y ngcp-rtpengine\*
+
+ rm -f /usr/sbin/rtpengine* /usr/bin/rtpengine /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
+
+    # remove our firewall changes
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+    firewall-cmd --reload
+
+    return 0
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]" && exit 1
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

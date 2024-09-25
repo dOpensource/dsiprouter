@@ -33,124 +33,113 @@ function install {
         printerr "Problem with installing the required libraries for RTPEngine"
         exit 1
     fi
+    BUILD_KERN_VERSIONS=$(joinwith '' ',' '' $(rpm -q kernel-headers | sed 's/kernel-headers-//g'))
 
-    # create rtpengine user and group
-    # sometimes locks aren't properly removed (this seems to happen often on VM's)
-    rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
-    useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
-
-    # Make and Configure RTPEngine
-    cd ${SRC_DIR}
-    rm -rf rtpengine.bak 2>/dev/null
-    mv -f rtpengine rtpengine.bak 2>/dev/null
-    git clone https://github.com/sipwise/rtpengine.git -b ${RTPENGINE_VER}
-    cd rtpengine
-
-    RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ./el/rtpengine.spec)
-    if (( $(echo "$RTPENGINE_VER" | perl -0777 -pe 's|mr(\d+\.\d+)\.(\d+)\.(\d+)|\1\2\3 >= 6.511|gm' | bc -l) )); then
-        PREFIX="rtpengine-${RTPENGINE_RPM_VER}/"
-    else
-        PREFIX="ngcp-rtpengine-${RTPENGINE_RPM_VER}/"
+    # rtpengine >= mr11.3.1.1 requires curl >= 7.43.0
+    if versionCompare "$(tr -d '[a-zA-Z]' <<<"$RTPENGINE_VER")" gteq "11.3.1.1"; then
+        if versionCompare "$(curl -V | head -1 | awk '{print $2}')" lt "7.43.0"; then
+            printdbg 'curl version is not recent enough.. compiling curl 7.8.0'
+            if [[ ! -d ${SRC_DIR}/curl ]]; then
+                (
+                    cd ${SRC_DIR} &&
+                    curl -sL https://curl.haxx.se/download/curl-7.80.0.tar.gz 2>/dev/null |
+                    tar -xzf - --transform 's%curl-7.80.0%curl%';
+                )
+            fi
+            (
+                cd ${SRC_DIR}/curl &&
+                ./configure --prefix=/usr --libdir=/usr/lib64 --with-ssl &&
+                make -j $NRPOC &&
+                make -j $NPROC install &&
+                ldconfig
+            )
+            if (( $? != 0 )); then
+                printerr 'Failed to compile curl'
+                return 1
+            fi
+        fi
     fi
 
+    # reuse repo if it exists and matches version we want to install
+    if [[ -d ${SRC_DIR}/rtpengine ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/rtpengine)" != "${RTPENGINE_VER}" ]]; then
+            rm -rf ${SRC_DIR}/rtpengine
+            git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+        fi
+    else
+        git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
+    fi
+
+    # apply our patches
+    (
+        cd ${SRC_DIR}/rtpengine &&
+        patch -p1 -N <${DSIP_PROJECT_DIR}/rtpengine/el-${RTPENGINE_VER}.patch
+    )
+    if (( $? > 1 )); then
+        printerr 'Failed patching RTPEngine files prior to build'
+        return 1
+    fi
+
+    RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ${SRC_DIR}/rtpengine/el/rtpengine.spec)
     RPM_BUILD_ROOT="${HOME}/rpmbuild"
-    rm -rf ${RPM_BUILD_ROOT}
-    mkdir -p ${RPM_BUILD_ROOT}/SOURCES
-    git archive --output ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz --prefix=${PREFIX} ${RTPENGINE_VER}
-    # fix for rpm build path issue
-    perl -i -pe 's|(%define archname) rtpengine-mr|\1 rtpengine-|' ./el/rtpengine.spec
-    # build the RPM's
-    rpmbuild -ba ./el/rtpengine.spec
-    # install the RPM's
-    yum localinstall -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
-        ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
-        ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
-#        ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-recording-${RTPENGINE_RPM_VER}*.rpm
+    rm -rf ${RPM_BUILD_ROOT} 2>/dev/null
+    mkdir -p ${RPM_BUILD_ROOT}/SOURCES &&
+    (
+        cd ${SRC_DIR} &&
+        tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz \
+            --transform="s%^rtpengine%ngcp-rtpengine-$RTPENGINE_RPM_VER%g" rtpengine/ &&
+        echo "%__make $(which make) -j $NPROC" >~/.rpmmacros &&
+        # fix for BUG: "exec_prefix: command not found"
+        function exec_prefix() { echo -n '/usr'; } && export -f exec_prefix &&
+        # build the RPM's
+        rpmbuild -ba --define "kversion $BUILD_KERN_VERSIONS" ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
+        rm -f ~/.rpmmacros && unset -f exec_prefix &&
+        systemctl mask ngcp-rtpengine-daemon.service
+
+        # install the RPM's
+        if (( ${DISTRO_VER} >= 8 )); then
+            dnf install -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
+                ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
+                ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
+        else
+            yum localinstall -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
+                ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
+                ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
+        fi
+    )
 
     if (( $? != 0 )); then
-        printerr "Problem installing RTPEngine RPM's"
-        exit 1
+        printerr "Problems occurred compiling rtpengine"
+        return 1
+    fi
+
+    # warn user if kernel module not loaded yet
+    if (( $REBOOT_REQUIRED == 1 )); then
+        printwarn "A reboot is required to load the RTPEngine kernel module"
     fi
 
     # ensure config dirs exist
-    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
-    chown -R rtpengine:rtpengine /var/run/rtpengine
-
-    # Configure RTPEngine to support kernel packet forwarding
-    cd ${SRC_DIR}/rtpengine/kernel-module &&
-    make &&
-    cp -f xt_RTPENGINE.ko /lib/modules/${OS_KERNEL}/updates/ &&
-    if (( $? != 0 )); then
-        printerr "Problem installing RTPEngine kernel-module"
-        exit 1
-    fi
-
-    # Remove RTPEngine kernel module if previously inserted
-    if lsmod | grep 'xt_RTPENGINE'; then
-        rmmod xt_RTPENGINE
-    fi
-    # Load new RTPEngine kernel module
-    depmod -a &&
-    modprobe xt_RTPENGINE
-
-    # set the forwarding table for the kernel module
-    echo 'add 0' > /proc/rtpengine/control
-    iptables -I INPUT -p udp -j RTPENGINE --id 0
-    ip6tables -I INPUT -p udp -j RTPENGINE --id 0
-
-    if (( ${SERVERNAT:-0} == 0 )); then
-        INTERFACE="ipv4/${INTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}"
-        fi
-    else
-        INTERFACE="ipv4/${INTERNAL_IP}!${EXTERNAL_IP}"
-        if (( ${IPV6_ENABLED} == 1 )); then
-            INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6}!${EXTERNAL_IP6}"
-        fi
-    fi
-
-    # rtpengine config file
-    # set table = 0 for kernel packet forwarding
-    (cat << EOF
-[rtpengine]
-table = 0
-interface = ${INTERFACE}
-listen-ng = 127.0.0.1:7722
-port-min = ${RTP_PORT_MIN}
-port-max = ${RTP_PORT_MAX}
-log-level = 7
-log-facility = local1
-log-facility-cdr = local1
-log-facility-rtcp = local1
-EOF
-    ) > ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    chown -R rtpengine:rtpengine /run/rtpengine
 
     # setup rtpengine defaults file
-    (cat << 'EOF'
-RUN_RTPENGINE=yes
-CONFIG_FILE=/etc/rtpengine/rtpengine.conf
-# CONFIG_SECTION=rtpengine
-PIDFILE=/var/run/rtpengine/rtpengine.pid
-MANAGE_IPTABLES=yes
-TABLE=0
-SET_USER=rtpengine
-SET_GROUP=rtpengine
-LOG_STDERR=yes
-EOF
-    ) > /etc/default/rtpengine.conf
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
     systemctl start firewalld
 
-    if (( $? != 0 )); then
+    if (( $? != 0 )) && (( ${DISTRO_VER} == 7 )); then
         # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
         # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
         systemctl restart systemd-logind
     fi
+
+    # give rtpengine permissions in selinux
+    semanage port -a -t rtp_media_port_t -p udp ${RTP_PORT_MIN}-${RTP_PORT_MAX} ||
+    semanage port -m -t rtp_media_port_t -p udp ${RTP_PORT_MIN}-${RTP_PORT_MAX}
 
     # Setup Firewall rules for RTPEngine
     firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
@@ -164,57 +153,55 @@ EOF
     # Setup logrotate
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/rtpengine /etc/logrotate.d/rtpengine
 
-    # Setup Firewall rules for RTPEngine
-    firewall-cmd --zone=public --add-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
-    firewall-cmd --reload
-
     # Setup tmp files
-    echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
+    echo "d /run/rtpengine/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /lib/systemd/system/rtpengine.service
+    chmod 644 /lib/systemd/system/rtpengine.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
     chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
-
-    # Reload systemd configs
     systemctl daemon-reload
-    # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
-    # Start RTPEngine
-    systemctl start rtpengine
 
-    # Start manually if the service fails to start
-    if [ $? -ne 0 ]; then
-        /usr/bin/rtpengine --config-file=${SYSTEM_RTPENGINE_CONFIG_FILE} --pidfile=/var/run/rtpengine/rtpengine.pid
-    fi
-
-    # File to signify that the install happened
-    if [ $? -eq 0 ]; then
-        touch ${DSIP_PROJECT_DIR}/.rtpengineinstalled
-        printdbg "RTPEngine has been installed!"
+    # preliminary check that rtpengine actually installed
+    if cmdExists rtpengine; then
+        return 0
     else
-        printerr "FAILED: RTPEngine could not be installed!"
+        return 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
     systemctl stop rtpengine
+    systemctl disable rtpengine
+    rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
+    systemctl daemon-reload
+
+    yum remove -y ngcp-rtpengine\*
+
+    rm -f /usr/sbin/rtpengine-{start-pre,stop-post}
     rm -f /usr/bin/rtpengine
     rm -f /etc/rsyslog.d/rtpengine.conf
     rm -f /etc/logrotate.d/rtpengine
-    printdbg "Removed RTPEngine for $DISTRO"
+
+    # remove our firewall changes
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+    firewall-cmd --reload
+
+    return 0
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall && exit 0
-        ;;
     install)
-        install && exit 0
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]" && exit 1
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac
