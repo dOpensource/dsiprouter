@@ -106,7 +106,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Could not install the required libraries for RTPEngine"
-        exit 1
+        return 1
     fi
 
     yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
@@ -118,7 +118,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Could not install kernel headers"
-        exit 1
+        return 1
     fi
 
     # link latest version of cmake
@@ -355,7 +355,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Problems occurred compiling rtpengine"
-        exit 1
+        return 1
     fi
 
     # make sure RTPEngine kernel module configured
@@ -363,20 +363,13 @@ function install {
     if rpm -qa | grep -q "kernel-headers-$(uname -r)"; then
         if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
             printerr "Problem installing RTPEngine kernel module"
-            exit 1
+            return 1
         fi
     fi
 
     # ensure config dirs exist
-    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
-    chown -R rtpengine:rtpengine /var/run/rtpengine
-
-    # rtpengine config file
-    # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
-    # TODO: move from 2 separate config files to generating entire config
-    #       1st we should change to generating config using rtpengine-start-pre
-    #       eventually we should create a config parser similar to how kamailio config is parsed
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    chown -R rtpengine:rtpengine /run/rtpengine
 
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
@@ -421,17 +414,17 @@ function install {
 
     # preliminary check that rtpengine actually installed
     if cmdExists rtpengine; then
-        exit 0
+        return 0
     else
-        exit 1
+        return 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
-    systemctl disable rtpengine
     systemctl stop rtpengine
-    rm -f /lib/systemd/system/rtpengine.service
+    systemctl disable rtpengine
+    rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
     systemctl daemon-reload
 
     yum remove -y ngcp-rtpengine\*
@@ -447,23 +440,22 @@ function uninstall {
     )
     done
 
-    # check that rtpengine actually uninstalled
-    if ! cmdExists rtpengine; then
-        exit 0
-    else
-        exit 1
-    fi
+    # remove our firewall changes
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+    firewall-cmd --reload
+
+    return 0
 }
 
 case "$1" in
-    uninstall)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]"
+        printerr "Usage: $0 [install | uninstall]"
         exit 1
         ;;
 esac

@@ -890,6 +890,29 @@ function getInternalCIDR() {
 }
 export -f getInternalCIDR
 
+# $1 == host to check
+# returns: 0 == host is local, 1 == host is remote
+function isHostLocal() { (
+    local LOCAL_MATCH=$(
+        joinwith '' '|' '' \
+            localhost \
+            $(hostname 2>/dev/null) \
+            $(hostname -f 2>/dev/null) \
+            $(ip -json address show | jq -r '.[].addr_info[].local')
+    )
+
+    shopt -s extglob
+    case "$1" in
+        $LOCAL_MATCH)
+            exit 0
+            ;;
+        *)
+            exit 1
+            ;;
+    esac
+) }
+export -f isHostLocal
+
 # $1 == cmd as executed in systemd (by ExecStart=)
 # notes: take precaution when adding long running functions as they will block startup in boot order
 # notes: adding init commands on an AMI instance must not be long running processes, otherwise they will fail
