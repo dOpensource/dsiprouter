@@ -28,7 +28,11 @@ Stops dSIPRouter services.
 .IP restart
 Restarts dSIPRouter services.
 .IP configurekam
-Configures the Kamailio service on the dSIPRouter platform.
+Generate new config files for Kamailio based on the dSIPRouter settings.
+.IP configuredsip
+Generate new config files for dSIPRouter based on the environment variables (don't use unless you have read through dsiprouter.sh).
+.IP configurertp
+Generate new config files for RTPEngine based on the dSIPRouter settings.
 .IP renewsslcert
 Renew configured letsencrypt SSL certificate.
 .IP configuresslcert

@@ -297,15 +297,15 @@ function setDynamicScriptSettings() {
 
     # if the public ip address is not the same as the internal address then enable serverside NAT
     if [[ "$EXTERNAL_IP_ADDR" != "$INTERNAL_IP_ADDR" ]]; then
-        export SERVERNAT=1
+        export SIGNAL_SERVERNAT=1
     else
-        export SERVERNAT=0
+        export SIGNAL_SERVERNAT=0
     fi
     # same as above but for ipv6, note that NAT is rarely used on ipv6 networks
     if (( ${IPV6_ENABLED} == 1 )) && [[ "$EXTERNAL_IP6_ADDR" != "$INTERNAL_IP6_ADDR" ]]; then
-        export SERVERNAT6=1
+        export SIGNAL_SERVERNAT6=1
     else
-        export SERVERNAT6=0
+        export SIGNAL_SERVERNAT6=0
     fi
 
     # grab root db settings from env or settings file
@@ -513,39 +513,44 @@ function initialChecks() {
     setDynamicScriptSettings
 }
 
-# exported because its used throughout called scripts as well
+# exported because its used throughout child scripts as well
 function reconfigureMysqlSystemdService() {
-    local KAMDB_HOST="${SET_KAM_DB_HOST:-$KAM_DB_HOST}"
-    local KAMDB_LOCATION="$(cat ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation 2>/dev/null)"
+    local KAM_DB_HOST="${SET_KAM_DB_HOST:-$KAM_DB_HOST}"
+    KAM_DB_HOST=${KAM_DB_HOST:-$(getConfigAttrib 'KAM_DB_HOST' ${DSIP_CONFIG_FILE})}
 
-    case "$KAMDB_HOST" in
-        # in this case mysql server is running on this node
-        "localhost"|"127.0.0.1"|"::1"|"${INTERNAL_IP_ADDR}"|"${EXTERNAL_IP_ADDR}"|"${INTERNAL_IP6_ADDR}"|"${EXTERNAL_IP6_ADDR}"|"$(hostname 2>/dev/null)"|"$(hostname -f 2>/dev/null)")
-            # if previously was remote and now local re-generate service files
-            if [[ "${KAMDB_LOCATION}" == "remote" ]]; then
-                systemctl disable mariadb
-                rm -f /etc/systemd/system/mariadb.service 2>/dev/null
-            fi
-
-            printf '%s' 'local' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
-            ;;
-        # in this case mysql server is running on a remote node
-        *)
-            # if previously was local and now remote or inital run and is remote replace service files w/ dummy
-            if [[ "${KAMDB_LOCATION}" == "local" ]] || [[ "${KAMDB_LOCATION}" == "" ]]; then
-                systemctl disable mariadb
-                cp -f ${DSIP_PROJECT_DIR}/mysql/systemd/dummy.service /etc/systemd/system/mariadb.service
-                chmod 644 /etc/systemd/system/mariadb.service
-            fi
-
-            printf '%s' 'remote' > ${DSIP_SYSTEM_CONFIG_DIR}/.mysqldblocation
-            ;;
-    esac
+    if isHostLocal "$KAM_DB_HOST"; then
+        # in this case mysql DBMS is running locally on this server
+        rm -f /etc/systemd/system/mariadb.service 2>/dev/null
+    else
+        # in this case mysql DBMS is running on a remote server
+        cp -f ${DSIP_PROJECT_DIR}/mysql/systemd/dummy.service /etc/systemd/system/mariadb.service
+        chmod 644 /etc/systemd/system/mariadb.service
+    fi
 
     systemctl daemon-reload
     systemctl enable mariadb
 }
 export -f reconfigureMysqlSystemdService
+
+# note: exports variable MEDIA_SERVERNAT
+function reconfigureRtpengineSystemdService() {
+    local RTPENGINE_URI=${RTPENGINE_URI:-$(getConfigAttrib 'RTPENGINE_URI' ${DSIP_CONFIG_FILE})}
+    local RTPENGINE_HOST=$(cut -s -d ':' -f 2 <<<"$RTPENGINE_URI")
+
+    if isHostLocal "$RTPENGINE_HOST"; then
+        # in this case rtpengine is running locally on this server
+        export MEDIA_SERVERNAT=1
+        rm -f /etc/systemd/system/rtpengine.service 2>/dev/null
+    else
+        # in this case rtpengine is running on a remote server
+        export MEDIA_SERVERNAT=0
+        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/dummy.service /etc/systemd/system/rtpengine.service
+        chmod 644 /etc/systemd/system/rtpengine.service
+    fi
+
+    systemctl daemon-reload
+    systemctl enable rtpengine
+}
 
 function generateDsiprouterConfig() {
     mkdir -p ${BACKUPS_DIR}/gui/
@@ -875,6 +880,7 @@ function updateKamailioConfig() {
     local HOMER_HEP_PORT=${HOMER_HEP_PORT:-$(getConfigAttrib 'HOMER_HEP_PORT' ${DSIP_CONFIG_FILE})}
     local NETWORK_MODE=${NETWORK_MODE:-$(getConfigAttrib 'NETWORK_MODE' ${DSIP_CONFIG_FILE})}
     local RTPENGINE_URI=${RTPENGINE_URI:-$(getConfigAttrib 'RTPENGINE_URI' ${DSIP_CONFIG_FILE})}
+    local RTPENGINE_HOST=$(cut -s -d ':' -f 2 <<<"$RTPENGINE_URI")
 
     # update kamailio config file
     if (( $DEBUG == 1 )); then
@@ -882,15 +888,15 @@ function updateKamailioConfig() {
     else
         disableKamailioConfigAttrib 'WITH_DEBUG' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    if (( $SERVERNAT == 1 )); then
-        enableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    if (( $SIGNAL_SERVERNAT == 1 )); then
+        enableKamailioConfigAttrib 'WITH_SIGNAL_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        disableKamailioConfigAttrib 'WITH_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+        disableKamailioConfigAttrib 'WITH_SIGNAL_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    if (( $SERVERNAT6 == 1 )); then
-        enableKamailioConfigAttrib 'WITH_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
+    if (( $SIGNAL_SERVERNAT6 == 1 )); then
+        enableKamailioConfigAttrib 'WITH_SIGNAL_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
     else
-        disableKamailioConfigAttrib 'WITH_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
+        disableKamailioConfigAttrib 'WITH_SIGNAL_SERVERNAT6' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
     if (( $IPV6_ENABLED == 1 )); then
         enableKamailioConfigAttrib 'WITH_IPV6' ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -925,6 +931,12 @@ function updateKamailioConfig() {
     else
         disableKamailioConfigAttrib 'WITH_SCTP' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
+    if isHostLocal "$RTPENGINE_HOST"; then
+        enableKamailioConfigAttrib 'WITH_MEDIA_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    else
+        disableKamailioConfigAttrib 'WITH_MEDIA_SERVERNAT' ${DSIP_KAMAILIO_CONFIG_FILE}
+    fi
+
     setKamailioConfigSubst 'DSIP_CLUSTER_ID' "${DSIP_CLUSTER_ID}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'DSIP_VERSION' "${DSIP_VERSION}" ${DSIP_KAMAILIO_CONFIG_FILE}
     setKamailioConfigSubst 'INTERNAL_IP_ADDR' "${INTERNAL_IP_ADDR}" ${DSIP_KAMAILIO_CONFIG_FILE}
@@ -1030,6 +1042,13 @@ function updateKamailioStartup {
     addDependsOnInit "kamailio.service"
 }
 
+function generateRtpengineConfig() {
+    mkdir -p ${BACKUPS_DIR}/rtpengine/
+    cp -af ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/. ${BACKUPS_DIR}/rtpengine/ 2>/dev/null
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+    ln -sft ${SYSTEM_RTPENGINE_CONFIG_DIR}/ ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/*
+}
+
 # updates and settings in rtpengine config that may change
 # should be run after reboot or change in network configurations
 function updateRtpengineConfig() {
@@ -1044,13 +1063,13 @@ function updateRtpengineConfig() {
         # TODO: ipv6 support broken here
         INTERFACE="public/${EXTERNAL_IP_ADDR}; private/${INTERNAL_IP_ADDR}"
     else
-        if (( ${SERVERNAT} == 1 )); then
+        if (( ${SIGNAL_SERVERNAT} == 1 )); then
             INTERFACE="ipv4/${INTERNAL_IP_ADDR}!${EXTERNAL_IP_ADDR}"
         else
             INTERFACE="ipv4/${INTERNAL_IP_ADDR}"
         fi
         if (( ${IPV6_ENABLED} == 1 )); then
-            if (( ${SERVERNAT6} == 1 )); then
+            if (( ${SIGNAL_SERVERNAT6} == 1 )); then
                 INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6_ADDR}!${EXTERNAL_IP6_ADDR}"
             else
                 INTERFACE="${INTERFACE}; ipv6/${INTERNAL_IP6_ADDR}"
@@ -1082,15 +1101,19 @@ function updateRtpengineConfig() {
 
 # update rtpengine service startup commands accounting for any changes
 function updateRtpengineStartup() {
-    local RTP_UPDATE_OPTS=""
+    reconfigureRtpengineSystemdService
 
-    # update rtpengine configs on reboot
+    # always clear out the dsip-init entries for rtpengine
     removeInitCmd "/usr/bin/dsiprouter updatertpconfig"
-    addInitCmd "/usr/bin/dsiprouter updatertpconfig $RTP_UPDATE_OPTS"
-
-    # make sure dsip-init service runs prior to rtpengine service
     removeDependsOnInit "rtpengine.service"
-    addDependsOnInit "rtpengine.service"
+
+    # conditionally add the dsip-init entries (MEDIA_SERVERNAT==1 only when rtpengine service is local)
+    if (( ${MEDIA_SERVERNAT} == 1 )); then
+        # update rtpengine configs on reboot
+        addInitCmd "/usr/bin/dsiprouter updatertpconfig"
+        # make sure dsip-init service runs prior to rtpengine service
+        addDependsOnInit "rtpengine.service"
+    fi
 }
 
 # updates DNSmasq configs from DB
@@ -1166,9 +1189,8 @@ export -f updateCACertsDir
 function generateKamailioConfig() {
     # Backup kamcfg, generate fresh config from templates, and link it in where kamailio wants it
     mkdir -p ${BACKUPS_DIR}/kamailio
-    cp -f ${SYSTEM_KAMAILIO_CONFIG_DIR}/*.cfg ${BACKUPS_DIR}/kamailio/ 2>/dev/null
-    rm -f ${SYSTEM_KAMAILIO_CONFIG_DIR}/*.cfg 2>/dev/null
-    cp -f ${PROJECT_KAMAILIO_CONFIG_DIR}/* ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+    cp -af ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${BACKUPS_DIR}/kamailio/
+    cp -f ${PROJECT_KAMAILIO_CONFIG_DIR}/*.cfg ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
     ln -sft ${SYSTEM_KAMAILIO_CONFIG_DIR}/ ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/*
 
     # version specific settings
@@ -1395,7 +1417,7 @@ function installScriptRequirements() {
 # Any setup that needs to be done before the script can run properly
 function setupScriptRequiredFiles() {
     # make sure dirs exist required for this script
-    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/gui,/kamailio} ${SRC_DIR} ${DSIP_RUN_DIR} ${DSIP_LIB_DIR} ${DSIP_CERTS_DIR}{,/ca} ${BACKUPS_DIR}
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}{,/gui,/kamailio,/rtpengine} ${SRC_DIR} ${DSIP_RUN_DIR} ${DSIP_LIB_DIR} ${DSIP_CERTS_DIR}{,/ca} ${BACKUPS_DIR}
 
     # only copy the template file over to the DSIP_CONFIG_FILE if it doesn't already exist
     if [[ ! -f "${DSIP_CONFIG_FILE}" ]]; then
@@ -1631,6 +1653,7 @@ function installRTPEngine() {
         exit 1
     fi
 
+    generateRtpengineConfig
     # config updates that are the same across all OS
     updateRtpengineConfig
     # add the config updates to dsip-init service
@@ -3577,6 +3600,13 @@ function updatePermissions() {
         mkdir -p /run/rtpengine
         chown -R rtpengine:rtpengine /run/rtpengine
         chmod 770 /run/rtpengine
+
+        if id -u dsiprouter &>/dev/null; then
+            chown -R dsiprouter:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+        else
+            chown -R root:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+        fi
+        find ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/ -type f -exec chmod 640 {} +
     }
 
     # no args given set permissions for all services
@@ -3720,6 +3750,8 @@ function usageOptions() {
         "configurekam" "[-debug]"
     printf "%-30s %s\n" \
         "configuredsip" "[-debug]"
+    printf "%-30s %s\n" \
+        "configurertp" "[-debug]"
     printf "%-30s %s\n" \
         "renewsslcert" "[-debug]"
     printf "%-30s %s\n" \
@@ -4053,6 +4085,7 @@ function processCMD() {
                             printerr 'Missing required argument to option "--rtpengine-uri="'
                             exit 1
                         fi
+                        RUN_CMMANDS+=(updateRtpengineStartup)
                         ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
@@ -4475,8 +4508,28 @@ function processCMD() {
             updatePermissions "$@"
             exit $?
             ;;
-        # TODO: add commands for configuring rtpengine using same setup
-        #       i.e.) configurertp should be externally accessible and documented
+        configurertp)
+            # reconfigure rtpengine configs
+            RUN_COMMANDS+=(generateRtpengineConfig updateRtpengineConfig updateRtpengineStartup)
+            shift
+
+            while (( $# > 0 )); do
+                OPT="$1"
+                case $OPT in
+                    -debug)
+                        export DEBUG=1
+                        set -x
+                        shift
+                        ;;
+                    *)  # fail on unknown option
+                        printerr "Invalid option [$OPT] for command [$ARG]"
+                        usageOptions
+                        exit 1
+                        shift
+                        ;;
+                esac
+            done
+            ;;
         configurekam)
             # reconfigure kamailio configs
             RUN_COMMANDS+=(generateKamailioConfig updateKamailioConfig updateKamailioStartup)
@@ -4561,7 +4614,7 @@ function processCMD() {
                         rm -f $DSIP_CERTS_DIR/dsiprouter-key.pem
                         shift
                         ;;
-		    -o|--override=*)
+                    -o|--override=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then
                             DNS_NAME_OVERRIDE=$(echo "$1" | cut -d '=' -f 2)
                             shift
@@ -4570,7 +4623,7 @@ function processCMD() {
                             DNS_NAME_OVERRIDE="$1"
                             shift
                         fi
-			;;
+                        ;;
                     *)  # fail on unknown option
                         printerr "Invalid option [$OPT] for command [$ARG]"
                         usageOptions
@@ -4884,7 +4937,6 @@ function processCMD() {
             done
             ;;
         # internal command, update rtpengine config dynamically
-        # TODO: create configurertp command for user configurable settings
         updatertpconfig)
             # update rtpengine config
             RUN_COMMANDS+=(updateRtpengineConfig)
