@@ -16,26 +16,31 @@ data "digitalocean_ssh_key" "ssh_key" {
 
 
 resource "digitalocean_droplet" "dsiprouter" {
-        name = "${var.dns_demo_hostname}.${var.dns_demo_domain}"
-        count = var.number_of_environments
-        region = "tor1"
-        size="1gb"
-        image=var.image
-      	ssh_keys = [ data.digitalocean_ssh_key.ssh_key.fingerprint ]
+  name = "${var.dns_demo_hostname}.${var.dns_demo_domain}"
+  count = var.number_of_environments
+  region = "tor1"
+  size = "1gb"
+  image = var.image
+  ssh_keys = [data.digitalocean_ssh_key.ssh_key.fingerprint]
 
-        connection {
-        host = self.ipv4_address
-        user = "root"
-        type = "ssh"
-        private_key = file(var.pvt_key_path)
-        timeout = "5m"
-        }
+  connection {
+    host = self.ipv4_address
+    user = "root"
+    type = "ssh"
+    private_key = file(var.pvt_key_path)
+    timeout = "5m"
+  }
 
-        provisioner "remote-exec" {
-          inline = [
-		"apt-get update -y && sleep 30 && apt-get install -y git && cd /opt && git clone https://github.com/dOpensource/dsiprouter.git -b ${var.branch} && cd dsiprouter && ./dsiprouter.sh install -all && ${var.additional_commands}"
-        ]
-      }
+  provisioner "remote-exec" {
+    inline = [
+      "apt-get update -y",
+      "sleep 30",
+      "apt-get install -y git",
+      var.pull_request != "" ? "git clone https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter && cd /opt/dsiprouter && git fetch origin pull/${var.pull_request}/head:pr_${var.pull_request}; git switch pr_${var.pull_request}" : "git clone -b ${var.branch}  https://github.com/dOpensource/dsiprouter.git /opt/dsiprouter",
+      "/opt/dsiprouter/dsiprouter.sh install -all",
+      "${var.additional_commands}"
+    ]
+  }
 }
 
 

@@ -35,6 +35,11 @@ variable "branch" {
 	default="master"
 }
 
+variable "pull_request" {
+	type=string
+	default=""
+}
+
 variable "image" {
 	type=string
 	default="debian-12-x64"
