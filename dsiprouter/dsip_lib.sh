@@ -892,7 +892,7 @@ export -f getInternalCIDR
 
 # $1 == host to check
 # returns: 0 == host is local, 1 == host is remote
-function isHostLocal() { (
+function isHostLocal() {
     local LOCAL_MATCH=$(
         joinwith '' '|' '' \
             localhost \
@@ -901,16 +901,11 @@ function isHostLocal() { (
             $(ip -json address show | jq -r '.[].addr_info[].local')
     )
 
-    shopt -s extglob
-    case "$1" in
-        $LOCAL_MATCH)
-            exit 0
-            ;;
-        *)
-            exit 1
-            ;;
-    esac
-) }
+    if [[ "$1" =~ $LOCAL_MATCH ]]; then
+        return 0
+    fi
+    return 1
+}
 export -f isHostLocal
 
 # $1 == cmd as executed in systemd (by ExecStart=)
