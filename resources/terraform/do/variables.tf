@@ -45,6 +45,11 @@ variable "image" {
 	default="debian-12-x64"
 }
 
+variable "image_size" {
+	type=string
+	default="2gb"
+}
+
 variable "additional_commands" {
 	type=string
 	default="echo"

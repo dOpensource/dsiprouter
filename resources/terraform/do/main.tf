@@ -19,7 +19,7 @@ resource "digitalocean_droplet" "dsiprouter" {
   name = "${var.dns_demo_hostname}.${var.dns_demo_domain}"
   count = var.number_of_environments
   region = "tor1"
-  size = "1gb"
+  size = var.image_size	
   image = var.image
   ssh_keys = [data.digitalocean_ssh_key.ssh_key.fingerprint]
 
