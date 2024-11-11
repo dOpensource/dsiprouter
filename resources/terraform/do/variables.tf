@@ -10,17 +10,12 @@ variable "dsiprouter_prefix" {
 	default=""
 }
 
-variable "dns_demo_domain" {
+variable "dns_domain" {
 	type=string
 	default=""
 }
 
-variable  "dns_demo_enabled" {
-	type=number
-	default=0
-}
-
-variable "dns_demo_hostname" {
+variable "dns_hostname" {
 	type=string
 	default="demo"
 }

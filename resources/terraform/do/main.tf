@@ -16,7 +16,7 @@ data "digitalocean_ssh_key" "ssh_key" {
 
 
 resource "digitalocean_droplet" "dsiprouter" {
-  name = "${var.dns_demo_hostname}.${var.dns_demo_domain}"
+  name = "${var.dns_hostname}.${var.dns_domain}"
   count = var.number_of_environments
   region = "tor1"
   size = var.image_size	
@@ -44,10 +44,10 @@ resource "digitalocean_droplet" "dsiprouter" {
 }
 
 
-resource "digitalocean_record" "dns_demo_record" {
-  count = var.dns_demo_enabled
-  domain = var.dns_demo_domain
+resource "digitalocean_record" "dns_record" {
+  count = var.number_of_environments
+  domain = var.dns_domain
   type = "A"
-  name = var.dns_demo_hostname
+  name = var.dns_hostname
   value = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
 }
