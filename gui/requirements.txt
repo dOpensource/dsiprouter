@@ -1,3 +1,4 @@
+UltraDict
 acme
 ansi2html
 bjoern
@@ -32,5 +33,4 @@ sphinx-rtd-theme
 piccolo_theme
 SQLAlchemy~=2.0
 twilio
-UltraDict
 Werkzeug~=2.0

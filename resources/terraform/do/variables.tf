@@ -10,17 +10,12 @@ variable "dsiprouter_prefix" {
 	default=""
 }
 
-variable "dns_demo_domain" {
+variable "dns_domain" {
 	type=string
 	default=""
 }
 
-variable  "dns_demo_enabled" {
-	type=number
-	default=0
-}
-
-variable "dns_demo_hostname" {
+variable "dns_hostname" {
 	type=string
 	default="demo"
 }
@@ -43,6 +38,11 @@ variable "pull_request" {
 variable "image" {
 	type=string
 	default="debian-12-x64"
+}
+
+variable "image_size" {
+	type=string
+	default="2gb"
 }
 
 variable "additional_commands" {
