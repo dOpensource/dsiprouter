@@ -100,6 +100,7 @@ DBROOTPORT="${ROOT_DB_PORT}"
 DBROOTUSER="${ROOT_DB_USER}"
 ${ROOTPW_SETTING}
 CHARSET=utf8
+EXTRA_MODULES="imc cpl siptrace domainpolicy carrierroute drouting userblocklist htable purple uac pipelimit mtree sca mohqueue rtpproxy rtpengine secfilter"
 INSTALL_EXTRA_TABLES=yes
 INSTALL_PRESENCE_TABLES=yes
 INSTALL_DBUID_TABLES=yes
