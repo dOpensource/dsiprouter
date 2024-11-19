@@ -1,0 +1,17 @@
+#-------------------------------------------------------------------
+# packages from ubuntu 24.04 (noble) release
+#-------------------------------------------------------------------
+deb https://nyc.mirrors.clouvider.net/ubuntu/ noble main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ noble main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ noble-security main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ noble-security main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ noble-updates main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ noble-updates main restricted universe multiverse
+
+deb https://nyc.mirrors.clouvider.net/ubuntu/ noble-backports main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ noble-backports main restricted universe multiverse
+
+#deb https://nyc.mirrors.clouvider.net/ubuntu/ noble-proposed main restricted universe multiverse
+#deb-src https://nyc.mirrors.clouvider.net/ubuntu/ noble-proposed main restricted universe multiverse
