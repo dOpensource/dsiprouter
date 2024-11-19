@@ -7,17 +7,21 @@
 #========================== NOTES ==========================#
 #
 # Supported OS:
-# - Debian 12 (bullseye)    - STABLE
+# - Debian 12 (bookworm)    - STABLE
 # - Debian 11 (bullseye)    - STABLE
 # - Debian 10 (buster)      - STABLE
 # - Debian 9 (stretch)      - DEPRECATED
 # - CentOS 9 (stream)       - STABLE
 # - CentOS 8 (stream)       - STABLE
-# - CentOS 7                - STABLE
+# - CentOS 7                - DEPRECATED
+# - RedHat Linux 9          - ALPHA
 # - RedHat Linux 8          - ALPHA
-# - Alma Linux 8            - ALPHA
-# - Rocky Linux 8           - ALPHA
+# - Alma Linux 9            - ALPHA
+# - Alma Linux 8            - BETA
+# - Rocky Linux 9           - ALPHA
+# - Rocky Linux 8           - BETA
 # - Amazon Linux 2          - STABLE
+# - Ubuntu 24.04 (noble)    - BETA
 # - Ubuntu 22.04 (jammy)    - ALPHA
 # - Ubuntu 20.04 (focal)    - DEPRECATED
 #
@@ -104,16 +108,11 @@ function setStaticScriptSettings() {
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
-    APT_OFFICIAL_SOURCES="/etc/apt/sources.list"
-    APT_OFFICIAL_PREFS="/etc/apt/preferences"
-    APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.list"
-    APT_OFFICIAL_PREFS_BAK="${BACKUPS_DIR}/original-sources.pref"
-    APT_DSIP_CONFIG="/etc/apt/apt.conf.d/99dsiprouter"
     YUM_OFFICIAL_REPOS="/etc/yum.repos.d/official-releases.repo"
 
     # Force the installation of an Kamailio version by uncommenting
     # can also be set as an environment variable
-    #KAM_VERSION=57 # Version 5.7.x
+    #KAM_VERSION=5.8.3
 
     # Force the installation of an RTPEngine version by uncommenting
     # can also be set as an environment variable
@@ -410,93 +409,130 @@ function validateOSInfo() {
     export DISTRO_MAJOR_VER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
     export DISTRO_MINOR_VER=$(cut -s -d '.' -f 2 <<<"$DISTRO_VER")
 
-    if [[ "$DISTRO" == "debian" ]]; then
+    case "$DISTRO" in
+    debian)
         case "$DISTRO_VER" in
-            12)
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
-                export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=500 APT_BOOKWORM_PRIORITY=990
-                ;;
-            11)
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
-                export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=50 APT_BULLSEYE_PRIORITY=990 APT_BOOKWORM_PRIORITY=500
-                ;;
-            10)
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
-                export APT_STRETCH_PRIORITY=50 APT_BUSTER_PRIORITY=990 APT_BULLSEYE_PRIORITY=500 APT_BOOKWORM_PRIORITY=100
-                ;;
-            9)
-                printerr "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
-                KAM_VERSION=${KAM_VERSION:-55}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
-                ;;
-            *)
-                printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                exit 1
-                ;;
-        esac
-    elif [[ "$DISTRO" == "centos" ]]; then
-        case "$DISTRO_VER" in
-            8|9)
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
-                ;;
-            7)
-                KAM_VERSION=${KAM_VERSION:-57}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
-                ;;
-            *)
-                printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                exit 1
+        12|11|10)
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        9)
+            printerr "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
+            KAM_VERSION=${KAM_VERSION:-"5.5.7"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
             ;;
         esac
-    elif [[ "$DISTRO" == "amzn" ]]; then
+        ;;
+    centos)
         case "$DISTRO_VER" in
-            2)
-                KAM_VERSION=${KAM_VERSION:-57}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
-                ;;
-            *)
-                printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                exit 1
-                ;;
+        8|9)
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        7)
+            printwarn "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
+            KAM_VERSION=${KAM_VERSION:-"5.7.6"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
+            ;;
         esac
-    elif [[ "$DISTRO" == "ubuntu" ]]; then
+        ;;
+    amzn)
         case "$DISTRO_VER" in
-            22.04)
-                printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
-                export APT_FOCAL_PRIORITY=100 APT_JAMMY_PRIORITY=990
-                ;;
-            20.04)
-                printwarn "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
-                ;;
-            *)
-                printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                exit 1
-                ;;
+        2)
+            KAM_VERSION=${KAM_VERSION:-"5.7.6"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
+            ;;
         esac
-    elif [[ "$DISTRO" =~ rhel|almalinux|rocky ]]; then
+        ;;
+    ubuntu)
+        case "$DISTRO_VER" in
+        24.04)
+            printwarn "Your operating System Version is in BETA support. Some features may have bugs. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.4"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        22.04)
+            printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        20.04)
+            printwarn "Your Operating System Version is DEPRECATED. To ask for support open an issue https://github.com/dOpensource/dsiprouter/"
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
+            ;;
+        esac
+        ;;
+    rhel)
         case "$DISTRO_MAJOR_VER" in
-            8)
-                printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
-                KAM_VERSION=${KAM_VERSION:-58}
-                RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
-                ;;
-            *)
-                printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
-                exit 1
-                ;;
+        8|9)
+            printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
+            ;;
         esac
-    else
+        ;;
+    almalinux)
+        case "$DISTRO_MAJOR_VER" in
+        9)
+            printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        8)
+            printwarn "Your operating System Version is in BETA support. Some features may have bugs. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
+            ;;
+        esac
+        ;;
+    rocky)
+        case "$DISTRO_MAJOR_VER" in
+        9)
+            printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        8)
+            printwarn "Your operating System Version is in BETA support. Some features may have bugs. Use at your own risk."
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        *)
+            printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
+            exit 1
+            ;;
+        esac
+        ;;
+    *)
         printerr "Your Operating System is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
         exit 1
-    fi
+        ;;
+    esac
 
     # export it for external scripts
     export KAM_VERSION
@@ -507,9 +543,10 @@ function validateOSInfo() {
 function initialChecks() {
     validateRootPriv
     validateOSInfo
+    configureSystemRepos
+    installScriptRequirements
     setStaticScriptSettings
     setupScriptRequiredFiles
-    installScriptRequirements
     setDynamicScriptSettings
 }
 
@@ -1187,6 +1224,8 @@ function updateCACertsDir() {
 export -f updateCACertsDir
 
 function generateKamailioConfig() {
+    local KAM_MAJ_MIN_INT=$(perl -pe 's%^([0-9])\.([0-9]).*$%\1\2%' <<<"$KAM_VERSION")
+
     # Backup kamcfg, generate fresh config from templates, and link it in where kamailio wants it
     mkdir -p ${BACKUPS_DIR}/kamailio
     cp -af ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${BACKUPS_DIR}/kamailio/
@@ -1194,10 +1233,10 @@ function generateKamailioConfig() {
     ln -sft ${SYSTEM_KAMAILIO_CONFIG_DIR}/ ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/*
 
     # version specific settings
-    if (( ${KAM_VERSION} >= 52 )); then
+    if (( ${KAM_MAJ_MIN_INT} >= 52 )); then
         sed -i -r -e 's~#+(modparam\(["'"'"']htable["'"'"'], ?["'"'"']dmq_init_sync["'"'"'], ?[0-9]\))~\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
-    if (( ${KAM_VERSION} <= 57 )); then
+    if (( ${KAM_MAJ_MIN_INT} <= 57 )); then
         sed -i -r -e 's~#*(modparam\(["'"'"']rtpengine["'"'"'], ?["'"'"']ping_mode["'"'"'], ?[0-9]\))~#\1~g' ${DSIP_KAMAILIO_CONFIG_FILE}
     fi
 
@@ -1393,14 +1432,21 @@ function installScriptRequirements() {
 
     printdbg 'Installing one-time script requirements'
 
-    if cmdExists 'apt-get'; then
-        apt-get update -y &&
-        apt-get install -y curl wget gawk perl sed git dnsutils openssl python3 jq xxd coreutils
-    elif cmdExists 'dnf'; then
-        dnf install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils
-    elif cmdExists 'yum'; then
-        yum install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils
-    fi
+    case "$DISTRO" in
+    rocky|almalinux)
+        dnf install -y curl wget gawk perl sed git bind-utils openssl python3.11 jq vim-common coreutils
+        ;;
+    *)
+        if cmdExists 'apt-get'; then
+            apt-get update -y &&
+            apt-get install -y curl wget gawk perl sed git dnsutils openssl python3 jq xxd coreutils
+        elif cmdExists 'dnf'; then
+            dnf install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils
+        elif cmdExists 'yum'; then
+            yum install -y curl wget gawk perl sed git bind-utils openssl python3 jq vim-common coreutils
+        fi
+        ;;
+    esac
 
     if (( $? != 0 )); then
         printerr 'Could not install script requirements'
@@ -1496,22 +1542,37 @@ function configureSystemRepos() {
 
     printdbg 'Configuring system repositories'
     case "$DISTRO" in
-        debian|ubuntu)
-            # comment out cdrom in sources as it can halt install
-            sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
+    debian|ubuntu)
+        if [[ "$DISTRO" == "ubuntu" ]] && (( ${DISTRO_MAJOR_VER} >= 24 )); then
+            APT_OFFICIAL_SOURCES="/etc/apt/sources.d/ubuntu.sources"
+            APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.sources"
+        else
+            APT_OFFICIAL_SOURCES="/etc/apt/sources.list"
+            APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.list"
+        fi
+        APT_OFFICIAL_PREFS="/etc/apt/preferences"
+        APT_OFFICIAL_PREFS_BAK="${BACKUPS_DIR}/original-sources.pref"
+        APT_DSIP_CONFIG="/etc/apt/apt.conf.d/99dsiprouter"
 
-            apt-get install -y apt-transport-https
-            mv -f ${APT_OFFICIAL_SOURCES} ${APT_OFFICIAL_SOURCES_BAK}
-            mv -f ${APT_OFFICIAL_PREFS} ${APT_OFFICIAL_PREFS_BAK} 2>/dev/null
-            cp -f ${DSIP_PROJECT_DIR}/resources/apt/${DISTRO}/${DISTRO_VER}/official-releases.list ${APT_OFFICIAL_SOURCES}
-            envsubst < ${DSIP_PROJECT_DIR}/resources/apt/${DISTRO}/official-releases.pref > ${APT_OFFICIAL_PREFS}
-            apt-get update -y
-            ;;
-        # TODO: create official repo file (rhel/amzn/rocky/alma repo's?)
-        # TODO: install yum priorities plugin
-        # TODO: set priorities on official repo
-        #amzn)
-        #    ;;
+        # comment out cdrom in sources as it can halt install
+        sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
+
+        apt-get install -y apt-transport-https
+        mv -f ${APT_OFFICIAL_SOURCES} ${APT_OFFICIAL_SOURCES_BAK}
+        mv -f ${APT_OFFICIAL_PREFS} ${APT_OFFICIAL_PREFS_BAK} 2>/dev/null
+        cp -f ${DSIP_PROJECT_DIR}/resources/apt/${DISTRO}/${DISTRO_VER}/official-releases.list ${APT_OFFICIAL_SOURCES}
+        cp -f ${DSIP_PROJECT_DIR}/resources/apt/${DISTRO}/${DISTRO_VER}/official-releases.pref ${APT_OFFICIAL_PREFS}
+        apt-get update -y
+        ;;
+    almalinux)
+        # ref: https://almalinux.org/blog/2023-12-20-almalinux-8-key-update/
+        rpm --import https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux
+        ;;
+    # TODO: create official repo file (rhel/amzn/rocky/alma repo's?)
+    # TODO: install yum priorities plugin
+    # TODO: set priorities on official repo
+    #amzn)
+    #    ;;
     esac
 
     if (( $? == 1 )); then
@@ -1527,13 +1588,24 @@ function configureSystemRepos() {
 }
 
 # remove dsiprouter system configs
-function removeDsipSystemConfig() {
-    if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]; then
+function revertSystemRepos() {
+    if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]]; then
         case "$DISTRO" in
-            debian|ubuntu)
-                mv -f ${APT_OFFICIAL_SOURCES_BAK} ${APT_OFFICIAL_SOURCES}
-                mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS} 2>/dev/null
-                apt-get update -y
+        debian|ubuntu)
+            if [[ "$DISTRO" == "ubuntu" ]] && (( ${DISTRO_MAJOR_VER} >= 24 )); then
+                APT_OFFICIAL_SOURCES="/etc/apt/sources.d/ubuntu.sources"
+                APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.sources"
+            else
+                APT_OFFICIAL_SOURCES="/etc/apt/sources.list"
+                APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.list"
+            fi
+            APT_OFFICIAL_PREFS="/etc/apt/preferences"
+            APT_OFFICIAL_PREFS_BAK="${BACKUPS_DIR}/original-sources.pref"
+            APT_DSIP_CONFIG="/etc/apt/apt.conf.d/99dsiprouter"
+
+            mv -f ${APT_OFFICIAL_SOURCES_BAK} ${APT_OFFICIAL_SOURCES}
+            mv -f ${APT_OFFICIAL_PREFS_BAK} ${APT_OFFICIAL_PREFS} 2>/dev/null
+            apt-get update -y
             ;;
         esac
     fi
@@ -3673,11 +3745,11 @@ function createSwapFile() {
     fi
 
     # only create if system has less than 2GB RAM and no existing swap files
-    if (( $(awk '/^MemTotal/ {print int($2/1000000)}' /proc/meminfo) < 2 )) && [[ -z "$(swapon --show=SIZE --noheadings)" ]]; then
+    if (( $(awk '/^MemTotal/ {print int($2/1024/1024)}' /proc/meminfo) < 2 )) && [[ -z "$(swapon --show=SIZE --noheadings)" ]]; then
         printdbg 'memory constraints require swapfile, creating now..'
 
-        # 1GB of swap space
-        dd if=/dev/zero of=${SWAP_FILE} bs=64M count=16 &&
+        # 2GB of swap space
+        dd if=/dev/zero of=${SWAP_FILE} bs=64M count=32 &&
         chmod 600 ${SWAP_FILE} &&
         mkswap ${SWAP_FILE} &&
         swapon ${SWAP_FILE} &&
@@ -3702,8 +3774,11 @@ function removeSwapFile() {
     fi
 
     swapoff ${SWAP_FILE} &&
-    echo perl -i -pe "s%^${SWAP_FILE}[ \t].*\n%%" /etc/fstab &&
-    printdbg 'swapfile removed'
+    sed -i "\%^${SWAP_FILE}%d" /etc/fstab &&
+    printdbg 'swapfile removed' || {
+        printerr 'failed removing swap file'
+        exit 1
+    }
 
     rm -f "${DSIP_SYSTEM_CONFIG_DIR}/.memupdatescomplete"
 }
@@ -3875,7 +3950,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(configureSystemRepos setCloudPlatform createInitService installDsiprouterCli)
+            RUN_COMMANDS+=(setCloudPlatform createInitService createSwapFile installDsiprouterCli)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -4143,7 +4218,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeInitService removeDsipSystemConfig)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeSwapFile removeInitService revertSystemRepos)
                         shift
                         ;;
                     *)  # fail on unknown option

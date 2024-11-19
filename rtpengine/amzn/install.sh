@@ -135,7 +135,7 @@ function install {
         (
             cd ${SRC_DIR}/openssl &&
             ./Configure --prefix=/usr linux-$(uname -m) &&
-            make -j $NRPOC &&
+            make -j $NPROC &&
             make -j $NPROC install
         ) || {
             printerr 'Failed to compile openssl'

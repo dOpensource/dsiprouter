@@ -181,8 +181,12 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         apt-get install -y ../ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
-            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
-        exit $?
+            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb || exit 1
+
+        systemctl unmask ngcp-rtpengine-daemon.service
+        systemctl disable ngcp-rtpengine-daemon.service
+
+        exit 0
     )
 
     if (( $? != 0 )); then
@@ -229,6 +233,7 @@ function install {
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
+    rm -f /lib/systemd/system/rtpengine*.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
     chmod 644 /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
