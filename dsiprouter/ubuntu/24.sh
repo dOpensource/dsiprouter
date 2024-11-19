@@ -8,20 +8,20 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
-function install {
+function install() {
     # create dsiprouter user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
     userdel dsiprouter &>/dev/null; groupdel dsiprouter &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
-    # Install dependencies for dSIPRouter
-    dnf remove -y rs-epel-release* &&
-    dnf install -y dnf-utils &&
-    dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools" &&
-    dnf install -y firewalld sudo logrotate rsyslog perl \
-        python3.11 python3.11-pip python3.11-libs python3.11-devel python3.11-PyMySQL \
-        libev-devel util-linux postgresql-devel mariadb-devel openldap-devel
+    # Install Dependencies and remove any conflicting packages
+    apt-get remove -y ufw &&
+    apt-get install -y build-essential pkg-config python3-pip \
+        python3-dev libpq-dev python3-venv libev-dev libffi-dev default-libmysqlclient-dev \
+        curl python3 firewalld sudo logrotate rsyslog perl sngrep uuid-runtime &&
+    # Install libraries needed to install the python-ldap package
+    apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -37,11 +37,7 @@ function install {
     mkdir -p ${DSIP_RUN_DIR}
     chown -R dsiprouter:dsiprouter ${DSIP_RUN_DIR}
 
-    # give dsiprouter permissions in SELINUX
-    semanage port -a -t http_port_t -p tcp ${DSIP_PORT} ||
-        semanage port -m -t http_port_t -p tcp ${DSIP_PORT}
-
-   # Enable and start firewalld
+    # Enable and start firewalld if not already running
     systemctl enable firewalld
     systemctl start firewalld
 
@@ -49,7 +45,9 @@ function install {
     firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
+    # TODO: figure out why compiling ultradict with the other deps hangs
     python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
+    ${PYTHON_CMD} -m pip install UltraDict &&
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"
@@ -61,8 +59,6 @@ function install {
         -pe 's%DSIP_UNIX_SOCK%${dsip_unix_sock}%g; s%DSIP_PORT%${dsip_port}%g; s%DSIP_SSL_CERT%${dsip_ssl_cert}%g; s%DSIP_SSL_KEY%${dsip_ssl_key}%g;' \
         ${DSIP_PROJECT_DIR}/nginx/configs/dsiprouter.conf >/etc/nginx/sites-available/dsiprouter.conf
     ln -sf /etc/nginx/sites-available/dsiprouter.conf /etc/nginx/sites-enabled/dsiprouter.conf
-    systemctl enable nginx
-    systemctl restart nginx
 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
@@ -87,21 +83,13 @@ function install {
     systemctl daemon-reload
     systemctl enable dsiprouter
 
-    # add hook to bash_completion in the standard debian location
-    echo '. /usr/share/bash-completion/bash_completion' > /etc/bash_completion
-
     return 0
 }
 
-
-function uninstall {
-    dnf remove -y python36u\*
-    dnf remove -y ius-release
-
-    # Remove the repos
-    rm -f /etc/dnf.repos.d/ius*
-    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
-    dnf clean all
+function uninstall() {
+    apt-get remove -y curl python3 python3-pip python-dev python3-openssl libpq-dev firewalld
+    apt-get remove -y --allow-unauthenticated libmariadbclient-dev
+    apt-get remove -y logrotate rsyslog perl sngrep libev-dev uuid-runtime
 
     # Remove Firewall for DSIP_PORT
     firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent

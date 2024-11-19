@@ -10,61 +10,139 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
-function install {
-    # Install required libraries
-    apt-get install -y logrotate rsyslog
-    apt-get install -y firewalld
-    apt-get install -y debhelper
-    apt-get install -y iptables-dev
-    apt-get install -y libcurl4-openssl-dev
-    apt-get install -y libpcre3-dev libxmlrpc-core-c3-dev
-    apt-get install -y markdown
-    apt-get install -y libglib2.0-dev
-    apt-get install -y libavcodec-dev
-    apt-get install -y libevent-dev
-    apt-get install -y libhiredis-dev
-    apt-get install -y libjson-glib-dev libpcap0.8-dev libpcap-dev libssl-dev
-    apt-get install -y libavfilter-dev
-    apt-get install -y libavformat-dev
-    apt-get install -y libmysqlclient-dev
-    apt-get install -y libmariadbclient-dev
-    apt-get install -y default-libmysqlclient-dev
-    apt-get install -y libmariadbd-dev
-    apt-get install -y module-assistant
-    apt-get install -y dkms
-    apt-get install -y unzip
-    apt-get install -y libavresample-dev
-    apt-get install -y linux-headers-$(uname -r)
-    apt-get install -y gperf libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libdigest-crc-perl libdigest-hmac-perl \
-        libio-multiplex-perl libio-socket-inet6-perl libnet-interface-perl libsocket6-perl libspandsp-dev libsystemd-dev libwebsockets-dev
+function debSearch() {
+    local DEB_SEARCH="$1" SEARCH_URL
 
-    # try upgrading debhelper with backports if lower ver than 10
-    CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
-    if (( ${CURRENT_VERSION:-0} < 10 )); then
-        CODENAME=$(cat /etc/os-release | grep '^VERSION_CODENAME=' | cut -d '=' -f 2)
-        BACKPORT_REPO="${CODENAME}-backports"
-        apt-get install -y -t ${BACKPORT_REPO} debhelper
-
-        # if current backports fail (again aws repo's are not very reliable) try and older repo
-        if [ $? -ne 0 ]; then
-            printf '%s\n%s\n' \
-                "deb http://archive.ubuntu.com/debian-archive/ubuntu/ ${CODENAME}-backports main" \
-                "deb-src http://archive.debian.org/debian-archive/ubuntu/ ${CODENAME}-backports main" \
-                > /etc/apt/sources.list.d/tmp-backports.list
-            apt-get -o Acquire::Check-Valid-Until=false update -y
-
-            apt-get -o Acquire::Check-Valid-Until=false install -y -t ${BACKPORT_REPO} debhelper
-            rm -f /etc/apt/sources.list.d/tmp-backports.list
-        fi
-
-        # pin debhelper package to stay on backports repo
-        printf '%s\n%s\n%s\n' \
-            "Package: debhelper" \
-            "Pin: release n=${BACKPORT_REPO}" \
-            "Pin-Priority: 750" > /etc/apt/preferences.d/debhelper
+    # search security.ubuntu.com for package
+    SEARCH_URL="http://security.ubuntu.com/ubuntu/pool/main/l/linux/${DEB_SEARCH}.deb"
+    if [[ $(curl -sL -I -w "%{http_code}" "$SEARCH_URL" -o /dev/null) == "200" ]]; then
+        echo "$SEARCH_URL"
+        return 0
     fi
 
-   ## compile and install RTPEngine as a DEB package
+    # search archive.ubuntu.com for package
+    SEARCH_URL="http://archive.ubuntu.com/ubuntu/pool/main/l/linux/${DEB_SEARCH}.deb"
+    if [[ $(curl -sL -I -w "%{http_code}" "$SEARCH_URL" -o /dev/null) == "200" ]]; then
+        echo "$SEARCH_URL"
+        return 0
+    fi
+
+    # nowhere else we trust to search
+    return 1
+}
+
+function aptInstallKernelHeadersFromURI() {
+    local RET=0
+    local KERN_HDR_URI="$1" KERN_HDR_DEB=$(basename "$1")
+    local KERN_HDR_COMMON_URI="" KERN_HDR_COMMON_DEB=""
+
+    (
+        # download the .deb file
+        cd /tmp/
+        curl -sLO --retry 3 "$KERN_HDR_URI"
+
+        # install dependent common headers
+        KERN_HDR_COMMON_URI=$(
+            debSearch $(
+                dpkg --info "$KERN_HDR_DEB" 2>/dev/null |
+                grep 'Depends:' |
+                cut -d ':' -f 2 |
+                tr ',' '\n' |
+                grep -oP 'linux-headers-.*-common'
+            )
+        ) &&
+        KERN_HDR_COMMON_DEB=$(basename "$KERN_HDR_COMMON_URI") &&
+        curl -sLO --retry 3 "$KERN_HDR_COMMON_URI" && {
+            apt-get install -y ./${KERN_HDR_COMMON_DEB}
+            RET=$((RET + $?))
+            apt-get install -y -f
+            rm -f "$KERN_HDR_COMMON_DEB"
+        }
+
+        # install the kernel headers
+        apt-get install -y ./${KERN_HDR_DEB}
+        RET=$((RET + $?))
+        rm -f "$KERN_HDR_DEB"
+        exit $RET
+    )
+
+    return $?
+}
+
+# prints $1 if not virtual or the package that provides $1 if virtual
+function resolveAptVirtualPkg() {
+    apt-cache search "^$1\$" | awk '{print $1}'
+}
+
+# when run from root of a debian repo finds the package dependencies
+function getDebDependencies() {
+    local TMP DISCRETE_PKGS CONDITIONAL_PKGS RESULT_PKGS=()
+
+    TMP=$(
+        dpkg-checkbuilddeps 2>&1 |
+        awk -F 'Unmet build dependencies: ' '{print $2}' |
+        perl -pe 's% \(.*?\)%%g'
+    )
+    DISCRETE_PKGS=$(perl -pe 's%[^ ]+ \| [^ ]+%%g' <<<"$TMP")
+    CONDITIONAL_PKGS=$(
+        grep -oP '[^ ]+ \| [^ ]+' <<<"$TMP" | (
+            while IFS= read -r LINE; do
+                PKG=$(resolveAptVirtualPkg $(awk -F ' | ' '{print $1}' <<<"$LINE"))
+                if [[ -n "$(apt-cache search $PKG 2>/dev/null)" ]]; then
+                    echo "$PKG"
+                else
+                    PKG=$(resolveAptVirtualPkg $(awk -F ' | ' '{print $2}' <<<"$LINE"))
+                    [[ -n "$(apt-cache search $PKG 2>/dev/null)" ]] && echo "$PKG"
+                fi
+            done
+        )
+    )
+
+    for PKG in $DISCRETE_PKGS; do
+        RESULT_PKGS+=( $(resolveAptVirtualPkg "$PKG") )
+    done
+    for PKG in $CONDITIONAL_PKGS; do
+        RESULT_PKGS+=( "$PKG" )
+    done
+
+    echo ${RESULT_PKGS[@]}
+}
+
+function install {
+    local MISSING_PKGS
+    local NPROC=$(nproc)
+
+    # Install required packages and remove conflicting packages
+    { dpkg -l ufw &>/dev/null && apt-get remove -y ufw || :; } &&
+    apt-get install -y git perl logrotate rsyslog firewalld dpkg-dev
+
+    if (( $? != 0 )); then
+        printerr "Problem with installing the required libraries for RTPEngine"
+        return 1
+    fi
+
+    # try installing kernel dev headers in the following order:
+    # 1: headers from security.ubuntu.com
+    # 2: headers from archive.ubuntu.com
+    # NOTE: headers should be installed for all kernels on the system
+    #       but we do not want to support ancient kernel dependencies
+    (
+        RET=0
+        for OS_KERNEL in $(ls /lib/modules/ 2>/dev/null); do
+            apt-get install -y linux-headers-${OS_KERNEL} ||
+            aptInstallKernelHeadersFromURI $(debSearch linux-headers-${OS_KERNEL})
+            RET=$((RET+$?))
+        done
+        exit $RET
+    )
+
+    # require kernel module
+    if (( $? != 0 )); then
+        printerr "Problems occurred installing one or more kernel headers"
+        return 1
+    fi
+
+    ## compile and install RTPEngine as a DEB package
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
         if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/rtpengine)" != "${RTPENGINE_VER}" ]]; then
@@ -98,22 +176,17 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         apt-get install -y ../ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
-            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
-        exit $?
+            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb || exit 1
+
+        systemctl unmask ngcp-rtpengine-daemon.service
+        systemctl disable ngcp-rtpengine-daemon.service
+
+        exit 0
     )
 
     if (( $? != 0 )); then
         printerr "Problem installing RTPEngine DEB's"
         return 1
-    fi
-
-    # make sure RTPEngine kernel module configured
-    # skip this check for older versions as we allow userspace forwarding
-    if (( ${DISTRO_VER} > 10 )); then
-        if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
-            printerr "Problem installing RTPEngine kernel module"
-            return 1
-        fi
     fi
 
     # ensure config dirs exist
@@ -146,7 +219,8 @@ function install {
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
    # Reconfigure systemd service files
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
+    rm -f /lib/systemd/system/rtpengine*.service
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
     chmod 644 /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
     systemctl enable rtpengine

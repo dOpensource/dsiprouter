@@ -1356,7 +1356,11 @@ export -f sendKamCmd
 function hashCreds() {
 	local CREDS SALT DK_LEN
 	# we use system python3 if dsiprouter python venv does not yet exist
-	local PYTHON_CMD=${PYTHON_CMD:-python3}
+	if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+	    local PYTHON_CMD="$PYTHON_CMD"
+	else
+	    local PYTHON_CMD="python3"
+	fi
 
 	# grab credentials from stdin if provided
 	if [[ -p /dev/stdin ]]; then

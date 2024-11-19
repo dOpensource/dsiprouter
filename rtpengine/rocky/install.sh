@@ -10,19 +10,16 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
     . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 fi
 
-# search for RPM using external APIs mirrors and archives
-# not guaranteed to find an RPM, outputs empty string if search fails
+# search for RPM using rocky linux vault repos
+# not guaranteed to find an RPM, returns 1 if not found
 # arguments:
 #   $1 == rpm to search for
 # options:
-#   -a <arch filter>
-#   --arch=<arch filter>
-#   -d <distro filter>
-#   --distro=<distro filter>
-#   -f <grep filter>
-#   --filter=<grep filter>
-function rpmSearch() {
-    local RPM_SEARCH="" DISTRO_FILTER="" ARCH_FILTER="" GREP_FILTER="" SEARCH_RESULTS=""
+#   -af <archictecture>
+#   -rf <repo filter>
+#   -dm <distro major version>
+function vaultSearch() {
+    local RPM_SEARCH DISTRO_MAJVER ARCH_FILTER REPO_FILTER SEARCH_RESULTS VERSIONS_TO_SEARCH SEARCH_URL PKG_LETTER
 
     while (( $# > 0 )); do
         # last arg is user and database
@@ -33,88 +30,62 @@ function rpmSearch() {
         fi
 
         case "$1" in
-            -a)
+            -af)
                 shift
                 ARCH_FILTER="$1"
                 shift
                 ;;
-            --arch=*)
-                ARCH_FILTER="$(echo "$1" | cut -d '=' -f 2)"
+            -rf)
+                shift
+                REPO_FILTER="$1"
                 shift
                 ;;
-            -d)
+            -dm)
                 shift
-                DISTRO_FILTER="$1"
-                shift
-                ;;
-            --distro=*)
-                DISTRO_FILTER="$(echo "$1" | cut -d '=' -f 2)"
-                shift
-                ;;
-            -f)
-                shift
-                GREP_FILTER="$1"
-                shift
-                ;;
-            --filter=*)
-                GREP_FILTER="$(echo "$1" | cut -d '=' -f 2)"
+                DISTRO_MAJVER="$1"
                 shift
                 ;;
         esac
     done
 
-    # if grep filter not set it defaults to rpm search
-    if [[ -z "$GREP_FILTER" ]]; then
-        GREP_FILTER="${RPM_SEARCH}"
-    fi
+    PKG_LETTER=$(tolower "${RPM_SEARCH:0:1}")
 
-    # grab the results of the search using an API on rpmfind.net
-    SEARCH_RESULTS=$(
-        curl -sL "https://www.rpmfind.net/linux/rpm2html/search.php?query=${RPM_SEARCH}&system=${DISTRO_FILTER}&arch=${ARCH_FILTER}" 2>/dev/null |
-            perl -e "\$rpmfind_base_url='https://rpmfind.net'; \$rpm_search='${RPM_SEARCH}'; @matches=(); " -0777 -e \
-                '$html = do { local $/; <STDIN> };
-                @matches = ($html =~ m%(?<=\<a href=["'"'"'])([-a-zA-Z0-9\@\:\%\._\+~#=/]*${rpm_search}[-a-zA-Z0-9\@\:\%\._\+\~\#\=]*\.rpm)(?=["'"'"']\>)%g);
-                foreach my $match (@matches) { print "${rpmfind_base_url}${match}\n"; }' 2>/dev/null |
-            grep -m 1 "${GREP_FILTER}"
-    )
+    VERSIONS_TO_SEARCH=($(
+        curl -s https://dl.rockylinux.org/vault/rocky/ |
+        perl -e "\$distro_majver='$DISTRO_MAJVER'; @matches=();" -0777 -e '
+            $html = do { local $/; <STDIN> };
+            @matches = ($html =~ m%(?<=\<a href=["'"'"'])(${distro_majver}\.[0-9a-zA-Z-]+)/(?=["'"'"']\>)%g);
+            foreach my $match (@matches) { print "${match}\n"; }
+        ' 2>/dev/null
+    ))
 
-    if [[ -n "$SEARCH_RESULTS" ]]; then
-        echo "$SEARCH_RESULTS"
-    fi
+    for VAULT_VER in ${VERSIONS_TO_SEARCH[@]}; do
+        SEARCH_URL="https://dl.rockylinux.org/vault/rocky/${VAULT_VER}/${REPO_FILTER}/${ARCH_FILTER}/os/Packages/${PKG_LETTER}/${RPM_SEARCH}.rpm"
+        if (( $(curl -s -I -w "%{http_code}" -o /dev/null "$SEARCH_URL") == 200 )); then
+            echo "$SEARCH_URL"
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # try installing in the following order:
 # 1: headers from repos
-# 2: headers from rpmfind.net (updates branch)
-# 3: headers from rpmfind.net (os branch)
-# 4: headers from linuxsoft.cern.ch (updates branch)
-# 5: headers from linuxsoft.cern.ch (os branch)
+# 2: headers from vault repos
 function installKernelDevHeaders {
-    local DISTRO_VER="$DISTRO_VER"
+    local DISTRO_MAJVER="$DISTRO_MAJVER"
     local OS_ARCH="$OS_ARCH"
     local OS_KERNEL="$OS_KERNEL"
+    local KERN_DEV KERN_HDR
 
-    if (( ${DISTRO_VER} >= 8 )); then
-        dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
-        dnf install -y https://rpmfind.net/linux/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        dnf install -y https://rpmfind.net/linux/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        dnf install -y https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        dnf install -y https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm
-    else
-        yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} ||
-        yum install -y https://rpmfind.net/linux/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://rpmfind.net/linux/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://rpmfind.net/linux/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/updates/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm ||
-        yum install -y https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-devel-${OS_KERNEL}.rpm \
-            https://linuxsoft.cern.ch/cern/centos/${DISTRO_VER}/os/${OS_ARCH}/Packages/kernel-headers-${OS_KERNEL}.rpm
-    fi
+    dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
+        KERN_DEV=$(vaultSearch -af $OS_ARCH -dm $DISTRO_MAJVER -rf BaseOS "kernel-devel-${OS_KERNEL}") || return 1
+        KERN_HDR=$(vaultSearch -af $OS_ARCH -dm $DISTRO_MAJVER -rf BaseOS "kernel-headers-${OS_KERNEL}") || return 1
+
+        dnf install -y "$KERN_DEV" &&
+        dnf install -y "$KERN_HDR"
+    }
 }
 
 # compile and install rtpengine from RPM's
@@ -124,29 +95,31 @@ function install {
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
     local RHEL_BASE_VER=$(rpm -E %{rhel})
-    local DISTRO_VER="$(cat /etc/redhat-release | cut -d ' ' -f 4)"
+    local DISTRO_VER=$(source /etc/os-release; echo "$VERSION_ID")
+    local DISTRO_MAJVER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
     local NPROC=$(nproc)
 
     # Install required libraries
-    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    yum-config-manager -y --add-repo https://negativo17.org/repos/epel-multimedia.repo
-    sed -i 's|$releasever|'"${RHEL_BASE_VER}|g" /etc/yum.repos.d/epel-multimedia.repo
-    rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-    rpm -Uh http://li.nux.ro/download/nux/dextop/el7/${OS_ARCH}/nux-dextop-release-0-5.el7.nux.noarch.rpm
-
-    yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+    dnf config-manager --enable -y devel &&
+    if (( ${DISTRO_MAJVER} == 9 )); then
+        dnf config-manager -y --set-enabled crb
+    elif (( ${DISTRO_MAJVER} == 8 )); then
+        dnf config-manager -y --set-enabled powertools
+    fi &&
+    dnf install -y epel-release distribution-gpg-keys &&
+    rpmkeys --import /usr/share/distribution-gpg-keys/rpmfusion/RPM-GPG-KEY-rpmfusion-free-el-${RHEL_BASE_VER} &&
+    dnf --setopt=localpkg_gpgcheck=1 install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
+    dnf install -y jq curl gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables iptables-devel xmlrpc-c-devel gperf system-lsb redhat-rpm-config rpm-build pkgconfig \
-        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd spandsp-devel bc libwebsockets-devel \
-        gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny spandsp \
-        $(rpmSearch -d centos -a x86_64 -f el7 librabbitmq) $(rpmSearch -d centos -a x86_64 -f el7 librabbitmq-devel) \
-        libbluray-devel libavcodec-devel libavformat-devel libavutil-devel libswresample-devel libavfilter-devel ffmpeg ffmpeg-devel \
-        libjpeg-turbo-devel mosquitto-devel &&
+        iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build pkgconfig spandsp-devel pandoc \
+        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd bc libwebsockets-devel \
+        gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny spandsp librabbitmq librabbitmq-devel \
+        ffmpeg ffmpeg-devel libjpeg-turbo-devel mosquitto-devel opus-devel gcc-toolset-14 &&
     installKernelDevHeaders
 
     if (( $? != 0 )); then
         printerr "Problem with installing the required libraries for RTPEngine"
-        exit 1
+        return 1
     fi
 
     BUILD_KERN_VERSIONS=$(joinwith '' ',' '' $(rpm -q kernel-headers | sed 's/kernel-headers-//g'))
@@ -165,7 +138,7 @@ function install {
             (
                 cd ${SRC_DIR}/curl &&
                 ./configure --prefix=/usr --libdir=/usr/lib64 --with-ssl &&
-                make -j $NRPOC &&
+                make -j $NPROC &&
                 make -j $NPROC install &&
                 ldconfig
             )
@@ -201,6 +174,7 @@ function install {
     rm -rf ${RPM_BUILD_ROOT} 2>/dev/null
     mkdir -p ${RPM_BUILD_ROOT}/SOURCES &&
     (
+        source scl_source enable gcc-toolset-14 &&
         cd ${SRC_DIR} &&
         tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz \
             --transform="s%^rtpengine%ngcp-rtpengine-$RTPENGINE_RPM_VER%g" rtpengine/ &&
@@ -213,15 +187,9 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         # install the RPM's
-        if (( ${DISTRO_VER} >= 8 )); then
-            dnf install -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
-                ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
-                ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
-        else
-            yum localinstall -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
-                ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
-                ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
-        fi
+        dnf install -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
+            ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
+            ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
     )
 
     if (( $? != 0 )); then
@@ -245,14 +213,6 @@ function install {
     systemctl enable firewalld
     systemctl start firewalld
 
-    if (( $? != 0 )) && (( ${DISTRO_VER} == 7 )); then
-        # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
-        systemctl restart dbus
-        systemctl restart firewalld
-        # fix for ensuing bug: https://bugzilla.redhat.com/show_bug.cgi?id=1372925
-        systemctl restart systemd-logind
-    fi
-
     # give rtpengine permissions in selinux
     semanage port -a -t rtp_media_port_t -p udp ${RTP_PORT_MIN}-${RTP_PORT_MAX} ||
     semanage port -m -t rtp_media_port_t -p udp ${RTP_PORT_MIN}-${RTP_PORT_MAX}
@@ -273,11 +233,7 @@ function install {
     echo "d /run/rtpengine/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    if (( ${DISTRO_VER} > 7 )); then
-        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
-    else
-        cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
-    fi
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
     chmod 644 /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
     systemctl enable rtpengine

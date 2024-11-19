@@ -177,7 +177,7 @@ function install {
             (
                 cd ${SRC_DIR}/curl &&
                 ./configure --prefix=/usr --libdir=/usr/lib64 --with-ssl &&
-                make -j $NRPOC &&
+                make -j $NPROC &&
                 make -j $NPROC install &&
                 ldconfig
             )
