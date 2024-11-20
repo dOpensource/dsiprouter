@@ -9,7 +9,9 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    local KAM_VERSION_DOTTED RHEL_BASE_VER NPROC
+    local KAM_MINOR_VERSION=$(perl -pe 's%^([0-9])\.([0-9]).*$%\1.\2%' <<<"$KAM_VERSION")
+    local RHEL_BASE_VER=$(rpm -E %{rhel})
+    local NPROC=$(nproc)
 
     # Install Dependencies
     dnf groupinstall -y 'Development Tools' &&
@@ -37,22 +39,31 @@ function install() {
         printwarn 'Could not install kernel modules for SCTP support. Continuing installation...'
     fi
 
-    KAM_VERSION_DOTTED=$(perl -pe 's%([0-9])([0-9])%\1.\2%' <<<"$KAM_VERSION")
-    RHEL_BASE_VER=$(rpm -E %{rhel})
-    NPROC=$(nproc)
-
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock &>/dev/null
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
-#    KAM_VERSION_FULL=$(
-#        curl -s "https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_VERSION_DOTTED}/listing" 2>/dev/null |
-#        tail -n -1
-#    )
-    dnf config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
-    dnf config-manager --disable 'kamailio*' &&
-    dnf config-manager --enable "kamailio-$KAM_VERSION_DOTTED" &&
+    # TODO: fix upstream kamailio.repo file
+    #dnf config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
+    #dnf config-manager --disable 'kamailio*' &&
+    #dnf config-manager --enable "kamailio-$KAM_VERSION_DOTTED" &&
+
+    # Add the Kamailio repos to yum
+    (cat << EOF
+[kamailio]
+name=Kamailio
+baseurl=https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_MINOR_VERSION}/${KAM_VERSION}/\$basearch/
+enabled=1
+metadata_expire=30d
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://rpm.kamailio.org/rpm-pub.key
+type=rpm
+EOF
+    ) > /etc/yum.repos.d/kamailio.repo
+    yum makecache -y
+
     dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
         kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid kamailio-sctp
@@ -63,7 +74,6 @@ function install() {
     fi
 
     # get info about the kamailio install for later use in script
-    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # make sure run dir exists
@@ -184,12 +194,12 @@ EOF
     ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
     (
         cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&

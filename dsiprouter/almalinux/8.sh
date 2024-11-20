@@ -16,11 +16,11 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "dSIPRouter SIP Provider Platform" dsiprouter
 
     # Install dependencies for dSIPRouter
-    dnf remove -y rs-epel-release* &&
     dnf install -y dnf-utils &&
     dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools" &&
-    dnf install -y firewalld python36 python36-libs python36-devel python36-pip MySQL-python sudo \
-        logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
+    dnf install -y firewalld sudo logrotate rsyslog perl \
+        python3.11 python3.11-pip python3.11-libs python3.11-devel python3.11-PyMySQL \
+        libev-devel util-linux postgresql-devel mariadb-devel openldap-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

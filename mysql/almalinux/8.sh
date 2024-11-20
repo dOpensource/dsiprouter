@@ -16,7 +16,7 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    yum install -y mariadb mariadb-devel mariadb-server
+    yum install -y mariadb mariadb-server
 
     # Setup mysql config locations in a reliable manner
     # Setup mysql config locations in a reliable manner

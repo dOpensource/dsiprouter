@@ -1,0 +1,87 @@
+## default priory assignments
+# priority 1
+# versions coming from archives which in their Release files are marked as "NotAutomatic: yes",
+# but not as "ButAutomaticUpgrades: yes" like the Debian experimental archive.
+#
+# priority 100
+# a version that is already installed (if any) and to the versions coming from archives which,
+# in their Release files are marked as "NotAutomatic: yes" and "ButAutomaticUpgrades: yes",
+# like the Debian backports archive since squeeze-backports.
+#
+# priority 500
+# versions that do not belong to the target release.
+#
+# priority 990
+# versions that belong to the target release.
+#
+## interpretation of priority (P)
+# P >= 1000
+# causes a version to be installed even if this constitutes a downgrade of the package
+#
+# 990 <= P < 1000
+# causes a version to be installed even if it does not come from the target release, unless the installed version is more recent
+#
+# 500 <= P < 990
+# causes a version to be installed unless there is a version available belonging to the target release or the installed version is more recent
+#
+# 100 <= P < 500
+# causes a version to be installed unless there is a version available belonging to some other distribution or the installed version is more recent
+#
+# 0 < P < 100
+# causes a version to be installed only if there is no installed version of the package
+#
+# P < 0
+# prevents the version from being installed
+#
+# P = 0
+# has undefined behaviour (do not use it)
+#
+
+#-------------------------------------------------------------------
+# priority for debian 9 (stretch) release packages
+#-------------------------------------------------------------------
+Package: *
+Pin: release o=Debian,n=stretch
+Pin-Priority: 990
+
+Package: *
+Pin: release o=Debian,n=stretch-updates
+Pin-Priority: 990
+
+Package: *
+Pin: release o=Debian,n=stretch-backports
+Pin-Priority: 990
+
+#-------------------------------------------------------------------
+# priority for debian 10 (buster) release packages
+#-------------------------------------------------------------------
+Package: *
+Pin: release o=Debian,n=buster
+Pin-Priority: 500
+
+Package: *
+Pin: release o=Debian,n=buster-updates
+Pin-Priority: 500
+
+Package: *
+Pin: release o=Debian,n=buster-backports
+Pin-Priority: 500
+
+#-------------------------------------------------------------------
+# priority for debian 11 (bullseye) release packages
+#-------------------------------------------------------------------
+Package: *
+Pin: release o=Debian,n=bullseye
+Pin-Priority: 100
+
+Package: *
+Pin: release o=Debian,n=bullseye-updates
+Pin-Priority: 100
+
+Package: *
+Pin: release o=Debian,n=bullseye-security
+Pin-Priority: 100
+
+Package: *
+Pin: release o=Debian,n=bullseye-backports
+Pin-Priority: 100
