@@ -16,7 +16,7 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    dnf install -y mariadb mariadb-devel mariadb-server
+    dnf install -y mariadb mariadb-server
 
     # Setup mysql config locations in a reliable manner
     rm -f ~/.my.cnf 2>/dev/null

@@ -52,8 +52,8 @@ function install {
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
 # kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} buster main
+deb https://deb-archive.kamailio.org/repos/kamailio-${KAM_VERSION} buster main
+#deb-src https://deb-archive.kamailio.org/repos/kamailio-${KAM_VERSION} buster main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
@@ -61,13 +61,13 @@ EOF
     mkdir -p /etc/apt/preferences.d
     (cat << 'EOF'
 Package: *
-Pin: origin deb.kamailio.org
+Pin: origin deb-archive.kamailio.org
 Pin-Priority: 1000
 EOF
     ) > ${KAM_PREFS_CONF}
 
     # Add Key for Kamailio Repo
-    wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
+    wget -O- https://deb-archive.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
     # Update repo sources cache
     apt-get update -y
@@ -99,7 +99,6 @@ EOF
     fi
 
     # get info about the kamailio install for later use in script
-    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # create kamailio defaults config
@@ -227,12 +226,12 @@ EOF
     ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
     (
         cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&

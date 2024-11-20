@@ -146,6 +146,9 @@ MAIL_DEFAULT_SUBJECT = 'dSIPRouter System Notification'
 # stored as hash_str: key_combo
 DSIP_LICENSE_STORE = {}
 
+# rtpengine settings
+RTPENGINE_URI = 'udp:localhost:7722'
+
 ################# End DB-Backed Settings #################
 
 ################# Local-Only Settings ####################
