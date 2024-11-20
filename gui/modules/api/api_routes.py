@@ -1486,17 +1486,22 @@ def updateEndpointGroups(gwgroupid=None):
                 if 'cdr_send_interval' in request_payload['cdr'] else None
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
+                cron_cmd = '{} cdr sendreport {}'.format(
+                    (settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'),
+                    gwgroupid_str
+                )
                 # Try to update
                 if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update(
                     {"email": cdr_email, "send_interval": cdr_send_interval},
                     synchronize_session=False):
                     if not updateTaggedCronjob(gwgroupid, cdr_send_interval):
-                        raise Exception('Crontab entry could not be updated')
+                        # in-case the entry was modified elsewhere we can just create it again
+                        if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
+                            raise Exception('Crontab entry could not be updated')
                 else:
                     cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_interval)
                     db.add(cdrinfo)
-                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'),
-                        gwgroupid_str)
+
                     if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
                         raise Exception('Crontab entry could not be created')
             else:
