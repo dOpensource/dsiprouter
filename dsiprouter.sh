@@ -790,7 +790,7 @@ function renewSSLCert() {
     fi
 
     CERT_ISSUER=$(
-        openssl x509 -in ${DSIP_SSL_KEY} -noout -nameopt compat -issuer 2>/dev/null |
+        openssl x509 -in ${DSIP_SSL_CERT} -noout -nameopt compat -issuer 2>/dev/null |
         perl -pe 's%^.*?/O=([^/]*).*?$%\1%'
     )
     case "$CERT_ISSUER" in
