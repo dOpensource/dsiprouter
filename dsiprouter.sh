@@ -14,14 +14,14 @@
 # - CentOS 9 (stream)       - STABLE
 # - CentOS 8 (stream)       - STABLE
 # - CentOS 7                - DEPRECATED
-# - RedHat Linux 9          - ALPHA
+# - RedHat Linux 9          - STABLE
 # - RedHat Linux 8          - ALPHA
-# - Alma Linux 9            - ALPHA
+# - Alma Linux 9            - STABLE
 # - Alma Linux 8            - BETA
-# - Rocky Linux 9           - ALPHA
+# - Rocky Linux 9           - STABLE
 # - Rocky Linux 8           - BETA
 # - Amazon Linux 2          - STABLE
-# - Ubuntu 24.04 (noble)    - BETA
+# - Ubuntu 24.04 (noble)    - STABLE
 # - Ubuntu 22.04 (jammy)    - ALPHA
 # - Ubuntu 20.04 (focal)    - DEPRECATED
 #
@@ -459,7 +459,6 @@ function validateOSInfo() {
     ubuntu)
         case "$DISTRO_VER" in
         24.04)
-            printwarn "Your operating System Version is in BETA support. Some features may have bugs. Use at your own risk."
             KAM_VERSION=${KAM_VERSION:-"5.8.4"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;
@@ -481,7 +480,11 @@ function validateOSInfo() {
         ;;
     rhel)
         case "$DISTRO_MAJOR_VER" in
-        8|9)
+        9)
+            KAM_VERSION=${KAM_VERSION:-"5.8.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        8)
             printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
@@ -495,7 +498,6 @@ function validateOSInfo() {
     almalinux)
         case "$DISTRO_MAJOR_VER" in
         9)
-            printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;
@@ -513,7 +515,6 @@ function validateOSInfo() {
     rocky)
         case "$DISTRO_MAJOR_VER" in
         9)
-            printwarn "Your operating System Version is in ALPHA support. Some features may not work yet. Use at your own risk."
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;

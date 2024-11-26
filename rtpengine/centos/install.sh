@@ -89,24 +89,23 @@ function install {
     local REBOOT_REQUIRED=0
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
+    local DISTRO_VER=$(source /etc/os-release; echo "$VERSION_ID")
+    local DISTRO_MAJVER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
     local RHEL_BASE_VER=$(rpm -E %{rhel})
     local NPROC=$(nproc)
 
     # Install required libraries
-    if (( ${DISTRO_VER} == 9 )); then
+    if (( ${DISTRO_MAJVER} == 9 )); then
         dnf install -y epel-release &&
         dnf install -y epel-next-release &&
-        dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
-        dnf install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
-        dnf --enablerepo=crb install -y ladspa libuv-devel xmlrpc-c-devel opus-devel
-        dnf install -y ffmpeg ffmpeg-devel &&
+        dnf config-manager -y --set-enabled crb &&
+        dnf install -y http://rpm.dsiprouter.org/dsiprouter-repo.noarch.rpm &&
         dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel curl libcurl libcurl-devel \
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
-            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
-            libwebsockets-devel iptables-legacy-devel pandoc &&
-        dnf install -y --enablerepo=crb mariadb-devel
-    elif (( ${DISTRO_VER} == 8 )); then
+            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip mariadb-devel \
+            libwebsockets-devel iptables-legacy-devel pandoc ladspa libuv-devel xmlrpc-c-devel opus-devel ffmpeg ffmpeg-devel
+    elif (( ${DISTRO_MAJVER} == 8 )); then
         dnf install -y epel-release &&
         dnf install -y epel-next-release &&
         dnf config-manager --enable powertools &&
@@ -138,7 +137,7 @@ function install {
         return 1
     fi
 
-    if (( ${DISTRO_VER} >= 8 )); then
+    if (( ${DISTRO_MAJVER} >= 8 )); then
         dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
             REBOOT_REQUIRED=1
             printwarn 'could not install kernel headers for current kernel'
@@ -225,7 +224,7 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         # install the RPM's
-        if (( ${DISTRO_VER} >= 8 )); then
+        if (( ${DISTRO_MAJVER} >= 8 )); then
             dnf install -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
                 ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
                 ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
@@ -257,7 +256,7 @@ function install {
     systemctl enable firewalld
     systemctl start firewalld
 
-    if (( $? != 0 )) && (( ${DISTRO_VER} == 7 )); then
+    if (( $? != 0 )) && (( ${DISTRO_MAJVER} == 7 )); then
         # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
@@ -285,7 +284,7 @@ function install {
     echo "d /run/rtpengine/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    if (( ${DISTRO_VER} > 7 )); then
+    if (( ${DISTRO_MAJVER} > 7 )); then
         cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
     else
         cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service

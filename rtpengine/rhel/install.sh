@@ -14,19 +14,22 @@ fi
 function install {
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
+    local DISTRO_VER=$(source /etc/os-release; echo "$VERSION_ID")
+    local DISTRO_MAJVER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
 
     # Install required libraries
-    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-${DISTRO_MAJOR_VER}.noarch.rpm
-    dnf config-manager -y --add-repo https://negativo17.org/repos/epel-multimedia.repo
-
-    dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
+    dnf install -y epel-release &&
+    {
+        dnf config-manager -y --set-enabled codeready-builder-for-rhel-9-$OS_ARCH-rpms ||
+        dnf config-manager -y --set-enabled codeready-builder-for-rhel-9-rhui-rpms
+    } &&
+    dnf install -y http://rpm.dsiprouter.org/dsiprouter-repo.noarch.rpm &&
+    dnf install -y jq curl gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
-        iptables iptables-devel xmlrpc-c-devel gperf system-lsb redhat-rpm-config rpm-build pkgconfig \
-        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd spandsp-devel bc libwebsockets-devel \
-        gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny spandsp \
-        $(rpmSearch -d centos -a x86_64 -f el7 librabbitmq) $(rpmSearch -d centos -a x86_64 -f el7 librabbitmq-devel) \
-        libbluray-devel libavcodec-devel libavformat-devel libavutil-devel libswresample-devel libavfilter-devel ffmpeg ffmpeg-devel \
-        libjpeg-turbo-devel mosquitto-devel
+        iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build pkgconfig spandsp-devel pandoc \
+        freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd bc libwebsockets-devel \
+        gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny spandsp librabbitmq librabbitmq-devel \
+        ffmpeg ffmpeg-devel libjpeg-turbo-devel mosquitto-devel opus-devel iptables-legacy-devel gcc-toolset-14 &&
     dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL}
 
     if (( $? != 0 )); then
@@ -97,7 +100,7 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         # install the RPM's
-        if (( ${DISTRO_VER} >= 8 )); then
+        if (( ${DISTRO_MAJVER} >= 8 )); then
             dnf install -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
                 ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
                 ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
@@ -129,7 +132,7 @@ function install {
     systemctl enable firewalld
     systemctl start firewalld
 
-    if (( $? != 0 )) && (( ${DISTRO_VER} == 7 )); then
+    if (( $? != 0 )) && (( ${DISTRO_MAJVER} == 7 )); then
         # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
