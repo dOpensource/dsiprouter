@@ -14,12 +14,34 @@ function install() {
     local NPROC=$(nproc)
 
     # Install Dependencies
+    dnf install -y epel-release &&
+    {
+        # TODO: fix upstream kamailio.repo file
+        #dnf config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
+        #dnf config-manager --disable 'kamailio*' &&
+        #dnf config-manager --enable "kamailio-$KAM_VERSION_DOTTED" &&
+
+        # Add the Kamailio repos to yum
+        (cat <<EOF
+[kamailio]
+name=Kamailio
+baseurl=https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_MINOR_VERSION}/${KAM_VERSION}/\$basearch/
+enabled=1
+metadata_expire=30d
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://rpm.kamailio.org/rpm-pub.key
+type=rpm
+EOF
+        ) >/etc/yum.repos.d/kamailio.repo &&
+        dnf makecache -y
+    } &&
     dnf groupinstall -y 'core' &&
     dnf groupinstall -y 'base' &&
     dnf groupinstall -y 'Development Tools' &&
-    dnf install -y epel-release dnf-plugins-core &&
     dnf install -y git curl perl firewalld logrotate rsyslog certbot cmake libuuid-devel \
-        libcurl-devel libjwt-devel libatomic openssl-devel policycoreutils-python-utils
+        libcurl-devel libjwt-devel libatomic openssl-devel policycoreutils-python-utils \
+        libks-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -46,27 +68,6 @@ function install() {
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
-    # TODO: fix upstream kamailio.repo file
-    #dnf config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
-    #dnf config-manager --disable 'kamailio*' &&
-    #dnf config-manager --enable "kamailio-$KAM_VERSION_DOTTED" &&
-
-    # Add the Kamailio repos to yum
-    (cat << EOF
-[kamailio]
-name=Kamailio
-baseurl=https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_MINOR_VERSION}/${KAM_VERSION}/\$basearch/
-enabled=1
-metadata_expire=30d
-gpgcheck=1
-repo_gpgcheck=0
-gpgkey=https://rpm.kamailio.org/rpm-pub.key
-type=rpm
-EOF
-    ) > /etc/yum.repos.d/kamailio.repo
-
-    dnf clean -y metadata
-    dnf makecache -y
     dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
         kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid kamailio-sctp
@@ -164,20 +165,6 @@ EOF
     updateCACertsDir
 
     # setup STIR/SHAKEN module for kamailio
-    ## compile and install libks
-    if [[ ! -d ${SRC_DIR}/libks ]]; then
-        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
-    fi
-    (
-        cd ${SRC_DIR}/libks &&
-        cmake -DCMAKE_BUILD_TYPE=Release . &&
-        make -j $NPROC CFLAGS='-Wno-deprecated-declarations' &&
-        make -j $NPROC install
-    ) || {
-        printerr 'Failed to compile and install libks'
-        return 1
-    }
-
     ## compile and install libstirshaken
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
         git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken

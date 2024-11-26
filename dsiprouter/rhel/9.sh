@@ -10,9 +10,12 @@ fi
 
 function install {
     # Install dependencies for dSIPRouter
+    {
+        dnf config-manager -y --set-enabled codeready-builder-for-rhel-9-$(uname -m)-rpms ||
+        dnf config-manager -y --set-enabled codeready-builder-for-rhel-9-rhui-rpms
+    } &&
     dnf install -y firewalld logrotate rsyslog perl curl python3 python3-devel libpq-devel \
-        libev-devel openldap-devel &&
-    dnf install -y --enablerepo=crb mariadb-devel
+        libev-devel openldap-devel mariadb-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

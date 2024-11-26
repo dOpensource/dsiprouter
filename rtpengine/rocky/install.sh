@@ -14,41 +14,16 @@ fi
 # not guaranteed to find an RPM, returns 1 if not found
 # arguments:
 #   $1 == rpm to search for
-# options:
-#   -af <archictecture>
-#   -rf <repo filter>
-#   -dm <distro major version>
 function vaultSearch() {
-    local RPM_SEARCH DISTRO_MAJVER ARCH_FILTER REPO_FILTER SEARCH_RESULTS VERSIONS_TO_SEARCH SEARCH_URL PKG_LETTER
+    local RPM_SEARCH RPM_PATH
 
-    while (( $# > 0 )); do
-        # last arg is user and database
-        if (( $# == 1 )); then
-            RPM_SEARCH="$1"
-            shift
-            break
-        fi
+    RPM_SEARCH="$1"
 
-        case "$1" in
-            -af)
-                shift
-                ARCH_FILTER="$1"
-                shift
-                ;;
-            -rf)
-                shift
-                REPO_FILTER="$1"
-                shift
-                ;;
-            -dm)
-                shift
-                DISTRO_MAJVER="$1"
-                shift
-                ;;
-        esac
-    done
-
-    PKG_LETTER=$(tolower "${RPM_SEARCH:0:1}")
+    RPM_PATH=$(
+        curl -s https://dl.rockylinux.org/vault/rocky/fullfilelist |
+        grep -m 1 "$RPM_SEARCH"'.rpm$'
+    )
+    (( $? == 0 )) || return 1
 
     VERSIONS_TO_SEARCH=($(
         curl -s https://dl.rockylinux.org/vault/rocky/ |
@@ -59,15 +34,8 @@ function vaultSearch() {
         ' 2>/dev/null
     ))
 
-    for VAULT_VER in ${VERSIONS_TO_SEARCH[@]}; do
-        SEARCH_URL="https://dl.rockylinux.org/vault/rocky/${VAULT_VER}/${REPO_FILTER}/${ARCH_FILTER}/os/Packages/${PKG_LETTER}/${RPM_SEARCH}.rpm"
-        if (( $(curl -s -I -w "%{http_code}" -o /dev/null "$SEARCH_URL") == 200 )); then
-            echo "$SEARCH_URL"
-            return 0
-        fi
-    done
-
-    return 1
+    echo "https://dl.rockylinux.org/vault/rocky/${RPM_PATH}"
+    return 0
 }
 
 # try installing in the following order:
@@ -80,8 +48,8 @@ function installKernelDevHeaders {
     local KERN_DEV KERN_HDR
 
     dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
-        KERN_DEV=$(vaultSearch -af $OS_ARCH -dm $DISTRO_MAJVER -rf BaseOS "kernel-devel-${OS_KERNEL}") || return 1
-        KERN_HDR=$(vaultSearch -af $OS_ARCH -dm $DISTRO_MAJVER -rf BaseOS "kernel-headers-${OS_KERNEL}") || return 1
+        KERN_DEV=$(vaultSearch "kernel-devel-${OS_KERNEL}") || return 1
+        KERN_HDR=$(vaultSearch "kernel-headers-${OS_KERNEL}") || return 1
 
         dnf install -y "$KERN_DEV" &&
         dnf install -y "$KERN_HDR"
@@ -100,21 +68,23 @@ function install {
     local NPROC=$(nproc)
 
     # Install required libraries
+    dnf install -y distribution-gpg-keys &&
+    dnf install -y epel-release &&
     dnf config-manager --enable -y devel &&
     if (( ${DISTRO_MAJVER} == 9 )); then
-        dnf config-manager -y --set-enabled crb
+        dnf config-manager -y --set-enabled crb &&
+        dnf install -y http://rpm.dsiprouter.org/dsiprouter-repo.noarch.rpm
     elif (( ${DISTRO_MAJVER} == 8 )); then
-        dnf config-manager -y --set-enabled powertools
+        dnf config-manager -y --set-enabled powertools &&
+        rpmkeys --import /usr/share/distribution-gpg-keys/rpmfusion/RPM-GPG-KEY-rpmfusion-free-el-${RHEL_BASE_VER} &&
+        dnf --setopt=localpkg_gpgcheck=1 install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm
     fi &&
-    dnf install -y epel-release distribution-gpg-keys &&
-    rpmkeys --import /usr/share/distribution-gpg-keys/rpmfusion/RPM-GPG-KEY-rpmfusion-free-el-${RHEL_BASE_VER} &&
-    dnf --setopt=localpkg_gpgcheck=1 install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
     dnf install -y jq curl gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel libcurl libcurl-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
         iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build pkgconfig spandsp-devel pandoc \
         freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd bc libwebsockets-devel \
         gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny spandsp librabbitmq librabbitmq-devel \
-        ffmpeg ffmpeg-devel libjpeg-turbo-devel mosquitto-devel opus-devel gcc-toolset-14 &&
+        ffmpeg ffmpeg-devel libjpeg-turbo-devel mosquitto-devel opus-devel iptables-legacy-devel gcc-toolset-14 &&
     installKernelDevHeaders
 
     if (( $? != 0 )); then

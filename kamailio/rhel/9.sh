@@ -14,12 +14,17 @@ function install() {
     local NPROC=$(nproc)
 
     # Install Dependencies
+    {
+        dnf config-manager -y --set-enabled codeready-builder-for-rhel-9-$(uname -m)-rpms ||
+        dnf config-manager -y --set-enabled codeready-builder-for-rhel-9-rhui-rpms
+    } &&
+    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm &&
     dnf groupinstall -y 'core' &&
     dnf groupinstall -y 'base' &&
     dnf groupinstall -y 'Development Tools' &&
-    dnf install -y epel-release dnf-plugins-core &&
     dnf install -y git curl perl firewalld logrotate rsyslog certbot cmake libuuid-devel \
-        libcurl-devel libjwt-devel libatomic openssl-devel policycoreutils-python-utils
+        libcurl-devel libjwt-devel libatomic openssl-devel policycoreutils-python-utils \
+        libks-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -164,20 +169,6 @@ EOF
     updateCACertsDir
 
     # setup STIR/SHAKEN module for kamailio
-    ## compile and install libks
-    if [[ ! -d ${SRC_DIR}/libks ]]; then
-        git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
-    fi
-    (
-        cd ${SRC_DIR}/libks &&
-        cmake -DCMAKE_BUILD_TYPE=Release . &&
-        make -j $NPROC CFLAGS='-Wno-deprecated-declarations' &&
-        make -j $NPROC install
-    ) || {
-        printerr 'Failed to compile and install libks'
-        return 1
-    }
-
     ## compile and install libstirshaken
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
         git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
