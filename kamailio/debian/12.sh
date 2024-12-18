@@ -16,7 +16,8 @@ function install() {
     # Install Dependencies and remove any conflicting packages
     { dpkg -l ufw &>/dev/null && apt-get remove -y ufw || :; } &&
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
-        libcurl4-openssl-dev libjansson-dev cmake firewalld build-essential certbot
+        libcurl4-openssl-dev libjansson-dev cmake firewalld build-essential certbot \
+        pkg-config dh-autoreconf
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
@@ -166,7 +167,7 @@ EOF
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt (version in repos is too old)
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
     (
         cd ${SRC_DIR}/libjwt &&
