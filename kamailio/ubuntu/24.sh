@@ -172,7 +172,7 @@ EOF
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt (version in repos is too old)
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
     (
         cd ${SRC_DIR}/libjwt &&

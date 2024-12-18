@@ -50,11 +50,14 @@ Debian 9 (stretch)                      DEPRECATED
 CentOS 9 (stream)                       STABLE
 CentOS 8 (stream)                       STABLE
 CentOS 7                                DEPRECATED
+RedHat Linux 9                          STABLE
 RedHat Linux 8                          ALPHA
-Alma Linux 8                            ALPHA
-Rocky Linux 8                           ALPHA
+Alma Linux 9                            STABLE
+Alma Linux 8                            BETA
+Rocky Linux 9                           STABLE
+Rocky Linux 8                           BETA
 Amazon Linux 2                          STABLE
-Ubuntu 24.04 (noble)                    ALPHA
+Ubuntu 24.04 (noble)                    STABLE
 Ubuntu 22.04 (jammy)                    ALPHA
 Ubuntu 20.04 (focal)                    DEPRECATED
 ===================================     ================
