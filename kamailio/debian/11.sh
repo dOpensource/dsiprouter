@@ -169,7 +169,7 @@ EOF
         mkdir build &&
         cd build &&
         cmake --install-prefix=/usr .. &&
-        make
+        make install
     ) || {
         printerr 'Failed to compile and install libjwt'
         return 1
