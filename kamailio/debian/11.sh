@@ -159,13 +159,17 @@ EOF
     ## compile and install libjwt (version in repos is too old)
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
         git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+    else
+        # Remove the libjwt build directory so that the install can be re-ran
+        rm -rf ${SRC_DIR}/libjwt/build
     fi
+
     (
         cd ${SRC_DIR}/libjwt &&
-        autoreconf -i &&
-        ./configure --prefix=/usr &&
-        make -j $NPROC &&
-        make -j $NPROC install
+        mkdir build &&
+        cd build &&
+        cmake --install-prefix=/usr .. &&
+        make install
     ) || {
         printerr 'Failed to compile and install libjwt'
         return 1
