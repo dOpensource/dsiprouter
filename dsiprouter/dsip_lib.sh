@@ -636,6 +636,22 @@ function ipv6Test() {
 }
 export -f ipv6Test
 
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+function ipv4TestRFC1918() {
+    local IP="$1"
+    if [[ $IP =~ ^(10\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|172\.(1[6-9]|2[0-9]|3[01])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|192\.168\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))$ ]]; then
+        return 0
+    fi
+    return 1
+}
+export -f ipv4TestRFC1918
+
+# output: all physical network interfaces on this machine
+function getPhysicalIfaces() {
+    ( cd /sys/class/net && dirname */device; )
+}
+export -f getPhysicalIfaces
 
 # $1 == [-4|-6] to force specific IP version
 # output: the internal IP for this system
@@ -645,7 +661,7 @@ export -f ipv6Test
 #       this will fail if the internal IP is not assigned to the default interface/default route
 #       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
 function getInternalIP() {
-    local INTERNAL_IP=""
+    local INTERNAL_IP="" INTERNAL_ADDRS=()
 
     case "$1" in
         -4)
@@ -661,23 +677,34 @@ function getInternalIP() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
-	    
+
+    # get the interface of the first default route
+    # TODO: can we support multiple default routes as iproute2 does?
     if (( ${IPV6_ENABLED} == 1 )); then
-		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+		INTERFACE=$(ip -6 -json route show default | jq -r '.[0].dev')
     else
-		INTERFACE=$(ip -4 route show default | head -1 | awk '{print $5}')
+		INTERFACE=$(ip -4 -json route show default | jq -r '.[0].dev')
     fi
 
-    # Get the ip address without depending on DNS
+    # we give priority to RFC1918 addresses if the interface has multiple addresses
+    # if none are found, the first address is used
     if (( ${IPV4_ENABLED} == 1 )); then
-        # Marked for removal because it depends on DNS
-		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		INTERNAL_ADDRS=($(
+		    ip -4 -json addr show $INTERFACE |
+		    jq -r '.[0].addr_info[].local'
+        ))
+        for ADDR in ${INTERNAL_ADDRS[@]}; do
+            if ipv4TestRFC1918 "$ADDR"; then
+                INTERNAL_IP="$ADDR"
+            fi
+        done
+        if [[ -z "$INTERNAL_IP" ]]; then
+            INTERNAL_IP="${INTERNAL_ADDRS[0]}"
+        fi
     fi
 
+    # TODO: implement RFC 4193 test and selection algorithm for IPv6 version
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
-        # Marked for removal because it depends on DNS
-        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
