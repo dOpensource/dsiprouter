@@ -274,7 +274,7 @@ function encryptConfigAttrib() {
 #updateConfig(settings, {'$NAME': AES_CTR.encrypt('$VALUE')})
 #EOPY
 }
-export -f setConfigAttrib
+export -f encryptConfigAttrib
 
 # $1 == attribute name
 # $2 == python config file
@@ -890,6 +890,24 @@ function getInternalCIDR() {
 }
 export -f getInternalCIDR
 
+# $1 == host to check
+# returns: 0 == host is local, 1 == host is remote
+function isHostLocal() {
+    local LOCAL_MATCH=$(
+        joinwith '' '|' '' \
+            localhost \
+            $(hostname 2>/dev/null) \
+            $(hostname -f 2>/dev/null) \
+            $(ip -json address show | jq -r '.[].addr_info[].local')
+    )
+
+    if [[ "$1" =~ $LOCAL_MATCH ]]; then
+        return 0
+    fi
+    return 1
+}
+export -f isHostLocal
+
 # $1 == cmd as executed in systemd (by ExecStart=)
 # notes: take precaution when adding long running functions as they will block startup in boot order
 # notes: adding init commands on an AMI instance must not be long running processes, otherwise they will fail
@@ -1208,7 +1226,6 @@ EOF
 }
 export -f sqlAsTransaction
 
-# TODO: remove dependency on system python3
 # usage: parseDBConnURI <field> <connection uri>
 # field:    -user
 #           -pass
@@ -1249,16 +1266,17 @@ function parseDBConnURI() {
             ;;
     esac
 
-    # WARNING: we must use system python3 here (dsiprouter python venv may not exist)
-    python3 <<EOPY
-import re
-matches = re.search(r'[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*', '$1')
-if matches is None:
-    exit(1)
-if matches.groups()[$GROUP] is None:
-    exit(1)
-print(matches.groups()[$GROUP], end='')
-EOPY
+    perl -e '
+@matches = ($ARGV[0] =~ m"^[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*$");
+if ($matches[$ARGV[1]] ne "") {
+    print $matches[$ARGV[1]];
+    exit 0;
+}
+else {
+    exit 1;
+}
+' "$1" "$GROUP"
+
     return $?
 }
 export -f parseDBConnURI
@@ -1337,6 +1355,12 @@ export -f sendKamCmd
 # TODO: improve performance of openssl native version and swap it out
 function hashCreds() {
 	local CREDS SALT DK_LEN
+	# we use system python3 if dsiprouter python venv does not yet exist
+	if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+	    local PYTHON_CMD="$PYTHON_CMD"
+	else
+	    local PYTHON_CMD="python3"
+	fi
 
 	# grab credentials from stdin if provided
 	if [[ -p /dev/stdin ]]; then
@@ -1377,8 +1401,7 @@ function hashCreds() {
 
 	# python native version
 	# no external dependencies other than vanilla python3
-	# WARNING: we must use system python3 here (dsiprouter python venv may not exist)
-	python3 <<EOPYTHON
+	${PYTHON_CMD} <<EOPYTHON
 import hashlib,binascii
 creds='$CREDS'.encode('utf-8')
 salt='$SALT'.encode('utf-8')

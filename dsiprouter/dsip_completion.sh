@@ -22,6 +22,7 @@ _dsiprouter() {
         chown
         configurekam
         configuredsip
+        configurertp
         renewsslcert
 	    configuresslcert
         installmodules
@@ -47,6 +48,7 @@ _dsiprouter() {
         [chown]=''
         [configurekam]=''
         [configuredsip]=''
+        [configurertp]=''
         [renewsslcert]=''
         [configuresslcert]=''
         [installmodules]=''
@@ -72,6 +74,7 @@ _dsiprouter() {
         [chown]=''
         [configurekam]=''
         [configuredsip]=''
+        [configurertp]=''
         [renewsslcert]=''
         [configuresslcert]='--force'
         [installmodules]=''
@@ -97,6 +100,7 @@ _dsiprouter() {
         [chown]='-debug -certs -dnsmasq -nginx -kamailio -dsiprouter -rtpengine'
         [configurekam]='-debug'
         [configuredsip]='-debug'
+        [configurertp]='-debug'
         [renewsslcert]='-debug'
         [configuresslcert]='-debug -f'
         [installmodules]='-debug'

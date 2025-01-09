@@ -1,12 +1,12 @@
 ## default priory assignments
 # priority 1
 # versions coming from archives which in their Release files are marked as "NotAutomatic: yes",
-# but not as "ButAutomaticUpgrades: yes" like the Ubuntu experimental archive.
+# but not as "ButAutomaticUpgrades: yes" like the Debian experimental archive.
 #
 # priority 100
 # a version that is already installed (if any) and to the versions coming from archives which,
 # in their Release files are marked as "NotAutomatic: yes" and "ButAutomaticUpgrades: yes",
-# like the Ubuntu backports archive since squeeze-backports.
+# like the Debian backports archive since squeeze-backports.
 #
 # priority 500
 # versions that do not belong to the target release.
@@ -38,23 +38,20 @@
 #
 
 #-------------------------------------------------------------------
-# priority for ubuntu 20.04 (focal) release packages
+# priority for debian 12 (bookworm) release packages
 #-------------------------------------------------------------------
 Package: *
-Pin: release o=Ubuntu,n=focal
-Pin-Priority: $APT_FOCAL_PRIORITY
+Pin: release o=Debian,n=bookworm
+Pin-Priority: 990
 
 Package: *
-Pin: release o=Ubuntu,a=focal
-Pin-Priority: $APT_FOCAL_PRIORITY
-
-#-------------------------------------------------------------------
-# priority for ubuntu 22.04 (jammy) release packages
-#-------------------------------------------------------------------
-Package: *
-Pin: release o=Ubuntu,n=jammy
-Pin-Priority: $APT_JAMMY_PRIORITY
+Pin: release o=Debian,n=bookworm-updates
+Pin-Priority: 990
 
 Package: *
-Pin: release o=Ubuntu,a=jammy
-Pin-Priority: $APT_JAMMY_PRIORITY
+Pin: release o=Debian,n=bookworm-security
+Pin-Priority: 990
+
+Package: *
+Pin: release o=Debian,n=bookworm-backports
+Pin-Priority: 990
