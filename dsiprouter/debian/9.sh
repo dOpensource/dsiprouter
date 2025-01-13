@@ -44,7 +44,9 @@ function install() {
     firewall-cmd --zone=public --add-port=${DSIP_PORT}/tcp --permanent
     firewall-cmd --reload
 
+    # TODO: figure out why compiling ultradict with the other deps hangs
     python3 -m venv --upgrade-deps ${PYTHON_VENV} &&
+    ${PYTHON_CMD} -m pip install UltraDict &&
     ${PYTHON_CMD} -m pip install -r ${DSIP_PROJECT_DIR}/gui/requirements.txt
     if (( $? == 1 )); then
         printerr "Failed installing required python libraries"
