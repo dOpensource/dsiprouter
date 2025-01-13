@@ -167,15 +167,14 @@ EOF
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt (version in repos is too old)
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false -b v2.1.1 https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
-    
     (
         cd ${SRC_DIR}/libjwt &&
-	mkdir build &&
-	cd build &&
-	cmake --install-prefix=/usr .. &&
-	make install 
+        autoreconf -i &&
+        ./configure --prefix=/usr &&
+        make -j $NPROC &&
+        make -j $NPROC install
     ) || {
         printerr 'Failed to compile and install libjwt'
         return 1
@@ -203,8 +202,8 @@ EOF
         # TODO: commit updates to upstream to fix EVP_PKEY_cmp being deprecated
         cd ${SRC_DIR}/libstirshaken &&
         ./bootstrap.sh &&
-        ./configure --prefix=/usr &&
-        make -j $NPROC CFLAGS='-Wno-deprecated-declarations' &&
+        ./configure --prefix=/usr CFLAGS='-Wno-deprecated-declarations' LDFLAGS='-L/usr/lib' &&
+        make -j $NPROC &&
         make -j $NPROC install &&
         ldconfig
     ) || {

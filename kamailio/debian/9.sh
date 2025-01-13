@@ -161,10 +161,19 @@ EOF
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false -b v2.1.1 https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
-    ( cd ${SRC_DIR}/libjwt && autoreconf -i && ./configure --prefix=/usr && make && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libjwt'; return 1; }
+
+    (
+        cd ${SRC_DIR}/libjwt &&
+        autoreconf -i &&
+        ./configure --prefix=/usr &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libjwt'
+        return 1
+    }
 
     ## compile and install libks
     if [[ ! -d ${SRC_DIR}/libks ]]; then
