@@ -175,14 +175,15 @@ EOF
     # setup STIR/SHAKEN module for kamailio
     ## compile and install libjwt (version in repos is too old)
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/benmcollins/libjwt.git ${SRC_DIR}/libjwt
+        git clone --depth 1 -c advice.detachedHead=false -b v2.1.1 https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
+
     (
         cd ${SRC_DIR}/libjwt &&
-        autoreconf -i &&
-        ./configure --prefix=/usr &&
-        make -j $NPROC &&
-        make -j $NPROC install
+        mkdir -p build &&
+        cd build &&
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release .. &&
+        make install
     ) || {
         printerr 'Failed to compile and install libjwt'
         return 1
@@ -206,9 +207,18 @@ EOF
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
         git clone --depth 1 -c advice.detachedHead=false https://github.com/signalwire/libstirshaken ${SRC_DIR}/libstirshaken
     fi
-    ( cd ${SRC_DIR}/libstirshaken && ./bootstrap.sh && ./configure --prefix=/usr &&
-        make && make install && ldconfig; exit $?;
-    ) || { printerr 'Failed to compile and install libstirshaken'; return 1; }
+    (
+        # TODO: commit updates to upstream to fix EVP_PKEY_cmp being deprecated
+        cd ${SRC_DIR}/libstirshaken &&
+        ./bootstrap.sh &&
+        ./configure --prefix=/usr CFLAGS='-Wno-deprecated-declarations' LDFLAGS='-L/usr/lib' &&
+        make -j $NPROC &&
+        make -j $NPROC install &&
+        ldconfig
+    ) || {
+        printerr 'Failed to compile and install libstirshaken'
+        return 1
+    }
 
     ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
