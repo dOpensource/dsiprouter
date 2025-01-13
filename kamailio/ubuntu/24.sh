@@ -9,22 +9,26 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
+    local KAM_DEBMINOR_VERSION=$(perl -pe 's%^([0-9])\.([0-9]).*$%\1\2%' <<<"$KAM_VERSION")
     local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
     local KAM_PREFS_CONF="/etc/apt/preferences.d/kamailio.pref"
     local NPROC=$(nproc)
 
-    # Install Dependencies and remove any conflicting packages
-    { dpkg -l ufw &>/dev/null && apt-get remove -y ufw || :; } &&
-    apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
-        libcurl4-openssl-dev libjansson-dev cmake firewalld build-essential certbot
+    # Install Dependencies
+    apt install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog \
+        libcurl4-openssl-dev libjansson-dev cmake firewalld python3 python3-venv
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
-        return 1
+        exit 1
     fi
 
-    # Configure OpenSSL to a default provider
-    sed -i -e 's/# providers =/providers =/' -e 's/# \[provider_sect/\[provider_sect/' -e 's/# default =/default =/' -e 's/# \[default_sect/\[default_sect/' -e 's/# activate/activate/' /etc/ssl/openssl.cnf
+    # we need a newer version of certbot than the distro repos offer
+    apt remove -y *certbot*
+    python3 -m venv /opt/certbot/
+    /opt/certbot/bin/pip install --upgrade pip
+    /opt/certbot/bin/pip install certbot
+    ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
     # create kamailio user and group
     mkdir -p /var/run/kamailio
@@ -34,15 +38,13 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
-    # allow root to fix permissions before starting services (required to work with SELinux enabled)
-    usermod -a -G kamailio root
-
     # add repo sources to apt
     mkdir -p /etc/apt/sources.list.d
+    # TODO: noble not available in the archive repos
     (cat << EOF
 # kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} bookworm main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} bookworm main
+deb https://deb.kamailio.org/kamailio${KAM_DEBMINOR_VERSION} noble main
+#deb-src https://deb-archive.kamailio.org/kamailio${KAM_DEBMINOR_VERSION} noble main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
@@ -56,19 +58,22 @@ EOF
     ) > ${KAM_PREFS_CONF}
 
     # Add Key for Kamailio Repo
-    wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
+    curl -s https://deb.kamailio.org/kamailiodebkey.gpg | gpg --dearmor >/etc/apt/trusted.gpg.d/kamailiodebkey.gpg
 
     # Update repo sources cache
-    apt-get update -y
+    apt update -y
 
-    
     # Install Kamailio packages
-    apt-get install -y kamailio kamailio-mysql-modules kamailio-extra-modules \
+    apt install -y kamailio kamailio-mysql-modules kamailio-extra-modules \
         kamailio-tls-modules kamailio-websocket-modules kamailio-presence-modules \
         kamailio-json-modules kamailio-sctp-modules
 
+    if (( $? != 0 )); then
+        printerr 'Failed installing kamailio packages'
+        exit 1
+    fi
+
     # get info about the kamailio install for later use in script
-    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # create kamailio defaults config
@@ -95,8 +100,6 @@ DBROUSER="${KAM_DB_USER}"
 DBROPW="${KAM_DB_PASS}"
 DBRWUSER="${KAM_DB_USER}"
 DBRWPW="${KAM_DB_PASS}"
-DBROOTHOST="${ROOT_DB_HOST}"
-DBROOTPORT="${ROOT_DB_PORT}"
 DBROOTUSER="${ROOT_DB_USER}"
 ${ROOTPW_SETTING}
 CHARSET=utf8
@@ -108,7 +111,7 @@ INSTALL_DBUID_TABLES=yes
 EOF
     ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
 
-    # in mariadb ver >= 10.6.1 --port= now defaults to transport=tcp
+   # in mariadb ver >= 10.6.1 --port= now defaults to transport=tcp
     # we want socket connections for root as default so apply our patch to kamdbctl
     # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
     (
@@ -128,6 +131,7 @@ EOF
 
     # Enable and start firewalld if not already running
     systemctl enable firewalld
+    systemctl start firewalld
 
     # Setup firewall rules
     firewall-cmd --zone=public --add-port=${KAM_SIP_PORT}/udp --permanent
@@ -138,12 +142,13 @@ EOF
     firewall-cmd --zone=public --add-port=22/tcp --permanent
     firewall-cmd --reload
 
-    systemctl start firewalld
-
     # Configure Kamailio systemd service
     cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
     chmod 644 /lib/systemd/system/kamailio.service
     systemctl daemon-reload
+    systemctl enable kamailio
+
+    # Enable Kamailio for system startup
     systemctl enable kamailio
 
     # Configure rsyslog defaults
@@ -215,12 +220,12 @@ EOF
     ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
     (
         cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&
