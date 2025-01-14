@@ -250,13 +250,13 @@ function setDynamicScriptSettings() {
             # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
         fi
-	
-	# set the external fqdn to the internal fqdn if the hostname contain vultrusercontent
-	# Kamailio doesn't like hostname names with dots and LetsEncrypt can't create certs for that domain
-	grep vultrusercontent <<< "$EXTERNAL_FQDN" >/dev/null
-	if (( $? == 0 ));then
-        export EXTERNAL_FQDN="$INTERNAL_FQDN"
-	fi
+
+        # set the external fqdn to the internal fqdn if the hostname contain vultrusercontent
+        # Kamailio doesn't like hostname names with dots and LetsEncrypt can't create certs for that domain
+        grep vultrusercontent <<< "$EXTERNAL_FQDN" >/dev/null
+        if (( $? == 0 ));then
+            export EXTERNAL_FQDN="$INTERNAL_FQDN"
+        fi
 
     # network settings pulled from env variables or from config file
     elif (( $NETWORK_MODE == 1 )); then
@@ -576,10 +576,10 @@ function validateOSInfo() {
 function initialChecks() {
     validateRootPriv
     validateOSInfo
-    configureSystemRepos
-    installScriptRequirements
     setStaticScriptSettings
     setupScriptRequiredFiles
+    configureSystemRepos
+    installScriptRequirements
     preProcessNetworkMode "$@"
     setDynamicScriptSettings
 }
@@ -1503,19 +1503,9 @@ function setupScriptRequiredFiles() {
         # copy over the template settings.py to be worked on (used throughout this script as well)
         cp -f ${DSIP_PROJECT_DIR}/gui/settings.py ${DSIP_CONFIG_FILE}
     fi
-
-    if cmdExists 'apt-get' && [[ ! -f "$APT_DSIP_CONFIG" ]]; then
-        # default dpkg to noninteractive modes for installs
-        cat <<'EOF' >${APT_DSIP_CONFIG}
-Dpkg::Options {
-"--force-confdef";
-"--force-confnew";
 }
-Dpkg::Lock::Timeout "300";
-APT::Get::Fix-Missing "1";
-EOF
-    fi
 
+function configureSystemPath() {
     # fix PATH if needed
     # we are using the default install paths but these may change in the future
     if [[ ! -e "$PATH_UPDATE_FILE" ]]; then
@@ -1558,6 +1548,10 @@ EOF
     (( ${PATH_UPDATED} == 1 )) &&  . ${PATH_UPDATE_FILE}
 }
 
+function revertSystemPath() {
+    rm -f ${PATH_UPDATE_FILE}
+}
+
 # Configure system repo sources to ensure we get the right package versions
 # TODO: dynamic mirror resolution based on RTT
 # TODO support multiple mirrors in repo configs
@@ -1574,8 +1568,21 @@ function configureSystemRepos() {
     fi
 
     printdbg 'Configuring system repositories'
+
     case "$DISTRO" in
     debian|ubuntu)
+        if [[ ! -f "$APT_DSIP_CONFIG" ]]; then
+            # default dpkg to noninteractive modes for installs
+            cat <<'EOF' >${APT_DSIP_CONFIG}
+Dpkg::Options {
+"--force-confdef";
+"--force-confnew";
+}
+Dpkg::Lock::Timeout "300";
+APT::Get::Fix-Missing "1";
+EOF
+        fi
+
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
 
@@ -3050,7 +3057,7 @@ function createInitService() {
     esac
 
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/dsip-net-cfg.py /usr/sbin/dsip-net-cfg
-    chomod +x /usr/sbin/dsip-net-cfg
+    chmod +x /usr/sbin/dsip-net-cfg
 
     (cat << EOF
 [Unit]
@@ -3966,7 +3973,7 @@ function processCMD() {
     case $ARG in
         install)
             # always add official repo's, set platform, and create init service
-            RUN_COMMANDS+=(setCloudPlatform createInitService createSwapFile installDsiprouterCli)
+            RUN_COMMANDS+=(configureSystemPath setCloudPlatform createInitService createSwapFile installDsiprouterCli)
             shift
 
             local NEW_ROOT_DB_USER="" NEW_ROOT_DB_PASS="" NEW_ROOT_DB_NAME="" DB_CONN_URI="" TMP_ARG=""
@@ -4234,7 +4241,7 @@ function processCMD() {
                     # same goes for official repo configs, we only remove if all dsiprouter configs are being removed
                     -all|--all)
                         DEFAULT_SERVICES=0
-                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeSwapFile removeInitService revertSystemRepos)
+                        RUN_COMMANDS+=(uninstallRTPEngine uninstallDsiprouter uninstallNginx uninstallKamailio uninstallMysql uninstallDnsmasq uninstallSipsak uninstallDsiprouterCli removeSwapFile removeInitService revertSystemRepos revertSystemPath)
                         shift
                         ;;
                     *)  # fail on unknown option
