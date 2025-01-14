@@ -108,6 +108,19 @@ function setStaticScriptSettings() {
     export SRC_DIR="/usr/local/src"
     export BACKUPS_DIR="/var/backups/dsiprouter"
     IMAGE_BUILD=${IMAGE_BUILD:-0}
+    # TODO: marked for review in v0.78
+    #       we should move these settings to the OS specific install scripts
+    #       OS vendors may change these locations in the future
+    if [[ "$DISTRO" == "ubuntu" ]] && (( ${DISTRO_MAJOR_VER} >= 24 )); then
+        APT_OFFICIAL_SOURCES="/etc/apt/sources.d/ubuntu.sources"
+        APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.sources"
+    else
+        APT_OFFICIAL_SOURCES="/etc/apt/sources.list"
+        APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.list"
+    fi
+    APT_OFFICIAL_PREFS="/etc/apt/preferences"
+    APT_OFFICIAL_PREFS_BAK="${BACKUPS_DIR}/original-sources.pref"
+    APT_DSIP_CONFIG="/etc/apt/apt.conf.d/99dsiprouter"
     YUM_OFFICIAL_REPOS="/etc/yum.repos.d/official-releases.repo"
 
     # Force the installation of an Kamailio version by uncommenting
@@ -1544,17 +1557,6 @@ function configureSystemRepos() {
     printdbg 'Configuring system repositories'
     case "$DISTRO" in
     debian|ubuntu)
-        if [[ "$DISTRO" == "ubuntu" ]] && (( ${DISTRO_MAJOR_VER} >= 24 )); then
-            APT_OFFICIAL_SOURCES="/etc/apt/sources.d/ubuntu.sources"
-            APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.sources"
-        else
-            APT_OFFICIAL_SOURCES="/etc/apt/sources.list"
-            APT_OFFICIAL_SOURCES_BAK="${BACKUPS_DIR}/original-sources.list"
-        fi
-        APT_OFFICIAL_PREFS="/etc/apt/preferences"
-        APT_OFFICIAL_PREFS_BAK="${BACKUPS_DIR}/original-sources.pref"
-        APT_DSIP_CONFIG="/etc/apt/apt.conf.d/99dsiprouter"
-
         # comment out cdrom in sources as it can halt install
         sed -i -E 's/(^\w.*cdrom.*)/#\1/g' /etc/apt/sources.list
 
