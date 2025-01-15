@@ -657,6 +657,7 @@ export -f getPhysicalIfaces
 # output: the internal IP for this system
 # notes: prints internal ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
+# returns: 0 on success, 1 if the interface was not found
 # TODO: currently we only check for the internal IP associated with the default interface/default route
 #       this will fail if the internal IP is not assigned to the default interface/default route
 #       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
@@ -681,9 +682,13 @@ function getInternalIP() {
     # get the interface of the first default route
     # TODO: can we support multiple default routes as iproute2 does?
     if (( ${IPV6_ENABLED} == 1 )); then
-		INTERFACE=$(ip -6 -json route show default | jq -r '.[0].dev')
+		INTERFACE=$(ip -6 -json route show default | jq -re '.[0].dev') || {
+		    return 1
+		}
     else
-		INTERFACE=$(ip -4 -json route show default | jq -r '.[0].dev')
+		INTERFACE=$(ip -4 -json route show default | jq -re '.[0].dev') || {
+		    return 1
+		}
     fi
 
     # we give priority to RFC1918 addresses if the interface has multiple addresses
@@ -709,6 +714,7 @@ function getInternalIP() {
     fi
 
     printf '%s' "$INTERNAL_IP"
+    return 0
 }
 export -f getInternalIP
 
