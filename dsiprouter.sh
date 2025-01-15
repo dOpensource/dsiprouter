@@ -3066,8 +3066,10 @@ DefaultDependencies=no
 Requires=basic.target network.target
 Wants=rsyslog.service mariadb.service dnsmasq.service nginx.service
 After=network.target network-online.target systemd-journald.socket basic.target cloud-init.target
+After=networking.service systemd-networkd.service NetworkManager.service
 After=rsyslog.service mariadb.service dnsmasq.service nginx.service
 Before=
+ReloadPropagatedFrom=networking.service systemd-networkd.service NetworkManager.service
 
 [Service]
 Type=oneshot
@@ -3077,6 +3079,7 @@ TimeoutSec=0
 
 [Install]
 WantedBy=multi-user.target
+WantedBy=networking.service systemd-networkd.service NetworkManager.service
 EOF
     ) > ${DSIP_INIT_FILE}
 
@@ -3779,8 +3782,12 @@ function createSwapFile() {
         (
             grep -vF "$SWAP_FILE" /etc/fstab
             echo "${SWAP_FILE} none swap sw 0 0"
-        ) >>/etc/fstab &&
-        printdbg 'swapfile created successfully'
+        ) >/tmp/fstab &&
+        mv -f /tmp/fstab /etc/fstab &&
+        printdbg 'swapfile created successfully' || {
+            printerr 'failed creating swap file'
+            exit 1
+        }
     fi
 
     touch "${DSIP_SYSTEM_CONFIG_DIR}/.memupdatescomplete"
@@ -3902,7 +3909,17 @@ function usageOptions() {
 }
 
 # make the output a little cleaner
-function setVerbosityLevel() {
+function setDebugMode() {
+    if [[ "$*" == *"-debug"* ]]; then
+        export DEBUG=1
+        # start debugging after this function exits
+        debugHandler() {
+            set -x
+            trap - RETURN
+        }
+        trap debugHandler RETURN
+    fi
+
 #    if [[ "$*" != *"-debug"* ]]; then
 #        # quiet pkg managers when not debugging
 #        if cmdExists 'apt-get'; then
@@ -3940,6 +3957,8 @@ function preprocessCMD() {
         exit 1
     fi
 
+    setDebugMode "$@"
+
     # Do not run the extra prep on these commands
     # we only need a portion of the script settings
     case "$1" in
@@ -3948,7 +3967,6 @@ function preprocessCMD() {
             ;;
         *)
             initialChecks "$@"
-            setVerbosityLevel "$@"
             ;;
     esac
 }
@@ -3982,8 +4000,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -dns|--dnsmasq)
@@ -4214,8 +4231,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -dns|--dnsmasq)
@@ -4284,7 +4300,7 @@ function processCMD() {
                         break
                         ;;
                     -debug)
-                        export DEBUG=1
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -i)
@@ -4342,8 +4358,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -dsipcid|--dsip-clusterid=*)
@@ -4418,38 +4433,33 @@ function processCMD() {
             RUN_COMMANDS+=(start)
             shift
 
-            # process debug option before parsing others
-            if [[ "$1" == "-debug" ]]; then
-                export DEBUG=1
-                set -x
-                shift
-            fi
-
-            # default to only starting dsip gui
-            if (( $# == 0 )); then
-                START_DSIPROUTER=1
-            else
-                START_DSIPROUTER=0
-            fi
-
+            DEFAULT_START_OPTIONS=1
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
+                    -debug)
+                        # already processed by setDebugMode()
+                        shift
+                        ;;
                     -all|--all)
+                        DEFAULT_START_OPTIONS=0
                         START_DSIPROUTER=1
                         START_KAMAILIO=1
                         START_RTPENGINE=1
                         shift
                         ;;
                     -dsip|--dsiprouter)
+                        DEFAULT_START_OPTIONS=0
                         START_DSIPROUTER=1
                         shift
                         ;;
                     -kam|--kamailio)
+                        DEFAULT_START_OPTIONS=0
                         START_KAMAILIO=1
                         shift
                         ;;
                     -rtp|--rtpengine)
+                        DEFAULT_START_OPTIONS=0
                         START_RTPENGINE=1
                         shift
                         ;;
@@ -4461,44 +4471,44 @@ function processCMD() {
                         ;;
                 esac
             done
+
+            # default to only starting dsip gui
+            if (( $DEFAULT_START_OPTIONS == 1 )); then
+                START_DSIPROUTER=1
+            fi
             ;;
         stop)
             # stop installed services
             RUN_COMMANDS+=(stop)
             shift
 
-            # process debug option before parsing others
-            if [[ "$1" == "-debug" ]]; then
-                export DEBUG=1
-                set -x
-                shift
-            fi
-
-            # default to only stopping dsip gui
-            if (( $# == 0 )); then
-                STOP_DSIPROUTER=1
-            else
-                STOP_DSIPROUTER=0
-            fi
-
+            DEFAULT_STOP_OPTIONS=1
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
+                    -debug)
+                        # already processed by setDebugMode()
+                        shift
+                        ;;
                     -all|--all)
+                        DEFAULT_STOP_OPTIONS=0
                         STOP_DSIPROUTER=1
                         STOP_KAMAILIO=1
                         STOP_RTPENGINE=1
                         shift
                         ;;
                     -dsip|--dsiprouter)
+                        DEFAULT_STOP_OPTIONS=0
                         STOP_DSIPROUTER=1
                         shift
                         ;;
                     -kam|--kamailio)
+                        DEFAULT_STOP_OPTIONS=0
                         STOP_KAMAILIO=1
                         shift
                         ;;
                     -rtp|--rtpengine)
+                        DEFAULT_STOP_OPTIONS=0
                         STOP_RTPENGINE=1
                         shift
                         ;;
@@ -4510,6 +4520,11 @@ function processCMD() {
                         ;;
                 esac
             done
+
+            # default to only stopping dsip gui
+            if (( $DEFAULT_STOP_OPTIONS == 1 )); then
+                STOP_DSIPROUTER=1
+            fi
             ;;
         restart)
             RESTART_ARGS=(restart)
@@ -4519,52 +4534,44 @@ function processCMD() {
             RUN_COMMANDS+=(restart)
             shift
 
-            # process debug option before parsing others
-            if [[ "$1" == "-debug" ]]; then
-                export DEBUG=1
-                RESTART_ARGS+=("$1")
-                set -x
-                shift
-            fi
-
-            # default to only restarting dsip gui
-            if (( $# == 0 )); then
-                STOP_DSIPROUTER=1
-                START_DSIPROUTER=1
-            else
-                STOP_DSIPROUTER=0
-                START_DSIPROUTER=0
-            fi
-
+            DEFAULT_RESTART_OPTIONS=1
             while (( $# > 0 )); do
                 OPT="$1"
                 case $OPT in
+                    -debug)
+                        RESTART_ARGS+=("$OPT")
+                        shift
+                        ;;
                     -all|--all)
+                        DEFAULT_RESTART_OPTIONS=0
                         STOP_DSIPROUTER=1
                         START_DSIPROUTER=1
                         STOP_KAMAILIO=1
                         START_KAMAILIO=1
                         STOP_RTPENGINE=1
                         START_RTPENGINE=1
-                        RESTART_ARGS+=("$1")
+                        RESTART_ARGS+=("$OPT")
                         shift
                         ;;
                     -dsip|--dsiprouter)
+                        DEFAULT_RESTART_OPTIONS=0
                         STOP_DSIPROUTER=1
                         START_DSIPROUTER=1
-                        RESTART_ARGS+=("$1")
+                        RESTART_ARGS+=("$OPT")
                         shift
                         ;;
                     -kam|--kamailio)
+                        DEFAULT_RESTART_OPTIONS=0
                         STOP_KAMAILIO=1
                         START_KAMAILIO=1
-                        RESTART_ARGS+=("$1")
+                        RESTART_ARGS+=("$OPT")
                         shift
                         ;;
                     -rtp|--rtpengine)
+                        DEFAULT_RESTART_OPTIONS=0
                         STOP_RTPENGINE=1
                         START_RTPENGINE=1
-                        RESTART_ARGS+=("$1")
+                        RESTART_ARGS+=("$OPT")
                         shift
                         ;;
                     # internal usage only, no need for user to be calling with this option
@@ -4580,6 +4587,12 @@ function processCMD() {
                         ;;
                 esac
             done
+
+            # default to only restarting dsip gui
+            if (( $DEFAULT_RESTART_OPTIONS == 1 )); then
+                STOP_DSIPROUTER=1
+                START_DSIPROUTER=1
+            fi
             ;;
         # internal command, replace this process with the GUI server immediately
         exec)
@@ -4588,18 +4601,17 @@ function processCMD() {
         chown)
             shift
 
-            # handle the debug option here
-            for OPT in "$@"; do
-                shift
-                case $OPT in
+            # pop off the -debug option if provided
+            OPTS=("$@")
+            for IDX in "${!OPTS[@]}"; do
+                case ${OPTS[$IDX]} in
                     -debug)
-                        export DEBUG=1
-                        set -x
-                        continue
+                        # already processed by setDebugMode()
+                        unset OPTS[$IDX]
                         ;;
                 esac
-                set -- "$@" "$OPT"
             done
+            set -- "${OPTS[@]}"
 
             # pass the rest of the user args to the local function
             # TODO: figure out how to pass variables into staged commands
@@ -4615,8 +4627,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4637,8 +4648,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4659,8 +4669,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4681,8 +4690,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4703,8 +4711,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -f|--force)
@@ -4740,8 +4747,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4767,8 +4773,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -q|--quiet)
@@ -4852,8 +4857,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     -dc|--dsip-creds=*)
@@ -4975,8 +4979,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -4998,8 +5001,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -5021,8 +5023,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -5044,8 +5045,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -5067,8 +5067,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -5090,8 +5089,7 @@ function processCMD() {
                 OPT="$1"
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                     *)  # fail on unknown option
@@ -5110,8 +5108,7 @@ function processCMD() {
             for OPT in "$@"; do
                 case $OPT in
                     -debug)
-                        export DEBUG=1
-                        set -x
+                        # already processed by setDebugMode()
                         shift
                         ;;
                 esac
