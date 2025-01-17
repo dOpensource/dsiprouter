@@ -2543,7 +2543,7 @@ function stop() {
 
 function restart() {
     # escape the systemd control group if told to daemonize
-    if (( $RESTART_DAEMONIZE == 1 )); then
+    if (( ${RESTART_DAEMONIZE:-0} == 1 )); then
         systemd-run --unit='dsip-daemon' --collect --slice=user.slice $0 ${RESTART_ARGS[@]}
         exit 0
     fi
