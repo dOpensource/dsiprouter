@@ -27,6 +27,7 @@ from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
+from sysloginit import initSyslogLogger
 import settings
 
 api = Blueprint('api', __name__)
@@ -2519,8 +2520,8 @@ def fetchNumberEnrichment(request_payload=None):
 
 # TODO: standardize response payload (use data param)
 # TODO: stop shadowing builtin functions -> type == builtin
-# return value should be used in an http/flask context
-def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None):
+# TODO: too manu use cases in this one function, split it up into constituent pieces
+def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None, run_standalone=False):
     """
     Generate CDRs Report for a gwgroup
 
@@ -2537,6 +2538,10 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
     :return:                returns a json response or file
     :rtype:                 flask.Response
     """
+
+    # if run in standalone mode we need to setup logging
+    initSyslogLogger()
+
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
@@ -2568,6 +2573,9 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
         else:
             response_payload['status'] = "0"
             response_payload['message'] = "Endpont group doesn't exist"
+            if run_standalone:
+                IO.logerr(f'Endpont group {gwgroupid} does not exist')
+                return None
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
@@ -2660,19 +2668,27 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                     data['html_body'] = "<html>CDR Report for {}</html>".format(gwgroupName)
                     data['text_body'] = "CDR Report for {}".format(gwgroupName)
                     data['subject'] = "CDR Report for {}".format(gwgroupName)
-                    data['attachments'] = []
-                    data['attachments'].append(csv_file)
+                    data['attachments'] = [csv_file]
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
                     # Remove CDR's from the payload thats being returned
                     response_payload.pop('cdrs')
                     response_payload['format'] = 'csv'
                     response_payload['type'] = 'email'
+                    if run_standalone:
+                        IO.loginfo(f'Sent CDR report for endpoint group {gwgroupid}')
+                        return None
                     return jsonify(response_payload)
 
+            if run_standalone:
+                IO.logerr(f'Nowhere to send CDR report for endpoint group {gwgroupid} run in standalone mode')
+                return None
             return send_file(csv_file, as_attachment=True), StatusCodes.HTTP_OK
-        else:
-            return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        if run_standalone:
+            IO.logerr(f'Nowhere to send CDR report for endpoint group {gwgroupid} run in standalone mode')
+            return None
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
