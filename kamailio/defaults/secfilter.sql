@@ -1,0 +1,35 @@
+delete from secfilter;
+insert into secfilter values 
+	(NULL,0,0,'friendly'),
+	(NULL,0,0,'SIPScan'),
+        (NULL,0,0,'smap'),
+	(NULL,0,0,'sipsak'),	
+	(NULL,0,0,'sipcli'),	
+	(NULL,0,0,'sipv'),	
+	(NULL,0,0,'iWar'),	
+	(NULL,0,0,'VaxIPUserAgent'),	
+	(NULL,0,0,'VaxSIPUserAgent'),	
+	(NULL,0,0,'SIVuS'),	
+	(NULL,0,0,'sipp'),	
+	(NULL,0,0,'SIPp'),
+	(NULL,0,0,'Gulp'),	
+	(NULL,0,0,'Viproy'),	
+	(NULL,0,0,'VoIP SIP'),
+	(NULL,0,0,'Avaya IP Phone 1120E'),	
+	(NULL,0,0,'PortSIP'),
+	(NULL,0,0,'eyeBeam'),
+	(NULL,0,0,'Kapanga'),
+	(NULL,0,0,'X-Lite'),
+	(NULL,0,0,'Firefly'),
+	(NULL,0,0,'OmniSession'),
+	(NULL,0,0,'Zoiper'),
+	(NULL,0,0,'Sipdroid'),
+	(NULL,0,0,'Ozeki'),
+	(NULL,0,0,'MizuPhone'),
+	(NULL,0,0,'Android based Mizu'),
+	(NULL,0,0,'linphone'),
+	(NULL,0,0,'3CXPhone'),
+	(NULL,0,0,'CSipSimple')
+
+
+

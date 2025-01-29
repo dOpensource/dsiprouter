@@ -25,6 +25,11 @@ def gatewayIdToIP(pbx_id, db):
     if gw is not None:
         return gw.address
 
+def gatewayIdToSetID(gw_id, db):
+    dispatcher = db.query(Dispatcher).filter(Dispatcher.description.like('%gwid=' + gw_id + '%')).first()
+    if dispatcher is not None:
+        return dispatcher.setid
+    
 
 def addDomain(domain, authtype, pbxs, notes, db):
     # Create the domain because we need the domain id
@@ -140,14 +145,18 @@ def addDomain(domain, authtype, pbxs, notes, db):
         PBXDomainAttr6 = DomainAttrs(did=domain, name='dispatcher_alg_reg', value="8")
         PBXDomainAttr7 = DomainAttrs(did=domain, name='dispatcher_alg_in', value="4")
         # Create entry in dispatcher and set dispatcher_set_id in domain_attrs
-        PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=PBXDomain.id)
-        for pbx_id in pbx_list:
-            dispatcher = Dispatcher(
-                setid=PBXDomain.id,
-                destination=gatewayIdToIP(pbx_id, db),
-                gwid=pbx_id
-            )
-            db.add(dispatcher)
+        # Grab the first entry for now.  TODO: Change the logic to be a Group ID moving forward
+        setId = gatewayIdToSetID(pbx_list[0],db)
+        PBXDomainAttr8 = DomainAttrs(did=domain, name='dispatcher_set_id', value=setId)
+        
+        # No need to add a dispatcher anymore since the Endpoint Gateways are added to dispatcher when entered
+        #for pbx_id in pbx_list:
+        #    dispatcher = Dispatcher(
+        #        setid=PBXDomain.id,
+        #        destination=gatewayIdToIP(pbx_id, db),
+        #        gwid=pbx_id
+        #    )
+        #    db.add(dispatcher)
 
         db.add(PBXDomainAttr1)
         db.add(PBXDomainAttr2)
