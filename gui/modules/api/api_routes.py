@@ -1428,10 +1428,12 @@ def updateEndpointGroups(gwgroupid=None):
         del_gw_filters = [
             f'gwid={gateway.gwid}(;|$)' for gateway in del_gateways.union(del_gateways_cleanup)
         ]
-        db.query(Dispatcher).filter(
-            (Dispatcher.setid == gwgroupid) &
-            Dispatcher.description.regexp_match('|'.join(del_gw_filters))
-        ).delete(synchronize_session=False)
+        # the default match for REGEXP is true, make sure we actually have gwids to match against
+        if len(del_gw_filters) > 0:
+            db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroupid) &
+                Dispatcher.description.regexp_match('|'.join(del_gw_filters))
+            ).delete(synchronize_session=False)
 
         del_gateways.delete(synchronize_session=False)
         del_gateways_cleanup.delete(synchronize_session=False)
