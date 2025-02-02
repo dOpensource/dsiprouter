@@ -54,7 +54,7 @@ resource "digitalocean_record" "dns_record" {
 
 resource "null_resource" "configure-ssl-cert" {
   triggers = {
-  	count = var.number_of_environments
+  	count = timestamp()
   }
 
 	connection {
