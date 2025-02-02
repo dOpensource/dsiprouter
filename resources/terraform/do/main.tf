@@ -53,8 +53,9 @@ resource "digitalocean_record" "dns_record" {
 }
 
 resource "null_resource" "configure-ssl-cert" {
-  count = var.number_of_environments
-        
+  triggers = {
+  	count = var.number_of_environments
+  }
 
 	connection {
         	host = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
