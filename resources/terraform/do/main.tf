@@ -51,3 +51,22 @@ resource "digitalocean_record" "dns_record" {
   name = var.dns_hostname
   value = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
 }
+
+resource "null_resource" "configure-ssl-cert" {
+  count = var.dns_demo_enabled
+        
+
+	connection {
+        	host = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
+        	user = "root"
+        	type = "ssh"
+        	private_key = file(var.pvt_key_path)
+        	timeout = "5m"
+        }
+
+  	provisioner "remote-exec" {
+    		inline = [
+      		"dsiprouter configuresslcert -f"
+   		 ]
+  	}	
+}
