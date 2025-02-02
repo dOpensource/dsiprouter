@@ -53,6 +53,7 @@ resource "digitalocean_record" "dns_record" {
 }
 
 resource "null_resource" "configure-ssl-cert" {
+  depends_on = ["digitalocean_record.dns_record"]
   count = var.number_of_environments
   triggers = {
   	runeachtime = timestamp()
