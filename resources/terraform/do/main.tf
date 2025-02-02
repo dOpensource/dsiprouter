@@ -49,7 +49,7 @@ resource "digitalocean_record" "dns_record" {
   domain = var.dns_domain
   type = "A"
   name = var.dns_hostname
-  value = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
+  value = digitalocean_droplet.dsiprouter.ipv4_address
 }
 
 resource "null_resource" "configure-ssl-cert" {
