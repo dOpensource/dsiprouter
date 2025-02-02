@@ -53,7 +53,7 @@ resource "digitalocean_record" "dns_record" {
 }
 
 resource "null_resource" "configure-ssl-cert" {
-  count = var.dns_demo_enabled
+  count = var.number_of_environments
         
 
 	connection {
