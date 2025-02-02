@@ -848,6 +848,8 @@ function configureSSL() {
     else
         firewall-cmd --zone=public --remove-port=80/tcp
     fi
+
+    exit 0
 }
 
 # updates and settings in kam config that may change
