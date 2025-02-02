@@ -58,7 +58,7 @@ resource "null_resource" "configure-ssl-cert" {
   }
 
 	connection {
-        	host = digitalocean_droplet.dsiprouter.ipv4_address
+        	host = digitalocean_droplet.dsiprouter[count.index].ipv4_address
         	user = "root"
         	type = "ssh"
         	private_key = file(var.pvt_key_path)
