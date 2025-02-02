@@ -49,7 +49,7 @@ resource "digitalocean_record" "dns_record" {
   domain = var.dns_domain
   type = "A"
   name = var.dns_hostname
-  value = digitalocean_droplet.dsiprouter.ipv4_address
+  value = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
 }
 
 resource "null_resource" "configure-ssl-cert" {
@@ -58,7 +58,7 @@ resource "null_resource" "configure-ssl-cert" {
   }
 
 	connection {
-        	host = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
+        	host = digitalocean_droplet.dsiprouter.ipv4_address
         	user = "root"
         	type = "ssh"
         	private_key = file(var.pvt_key_path)
