@@ -53,12 +53,13 @@ resource "digitalocean_record" "dns_record" {
 }
 
 resource "null_resource" "configure-ssl-cert" {
+  count = var.number_of_environments
   triggers = {
   	runeachtime = timestamp()
   }
 
 	connection {
-        	host = digitalocean_droplet.dsiprouter[count.index].ipv4_address
+        	host = digitalocean_droplet.dsiprouter.*.ipv4_address[count.index]
         	user = "root"
         	type = "ssh"
         	private_key = file(var.pvt_key_path)
