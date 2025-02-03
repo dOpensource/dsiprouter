@@ -3877,6 +3877,10 @@ function usageOptions() {
         " " "-clear|-deactivate <license_key or 'tag=<tag>'>|" \
         " " "-check <license_key or 'tag=<tag>'>"
     printf "%-30s %s\n" \
+        "backup" "[-debug] [-f <output file>]"
+    printf "%-30s %s\n" \
+        "restore" "[-debug] [-f <input file>]"
+    printf "%-30s %s\n" \
         "version|-v|--version" ""
     printf "%-30s %s\n" \
         "help|-h|--help" ""
@@ -5117,6 +5121,67 @@ function processCMD() {
             # pass the rest of the user args to the local function
             licenseManager "$@"
             exit $?
+            ;;
+        backup)
+            shift
+
+            for OPT in "$@"; do
+                case $OPT in
+                    -debug)
+                        # already processed by setDebugMode()
+                        shift
+                        ;;
+                    -f)
+                        shift
+                        DUMP_FILE="$1"
+                        shift
+                        ;;
+                esac
+            done
+
+            if [[ -z "$DUMP_FILE" ]]; then
+                DUMP_FILE=${CURR_BACKUP_DIR}/db.sql
+            fi
+
+            printdbg "backing up database to $DUMP_FILE"
+            dumpDB "$KAM_DB_NAME" >"$DUMP_FILE"
+            (( $? != 0 )) && {
+                printerr 'failed backing up database'
+                exit 1
+            }
+            chown dsiprouter:root "$DUMP_FILE"
+            pprint 'database backup created'
+            exit 0
+            ;;
+        restore)
+            shift
+
+            for OPT in "$@"; do
+                case $OPT in
+                    -debug)
+                        # already processed by setDebugMode()
+                        shift
+                        ;;
+                    -f)
+                        shift
+                        DUMP_FILE="$1"
+                        shift
+                        ;;
+                esac
+            done
+
+            if [[ -z "$DUMP_FILE" ]]; then
+                DUMP_FILE=${CURR_BACKUP_DIR}/db.sql
+            fi
+
+            printdbg "restoring database from $DUMP_FILE"
+            withRootDBConn mysql <"$DUMP_FILE"
+            (( $? != 0 )) && {
+                printerr 'failed restoring database'
+                exit 1
+            }
+            pprint 'database restored from backup'
+            exit 0
             ;;
         version|-v|--version)
             printf '%s\n' "$(getConfigAttrib 'VERSION' ${DSIP_CONFIG_FILE})"
