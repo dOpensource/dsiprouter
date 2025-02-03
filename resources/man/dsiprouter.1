@@ -45,6 +45,10 @@ Generate new unique credentials for dSIPRouter services.
 Set credentials for dSIPRouter services manually.
 .IP licensemanager
 Manage the dSIPRouter licenses for this system.
+.IP backup
+Backup the dSIPRouter data and settings in a SQL file.
+.IP restore
+Restore the dSIPRouter settings and data from a SQL file.
 .IP version|-v|--version
 Show the currently installed dSIPRouter version.
 .IP help|-h|--help
@@ -246,7 +250,7 @@ Used to set the key for the flask session manager manually.
 
 .IP "licensemanager options"
 -debug
-Show detailed info while running licensemanager commands.
+Show detailed info while running the licensemanager sub-command.
 
 -list
 List all the licenses associated with this machine.
@@ -274,6 +278,20 @@ Dissociate and deactivate a license that is currently installed on this system.
 
 -check <license_key or 'tag=<tag>'
 Check whether the license key(s) is valid and active on this machine.
+
+.IP "backup options"
+-debug
+Show detailed info while running the backup sub-command.
+
+-f <sql file>
+Specify the path to output the backup file.
+
+.IP "restore options"
+-debug
+Show detailed info while running the restore sub-command.
+
+-f <sql file>
+Specify the path to import the backup file from.
 
 .SH BUGS
 Report to Github Issues: https://github.com/dOpensource/dsiprouter.git

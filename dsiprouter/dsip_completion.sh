@@ -29,6 +29,8 @@ _dsiprouter() {
         resetpassword
         setcredentials
         licensemanager
+        backup
+        restore
         help
         -h
         --help
@@ -55,6 +57,8 @@ _dsiprouter() {
         [resetpassword]=''
         [setcredentials]='--dsip-creds= --api-creds= --kam-creds= --mail-creds= --ipc-creds= --db-admin-creds= --session-creds='
         [licensemanager]=''
+        [backup]=''
+        [restore]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -81,6 +85,8 @@ _dsiprouter() {
         [resetpassword]='--all --dsip-creds --api-creds --kam-creds --ipc-creds --force-instance-id'
         [setcredentials]=''
         [licensemanager]=''
+        [backup]=''
+        [restore]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -107,6 +113,8 @@ _dsiprouter() {
         [resetpassword]='-debug -q -all -dc -ac -kc -ic -fid'
         [setcredentials]='-debug --dc -ac -kc -mc -ic -dac -sc'
         [licensemanager]='-debug -retrieve -list -activate -import -deactivate -clear -check'
+        [backup]='-debug -f'
+        [restore]='-debug -f'
         [help]=''
         [-h]=''
         [--help]=''

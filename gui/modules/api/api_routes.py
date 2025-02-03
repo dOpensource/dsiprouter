@@ -2793,34 +2793,23 @@ def createBackup():
     Generate a backup of the database
     """
 
-    # define here so we can cleanup in finally statement
+    # in case we error early make sure the variable is set
     backup_path = ''
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        backup_name = time.strftime('%Y%m%d-%H%M%S') + ".sql"
-        backup_path = os.path.join(settings.BACKUP_FOLDER, backup_name)
-        # need to decrypt password
-        if isinstance(settings.KAM_DB_PASS, bytes):
-            kampass = AES_CTR.decrypt(settings.KAM_DB_PASS)
-        else:
-            kampass = settings.KAM_DB_PASS
+        backup_path = os.path.join(settings.BACKUP_FOLDER, f'{time.strftime("%s")}-db.sql')
 
-        dumpcmd = ['/usr/bin/mysqldump', '--single-transaction', '--opt', '--routines', '--triggers', '--hex-blob',
-                   '--ignore-table=kamailio.dsip_prefix_mapping','--ignore-table=kamailio.dsip_dnid_lnp_mapping','--ignore-table=kamailio.dsip_call_settings_h','-h', settings.KAM_DB_HOST, '-u',
-                   settings.KAM_DB_USER, '-p{}'.format(kampass), '-B', settings.KAM_DB_NAME]
-        with open(backup_path, 'wb') as fp:
-            dump = subprocess.Popen(dumpcmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]
-            dump = re.sub(rb'''DEFINER=[`"\'][a-zA-Z0-9_%]*[`"\']@[`"\'][a-zA-Z0-9_%]*[`"\']''', b'', dump,
-                flags=re.MULTILINE)
-            dump = re.sub(rb'ENGINE=MyISAM', b'ENGINE=InnoDB', dump, flags=re.MULTILINE)
-            fp.write(dump)
-        # lines = "It wrote the backup"
-        # attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
-        # headers={"Content-disposition":attachment}
-        # return Response(lines, mimetype="text/plain",headers=headers)
+        dumpcmd = ['sudo', 'dsiprouter', 'backup', '-f', backup_path]
+        proc = subprocess.run(
+            dumpcmd,
+            capture_output=True,
+            text=True
+        )
+        proc.check_returncode()
+
         return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
     except Exception as ex:
@@ -2837,19 +2826,12 @@ def restoreBackup():
     Restore backup of the database
     """
 
+    # in case we error early make sure the variable is set
+    restore_path = ''
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
-
-        data = getRequestData()
-
-        KAM_DB_USER = settings.KAM_DB_USER
-        KAM_DB_PASS = settings.KAM_DB_PASS
-
-        if 'db_username' in data.keys():
-            KAM_DB_USER = ''.join(data['db_username'])
-            if KAM_DB_USER != '':
-                KAM_DB_PASS = ''.join(data['db_password'])
 
         if 'file' not in request.files:
             raise http_exceptions.BadRequest("No file was sent")
@@ -2866,27 +2848,25 @@ def restoreBackup():
         else:
             raise http_exceptions.BadRequest("Improper file upload")
 
-        if len(KAM_DB_PASS) == 0:
-            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-D', settings.KAM_DB_NAME]
-        else:
-            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', str(KAM_DB_USER), '-p{}'.format(str(KAM_DB_PASS)),
-                          '-D', settings.KAM_DB_NAME]
+        restorecmd = ['sudo', 'dsiprouter', 'restore', '-f', restore_path]
+        proc = subprocess.run(
+            restorecmd,
+            capture_output=True,
+            text=True
+        )
+        proc.check_returncode()
 
-        with open(restore_path, 'rb') as fp:
-            stdout, stderr = subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-            if len(stderr) > 0:
-                errorMessage = stdout
-                raise http_exceptions.BadRequest(stderr)
-            else:
-                errorMessage='The restore was successful'
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
-            msg= errorMessage,
+            msg='The restore was successful',
             kamreload=True,
         )
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        if os.path.exists(restore_path):
+            os.remove(restore_path)
 
 
 @api.route("/api/v1/sys/generatepassword", methods=['GET'])
