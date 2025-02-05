@@ -2415,7 +2415,7 @@ def intializeAuthModules():
         )
         auth_mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(auth_mod)
-        auth_mod.initialize()
+        auth_mod.initialize(settings)
         auth_modules.append(auth_mod)
 
 def guiLicenseCheck(tag):
