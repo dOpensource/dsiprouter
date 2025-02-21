@@ -1281,28 +1281,37 @@ def deleteInboundMapping():
 
 def processInboundMappingImport(filename, override_gwgroupid, name, db):
     try:
-        # Adding
         f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
         csv_f = csv.reader(f)
 
         for row in csv_f:
+            if len(row) == 0:
+                continue
             # skip header if present
             if row[0].startswith("#"):
                 continue
 
             prefix = row[0]
-            if len(row) > 0:
-                if override_gwgroupid is not None:
-                    gwgroupid = override_gwgroupid
-                else:
-                    gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
+            if override_gwgroupid is not None:
+                gwlist = override_gwgroupid
+            else:
+                gwlist = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
             if len(row) > 1:
                 description = 'name:{}'.format(row[2])
             else:
                 description = 'name:{}'.format(name)
 
-            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwgroupid, description)
-            db.add(IMap)
+            IMap = db.query(InboundMapping).filter(
+                (InboundMapping.prefix == prefix) &
+                (InboundMapping.groupid == settings.FLT_INBOUND)
+            )
+            if IMap is None:
+                IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
+                db.add(IMap)
+            else:
+                IMap.prefix = prefix
+                IMap.gwlist = gwlist
+                IMap.description = description
 
         db.commit()
 
