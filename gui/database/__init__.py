@@ -981,7 +981,6 @@ def settingsToTableFormat(settings, updates=None):
         ('MAIL_DEFAULT_SENDER', data['MAIL_DEFAULT_SENDER']),
         ('MAIL_DEFAULT_SUBJECT', data['MAIL_DEFAULT_SUBJECT']),
         ('DSIP_LICENSE_STORE', data['DSIP_LICENSE_STORE']),
-        ('RTPENGINE_URI', data['RTPENGINE_URI']),
     ])
 
 

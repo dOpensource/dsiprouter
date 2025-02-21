@@ -9,9 +9,7 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    local KAM_MINOR_VERSION=$(perl -pe 's%^([0-9])\.([0-9]).*$%\1.\2%' <<<"$KAM_VERSION")
-    local RHEL_BASE_VER=$(rpm -E %{rhel})
-    local NPROC=$(nproc)
+    local KAM_VERSION_DOTTED RHEL_BASE_VER NPROC
 
     # Install Dependencies
     yum groupinstall -y 'Development Tools' &&
@@ -36,6 +34,11 @@ function install() {
     sed -i -re 's%^blacklist sctp%#blacklist sctp%g' /etc/modprobe.d/*
     modprobe sctp
 
+    # hardcoded to the latest release available for centos (patch updates broken)
+    KAM_VERSION_DOTTED='5.7.4'
+    RHEL_BASE_VER=$(rpm -E %{rhel})
+    NPROC=$(nproc)
+
     ## compile and install openssl v1.1.1 (repo versions too old)
     ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
     if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1w" ]]; then
@@ -47,7 +50,7 @@ function install() {
         (
             cd ${SRC_DIR}/openssl &&
             ./Configure --prefix=/usr linux-$(uname -m) &&
-            make -j $NPROC &&
+            make -j $NRPOC &&
             make -j $NPROC install
         )
         if (( $? != 0 )); then
@@ -97,27 +100,14 @@ function install() {
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
-    # TODO: fix upstream kamailio.repo file
-    #yum install -y yum-utils &&
-    #yum-config-manager --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
-    #yum-config-manager --disable 'kamailio*' >/dev/null &&
-    #yum-config-manager --enable "kamailio-$KAM_VERSION_DOTTED" >/dev/null &&
-
-    # Add the Kamailio repos to yum
-    (cat << EOF
-[kamailio]
-name=Kamailio
-baseurl=https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_MINOR_VERSION}/${KAM_VERSION}/\$basearch/
-enabled=1
-metadata_expire=30d
-gpgcheck=1
-repo_gpgcheck=0
-gpgkey=https://rpm.kamailio.org/rpm-pub.key
-type=rpm
-EOF
-    ) > /etc/yum.repos.d/kamailio.repo
-    yum makecache -y
-
+#    KAM_VERSION_FULL=$(
+#        curl -s "https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_VERSION_DOTTED}/listing" 2>/dev/null |
+#        tail -n -1
+#    )
+    yum install -y yum-utils &&
+    yum-config-manager --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
+    yum-config-manager --disable 'kamailio*' >/dev/null &&
+    yum-config-manager --enable "kamailio-$KAM_VERSION_DOTTED" >/dev/null &&
     yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
         kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid kamailio-sctp
@@ -128,6 +118,7 @@ EOF
     fi
 
     # get info about the kamailio install for later use in script
+    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # make sure run dir exists
@@ -250,12 +241,12 @@ EOF
     ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
     (
         cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&

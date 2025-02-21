@@ -11,8 +11,7 @@ fi
 function install {
     # Install dependencies for dSIPRouter
     dnf install -y firewalld logrotate rsyslog perl curl python3 python3-devel libpq-devel \
-        libev-devel openldap-devel &&
-    dnf install -y --enablerepo=crb mariadb-devel
+        libev-devel openldap-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'

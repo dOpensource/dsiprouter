@@ -16,7 +16,7 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    dnf install -y mariadb mariadb-server
+    dnf install -y mariadb mariadb-server mariadb-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing mariadb packages'

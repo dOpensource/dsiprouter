@@ -11,7 +11,7 @@ def sendCdrReport(gwgroupid):
 
         now = datetime.now()
         cdr_info = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
-        generateCDRS(gwgroupid=gwgroupid, type='csv', email=True, dtfilter=cdr_info.last_sent, run_standalone=True)
+        generateCDRS(gwgroupid=gwgroupid, type='csv', email=True, dtfilter=cdr_info.last_sent)
         cdr_info.last_sent = now
         db.commit()
 
