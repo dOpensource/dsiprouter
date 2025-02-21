@@ -17,8 +17,8 @@ function install() {
 
     # install mysql packages
     amazon-linux-extras enable mariadb10.5 >/dev/null
-    yum makecache -y
-    yum install -y mariadb mariadb-server
+    yum clean -y metadata
+    yum install -y mariadb mariadb-libs mariadb-devel mariadb-server
 
     # Setup mysql config locations in a reliable manner
     rm -f ~/.my.cnf 2>/dev/null

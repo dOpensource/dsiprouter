@@ -9,28 +9,20 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    local KAM_MINOR_VERSION=$(perl -pe 's%^([0-9])\.([0-9]).*$%\1.\2%' <<<"$KAM_VERSION")
+    local KAM_VERSION_DOTTED=$(perl -pe 's%([0-9])([0-9])%\1.\2%' <<<"$KAM_VERSION")
     local RHEL_BASE_VER=$(rpm -E %{rhel})
-    local NPROC=$(nproc)
 
     # Install Dependencies
-    dnf config-manager --enable -y powertools &&
-    dnf install -y epel-release &&
-    dnf groupinstall --setopt=group_package_types=mandatory,default,optional -y 'core' &&
-    dnf groupinstall --setopt=group_package_types=mandatory,default,optional -y 'base' &&
-    dnf groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools' &&
-    dnf install -y psmisc curl wget sed gawk vim perl firewalld logrotate rsyslog \
-        uuid openssl-devel libuuid-devel libjwt-devel libatomic bzip2-devel libffi-devel libcurl-devel \
-        python3.11 python3.11-pip policycoreutils-python-utils
+    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'core'
+    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'base'
+    yum groupinstall --setopt=group_package_types=mandatory,default,optional -y 'Development Tools'
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    yum install -y psmisc curl wget sed gawk vim perl firewalld uuid-devel openssl-devel
+    yum install -y logrotate rsyslog python3 python3-virtualenv policycoreutils-python-utils
 
-    if (( $? != 0 )); then
-        printerr 'Failed installing required packages'
-        exit 1
-    fi
-
-    # we need a newer version of certbot than the distro repos offer
-    dnf remove -y *certbot*
-    python3 -m venv --upgrade-deps /opt/certbot/
+    yum remove -y *certbot*
+    python3 -m venv /opt/certbot/
+    /opt/certbot/bin/pip install --upgrade pip
     /opt/certbot/bin/pip install certbot
     ln -sf /opt/certbot/bin/certbot /usr/bin/certbot
 
@@ -50,6 +42,7 @@ function install() {
     fi
 
     # create kamailio user and group
+    mkdir -p /var/run/kamailio
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
@@ -59,7 +52,7 @@ function install() {
     (cat << EOF
 [kamailio]
 name=Kamailio
-baseurl=https://rpm.kamailio.org/centos/${RHEL_BASE_VER}/${KAM_MINOR_VERSION}/${KAM_VERSION}/\$basearch/
+baseurl=https://rpm.kamailio.org/rhel/${RHEL_BASE_VER}/${KAM_VERSION_DOTTED}/${KAM_VERSION_DOTTED}/\$basearch/
 enabled=1
 metadata_expire=30d
 gpgcheck=1
@@ -69,9 +62,8 @@ type=rpm
 EOF
     ) > /etc/yum.repos.d/kamailio.repo
 
-    dnf clean -y metadata
-    dnf makecache -y
-    dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket \
+    yum makecache -y
+    yum install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket \
         kamailio-postgresql kamailio-debuginfo kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls \
         kamailio-presence kamailio-outbound kamailio-gzcompress kamailio-http_async_client kamailio-dmq_userloc \
         kamailio-sctp
@@ -86,6 +78,7 @@ EOF
     fi
 
     # get info about the kamailio install for later use in script
+    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     touch /etc/tmpfiles.d/kamailio.conf
@@ -210,12 +203,12 @@ EOF
     ## compile and install STIR/SHAKEN module
     ## reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION}" ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
             rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
         fi
     else
-        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
     fi
     (
         cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&

@@ -98,7 +98,7 @@ def reloadKamailio():
             ('127.0.0.1', 'htable.reload', ['gwgroup2lb']),
             ('127.0.0.1', 'htable.reload', ['inbound_hardfwd']),
             ('127.0.0.1', 'htable.reload', ['inbound_failfwd']),
-            ('127.0.0.1', 'htable.reload', ['prefix_to_route']),
+            ('127.0.0.1', 'htable.reload', ['inbound_prefixmap']),
         ]
 
         # reload data depending on the features enabled
@@ -146,6 +146,7 @@ def reloadKamailio():
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_block_invalid', str(settings.STIR_SHAKEN_BLOCK_INVALID)]))
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_key_path', str(settings.STIR_SHAKEN_KEY_PATH)]))
             rpc_args.append(('127.0.0.1', 'cfg.sets', ['stir_shaken', 'stir_shaken_cert_url', str(settings.STIR_SHAKEN_CERT_URL)]))
+            rpc_args.append(('127.0.0.1', 'htable.reload', ['dr_rules']))
 
         # data that is conditionally reloaded based on dsiprouter settings
         if settings.TELEBLOCK_GW_ENABLED:

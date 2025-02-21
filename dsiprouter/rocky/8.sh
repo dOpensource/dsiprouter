@@ -19,9 +19,8 @@ function install {
     dnf remove -y rs-epel-release* &&
     dnf install -y dnf-utils &&
     dnf --setopt=group_package_types=mandatory,default,optional groupinstall -y "Development Tools" &&
-    dnf install -y firewalld sudo logrotate rsyslog perl \
-        python3.11 python3.11-pip python3.11-libs python3.11-devel python3.11-PyMySQL \
-        libev-devel util-linux postgresql-devel mariadb-devel openldap-devel
+    dnf install -y firewalld sudo python36 python36-libs python36-devel python36-pip MySQL-python \
+        python36-virtualenv logrotate rsyslog perl libev-devel util-linux postgresql-devel mariadb-devel
 
     if (( $? != 0 )); then
         printerr 'Failed installing required packages'
