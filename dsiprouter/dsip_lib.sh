@@ -274,7 +274,7 @@ function encryptConfigAttrib() {
 #updateConfig(settings, {'$NAME': AES_CTR.encrypt('$VALUE')})
 #EOPY
 }
-export -f setConfigAttrib
+export -f encryptConfigAttrib
 
 # $1 == attribute name
 # $2 == python config file
@@ -636,16 +636,33 @@ function ipv6Test() {
 }
 export -f ipv6Test
 
+# $1 == ip to test
+# returns: 0 == success, 1 == failure
+function ipv4TestRFC1918() {
+    local IP="$1"
+    if [[ $IP =~ ^(10\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|172\.(1[6-9]|2[0-9]|3[01])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|192\.168\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.([0-9]{1,2}|1[0-9][0-9]|2[0-4][0-9]|25[0-5]))$ ]]; then
+        return 0
+    fi
+    return 1
+}
+export -f ipv4TestRFC1918
+
+# output: all physical network interfaces on this machine
+function getPhysicalIfaces() {
+    ( cd /sys/class/net && dirname */device; )
+}
+export -f getPhysicalIfaces
 
 # $1 == [-4|-6] to force specific IP version
 # output: the internal IP for this system
 # notes: prints internal ip, or empty string if not available
 # notes: tries ipv4 first then ipv6
+# returns: 0 on success, 1 if the interface was not found
 # TODO: currently we only check for the internal IP associated with the default interface/default route
 #       this will fail if the internal IP is not assigned to the default interface/default route
 #       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
 function getInternalIP() {
-    local INTERNAL_IP=""
+    local INTERNAL_IP="" INTERNAL_ADDRS=()
 
     case "$1" in
         -4)
@@ -661,27 +678,43 @@ function getInternalIP() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
-	    
+
+    # get the interface of the first default route
+    # TODO: can we support multiple default routes as iproute2 does?
     if (( ${IPV6_ENABLED} == 1 )); then
-		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
+		INTERFACE=$(ip -6 -json route show default | jq -re '.[0].dev') || {
+		    return 1
+		}
     else
-		INTERFACE=$(ip -4 route show default | head -1 | awk '{print $5}')
+		INTERFACE=$(ip -4 -json route show default | jq -re '.[0].dev') || {
+		    return 1
+		}
     fi
 
-    # Get the ip address without depending on DNS
+    # we give priority to RFC1918 addresses if the interface has multiple addresses
+    # if none are found, the first address is used
     if (( ${IPV4_ENABLED} == 1 )); then
-        # Marked for removal because it depends on DNS
-		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		INTERNAL_ADDRS=($(
+		    ip -4 -json addr show $INTERFACE |
+		    jq -r '.[0].addr_info[].local'
+        ))
+        for ADDR in ${INTERNAL_ADDRS[@]}; do
+            if ipv4TestRFC1918 "$ADDR"; then
+                INTERNAL_IP="$ADDR"
+            fi
+        done
+        if [[ -z "$INTERNAL_IP" ]]; then
+            INTERNAL_IP="${INTERNAL_ADDRS[0]}"
+        fi
     fi
 
+    # TODO: implement RFC 4193 test and selection algorithm for IPv6 version
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
-        # Marked for removal because it depends on DNS
-        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$INTERNAL_IP"
+    return 0
 }
 export -f getInternalIP
 
@@ -889,6 +922,24 @@ function getInternalCIDR() {
     fi
 }
 export -f getInternalCIDR
+
+# $1 == host to check
+# returns: 0 == host is local, 1 == host is remote
+function isHostLocal() {
+    local LOCAL_MATCH=$(
+        joinwith '' '|' '' \
+            localhost \
+            $(hostname 2>/dev/null) \
+            $(hostname -f 2>/dev/null) \
+            $(ip -json address show | jq -r '.[].addr_info[].local')
+    )
+
+    if [[ "$1" =~ $LOCAL_MATCH ]]; then
+        return 0
+    fi
+    return 1
+}
+export -f isHostLocal
 
 # $1 == cmd as executed in systemd (by ExecStart=)
 # notes: take precaution when adding long running functions as they will block startup in boot order
@@ -1208,7 +1259,6 @@ EOF
 }
 export -f sqlAsTransaction
 
-# TODO: remove dependency on system python3
 # usage: parseDBConnURI <field> <connection uri>
 # field:    -user
 #           -pass
@@ -1249,16 +1299,17 @@ function parseDBConnURI() {
             ;;
     esac
 
-    # WARNING: we must use system python3 here (dsiprouter python venv may not exist)
-    python3 <<EOPY
-import re
-matches = re.search(r'[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*', '$1')
-if matches is None:
-    exit(1)
-if matches.groups()[$GROUP] is None:
-    exit(1)
-print(matches.groups()[$GROUP], end='')
-EOPY
+    perl -e '
+@matches = ($ARGV[0] =~ m"^[\t\r\n\v\f]*(?:([^:]+)?(?::([^@]+)?)?@)?([^:]+)(?::([^/]+)?)?(?:/([^\t\r\n\v\f]+))?[\t\r\n\v\f]*$");
+if ($matches[$ARGV[1]] ne "") {
+    print $matches[$ARGV[1]];
+    exit 0;
+}
+else {
+    exit 1;
+}
+' "$1" "$GROUP"
+
     return $?
 }
 export -f parseDBConnURI
@@ -1337,6 +1388,12 @@ export -f sendKamCmd
 # TODO: improve performance of openssl native version and swap it out
 function hashCreds() {
 	local CREDS SALT DK_LEN
+	# we use system python3 if dsiprouter python venv does not yet exist
+	if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
+	    local PYTHON_CMD="$PYTHON_CMD"
+	else
+	    local PYTHON_CMD="python3"
+	fi
 
 	# grab credentials from stdin if provided
 	if [[ -p /dev/stdin ]]; then
@@ -1377,8 +1434,7 @@ function hashCreds() {
 
 	# python native version
 	# no external dependencies other than vanilla python3
-	# WARNING: we must use system python3 here (dsiprouter python venv may not exist)
-	python3 <<EOPYTHON
+	${PYTHON_CMD} <<EOPYTHON
 import hashlib,binascii
 creds='$CREDS'.encode('utf-8')
 salt='$SALT'.encode('utf-8')

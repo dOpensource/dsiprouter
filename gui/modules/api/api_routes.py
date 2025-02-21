@@ -27,6 +27,7 @@ from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
+from sysloginit import initSyslogLogger
 import settings
 
 api = Blueprint('api', __name__)
@@ -1427,10 +1428,12 @@ def updateEndpointGroups(gwgroupid=None):
         del_gw_filters = [
             f'gwid={gateway.gwid}(;|$)' for gateway in del_gateways.union(del_gateways_cleanup)
         ]
-        db.query(Dispatcher).filter(
-            (Dispatcher.setid == gwgroupid) &
-            Dispatcher.description.regexp_match('|'.join(del_gw_filters))
-        ).delete(synchronize_session=False)
+        # the default match for REGEXP is true, make sure we actually have gwids to match against
+        if len(del_gw_filters) > 0:
+            db.query(Dispatcher).filter(
+                (Dispatcher.setid == gwgroupid) &
+                Dispatcher.description.regexp_match('|'.join(del_gw_filters))
+            ).delete(synchronize_session=False)
 
         del_gateways.delete(synchronize_session=False)
         del_gateways_cleanup.delete(synchronize_session=False)
@@ -1486,17 +1489,22 @@ def updateEndpointGroups(gwgroupid=None):
                 if 'cdr_send_interval' in request_payload['cdr'] else None
 
             if len(cdr_email) > 0 and len(cdr_send_interval) > 0:
+                cron_cmd = '{} cdr sendreport {}'.format(
+                    (settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'),
+                    gwgroupid_str
+                )
                 # Try to update
                 if db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).update(
                     {"email": cdr_email, "send_interval": cdr_send_interval},
                     synchronize_session=False):
                     if not updateTaggedCronjob(gwgroupid, cdr_send_interval):
-                        raise Exception('Crontab entry could not be updated')
+                        # in-case the entry was modified elsewhere we can just create it again
+                        if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
+                            raise Exception('Crontab entry could not be updated')
                 else:
                     cdrinfo = dSIPCDRInfo(gwgroupid, cdr_email, cdr_send_interval)
                     db.add(cdrinfo)
-                    cron_cmd = '{} cdr sendreport {}'.format((settings.DSIP_PROJECT_DIR + '/gui/dsiprouter_cron.py'),
-                        gwgroupid_str)
+
                     if not addTaggedCronjob(gwgroupid, cdr_send_interval, cron_cmd):
                         raise Exception('Crontab entry could not be created')
             else:
@@ -2514,8 +2522,8 @@ def fetchNumberEnrichment(request_payload=None):
 
 # TODO: standardize response payload (use data param)
 # TODO: stop shadowing builtin functions -> type == builtin
-# return value should be used in an http/flask context
-def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None):
+# TODO: too manu use cases in this one function, split it up into constituent pieces
+def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None, run_standalone=False):
     """
     Generate CDRs Report for a gwgroup
 
@@ -2532,6 +2540,10 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
     :return:                returns a json response or file
     :rtype:                 flask.Response
     """
+
+    # if run in standalone mode we need to setup logging
+    initSyslogLogger()
+
     db = DummySession()
 
     # defaults.. keep data returned separate from returned metadata
@@ -2563,6 +2575,9 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
         else:
             response_payload['status'] = "0"
             response_payload['message'] = "Endpont group doesn't exist"
+            if run_standalone:
+                IO.logerr(f'Endpont group {gwgroupid} does not exist')
+                return None
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
@@ -2655,19 +2670,27 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                     data['html_body'] = "<html>CDR Report for {}</html>".format(gwgroupName)
                     data['text_body'] = "CDR Report for {}".format(gwgroupName)
                     data['subject'] = "CDR Report for {}".format(gwgroupName)
-                    data['attachments'] = []
-                    data['attachments'].append(csv_file)
+                    data['attachments'] = [csv_file]
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
                     # Remove CDR's from the payload thats being returned
                     response_payload.pop('cdrs')
                     response_payload['format'] = 'csv'
                     response_payload['type'] = 'email'
+                    if run_standalone:
+                        IO.loginfo(f'Sent CDR report for endpoint group {gwgroupid}')
+                        return None
                     return jsonify(response_payload)
 
+            if run_standalone:
+                IO.logerr(f'Nowhere to send CDR report for endpoint group {gwgroupid} run in standalone mode')
+                return None
             return send_file(csv_file, as_attachment=True), StatusCodes.HTTP_OK
-        else:
-            return jsonify(response_payload), StatusCodes.HTTP_OK
+
+        if run_standalone:
+            IO.logerr(f'Nowhere to send CDR report for endpoint group {gwgroupid} run in standalone mode')
+            return None
+        return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:
         db.rollback()
@@ -2770,35 +2793,23 @@ def createBackup():
     Generate a backup of the database
     """
 
-    # define here so we can cleanup in finally statement
+    # in case we error early make sure the variable is set
     backup_path = ''
 
     try:
         if (settings.DEBUG):
             debugEndpoint()
 
-        backup_name = time.strftime('%Y%m%d-%H%M%S') + ".sql"
-        backup_path = os.path.join(settings.BACKUP_FOLDER, backup_name)
-        # need to decrypt password
-        if isinstance(settings.KAM_DB_PASS, bytes):
-            kampass = AES_CTR.decrypt(settings.KAM_DB_PASS)
-        else:
-            kampass = settings.KAM_DB_PASS
+        backup_path = os.path.join(settings.BACKUP_FOLDER, f'{time.strftime("%s")}-db.sql')
 
-        dumpcmd = ['/usr/bin/mysqldump', '--single-transaction', '--opt', '--routines', '--triggers', '--hex-blob',
-                   '-h', settings.KAM_DB_HOST, '-u',
-                   settings.KAM_DB_USER, '-p{}'.format(kampass), '-B', settings.KAM_DB_NAME]
-        with open(backup_path, 'wb') as fp:
-            dump = subprocess.Popen(dumpcmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).communicate()[0]
-            dump = re.sub(rb'''DEFINER=[`"\'][a-zA-Z0-9_%]*[`"\']@[`"\'][a-zA-Z0-9_%]*[`"\']''', b'', dump,
-                flags=re.MULTILINE)
-            dump = re.sub(rb'ENGINE=MyISAM', b'ENGINE=InnoDB', dump, flags=re.MULTILINE)
-            fp.write(dump)
+        dumpcmd = ['sudo', 'dsiprouter', 'backup', '-f', backup_path]
+        proc = subprocess.run(
+            dumpcmd,
+            capture_output=True,
+            text=True
+        )
+        proc.check_returncode()
 
-        # lines = "It wrote the backup"
-        # attachment = "attachment; filename=dsiprouter_{}_{}.sql".format(settings.VERSION,backupDateTime)
-        # headers={"Content-disposition":attachment}
-        # return Response(lines, mimetype="text/plain",headers=headers)
         return send_file(backup_path, as_attachment=True), StatusCodes.HTTP_OK
 
     except Exception as ex:
@@ -2815,19 +2826,12 @@ def restoreBackup():
     Restore backup of the database
     """
 
+    # in case we error early make sure the variable is set
+    restore_path = ''
+
     try:
         if (settings.DEBUG):
             debugEndpoint()
-
-        data = getRequestData()
-
-        KAM_DB_USER = settings.KAM_DB_USER
-        KAM_DB_PASS = settings.KAM_DB_PASS
-
-        if 'db_username' in data.keys():
-            KAM_DB_USER = str(data.get('db_username'))
-            if KAM_DB_USER != '':
-                KAM_DB_PASS = str(data.get('db_password'))
 
         if 'file' not in request.files:
             raise http_exceptions.BadRequest("No file was sent")
@@ -2844,14 +2848,13 @@ def restoreBackup():
         else:
             raise http_exceptions.BadRequest("Improper file upload")
 
-        if len(KAM_DB_PASS) == 0:
-            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-D', settings.KAM_DB_NAME]
-        else:
-            restorecmd = ['/usr/bin/mysql', '-h', settings.KAM_DB_HOST, '-u', KAM_DB_USER, '-p{}'.format(KAM_DB_PASS),
-                          '-D', settings.KAM_DB_NAME]
-
-        with open(restore_path, 'rb') as fp:
-            subprocess.Popen(restorecmd, stdin=fp, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).communicate()
+        restorecmd = ['sudo', 'dsiprouter', 'restore', '-f', restore_path]
+        proc = subprocess.run(
+            restorecmd,
+            capture_output=True,
+            text=True
+        )
+        proc.check_returncode()
 
         getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
         return createApiResponse(
@@ -2861,6 +2864,9 @@ def restoreBackup():
 
     except Exception as ex:
         return showApiError(ex)
+    finally:
+        if os.path.exists(restore_path):
+            os.remove(restore_path)
 
 
 @api.route("/api/v1/sys/generatepassword", methods=['GET'])

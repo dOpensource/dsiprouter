@@ -62,7 +62,7 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    # backup somer configuration files we will replace
+    # backup the configuration files we will replace
     [[ ! -e "${BACKUPS_DIR}/network/" ]] && {
         mkdir -p ${BACKUPS_DIR}/network/
         cp -df /etc/resolv.conf ${BACKUPS_DIR}/network/resolv.conf
