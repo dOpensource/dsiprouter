@@ -662,7 +662,7 @@ export -f getPhysicalIfaces
 #       this will fail if the internal IP is not assigned to the default interface/default route
 #       not sure what networking scenarios that would be useful for, the community should provide us feedback on this
 function getInternalIP() {
-    local INTERNAL_IP="" INTERNAL_ADDRS=()
+    local INTERNAL_IP=""
 
     case "$1" in
         -4)
@@ -679,42 +679,26 @@ function getInternalIP() {
             ;;
     esac
 
-    # get the interface of the first default route
-    # TODO: can we support multiple default routes as iproute2 does?
     if (( ${IPV6_ENABLED} == 1 )); then
-		INTERFACE=$(ip -6 -json route show default | jq -re '.[0].dev') || {
-		    return 1
-		}
+		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
     else
-		INTERFACE=$(ip -4 -json route show default | jq -re '.[0].dev') || {
-		    return 1
-		}
+		INTERFACE=$(ip -4 route show default | head -1 | awk '{print $5}')
     fi
 
-    # we give priority to RFC1918 addresses if the interface has multiple addresses
-    # if none are found, the first address is used
+    # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-		INTERNAL_ADDRS=($(
-		    ip -4 -json addr show $INTERFACE |
-		    jq -r '.[0].addr_info[].local'
-        ))
-        for ADDR in ${INTERNAL_ADDRS[@]}; do
-            if ipv4TestRFC1918 "$ADDR"; then
-                INTERNAL_IP="$ADDR"
-            fi
-        done
-        if [[ -z "$INTERNAL_IP" ]]; then
-            INTERNAL_IP="${INTERNAL_ADDRS[0]}"
-        fi
+        # Marked for removal because it depends on DNS
+		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
-    # TODO: implement RFC 4193 test and selection algorithm for IPv6 version
     if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
+        # Marked for removal because it depends on DNS
+        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
 		INTERNAL_IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
     printf '%s' "$INTERNAL_IP"
-    return 0
 }
 export -f getInternalIP
 
