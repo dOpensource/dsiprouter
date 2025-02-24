@@ -226,18 +226,6 @@ function setDynamicScriptSettings() {
         EXTERNAL_IP6_ADDR=$(getExternalIP -6)
         export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
 
-
-	# Special DO Use Case
-	# DO assigns a Private and Public IP address to eth0
-	# The Public is the only one routable on the internet
-	# and the private IP is not NAT'd like on AWS
-	# Hence, we setup the INTERNAL IP Address to the External IP Address
-	setCloudPlatform	
-
-	if (( $DO_ENABLED )); then
-		export INTERNAL_IP_ADDR=$EXTERNAL_IP_ADDR
-	fi
-
         # determine whether ipv6 is enabled
         # /proc/net/if_inet6 tells us if the kernel has ipv6 enabled
 #		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6_ADDR" ]]; then
@@ -305,7 +293,6 @@ function setDynamicScriptSettings() {
         export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
         EXTERNAL_IP6_ADDR=$(getIP -6 "$PUBLIC_IFACE")
         export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
-
 
 #		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6_ADDR" ]]; then
 #			# sanity check, is the ipv6 address routable?
