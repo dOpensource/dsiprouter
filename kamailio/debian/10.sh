@@ -89,7 +89,7 @@ EOF
         printerr 'Failed installing kamailio from packages'
         return 1
     }
-    apt-get install -y kamailio-mysql-modules kamailio-extra-modules kamailio-tls-modules \
+    apt-get install -y --allow-downgrades kamailio-mysql-modules kamailio-extra-modules kamailio-tls-modules \
         kamailio-websocket-modules kamailio-presence-modules kamailio-json-modules \
         kamailio-sctp-modules
 
