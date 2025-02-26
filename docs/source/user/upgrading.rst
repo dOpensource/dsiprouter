@@ -16,6 +16,47 @@ A core license can be purchased from the `dSIPRouter Marketplace <https://dopens
 .. image:: images/upgrade_up_to_date.png
         :align: center
 
+Note that during upgrades, the hashed passwords have to be reset (such as dsiprouter admin password).
+You can find the new passwords displayed; either on the CLI after completion, or by viewing the upgrade log in the UI:
+
+.. image:: images/upgrading-log-01.png
+        :align: center
+
+.. image:: images/upgrading-log-02.png
+        :align: center
+
+Upgrade to 0.77
+--------------------
+
+Upgrading from version 0.76 to 0.77 can be done using the auto upgrade feature via the UI or CLI.
+
+To upgrade using the UI click the "Upgrade Now" button:
+
+.. image:: images/upgrade_available.png
+        :align: center
+
+Or by using the CLI:
+
+.. code-block:: bash
+
+   dsiprouter upgrade -rel 0.77
+
+Upgrade to 0.76
+--------------------
+
+Upgrading from version 0.75 to 0.76 can be done using the auto upgrade feature via the UI or CLI.
+
+To upgrade using the UI click the "Upgrade Now" button:
+
+.. image:: images/upgrade_available.png
+        :align: center
+
+Or by using the CLI:
+
+.. code-block:: bash
+
+   dsiprouter upgrade -rel 0.76
+
 Upgrade to 0.75
 ---------------
 
