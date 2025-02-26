@@ -20,7 +20,7 @@
       <hr>
       <div class="form-group">
       <label class="label-toggle">Global Gryphon Teleblock Support </label>
-        {% if teleblock["gw_enabled"] == "1" %}
+        {% if teleblock["gw_enabled"] == 1 %}
           <input id="toggleTeleblock" name ="gw_enabled" type="checkbox" checked title="Toggle Teleblock"
                  data-toggle="toggle"
                  value="{{ teleblock["gw_enabled"] }}"
@@ -36,7 +36,7 @@
                  data-width="120px">
         {% endif %}
       </div>
-      {% if teleblock["gw_enabled"]  == "1" %}
+      {% if teleblock["gw_enabled"]  == 1 %}
         <div id="teleblockOptions" class="form-group">
       {% else %}
         <div id="teleblockOptions" class="form-group hidden">
