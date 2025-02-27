@@ -179,14 +179,14 @@ fi
 printdbg 'backing up configs just in case the upgrade fails'
 mkdir -p "$CURR_BACKUP_DIR"
 mkdir -p ${CURR_BACKUP_DIR}/{opt/dsiprouter,var/lib/dsiprouter,etc/dsiprouter,etc/kamailio,etc/rtpengine,etc/systemd/system,lib/systemd/system,etc/default}
-cp -af ${OLD_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
-cp -af ${DSIP_LIB_DIR}/. ${CURR_BACKUP_DIR}/var/lib/dsiprouter/
-cp -af ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
-cp -af ${DSIP_SYSTEM_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/dsiprouter/
-cp -af ${SYSTEM_RTPENGINE_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/rtpengine/
-cp -af /etc/systemd/system/{dsiprouter,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/etc/systemd/system/ 2>/dev/null
-cp -af /lib/systemd/system/{dsiprouter,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/lib/systemd/system/ 2>/dev/null
-cp -af /etc/default/{kamailio,rtpengine}* ${CURR_BACKUP_DIR}/etc/default/
+cp -afP ${OLD_PROJECT_DIR}/. ${CURR_BACKUP_DIR}/opt/dsiprouter/
+cp -afP ${DSIP_LIB_DIR}/. ${CURR_BACKUP_DIR}/var/lib/dsiprouter/
+cp -afP ${SYSTEM_KAMAILIO_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/kamailio/
+cp -afP ${DSIP_SYSTEM_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/dsiprouter/
+cp -afP ${SYSTEM_RTPENGINE_CONFIG_DIR}/. ${CURR_BACKUP_DIR}/etc/rtpengine/
+cp -afP /etc/systemd/system/{dsiprouter,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/etc/systemd/system/ 2>/dev/null
+cp -afP /lib/systemd/system/{dsiprouter,kamailio,rtpengine,dsip-init,mariadb}.service ${CURR_BACKUP_DIR}/lib/systemd/system/ 2>/dev/null
+cp -afP /etc/default/{kamailio,rtpengine}* ${CURR_BACKUP_DIR}/etc/default/
 printdbg "files were backed up here: ${CURR_BACKUP_DIR}/"
 
 # if the state files for the services to upgrade were there before
@@ -204,10 +204,10 @@ resetConfigsHandler() {
         systemctl unmask rtpengine.service
     fi
 
-    cp -af ${CURR_BACKUP_DIR}/etc/. /etc/
-    cp -af ${CURR_BACKUP_DIR}/lib/. /lib/
-    cp -af ${CURR_BACKUP_DIR}/opt/. /opt/
-    cp -af ${CURR_BACKUP_DIR}/var/. /var/
+    cp -afP ${CURR_BACKUP_DIR}/etc/. /etc/
+    cp -afP ${CURR_BACKUP_DIR}/lib/. /lib/
+    cp -afP ${CURR_BACKUP_DIR}/opt/. /opt/
+    cp -afP ${CURR_BACKUP_DIR}/var/. /var/
     systemctl daemon-reload
 
     if (( $REINSTALL_KAMAILIO == 1 )); then
