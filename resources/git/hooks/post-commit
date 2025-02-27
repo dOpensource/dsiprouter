@@ -30,10 +30,10 @@ REMOTE_NAME="${REMOTE_NAME:-origin}"
 # file that will hold remote that must be pushed to
 REMOTE_FILE="${PROJECT_ROOT}/.push_remote"
 # remote info used in script
-REMOTE_URL=$(git remote get-url ${REMOTE_NAME} 2>/dev/null | perl -pe 's%(?:git\@|https\://)(.+)(?:\:|/)(.+)/(.+)\.git%https://\1/\2/\3%')
-REMOTE_SITE=$(cut -d '/' -f -3 <<<"${REMOTE_URL}")
-REMOTE_USER=$(cut -d '/' -f 4 <<<"${REMOTE_URL}")
-REMOTE_REPO=$(cut -d '/' -f 5- <<<"${REMOTE_URL}")
+export REMOTE_URL=$(git remote get-url ${REMOTE_NAME} 2>/dev/null | perl -pe 's%(?:git\@|https\://).+?@(.+)(?:\:|/)(.+)/(.+)\.git%https://\1/\2/\3%')
+export REMOTE_SITE=$(cut -d '/' -f -3 <<<"${REMOTE_URL}")
+export REMOTE_USER=$(cut -d '/' -f 4 <<<"${REMOTE_URL}")
+export REMOTE_REPO=$(cut -d '/' -f 5- <<<"${REMOTE_URL}")
 
 
 # utility functions
@@ -50,15 +50,17 @@ createMDRenderedSection() {
     printf '%s' "$CONTENT" | sed -e '$a\'
     printf '%s\n' "[//]: # (END_SECTION ${NAME})"
 }
+export -f createMDRenderedSection
 
 createMDCommentSection() {
     local NAME="$1"
     local CONTENT="$2"
 
-    printf '%s\n' "[//]: # (START_SECTION ${NAME})"
+    printf '%s\n' "[//]: # (START_SECTION ${NAME}"
     printf '%s' "$CONTENT" | sed -e '$a\'
     printf '%s\n' "END_SECTION ${NAME})"
 }
+export -f createMDCommentSection
 
 removeMDRenderedSection() {
     local NAME="$1"
@@ -66,6 +68,7 @@ removeMDRenderedSection() {
     perl -e "\$name='${NAME}';" -0777 \
         -pe 's%\[//\]: # \(START_SECTION ${name}\)\n(.*?)\[//\]: # \(END_SECTION ${name}\)\n%%s'
 }
+export -f removeMDRenderedSection
 
 removeMDRenderedSections() {
     local NAMES=$(printf '%s' "$1" | tr '\n' '|')
@@ -73,6 +76,7 @@ removeMDRenderedSections() {
     perl -e "\$names='${NAMES}';" -0777 \
         -pe 's%\[//\]: # \(START_SECTION (?:${names})\)\n(.*?)\[//\]: # \(END_SECTION (?:${names})\)\n%%sg'
 }
+export -f removeMDRenderedSections
 
 removeMDCommentSection() {
     local NAME="$1"
@@ -80,6 +84,7 @@ removeMDCommentSection() {
     perl -e "\$name='${NAME}';" -0777 \
         -pe 's%\[//\]: # \(START_SECTION ${name}\n(.*?)END_SECTION ${name}\)\n%%s'
 }
+export -f removeMDCommentSection
 
 getMDRenderedSection() {
     local NAME="$1"
@@ -87,6 +92,7 @@ getMDRenderedSection() {
     perl -e "\$name='${NAME}';" -0777 \
         -e ' while (<>) { if (s%.*\[//\]: # \(START_SECTION ${name}\)\n(.*?)\[//\]: # \(END_SECTION ${name}\)\n.*%\1%s) { print; } }'
 }
+export -f getMDRenderedSection
 
 getMDCommentSection() {
     local NAME="$1"
@@ -94,6 +100,7 @@ getMDCommentSection() {
     perl -e "\$name='${NAME}';" -0777 \
         -e ' while (<>) { if (s%.*\[//\]: # \(START_SECTION ${name}\n(.*?)END_SECTION ${name}\)\n.*%\1%s) { print; } }'
 }
+export -f getMDCommentSection
 
 # create a formatted commit section
 createCommitSection() {
@@ -120,6 +127,7 @@ createCommitSection() {
     createMDRenderedSection "$HASH" "$CONTENT"
     IFS=$OIFS
 }
+export -f createCommitSection
 
 # diff of newline delimeted string arrays (A - B)
 strarrDiff() {
@@ -144,16 +152,16 @@ createChangelog() {
 
     # if gitlab we use merges if github we use pulls
     if isRemoteGitlab; then
-        PULL_OR_MERGE="merge_requests"
+        export PULL_OR_MERGE="merge_requests"
     else
-        PULL_OR_MERGE="pull"
+        export PULL_OR_MERGE="pull"
     fi
 
     # if exists and in correct format we update the changelog
     # otherwise we create new changelog from scratch
     NEW_COMMIT_HASHES=$(git --no-pager log --no-merges --format='%H')
     if [[ -e "$CHANGELOG_FILE" ]]; then
-        OLD_COMMIT_HASHES=$(cat "$CHANGELOG_FILE" | getMDCommentSection 'COMMITS')
+        OLD_COMMIT_HASHES=$(getMDCommentSection 'COMMITS')
         if [[ -n "$OLD_COMMIT_HASHES" ]]; then
             NEW_CHANGELOG=0
 
@@ -170,16 +178,12 @@ createChangelog() {
     if (( ${NEW_CHANGELOG} == 1 )); then
         createMDRenderedSection 'HEADER' "$HEADER" > ${CHANGELOG_FILE}
         createMDCommentSection 'COMMITS' "$NEW_COMMIT_HASHES" >> ${CHANGELOG_FILE}
-        for HASH in $NEW_COMMIT_HASHES; do
-            createCommitSection "$HASH" >> ${CHANGELOG_FILE}
-        done
+        parallel --env -k -j 0 createCommitSection ::: $NEW_COMMIT_HASHES >>${CHANGELOG_FILE}
     # create temp changelog and merge with old
     else
         createMDRenderedSection 'HEADER' "$HEADER" > ${TMP_CHANGELOG_FILE}
         createMDCommentSection 'COMMITS' "$NEW_COMMIT_HASHES" >> ${TMP_CHANGELOG_FILE}
-        for HASH in $COMMITS_ADDED; do
-            createCommitSection "$HASH" >> ${TMP_CHANGELOG_FILE}
-        done
+        parallel --env -k -j 0 createCommitSection ::: $COMMITS_ADDED >>${TMP_CHANGELOG_FILE}
         (
             cat ${TMP_CHANGELOG_FILE}
             cat ${CHANGELOG_FILE} |

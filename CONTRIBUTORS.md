@@ -7,6 +7,7 @@
 - Dan Ryan
 - Dean Forester
 - demonspork
+- dependabot[bot]
 - dopensource
 - hailthemelody
 - James Peru Mmbono

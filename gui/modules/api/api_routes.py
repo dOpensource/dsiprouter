@@ -2523,16 +2523,25 @@ def fetchNumberEnrichment(request_payload=None):
 # TODO: standardize response payload (use data param)
 # TODO: stop shadowing builtin functions -> type == builtin
 # TODO: too manu use cases in this one function, split it up into constituent pieces
-def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None, nonCompletedCalls=None, run_standalone=False):
+def generateCDRS(
+    gwgroupid,
+    report_type=None,
+    send_email=None,
+    dtfilter=None,
+    cdrfilter=None,
+    nonCompletedCalls=None,
+    run_standalone=False,
+    filter_params=None,
+):
     """
     Generate CDRs Report for a gwgroup
 
     :param gwgroupid:       gwgroup to generate cdr's for
     :type gwgroupid:        int|str
-    :param type:            type of report (json|csv)
-    :type type:             str
-    :param email:           whether the report should be emailed
-    :type email:            bool
+    :param report_type:            type of report (json|csv)
+    :type report_type:             str
+    :param send_email:           whether the report should be emailed
+    :type send_email:            bool
     :param dtfilter:        time before which cdr's are not returned
     :type dtfilter:         datetime
     :param cdrfilter:       comma seperated cdr id's to include
@@ -2556,18 +2565,22 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
 
         if isinstance(gwgroupid, int):
             gwgroupid = str(gwgroupid)
-        if type is None:
-            type = 'json'
+        if report_type is None:
+            report_type = 'json'
         else:
-            type = type.lower()
-        if email is None:
-            email = False
+            report_type = report_type.lower()
+        if send_email is None:
+            send_email = False
         if dtfilter is None:
             dtfilter = datetime.min
         if cdrfilter is None:
-            cdrfilter = ''
+            cdrfilter = tuple()
+        else:
+            cdrfilter = tuple(cdrfilter.split(','))
         if nonCompletedCalls is None:
             nonCompletedCalls = True
+        if filter_params is None:
+            filter_params = {'paging': False, 'searching': False, 'ordering': False}
 
         gwgroup = db.query(GatewayGroups).filter(GatewayGroups.id == gwgroupid).first()
         if gwgroup is not None:
@@ -2581,7 +2594,8 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
-            query = (
+            sql_params = {"gwgroupid": gwgroupid, "dtfilter": dtfilter, "cdrfilter": cdrfilter}
+            query1 = (
                 """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
                           t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
                           t3.id AS dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
@@ -2589,11 +2603,12 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}' AND t1.cdr_id IN ({cdrfilter})
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dtfilter AND t1.cdr_id IN :cdrfilter
                 ORDER BY t1.call_start_time DESC"""
-            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter, cdrfilter=cdrfilter)
+            )
         else:
-            query = (
+            sql_params = {"gwgroupid": gwgroupid, "dtfilter": dtfilter}
+            query1 = (
                 """SELECT t1.cdr_id, t1.call_start_time, t1.duration AS call_duration, t1.calltype AS call_direction,
                           t2.id AS src_gwgroupid, substring_index(substring_index(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
                           t3.id AS dst_gwgroupid, substring_index(substring_index(t3.description, 'name:', -1), ',', 1) AS dst_gwgroupname,
@@ -2601,11 +2616,11 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                 FROM cdrs t1
                 JOIN dr_gw_lists t2 ON (t1.src_gwgroupid = t2.id)
                 JOIN dr_gw_lists t3 ON (t1.dst_gwgroupid = t3.id)
-                WHERE (t2.id = '{gwgroupid}' OR t3.id = '{gwgroupid}') AND t1.call_start_time >= '{dtfilter}'
+                WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND t1.call_start_time >= :dtfilter
                 ORDER BY t1.call_start_time DESC"""
-            ).format(gwgroupid=gwgroupid, dtfilter=dtfilter)
+            )
 
-        if nonCompletedCalls == True:
+        if nonCompletedCalls:
             query2 = (
                 """SELECT acc.id AS cdr_id, acc.time, 0, acc.calltype,
                 acc.src_gwgroupid, SUBSTRING_INDEX(SUBSTRING_INDEX(t2.description, 'name:', -1), ',', 1) AS src_gwgroupname,
@@ -2617,14 +2632,66 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                 WHERE (t2.id = :gwgroupid OR t3.id = :gwgroupid) AND acc.time >= :dtfilter
                 ORDER BY acc.time DESC"""
             )
-            query = "(" + query + ")" + " UNION " + "(" + query2 + ")"
+            sql = f'SELECT SQL_CALC_FOUND_ROWS * FROM (({query1}) UNION ({query2})) t_all'
+        else:
+            sql = f'SELECT SQL_CALC_FOUND_ROWS * FROM ({query1}) t_all'
 
-        rows = db.execute(text(query), {"gwgroupid": gwgroupid, "dtfilter": dtfilter})
+        if filter_params['searching']:
+            if filter_params['search_regex']:
+                sql_params['search_val'] = filter_params['search_val']
+                sql = sql + ' WHERE ' + '''
+                `cdr_id` REGEXP :search_val
+                OR `call_start_time` REGEXP :search_val
+                OR `call_duration` REGEXP :search_val
+                OR `call_direction` REGEXP :search_val
+                OR `src_gwgroupname` REGEXP :search_val
+                OR `dst_gwgroupname` REGEXP :search_val
+                OR `src_username` REGEXP :search_val
+                OR `dst_username` REGEXP :search_val
+                OR `src_address` REGEXP :search_val
+                OR `dst_address` REGEXP :search_val
+                OR `call_id` REGEXP :search_val
+                '''
+            else:
+                sql_params['search_val'] = f"%{filter_params['search_val']}%"
+                sql = sql + ' WHERE ' + '''
+                `cdr_id` LIKE :search_val
+                OR `call_start_time` LIKE :search_val
+                OR `call_duration` LIKE :search_val
+                OR `call_direction` LIKE :search_val
+                OR `src_gwgroupname` LIKE :search_val
+                OR `dst_gwgroupname` LIKE :search_val
+                OR `src_username` LIKE :search_val
+                OR `dst_username` LIKE :search_val
+                OR `src_address` LIKE :search_val
+                OR `dst_address` LIKE :search_val
+                OR `call_id` LIKE :search_val
+                '''
+        if filter_params['ordering']:
+            sql_params['order_col'] = filter_params['order_col']
+            if filter_params['order_dir'] == 'desc':
+                sql = sql + ' ORDER BY :order_col DESC'
+            else:
+                sql = sql + ' ORDER BY :order_col ASC'
+        if filter_params['paging']:
+            sql_params['page_start'] = filter_params['page_start']
+            sql_params['page_len'] = filter_params['page_len']
+            sql = sql + ' LIMIT :page_len OFFSET :page_start'
+        sql = text(sql)
+
+        rows = db.execute(sql, sql_params).all()
+        total_rows = db.execute(text('SELECT FOUND_ROWS()')).scalar()
+        # TODO: does not work as described by datatables, clientside JS expects the count before limiting
+        # only effects the text displayed on the bottom left (filter shown when searching)
+        #filtered_rows = len(rows)
+        filtered_rows = total_rows
+
         cdrs = []
-        dataFields = ['cdr_id', 'call_start_time', 'call_duration', 'call_direction', 'src_gwgroupid',
-                      'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname', 'src_username',
-                      'dst_username', 'src_address', 'dst_address', 'call_id']
-
+        dataFields = [
+            'cdr_id', 'call_start_time', 'call_duration', 'call_direction', 'src_gwgroupid',
+            'src_gwgroupname', 'dst_gwgroupid', 'dst_gwgroupname', 'src_username',
+            'dst_username', 'src_address', 'dst_address', 'call_id'
+        ]
         for row in rows:
             data = {}
             data['cdr_id'] = int(row[0])
@@ -2640,15 +2707,15 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
             data['src_address'] = row[10]
             data['dst_address'] = row[11]
             data['call_id'] = row[12]
-
             cdrs.append(data)
 
         response_payload['status'] = "200"
-        response_payload['cdrs'] = cdrs
-        response_payload['recordCount'] = len(cdrs)
+        response_payload['data'] = cdrs
+        response_payload['total_rows'] = total_rows
+        response_payload['filtered_rows'] = filtered_rows
 
         # Convert array of dicts to csv format
-        if type == "csv":
+        if report_type == "csv":
             now = time.strftime('%Y%m%d-%H%M%S')
             filename = secure_filename('{}_{}.csv'.format(gwgroupName, now))
             csv_file = '/tmp/{}'.format(filename)
@@ -2661,7 +2728,7 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                     dict_writer = csv.DictWriter(csv_fp, fieldnames=dataFields)
                     dict_writer.writeheader()
 
-            if email:
+            if send_email:
                 # recipients required
                 cdr_info = db.query(dSIPCDRInfo).filter(dSIPCDRInfo.gwgroupid == gwgroupid).first()
                 if cdr_info is not None:
@@ -2673,8 +2740,8 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
                     data['attachments'] = [csv_file]
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
-                    # Remove CDR's from the payload thats being returned
-                    response_payload.pop('cdrs')
+                    # remove CDRs from the payload that is being returned
+                    response_payload.pop('data')
                     response_payload['format'] = 'csv'
                     response_payload['type'] = 'email'
                     if run_standalone:
@@ -2704,7 +2771,7 @@ def generateCDRS(gwgroupid, type=None, email=None, dtfilter=None, cdrfilter=None
 
 @api.route("/api/v1/cdrs/endpointgroups/<int:gwgroupid>", methods=['GET'])
 @api_security
-def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None, dtfilter=None, nonCompletedCalls=None):
+def getGatewayGroupCDRS(gwgroupid=None):
     """
     Purpose
 
@@ -2714,18 +2781,50 @@ def getGatewayGroupCDRS(gwgroupid=None, type=None, email=None, filter=None, dtfi
     if (settings.DEBUG):
         debugEndpoint()
 
-    if type is None:
-        type = request.args.get('type', 'json')
-    if email is None:
-        email = bool(request.args.get('email', False))
-    if filter is None:
-        filter = request.args.get('filter', None)
-    if dtfilter is None:
-        dtfilter = request.args.get('dtfilter', None)
-    if nonCompletedCalls is None:
-        nonCompletedCalls = bool(request.args.get('nonCompletedCalls', True))
+    report_type = request.args.get('type', 'json')
+    if 'email' in request.args:
+        send_email = json.loads(request.args['email'])
+    else:
+        send_email = False
+    cdrfilter = request.args.get('filter', None)
+    if 'dtfilter' in request.args:
+        dtfilter = datetime.strptime(request.args['dtfilter'], "%Y-%m-%d")
+    else:
+        dtfilter = None
+    if 'nonCompletedCalls' in request.args:
+        nonCompletedCalls = json.loads(request.args['nonCompletedCalls'])
+    else:
+        nonCompletedCalls = True
 
-    return generateCDRS(gwgroupid, type, email, cdrfilter=filter, dtfilter=dtfilter, nonCompletedCalls=nonCompletedCalls)
+    if 'start' in request.args or 'length' in request.args:
+        page_start = int(request.args.get('start', 0))
+        page_len = int(request.args.get('length', 100))
+        filter_params = {
+            'paging': True,
+            'page_start': page_start,
+            'page_len': page_len,
+        }
+    else:
+        filter_params = {
+            'paging': False,
+        }
+    if 'search[value]' in request.args and len(request.args['search[value]']) > 0:
+        filter_params['searching'] = True
+        filter_params['search_val'] = request.args['search[value]']
+        if 'search[regex]' in request.args:
+            filter_params['search_regex'] = json.loads(request.args['search[regex]'])
+        else:
+            filter_params['search_regex'] = False
+    else:
+        filter_params['searching'] = False
+    if 'order[0][column]' in request.args:
+        filter_params['ordering'] = True
+        filter_params['order_col'] = int(request.args['order[0][column]']) + 1
+        filter_params['order_dir'] = request.args['order[0][dir]']
+    else:
+        filter_params['ordering'] = False
+
+    return generateCDRS(gwgroupid, report_type, send_email, dtfilter, cdrfilter, nonCompletedCalls, filter_params=filter_params)
 
 
 # TODO: standardize response payload (use createApiResponse())

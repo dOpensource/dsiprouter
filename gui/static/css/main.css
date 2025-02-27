@@ -1,11 +1,11 @@
 /* custom icons */
 @font-face {
   font-family: 'icomoon';
-  src: url('/static/fonts/icomoon.eot?wmk8iu');
-  src: url('/static/fonts/icomoon.eot?wmk8iu#iefix') format('embedded-opentype'),
-  url('/static/fonts/icomoon.ttf?wmk8iu') format('truetype'),
-  url('/static/fonts/icomoon.woff?wmk8iu') format('woff'),
-  url('/static/fonts/icomoon.svg?wmk8iu#icomoon') format('svg');
+  src:  url('/static/fonts/icomoon.eot?imwift');
+  src:  url('/static/fonts/icomoon.eot?imwift#iefix') format('embedded-opentype'),
+    url('/static/fonts/icomoon.ttf?imwift') format('truetype'),
+    url('/static/fonts/icomoon.woff?imwift') format('woff'),
+    url('/static/fonts/icomoon.svg?imwift#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -26,53 +26,59 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-fusionpbx_full:before {
+.icon-phone_enabled:before {
+  content: "\e90d";
+}
+.icon-money:before {
   content: "\e900";
 }
-.icon-gryphon:before {
+.icon-load_balance:before {
+  content: "\e111";
+}
+.icon-fusionpbx_full:before {
   content: "\e901";
 }
-.icon-fusionpbx:before {
+.icon-gryphon:before {
   content: "\e902";
 }
-.icon-asterisk:before {
+.icon-fusionpbx:before {
   content: "\e903";
 }
-.icon-kamailio:before {
+.icon-asterisk:before {
   content: "\e904";
 }
-.icon-flowroute:before {
+.icon-kamailio:before {
   content: "\e905";
 }
-.icon-freepbx:before {
+.icon-flowroute:before {
   content: "\e906";
 }
-.icon-zencommunication:before {
+.icon-freepbx:before {
   content: "\e907";
+}
+.icon-zencommunication:before {
+  content: "\e908";
+}
+.icon-call_failfwd:before {
+  content: "\e909";
+}
+.icon-call_hardfwd:before {
+  content: "\e90a";
+}
+.icon-transnexus .path1:before {
+  content: "\e90b";
+  color: rgb(0, 78, 168);
+}
+.icon-transnexus .path2:before {
+  content: "\e90c";
+  margin-left: -1em;
+  color: rgb(255, 255, 255);
 }
 .icon-circle-up:before {
   content: "\ea41";
 }
 .icon-circle-down:before {
   content: "\ea43";
-}
-.icon-call_failfwd:before {
-  content: "\e908";
-}
-.icon-call_hardfwd:before {
-  content: "\e909";
-}
-.icon-transnexus .path1:before {
-  content: "\e90a";
-  color: rgb(0, 78, 168);
-}
-.icon-transnexus .path2:before {
-  content: "\e90b";
-  margin-left: -1em;
-  color: rgb(255, 255, 255);
-}
-.icon-load_balance:before {
-  content: "\e111";
 }
 
 .wrap {

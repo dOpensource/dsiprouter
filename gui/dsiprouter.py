@@ -515,6 +515,17 @@ def displayCDRS():
         if (settings.DEBUG):
             debugEndpoint()
 
+        license_status = getLicenseStatus(license_tag='DSIP_CORE')
+        if license_status == 0:
+            return render_template('license_required.html', msg='DSIP_CORE license is required to use this feature')
+
+        if license_status == 1:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
+
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
+
+
         return render_template('cdrs.html')
 
     except http_exceptions.HTTPException as ex:
