@@ -2072,17 +2072,38 @@ def formatSSE(data: str, event: str = None) -> str:
 
 # inspired by: https://gist.github.com/kapb14/87255efffa173bb76cf5c1ed9db1d047
 # TODO: move to file handling
+# TODO: figure out why the SSE are not being sent every 1 second as expected
 def readLogChunk(log_file):
-    while getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] == True:
-        time.sleep(2)
-        for line in Pygtail(log_file, offset_file=f'{log_file}.offset'):
-            yield formatSSE(ansi_converter.convert(line, full=False).rstrip() + '<br>')
-
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
+    while state['dsip_upgrade_ongoing'] == True:
+        try:
+            lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+            yield formatSSE(
+                ansi_converter.convert(
+                    lines,
+                    full=False
+                ).replace('\n', '<br>')
+            )
+        except:
+            pass
+        time.sleep(1)
+    # process the reset of the lines
+    try:
+        lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+        yield formatSSE(
+            ansi_converter.convert(
+                lines,
+                full=False
+            ).replace('\n', '<br>')
+        )
+    except:
+        pass
 
 def checkUpgradeStatus():
-    while getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] == True:
-        time.sleep(30)
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
+    while state['dsip_upgrade_ongoing'] == True:
         yield formatSSE('1')
+        time.sleep(30)
     yield formatSSE('0')
 
 
