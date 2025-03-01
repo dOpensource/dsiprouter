@@ -3335,6 +3335,7 @@ def uploadCertificates(domain=None):
         # Create a directory for the domain
         if not os.path.exists(cert_domain_dir):
             os.makedirs(cert_domain_dir)
+            os.chmod(cert_domain_dir, 0o770)
 
         files = request.files.getlist("certandkey")
         try:
