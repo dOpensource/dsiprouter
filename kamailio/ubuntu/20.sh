@@ -62,7 +62,7 @@ EOF
     apt-get update -y
 
     # Install Kamailio packages
-    apt-get install -y kamailio kamailio-mysql-modules kamailio-extra-modules kamailio-tls-modules kamailio-websocket-modules \
+    apt-get install -y --allow-downgrades kamailio kamailio-mysql-modules kamailio-extra-modules kamailio-tls-modules kamailio-websocket-modules \
         kamailio-presence-modules kamailio-json-modules
 
     # get info about the kamailio install for later use in script

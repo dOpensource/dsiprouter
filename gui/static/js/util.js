@@ -334,4 +334,18 @@
     }, interval);
   }
 
+  /**
+   * Queued delay of a callback
+   * @param fn  The callback function
+   * @param ms  The timeout in milliseconds
+   * @returns {(function(...[*]): void)|*}
+   */
+  window.delayedCallback = function(fn, ms) {
+    let timer = 0
+    return function(...args) {
+      clearTimeout(timer)
+      timer = setTimeout(fn.bind(this, ...args), ms || 0)
+    }
+  };
+
 })(window, document);

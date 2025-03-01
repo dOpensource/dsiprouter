@@ -11,12 +11,22 @@
     <h3>Call Detail Records</h3>
   </div>
 
-  <div class="btn-group col-xs-3" id="menu">
+  <div class="btn-group col-sm-3" id="menu">
     <select class="btn-primary btn-md" id="endpointgroups">
       <option class="hidden" value="0" selected disabled>Select Endpoint Group</option>
     </select>
     <i class="glyphicon glyphicon glyphicon-refresh" id="refreshCDR"></i>
     <i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>
+  </div>
+
+  <div>
+    <label for="toggle_completed_calls">
+    Filter Calls
+    </label>
+    <input id="toggle_completed_calls" type="checkbox" data-toggle="toggle" value="1"
+           data-on="All Calls <span class='icon-phone_enabled'></span>"
+           data-off="Billable Calls <span class='icon-money'></span>"
+           data-width="125px">
   </div>
 {% endblock %}
 

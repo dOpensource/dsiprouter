@@ -513,6 +513,17 @@ def displayCDRS():
         if (settings.DEBUG):
             debugEndpoint()
 
+        license_status = getLicenseStatus(license_tag='DSIP_CORE')
+        if license_status == 0:
+            return render_template('license_required.html', msg='DSIP_CORE license is required to use this feature')
+
+        if license_status == 1:
+            return render_template('license_required.html', msg='license is not valid, ensure your license is still active')
+
+        if license_status == 2:
+            return render_template('license_required.html', msg='license is associated with another machine, re-associate it with this machine first')
+
+
         return render_template('cdrs.html')
 
     except http_exceptions.HTTPException as ex:
@@ -1279,28 +1290,37 @@ def deleteInboundMapping():
 
 def processInboundMappingImport(filename, override_gwgroupid, name, db):
     try:
-        # Adding
         f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
         csv_f = csv.reader(f)
 
         for row in csv_f:
+            if len(row) == 0:
+                continue
             # skip header if present
             if row[0].startswith("#"):
                 continue
 
             prefix = row[0]
-            if len(row) > 0:
-                if override_gwgroupid is not None:
-                    gwgroupid = override_gwgroupid
-                else:
-                    gwgroupid = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
+            if override_gwgroupid is not None:
+                gwlist = override_gwgroupid
+            else:
+                gwlist = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
             if len(row) > 1:
                 description = 'name:{}'.format(row[2])
             else:
                 description = 'name:{}'.format(name)
 
-            IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwgroupid, description)
-            db.add(IMap)
+            IMap = db.query(InboundMapping).filter(
+                (InboundMapping.prefix == prefix) &
+                (InboundMapping.groupid == settings.FLT_INBOUND)
+            )
+            if IMap is None:
+                IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
+                db.add(IMap)
+            else:
+                IMap.prefix = prefix
+                IMap.gwlist = gwlist
+                IMap.description = description
 
         db.commit()
 
@@ -2061,17 +2081,38 @@ def formatSSE(data: str, event: str = None) -> str:
 
 # inspired by: https://gist.github.com/kapb14/87255efffa173bb76cf5c1ed9db1d047
 # TODO: move to file handling
+# TODO: figure out why the SSE are not being sent every 1 second as expected
 def readLogChunk(log_file):
-    while getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] == True:
-        time.sleep(2)
-        for line in Pygtail(log_file, offset_file=f'{log_file}.offset'):
-            yield formatSSE(ansi_converter.convert(line, full=False).rstrip() + '<br>')
-
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
+    while state['dsip_upgrade_ongoing'] == True:
+        try:
+            lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+            yield formatSSE(
+                ansi_converter.convert(
+                    lines,
+                    full=False
+                ).replace('\n', '<br>')
+            )
+        except:
+            pass
+        time.sleep(1)
+    # process the reset of the lines
+    try:
+        lines = Pygtail(log_file, offset_file=f'{log_file}.offset').read()
+        yield formatSSE(
+            ansi_converter.convert(
+                lines,
+                full=False
+            ).replace('\n', '<br>')
+        )
+    except:
+        pass
 
 def checkUpgradeStatus():
-    while getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_upgrade_ongoing'] == True:
-        time.sleep(30)
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
+    while state['dsip_upgrade_ongoing'] == True:
         yield formatSSE('1')
+        time.sleep(30)
     yield formatSSE('0')
 
 

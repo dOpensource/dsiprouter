@@ -5,10 +5,15 @@
   if (typeof API_BASE_URL === "undefined") {
     throw new Error("API_BASE_URL is required and is not defined");
   }
+  if (typeof delayedCallback === "undefined") {
+    throw new Error("delayedCallback() is required and is not defined");
+  }
 
   // globals for this script
   var epgroup_select = $("#endpointgroups");
   var loading_spinner = $('#loading-spinner');
+  var showallcalls_inp = $('#toggle_completed_calls');
+  var cdr_table = null;
 
   /**
    * Show a spinner while loading
@@ -30,29 +35,46 @@
     	return value;
     }
     else {
-	return '';
+	    return '';
     }
-
   }
 
   function loadCDRDataTable(gwgroupid) {
     changeLoadingState(true);
 
     // load CDR data
-    if ($.fn.dataTable.isDataTable('#cdrs')) {
-      var table = $('#cdrs').DataTable();
+    if ($.fn.dataTable.isDataTable(cdr_table)) {
       // Clear the contents of the table
-      table.clear();
-      table.draw();
-      table.ajax.url(API_BASE_URL + "cdrs/endpointgroups/" + gwgroupid);
-      table.ajax.reload();
+      // cdr_table.clear();
+      // cdr_table.draw();
+      cdr_table.ajax.url(API_BASE_URL + "cdrs/endpointgroups/" + gwgroupid);
+      cdr_table.ajax.reload();
     }
     // datatable init
     else {
-      $('#cdrs').DataTable({
+      cdr_table = $('#cdrs').DataTable({
+        "pagingType": "full_numbers",
+        "processing": false,
+        "serverSide": true,
         "ajax": {
           "url": API_BASE_URL + "cdrs/endpointgroups/" + gwgroupid,
-          "dataSrc": "cdrs"
+          "data": function (d) {
+            d.nonCompletedCalls = showallcalls_inp.val() === '1';
+          },
+          "dataFilter": function (data) {
+            if (data) {
+              var json = jQuery.parseJSON(data);
+              json.recordsTotal = json.total_rows;
+              json.recordsFiltered = json.filtered_rows;
+              return JSON.stringify(json);
+            }
+
+            return JSON.stringify({
+              data: [],
+              recordsTotal: 0,
+              recordsFiltered: 0
+            });
+          }
         },
         "columns": [
           {"data": "cdr_id", "orderable": false},
@@ -69,9 +91,18 @@
           {"data": "dst_address"},
           {"data": "call_id", "orderable": false}
         ],
-        "order": [1, 'dsc'],
+        "order": [[1, 'desc']],
         "pageLength": 100
       });
+
+      // make searchbox less spammy
+      var searchbox = $('#cdrs input[type="search"]');
+      searchbox.unbind();
+      searchbox.bind('input', delayedCallback(
+        function(ev) {
+          cdr_table.search(this.value).draw();
+        }, 500)
+      );
     }
 
     changeLoadingState(false);
@@ -91,9 +122,25 @@
       }
     })
 
+    // default is enabled
+    showallcalls_inp.bootstrapToggle('on');
+
+    /* listener for completed calls toggle */
+    showallcalls_inp.change(function() {
+      var self = $(this);
+
+      if (self.is(":checked") || self.prop("checked")) {
+        self.val(1);
+      }
+      else {
+        self.val(0);
+      }
+      loadCDRDataTable(epgroup_select.find('option:selected').val());
+    });
+
     // change table when endpoint group selected
     epgroup_select.change(function () {
-      loadCDRDataTable($("#endpointgroups option:selected").val());
+      loadCDRDataTable(epgroup_select.find('option:selected').val());
     })
 
     $('#downloadCDR').click(function () {
@@ -104,7 +151,7 @@
     
     // reload table when the refresh button is clicked
     $('#refreshCDR').click(function () {
-      loadCDRDataTable($("#endpointgroups option:selected").val());
+      loadCDRDataTable(epgroup_select.find('option:selected').val());
     });
   });
 

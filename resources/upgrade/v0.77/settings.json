@@ -1,0 +1,8 @@
+{
+  "version": "0.77",
+  "depends": ["0.76"],
+  "install_location": "/opt/dsiprouter",
+  "dsiprouter": [
+    "migrate.sh"
+  ]
+}

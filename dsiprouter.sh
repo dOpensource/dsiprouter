@@ -642,6 +642,7 @@ function updateDsiprouterConfig() {
     [[ -n "$BACKUPS_DIR" ]] && setConfigAttrib 'BACKUP_FOLDER' "$BACKUPS_DIR" ${DSIP_CONFIG_FILE} -q
     [[ -n "$DID_PREFIX_ALLOWED_CHARS" ]] && setConfigAttrib 'DID_PREFIX_ALLOWED_CHARS' "$DID_PREFIX_ALLOWED_CHARS" ${DSIP_CONFIG_FILE}
     [[ -n "$LOAD_SETTINGS_FROM" ]] && setConfigAttrib 'LOAD_SETTINGS_FROM' "$LOAD_SETTINGS_FROM" ${DSIP_CONFIG_FILE} -q
+    [[ -n "$DSIP_LICENSE_STORE" ]] && setConfigAttrib 'DSIP_LICENSE_STORE' "$DSIP_LICENSE_STORE" ${DSIP_CONFIG_FILE}
 
     # update settings based on values set by setDynamicScriptSettings()
     setConfigAttrib 'NETWORK_MODE' "$NETWORK_MODE" ${DSIP_CONFIG_FILE}
@@ -1384,6 +1385,7 @@ function installScriptRequirements() {
 
     printdbg 'One-time script requirements installed'
     touch ${DSIP_SYSTEM_CONFIG_DIR}/.requirementsinstalled
+    return 0
 }
 
 # Any setup that needs to be done before the script can run properly
@@ -1449,6 +1451,14 @@ EOF
 
     # import new path definition if it was updated
     (( ${PATH_UPDATED} == 1 )) &&  . ${PATH_UPDATE_FILE}
+
+    return 0
+}
+
+function revertSystemPath() {
+    rm -f ${PATH_UPDATE_FILE}
+
+    return 0
 }
 
 # Configure system repo sources to ensure we get the right package versions
@@ -1463,7 +1473,7 @@ EOF
 #       https://wiki.centos.org/PackageManagement/Yum/Priorities
 function configureSystemRepos() {
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.reposconfigured" ]; then
-        return
+        return 0
     fi
 
     printdbg 'Configuring system repositories'
@@ -1519,7 +1529,7 @@ function removeDsipSystemConfig() {
 function installMysql() {
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
         printwarn "MySQL is already installed"
-        return
+        return 0
     fi
 
     printdbg "Attempting to install / configure MySQL..."
@@ -1537,6 +1547,7 @@ function installMysql() {
         printdbg "------------------------------------"
         pprint "MySQL Installation is complete!"
         printdbg "------------------------------------"
+        return 0
     else
         printerr "MySQL install failed"
         exit 1
@@ -1547,7 +1558,7 @@ function installMysql() {
 function uninstallMysql() {
     if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.mysqlinstalled" ]]; then
         printwarn "MySQL is not installed - skipping removal"
-        return
+        return 0
     fi
 
     printdbg "Attempting to uninstall MySQL..."
@@ -1567,7 +1578,7 @@ function uninstallMysql() {
 function installNginx() {
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
         printwarn "nginx is already installed"
-        return
+        return 0
     fi
 
     printdbg "Attempting to install / configure nginx..."
@@ -1585,6 +1596,7 @@ function installNginx() {
         printdbg "------------------------------------"
         pprint "nginx Installation is complete!"
         printdbg "------------------------------------"
+        return 0
     else
         printerr "nginx install failed"
         exit 1
@@ -1595,7 +1607,7 @@ function installNginx() {
 function uninstallNginx() {
     if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.nginxinstalled" ]]; then
         printwarn "nginx is not installed - skipping removal"
-        return
+        return 0
     fi
 
     printdbg "Attempting to uninstall nginx..."
@@ -1615,7 +1627,7 @@ function uninstallNginx() {
 function installRTPEngine() {
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.rtpengineinstalled" ]; then
         printwarn "RTPEngine is already installed"
-        return
+        return 0
     fi
 
     printdbg "Attempting to install RTPEngine..."
@@ -1652,6 +1664,7 @@ function installRTPEngine() {
     printdbg "------------------------------------"
     pprint "RTPEngine Installation is complete!"
     printdbg "------------------------------------"
+    return 0
 }
 
 # Remove RTPEngine
@@ -1688,7 +1701,7 @@ function installDsiprouterCli() {
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
         printwarn "dSIPRouter CLI is already installed"
-        return
+        return 0
     fi
 
     # TODO: add support for 'su' privilege escalation
@@ -1751,6 +1764,7 @@ function installDsiprouterCli() {
     echo ''
     printbold "To enable tab completion in this terminal session run:"
     echo -ne "source /etc/bash_completion\n\n"
+    return 0
 }
 
 function uninstallDsiprouterCli() {
@@ -1758,7 +1772,7 @@ function uninstallDsiprouterCli() {
 
     if [ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiproutercliinstalled" ]; then
         printwarn "dSIPRouter CLI is not installed, skipping..."
-        return
+        return 0
     else
         printdbg "Uninstalling dSIPRouter CLI"
     fi
@@ -1791,7 +1805,7 @@ function installDsiprouter() {
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]; then
         printwarn "dSIPRouter is already installed"
-        return
+        return 0
     fi
 
     printdbg "Attempting to install dSIPRouter..."
@@ -1960,6 +1974,7 @@ EOF
         printdbg "-------------------------------------"
         pprint "dSIPRouter Installation is complete! "
         printdbg "-------------------------------------"
+        return 0
     else
         printerr "dSIPRouter install failed"
         exit 1
@@ -2007,7 +2022,7 @@ function installKamailio() {
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
         printwarn "kamailio is already installed"
-        return
+        return 0
     else
         printdbg "Attempting to install Kamailio..."
     fi
@@ -2047,6 +2062,7 @@ function installKamailio() {
         printdbg "-----------------------------------"
         pprint "Kamailio Installation is complete!"
         printdbg "-----------------------------------"
+        return 0
     else
         printerr "Kamailio install failed"
         exit 1
@@ -2089,6 +2105,7 @@ function installModules() {
             ${dir}/install.sh
         fi
     done
+
     # priming function restart() to start/stop services
     # restart() may or may not be called after this depending on context
     STOP_DSIPROUTER=1
@@ -2097,12 +2114,14 @@ function installModules() {
     START_KAMAILIO=1
     STOP_RTPENGINE=0
     START_RTPENGINE=0
+
+    return 0
 }
 
 function installCron() {
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.croninstalled" ]; then
         printwarn "cron is already installed"
-        return
+        return 0
     else
         printdbg "Attempting to install cron"
     fi
@@ -2122,6 +2141,7 @@ function installCron() {
 
     pprint "cron was installed"
     touch ${DSIP_SYSTEM_CONFIG_DIR}/.croninstalled
+    return 0
 }
 
 # Install Sipsak
@@ -2131,7 +2151,7 @@ function installSipsak() {
 
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled" ]; then
         printwarn "SipSak is already installed"
-        return
+        return 0
     else
         printdbg "Attempting to install SipSak"
     fi
@@ -2175,6 +2195,7 @@ function installSipsak() {
     else
         printwarn "SipSak install failed.. continuing without it"
     fi
+    return 0
 }
 
 # Remove Sipsak from the machine completely
@@ -2202,7 +2223,7 @@ function uninstallSipsak() {
 function installDnsmasq() {
     if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled" ]; then
         printwarn "DNSmasq is already installed"
-        return
+        return 0
     fi
 
     # create dnsmasq user and group
@@ -2257,12 +2278,11 @@ function installDnsmasq() {
     if systemctl is-active --quiet dnsmasq; then
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.dnsmasqinstalled
         pprint "DNSmasq was installed"
+        return 0
     else
         printerr "DNSmasq install failed"
         exit 1
     fi
-
-    return 0
 }
 
 function uninstallDnsmasq() {
@@ -2798,7 +2818,7 @@ function setCredentials() {
 function updateBanner() {
     # don't write multiple times
     if [ -f /etc/update-motd.d/00-dsiprouter ]; then
-        return
+        return 0
     fi
 
     # move old banner files
@@ -2905,7 +2925,7 @@ function createInitService() {
     # only create if it doesn't exist
     if [[ -f "$DSIP_INIT_FILE" ]]; then
         printwarn "dsip-init service already exists"
-        return
+        return 0
     else
         printdbg "creating dsip-init service"
     fi
@@ -3635,7 +3655,7 @@ function createSwapFile() {
     local SWAP_FILE="${DSIP_LIB_DIR}/swap"
 
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.memupdatescomplete" ]]; then
-        return
+        return 0
     fi
 
     # only create if system has less than 2GB RAM and no existing swap files
@@ -3661,10 +3681,10 @@ function removeSwapFile() {
     local SWAP_FILE="${DSIP_LIB_DIR}/swap"
 
     if [[ ! -f "${DSIP_SYSTEM_CONFIG_DIR}/.memupdatescomplete" ]]; then
-        return
+        return 0
     fi
     if [[ ! -e "$SWAP_FILE" ]]; then
-        return
+        return 0
     fi
 
     swapoff ${SWAP_FILE} &&
@@ -3795,7 +3815,7 @@ function setVerbosityLevel() {
 #        }
 #        export -f make
 #    fi
-    return
+    return 0
 }
 
 # prep before processing command
@@ -4983,10 +5003,12 @@ function processCMD() {
     # 1. kamailio
     # 2. rtpengine
     for RUN_COMMAND in "${RUN_COMMANDS[@]}"; do
-        $RUN_COMMAND
-        RETVAL=$((RETVAL + $?))
+        $RUN_COMMAND || {
+            printerr "[$0:$RUN_CMMAND()] an unhandled fatal error occurred.. halting execution."
+            exit $?
+        }
     done
-    exit $RETVAL
+    exit 0
 } #end of processCMD
 
 processCMD "$@"

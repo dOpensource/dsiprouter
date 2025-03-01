@@ -661,7 +661,7 @@ function getInternalIP() {
             local IPV6_ENABLED=${IPV6_ENABLED:-0}
             ;;
     esac
-	    
+
     if (( ${IPV6_ENABLED} == 1 )); then
 		INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
     else
@@ -1436,7 +1436,10 @@ function versionCompare() { (
             exit 0
             ;;
         eq)
-            COMP='=='
+            for (( IDX=0; IDX<$LEN; IDX++)); do
+                (( ${VER1[$IDX]} == ${VER2[$IDX]} )) || exit 1
+            done
+            exit 0
             ;;
         gt)
             [[ "${VER1[@]}" == "${VER2[@]}" ]] && exit 1

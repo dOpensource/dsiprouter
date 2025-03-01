@@ -17,9 +17,7 @@
 17;FLT_CARRIER;50.17.48.216;0;;17,FLT_CARRIER,,proxy,proxy;name:Skyetel 4rd Priority Outbound Call,gwgroup:2,addr_id:37
 18;FLT_CARRIER;52.32.223.28;0;;18,FLT_CARRIER,,proxy,proxy;name:Skyetel North West High Cost Outbound Traffic,gwgroup:2,addr_id:38
 19;FLT_CARRIER;52.4.178.107;0;;19,FLT_CARRIER,,proxy,proxy;name:Skyetel South East High Cost Outbound Traffic,gwgroup:2,addr_id:39
-20;FLT_CARRIER;147.75.60.160;0;;20,FLT_CARRIER,,proxy,proxy;name:Flowroute US-West-WA,gwgroup:3,addr_id:40
 21;FLT_CARRIER;34.210.91.112;0;;21,FLT_CARRIER,,proxy,proxy;name:Flowroute US-West-OR,gwgroup:3,addr_id:41
-22;FLT_CARRIER;147.75.65.192;0;;22,FLT_CARRIER,,proxy,proxy;name:Flowroute US-East-NJ,gwgroup:3,addr_id:42
 23;FLT_CARRIER;34.226.36.32;0;;23,FLT_CARRIER,,proxy,proxy;name:Flowroute US-East-VA,gwgroup:3,addr_id:43
 24;FLT_CARRIER;81.201.82.45;0;;24,FLT_CARRIER,,proxy,proxy;name:Voxbone Belgium,gwgroup:4,addr_id:44
 25;FLT_CARRIER;81.201.84.195;0;;25,FLT_CARRIER,,proxy,proxy;name:Voxbone LA,gwgroup:4,addr_id:45
