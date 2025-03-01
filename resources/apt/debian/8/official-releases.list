@@ -1,0 +1,11 @@
+#-------------------------------------------------------------------
+# packages from debian 8 (jessie) release
+#-------------------------------------------------------------------
+deb http://deb.debian.org/debian/ jessie main contrib non-free
+#deb-src http://deb.debian.org/debian/ jessie main contrib non-free
+
+deb http://deb.debian.org/debian/ jessie-updates main contrib non-free
+#deb-src http://deb.debian.org/debian/ jessie-updates main contrib non-free
+
+deb http://deb.debian.org/debian-security jessie/updates main
+#deb-src http://deb.debian.org/debian-security jessie/updates main

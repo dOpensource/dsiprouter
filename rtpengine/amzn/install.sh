@@ -92,21 +92,19 @@ function install {
     amazon-linux-extras enable -y GraphicsMagick1.3 >/dev/null
     amazon-linux-extras enable -y redis6 >/dev/null
     amazon-linux-extras install -y epel >/dev/null
-    amazon-linux-extras enable mariadb10.5 >/dev/null
     yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools'
     yum install -y gcc glib2 glib2-devel zlib zlib-devel pcre pcre-devel libcurl libcurl-devel libjpeg-turbo-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent \
         libevent-devel iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build rpmrebuild cmake3 \
         pkgconfig freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd libtiff-devel \
-        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip perl-Config-Tiny \
+        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip mariadb-devel perl-Config-Tiny \
         libbluray-devel libavcodec-devel libavformat-devel libavutil-devel libswresample-devel libavfilter-devel \
         libjpeg-turbo-devel mosquitto-devel glib2-devel xmlrpc-c-devel hiredis-devel libpcap-devel libevent-devel \
-        json-glib-devel gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel \
-        mariadb-libs mariadb-devel
+        json-glib-devel gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel
 
     if (( $? != 0 )); then
         printerr "Could not install the required libraries for RTPEngine"
-        return 1
+        exit 1
     fi
 
     yum install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
@@ -118,7 +116,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Could not install kernel headers"
-        return 1
+        exit 1
     fi
 
     # link latest version of cmake
@@ -135,7 +133,7 @@ function install {
         (
             cd ${SRC_DIR}/openssl &&
             ./Configure --prefix=/usr linux-$(uname -m) &&
-            make -j $NPROC &&
+            make -j $NRPOC &&
             make -j $NPROC install
         ) || {
             printerr 'Failed to compile openssl'
@@ -355,7 +353,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Problems occurred compiling rtpengine"
-        return 1
+        exit 1
     fi
 
     # make sure RTPEngine kernel module configured
@@ -363,13 +361,20 @@ function install {
     if rpm -qa | grep -q "kernel-headers-$(uname -r)"; then
         if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
             printerr "Problem installing RTPEngine kernel module"
-            return 1
+            exit 1
         fi
     fi
 
     # ensure config dirs exist
-    mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
-    chown -R rtpengine:rtpengine /run/rtpengine
+    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    chown -R rtpengine:rtpengine /var/run/rtpengine
+
+    # rtpengine config file
+    # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
+    # TODO: move from 2 separate config files to generating entire config
+    #       1st we should change to generating config using rtpengine-start-pre
+    #       eventually we should create a config parser similar to how kamailio config is parsed
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
@@ -414,17 +419,17 @@ function install {
 
     # preliminary check that rtpengine actually installed
     if cmdExists rtpengine; then
-        return 0
+        exit 0
     else
-        return 1
+        exit 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
-    systemctl stop rtpengine
     systemctl disable rtpengine
-    rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
+    systemctl stop rtpengine
+    rm -f /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
 
     yum remove -y ngcp-rtpengine\*
@@ -440,22 +445,23 @@ function uninstall {
     )
     done
 
-    # remove our firewall changes
-    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
-    firewall-cmd --reload
-
-    return 0
+    # check that rtpengine actually uninstalled
+    if ! cmdExists rtpengine; then
+        exit 0
+    else
+        exit 1
+    fi
 }
 
 case "$1" in
-    install)
-        install && exit 0 || exit 1
-        ;;
     uninstall)
-        uninstall && exit 0 || exit 1
+        uninstall
+        ;;
+    install)
+        install
         ;;
     *)
-        printerr "Usage: $0 [install | uninstall]"
+        printerr "usage $0 [install | uninstall]"
         exit 1
         ;;
 esac

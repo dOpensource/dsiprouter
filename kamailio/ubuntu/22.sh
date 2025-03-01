@@ -177,6 +177,7 @@ EOF
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
         git clone --depth 1 -c advice.detachedHead=false -b v2.1.1 https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
+
     (
         cd ${SRC_DIR}/libjwt &&
         autoreconf -i &&

@@ -16,7 +16,7 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Mysql Database Server" mysql
 
     # install mysql packages
-    apt-get install -y mariadb-server mariadb-client
+    apt-get install -y mariadb-server mariadb-client libmariadbd-dev
 
     # Make sure no extra configs present on fresh install
     rm -f ~/.my.cnf
