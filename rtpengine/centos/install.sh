@@ -89,23 +89,23 @@ function install {
     local REBOOT_REQUIRED=0
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
+    local DISTRO_VER=$(source /etc/os-release; echo "$VERSION_ID")
+    local DISTRO_MAJVER=$(cut -d '.' -f 1 <<<"$DISTRO_VER")
     local RHEL_BASE_VER=$(rpm -E %{rhel})
     local NPROC=$(nproc)
 
     # Install required libraries
-    if (( ${DISTRO_VER} == 9 )); then
+    if (( ${DISTRO_MAJVER} == 9 )); then
         dnf install -y epel-release &&
         dnf install -y epel-next-release &&
-        dnf install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
-        dnf install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
-        dnf --enablerepo=crb install -y ladspa libuv-devel xmlrpc-c-devel opus-devel
-        dnf install -y ffmpeg ffmpeg-devel &&
+        dnf config-manager -y --set-enabled crb &&
+        dnf install -y http://rpm.dsiprouter.org/dsiprouter-repo.noarch.rpm &&
         dnf install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre pcre-devel curl libcurl libcurl-devel \
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
-            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
-            libwebsockets-devel iptables-legacy-devel pandoc
-    elif (( ${DISTRO_VER} == 8 )); then
+            redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip mariadb-devel \
+            libwebsockets-devel iptables-legacy-devel pandoc ladspa libuv-devel xmlrpc-c-devel opus-devel ffmpeg ffmpeg-devel
+    elif (( ${DISTRO_MAJVER} == 8 )); then
         dnf install -y epel-release &&
         dnf install -y epel-next-release &&
         dnf config-manager --enable powertools &&
@@ -116,7 +116,7 @@ function install {
             xmlrpc-c libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel gperf nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog mosquitto-devel \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip \
-            libwebsockets-devel opus-devel xmlrpc-c-devel gcc-toolset-13 pandoc &&
+            libwebsockets-devel opus-devel xmlrpc-c-devel gcc-toolset-13 pandoc mariadb-devel mariadb-libs &&
         source scl_source enable gcc-toolset-13
     else
         yum-config-manager --enable centos-sclo-rh >/dev/null &&
@@ -124,20 +124,20 @@ function install {
         yum install -y https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-${RHEL_BASE_VER}.noarch.rpm &&
         yum install -y https://mirrors.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-${RHEL_BASE_VER}.noarch.rpm &&
         yum install -y ffmpeg ffmpeg-devel &&
-        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre2 pcre2-devel curl libcurl libcurl-devel mariadb-devel \
+        yum install -y gcc glib2 glib2-devel zlib zlib-devel openssl openssl-devel pcre2 pcre2-devel curl libcurl libcurl-devel \
             xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent libevent-devel \
             iptables iptables-devel xmlrpc-c-devel gperf redhat-lsb nc dkms perl perl-IPC-Cmd spandsp spandsp-devel logrotate rsyslog \
             redhat-rpm-config rpm-build pkgconfig perl-Config-Tiny gperftools-libs gperftools gperftools-devel gzip libwebsockets-devel \
-            mosquitto-devel opus-devel devtoolset-11 pandoc
+            mosquitto-devel opus-devel devtoolset-11 pandoc mariadb-devel mariadb-libs &&
         source scl_source enable devtoolset-11
     fi
 
     if (( $? != 0 )); then
         printerr "Could not install the required libraries for RTPEngine"
-        exit 1
+        return 1
     fi
 
-    if (( ${DISTRO_VER} >= 8 )); then
+    if (( ${DISTRO_MAJVER} >= 8 )); then
         dnf install -y kernel-devel-${OS_KERNEL} kernel-headers-${OS_KERNEL} || {
             REBOOT_REQUIRED=1
             printwarn 'could not install kernel headers for current kernel'
@@ -157,7 +157,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Could not install kernel headers"
-        exit 1
+        return 1
     fi
 
     BUILD_KERN_VERSIONS=$(joinwith '' ',' '' $(rpm -q kernel-headers | sed 's/kernel-headers-//g'))
@@ -176,7 +176,7 @@ function install {
             (
                 cd ${SRC_DIR}/curl &&
                 ./configure --prefix=/usr --libdir=/usr/lib64 --with-ssl &&
-                make -j $NRPOC &&
+                make -j $NPROC &&
                 make -j $NPROC install &&
                 ldconfig
             )
@@ -224,7 +224,7 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         # install the RPM's
-        if (( ${DISTRO_VER} >= 8 )); then
+        if (( ${DISTRO_MAJVER} >= 8 )); then
             dnf install -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
                 ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
                 ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-kernel-${RTPENGINE_RPM_VER}*.rpm
@@ -237,7 +237,7 @@ function install {
 
     if (( $? != 0 )); then
         printerr "Problems occurred compiling rtpengine"
-        exit 1
+        return 1
     fi
 
     # warn user if kernel module not loaded yet
@@ -246,15 +246,8 @@ function install {
     fi
 
     # ensure config dirs exist
-    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /run/rtpengine
-
-    # rtpengine config file
-    # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
-    # TODO: move from 2 separate config files to generating entire config
-    #       1st we should change to generating config using rtpengine-start-pre
-    #       eventually we should create a config parser similar to how kamailio config is parsed
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
 
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
@@ -263,7 +256,7 @@ function install {
     systemctl enable firewalld
     systemctl start firewalld
 
-    if (( $? != 0 )) && (( ${DISTRO_VER} == 7 )); then
+    if (( $? != 0 )) && (( ${DISTRO_MAJVER} == 7 )); then
         # fix for bug: https://bugzilla.redhat.com/show_bug.cgi?id=1575845
         systemctl restart dbus
         systemctl restart firewalld
@@ -291,30 +284,31 @@ function install {
     echo "d /run/rtpengine/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
-    if (( ${DISTRO_VER} > 7 )); then
+    if (( ${DISTRO_MAJVER} > 7 )); then
         cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
     else
         cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v2.service /lib/systemd/system/rtpengine.service
     fi
-
-    # Reload systemd configs
+    chmod 644 /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
-    # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
 
     # preliminary check that rtpengine actually installed
     if cmdExists rtpengine; then
-        exit 0
+        return 0
     else
-        exit 1
+        return 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
-    systemctl disable rtpengine
     systemctl stop rtpengine
+    systemctl disable rtpengine
+    rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
+    systemctl daemon-reload
+
+    yum remove -y ngcp-rtpengine\*
 
     rm -f /usr/bin/rtpengine
     rm -f /etc/rsyslog.d/rtpengine.conf
@@ -327,18 +321,18 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
     firewall-cmd --reload
 
-    printdbg "Removed RTPEngine for $DISTRO"
+    return 0
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall && exit 0
-        ;;
     install)
-        install && exit 0
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]" && exit 1
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac
-
