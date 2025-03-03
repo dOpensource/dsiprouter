@@ -22,12 +22,15 @@ _dsiprouter() {
         chown
         configurekam
         configuredsip
+        configurertp
         renewsslcert
 	    configuresslcert
         installmodules
         resetpassword
         setcredentials
         licensemanager
+        backup
+        restore
         help
         -h
         --help
@@ -47,12 +50,15 @@ _dsiprouter() {
         [chown]=''
         [configurekam]=''
         [configuredsip]=''
+        [configurertp]=''
         [renewsslcert]=''
         [configuresslcert]=''
         [installmodules]=''
         [resetpassword]=''
         [setcredentials]='--dsip-creds= --api-creds= --kam-creds= --mail-creds= --ipc-creds= --db-admin-creds= --session-creds='
         [licensemanager]=''
+        [backup]=''
+        [restore]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -72,12 +78,15 @@ _dsiprouter() {
         [chown]=''
         [configurekam]=''
         [configuredsip]=''
+        [configurertp]=''
         [renewsslcert]=''
         [configuresslcert]='--force'
         [installmodules]=''
         [resetpassword]='--all --dsip-creds --api-creds --kam-creds --ipc-creds --force-instance-id'
         [setcredentials]=''
         [licensemanager]=''
+        [backup]=''
+        [restore]=''
         [help]=''
         [-h]=''
         [--help]=''
@@ -97,12 +106,15 @@ _dsiprouter() {
         [chown]='-debug -certs -dnsmasq -nginx -kamailio -dsiprouter -rtpengine'
         [configurekam]='-debug'
         [configuredsip]='-debug'
+        [configurertp]='-debug'
         [renewsslcert]='-debug'
         [configuresslcert]='-debug -f'
         [installmodules]='-debug'
         [resetpassword]='-debug -q -all -dc -ac -kc -ic -fid'
         [setcredentials]='-debug --dc -ac -kc -mc -ic -dac -sc'
         [licensemanager]='-debug -retrieve -list -activate -import -deactivate -clear -check'
+        [backup]='-debug -f'
+        [restore]='-debug -f'
         [help]=''
         [-h]=''
         [--help]=''

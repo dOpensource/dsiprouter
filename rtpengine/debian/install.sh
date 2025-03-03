@@ -107,9 +107,9 @@ function install {
     local NPROC=$(nproc)
 
     # Install required packages and remove conflicting packages
+    { dpkg -l ufw &>/dev/null && apt-get remove -y ufw || :; } &&
     case "${DISTRO_VER}" in
         10)
-            apt-get remove -y ufw &&
             apt-get install -y git logrotate rsyslog dpkg-dev &&
             apt-get install -y -t bullseye libbcg729-0 libbcg729-dev debhelper dkms libglib2.0-dev libncurses-dev \
                 zlib1g-dev default-libmysqlclient-dev libmariadb-dev firewalld python3 python3-dev python3-websockets \
@@ -117,14 +117,13 @@ function install {
                 libsocket6-perl libdigest-hmac-perl libio-multiplex-perl libio-socket-inet6-perl libjson-perl libtest2-suite-perl
             ;;
         *)
-            apt-get remove -y ufw &&
             apt-get install -y git logrotate rsyslog firewalld dpkg-dev
             ;;
     esac
 
     if (( $? != 0 )); then
         printerr "Problem with installing the required libraries for RTPEngine"
-        exit 1
+        return 1
     fi
 
     # try installing kernel dev headers in the following order:
@@ -145,7 +144,7 @@ function install {
     # debian ver <= 10 has package conflicts with some older kernels so allow userspace forwarding
     if (( $? != 0 && ${DISTRO_VER} > 10 )); then
         printerr "Problems occurred installing one or more kernel headers"
-        exit 1
+        return 1
     fi
 
     ## compile and install RTPEngine as a DEB package
@@ -182,13 +181,17 @@ function install {
         systemctl mask ngcp-rtpengine-daemon.service
 
         apt-get install -y ../ngcp-rtpengine-daemon_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-iptables_*${RTPENGINE_VER}*.deb \
-            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb
-        exit $?
+            ../ngcp-rtpengine-kernel-dkms_*${RTPENGINE_VER}*.deb ../ngcp-rtpengine-utils_*${RTPENGINE_VER}*.deb || exit 1
+
+        systemctl unmask ngcp-rtpengine-daemon.service
+        systemctl disable ngcp-rtpengine-daemon.service
+
+        exit 0
     )
 
     if (( $? != 0 )); then
         printerr "Problem installing RTPEngine DEB's"
-        exit 1
+        return 1
     fi
 
     # make sure RTPEngine kernel module configured
@@ -196,17 +199,16 @@ function install {
     if (( ${DISTRO_VER} > 10 )); then
         if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
             printerr "Problem installing RTPEngine kernel module"
-            exit 1
+            return 1
         fi
     fi
 
     # ensure config dirs exist
-    mkdir -p /var/run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
-    chown -R rtpengine:rtpengine /var/run/rtpengine
+    mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
+    chown -R rtpengine:rtpengine /run/rtpengine
 
-    # rtpengine config file
-    # ref example config: https://github.com/sipwise/rtpengine/blob/master/etc/rtpengine.sample.conf
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${SYSTEM_RTPENGINE_CONFIG_FILE}
+    # allow root to fix permissions before starting services (required to work with SELinux enabled)
+    usermod -a -G rtpengine root
 
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
@@ -231,49 +233,47 @@ function install {
     echo "d /var/run/rtpengine.pid  0755 rtpengine rtpengine - -" > /etc/tmpfiles.d/rtpengine.conf
 
     # Reconfigure systemd service files
-    rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
+    rm -f /lib/systemd/system/rtpengine*.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
-
-    # Reload systemd configs
+    chmod 644 /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
-    # Enable the RTPEngine to start during boot
     systemctl enable rtpengine
 
     # preliminary check that rtpengine actually installed
     if cmdExists rtpengine; then
-        exit 0
+        return 0
     else
-        exit 1
+        return 1
     fi
 }
 
 # Remove RTPEngine
 function uninstall {
-    systemctl disable rtpengine
     systemctl stop rtpengine
-    rm -f /lib/systemd/system/rtpengine.service
+    systemctl disable rtpengine
+    rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
     systemctl daemon-reload
 
     apt-get remove -y ngcp-rtpengine\*
 
     rm -f /usr/sbin/rtpengine* /usr/bin/rtpengine /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
 
-    # check that rtpengine actually uninstalled
-    if ! cmdExists rtpengine; then
-        exit 0
-    else
-        exit 1
-    fi
+    # remove our firewall changes
+    firewall-cmd --zone=public --remove-port=${RTP_PORT_MIN}-${RTP_PORT_MAX}/udp --permanent
+    firewall-cmd --reload
+
+    return 0
 }
 
 case "$1" in
-    uninstall|remove)
-        uninstall
-        ;;
     install)
-        install
+        install && exit 0 || exit 1
+        ;;
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     *)
-        printerr "usage $0 [install | uninstall]" && exit 1
+        printerr "Usage: $0 [install | uninstall]"
+        exit 1
         ;;
 esac

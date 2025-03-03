@@ -38,69 +38,35 @@
 #
 
 #-------------------------------------------------------------------
-# priority for debian 9 (stretch) release packages
-#-------------------------------------------------------------------
-Package: *
-Pin: release o=Debian,n=stretch
-Pin-Priority: $APT_STRETCH_PRIORITY
-
-Package: *
-Pin: release o=Debian,n=stretch-updates
-Pin-Priority: $APT_STRETCH_PRIORITY
-
-Package: *
-Pin: release o=Debian,n=stretch-backports
-Pin-Priority: $APT_STRETCH_PRIORITY
-
-#-------------------------------------------------------------------
 # priority for debian 10 (buster) release packages
 #-------------------------------------------------------------------
 Package: *
 Pin: release o=Debian,n=buster
-Pin-Priority: $APT_BUSTER_PRIORITY
+Pin-Priority: 990
 
 Package: *
 Pin: release o=Debian,n=buster-updates
-Pin-Priority: $APT_BUSTER_PRIORITY
+Pin-Priority: 990
 
 Package: *
 Pin: release o=Debian,n=buster-backports
-Pin-Priority: $APT_BUSTER_PRIORITY
+Pin-Priority: 990
 
 #-------------------------------------------------------------------
 # priority for debian 11 (bullseye) release packages
 #-------------------------------------------------------------------
 Package: *
 Pin: release o=Debian,n=bullseye
-Pin-Priority: $APT_BULLSEYE_PRIORITY
+Pin-Priority: 500
 
 Package: *
 Pin: release o=Debian,n=bullseye-updates
-Pin-Priority: $APT_BULLSEYE_PRIORITY
+Pin-Priority: 500
 
 Package: *
 Pin: release o=Debian,n=bullseye-security
-Pin-Priority: $APT_BULLSEYE_PRIORITY
+Pin-Priority: 500
 
 Package: *
 Pin: release o=Debian,n=bullseye-backports
-Pin-Priority: $APT_BULLSEYE_PRIORITY
-
-#-------------------------------------------------------------------
-# priority for debian 12 (bookworm) release packages
-#-------------------------------------------------------------------
-Package: *
-Pin: release o=Debian,n=bookworm
-Pin-Priority: $APT_BOOKWORM_PRIORITY
-
-Package: *
-Pin: release o=Debian,n=bookworm-updates
-Pin-Priority: $APT_BOOKWORM_PRIORITY
-
-Package: *
-Pin: release o=Debian,n=bookworm-security
-Pin-Priority: $APT_BOOKWORM_PRIORITY
-
-Package: *
-Pin: release o=Debian,n=bookworm-backports
-Pin-Priority: $APT_BOOKWORM_PRIORITY
+Pin-Priority: 500

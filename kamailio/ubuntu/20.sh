@@ -22,6 +22,30 @@ function install() {
     apt-get install -y curl wget sed gawk vim perl uuid-dev libssl-dev logrotate rsyslog firewalld \
         python3 libcurl4-openssl-dev libjansson-dev cmake python3-venv
 
+    if (( $? != 0 )); then
+        printerr 'Failed installing required packages'
+        exit 1
+    fi
+
+    ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
+    ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
+    if [[ "$(openssl version 2>/dev/null | awk '{print $2}')" != "1.1.1w" ]]; then
+        if [[ ! -d ${SRC_DIR}/openssl ]]; then
+            ( cd ${SRC_DIR} &&
+            curl -sL https://www.openssl.org/source/openssl-1.1.1w.tar.gz 2>/dev/null |
+            tar -xzf - --transform 's%openssl-1.1.1w%openssl%'; )
+        fi
+        (
+            cd ${SRC_DIR}/openssl &&
+            ./Configure --prefix=/usr linux-$(uname -m) &&
+            make -j $NPROC &&
+            make -j $NPROC install
+        ) || {
+            printerr 'Failed to compile openssl'
+            return 1
+        }
+    fi
+
     # we need a newer version of certbot than the distro repos offer
     apt-get remove -y *certbot*
     python3 -m venv /opt/certbot/
@@ -41,8 +65,8 @@ function install() {
     mkdir -p /etc/apt/sources.list.d
     (cat << EOF
 # kamailio repo's
-deb http://deb.kamailio.org/kamailio${KAM_VERSION} focal main
-#deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} focal main
+deb https://deb-archive.kamailio.org/repos/kamailio-${KAM_VERSION} focal main
+#deb-src https://deb-archive.kamailio.org/repos/kamailio-${KAM_VERSION} focal main
 EOF
     ) > ${KAM_SOURCES_LIST}
 
@@ -50,13 +74,13 @@ EOF
     mkdir -p /etc/apt/preferences.d
     (cat << 'EOF'
 Package: *
-Pin: origin deb.kamailio.org
+Pin: origin deb-archive.kamailio.org
 Pin-Priority: 1000
 EOF
     ) > ${KAM_PREFS_CONF}
 
     # Add Key for Kamailio Repo
-    wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
+    wget -O- https://deb-archive.kamailio.org/kamailiodebkey.gpg | apt-key add -
 
     # Update repo sources cache
     apt-get update -y
@@ -66,7 +90,6 @@ EOF
         kamailio-presence-modules kamailio-json-modules
 
     # get info about the kamailio install for later use in script
-    KAM_VERSION_FULL=$(kamailio -v 2>/dev/null | grep '^version:' | awk '{print $3}')
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
     # create kamailio defaults config
@@ -96,27 +119,13 @@ DBRWPW="${KAM_DB_PASS}"
 DBROOTUSER="${ROOT_DB_USER}"
 ${ROOTPW_SETTING}
 CHARSET=utf8
+EXTRA_MODULES="imc cpl siptrace domainpolicy carrierroute drouting userblocklist htable purple uac pipelimit mtree sca mohqueue rtpproxy rtpengine secfilter"
 INSTALL_EXTRA_TABLES=yes
 INSTALL_PRESENCE_TABLES=yes
 INSTALL_DBUID_TABLES=yes
 #STORE_PLAINTEXT_PW=0
 EOF
     ) > ${SYSTEM_KAMAILIO_CONFIG_DIR}/kamctlrc
-
-    # fix bug in kamilio v5.3.4 installer
-    if [[ "$KAM_VERSION_FULL" == "5.3.4" ]]; then
-        (cat << 'EOF'
-CREATE TABLE `secfilter` (
-`id` INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY NOT NULL,
-`action` SMALLINT DEFAULT 0 NOT NULL,
-`type` SMALLINT DEFAULT 0 NOT NULL,
-`data` VARCHAR(64) DEFAULT "" NOT NULL
-);
-CREATE INDEX secfilter_idx ON secfilter (`action`, `type`, `data`);
-INSERT INTO version (table_name, table_version) values ("secfilter","1");
-EOF
-        ) > /usr/share/kamailio/mysql/secfilter-create.sql
-    fi
 
     # Execute 'kamdbctl create' to create the Kamailio database schema
     kamdbctl create
@@ -163,19 +172,8 @@ EOF
     ln -s /etc/ssl/certs/ca-certificates.crt ${DSIP_SSL_CA}
     updateCACertsDir
 
-    # setup dSIPRouter module for kamailio
-    ## reuse repo if it exists and matches version we want to install
-    if [[ -d ${SRC_DIR}/kamailio ]]; then
-        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION_FULL}" ]]; then
-            rm -rf ${SRC_DIR}/kamailio
-            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
-        fi
-    else
-        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION_FULL} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
-    fi
-
     # setup STIR/SHAKEN module for kamailio
-    ## compile and install libjwt
+    ## compile and install libjwt (version in repos is too old)
     if [[ ! -d ${SRC_DIR}/libjwt ]]; then
         git clone --depth 1 -c advice.detachedHead=false -b v2.1.1 https://github.com/devopsec/libjwt.git ${SRC_DIR}/libjwt
     fi
@@ -195,8 +193,15 @@ EOF
     if [[ ! -d ${SRC_DIR}/libks ]]; then
         git clone --single-branch -c advice.detachedHead=false https://github.com/signalwire/libks -b v1.8.3 ${SRC_DIR}/libks
     fi
-    ( cd ${SRC_DIR}/libks && cmake -DCMAKE_INSTALL_PREFIX=/usr . && make install; exit $?; ) ||
-    { printerr 'Failed to compile and install libks'; return 1; }
+    (
+        cd ${SRC_DIR}/libks &&
+        cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release . &&
+        make -j $NPROC &&
+        make -j $NPROC install
+    ) || {
+        printerr 'Failed to compile and install libks'
+        return 1
+    }
 
     ## compile and install libstirshaken
     if [[ ! -d ${SRC_DIR}/libstirshaken ]]; then
@@ -207,9 +212,36 @@ EOF
     ) || { printerr 'Failed to compile and install libstirshaken'; return 1; }
 
     ## compile and install STIR/SHAKEN module
-    ( cd ${SRC_DIR}/kamailio/src/modules/stirshaken && make; exit $?; ) &&
-    cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ ||
-    { printerr 'Failed to compile and install STIR/SHAKEN module'; return 1; }
+    ## reuse repo if it exists and matches version we want to install
+    if [[ -d ${SRC_DIR}/kamailio ]]; then
+        if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/kamailio)" != "${KAM_VERSION}" ]]; then
+            rm -rf ${SRC_DIR}/kamailio
+            git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+        fi
+    else
+        git clone --depth 1 -c advice.detachedHead=false -b ${KAM_VERSION} https://github.com/kamailio/kamailio.git ${SRC_DIR}/kamailio
+    fi
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/stirshaken &&
+        make -j $NPROC
+    ) &&
+    cp -f ${SRC_DIR}/kamailio/src/modules/stirshaken/stirshaken.so ${KAM_MODULES_DIR}/ || {
+        printerr 'Failed to compile and install STIR/SHAKEN module'
+        return 1
+    }
+
+    # patch uac module to support reload_delta
+    # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
+    (
+        cd ${SRC_DIR}/kamailio/src/modules/uac &&
+        patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/uac.patch
+        (( $? > 1 )) && exit 1
+        make -j $NPROC &&
+        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
+    ) || {
+        printerr 'Failed to patch uac module'
+        return 1
+    }
 
     return 0
 }
