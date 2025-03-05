@@ -9,10 +9,6 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
-    
-    # mask the service before running package manager to avoid faulty startup errors
-    systemctl mask dnsmasq.service
-
     apt-get install -y dnsmasq
 
     if (( $? != 0 )); then
@@ -20,13 +16,15 @@ function install() {
         return 1
     fi
 
-    # make sure we unmask before configuring the service ourselves
-    systemctl unmask dnsmasq.service
+    # configure init.d daemon
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/init.d/dnsmasq /etc/init.d/dnsmasq
+    chmod 755 /etc/init.d/dnsmasq
+    touch /usr/share/dnsmasq/installed-marker
 
     # configure dnsmasq systemd service
-    #cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /lib/systemd/system/dnsmasq.service
-    #chmod 644 /lib/systemd/system/dnsmasq.service
-    #systemctl daemon-reload
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /lib/systemd/system/dnsmasq.service
+    chmod 644 /lib/systemd/system/dnsmasq.service
+    systemctl daemon-reload
     systemctl enable dnsmasq
 
     # backup the original resolv.conf
