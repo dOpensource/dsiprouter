@@ -461,11 +461,6 @@
       <input class="ff_groupid" type="hidden" name="ff_groupid">
 
       <div class="form-group">
-        <input class="form-control rulename" type="text" name="rulename" placeholder="Friendly Name (Optional)"
-               autofocus="autofocus">
-      </div>
-
-      <div class="form-group">
         <label for="importFile">CSV File with DID's (<a href="/static/template/DID_example.csv" target="_blank">Download Example CSV</a>)</label>
         <input type="file" name="file" class="form-control-file" id="importFile">
       </div>
@@ -479,100 +474,9 @@
         </select>
       </div>
 
-      <div class="form-group">
-        <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggle-hardfwd" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-call_hardfwd'></span> Enabled"
-                   data-off="<span class='icon-call_hardfwd'></span> Disabled"
-                   data-width="125px">
-            Hard Forwarding
-          </label>
-        </div>
-        <input class="hardfwd_enabled" type="hidden" name="hardfwd_enabled" value="0">
-      </div>
-
-      <div class="hardfwd-options form-group hidden">
-        <div class="form-group">
-          {% if imported_dids|length > 0 %}
-            <div class="combobox-wrapper">
-              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
-                   aria-haspopup="listbox">
-                <input class="did-combobox-input hf_fwddid form-control" type="text" name="hf_fwddid"
-                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
-                       aria-controls="did-listbox">
-                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
-                     aria-label="Toggle DIDs Shown">
-                  <span class="did-combobox-span icon-circle-down centered"></span>
-                </div>
-              </div>
-              <ul class="did-listbox listbox hidden" role="listbox"></ul>
-            </div>
-          {% else %}
-            <input class="hf_fwddid form-control" type="text" name="hf_fwddid"
-                   placeholder="Forwarded DID (default is unchanged)">
-          {% endif %}
-        </div>
-
-        <div class="form-group">
-          <select class="hf_gwgroupid form-control" name="hf_gwgroupid" title="gwgroupid">
-            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
-            {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-
-      <div class="form-group">
-        <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggle-failfwd" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-call_failfwd'></span> Enabled"
-                   data-off="<span class='icon-call_failfwd'></span> Disabled"
-                   data-width="125px">
-            Failover Forwarding
-          </label>
-        </div>
-        <input class="failfwd_enabled" type="hidden" name="failfwd_enabled" value="0">
-      </div>
-
-      <div class="failfwd-options form-group hidden">
-        <div class="form-group">
-          {% if imported_dids|length > 0 %}
-            <div class="combobox-wrapper">
-              <div class="did-combobox" role="combobox" aria-expanded="false" aria-owns="did-listbox"
-                   aria-haspopup="listbox">
-                <input class="did-combobox-input ff_fwddid form-control" type="text" name="ff_fwddid"
-                       placeholder="Forwarded DID (default is unchanged)" aria-autocomplete="both"
-                       aria-controls="did-listbox">
-                <div class="did-combobox-arrow combobox-dropdown wrapper-vertical" tabindex="-1" role="button"
-                     aria-label="Toggle DIDs Shown">
-                  <span class="did-combobox-span icon-circle-down centered"></span>
-                </div>
-              </div>
-              <ul class="did-listbox listbox hidden" role="listbox"></ul>
-            </div>
-          {% else %}
-            <input class="ff_fwddid form-control" type="text" name="ff_fwddid"
-                   placeholder="Forwarded DID (default is unchanged)">
-          {% endif %}
-        </div>
-
-        <div class="form-group">
-          <select class="ff_gwgroupid form-control" name="ff_gwgroupid" title="gwgroupid">
-            <option value="" selected="selected">Carrier/Endpoint Group (default is route via DID)</option>
-            {% for gwgroup in gwgroups %}
-              <option value="{{ gwgroup['id'] }}">{{ gwgroup['description']|attrFilter('name') }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Add
+            class="glyphicon glyphicon-ok-sign"></span> Import
         </button>
       </div>
     </form>
