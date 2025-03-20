@@ -66,15 +66,15 @@ function install() {
              #export DNSMASQ_RESOLV_FILE="/run/resolvconf/resolv.conf"
     fi
     
-  # Reload systemctl-resolved if it's installed
-    systemctl is-active systemctl-resolved
+  # Reload systemd-resolved if it's installed
+    systemctl is-active systemd-resolved
     if (( $? != 0 )); then
-             printwarn 'systemctl-resolved is not installed'
+             printwarn 'systemd-resolved is not installed'
     else
     	     # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
    	      mkdir -p /etc/systemd/resolved.conf.d/
     	     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
-	     systemctl restart systemctl-resolved
+	     systemctl restart systemd-resolved
     	     # tell dnsmasq to grab dns servers from systemd-resolved
              export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
     fi
