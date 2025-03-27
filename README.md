@@ -108,4 +108,4 @@ Details on training can be found [here](https://dopensource.com/product/dsiprout
   - Kamailio DMQ replication
 - Microsoft Teams Support (Subscription Required)
 - WebSockets Enabled by Default
-# Trigger status check
+# Trigger status check again
