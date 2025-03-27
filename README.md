@@ -107,4 +107,4 @@ Details on training can be found [here](https://dopensource.com/product/dsiprout
   - dSIPRouter cluster synchronization
   - Kamailio DMQ replication
 - Microsoft Teams Support (Subscription Required)
-- WebSockets Enabled by Default 
+- WebSockets Enabled by Default
