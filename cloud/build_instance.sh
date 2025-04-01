@@ -64,8 +64,15 @@ if cmdExists "apt-get"; then
           perl -i -pe 's%# (en_US\.UTF-8 UTF-8)%\1%' /etc/locale.gen
           locale-gen
     fi
+elif cmdExists 'dnf'; then
+    while [[ -f /var/run/dnf.pid ]]; do
+        sleep 1
+    done
+
+    dnf makecache -y --quiet --errorlevel=0 >/dev/null
+    dnf install -y --quiet --errorlevel=0 git >/dev/null
 elif cmdExists "yum"; then
-    while [ -f /var/run/yum.pid ]; do
+    while [[ -f /var/run/yum.pid ]]; do
         sleep 1
     done
 
