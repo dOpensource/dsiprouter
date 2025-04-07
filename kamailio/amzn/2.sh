@@ -273,11 +273,12 @@ EOF
         patch -p4 -N <${DSIP_PROJECT_DIR}/kamailio/htable-kam57.patch
         (( $? > 1 )) && exit 1
         make -j $NPROC &&
-        cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
-    ) || {
+        cp -f ${SRC_DIR}/kamailio/src/modules/htable/htable.so ${KAM_MODULES_DIR}/
+    )
+    if (( $? != 0 )); then
         printerr 'Failed to patch htable module'
         return 1
-    }
+    fi
 
     # patch uac module to support reload_delta
     # TODO: commit upstream (https://github.com/kamailio/kamailio.git)
@@ -287,10 +288,11 @@ EOF
         (( $? > 1 )) && exit 1
         make -j $NPROC &&
         cp -f ${SRC_DIR}/kamailio/src/modules/uac/uac.so ${KAM_MODULES_DIR}/
-    ) || {
+    )
+    if (( $? != 0 )); then
         printerr 'Failed to patch uac module'
         return 1
-    }
+    fi
 
     return 0
 }
