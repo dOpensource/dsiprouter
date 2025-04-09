@@ -480,7 +480,7 @@ function validateOSInfo() {
         case "$DISTRO_VER" in
         2)
             KAM_VERSION=${KAM_VERSION:-"5.7.6"}
-            RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;
         *)
             printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"

@@ -83,9 +83,9 @@ fi
 
 # compile and install rtpengine from RPM's
 function install {
+    local RTPENGINE_RPM_VER BUILD_KERN_VERSIONS TMP
     local OS_ARCH=$(uname -m)
     local OS_KERNEL=$(uname -r)
-    local RHEL_BASE_VER=$(rpm -E %{rhel})
     local NPROC=$(nproc)
 
     # Install required libraries
@@ -94,15 +94,14 @@ function install {
     amazon-linux-extras install -y epel >/dev/null
     amazon-linux-extras enable mariadb10.5 >/dev/null
     yum groupinstall --setopt=group_package_types=mandatory,default -y 'Development Tools'
-    yum install -y gcc glib2 glib2-devel zlib zlib-devel pcre pcre-devel libcurl libcurl-devel libjpeg-turbo-devel \
+    yum install -y gcc-10 gcc10-c++ glib2 glib2-devel zlib zlib-devel pcre2 pcre2-devel libcurl libcurl-devel libjpeg-turbo-devel \
         xmlrpc-c xmlrpc-c-devel libpcap libpcap-devel hiredis hiredis-devel json-glib json-glib-devel libevent \
         libevent-devel iptables iptables-devel xmlrpc-c-devel gperf redhat-rpm-config rpm-build rpmrebuild cmake3 \
         pkgconfig freetype-devel fontconfig-devel libxml2-devel nc dkms logrotate rsyslog perl perl-IPC-Cmd libtiff-devel \
-        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip perl-Config-Tiny \
-        libbluray-devel libavcodec-devel libavformat-devel libavutil-devel libswresample-devel libavfilter-devel \
+        bc libwebsockets-devel gperf gperftools gperftools-devel gperftools-libs gzip perl-Config-Tiny libbluray-devel \
         libjpeg-turbo-devel mosquitto-devel glib2-devel xmlrpc-c-devel hiredis-devel libpcap-devel libevent-devel \
         json-glib-devel gperf nasm yasm yasm-devel autoconf automake bzip2 bzip2-devel libtool make mercurial libtiff-devel \
-        mariadb-libs mariadb-devel
+        mariadb-libs mariadb-devel pandoc
 
     if (( $? != 0 )); then
         printerr "Could not install the required libraries for RTPEngine"
@@ -121,8 +120,16 @@ function install {
         return 1
     fi
 
-    # link latest version of cmake
+    # change to a later C/C++ toolchain
+    for FILE in $(ls /usr/bin/gcc10-*); do
+        TMP=$(cut -d '-' -f 2- <<<"$FILE")
+        ln -sf "$FILE" "/usr/local/bin/$TMP"
+    done
     ln -sf $(which cmake3) /usr/local/bin/cmake
+    # make sure PATH has been updated
+    source /etc/profile
+
+    BUILD_KERN_VERSIONS=$(joinwith '' ',' '' $(rpm -q kernel-headers | sed 's/kernel-headers-//g'))
 
     ## compile and install openssl v1.1.1 (workaround for amazon linux repo conflicts)
     ## we must overwrite system packages (openssl/openssl-devel) otherwise python's openssl package is not supported
@@ -165,7 +172,7 @@ function install {
         cd ${SRC_DIR}/libx265/build/linux &&
         rm -rf ${SRC_DIR}/libx265/.git &&
         cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr -DLIB_INSTALL_DIR=/usr/lib64 \
-            -DENABLE_SHARED=FALSE ../../source &&
+            -DENABLE_SHARED=TRUE ../../source &&
         make -j $NPROC &&
         make -j $NPROC install
     ) || {
@@ -234,8 +241,7 @@ function install {
 
     ## compile and install ffmpeg
     if [[ ! -d ${SRC_DIR}/ffmpeg ]]; then
-        git clone --depth 1 -c advice.detachedHead=false https://git.ffmpeg.org/ffmpeg.git ${SRC_DIR}/ffmpeg ||
-        git clone --depth 1 -c advice.detachedHead=false https://github.com/FFmpeg/FFmpeg.git ${SRC_DIR}/ffmpeg
+        git clone --depth 1 -c advice.detachedHead=false -b n7.1.1 https://git.ffmpeg.org/ffmpeg.git ${SRC_DIR}/ffmpeg
     fi
     (
         cd ${SRC_DIR}/ffmpeg &&
@@ -322,31 +328,44 @@ function install {
         git clone --depth 1 -c advice.detachedHead=false -b ${RTPENGINE_VER} https://github.com/sipwise/rtpengine.git ${SRC_DIR}/rtpengine
     fi
 
-    # replace the spec file with our custom one
-    # NOTE: this is amzn2 specific and should not be used by other versions
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/amzn/rtpengine.spec ${SRC_DIR}/rtpengine/el/rtpengine.spec
+    # apply our patches
+    (
+        cd ${SRC_DIR}/rtpengine &&
+        patch -p1 -N <${DSIP_PROJECT_DIR}/rtpengine/el-${RTPENGINE_VER}.patch
+    )
+    if (( $? > 1 )); then
+        printerr 'Failed patching RTPEngine files prior to build'
+        return 1
+    fi
+
+    # amazon linux specific: remove the dependencies that were manually compiled
+    sed -i --regexp-extended \
+        -e '/^BuildRequires:[ \t]*pkgconfig\(libwebsockets\).*/d' \
+        -e '/^BuildRequires:[ \t]*pkgconfig\(spandsp\).*/d' \
+        -e '/^BuildRequires:[ \t]*pkgconfig\(opus\).*/d' \
+        -e '/^BuildRequires:[ \t]*ffmpeg-devel.*/d' \
+        -e '/^Requires\(pre\):[ \t]*ffmpeg-libs.*/d' \
+        -e 's/^(BuildRequires:.*)ffmpeg-devel(.*)/\1\2/' \
+        ${SRC_DIR}/rtpengine/el/rtpengine.spec
 
     RTPENGINE_RPM_VER=$(grep -oP 'Version:.+?\K[\w\.\~\+]+' ${SRC_DIR}/rtpengine/el/rtpengine.spec)
     RPM_BUILD_ROOT="${HOME}/rpmbuild"
     rm -rf ${RPM_BUILD_ROOT} 2>/dev/null
     mkdir -p ${RPM_BUILD_ROOT}/SOURCES &&
     (
-        # some packages had to be compiled from source and therefore the default rpm build will fail
-        # we remove these from the the rpm spec files so we can still reliably install the other deps
-        # this also allows us to keep the standard post/pre build configurations from the spec file
         cd ${SRC_DIR} &&
         tar -czf ${RPM_BUILD_ROOT}/SOURCES/ngcp-rtpengine-${RTPENGINE_RPM_VER}.tar.gz \
             --transform="s%^rtpengine%ngcp-rtpengine-$RTPENGINE_RPM_VER%g" rtpengine/ &&
-        echo "%__make /usr/bin/make -j $NPROC" >~/.rpmmacros &&
+        echo "%__make $(which make) -j $NPROC" >~/.rpmmacros &&
+        # fix for BUG: "exec_prefix: command not found"
+        function exec_prefix() { echo -n '/usr'; } && export -f exec_prefix &&
         # build the RPM's
-        rpmbuild -ba ${SRC_DIR}/rtpengine/el/rtpengine.spec || exit 1
-        rm -f ~/.rpmmacros &&
+        rpmbuild -ba --define "kversion $BUILD_KERN_VERSIONS" ${SRC_DIR}/rtpengine/el/rtpengine.spec &&
         # see: https://stackoverflow.com/questions/49263444/missing-libraries-in-my-rpm-but-i-know-they-are-there
-        rpmrebuild --change-spec-requires='sed -re "/^(Requires:.*)(libspandsp\.so|libwebsockets\.so).*/d"' \
-            -bp ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm || exit 1
-
-        systemctl mask ngcp-rtpengine-daemon.service
-
+        rpmrebuild --change-spec-requires='sed -re "/^(Requires:.*)(libspandsp\.so|libwebsockets\.so|libx265\.so).*/d"' \
+            -bp ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm &&
+        rm -f ~/.rpmmacros && unset -f exec_prefix &&
+        systemctl mask ngcp-rtpengine-daemon.service &&
         # install the RPM's
         yum localinstall -y ${RPM_BUILD_ROOT}/RPMS/${OS_ARCH}/ngcp-rtpengine-${RTPENGINE_RPM_VER}*.rpm \
             ${RPM_BUILD_ROOT}/RPMS/noarch/ngcp-rtpengine-dkms-${RTPENGINE_RPM_VER}*.rpm \
@@ -360,7 +379,7 @@ function install {
 
     # make sure RTPEngine kernel module configured
     # skip if the kernel headers were not installed
-    if rpm -qa | grep -q "kernel-headers-$(uname -r)"; then
+    if rpm -qa | grep -q "kernel-headers-${OS_KERNEL}"; then
         if [[ -z "$(find /lib/modules/${OS_KERNEL}/ -name 'xt_RTPENGINE.ko' 2>/dev/null)" ]]; then
             printerr "Problem installing RTPEngine kernel module"
             return 1
