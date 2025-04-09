@@ -4,7 +4,7 @@
 #
 
 function cmdExists() {
-    if command -v "$1" >/dev/null  2>&1; then
+    if command -v "$1" >/dev/null 2>&1; then
         return 0
     else
         return 1
@@ -17,9 +17,7 @@ function getDistroName() {
 
 function joinwith() {
     local START="$1" IFS="$2" END="$3" ARR=()
-    shift
-          shift
-                shift
+    shift;shift;shift
 
     for VAR in "$@"; do
         ARR+=("${START}${VAR}${END}")
