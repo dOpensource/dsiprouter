@@ -7,6 +7,26 @@ import os, sys, re, subprocess, shutil
 # TODO: add support for missing semi-colon / dangling curly brace (c/kamcfg)
 # TODO: add support for recursing through kamcfg include files (kamcfg)
 
+# global constants
+CSRC_STYLE_IFDEF_REGEX = re.compile(rb'^[ \t]*#(?:ifdef|ifndef).*')
+CSRC_STYLE_ELSE_REGEX = re.compile(rb'^[ \t]*#else.*')
+CSRC_STYLE_ENDIF_REGEX = re.compile(rb'^[ \t]*#endif.*')
+CSRC_CURLYBRACE_OPEN_REGEX = re.compile(rb'^[ \t]*(?!//|/\*).*\{[ \t]*')
+CSRC_CURLYBRACE_CLOSE_REGEX = re.compile(rb'^[ \t]*(?!//|/\*)\}[ \t]*')
+KAMCFG_STYLE_IFDEF_REGEX = re.compile(rb'^[ \t]*#\!(?:ifdef|ifndef).*')
+KAMCFG_STYLE_ELSE_REGEX = re.compile(rb'^[ \t]*#\!else.*')
+KAMCFG_STYLE_ENDIF_REGEX = re.compile(rb'^[ \t]*#\!endif.*')
+KAMCFG_CURLYBRACE_OPEN_REGEX = re.compile(rb'^[ \t]*(?!//|#|/\*).*\{[ \t]*')
+KAMCFG_CURLYBRACE_CLOSE_REGEX = re.compile(rb'^[ \t]*(?!//|#|/\*)\}[ \t]*')
+KAMCFG_IMPORT_FILE_REGEX = re.compile(rb'''import_file[ \t]*(?P<quote>['"])(?P<fname>.+?)(?P=quote)''')
+KAMCFG_INCLUDE_FILE_REGEX = re.compile(rb'''include_file[ \t]*(?P<quote>['"])(?P<fname>.+?)(?P=quote)''')
+
+# holds state for entire test
+test_succeeded = True
+files_checked = 0
+files_found = 0
+term_width = 0
+missing_files = []
 
 # global config variables
 project_root = subprocess.Popen(['git', 'rev-parse', '--show-toplevel'], universal_newlines=True,
@@ -23,25 +43,29 @@ shell_pipe = subprocess.Popen(['find', project_root, '-type', 'f', '-name', '*.c
 matched_kamcfg_files = subprocess.Popen(['xargs', '-0', 'sh', '-c', 'for arg do sed -n "/^\#\!KAMAILIO/q 0;q 1" ${arg} && echo "${arg}"; done', '_'],
                                     universal_newlines=True, stdin=shell_pipe, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
                                     ).communicate()[0].strip().split()
+for kamcfg_fname in matched_kamcfg_files:
+    parent_dir = os.path.dirname(kamcfg_fname)
+    with open(kamcfg_fname, 'rb') as kamcfg_fp:
+        kamcfg_bytes = kamcfg_fp.read()
+        for match in KAMCFG_IMPORT_FILE_REGEX.finditer(kamcfg_bytes):
+            fname = match.groupdict()['fname'].decode('utf-8')
+            if not os.path.isabs(fname):
+                fname = os.path.join(parent_dir, fname)
+            if not os.path.exists(fname):
+                continue
+            matched_kamcfg_files.append(fname)
+        for match in KAMCFG_INCLUDE_FILE_REGEX.finditer(kamcfg_bytes):
+            fname = match.groupdict()['fname'].decode('utf-8')
+            if not os.path.isabs(fname):
+                fname = os.path.join(parent_dir, fname)
+            if not os.path.exists(fname):
+                missing_files.append([fname,0,0])
+                test_succeeded = False
+                continue
+            matched_kamcfg_files.append(fname)
+
 files_found = len(matched_csrc_files) + len(matched_kamcfg_files)
-
 term_width = shutil.get_terminal_size((80, 24))[0]
-
-# global constants
-CSRC_STYLE_IFDEF_REGEX = re.compile(rb'^[ \t]*#(?:ifdef|ifndef).*')
-CSRC_STYLE_ELSE_REGEX = re.compile(rb'^[ \t]*#else.*')
-CSRC_STYLE_ENDIF_REGEX = re.compile(rb'^[ \t]*#endif.*')
-CSRC_CURLYBRACE_OPEN_REGEX = re.compile(rb'^[ \t]*(?!//|/\*).*\{[ \t]*')
-CSRC_CURLYBRACE_CLOSE_REGEX = re.compile(rb'^[ \t]*(?!//|/\*)\}[ \t]*')
-KAMCFG_STYLE_IFDEF_REGEX = re.compile(rb'^[ \t]*#\!(?:ifdef|ifndef).*')
-KAMCFG_STYLE_ELSE_REGEX = re.compile(rb'^[ \t]*#\!else.*')
-KAMCFG_STYLE_ENDIF_REGEX = re.compile(rb'^[ \t]*#\!endif.*')
-KAMCFG_CURLYBRACE_OPEN_REGEX = re.compile(rb'^[ \t]*(?!//|#|/\*).*\{[ \t]*')
-KAMCFG_CURLYBRACE_CLOSE_REGEX = re.compile(rb'^[ \t]*(?!//|#|/\*)\}[ \t]*')
-
-# holds state for entire test
-test_succeeded = True
-files_checked = 0
 
 # holds state for current file check
 unmatched_ifdefs = []
@@ -143,6 +167,8 @@ def printErrorInfo():
         printErrorBlock('unmatched left curly braces', unmatched_lcurly_braces)
     if len(unmatched_rcurly_braces) != 0:
         printErrorBlock('unmatched right curly braces', unmatched_rcurly_braces)
+    if len(missing_files) != 0:
+        printErrorBlock('missing files found', missing_files)
 
 # wrapper for the final cleanup
 def printResultsAndExit():
@@ -153,9 +179,6 @@ def printResultsAndExit():
 
 # main testing logic
 if __name__ == "__main__":
-    if not haveValidSyntax(matched_csrc_files, syntax='c-src'):
-        test_succeeded = False
-    elif not haveValidSyntax(matched_kamcfg_files, syntax='kam-cfg'):
-        test_succeeded = False
+    test_succeeded &= haveValidSyntax(matched_csrc_files, syntax='c-src')
+    test_succeeded &= haveValidSyntax(matched_kamcfg_files, syntax='kam-cfg')
     printResultsAndExit()
-

@@ -36,6 +36,10 @@ CREATE TABLE dsip_settings
   DEBUG                   TINYINT(1)                                                NOT NULL DEFAULT 0,
   `ROLE`                  VARCHAR(32)                                               NOT NULL DEFAULT '',
   GUI_INACTIVE_TIMEOUT    INT UNSIGNED                                              NOT NULL DEFAULT 20,
+  KAM_SIP_PORT            INT                                                       NOT NULL DEFAULT 5060,
+  KAM_SIPS_PORT           INT                                                       NOT NULL DEFAULT 5061,
+  KAM_DMQ_PORT            INT                                                       NOT NULL DEFAULT 5090,
+  KAM_WSS_PORT            INT                                                       NOT NULL DEFAULT 4443,
   KAM_DB_HOST             VARCHAR(255)                                              NOT NULL DEFAULT 'localhost',
   KAM_DB_DRIVER           VARCHAR(255)                                              NOT NULL DEFAULT '',
   KAM_DB_TYPE             VARCHAR(255)                                              NOT NULL DEFAULT 'mysql',
@@ -89,6 +93,8 @@ CREATE TABLE dsip_settings
   MAIL_DEFAULT_SUBJECT    VARCHAR(255)                                              NOT NULL DEFAULT 'dSIPRouter System Notification',
   DSIP_LICENSE_STORE      BLOB                                                      NOT NULL,
   RTPENGINE_URI           VARCHAR(255)                                              NOT NULL DEFAULT 'udp:localhost:7722',
+  RTP_PORT_MIN            INT                                                       NOT NULL DEFAULT 10000,
+  RTP_PORT_MAX            INT                                                       NOT NULL DEFAULT 20000,
   CHECK (`ROLE` IN ('', 'outbound', 'inout')),
   PRIMARY KEY (DSIP_ID)
 ) ENGINE = InnoDB
@@ -144,6 +150,10 @@ CREATE PROCEDURE update_dsip_settings(
   IN NEW_DEBUG TINYINT(1),
   IN NEW_ROLE VARCHAR(32),
   IN NEW_GUI_INACTIVE_TIMEOUT INT UNSIGNED,
+  IN NEW_KAM_SIP_PORT INT,
+  IN NEW_KAM_SIPS_PORT INT,
+  IN NEW_KAM_DMQ_PORT INT,
+  IN NEW_KAM_WSS_PORT INT,
   IN NEW_KAM_DB_HOST VARCHAR(255),
   IN NEW_KAM_DB_DRIVER VARCHAR(255),
   IN NEW_KAM_DB_TYPE VARCHAR(255),
@@ -196,7 +206,9 @@ CREATE PROCEDURE update_dsip_settings(
   IN NEW_MAIL_DEFAULT_SENDER VARCHAR(255),
   IN NEW_MAIL_DEFAULT_SUBJECT VARCHAR(255),
   IN NEW_DSIP_LICENSE_STORE BLOB,
-  IN NEW_RTPENGINE_URI VARCHAR(255)
+  IN NEW_RTPENGINE_URI VARCHAR(255),
+  IN NEW_RTP_PORT_MIN INT,
+  IN NEW_RTP_PORT_MAX INT
 )
 BEGIN
   START TRANSACTION;
@@ -228,6 +240,10 @@ BEGIN
           NEW_DEBUG,
           NEW_ROLE,
           NEW_GUI_INACTIVE_TIMEOUT,
+          NEW_KAM_SIP_PORT,
+          NEW_KAM_SIPS_PORT,
+          NEW_KAM_DMQ_PORT,
+          NEW_KAM_WSS_PORT,
           NEW_KAM_DB_HOST,
           NEW_KAM_DB_DRIVER,
           NEW_KAM_DB_TYPE,
@@ -280,7 +296,9 @@ BEGIN
           NEW_MAIL_DEFAULT_SENDER,
           NEW_MAIL_DEFAULT_SUBJECT,
           NEW_DSIP_LICENSE_STORE,
-          NEW_RTPENGINE_URI);
+          NEW_RTPENGINE_URI,
+          NEW_RTP_PORT_MIN,
+          NEW_RTP_PORT_MAX);
 
   IF NEW_DSIP_CLUSTER_SYNC = 1 THEN
     UPDATE dsip_settings
@@ -307,6 +325,10 @@ BEGIN
         DEBUG                  = NEW_DEBUG,
         `ROLE`                 = NEW_ROLE,
         GUI_INACTIVE_TIMEOUT   = NEW_GUI_INACTIVE_TIMEOUT,
+        KAM_SIP_PORT           = NEW_KAM_SIP_PORT,
+        KAM_SIPS_PORT          = NEW_KAM_SIPS_PORT,
+        KAM_DMQ_PORT           = NEW_KAM_DMQ_PORT,
+        KAM_WSS_PORT           = NEW_KAM_WSS_PORT,
         KAM_DB_HOST            = NEW_KAM_DB_HOST,
         KAM_DB_DRIVER          = NEW_KAM_DB_DRIVER,
         KAM_DB_TYPE            = NEW_KAM_DB_TYPE,
@@ -345,7 +367,9 @@ BEGIN
         MAIL_ASCII_ATTACHMENTS = NEW_MAIL_ASCII_ATTACHMENTS,
         MAIL_DEFAULT_SENDER    = NEW_MAIL_DEFAULT_SENDER,
         MAIL_DEFAULT_SUBJECT   = NEW_MAIL_DEFAULT_SUBJECT,
-        RTPENGINE_URI          = NEW_RTPENGINE_URI
+        RTPENGINE_URI          = NEW_RTPENGINE_URI,
+        RTP_PORT_MIN           = NEW_RTP_PORT_MIN,
+        RTP_PORT_MAX           = NEW_RTP_PORT_MAX
     WHERE DSIP_CLUSTER_ID = NEW_DSIP_CLUSTER_ID
       AND DSIP_CLUSTER_SYNC = 1
       AND DSIP_ID != NEW_DSIP_ID;

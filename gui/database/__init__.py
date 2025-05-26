@@ -929,6 +929,10 @@ def settingsToTableFormat(settings, updates=None):
         ('DEBUG', data['DEBUG']),
         ('ROLE', data['ROLE']),
         ('GUI_INACTIVE_TIMEOUT', data['GUI_INACTIVE_TIMEOUT']),
+        ('KAM_SIP_PORT', data['KAM_SIP_PORT']),
+        ('KAM_SIPS_PORT', data['KAM_SIPS_PORT']),
+        ('KAM_DMQ_PORT', data['KAM_DMQ_PORT']),
+        ('KAM_WSS_PORT', data['KAM_WSS_PORT']),
         ('KAM_DB_HOST', data['KAM_DB_HOST']),
         ('KAM_DB_DRIVER', data['KAM_DB_DRIVER']),
         ('KAM_DB_TYPE', data['KAM_DB_TYPE']),
@@ -982,6 +986,8 @@ def settingsToTableFormat(settings, updates=None):
         ('MAIL_DEFAULT_SUBJECT', data['MAIL_DEFAULT_SUBJECT']),
         ('DSIP_LICENSE_STORE', data['DSIP_LICENSE_STORE']),
         ('RTPENGINE_URI', data['RTPENGINE_URI']),
+        ('RTP_PORT_MIN', data['RTP_PORT_MIN']),
+        ('RTP_PORT_MAX', data['RTP_PORT_MAX']),
     ])
 
 

@@ -47,6 +47,12 @@ DEBUG = False
 ROLE = ''
 GUI_INACTIVE_TIMEOUT = 20
 
+# kamailio port settings
+KAM_SIP_PORT = 5060
+KAM_SIPS_PORT = 5061
+KAM_DMQ_PORT = 5090
+KAM_WSS_PORT = 4443
+
 # MySQL settings for kamailio
 
 # Database cluster
@@ -148,6 +154,8 @@ DSIP_LICENSE_STORE = {}
 
 # rtpengine settings
 RTPENGINE_URI = 'udp:localhost:7722'
+RTP_PORT_MIN = 10000
+RTP_PORT_MAX = 20000
 
 ################# End DB-Backed Settings #################
 

@@ -647,6 +647,15 @@ function ipv4TestRFC1918() {
 }
 export -f ipv4TestRFC1918
 
+function ipPortTest() {
+    local PORT="$1"
+    if [[ $PORT =~ ^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$ ]]; then
+        return 0
+    fi
+    return 1
+}
+export -f ipPortTest
+
 # output: all physical network interfaces on this machine
 function getPhysicalIfaces() {
     ( cd /sys/class/net && dirname */device; )
