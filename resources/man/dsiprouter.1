@@ -114,8 +114,27 @@ Uninstall dSIPRouter GUI.
 -rtp|--rtpengine
 Uninstall rtpengine.
 
+--rtpengine-uri=<protocol:rtp_host:ng_port>
+Change the connection URI for connecting to RTPEngine.
+This would be where RTPEngine listen for NG protocol connections, i.e. udp:1.2.3.4:7722
+
 --dsip-port=<num>
-Change the port the dSIPRouter UI|--kam-sip-port=<num>|--kam-sips-port=<num>|--kam-dmq-port=<num>|--kam-wss-port=<num>|--rtp-port-min=<num>|--rtp-port-max=<num>
+Change the port the dSIPRouter UI listens on (HTTPS).
+
+--kam-sip-port=<num>
+Change the port that Kamailio listens for SIP on (UDP/TCP).
+
+--kam-sips-port=<num>
+Change the port that Kamailio listens for SIPS on (TLS).
+
+--kam-dmq-port=<num>
+Change the port that Kamailio listens for SIP DMQ messages on.
+
+--kam-wss-port=<num>
+Change the port that Kamailio listens for WebRTC connections on (TLS).
+
+--rtp-port-min=<num>|--rtp-port-max=<num>
+Change the port range that RTPEngine listens for media on.
 
 .IP "clusterinstall options"
 -debug

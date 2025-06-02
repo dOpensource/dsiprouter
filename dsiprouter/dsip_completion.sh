@@ -40,7 +40,7 @@ _dsiprouter() {
     )
     # available long options (with value) for each cmd
     declare -A llopts=(
-        [install]='--database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev= --dmz= --network-mode= --dsip-port= --kam-sip-port= --kam-sips-port= --kam-dmq-port= --kam-wss-port= --rtp-port-min= --rtp-port-max='
+        [install]='--database= --dsip-clusterid= --database-admin= --dsip-clustersync= --dsip-privkey= --with_lcr= --with_dev= --dmz= --network-mode= --rtpengine-uri= --dsip-port= --kam-sip-port= --kam-sips-port= --kam-dmq-port= --kam-wss-port= --rtp-port-min= --rtp-port-max='
         [uninstall]=''
         [clusterinstall]=''
         [upgrade]='--dsip-clusterid= --release= --repo-url='
