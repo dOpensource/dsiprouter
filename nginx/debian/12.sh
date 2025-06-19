@@ -38,9 +38,6 @@ function install() {
     mkdir -p /etc/nginx/sites-enabled /etc/nginx/sites-available /etc/nginx/nginx.conf.d/
     # remove the defaults
     rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* /etc/nginx/nginx.conf.d/*
-    # change /etc/nginix/sites-enabled group to dsiprouter and permissions
-    chown root:dsiprouter /etc/nginx/sites-enabled
-    chmod 775 /etc/nginx/sites-enabled
     # setup our own nginx configs
     perl -e "\$tls_protocols='${TLS_PROTOCOLS}';" \
         -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
