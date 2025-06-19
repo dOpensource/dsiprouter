@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "9c09dea3-0b4b-4a20-a615-fb8fc16811af",
+		"_postman_id": "5ac300ac-1cc4-4569-b3fa-514cb76b9e38",
 		"name": "dsiprouter",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1379127"
 	},
 	"item": [
 		{
@@ -26,13 +27,10 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -62,13 +60,10 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups/9",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups/9",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -83,13 +78,13 @@
 					"response": []
 				},
 				{
-					"name": "/api/v1/endpointgroups",
+					"name": "/api/v1/endpointgroups (FusionPBX PassThru)",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"name\": \"Endpoint1\",\n  \"calllimit\": \"0\",\n  \"auth\": { \"type\":\"ip\",\n\t    \"user\":\"mack10\",\n\t    \"pass\":\"1234\",\n\t    \"domain\":\"sip.dsiprouter.org\"\n  },\n  \"endpoints\": [\n                    {\"hostname\":\"142.131.313.1\",\"description\":\"Endpoint1\",\"maintmode\":0},\n                    {\"hostname\":\"143.131.344.2\",\"description\":\"Endpoint2\",\"maintmode\":1}\n   ],\n  \"strip\": 0,\n  \"prefix\": \"\",\n  \"notifications\": {\n            \"overmaxcalllimit\": \"mack.hendricks@gmail.com\",\n            \"endpointfailure\": \"mack.hendricks@gmail.com\"\n  },\n  \n  \"fusionpbx\": {\n            \"enabled\": 1,\n            \"dbhost\": \"13.13.24.22\",\n            \"dbuser\": \"fusiopbx\",\n            \"dbpass\": \"1234\"\n            }\n    \n}",
+							"raw": "{\n    \"name\": \"FusionPBX PassThru\",\n    \"call_settings\": {\n        \"limit\": 5,\n        \"timeout\": 3600\n    },\n    \n    \"fusionpbx\": {\n        \"enabled\": true,\n        \"dbhost\": \"fusionpbx.dsiprouter.net\",\n        \"dbuser\": \"fusionpbx\",\n        \"dbpass\": \"\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -97,13 +92,103 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups"
+							]
+						},
+						"description": "Create an endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups (SIP Trunk - In/Out - User/Password)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " {\n    \"name\": \"SIP Trunk In/Out - User/Password\",\n    \"call_settings\": {\n        \"limit\": 5,\n        \"timeout\": 3600\n    },\n    \"auth\": {\n        \"type\": \"userpwd\",\n        \"user\": \"18889072085\",\n        \"pass\": \"example\",\n        \"domain\": \"pbx.example.com\"\n    },\n    \"strip\": 0,\n    \"prefix\": \"\",\n    \"notifications\": {\n        \"overmaxcalllimit\": \"email@example.com\",\n        \"endpointfailure\": \"email@example.com\"\n    }\n           \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups"
+							]
+						},
+						"description": "Create an endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups (SIP Trunk - In/Out - User/Password) Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " {\n    \"name\": \"SIP Trunk In/Out - User/Password\",\n    \"call_settings\": {\n        \"limit\": 5,\n        \"timeout\": 3600\n    },\n    \"auth\": {\n        \"type\": \"userpwd\",\n        \"user\": \"18889072085\",\n        \"pass\": \"example\",\n        \"domain\": \"pbx.example.com\"\n    },\n    \"strip\": 0,\n    \"prefix\": \"\",\n    \"notifications\": {\n        \"overmaxcalllimit\": \"email@example.com\",\n        \"endpointfailure\": \"email@example.com\"\n    }\n           \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"endpointgroups"
+							]
+						},
+						"description": "Create an endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/endpointgroups (SIP Trunk - IP Auth)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"SIP Trunk IP Auth\",\n    \"call_settings\": {\n        \"limit\": 5,\n        \"timeout\": 3600\n    },\n    \"auth\": {\n        \"type\": \"ip\"\n    },\n    \"endpoints\": [\n                {\n                    \"host\": \"50.192.97.226\",\n                    \"port\": 5060,\n                    \"signalling\": \"proxy\",\n                    \"media\": \"proxy\",\n                    \"description\": \"SIP Trunk Endpoint\",\n                    \"rweight\": 1\n                }\n    ],\n    \"strip\": 0,\n    \"prefix\": \"\",\n    \"notifications\": {\n        \"overmaxcalllimit\": \"email@example.com\",\n        \"endpointfailure\": \"email@example.com\"\n    }\n           \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -123,7 +208,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"name\": \"Endpoint1\",\n  \"calllimit\": \"0\",\n  \"auth\": { \"type\":\"ip\",\n\t    \"user\":\"mack10\",\n\t    \"pass\":\"1234\",\n\t    \"domain\":\"sip.dsiprouter.org\"\n  },\n  \"endpoints\": [\n                    {\"hostname\":\"142.131.313.1\",\"description\":\"Endpoint1\",\"maintmode\":0},\n                    {\"hostname\":\"143.131.344.2\",\"description\":\"Endpoint2\",\"maintmode\":1}\n   ],\n  \"strip\": 0,\n  \"prefix\": \"\",\n  \"notifications\": {\n            \"overmaxcalllimit\": \"mack.hendricks@gmail.com\",\n            \"endpointfailure\": \"mack.hendricks@gmail.com\"\n  },\n  \n  \"fusionpbx\": {\n            \"enabled\": 1,\n            \"dbhost\": \"13.13.24.22\",\n            \"dbuser\": \"fusiopbx\",\n            \"dbpass\": \"1234\"\n            }\n    \n}",
+							"raw": "",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -131,20 +216,17 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups/12",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups/53",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
 								"api",
 								"v1",
 								"endpointgroups",
-								"12"
+								"53"
 							]
 						},
 						"description": "Delete endpointgroup"
@@ -152,13 +234,13 @@
 					"response": []
 				},
 				{
-					"name": "/api/v1/endpointgroups/<int id>",
+					"name": "/api/v1/endpointgroups/<int id> (SIP Trunk - IP Auth Update)",
 					"request": {
 						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \"name\": \"Endpoint1-Update\",\n  \"calllimit\": \"0\",\n  \"auth\": { \"type\":\"ip\",\n\t    \"user\":\"mack10\",\n\t    \"pass\":\"1234\",\n\t    \"domain\":\"sip.dsiprouter.org\"\n  },\n  \"endpoints\": [\n                    {\"hostname\":\"142.131.313.1\",\"description\":\"Endpoint1\",\"maintmode\":0},\n                    {\"hostname\":\"143.131.344.2\",\"description\":\"Endpoint2\",\"maintmode\":1}\n   ],\n  \"strip\": 0,\n  \"prefix\": \"\",\n  \"notifications\": {\n            \"overmaxcalllimit\": \"mack.hendricks@gmail.com\",\n            \"endpointfailure\": \"mack.hendricks@gmail.com\"\n  },\n  \n  \"fusionpbx\": {\n            \"enabled\": 1,\n            \"dbhost\": \"13.13.24.22\",\n            \"dbuser\": \"fusiopbx\",\n            \"dbpass\": \"1234\"\n            }\n    \n}",
+							"raw": "{\n    \"name\": \"SIP Trunk IP Auth Update\",\n    \"call_settings\": {\n        \"limit\": 5,\n        \"timeout\": 3600\n    },\n    \"auth\": {\n        \"type\": \"ip\"\n    },\n    \"endpoints\": [\n                {\n                    \"host\": \"50.192.97.227\",\n                    \"port\": 5060,\n                    \"signalling\": \"proxy\",\n                    \"media\": \"proxy\",\n                    \"description\": \"SIP Trunk Endpoint\",\n                    \"rweight\": 1\n                }\n    ],\n    \"strip\": 0,\n    \"prefix\": \"\",\n    \"notifications\": {\n        \"overmaxcalllimit\": \"email@example.com\",\n        \"endpointfailure\": \"email@example.com\"\n    }\n           \n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -166,28 +248,24 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/endpointgroups/13",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/endpointgroups/34",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
 								"api",
 								"v1",
 								"endpointgroups",
-								"13"
+								"34"
 							]
 						},
 						"description": "Update an endpointgroup"
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "kamailio",
@@ -198,20 +276,17 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/reload/kamailio",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/reload/kamailio",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
 								"api",
 								"v1",
-								"kamailio",
-								"reload"
+								"reload",
+								"kamailio"
 							]
 						},
 						"description": "Trigger a reload of Kamailio.  This is needed after changes are made"
@@ -224,13 +299,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/kamailio/stats",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/kamailio/stats",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -244,8 +316,7 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
 		},
 		{
 			"name": "inboundmapping",
@@ -256,13 +327,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/inboundmapping",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -282,7 +350,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n    \"did\": \"13132222223\",\n    \"servers\": [\"#9\"],\n    \"name\": \"Taste Pizzabar\"\n}",
+							"raw": "{ \n    \"did\": \"13132222223\",\n    \"servers\": [\"#22\"],\n    \"name\": \"Taste Pizzabar\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -290,13 +358,10 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/inboundmapping",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -324,13 +389,10 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping?did=13132222223",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/inboundmapping?did=13132222223",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -350,13 +412,13 @@
 					"response": []
 				},
 				{
-					"name": "/api/v1/inboundmapping?did=<string> Copy",
+					"name": "/api/v1/inboundmapping?did=<string>",
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n    \"servers\": [\"#10\"],\n    \"name\": \"Flyball\"\n}",
+							"raw": "",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -364,13 +426,10 @@
 							}
 						},
 						"url": {
-							"raw": "https://167.99.182.100:5000/api/v1/inboundmapping?did=13132222223",
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/inboundmapping?did=13132222223",
 							"protocol": "https",
 							"host": [
-								"167",
-								"99",
-								"182",
-								"100"
+								"{{DSIP_ADDR}}"
 							],
 							"port": "5000",
 							"path": [
@@ -389,8 +448,449 @@
 					},
 					"response": []
 				}
-			],
-			"protocolProfileBehavior": {}
+			]
+		},
+		{
+			"name": "leases",
+			"item": [
+				{
+					"name": "/api/v1/lease/endpoint/ (User/Pass)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/lease/endpoint?email=mack@goflyball.com&ttl=5m",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"lease",
+								"endpoint"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "mack@goflyball.com"
+								},
+								{
+									"key": "ttl",
+									"value": "5m"
+								}
+							]
+						},
+						"description": "Get a single endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/lease/endpoint/  (IP Type)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Slack-Signature",
+								"value": "test",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/lease/endpoint?email=mack@goflyball.com&ttl=1m&type=ip&auth_ip=172.145.24.2",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"lease",
+								"endpoint"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "mack@goflyball.com"
+								},
+								{
+									"key": "ttl",
+									"value": "1m"
+								},
+								{
+									"key": "type",
+									"value": "ip"
+								},
+								{
+									"key": "auth_ip",
+									"value": "172.145.24.2"
+								}
+							]
+						},
+						"description": "Get a single endpointgroup"
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/lease/endpoint/<leaseid>/revoke",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/lease/endpoint/34/revoke",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"lease",
+								"endpoint",
+								"34",
+								"revoke"
+							]
+						},
+						"description": "Get a single endpointgroup"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "carriergroups",
+			"item": [
+				{
+					"name": "/api/v1/carriergroups",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/carriergroups",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"carriergroups"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/v1/carriergroups",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test1\",\n    \"strip\": \"\",\n    \"prefix\": \"\",\n    \"auth\": {\n        \"type\": \"ip\",\n        \"r_username\": \"\",\n        \"auth_username\": \"\",\n        \"auth_password\": \"\",\n        \"auth_domain\": \"\",\n        \"auth_proxy\": \"\"\n    },\n    \"plugin\" : {\n        \"name\":\"\",\n        \"plugin_prefix\":\"\",\n        \"account_sid\": \"\",\n        \"account_token\":\"\"\n    },\n    \"endpoints\":[\n        {\n            \"name\": \"proxy.detroitpbx.com\",\n            \"hostname\": \"proxy.detroitpbx.com\",\n            \"strip\": \"\",\n            \"prefix\": \"\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/carriergroups",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"carriergroups"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "Auth / User - Add",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"yahoo2\",\n    \"password\": \"123456\",\n    \"firstname\": \"First\",\n    \"lastname\": \"DeLast\",\n    \"roles\": [],\n    \"domains\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/auth/user",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Auth / User - Update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer ",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"de_uzer\",\n    \"password\": \"1234567\",\n    \"firstname\": \"First\",\n    \"lastname\": \"DeLast\",\n    \"roles\": [],\n    \"domains\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/auth/user/2",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"user",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Auth / User - Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer ",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/auth/user/2",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"user",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Auth / User - List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/auth/user",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Auth / Login",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"yahoo2\",\n    \"password\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/auth/login",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "cdr",
+			"item": [
+				{
+					"name": "api/v1/cdrs/endpointgroups/<<endpointgroup>>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/cdrs/endpointgroups/17?type=csv&dtfilter=2022-09-14&email=True",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"cdrs",
+								"endpointgroups",
+								"17"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "csv",
+									"description": "csv or json - The default is json"
+								},
+								{
+									"key": "dtfilter",
+									"value": "2022-09-14",
+									"description": "Date/Time Filter - mysql format"
+								},
+								{
+									"key": "email",
+									"value": "True",
+									"description": "Will send the CDR to email addresses in the Endpoint Group"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "api/v1/cdrs/endpoint/<<endpoint>>",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://{{DSIP_ADDR}}:5000/api/v1/cdrs/endpoint/54",
+							"protocol": "https",
+							"host": [
+								"{{DSIP_ADDR}}"
+							],
+							"port": "5000",
+							"path": [
+								"api",
+								"v1",
+								"cdrs",
+								"endpoint",
+								"54"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {
@@ -398,7 +898,7 @@
 		"bearer": [
 			{
 				"key": "token",
-				"value": "adminadmin",
+				"value": "{{DSIP_TOKEN}}",
 				"type": "string"
 			}
 		]
@@ -407,7 +907,6 @@
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "8f3dae2c-31cf-41b5-a7ba-e2e15c0220b7",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -417,7 +916,6 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "b8882818-7b26-43e4-ab1c-cce8eb155db2",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -425,5 +923,15 @@
 			}
 		}
 	],
-	"protocolProfileBehavior": {}
+	"variable": [
+		{
+			"key": "DSIP_ADDR",
+			"value": "demo.dsiprouter.net"
+		},
+		{
+			"key": "DSIP_TOKEN",
+			"value": "91RpJidL1f2eEDSyxUDnn83B7jipuDyl",
+			"type": "string"
+		}
+	]
 }
