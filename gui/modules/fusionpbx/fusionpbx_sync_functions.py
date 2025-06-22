@@ -251,24 +251,20 @@ def update_nginx(sources):
 
         script_dir = os.path.dirname(os.path.abspath(__file__))
     
-        # TODO: Marked for removal in next release 
-        # Build a config for the docker instance of Nginx
-        #input = open(script_dir + "/dsiprouter.nginx.tpl")
-        #output = open(script_dir + "/dsiprouter.nginx", "w")
-        #output.write(input.read().replace("##SERVERLIST##", serverList))
-        #output.close()
-        #input.close()
-    
         # Build a config for the native Nginx instance
 
         input = open(script_dir + "/dsiprouter-provisioner.tpl")
-        output = open(script_dir + "/dsiprouter-provisioner.conf", "w")
-        output.write(input.read().replace("##SERVERLIST##", serverList))
-        output.close()
+        try:
+            output = open("/etc/nginx/sites-enabled/dsiprouter-provisioner.conf", "x")
+        except FileExistsError:
+            output = open("/etc/nginx/sites-enabled/dsiprouter-provisioner.conf", "w")
+        finally:
+            output.write(input.read().replace("##SERVERLIST##", serverList))
+            output.close()
+
         input.close()
 
-        # Copy config to Native Nginx Server and restart Nginx
-        shutil.copy(script_dir + "/dsiprouter-provisioner.conf", '/etc/nginx/sites-enabled/dsiprouter-provisioner.conf')
+        # Restart Nginx
         os.system('systemctl reload nginx')
     
     except Exception as e:
