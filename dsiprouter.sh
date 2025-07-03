@@ -3670,6 +3670,10 @@ function updatePermissions() {
         mkdir -p /run/nginx
         chown -R nginx:nginx /run/nginx
         chmod 770 /run/nginx
+
+        # dsiprouter needs to be able to dynamically update the provisioning site
+        chown root:dsiprouter /etc/nginx/sites-enabled/
+        chmod 775 /etc/nginx/sites-enabled/
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {
