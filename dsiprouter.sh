@@ -81,7 +81,7 @@ function setStaticScriptSettings() {
     FLT_LCR_MIN=10000
     FLT_FWD_MIN=20000
     WITH_LCR=1
-    export DEBUG=0
+    export DEBUG=${DEBUG:-0}
     export TEAMS_ENABLED=1
     DSIP_MIN_PYTHON_VER='3.8'
     export PYTHON_VENV="${DSIP_PROJECT_DIR}/venv"
@@ -2485,7 +2485,7 @@ function start() {
             # perform pre-startup commands systemd would normally do in dsiprouter.service
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
-            sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
+            sudo -E -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             exit $?
         else
             # start the reverse proxy first
