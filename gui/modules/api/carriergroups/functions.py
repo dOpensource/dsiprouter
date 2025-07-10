@@ -388,7 +388,7 @@ def addUpdateCarriers(data=None):
         hostname = form['hostname'] if len(form['hostname']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
-        rweight = form['rweight'] if 'rweight' in form else 1
+        rweight = int(form['rweight']) if form.get('rweight', '') != '' else 1
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")

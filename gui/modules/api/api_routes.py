@@ -1157,8 +1157,8 @@ def updateEndpointGroups(gwgroupid=None):
                 signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
                 media = endpoint['media'] if 'media' in endpoint else 'proxy'
                 name = endpoint['description'] if 'description' in endpoint else ''
-                rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
-                keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+                rweight = int(endpoint['rweight']) if endpoint.get('rweight', '') != '' else 1
+                keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', '') != '' else 0
 
                 flags = 0
                 if keepalive > 0:
@@ -1229,8 +1229,8 @@ def updateEndpointGroups(gwgroupid=None):
             signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
             media = endpoint['media'] if 'media' in endpoint else 'proxy'
             name = endpoint['description'] if 'description' in endpoint else ''
-            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
-            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', '') != '' else 1
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', '') != '' else 0
 
             flags = 0
             if keepalive > 0:
@@ -1782,8 +1782,8 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
             media = endpoint['media'] if 'media' in endpoint else 'proxy'
             name = endpoint['description'] if 'description' in endpoint else ''
-            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
-            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', '') != '' else 1
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', '') != '' else 0
 
             flags = 0
             if keepalive > 0:
