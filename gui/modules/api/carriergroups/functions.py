@@ -440,11 +440,16 @@ def addUpdateCarriers(data=None):
                 gw_fields['gwgroup'] = gwgroup
 
             # update dispatcher entry
-            db.query(Dispatcher).filter(
+            if db.query(Dispatcher).filter(
                 Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
             ).update({
                 "attrs": Dispatcher.buildAttrs(rweight=rweight)
-            }, synchronize_session=False)
+            }, synchronize_session=False):
+                pass
+            # add new dispatcher entry if it did not exist (gwgroup must also exist)
+            elif len(gwgroup) > 0:
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
+                db.add(dispatcher)
 
             # if address exists update
             address_exists = False
