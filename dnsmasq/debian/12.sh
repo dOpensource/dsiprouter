@@ -9,6 +9,12 @@ if [[ "$DSIP_LIB_IMPORTED" != "1" ]]; then
 fi
 
 function install() {
+    if ! systemctl is-active -q systemd-resolved; then
+        printerr 'systemd-resolved is required for this deployment'
+        echo 'install systemd-resolved and then retry installation'
+        return 1
+    fi
+
     apt-get install -y dnsmasq
 
     if (( $? != 0 )); then
@@ -48,37 +54,19 @@ function install() {
     if (( $? != 0 )); then
         printerr 'failed loading new systemd network configurations..'
         printwarn 'reverting network changes'
+        cp -df ${BACKUPS_DIR}/etc/resolv.conf /etc/resolv.conf
         rm -f /etc/systemd/network/99-dsiprouter.network
         systemctl restart systemd-networkd
         return 1
     fi
-
-    # Reload resolvconf if it's installed
-    systemctl is-active resolvconf
-    if (( $? != 0 )); then
-             printwarn 'resolvconf is not installed'
-
-    else
-             printwarn 'resolvconf is installed'
-	     # copy the DNS servers from the orig /etc/resolv.conf
-             #cp -df ${BACKUPS_DIR}/etc/resolv.conf /run/resolvconf/resolv.conf
-    	     # tell dnsmasq to grab dns servers from resolvconf
-             #export DNSMASQ_RESOLV_FILE="/run/resolvconf/resolv.conf"
-    fi
     
-  # Reload systemd-resolved if it's installed
-    systemctl is-active systemd-resolved
-    if (( $? != 0 )); then
-             printwarn 'systemd-resolved is not installed'
-    else
-    	     # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
-   	      mkdir -p /etc/systemd/resolved.conf.d/
-    	     cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved.conf /etc/systemd/resolved.conf.d/99-dsiprouter.conf
-	     systemctl restart systemd-resolved
-    	     # tell dnsmasq to grab dns servers from systemd-resolved
-             export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
-    fi
-
+    # tell dnsmasq where to find upstream DNS servers
+    # we only need the dhcp dynamic dns servers feature of systemd-resolved, everything else is turned off
+    mkdir -p /etc/systemd/resolved.conf.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/configs/systemdresolved/dsiprouter.conf /etc/systemd/resolved.conf.d/dsiprouter.conf
+    systemctl restart systemd-resolved
+    # tell dnsmasq to grab dns servers from systemd-resolved
+    export DNSMASQ_RESOLV_FILE="/run/systemd/resolve/resolv.conf"
 
     envsubst <${DSIP_PROJECT_DIR}/dnsmasq/configs/dnsmasq_sh.conf >/etc/dnsmasq.conf
 
@@ -86,7 +74,6 @@ function install() {
 }
 
 function uninstall() {
-
     # stop and disable services
     systemctl disable dnsmasq
     systemctl stop dnsmasq
