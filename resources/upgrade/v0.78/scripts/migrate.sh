@@ -33,8 +33,14 @@ export PYTHON_CMD=${OLD_PROJECT_DIR}/venv/bin/python
 DSIP_SYSTEM_CONFIG_DIR='/etc/dsiprouter'
 DSIP_CONFIG_FILE=${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py
 SYSTEM_KAMAILIO_CONFIG_DIR='/etc/kamailio'
+export ROOT_DB_USER=$(getConfigAttrib 'ROOT_DB_USER' ${DSIP_CONFIG_FILE})
+export ROOT_DB_PASS=$(decryptConfigAttrib 'ROOT_DB_PASS' ${DSIP_CONFIG_FILE})
+export ROOT_DB_HOST=$(getConfigAttrib 'ROOT_DB_HOST' ${DSIP_CONFIG_FILE})
+export ROOT_DB_PORT=$(getConfigAttrib 'ROOT_DB_PORT' ${DSIP_CONFIG_FILE})
+export KAM_DB_NAME=$(getConfigAttrib 'KAM_DB_NAME' ${DSIP_CONFIG_FILE})
 
 printdbg 'preparing for migration'
+export DSIP_PROJECT_DIR=${OLD_PROJECT_DIR}
 UPDATE_KAMAILIO=0
 UPDATE_DSIPROUTER=0
 REQUIRED_RELOADS=()
@@ -67,6 +73,14 @@ resetConfigsHandler() {
 
     cp -afP ${CURR_BACKUP_DIR}/etc/. /etc/
     cp -afP ${CURR_BACKUP_DIR}/opt/. /opt/
+
+    if (( $UPDATE_KAMAILIO == 1 )); then
+        # DSIP_PROJECT_DIR may be the old or new project based on when this fails
+        [[ -e "${DSIP_PROJECT_DIR}/resources/upgrade/v0.78/dsip-fwd-old.sql" ]] && {
+            withRootDBConn --db="$KAM_DB_NAME" mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.78/dsip-fwd-old.sql
+            kamcmd htable.reload prefix_to_route
+        }
+    fi
 
     trap - EXIT SIGHUP SIGINT SIGQUIT SIGTERM
     exit 1
@@ -108,6 +122,10 @@ if (( $UPDATE_KAMAILIO == 1 )); then
     dsiprouter configurekam
     kamailio -c >/dev/null || {
         printerr 'Failed migrating kamailio configuration to newer version'
+        exit 1
+    }
+    withRootDBConn --db="$KAM_DB_NAME" mysql <${DSIP_PROJECT_DIR}/resources/upgrade/v0.78/dsip-fwd-new.sql || {
+        printerr 'Failed migrating kamailio database'
         exit 1
     }
 fi
