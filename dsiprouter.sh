@@ -3578,9 +3578,9 @@ EOSSH
                 ${DSIP_PROJECT_DIR}/dsiprouter.sh install -dns ${SSH_SYNC_ARGS[@]}
 
                 # create indicator in case we iterate over this node again (if this command is re-run)
-                RETVAL=$?
-                (( $RETVAL == 0 )) && touch ${DSIP_SYSTEM_CONFIG_DIR}/.clusterinstallcomplete
-                exit $RETVAL
+                RETVAL=\$?
+                (( \$RETVAL == 0 )) && touch ${DSIP_SYSTEM_CONFIG_DIR}/.clusterinstallcomplete
+                exit \$RETVAL
             else
                 # if this node was already configured, reconfigure the encrypted credentials to use the new private key
                 source ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
