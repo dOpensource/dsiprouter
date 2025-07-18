@@ -183,7 +183,7 @@ function setConfigAttrib() {
             VALUE="b'${VALUE}'"
         fi
     fi
-    sed -i -r -e "s|$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
+    sed -i -r -e "s|^$NAME[ \t]*=[ \t]*.*|$NAME = $VALUE|g" ${CONFIG_FILE}
 }
 export -f setConfigAttrib
 

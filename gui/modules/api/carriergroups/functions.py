@@ -388,7 +388,7 @@ def addUpdateCarriers(data=None):
         hostname = form['hostname'] if len(form['hostname']) > 0 else ''
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
-        rweight = form['rweight'] if 'rweight' in form else 1
+        rweight = int(form['rweight']) if form.get('rweight', '') != '' else 1
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
@@ -440,11 +440,16 @@ def addUpdateCarriers(data=None):
                 gw_fields['gwgroup'] = gwgroup
 
             # update dispatcher entry
-            db.query(Dispatcher).filter(
+            if db.query(Dispatcher).filter(
                 Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
             ).update({
                 "attrs": Dispatcher.buildAttrs(rweight=rweight)
-            }, synchronize_session=False)
+            }, synchronize_session=False):
+                pass
+            # add new dispatcher entry if it did not exist (gwgroup must also exist)
+            elif len(gwgroup) > 0:
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
+                db.add(dispatcher)
 
             # if address exists update
             address_exists = False

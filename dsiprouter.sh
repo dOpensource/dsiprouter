@@ -81,7 +81,7 @@ function setStaticScriptSettings() {
     FLT_LCR_MIN=10000
     FLT_FWD_MIN=20000
     WITH_LCR=1
-    export DEBUG=0
+    export DEBUG=${DEBUG:-0}
     export TEAMS_ENABLED=1
     DSIP_MIN_PYTHON_VER='3.8'
     export PYTHON_VENV="${DSIP_PROJECT_DIR}/venv"
@@ -480,7 +480,7 @@ function validateOSInfo() {
         case "$DISTRO_VER" in
         2)
             KAM_VERSION=${KAM_VERSION:-"5.7.6"}
-            RTPENGINE_VER=${RTPENGINE_VER:-"mr9.5.5.1"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;
         *)
             printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -886,7 +886,9 @@ function configureSSL() {
 
     # Stop nginx if started so that LetsEncrypt can leverage port 80
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
-        docker stop dsiprouter-nginx 2>/dev/null
+	    if docker ps | grep -q dsiprouter-nginx; then
+	    	docker stop dsiprouter-nginx 2>/dev/null
+	    fi	
     else
         firewall-cmd --zone=public --add-port=80/tcp
     fi
@@ -919,7 +921,9 @@ function configureSSL() {
 
     # Start nginx if dSIP was installed
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
-        docker stop dsiprouter-nginx 2>/dev/null
+	    if docker ps | grep -q dsiprouter-nginx; then
+	    	docker stop dsiprouter-nginx 2>/dev/null
+	    fi	
     else
         firewall-cmd --zone=public --remove-port=80/tcp
     fi
@@ -2485,7 +2489,7 @@ function start() {
             # perform pre-startup commands systemd would normally do in dsiprouter.service
             updatePermissions -dsiprouter
             # keep dSIPRouter in the foreground, only used for debugging issues (blocking)
-            sudo -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
+            sudo -E -u dsiprouter -g dsiprouter ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter.py
             exit $?
         else
             # start the reverse proxy first
@@ -3578,9 +3582,9 @@ EOSSH
                 ${DSIP_PROJECT_DIR}/dsiprouter.sh install -dns ${SSH_SYNC_ARGS[@]}
 
                 # create indicator in case we iterate over this node again (if this command is re-run)
-                RETVAL=$?
-                (( $RETVAL == 0 )) && touch ${DSIP_SYSTEM_CONFIG_DIR}/.clusterinstallcomplete
-                exit $RETVAL
+                RETVAL=\$?
+                (( \$RETVAL == 0 )) && touch ${DSIP_SYSTEM_CONFIG_DIR}/.clusterinstallcomplete
+                exit \$RETVAL
             else
                 # if this node was already configured, reconfigure the encrypted credentials to use the new private key
                 source ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
@@ -3670,6 +3674,10 @@ function updatePermissions() {
         mkdir -p /run/nginx
         chown -R nginx:nginx /run/nginx
         chmod 770 /run/nginx
+
+        # dsiprouter needs to be able to dynamically update the provisioning site
+        chown root:dsiprouter /etc/nginx/sites-enabled/
+        chmod 775 /etc/nginx/sites-enabled/
     }
     # set permissions for files/dirs used by kamailio
     setKamailioPerms() {

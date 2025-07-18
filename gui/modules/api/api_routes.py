@@ -354,6 +354,7 @@ def handleInboundMapping():
                     payload['msg'] = 'Rule Found'
                 else:
                     payload['msg'] = 'No Matching Rule Found'
+                    payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
 
             # get single rule by did
             else:
@@ -371,6 +372,7 @@ def handleInboundMapping():
                         payload['msg'] = 'DID Found'
                     else:
                         payload['msg'] = 'No Matching DID Found'
+                        payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
 
                 # get list of rules
                 else:
@@ -524,7 +526,9 @@ def handleInboundMapping():
             if rule_id is not None:
                 rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
                     InboundMapping.ruleid == rule_id)
-                rule.delete(synchronize_session=False)
+                if rule.delete(synchronize_session=False) == 0:
+                    payload['msg'] = 'No Rules Found'
+                    payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
 
             # delete single rule by did
             else:
@@ -532,7 +536,9 @@ def handleInboundMapping():
                 if did_pattern is not None:
                     rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
                         InboundMapping.prefix == did_pattern)
-                    rule.delete(synchronize_session=False)
+                    if rule.delete(synchronize_session=False) == 0:
+                        payload['msg'] = 'No Rules Found'
+                        payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
 
                 # no other options
                 else:
@@ -1151,8 +1157,8 @@ def updateEndpointGroups(gwgroupid=None):
                 signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
                 media = endpoint['media'] if 'media' in endpoint else 'proxy'
                 name = endpoint['description'] if 'description' in endpoint else ''
-                rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
-                keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+                rweight = int(endpoint['rweight']) if endpoint.get('rweight', '') != '' else 1
+                keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', '') != '' else 0
 
                 flags = 0
                 if keepalive > 0:
@@ -1223,8 +1229,8 @@ def updateEndpointGroups(gwgroupid=None):
             signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
             media = endpoint['media'] if 'media' in endpoint else 'proxy'
             name = endpoint['description'] if 'description' in endpoint else ''
-            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
-            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', '') != '' else 1
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', '') != '' else 0
 
             flags = 0
             if keepalive > 0:
@@ -1776,8 +1782,8 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
             signalling = endpoint['signalling'] if 'signalling' in endpoint else 'proxy'
             media = endpoint['media'] if 'media' in endpoint else 'proxy'
             name = endpoint['description'] if 'description' in endpoint else ''
-            rweight = int(endpoint['rweight']) if endpoint.get('rweight', None) is not None else 0
-            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', None) is not None else 0
+            rweight = int(endpoint['rweight']) if endpoint.get('rweight', '') != '' else 1
+            keepalive = int(endpoint['keepalive']) if endpoint.get('keepalive', '') != '' else 0
 
             flags = 0
             if keepalive > 0:

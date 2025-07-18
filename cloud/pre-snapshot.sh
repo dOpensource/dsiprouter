@@ -4,15 +4,17 @@
 #
 
 function cmdExists() {
-    if command -v "$1" > /dev/null 2>&1; then
+    if command -v "$1" >/dev/null 2>&1; then
         return 0
     else
         return 1
     fi
 }
+
 function getDistroName() {
     grep '^ID=' /etc/os-release 2>/dev/null | cut -d '=' -f 2 | cut -d '"' -f 2
 }
+
 function joinwith() {
     local START="$1" IFS="$2" END="$3" ARR=()
     shift;shift;shift
@@ -23,46 +25,59 @@ function joinwith() {
 
     echo "${ARR[*]}"
 }
+
 # removed from cleanup logic as this is run on virtual hardware
 # we shouldn't need to flush the disks, this saves us time
 function clearDiskCache() {
-    dd if=/dev/zero of=/zerofile 2>/dev/null; rm -f /zerofile; sync
-}
-# removed from cleanup logic to allow running this script from cloud-init
-function cleanupCloudInit() {
-    find /var/lib/cloud -mindepth 1 -maxdepth 1 -type d ! -name 'seed' ! -name 'scripts' -exec rm -rf {} +
-    find /var/lib/cloud -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
+    dd if=/dev/zero of=/zerofile 2>/dev/null
+    rm -f /zerofile
+    sync
 }
 
 # make sure all security updates are installed
 # remove insecure services (FTP, Telnet, Rlogin/Rsh)
-if cmdExists 'apt-get'; then
-    # grub updates adhere to ucf not debconf
-    # make sure ucf defaults to unattended upgrade
-    unset UCF_FORCE_CONFFOLD
-    export UCF_FORCE_CONFFNEW=YES
-    ucf --purge /boot/grub/menu.lst
+# TEMP: remove known bad packages
+# TODO: in the future this will instead be handled by using pre-packaged binaries
+function runSecurityUpdates() {
+    if cmdExists 'apt-get'; then
+        # grub updates adhere to ucf not debconf
+        # make sure ucf defaults to unattended upgrade
+        unset UCF_FORCE_CONFFOLD
+        export UCF_FORCE_CONFFNEW=YES
+        ucf --purge /boot/grub/menu.lst
 
-    apt-mark hold linux-image-* linux-headers-*
-    apt-get -y update
-    apt-get -y upgrade
-    apt-mark unhold linux-image-* linux-headers-*
+        apt-mark hold linux-image-* linux-headers-*
+        apt-get update -y
+        apt-get upgrade -y
+        apt-mark unhold linux-image-* linux-headers-*
 
-    apt-get -y --purge remove xinetd nis yp-tools tftpd atftpd tftpd-hpa telnetd rsh-server rsh-redone-server
+        apt-get remove -y --purge xinetd nis yp-tools tftpd atftpd tftpd-hpa telnetd rsh-server rsh-redone-server
+        apt-get remove -y --purge libcap-dev
 
-    apt-get -y autoremove
-    apt-get -y autoclean
-elif cmdExists 'yum'; then
-    yum -y upgrade --exclude='linux-image-*' --exclude='linux-headers-*'
+        apt-get autoremove -y --purge
+        apt-get clean -y
+    elif cmdExists 'dnf'; then
+        dnf upgrade -y --exclude='kernel*' --exclude='linux-headers-*'
 
-    yum -y erase xinetd ypserv tftp-server telnet-server rsh-server
+        dnf remove -y xinetd ypserv tftp-server telnet-server rsh-server
+        dnf remove -y libcap-devel
 
-    yum -y autoremove
-    yum -y clean all
-fi
+        dnf autoremove -y
+        dnf clean all
+    elif cmdExists 'yum'; then
+        yum upgrade -y --exclude='linux-image-*' --exclude='linux-headers-*'
 
-# harden sshd server configs
-(cat <<'EOF'
+        yum remove -y xinetd ypserv tftp-server telnet-server rsh-server
+        yum remove -y libcap-devel
+
+        yum autoremove -y
+        yum clean all -y
+    fi
+}
+
+function hardenSshdConfigs() {
+    (
+        cat <<'EOF'
 # |== SSHD Server Settings ==|
 Port 22
 Protocol 2
@@ -123,15 +138,13 @@ AcceptEnv LANG LANGUAGE LC_*
 # Allow sftp over ssh
 Subsystem sftp /usr/lib/openssh/sftp-server
 EOF
-) > /etc/ssh/sshd_config
+    ) >/etc/ssh/sshd_config
+}
 
-# delete any accounts attempting to be root
-BAD_USERS=$(joinwith '' ';' 'd' `awk -F ':' '($3 == "0") && !/root/ {print FNR}' /etc/passwd`)
-[[ ! -z "${BAD_USERS}" ]] && sed -i "/${BAD_USERS}/d" /etc/passwd
-
-# kernel hardening
-# source: https://www.cyberciti.biz/tips/linux-security.html
-(cat <<'EOF'
+function hardenKernelConfigs() {
+    # source: https://www.cyberciti.biz/tips/linux-security.html
+    (
+        cat <<'EOF'
 ######################################################################
 # /etc/sysctl.conf - Configuration file for setting system variables
 # See /etc/sysctl.d/ for additional system variables.
@@ -152,28 +165,79 @@ net.ipv4.icmp_ignore_bogus_error_messages=1
 # Make sure spoofed packets get logged
 net.ipv4.conf.all.log_martians = 1
 EOF
-) > /etc/sysctl.conf
+    ) >/etc/sysctl.conf
 
-# ensure address space layout randomization (ASLR) is enabled
-echo '2' > /proc/sys/kernel/randomize_va_space
+    # ensure address space layout randomization (ASLR) is enabled
+    echo '2' >/proc/sys/kernel/randomize_va_space
+}
 
-# remove ssh keys, remove known hosts files, regenerate host server keys
-rm -f /etc/ssh/*key* /root/.ssh/{authorized_keys,known_hosts} /home/*/.ssh/{authorized_keys,known_hosts} 2>/dev/null
-touch /etc/ssh/revoked_keys; chmod 600 /etc/ssh/revoked_keys
-#if cmdExists 'apt-get'; then
-#    dpkg-reconfigure -f noninteractive openssh-server
-#fi
-#systemctl restart sshd
+# sets up the filesystem as a golden image
+# we are running a portoin of the "cloud-init clean" logic to ensure we keep dsiprouter specific scripts
+# cloud-init versions < 23.1 remove machine-id instead of zeroing it out
+# see discussion here: https://bugs.launchpad.net/ubuntu/+source/cloud-init/+bug/1563951
+# TODO: revisit this in the future, there is a bit more logic they do we might want to incorporate:
+# ref: https://github.com/canonical/cloud-init/blob/main/cloudinit/cmd/clean.py#L165
+function cleanCloudInit() {
+    find /var/lib/cloud -mindepth 1 -maxdepth 1 -type d ! -name 'scripts' -exec rm -rf {} +
+    find /var/lib/cloud -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
+    truncate -s 0 /etc/machine-id
+}
+
+function cleanUserAccounts() {
+    # delete any accounts attempting to be root
+    BAD_USERS=$(joinwith '' ';' 'd' $(awk -F ':' '($3 == "0") && !/root/ {print FNR}' /etc/passwd))
+    [[ ! -z "${BAD_USERS}" ]] && sed -i "/${BAD_USERS}/d" /etc/passwd
+    # remove and lock the root user's password
+    passwd -d root
+    passwd -l root
+}
+
+# remove ssh keys, remove known hosts files
+function cleanKeys() {
+    rm -f /etc/ssh/*key* /root/.ssh/{authorized_keys,known_hosts} /home/*/.ssh/{authorized_keys,known_hosts} 2>/dev/null
+    touch /etc/ssh/revoked_keys
+    chmod 600 /etc/ssh/revoked_keys
+}
+
+# let cloud-init write these on boot
+function cleanNetworkConfigs() {
+    rm -f /etc/systemd/network/*
+    rm -f /etc/netplan/*
+}
+
+function cleanSourceFiles() {
+    find /usr/local/src -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +
+    find /usr/local/src -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
+}
+
+function cleanRuntimeFiles() {
+    (
+        shopt -s globstar
+        rm -rf /opt/dsiprouter/**/__pycache__/
+    )
+    rm -rf /run/*
+    rm -rf /tmp/* /var/tmp/*
+}
 
 # remove logs and any information from build process
-rm -rf /tmp/* /var/tmp/*
-history -c
-truncate -s 0 /root/.*history /home/*/.*history 2>/dev/null
-unset HISTFILE
-find /var/log -mtime -1 -type f -exec truncate -s 0 {} +
-rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
-find /usr/local/src -mindepth 1 -maxdepth 1 -type d  -exec rm -rf {} +
-find /usr/local/src -mindepth 1 -maxdepth 1 ! -type d -exec rm -f {} +
-truncate -s 0 /var/log/lastlog /var/log/wtmp
+function cleanLogs() {
+    history -c
+    truncate -s 0 /root/.*history /home/*/.*history 2>/dev/null
+    unset HISTFILE
+    find /var/log -mtime -1 -type f -exec truncate -s 0 {} +
+    rm -rf /var/log/*.gz /var/log/*.[0-9] /var/log/*-????????
+    truncate -s 0 /var/log/lastlog /var/log/wtmp
+}
 
+# main logic
+runSecurityUpdates
+hardenSshdConfigs
+hardenKernelConfigs
+cleanUserAccounts
+cleanKeys
+cleanNetworkConfigs
+cleanSourceFiles
+cleanLogs
+cleanCloudInit
+cleanRuntimeFiles
 exit 0

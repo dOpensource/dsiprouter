@@ -3,6 +3,7 @@
 ### Contributors
 
 - Asiel Lara
+- chelseatcarter
 - Dan
 - Dan Ryan
 - Dean Forester
@@ -21,6 +22,7 @@
 - Mat Murdock
 - Maurice Rogers
 - mhendricks
+- Micah Quinn
 - ncannon01
 - Nicole
 - Omari S. King

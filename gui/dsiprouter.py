@@ -18,7 +18,7 @@ from itsdangerous import URLSafeTimedSerializer
 from pygtail import Pygtail
 from sqlalchemy import exc as sql_exceptions, Integer
 from sqlalchemy.orm import load_only
-from sqlalchemy.sql import text, func, cast
+from sqlalchemy.sql import text, func, select
 from sqlalchemy.orm.session import close_all_sessions
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
@@ -1289,41 +1289,65 @@ def deleteInboundMapping():
     finally:
         db.close()
 
-
-def processInboundMappingImport(filename, override_gwgroupid, name, db):
+# TODO: add support for hard/fail forwarding
+def processInboundMappingImport(filename, override_gwgroupid, db):
     try:
-        f = open(os.path.join(settings.UPLOAD_FOLDER, filename))
-        csv_f = csv.reader(f)
+        # sql = insert(
+        #     InboundMapping
+        # ).values(
+        #     groupid=str(settings.FLT_INBOUND),
+        #     prefix=bindparam("prefix"),
+        #     gwlist=bindparam("gwlist"),
+        #     description=f'name:{bindparam("name")}',
+        # ).on_duplicate_key_update(
+        #     prefix=bindparam("prefix"),
+        #     gwlist=bindparam("gwlist"),
+        #     # description=bindparam('name', callable_=lambda name: text(f"REGEXP_REPLACE(description, '(.*?)name:[^,|$]*(.*?)', '\\1name:{name}\\2')"),
+        # )
+        insert_sql = text("""
+INSERT INTO dr_rules (groupid, prefix, timerec, routeid, gwlist, description)
+VALUES (:groupid, :prefix, '', '', :gwlist, CONCAT('name:', :name))
+        """)
+        update_sql = text("""
+UPDATE dr_rules SET
+prefix = :prefix, gwlist = :gwlist, description = REGEXP_REPLACE(description, '(.*?)name:[^,|$]*(.*?)', CONCAT('\\\\1name:', :name, '\\\\2'))
+WHERE prefix = :prefix
+        """)
+        insert_sql_args = []
+        update_sql_args = []
+        # prefix: sql_args
+        dids_uploaded = {}
 
-        for row in csv_f:
-            if len(row) == 0:
-                continue
-            # skip header if present
-            if row[0].startswith("#"):
-                continue
+        with open(os.path.join(settings.UPLOAD_FOLDER, filename), 'r', newline='') as csv_file:
+            csv_file = csv.DictReader(csv_file)
 
-            prefix = row[0]
-            if override_gwgroupid is not None:
-                gwlist = override_gwgroupid
+            for row in csv_file:
+                if len(row) == 0:
+                    continue
+
+                prefix = row['DID']
+                if override_gwgroupid is not None:
+                    gwlist = override_gwgroupid
+                else:
+                    gwlist = f'#{row["EndpointGroupID"]}'
+                name = row["Name"]
+
+                dids_uploaded[prefix] = {'groupid': str(settings.FLT_INBOUND), 'prefix': prefix, 'gwlist': gwlist, 'name': name}
+
+        # bulk SELECT
+        select_sql = select(InboundMapping.prefix).filter(
+            (InboundMapping.groupid == settings.FLT_INBOUND) &
+            (InboundMapping.prefix.in_(dids_uploaded.keys()))
+        )
+        existing_dids = db.execute(select_sql).scalars().all()
+        for did in dids_uploaded:
+            if did in existing_dids:
+                update_sql_args.append(dids_uploaded[did])
             else:
-                gwlist = '#{}'.format(row[1]) if '#' not in row[1] else row[1]
-            if len(row) > 1:
-                description = 'name:{}'.format(row[2])
-            else:
-                description = 'name:{}'.format(name)
+                insert_sql_args.append(dids_uploaded[did])
 
-            IMap = db.query(InboundMapping).filter(
-                (InboundMapping.prefix == prefix) &
-                (InboundMapping.groupid == settings.FLT_INBOUND)
-            )
-            if IMap is None:
-                IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
-                db.add(IMap)
-            else:
-                IMap.prefix = prefix
-                IMap.gwlist = gwlist
-                IMap.description = description
-
+        db.execute(insert_sql, insert_sql_args)
+        db.execute(update_sql, update_sql_args)
         db.commit()
 
     except sql_exceptions.SQLAlchemyError as ex:
@@ -1372,11 +1396,11 @@ def importInboundMapping():
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename, ALLOWED_EXTENSIONS=set(['csv'])):
+        if file and allowed_file(file.filename, ALLOWED_EXTENSIONS={'csv'}):
             filename = secure_filename(file.filename)
             file.save(os.path.join(settings.UPLOAD_FOLDER, filename))
-            processInboundMappingImport(filename, gwgroupid, None, db)
-            flash('X number of file were imported')
+            processInboundMappingImport(filename, gwgroupid, db)
+            flash('DIDs were successfully imported')
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             return redirect(url_for('displayInboundMapping', filename=filename))
 

@@ -338,16 +338,22 @@ Now that domains have been synced in dSIPRouter you are able to register a endpo
     :align: center
 
 3. Configuring the Provisioning Server section of the phone. Enter the appropriate information into the fields.
-    a) Server Type (dSIPRouter uses HTTP by default)
-    b) Server Address
+    a) Server Type (dSIPRouter uses HTTP/s by default)
+    b) Server Address (dSIPRouter Address*)
     c) Server Username (device provisioning server name)
     d) Server Password
+
 4. Click Save 
 
 .. image:: images/provisioning_server.png
     :align: center
 
 5. Reboot the phone
+
+* You will need to set http_domain_filter to false in FusionPBX.  You can change this value by navagating to "Default Settings", search for http_domain_filter, and set the value to false.  As shown below:
+
+.. image:: images/device_provisioning_http_domain_filter.png
+
 
 FreePBX Hosting - Pass Thru Authentication
 ------------------------------------------

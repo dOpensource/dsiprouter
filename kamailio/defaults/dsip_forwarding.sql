@@ -39,5 +39,6 @@ CREATE VIEW dsip_prefix_mapping AS
     CAST(priority AS char) AS priority,
     '0' AS key_type,
     '0' AS value_type
-  FROM dr_rules;
+  FROM dr_rules
+  WHERE groupid='FLT_INBOUND_REPLACE';
 /*!40101 SET character_set_client = @saved_cs_client */;

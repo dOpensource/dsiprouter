@@ -5,8 +5,88 @@
 
 [//]: # (END_SECTION HEADER)
 [//]: # (START_SECTION COMMITS
-aa4857a93511208c2c7ba3e5ec7ac299d90471b7
+7c86d935be95d9838f45727025d442f55a8456a4
+844fdfd70c526e3e3f4b94ca91de5a74bab12213
+8261be6d3e1772d94acb1d8c8de194a0b4afbdd6
+c1b270c5efb9f1640ed0a32a7d9c0d7f96b1a02d
+58096c74533221acc325c101627b8f8a8ada1282
+c8c6ba9ded2fc109099a8fd3c9e7775ea61560c5
+a252b7e6646a684a44946f48bc93f78335d559f4
+31d9a61fe5e5698a83ba460a347ca2d9d681904f
+902c53e6ea1b56ba293362fd7147f954fe5b87f0
+10cdc797dddb3053dfa574dcd10e5fe0696cffe8
+2485a964ccf7d5eab5c719d9fe1d24221e79ff41
+37fe6c03ed7e798119732367dc1896fa93d3182f
+49ba3a7b761ef8f7c71de501c66bdadeeddc70ac
+5995b5b7296506b72e5863aba07d1343acb9e113
+23b1395497f61ec9a8f60ab63dd394397e1866b6
+3007c0e8499cc95673704a420dee938dd424ef9e
+e1e287dd579ff03c0407b90d047d76e10a2ad52f
+8f427d4f46d64c4ead9c32402d56f509f63850c9
+155f1594e37d88e14dc9699cc75cba04f3d6b2f0
+ababcdd35782a7234b14e9a8c9630e2127bfc52e
+73cb9b23631150873b18c39696018a4f599738a9
+303bf86be04320131b8fce613e19aa71dfd7ce75
+52e07933e0845f85c95c6c05af3e4a7b9ad3f2c2
+a39ef41fa5eb058903ca03f8b923570aac7ff15a
+3dd1156097fefd98be296dc312bbc03eb3c58002
+fd1696c6f460afdac86e5e56414b975ecc3c37ec
+0717ce38b28066de5749decbc3aa65bf65051956
+b580cc323974d7aba05932392940050f14350858
+5c5eb60127bc8b176e933c39f30a60a56d08a312
+49e9c8c9f4ab16572259a178182437a5b8ef44d8
+b46787c059a00d4a8b17a957df3f696f3dad682d
+e606c4765084386cf03740c99cb8916bcc78f7f3
+17a10889ddc23eee8f9392319fee27e6401bcb70
+08ea093039491b124b09bd4b21f63fd629019afd
+9e2e812346a002b11e66ef6bd87ce72e130b198d
+f298cc3ba4118807586579090c473df2035189e5
+a85ae0c02f89bcf0539c56201a58e5d01585f062
+fbd0f7c84e4cd66e7f0d694a965abc259f333683
+a638bc71661c89be5881a9d776b9f73a6ad0af97
+952f0655d49ad7ab60c106b4f108945070b7c8eb
+a058f7f1054f5c65c330f0424e732ce6861793bc
+f3993379b9ba18b9b4a26eba2611c03ac64b568f
+febc0d9073bf1834e0fc13dbaf893cb9179a82d6
+01171453f8bfe861f37aceb332ada09057ad4b59
+d61ec9564deeca1999c61f0683af50bf8b74730d
+cdfda0c7319e70217b1d6f5570ba7d242e181b4b
+fe6dee1e3bb7f94a87dca23d8f78512fbd7c03b7
+43d053b938a14191b97ce44048a8751021fc6255
+68a2dd685172e2b5521f1b698456b2f0dde077b4
+4f2a9f8ad407110852092ce543461972687588df
+656fbc1c50d503d7f14d13674da597ebc4e1f117
+186f48f0d295f28527564a3dc3103cab8993f65c
+2b76d501e66b0b22acc911e944f24ca09588cbd7
+9b1cab3e12f978ae79c7317b530881a1c6cbe8ae
+6fc2548389b0c6672f9141baf4e53e71bc297184
+3f73914f1225b2836cab1f13e366582a61c183b4
+6265abc736c8c08348a951da48b643bd67034b0e
+b57a2a3670df1bf0005a4992f2af073e4d85738a
+a977b58eee52a00f10ea32f7e9a05f2222037a3d
+f47832ae5061628cef09e3198b7a33525f2cd0d9
+f2a522d40e62c96bd1e55de7e098cfda9c98fbfe
+92176ca0a908d5a778cb9a1081d7bd3a80df719c
+50380c10d0fbeb07295d13cde20aa6ac0a221def
+e6cbcdbf74426a74a890a97cd5a1ef93813eda99
+14712ee1e39628bc178d8591e22d8fc6b355a21d
+7a264c878a5440330ee03bccc501ea83c4fa33bb
+2ab2a009610830601e70476cea99ec7d867ae181
+36eb14bf4f109b1db9e11497f036f7768669a8bd
+bda6aadd069dbdf2027b782e81a83af66e7e890a
+5d95510edf523ea0be6d417ff69360f77eb610e6
+223522fe8e8011377b663409529bf04eb74cf1da
+96e17cb5f60b07b90c0f62639b5239e7e1e08873
+c9131b49277ad01931aa7fd19e56bf85a4b37e79
+a106f645bebbd0f39f073f2dad55bf8ad5733463
+4f23a2e1158d415856c027cc516069d4be7b0b2f
+4859f366f289a1e8aa03d19fcb902cedba2129d7
+e8f8f8c07902241cd86428ab860dde834ba2977a
+8c3d1ec2aec7952602f6c19af5d94648d272257a
+ce9efc694149c243243e366d9303f12a6ff21090
 a6690af4543a9458baf971404c7d21d03ec19bb3
+a89c77066094932562cb1aee1ade444c1335b02b
+16e7d16b9aaf5a230f1b4faa2ad032127befbe6e
 db26338c391f2b39463967f03ec2f123cc4c1f56
 ce3312c9020a8c1e208143ba51ae6ab19fb75fec
 c7d98a3c26f298b4416fe27bb9ed6145a3eed3c3
@@ -14,6 +94,7 @@ c7d98a3c26f298b4416fe27bb9ed6145a3eed3c3
 dd4564e01ccc4d5bd3ef101a1d1abf368771ce1e
 02207a75314811582d3895d35c2eabab968422e7
 2302d89fd3752bbc6231f9e8131105a04a9f14ac
+f429ed2052552e1d8ea2c8182ce4825b1432a8e0
 40eac0dbad1c95998ca0b5346187b47abceb1f95
 5a5f7558d67477c8b69dd1e23ac4f2ebc65ea2a3
 84d1f13d647cc2d7eeab523587435e9fb36b1688
@@ -44,6 +125,8 @@ ba663bd3cc3c16f7c33c8f7977e1b4d5051efc0d
 8a9eefe4814db0d20e6d5030f6e9865f47711513
 5737d1f33c99de90e0ef9188ca6c840292896567
 cced1d2cd835ca6d546a22b78dcc6d46f2c1a874
+357eca71bf3767d10f36b6e2db1249048a399c54
+cd0db1a1f6bf45e09e31ff56e6e3541bd617ea70
 8b79cd5e57ee370fe39d8d2234b995c7a0c3667f
 435b3cadb5cdc837343d12c04199ef58ecc88123
 ec09a74859312f30a48ec11dd57ed682f4da3868
@@ -2449,10 +2532,1224 @@ a72121b9551921aa3dced32d943c6034ba318f82
 ce6c5aac0db5476dc496c34388e4f9ce2c4b86e5
 b46b1e64f06f448bde78b98e3ae8228ce5f96067
 END_SECTION COMMITS)
-[//]: # (START_SECTION aa4857a93511208c2c7ba3e5ec7ac299d90471b7)
+[//]: # (START_SECTION 7c86d935be95d9838f45727025d442f55a8456a4)
+### Error fixes (#677)
+
+> Commit: [7c86d935be95d9838f45727025d442f55a8456a4](https://github.com/dOpensource/dsiprouter/commit/7c86d935be95d9838f45727025d442f55a8456a4)  
+> Date: Fri, 18 Jul 2025 10:33:42 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- * Update v0.78 Upgrade With DB Changes
+- * Fix "sdp_transport_helper(): malformed or non AVP $dlg_var(src_media_tp)"
+- `sdp_transport` does not support dlg_var, switch to pv
+- remove inaccurate dlg_var on MANAGE_REPLY
+- set default for rtpengine to enabled when dlg flag is not set
+- * Revert Media Handling Improvements
+- not enough time to revalidate, will revisit in next release
+- fix rtpengine enabled on direct media
+
+
+---
+
+[//]: # (END_SECTION 7c86d935be95d9838f45727025d442f55a8456a4)
+[//]: # (START_SECTION 844fdfd70c526e3e3f4b94ca91de5a74bab12213)
+### Fixed error message when configuresslcert is executed
+
+> Commit: [844fdfd70c526e3e3f4b94ca91de5a74bab12213](https://github.com/dOpensource/dsiprouter/commit/844fdfd70c526e3e3f4b94ca91de5a74bab12213)  
+> Date: Fri, 18 Jul 2025 13:24:20 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 844fdfd70c526e3e3f4b94ca91de5a74bab12213)
+[//]: # (START_SECTION 8261be6d3e1772d94acb1d8c8de194a0b4afbdd6)
+### Update README.md
+
+> Commit: [8261be6d3e1772d94acb1d8c8de194a0b4afbdd6](https://github.com/dOpensource/dsiprouter/commit/8261be6d3e1772d94acb1d8c8de194a0b4afbdd6)  
+> Date: Fri, 18 Jul 2025 07:59:55 -0400  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8261be6d3e1772d94acb1d8c8de194a0b4afbdd6)
+[//]: # (START_SECTION c1b270c5efb9f1640ed0a32a7d9c0d7f96b1a02d)
+### WebRTC Fixes to handle a more compliant WebRTC client called Jambonz, which is based on JsSIP
+
+> Commit: [c1b270c5efb9f1640ed0a32a7d9c0d7f96b1a02d](https://github.com/dOpensource/dsiprouter/commit/c1b270c5efb9f1640ed0a32a7d9c0d7f96b1a02d)  
+> Date: Fri, 18 Jul 2025 11:52:25 +0000  
+> Author: root (root@mack.test.dsiprouter.net)  
+> Committer: root (root@mack.test.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c1b270c5efb9f1640ed0a32a7d9c0d7f96b1a02d)
+[//]: # (START_SECTION 58096c74533221acc325c101627b8f8a8ada1282)
+### Update of login page and logo
+
+> Commit: [58096c74533221acc325c101627b8f8a8ada1282](https://github.com/dOpensource/dsiprouter/commit/58096c74533221acc325c101627b8f8a8ada1282)  
+> Date: Thu, 17 Jul 2025 04:26:23 +0000  
+> Author: root (root@mack.test.dsiprouter.net)  
+> Committer: root (root@mack.test.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 58096c74533221acc325c101627b8f8a8ada1282)
+[//]: # (START_SECTION c8c6ba9ded2fc109099a8fd3c9e7775ea61560c5)
+### Update v0.78 Upgrade With DB Changes
+
+> Commit: [c8c6ba9ded2fc109099a8fd3c9e7775ea61560c5](https://github.com/dOpensource/dsiprouter/commit/c8c6ba9ded2fc109099a8fd3c9e7775ea61560c5)  
+> Date: Mon, 14 Jul 2025 12:16:13 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION c8c6ba9ded2fc109099a8fd3c9e7775ea61560c5)
+[//]: # (START_SECTION a252b7e6646a684a44946f48bc93f78335d559f4)
+### Fix Failure Routing
+
+> Commit: [a252b7e6646a684a44946f48bc93f78335d559f4](https://github.com/dOpensource/dsiprouter/commit/a252b7e6646a684a44946f48bc93f78335d559f4)  
+> Date: Mon, 14 Jul 2025 10:53:06 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- move 3xx blocking up in faliure route
+- move timeout check to after failover/hard fwd checks
+- dsip_prefix_mapping view only includes inbound routes now
+
+
+---
+
+[//]: # (END_SECTION a252b7e6646a684a44946f48bc93f78335d559f4)
+[//]: # (START_SECTION 31d9a61fe5e5698a83ba460a347ca2d9d681904f)
+### Cluster Fixes
+
+> Commit: [31d9a61fe5e5698a83ba460a347ca2d9d681904f](https://github.com/dOpensource/dsiprouter/commit/31d9a61fe5e5698a83ba460a347ca2d9d681904f)  
+> Date: Mon, 14 Jul 2025 09:44:50 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- do not allow debian images without systemd-resolved to install with `-dns`
+- fix return code of each install on `clusterinstall` subcommand
+
+
+---
+
+[//]: # (END_SECTION 31d9a61fe5e5698a83ba460a347ca2d9d681904f)
+[//]: # (START_SECTION 902c53e6ea1b56ba293362fd7147f954fe5b87f0)
+### Extra Check for Carrier Load Balancing
+
+> Commit: [902c53e6ea1b56ba293362fd7147f954fe5b87f0](https://github.com/dOpensource/dsiprouter/commit/902c53e6ea1b56ba293362fd7147f954fe5b87f0)  
+> Date: Fri, 11 Jul 2025 08:25:06 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- if dispatcher entry does not yet exist when updating, create it
+
+
+---
+
+[//]: # (END_SECTION 902c53e6ea1b56ba293362fd7147f954fe5b87f0)
+[//]: # (START_SECTION 10cdc797dddb3053dfa574dcd10e5fe0696cffe8)
+### Load Balancing Fixes
+
+> Commit: [10cdc797dddb3053dfa574dcd10e5fe0696cffe8](https://github.com/dOpensource/dsiprouter/commit/10cdc797dddb3053dfa574dcd10e5fe0696cffe8)  
+> Date: Thu, 10 Jul 2025 11:53:24 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- fix load balancing regression
+- set more sane defaults for rweight/keepalive
+
+
+---
+
+[//]: # (END_SECTION 10cdc797dddb3053dfa574dcd10e5fe0696cffe8)
+[//]: # (START_SECTION 2485a964ccf7d5eab5c719d9fe1d24221e79ff41)
+### Fix CLI Debug Handling
+
+> Commit: [2485a964ccf7d5eab5c719d9fe1d24221e79ff41](https://github.com/dOpensource/dsiprouter/commit/2485a964ccf7d5eab5c719d9fe1d24221e79ff41)  
+> Date: Wed, 9 Jul 2025 11:00:59 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- `dsiprouter start -debug` now works as intended (blocking)
+- allow environment variables being passed when started in debug mode
+
+
+---
+
+[//]: # (END_SECTION 2485a964ccf7d5eab5c719d9fe1d24221e79ff41)
+[//]: # (START_SECTION 37fe6c03ed7e798119732367dc1896fa93d3182f)
+### Fix Record Routing for Some NAT Scenarios
+
+> Commit: [37fe6c03ed7e798119732367dc1896fa93d3182f](https://github.com/dOpensource/dsiprouter/commit/37fe6c03ed7e798119732367dc1896fa93d3182f)  
+> Date: Tue, 8 Jul 2025 13:16:09 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 37fe6c03ed7e798119732367dc1896fa93d3182f)
+[//]: # (START_SECTION 49ba3a7b761ef8f7c71de501c66bdadeeddc70ac)
+### Resolves #640
+
+> Commit: [49ba3a7b761ef8f7c71de501c66bdadeeddc70ac](https://github.com/dOpensource/dsiprouter/commit/49ba3a7b761ef8f7c71de501c66bdadeeddc70ac)  
+> Date: Tue, 11 Mar 2025 11:51:05 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 49ba3a7b761ef8f7c71de501c66bdadeeddc70ac)
+[//]: # (START_SECTION 5995b5b7296506b72e5863aba07d1343acb9e113)
+### Resolves #637
+
+> Commit: [5995b5b7296506b72e5863aba07d1343acb9e113](https://github.com/dOpensource/dsiprouter/commit/5995b5b7296506b72e5863aba07d1343acb9e113)  
+> Date: Thu, 13 Mar 2025 13:21:33 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5995b5b7296506b72e5863aba07d1343acb9e113)
+[//]: # (START_SECTION 23b1395497f61ec9a8f60ab63dd394397e1866b6)
+### Fix Typos in Deb12 DnsMasq Install
+
+> Commit: [23b1395497f61ec9a8f60ab63dd394397e1866b6](https://github.com/dOpensource/dsiprouter/commit/23b1395497f61ec9a8f60ab63dd394397e1866b6)  
+> Date: Thu, 20 Mar 2025 12:04:50 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 23b1395497f61ec9a8f60ab63dd394397e1866b6)
+[//]: # (START_SECTION 3007c0e8499cc95673704a420dee938dd424ef9e)
+### Fix Amzn2 RTPEngine Install
+
+> Commit: [3007c0e8499cc95673704a420dee938dd424ef9e](https://github.com/dOpensource/dsiprouter/commit/3007c0e8499cc95673704a420dee938dd424ef9e)  
+> Date: Wed, 9 Apr 2025 08:24:31 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- bump rtpengine to mr11.5.1.11
+- update dependencies
+
+
+---
+
+[//]: # (END_SECTION 3007c0e8499cc95673704a420dee938dd424ef9e)
+[//]: # (START_SECTION e1e287dd579ff03c0407b90d047d76e10a2ad52f)
+### Fix Amzn2 Kamailio Install
+
+> Commit: [e1e287dd579ff03c0407b90d047d76e10a2ad52f](https://github.com/dOpensource/dsiprouter/commit/e1e287dd579ff03c0407b90d047d76e10a2ad52f)  
+> Date: Mon, 7 Apr 2025 13:56:51 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e1e287dd579ff03c0407b90d047d76e10a2ad52f)
+[//]: # (START_SECTION 8f427d4f46d64c4ead9c32402d56f509f63850c9)
+### Fix AWS Image Creation
+
+> Commit: [8f427d4f46d64c4ead9c32402d56f509f63850c9](https://github.com/dOpensource/dsiprouter/commit/8f427d4f46d64c4ead9c32402d56f509f63850c9)  
+> Date: Tue, 1 Apr 2025 14:54:49 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+- various updates to cleanup logic for golden images
+- add support for `dnf` in cloud build scripts
+
+
+---
+
+[//]: # (END_SECTION 8f427d4f46d64c4ead9c32402d56f509f63850c9)
+[//]: # (START_SECTION 155f1594e37d88e14dc9699cc75cba04f3d6b2f0)
+### Update Demo API Token
+
+> Commit: [155f1594e37d88e14dc9699cc75cba04f3d6b2f0](https://github.com/dOpensource/dsiprouter/commit/155f1594e37d88e14dc9699cc75cba04f3d6b2f0)  
+> Date: Tue, 11 Mar 2025 13:30:00 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 155f1594e37d88e14dc9699cc75cba04f3d6b2f0)
+[//]: # (START_SECTION ababcdd35782a7234b14e9a8c9630e2127bfc52e)
+### Add Support for Upgrading to v0.78 (#674)
+
+> Commit: [ababcdd35782a7234b14e9a8c9630e2127bfc52e](https://github.com/dOpensource/dsiprouter/commit/ababcdd35782a7234b14e9a8c9630e2127bfc52e)  
+> Date: Thu, 3 Jul 2025 11:17:04 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+- * Add Support for Upgrading to v0.78
+- * Fix Multiple Settings Effected by Updates
+- fixes `setConfigAttrib()` matching other settings partially
+
+
+---
+
+[//]: # (END_SECTION ababcdd35782a7234b14e9a8c9630e2127bfc52e)
+[//]: # (START_SECTION 73cb9b23631150873b18c39696018a4f599738a9)
+### Add FusionPBX Provisioning Permissions to chown Subcommand
+
+> Commit: [73cb9b23631150873b18c39696018a4f599738a9](https://github.com/dOpensource/dsiprouter/commit/73cb9b23631150873b18c39696018a4f599738a9)  
+> Date: Thu, 3 Jul 2025 07:50:02 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 73cb9b23631150873b18c39696018a4f599738a9)
+[//]: # (START_SECTION 303bf86be04320131b8fce613e19aa71dfd7ce75)
+### Version and logo update
+
+> Commit: [303bf86be04320131b8fce613e19aa71dfd7ce75](https://github.com/dOpensource/dsiprouter/commit/303bf86be04320131b8fce613e19aa71dfd7ce75)  
+> Date: Wed, 2 Jul 2025 11:16:53 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 303bf86be04320131b8fce613e19aa71dfd7ce75)
+[//]: # (START_SECTION 52e07933e0845f85c95c6c05af3e4a7b9ad3f2c2)
+### Fix from merge
+
+> Commit: [52e07933e0845f85c95c6c05af3e4a7b9ad3f2c2](https://github.com/dOpensource/dsiprouter/commit/52e07933e0845f85c95c6c05af3e4a7b9ad3f2c2)  
+> Date: Sun, 29 Jun 2025 01:28:43 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 52e07933e0845f85c95c6c05af3e4a7b9ad3f2c2)
+[//]: # (START_SECTION a39ef41fa5eb058903ca03f8b923570aac7ff15a)
+### Added changes for WebRTC fixes: #666
+
+> Commit: [a39ef41fa5eb058903ca03f8b923570aac7ff15a](https://github.com/dOpensource/dsiprouter/commit/a39ef41fa5eb058903ca03f8b923570aac7ff15a)  
+> Date: Sun, 29 Jun 2025 01:16:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a39ef41fa5eb058903ca03f8b923570aac7ff15a)
+[//]: # (START_SECTION 3dd1156097fefd98be296dc312bbc03eb3c58002)
+### Added a commit to allow WebRTC clients using PassThru auth to automatically translate secure SDP into non-secure SDP if the Media setting on the endpoint is proxy
+
+> Commit: [3dd1156097fefd98be296dc312bbc03eb3c58002](https://github.com/dOpensource/dsiprouter/commit/3dd1156097fefd98be296dc312bbc03eb3c58002)  
+> Date: Sat, 28 Jun 2025 00:38:07 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3dd1156097fefd98be296dc312bbc03eb3c58002)
+[//]: # (START_SECTION fd1696c6f460afdac86e5e56414b975ecc3c37ec)
+### Added support for OnHold
+
+> Commit: [fd1696c6f460afdac86e5e56414b975ecc3c37ec](https://github.com/dOpensource/dsiprouter/commit/fd1696c6f460afdac86e5e56414b975ecc3c37ec)  
+> Date: Fri, 23 May 2025 04:58:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fd1696c6f460afdac86e5e56414b975ecc3c37ec)
+[//]: # (START_SECTION 0717ce38b28066de5749decbc3aa65bf65051956)
+### Added logic to handle BYE's and ACK's for WebRTC
+
+> Commit: [0717ce38b28066de5749decbc3aa65bf65051956](https://github.com/dOpensource/dsiprouter/commit/0717ce38b28066de5749decbc3aa65bf65051956)  
+> Date: Thu, 19 Jun 2025 03:10:46 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 0717ce38b28066de5749decbc3aa65bf65051956)
+[//]: # (START_SECTION b580cc323974d7aba05932392940050f14350858)
+### Fixed ACK issue
+
+> Commit: [b580cc323974d7aba05932392940050f14350858](https://github.com/dOpensource/dsiprouter/commit/b580cc323974d7aba05932392940050f14350858)  
+> Date: Fri, 13 Jun 2025 22:36:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b580cc323974d7aba05932392940050f14350858)
+[//]: # (START_SECTION 5c5eb60127bc8b176e933c39f30a60a56d08a312)
+### Added logic in the LOCATION route to make it transport and signaling aware so that calls are properly routed and translated via the RTPENGINE
+
+> Commit: [5c5eb60127bc8b176e933c39f30a60a56d08a312](https://github.com/dOpensource/dsiprouter/commit/5c5eb60127bc8b176e933c39f30a60a56d08a312)  
+> Date: Wed, 11 Jun 2025 21:24:35 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 5c5eb60127bc8b176e933c39f30a60a56d08a312)
+[//]: # (START_SECTION 49e9c8c9f4ab16572259a178182437a5b8ef44d8)
+### Added support for OnHold
+
+> Commit: [49e9c8c9f4ab16572259a178182437a5b8ef44d8](https://github.com/dOpensource/dsiprouter/commit/49e9c8c9f4ab16572259a178182437a5b8ef44d8)  
+> Date: Fri, 23 May 2025 04:58:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 49e9c8c9f4ab16572259a178182437a5b8ef44d8)
+[//]: # (START_SECTION b46787c059a00d4a8b17a957df3f696f3dad682d)
+### Added a flag that would trigger RTPENGINEANSER
+
+> Commit: [b46787c059a00d4a8b17a957df3f696f3dad682d](https://github.com/dOpensource/dsiprouter/commit/b46787c059a00d4a8b17a957df3f696f3dad682d)  
+> Date: Fri, 16 May 2025 22:02:40 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b46787c059a00d4a8b17a957df3f696f3dad682d)
+[//]: # (START_SECTION e606c4765084386cf03740c99cb8916bcc78f7f3)
+### Added a commit to allow WebRTC clients using PassThru auth to automatically translate secure SDP into non-secure SDP if the Media setting on the endpoint is proxy
+
+> Commit: [e606c4765084386cf03740c99cb8916bcc78f7f3](https://github.com/dOpensource/dsiprouter/commit/e606c4765084386cf03740c99cb8916bcc78f7f3)  
+> Date: Sat, 28 Jun 2025 00:38:07 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e606c4765084386cf03740c99cb8916bcc78f7f3)
+[//]: # (START_SECTION 17a10889ddc23eee8f9392319fee27e6401bcb70)
+### Added support for OnHold
+
+> Commit: [17a10889ddc23eee8f9392319fee27e6401bcb70](https://github.com/dOpensource/dsiprouter/commit/17a10889ddc23eee8f9392319fee27e6401bcb70)  
+> Date: Fri, 23 May 2025 04:58:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 17a10889ddc23eee8f9392319fee27e6401bcb70)
+[//]: # (START_SECTION 08ea093039491b124b09bd4b21f63fd629019afd)
+### Revert "Location Lookup Improvements"
+
+> Commit: [08ea093039491b124b09bd4b21f63fd629019afd](https://github.com/dOpensource/dsiprouter/commit/08ea093039491b124b09bd4b21f63fd629019afd)  
+> Date: Fri, 27 Jun 2025 01:14:36 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- This reverts commit a85ae0c02f89bcf0539c56201a58e5d01585f062.
+
+
+---
+
+[//]: # (END_SECTION 08ea093039491b124b09bd4b21f63fd629019afd)
+[//]: # (START_SECTION 9e2e812346a002b11e66ef6bd87ce72e130b198d)
+### Revert "Revert Carrier Redial Location Lookup"
+
+> Commit: [9e2e812346a002b11e66ef6bd87ce72e130b198d](https://github.com/dOpensource/dsiprouter/commit/9e2e812346a002b11e66ef6bd87ce72e130b198d)  
+> Date: Fri, 27 Jun 2025 01:14:33 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- This reverts commit f298cc3ba4118807586579090c473df2035189e5.
+
+
+---
+
+[//]: # (END_SECTION 9e2e812346a002b11e66ef6bd87ce72e130b198d)
+[//]: # (START_SECTION f298cc3ba4118807586579090c473df2035189e5)
+### Revert Carrier Redial Location Lookup
+
+> Commit: [f298cc3ba4118807586579090c473df2035189e5](https://github.com/dOpensource/dsiprouter/commit/f298cc3ba4118807586579090c473df2035189e5)  
+> Date: Thu, 26 Jun 2025 13:14:15 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- too close to release, reverting this extra feature
+
+
+---
+
+[//]: # (END_SECTION f298cc3ba4118807586579090c473df2035189e5)
+[//]: # (START_SECTION a85ae0c02f89bcf0539c56201a58e5d01585f062)
+### Location Lookup Improvements
+
+> Commit: [a85ae0c02f89bcf0539c56201a58e5d01585f062](https://github.com/dOpensource/dsiprouter/commit/a85ae0c02f89bcf0539c56201a58e5d01585f062)  
+> Date: Thu, 26 Jun 2025 13:03:51 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- Resolves #669
+- allow phones on other side of carrier to redial a registered device
+- remove local exten length check and continue routing if no device found
+
+
+---
+
+[//]: # (END_SECTION a85ae0c02f89bcf0539c56201a58e5d01585f062)
+[//]: # (START_SECTION fbd0f7c84e4cd66e7f0d694a965abc259f333683)
+### - Added logic to properly enable the RTPEngine on 200OK's - fixed #661 - Added logic to correctly process Extension to Extension calls that use Domain Routing
+
+> Commit: [fbd0f7c84e4cd66e7f0d694a965abc259f333683](https://github.com/dOpensource/dsiprouter/commit/fbd0f7c84e4cd66e7f0d694a965abc259f333683)  
+> Date: Thu, 26 Jun 2025 18:11:06 +0000  
+> Author: root (root@ip-172-31-53-209)  
+> Committer: root (root@ip-172-31-53-209)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fbd0f7c84e4cd66e7f0d694a965abc259f333683)
+[//]: # (START_SECTION a638bc71661c89be5881a9d776b9f73a6ad0af97)
+### Updated device provisioning documentation
+
+> Commit: [a638bc71661c89be5881a9d776b9f73a6ad0af97](https://github.com/dOpensource/dsiprouter/commit/a638bc71661c89be5881a9d776b9f73a6ad0af97)  
+> Date: Sun, 22 Jun 2025 07:59:26 -0400  
+> Author: Mack Hendricks (mhendricks@sangoma.com)  
+> Committer: Mack Hendricks (mhendricks@sangoma.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a638bc71661c89be5881a9d776b9f73a6ad0af97)
+[//]: # (START_SECTION 952f0655d49ad7ab60c106b4f108945070b7c8eb)
+### Moves nginx changes to the FusionPBX module install script
+
+> Commit: [952f0655d49ad7ab60c106b4f108945070b7c8eb](https://github.com/dOpensource/dsiprouter/commit/952f0655d49ad7ab60c106b4f108945070b7c8eb)  
+> Date: Thu, 19 Jun 2025 21:50:24 +0000  
+> Author: root (root@mack.test.dsiprouter.net)  
+> Committer: root (root@mack.test.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 952f0655d49ad7ab60c106b4f108945070b7c8eb)
+[//]: # (START_SECTION a058f7f1054f5c65c330f0424e732ce6861793bc)
+### Added logic to write out the Nginx configuration for FusionPBX Provisioning within the /etc/nginx/sites-enabled directory
+
+> Commit: [a058f7f1054f5c65c330f0424e732ce6861793bc](https://github.com/dOpensource/dsiprouter/commit/a058f7f1054f5c65c330f0424e732ce6861793bc)  
+> Date: Thu, 19 Jun 2025 21:13:05 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a058f7f1054f5c65c330f0424e732ce6861793bc)
+[//]: # (START_SECTION f3993379b9ba18b9b4a26eba2611c03ac64b568f)
+### Added logic to handle BYE's and ACK's for WebRTC
+
+> Commit: [f3993379b9ba18b9b4a26eba2611c03ac64b568f](https://github.com/dOpensource/dsiprouter/commit/f3993379b9ba18b9b4a26eba2611c03ac64b568f)  
+> Date: Thu, 19 Jun 2025 03:10:46 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f3993379b9ba18b9b4a26eba2611c03ac64b568f)
+[//]: # (START_SECTION febc0d9073bf1834e0fc13dbaf893cb9179a82d6)
+### Fixed ACK issue
+
+> Commit: [febc0d9073bf1834e0fc13dbaf893cb9179a82d6](https://github.com/dOpensource/dsiprouter/commit/febc0d9073bf1834e0fc13dbaf893cb9179a82d6)  
+> Date: Fri, 13 Jun 2025 22:36:03 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION febc0d9073bf1834e0fc13dbaf893cb9179a82d6)
+[//]: # (START_SECTION 01171453f8bfe861f37aceb332ada09057ad4b59)
+### Added logic in the LOCATION route to make it transport and signaling aware so that calls are properly routed and translated via the RTPENGINE
+
+> Commit: [01171453f8bfe861f37aceb332ada09057ad4b59](https://github.com/dOpensource/dsiprouter/commit/01171453f8bfe861f37aceb332ada09057ad4b59)  
+> Date: Wed, 11 Jun 2025 21:24:35 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 01171453f8bfe861f37aceb332ada09057ad4b59)
+[//]: # (START_SECTION d61ec9564deeca1999c61f0683af50bf8b74730d)
+### Cleaned up xlog comments
+
+> Commit: [d61ec9564deeca1999c61f0683af50bf8b74730d](https://github.com/dOpensource/dsiprouter/commit/d61ec9564deeca1999c61f0683af50bf8b74730d)  
+> Date: Tue, 10 Jun 2025 03:57:09 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION d61ec9564deeca1999c61f0683af50bf8b74730d)
+[//]: # (START_SECTION cdfda0c7319e70217b1d6f5570ba7d242e181b4b)
+### Fixing broken edit/delete links on domains
+
+> Commit: [cdfda0c7319e70217b1d6f5570ba7d242e181b4b](https://github.com/dOpensource/dsiprouter/commit/cdfda0c7319e70217b1d6f5570ba7d242e181b4b)  
+> Date: Fri, 6 Jun 2025 23:03:26 -0500  
+> Author: Micah Quinn (micah.quinn@sipiq.com)  
+> Committer: Micah Quinn (micah.quinn@sipiq.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION cdfda0c7319e70217b1d6f5570ba7d242e181b4b)
+[//]: # (START_SECTION fe6dee1e3bb7f94a87dca23d8f78512fbd7c03b7)
+### Added logic to route NOTIFY messages when the RURI contains it's private ip address.  We use the TO header to lookup the real contact address in the location table
+
+> Commit: [fe6dee1e3bb7f94a87dca23d8f78512fbd7c03b7](https://github.com/dOpensource/dsiprouter/commit/fe6dee1e3bb7f94a87dca23d8f78512fbd7c03b7)  
+> Date: Sun, 1 Jun 2025 01:49:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION fe6dee1e3bb7f94a87dca23d8f78512fbd7c03b7)
+[//]: # (START_SECTION 43d053b938a14191b97ce44048a8751021fc6255)
+### Added support for OnHold
+
+> Commit: [43d053b938a14191b97ce44048a8751021fc6255](https://github.com/dOpensource/dsiprouter/commit/43d053b938a14191b97ce44048a8751021fc6255)  
+> Date: Fri, 23 May 2025 04:58:38 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 43d053b938a14191b97ce44048a8751021fc6255)
+[//]: # (START_SECTION 68a2dd685172e2b5521f1b698456b2f0dde077b4)
+### Added some notes around setting up Phone Provisioning when dSIPRouter is being used to proxy FusionPBX UI requests
+
+> Commit: [68a2dd685172e2b5521f1b698456b2f0dde077b4](https://github.com/dOpensource/dsiprouter/commit/68a2dd685172e2b5521f1b698456b2f0dde077b4)  
+> Date: Wed, 21 May 2025 00:16:42 -0400  
+> Author: Mack Hendricks (mhendricks@sangoma.com)  
+> Committer: Mack Hendricks (mhendricks@sangoma.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 68a2dd685172e2b5521f1b698456b2f0dde077b4)
+[//]: # (START_SECTION 4f2a9f8ad407110852092ce543461972687588df)
+### Added a flag that would trigger RTPENGINEANSER
+
+> Commit: [4f2a9f8ad407110852092ce543461972687588df](https://github.com/dOpensource/dsiprouter/commit/4f2a9f8ad407110852092ce543461972687588df)  
+> Date: Fri, 16 May 2025 22:02:40 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4f2a9f8ad407110852092ce543461972687588df)
+[//]: # (START_SECTION 656fbc1c50d503d7f14d13674da597ebc4e1f117)
+### Converted back the commit
+
+> Commit: [656fbc1c50d503d7f14d13674da597ebc4e1f117](https://github.com/dOpensource/dsiprouter/commit/656fbc1c50d503d7f14d13674da597ebc4e1f117)  
+> Date: Wed, 14 May 2025 20:45:37 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 656fbc1c50d503d7f14d13674da597ebc4e1f117)
+[//]: # (START_SECTION 186f48f0d295f28527564a3dc3103cab8993f65c)
+### Fixes #660 - Added logic to test if the SIP Dialog was already created.  If so, don't create a new SIP Dialog " Fixes #554 - Confirmed that it's fixed Fixes #545 - Confirmed that it's fixed Fixes #520 - Confirmed that it's fixed
+
+> Commit: [186f48f0d295f28527564a3dc3103cab8993f65c](https://github.com/dOpensource/dsiprouter/commit/186f48f0d295f28527564a3dc3103cab8993f65c)  
+> Date: Wed, 14 May 2025 20:35:30 +0000  
+> Author: root (root@demo.test.dsiprouter.net)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 186f48f0d295f28527564a3dc3103cab8993f65c)
+[//]: # (START_SECTION 2b76d501e66b0b22acc911e944f24ca09588cbd7)
+### Fixes #660 - Added logic to test if the SIP Dialog was already created.  If so, don't create a new SIP Dialog " Fixes #554 - Confirmed that it's fixed Fixes #545 - Confirmed that it's fixed Fixes #520 - Confirmed that it's fixed
+
+> Commit: [2b76d501e66b0b22acc911e944f24ca09588cbd7](https://github.com/dOpensource/dsiprouter/commit/2b76d501e66b0b22acc911e944f24ca09588cbd7)  
+> Date: Wed, 14 May 2025 20:35:30 +0000  
+> Author: root (root@demo.test.dsiprouter.net)  
+> Committer: root (root@demo.test.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2b76d501e66b0b22acc911e944f24ca09588cbd7)
+[//]: # (START_SECTION 9b1cab3e12f978ae79c7317b530881a1c6cbe8ae)
+### Fixes: - Fixed the contact so that the transport parameter is changed based on the destination - Fixed the Path header so that the transport parameter is defined based on the destination
+
+> Commit: [9b1cab3e12f978ae79c7317b530881a1c6cbe8ae](https://github.com/dOpensource/dsiprouter/commit/9b1cab3e12f978ae79c7317b530881a1c6cbe8ae)  
+> Date: Tue, 22 Apr 2025 02:06:23 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 9b1cab3e12f978ae79c7317b530881a1c6cbe8ae)
+[//]: # (START_SECTION 6fc2548389b0c6672f9141baf4e53e71bc297184)
+### Fixed issue with RE-INVITES from a Carrier to MSTeam causes a 488 from MSTeams with this error message: 'CannotChangeRtcpMultiplexing, InternalErrorPhrase: Cannot change RTCP multiplexing from existing active media'
+
+> Commit: [6fc2548389b0c6672f9141baf4e53e71bc297184](https://github.com/dOpensource/dsiprouter/commit/6fc2548389b0c6672f9141baf4e53e71bc297184)  
+> Date: Fri, 18 Apr 2025 00:29:55 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6fc2548389b0c6672f9141baf4e53e71bc297184)
+[//]: # (START_SECTION 3f73914f1225b2836cab1f13e366582a61c183b4)
+### Fixed REMOVE_REFER
+
+> Commit: [3f73914f1225b2836cab1f13e366582a61c183b4](https://github.com/dOpensource/dsiprouter/commit/3f73914f1225b2836cab1f13e366582a61c183b4)  
+> Date: Mon, 7 Apr 2025 13:15:07 -0400  
+> Author: Mack Hendricks (mhendricks@sangoma.com)  
+> Committer: Mack Hendricks (mhendricks@sangoma.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 3f73914f1225b2836cab1f13e366582a61c183b4)
+[//]: # (START_SECTION 6265abc736c8c08348a951da48b643bd67034b0e)
+### Fixed Internal Transfers
+
+> Commit: [6265abc736c8c08348a951da48b643bd67034b0e](https://github.com/dOpensource/dsiprouter/commit/6265abc736c8c08348a951da48b643bd67034b0e)  
+> Date: Mon, 7 Apr 2025 11:25:21 -0400  
+> Author: Mack Hendricks (mhendricks@sangoma.com)  
+> Committer: Mack Hendricks (mhendricks@sangoma.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 6265abc736c8c08348a951da48b643bd67034b0e)
+[//]: # (START_SECTION b57a2a3670df1bf0005a4992f2af073e4d85738a)
+### Fixed issue with MSTeams calls not hanging up properly
+
+> Commit: [b57a2a3670df1bf0005a4992f2af073e4d85738a](https://github.com/dOpensource/dsiprouter/commit/b57a2a3670df1bf0005a4992f2af073e4d85738a)  
+> Date: Sat, 5 Apr 2025 16:50:25 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION b57a2a3670df1bf0005a4992f2af073e4d85738a)
+[//]: # (START_SECTION a977b58eee52a00f10ea32f7e9a05f2222037a3d)
+### Trigger Jenkins build
+
+> Commit: [a977b58eee52a00f10ea32f7e9a05f2222037a3d](https://github.com/dOpensource/dsiprouter/commit/a977b58eee52a00f10ea32f7e9a05f2222037a3d)  
+> Date: Fri, 28 Mar 2025 14:36:48 -0400  
+> Author: chelseatcarter (chelseatcarter@gmail.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a977b58eee52a00f10ea32f7e9a05f2222037a3d)
+[//]: # (START_SECTION f47832ae5061628cef09e3198b7a33525f2cd0d9)
+### Trigger Jenkins build
+
+> Commit: [f47832ae5061628cef09e3198b7a33525f2cd0d9](https://github.com/dOpensource/dsiprouter/commit/f47832ae5061628cef09e3198b7a33525f2cd0d9)  
+> Date: Fri, 28 Mar 2025 14:25:21 -0400  
+> Author: chelseatcarter (chelseatcarter@gmail.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f47832ae5061628cef09e3198b7a33525f2cd0d9)
+[//]: # (START_SECTION f2a522d40e62c96bd1e55de7e098cfda9c98fbfe)
+### Fixed Issues - REGISTER will now follow the signal settings in the endpoint group for domain routing.  Fixes #656 - Fixed an issue with the REPLACE_CONTACT_DOMAIN route, the semi-colon was missing in the protocal portion of the contact
+
+> Commit: [f2a522d40e62c96bd1e55de7e098cfda9c98fbfe](https://github.com/dOpensource/dsiprouter/commit/f2a522d40e62c96bd1e55de7e098cfda9c98fbfe)  
+> Date: Fri, 28 Mar 2025 16:03:43 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f2a522d40e62c96bd1e55de7e098cfda9c98fbfe)
+[//]: # (START_SECTION 92176ca0a908d5a778cb9a1081d7bd3a80df719c)
+### WIP on SUBSCRIBE Interdomain Messaging
+
+> Commit: [92176ca0a908d5a778cb9a1081d7bd3a80df719c](https://github.com/dOpensource/dsiprouter/commit/92176ca0a908d5a778cb9a1081d7bd3a80df719c)  
+> Date: Wed, 12 Mar 2025 15:13:32 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- fix POSIX REGEX check on Contact
+- remove non-useful domain code on PUBLISH
+
+
+---
+
+[//]: # (END_SECTION 92176ca0a908d5a778cb9a1081d7bd3a80df719c)
+[//]: # (START_SECTION 50380c10d0fbeb07295d13cde20aa6ac0a221def)
+### Fixes for Domain Routing Use Cases
+
+> Commit: [50380c10d0fbeb07295d13cde20aa6ac0a221def](https://github.com/dOpensource/dsiprouter/commit/50380c10d0fbeb07295d13cde20aa6ac0a221def)  
+> Date: Tue, 11 Mar 2025 14:25:41 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- resolves #622
+- fix Contact on REGISTER, SUBSCRIBE, and PUBLISH
+- use dispatcher routes for presence when a domain is matched
+
+
+---
+
+[//]: # (END_SECTION 50380c10d0fbeb07295d13cde20aa6ac0a221def)
+[//]: # (START_SECTION e6cbcdbf74426a74a890a97cd5a1ef93813eda99)
+### Fixed issues for MSTeams: - Fixed internal transfers - Fixed issue with hangups when initiated from the carrier side
+
+> Commit: [e6cbcdbf74426a74a890a97cd5a1ef93813eda99](https://github.com/dOpensource/dsiprouter/commit/e6cbcdbf74426a74a890a97cd5a1ef93813eda99)  
+> Date: Thu, 3 Apr 2025 09:10:31 -0400  
+> Author: Mack Hendricks (mhendricks@sangoma.com)  
+> Committer: Mack Hendricks (mhendricks@sangoma.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION e6cbcdbf74426a74a890a97cd5a1ef93813eda99)
+[//]: # (START_SECTION 14712ee1e39628bc178d8591e22d8fc6b355a21d)
+### Trigger Jenkins build
+
+> Commit: [14712ee1e39628bc178d8591e22d8fc6b355a21d](https://github.com/dOpensource/dsiprouter/commit/14712ee1e39628bc178d8591e22d8fc6b355a21d)  
+> Date: Fri, 28 Mar 2025 14:36:48 -0400  
+> Author: chelseatcarter (chelseatcarter@gmail.com)  
+> Committer: chelseatcarter (chelseatcarter@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 14712ee1e39628bc178d8591e22d8fc6b355a21d)
+[//]: # (START_SECTION 7a264c878a5440330ee03bccc501ea83c4fa33bb)
+### Trigger Jenkins build
+
+> Commit: [7a264c878a5440330ee03bccc501ea83c4fa33bb](https://github.com/dOpensource/dsiprouter/commit/7a264c878a5440330ee03bccc501ea83c4fa33bb)  
+> Date: Fri, 28 Mar 2025 14:25:21 -0400  
+> Author: chelseatcarter (chelseatcarter@gmail.com)  
+> Committer: chelseatcarter (chelseatcarter@gmail.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 7a264c878a5440330ee03bccc501ea83c4fa33bb)
+[//]: # (START_SECTION 2ab2a009610830601e70476cea99ec7d867ae181)
+### Fixed Issues - REGISTER will now follow the signal settings in the endpoint group for domain routing.  Fixes #656 - Fixed an issue with the REPLACE_CONTACT_DOMAIN route, the semi-colon was missing in the protocal portion of the contact
+
+> Commit: [2ab2a009610830601e70476cea99ec7d867ae181](https://github.com/dOpensource/dsiprouter/commit/2ab2a009610830601e70476cea99ec7d867ae181)  
+> Date: Fri, 28 Mar 2025 16:03:43 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 2ab2a009610830601e70476cea99ec7d867ae181)
+[//]: # (START_SECTION 36eb14bf4f109b1db9e11497f036f7768669a8bd)
+### WIP on SUBSCRIBE Interdomain Messaging
+
+> Commit: [36eb14bf4f109b1db9e11497f036f7768669a8bd](https://github.com/dOpensource/dsiprouter/commit/36eb14bf4f109b1db9e11497f036f7768669a8bd)  
+> Date: Wed, 12 Mar 2025 15:13:32 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- fix POSIX REGEX check on Contact
+- remove non-useful domain code on PUBLISH
+
+
+---
+
+[//]: # (END_SECTION 36eb14bf4f109b1db9e11497f036f7768669a8bd)
+[//]: # (START_SECTION bda6aadd069dbdf2027b782e81a83af66e7e890a)
+### Fixes for Domain Routing Use Cases
+
+> Commit: [bda6aadd069dbdf2027b782e81a83af66e7e890a](https://github.com/dOpensource/dsiprouter/commit/bda6aadd069dbdf2027b782e81a83af66e7e890a)  
+> Date: Tue, 11 Mar 2025 14:25:41 -0600  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- resolves #622
+- fix Contact on REGISTER, SUBSCRIBE, and PUBLISH
+- use dispatcher routes for presence when a domain is matched
+
+
+---
+
+[//]: # (END_SECTION bda6aadd069dbdf2027b782e81a83af66e7e890a)
+[//]: # (START_SECTION 5d95510edf523ea0be6d417ff69360f77eb610e6)
+### Fix DNSmasq Install for Debian
+
+> Commit: [5d95510edf523ea0be6d417ff69360f77eb610e6](https://github.com/dOpensource/dsiprouter/commit/5d95510edf523ea0be6d417ff69360f77eb610e6)  
+> Date: Wed, 5 Mar 2025 15:59:35 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 5d95510edf523ea0be6d417ff69360f77eb610e6)
+[//]: # (START_SECTION 223522fe8e8011377b663409529bf04eb74cf1da)
+### Fixes #646: Set a default value of 1 for rweight when an endpoint is created
+
+> Commit: [223522fe8e8011377b663409529bf04eb74cf1da](https://github.com/dOpensource/dsiprouter/commit/223522fe8e8011377b663409529bf04eb74cf1da)  
+> Date: Mon, 17 Mar 2025 23:15:18 +0000  
+> Author: root (root@sbc1.customers.dsiprouter.net)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 223522fe8e8011377b663409529bf04eb74cf1da)
+[//]: # (START_SECTION 96e17cb5f60b07b90c0f62639b5239e7e1e08873)
+### Added DLGURI back into the config
+
+> Commit: [96e17cb5f60b07b90c0f62639b5239e7e1e08873](https://github.com/dOpensource/dsiprouter/commit/96e17cb5f60b07b90c0f62639b5239e7e1e08873)  
+> Date: Mon, 3 Mar 2025 23:17:28 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 96e17cb5f60b07b90c0f62639b5239e7e1e08873)
+[//]: # (START_SECTION c9131b49277ad01931aa7fd19e56bf85a4b37e79)
+### Revert "Removed duplicate route that was added in during merge from QA"
+
+> Commit: [c9131b49277ad01931aa7fd19e56bf85a4b37e79](https://github.com/dOpensource/dsiprouter/commit/c9131b49277ad01931aa7fd19e56bf85a4b37e79)  
+> Date: Mon, 3 Mar 2025 22:45:27 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- This reverts commit 4f23a2e1158d415856c027cc516069d4be7b0b2f.
+
+
+---
+
+[//]: # (END_SECTION c9131b49277ad01931aa7fd19e56bf85a4b37e79)
+[//]: # (START_SECTION a106f645bebbd0f39f073f2dad55bf8ad5733463)
+### Revert "Merge branch 'master' into qa"
+
+> Commit: [a106f645bebbd0f39f073f2dad55bf8ad5733463](https://github.com/dOpensource/dsiprouter/commit/a106f645bebbd0f39f073f2dad55bf8ad5733463)  
+> Date: Mon, 3 Mar 2025 22:38:45 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+- This reverts commit ffbc368d783e83ae47809ef7cadad68e7496640f, reversing
+- changes made to e8f8f8c07902241cd86428ab860dde834ba2977a.
+
+
+---
+
+[//]: # (END_SECTION a106f645bebbd0f39f073f2dad55bf8ad5733463)
+[//]: # (START_SECTION 4f23a2e1158d415856c027cc516069d4be7b0b2f)
+### Removed duplicate route that was added in during merge from QA
+
+> Commit: [4f23a2e1158d415856c027cc516069d4be7b0b2f](https://github.com/dOpensource/dsiprouter/commit/4f23a2e1158d415856c027cc516069d4be7b0b2f)  
+> Date: Sun, 2 Mar 2025 04:06:15 +0000  
+> Author: root (root@demo.dsiprouter.net)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4f23a2e1158d415856c027cc516069d4be7b0b2f)
+[//]: # (START_SECTION 4859f366f289a1e8aa03d19fcb902cedba2129d7)
+### Removed duplicate route that was added in during merge from QA
+
+> Commit: [4859f366f289a1e8aa03d19fcb902cedba2129d7](https://github.com/dOpensource/dsiprouter/commit/4859f366f289a1e8aa03d19fcb902cedba2129d7)  
+> Date: Sun, 2 Mar 2025 04:06:15 +0000  
+> Author: root (root@demo.dsiprouter.net)  
+> Committer: root (root@demo.dsiprouter.net)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 4859f366f289a1e8aa03d19fcb902cedba2129d7)
+[//]: # (START_SECTION e8f8f8c07902241cd86428ab860dde834ba2977a)
+### Resolves #633
+
+> Commit: [e8f8f8c07902241cd86428ab860dde834ba2977a](https://github.com/dOpensource/dsiprouter/commit/e8f8f8c07902241cd86428ab860dde834ba2977a)  
+> Date: Fri, 28 Feb 2025 20:14:40 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION e8f8f8c07902241cd86428ab860dde834ba2977a)
+[//]: # (START_SECTION 8c3d1ec2aec7952602f6c19af5d94648d272257a)
+### PIDF-LO Support: - Fixed the Kamailio configuration so that SIP packets with PIDF-LO messages are properly re-written
+
+> Commit: [8c3d1ec2aec7952602f6c19af5d94648d272257a](https://github.com/dOpensource/dsiprouter/commit/8c3d1ec2aec7952602f6c19af5d94648d272257a)  
+> Date: Fri, 28 Feb 2025 14:12:28 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 8c3d1ec2aec7952602f6c19af5d94648d272257a)
+[//]: # (START_SECTION ce9efc694149c243243e366d9303f12a6ff21090)
 ### Improved CDR Handling
 
-> Commit: [aa4857a93511208c2c7ba3e5ec7ac299d90471b7](https://github.com/dOpensource/dsiprouter/commit/aa4857a93511208c2c7ba3e5ec7ac299d90471b7)  
+> Commit: [ce9efc694149c243243e366d9303f12a6ff21090](https://github.com/dOpensource/dsiprouter/commit/ce9efc694149c243243e366d9303f12a6ff21090)  
 > Date: Thu, 27 Feb 2025 16:37:35 -0700  
 > Author: Tyler Moore (tmoore@goflyball.com)  
 > Committer: Tyler Moore (tmoore@goflyball.com)  
@@ -2468,7 +3765,7 @@ END_SECTION COMMITS)
 
 ---
 
-[//]: # (END_SECTION aa4857a93511208c2c7ba3e5ec7ac299d90471b7)
+[//]: # (END_SECTION ce9efc694149c243243e366d9303f12a6ff21090)
 [//]: # (START_SECTION a6690af4543a9458baf971404c7d21d03ec19bb3)
 ### Upgrade from 0.76 to 0.77 (#631)
 
@@ -2484,6 +3781,36 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION a6690af4543a9458baf971404c7d21d03ec19bb3)
+[//]: # (START_SECTION a89c77066094932562cb1aee1ade444c1335b02b)
+### Fixes: - Removed the Microsoft Teams Subscriptions Link from Dashboard - Fixed the Teleblock Screen so that the Enable/Disable button works properly
+
+> Commit: [a89c77066094932562cb1aee1ade444c1335b02b](https://github.com/dOpensource/dsiprouter/commit/a89c77066094932562cb1aee1ade444c1335b02b)  
+> Date: Wed, 26 Feb 2025 11:48:01 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION a89c77066094932562cb1aee1ade444c1335b02b)
+[//]: # (START_SECTION 16e7d16b9aaf5a230f1b4faa2ad032127befbe6e)
+### Fixes: - Fixed BYE on non-MSTeams Calls - Fixed BYE on MSTeams to Carrier calls with the Carrier hanging up
+
+> Commit: [16e7d16b9aaf5a230f1b4faa2ad032127befbe6e](https://github.com/dOpensource/dsiprouter/commit/16e7d16b9aaf5a230f1b4faa2ad032127befbe6e)  
+> Date: Wed, 26 Feb 2025 11:44:39 +0000  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: Mack Hendricks (mack@dopensource.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION 16e7d16b9aaf5a230f1b4faa2ad032127befbe6e)
 [//]: # (START_SECTION db26338c391f2b39463967f03ec2f123cc4c1f56)
 ### Upgrade from 0.76 to 0.77
 
@@ -2590,6 +3917,21 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION 2302d89fd3752bbc6231f9e8131105a04a9f14ac)
+[//]: # (START_SECTION f429ed2052552e1d8ea2c8182ce4825b1432a8e0)
+### Revert "Feature/sbcsignalhandling"
+
+> Commit: [f429ed2052552e1d8ea2c8182ce4825b1432a8e0](https://github.com/dOpensource/dsiprouter/commit/f429ed2052552e1d8ea2c8182ce4825b1432a8e0)  
+> Date: Fri, 21 Feb 2025 16:16:54 -0500  
+> Author: Mack Hendricks (mack@dopensource.com)  
+> Committer: GitHub (noreply@github.com)  
+> Signed:   
+
+
+
+
+---
+
+[//]: # (END_SECTION f429ed2052552e1d8ea2c8182ce4825b1432a8e0)
 [//]: # (START_SECTION 40eac0dbad1c95998ca0b5346187b47abceb1f95)
 ### Fixed issue(s) with MSTeams, which include: - Adding logic to improve REINVITES for MSTeam - Improved signal handling
 
@@ -3098,6 +4440,37 @@ END_SECTION COMMITS)
 ---
 
 [//]: # (END_SECTION cced1d2cd835ca6d546a22b78dcc6d46f2c1a874)
+[//]: # (START_SECTION 357eca71bf3767d10f36b6e2db1249048a399c54)
+### Backport UltraDict Build Fix to Debian-based OS
+
+> Commit: [357eca71bf3767d10f36b6e2db1249048a399c54](https://github.com/dOpensource/dsiprouter/commit/357eca71bf3767d10f36b6e2db1249048a399c54)  
+> Date: Mon, 13 Jan 2025 10:25:40 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+
+
+---
+
+[//]: # (END_SECTION 357eca71bf3767d10f36b6e2db1249048a399c54)
+[//]: # (START_SECTION cd0db1a1f6bf45e09e31ff56e6e3541bd617ea70)
+### Debian12 UltraDict Dependency Fix
+
+> Commit: [cd0db1a1f6bf45e09e31ff56e6e3541bd617ea70](https://github.com/dOpensource/dsiprouter/commit/cd0db1a1f6bf45e09e31ff56e6e3541bd617ea70)  
+> Date: Fri, 8 Nov 2024 13:50:00 -0700  
+> Author: Tyler Moore (tmoore@goflyball.com)  
+> Committer: Tyler Moore (tmoore@goflyball.com)  
+> Signed: Tyler Moore (devopsec) <tmoore@goflyball.com>  
+
+
+- run UltraDict install separate to workaround hanging install
+
+
+---
+
+[//]: # (END_SECTION cd0db1a1f6bf45e09e31ff56e6e3541bd617ea70)
 [//]: # (START_SECTION 8b79cd5e57ee370fe39d8d2234b995c7a0c3667f)
 ### Backport UltraDict Build Fix to Debian-based OS
 
