@@ -16,8 +16,11 @@ We have support for IP and credential based authentication.
 Proxy SIP Endpoint requests to a multi-tenant PBX such as FusionPBX or single-tenant such as FreePBX.
 We have an integration with FusionPBX that make this really easy and scalable!
 
-- **Microsoft Teams Direct Routing:**
+- **Microsoft Teams Direct Routing (Core Subscription Required):**
 We can provide SBC functionality that allows dSIPRouter to interconnect your existing voice infrastructure or VoIP carrier to your Microsoft Teams environment.
+
+- **WebRTC Proxy (Core Subscription Required):**
+We can provide functionality that allows dSIPRouter to register WebRTC clients to PBX's that has extensions being exposed as just UDP and TCP.  Hence, becoming a WebRTC Proxy.
 
 The dSIPRouter UI allows you to manage the platform.  We also make it easy to intergrate dSIPRouter into your existing workflow by using our [API](https://www.postman.com/dopensource/workspace/dsiprouter/overview)
 
