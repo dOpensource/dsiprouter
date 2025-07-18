@@ -886,7 +886,9 @@ function configureSSL() {
 
     # Stop nginx if started so that LetsEncrypt can leverage port 80
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
-        docker stop dsiprouter-nginx 2>/dev/null
+	    if docker ps | grep -q dsiprouter-nginx; then
+	    	docker stop dsiprouter-nginx 2>/dev/null
+	    fi	
     else
         firewall-cmd --zone=public --add-port=80/tcp
     fi
@@ -919,7 +921,9 @@ function configureSSL() {
 
     # Start nginx if dSIP was installed
     if [[ -f "${DSIP_SYSTEM_CONFIG_DIR}/.dsiprouterinstalled" ]]; then
-        docker stop dsiprouter-nginx 2>/dev/null
+	    if docker ps | grep -q dsiprouter-nginx; then
+	    	docker stop dsiprouter-nginx 2>/dev/null
+	    fi	
     else
         firewall-cmd --zone=public --remove-port=80/tcp
     fi
