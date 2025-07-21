@@ -37,7 +37,7 @@ def showWoocommerceError(ex):
     debugException(ex)
     payload = {
         'error': 'woocommerce',
-        'msg': ex.response.json()['data'].get('errors', {}).get('lmfwc_rest_data_error', [''])[0],
+        'msg': str(ex),
         'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'],
         'data': []
     }
@@ -222,7 +222,7 @@ def retrieveLicense():
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except WoocommerceError as ex:
-        showWoocommerceError(ex)
+        return showWoocommerceError(ex)
     except Exception as ex:
         return showApiError(ex)
 

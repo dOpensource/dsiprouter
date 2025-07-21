@@ -22,7 +22,8 @@ class WoocommerceError(requests.HTTPError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     def __str__(self):
-        return '\n'.join(self.response.json()['data']['errors']['lmfwc_rest_data_error'])
+        r_json = self.response.json()
+        return '\n'.join(' '.join(r_json['data']['errors'][k]) for k in r_json['data']['errors'])
 
 class WoocommerceLicense(object):
     # this API key is locked down to only allow functionality below
