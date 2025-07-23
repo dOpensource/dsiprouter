@@ -461,7 +461,11 @@ function validateOSInfo() {
         ;;
     centos)
         case "$DISTRO_VER" in
-        8|9)
+        9)
+            KAM_VERSION=${KAM_VERSION:-"6.0.2"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
+        8)
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;
