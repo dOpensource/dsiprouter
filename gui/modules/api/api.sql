@@ -3,6 +3,7 @@ CREATE TABLE `dsip_endpoint_lease` (
 	  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
 	  `gwid` int(10) unsigned NOT NULL,
 	  `sid` int(10) unsigned NOT NULL,
+	  `addrid` int(10) unsigned NULL,
 	  `expiration` datetime NOT NULL,
 	  PRIMARY KEY (`id`)
 );
