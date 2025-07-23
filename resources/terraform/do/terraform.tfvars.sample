@@ -1,5 +1,6 @@
 pvt_key_path="/Users/mackhendricks/.ssh/dopensource-training"
-dsiprouter_prefix="dev"
+dns_domain="dsiprouter.net"
+dns_hostname="training"
 number_of_environments=1
 pub_key_name="dopensource-training"
 additional_commands="echo"

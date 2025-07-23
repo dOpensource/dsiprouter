@@ -5,10 +5,6 @@ variable "pvt_key_path" {
 variable "pub_key_name" {
 	type=string
 }
-variable "dsiprouter_prefix" {
-	type=string
-	default=""
-}
 
 variable "dns_domain" {
 	type=string
@@ -20,11 +16,6 @@ variable "dns_hostname" {
 	default="demo"
 }
 
-variable "number_of_environments" {
-	type=number
-	default="1"
-}
-
 variable "branch" {
 	type=string
 	default="master"
@@ -33,6 +24,11 @@ variable "branch" {
 variable "pull_request" {
 	type=string
 	default=""
+}
+
+variable "region" {
+	type=string
+	default="tor1"
 }
 
 variable "image" {
