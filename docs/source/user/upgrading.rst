@@ -25,6 +25,22 @@ You can find the new passwords displayed; either on the CLI after completion, or
 .. image:: images/upgrading-log-02.png
         :align: center
 
+Upgrade to 0.78
+--------------------
+
+Upgrading from version 0.77 to 0.78 can be done using the auto upgrade feature via the UI or CLI.
+
+To upgrade using the UI click the "Upgrade Now" button:
+
+.. image:: images/upgrade_available.png
+        :align: center
+
+Or by using the CLI:
+
+.. code-block:: bash
+
+   dsiprouter upgrade -rel 0.78
+
 Upgrade to 0.77
 --------------------
 
