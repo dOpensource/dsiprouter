@@ -647,6 +647,57 @@ function ipv4TestRFC1918() {
 }
 export -f ipv4TestRFC1918
 
+# summary:  test if an IPv4 address is within a subnet
+# usage:    ipv4AddrInSubnet <ip_address> <subnet_cidr>
+# returns:  0 if IP is in subnet, 1 if not, 2 if invalid input
+function ipv4AddrInSubnet() {
+    if (( $# != 2 )); then
+        return 2
+    fi
+
+    # extract network and prefix from subnet
+    local IP_ADDR="$1"
+    local NETWORK=$(echo "$2" | cut -s -d'/' -f1)
+    local PREFIX=$(echo "$2" | cut -s -d'/' -f2)
+
+    # validate input
+    if [[ -z "$NETWORK" || -z "$PREFIX" ]]; then
+        return 2
+    fi
+    if ! ipv4Test "$IP_ADDR" || ! ipv4Test "$NETWORK"; then
+        return 2
+    fi
+    if (( $PREFIX < 0 || $PREFIX > 32 )); then
+        return 2
+    fi
+
+    # convert IP addresses to integers
+    IFS='.' read -r OCT1 OCT2 OCT3 OCT4 <<<"$IP_ADDR"
+    local IP_INT=$(((OCT1 << 24) + (OCT2 << 16) + (OCT3 << 8) + OCT4))
+    IFS='.' read -r OCT1 OCT2 OCT3 OCT4 <<<"$NETWORK"
+    local NET_INT=$(((OCT1 << 24) + (OCT2 << 16) + (OCT3 << 8) + OCT4))
+
+    # check if conversion was successful
+    if [[ -z "$IP_INT" || -z "$NET_INT" ]]; then
+        return 2
+    fi
+
+    # calculate subnet mask
+    local MASK=$((0xFFFFFFFF << (32 - PREFIX) & 0xFFFFFFFF))
+
+    # apply mask to both IPs and compare
+    local IP_MASKED=$((IP_INT & MASK))
+    local NET_MASKED=$((NET_INT & MASK))
+
+    if (( $IP_MASKED == $NET_MASKED )); then
+        return 0
+    else
+        return 1
+    fi
+}
+export -f ipv4AddrInSubnet
+
+
 # output: all physical network interfaces on this machine
 function getPhysicalIfaces() {
     ( cd /sys/class/net && dirname */device; )
@@ -714,10 +765,12 @@ function getIP() {
         -4)
             local IPV4_ENABLED=1
             local IPV6_ENABLED=0
+            shift
             ;;
         -6)
             local IPV4_ENABLED=0
             local IPV6_ENABLED=1
+            shift
             ;;
         *)
             local IPV4_ENABLED=1
@@ -725,31 +778,23 @@ function getIP() {
             ;;
     esac
 
-    # Use the provided interface or get the first interface - other then lo
-    if ! [ -z $2 ]; then
-	    INTERFACE=$2
+    # if the interface is not given its an error
+    if [[ -z "$1" ]]; then
+        return 1
     else
-	    if (( ${IPV6_ENABLED} == 1 )); then
-			INTERFACE=$(ip -br -6 a| grep UP | head -1 | awk {'print $1'})
-	    else
-	    	INTERFACE=$(ip -4 route show default | head -1 | awk '{print $5}')
-	    fi
+        INTERFACE="$1"
     fi
 
     # Get the ip address without depending on DNS
     if (( ${IPV4_ENABLED} == 1 )); then
-        # Marked for removal because it depends on DNS
-		#INTERNAL_IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-		IP=$(ip addr show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+		IP=$(ip -4 address show $INTERFACE | grep 'inet ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
-    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
-        # Marked for removal because it depends on DNS
-        #INTERNAL_IP=$(ip -6 route get $GOOGLE_DNS_IPV6 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
-		IP=$(ip addr show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$IP" ]]; then
+		IP=$(ip -4 address show $INTERFACE | grep 'inet6 ' | awk '{print $2}' | cut -f1 -d'/' | head -1)
     fi
 
-    printf '%s' "$IP"
+    echo "$IP"
 }
 export -f getIP
 
@@ -858,17 +903,18 @@ export -f getExternalFQDN
 # notes: prints internal CIDR address, or empty string if not available
 # notes: tries ipv4 first then ipv6
 function getInternalCIDR() {
-    local PREFIX_LEN="" DEF_IFACE="" INTERNAL_IP=""
-    #local IP=$(ip -4 route get $GOOGLE_DNS_IPV4 2>/dev/null | head -1 | grep -oP 'src \K([^\s]+)')
+    local CIDR="" INTERFACE="" INT_IP=""
 
     case "$1" in
         -4)
             local IPV4_ENABLED=1
             local IPV6_ENABLED=0
+            shift
             ;;
         -6)
             local IPV4_ENABLED=0
             local IPV6_ENABLED=1
+            shift
             ;;
         *)
             local IPV4_ENABLED=1
@@ -876,34 +922,41 @@ function getInternalCIDR() {
             ;;
     esac
     
-    if ! [ -z $2 ]; then
-	    INTERFACE=$2
+    if [[ -n "$1" ]]; then
+	    INTERFACE="$1"
     fi
 
     if (( ${IPV4_ENABLED} == 1 )); then
-        INTERNAL_IP=$(getIP -4 "$INTERFACE")
-        if [[ -n "$INTERNAL_IP" ]]; then
-			if [[ -n "$INTERFACE" ]]; then
-				DEF_IFACE=$INTERFACE
-			else
-				DEF_IFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-			fi
-			PREFIX_LEN=$(ip -4 route list | grep "$INTERNAL_IP" | perl -e 'while (<>) { if (s%^(?!0\.0\.0\.0|default).*/(\d+) .*src [\w/.]*.*$%\1%) { print; exit; } }')
+        # use the default IPv4 interface if not given
+        if [[ -z "$INTERFACE" ]]; then
+            INTERFACE=$(ip -4 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:0\.0\.0\.0|default).*dev (\w+).*$%\1%) { print; exit; } }')
+        fi
+        CIDR=$(ip -4 address show "$INTERFACE" | grep 'inet ' | awk '{print $2}' | head -1)
+        if [[ -n "$CIDR" ]]; then
+            INT_IP=$(cut -s -d'/' -f1 <<<"$CIDR")
+            # some administrators will manage network routes external to the system and assign a /32 address to the interface
+            # in this case we default to the corresponding RFC 1918 subnet for that address (the whole subnet)
+            if ipv4TestRFC1918 "$INT_IP"; then
+                for RFC1918_CIDR in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16; do
+                    if ipv4AddrInSubnet "$INT_IP" "$RFC1918_CIDR"; then
+                        CIDR="$RFC1918_CIDR"
+                        break
+                    fi
+                done
+            fi
         fi
     fi
 
-    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$INTERNAL_IP" ]]; then
-        INTERNAL_IP=$(getInternalIP -6)
-        if [[ -n "$INTERNAL_IP" ]]; then
-            DEF_IFACE=$(ip -6 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:::/0|default).*dev (\w+).*$%\1%) { print; exit; } }')
-            PREFIX_LEN=$(ip -6 route list 2>/dev/null | grep "dev $DEF_IFACE" | perl -e 'while (<>) { if (s%^(?!::/0|default).*/(\d+) .*via [\w:/.]*.*$%\1%) { print; exit; } }')
+    if (( ${IPV6_ENABLED} == 1 )) && [[ -z "$CIDR" ]]; then
+        # use the default IPv6 interface if not given
+        if [[ -z "$INTERFACE" ]]; then
+            INTERFACE=$(ip -6 route list scope global 2>/dev/null | perl -e 'while (<>) { if (s%^(?:::/0|default).*dev (\w+).*$%\1%) { print; exit; } }')
         fi
+        CIDR=$(ip -4 address show "$INTERFACE" | grep 'inet ' | awk '{print $2}' | head -1)
+        # TODO: check for /128 addresses (similar to above for ipv4 addresses)
     fi
 
-    # make sure output is empty if error occurred
-    if [[ -n "$INTERNAL_IP" && -n "$PREFIX_LEN" ]]; then
-        printf '%s/%s' "$INTERNAL_IP" "$PREFIX_LEN"
-    fi
+    echo "$CIDR"
 }
 export -f getInternalCIDR
 
