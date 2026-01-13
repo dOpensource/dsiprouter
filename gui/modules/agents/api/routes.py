@@ -26,6 +26,7 @@ def _map_payload_to_agent(payload):
     mapped['guardrails'] = payload.get('agent-guardrails', payload.get('guardrails', ''))
     mapped['tools'] = payload.get('agent-tools', payload.get('tools', ''))
     mapped['callback_email'] = payload.get('agent-callback-email', payload.get('callback_email', ''))
+    mapped['did_mappings'] = payload.get('agent-did-mapping', payload.get('did_mappings', ''))
     mapped['deployment_type'] = payload.get('agent-deployment-type', payload.get('deployment_type', ''))
     mapped['deployment_profile_id'] = payload.get('agent-deployment-profile-id', payload.get('deployment_profile_id', 0)) or 0
     return mapped
@@ -77,8 +78,10 @@ def create_agent():
             instructions=mapped['instructions'],
             instructions_id=int(mapped.get('instructions_id', 0)),
             guardrails=mapped.get('guardrails', ''),
+            training_website=mapped.get('training_website', ''),
             tools=mapped.get('tools', ''),
             callback_email=mapped.get('callback_email', ''),
+            did_mappings=mapped.get('did_mappings', ''),
             deployment_type=mapped.get('deployment_type', ''),
             deployment_profile_id=int(mapped.get('deployment_profile_id', 0)),
         )
