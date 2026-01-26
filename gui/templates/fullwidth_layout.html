@@ -219,6 +219,11 @@
       writable: false,
       value: "{{ settings.DSIP_API_PROTO }}" + "://" + window.location.hostname + ":" + "{{ settings.DSIP_API_PORT }}" + "/api/v1/"
     });
+    Object.defineProperty(window, "CUSTOM_MODULE_API_BASE_URL", {
+      configurable: false,
+      writable: false,
+      value: "{{ settings.DSIP_API_PROTO }}" + "://" + window.location.hostname + ":" + "{{ settings.DSIP_API_PORT }}" + "/api/"
+    });
   </script>
   {{ script_tag('util') }}
   <script type="application/javascript">

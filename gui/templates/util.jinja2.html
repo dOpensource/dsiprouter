@@ -1,5 +1,9 @@
-{%- macro link_tag(location) -%}
+{%- macro link_tag(location, module) -%}
+        {%- if module -%}
+        <link rel="stylesheet" href="/{{ module }}/static/css/{{ location }}.css">
+        {%- else -%}
         <link rel="stylesheet" href="/static/css/{{ location }}.css">
+        {%- endif -%}
 {%- endmacro -%}
 
 {%- macro script_tag(location, module) -%}

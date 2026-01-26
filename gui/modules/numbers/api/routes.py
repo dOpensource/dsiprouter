@@ -158,6 +158,19 @@ def update_number(number_id):
         for key in ('did', 'status', 'carrier', 'pool', 'assigned_length', 'assigned_reference_id', 'assigned_date'):
             if key in payload:
                 setattr(number, key, payload.get(key))
+            if key == 'did' and payload.get('did'):
+                # Check if DID exists
+                existing = db.query(dSIPNumber).filter(
+                    or_(
+                        dSIPNumber.did == payload.get('did'),
+                        dSIPNumber.did == "+" + payload.get('did'),
+                    ),
+                    dSIPNumber.id != number_id
+                ).first()
+                
+                if existing is not None:
+                    raise http_exceptions.Conflict('DID already exists')
+                
         
         # define an assignd_date if the assigned_length is set
         if payload.get('assigned_length'):
