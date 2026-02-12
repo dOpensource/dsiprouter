@@ -24,15 +24,6 @@
   var numbers_table;
 
 
-  // Clear form fields
-  function clearFormFields(selector) {
-    var modal_body = $(selector + ' .modal-body');
-    var forms = modal_body.find('form')
-    forms.each(function () {
-    this.reset();
-    });
-  } 
-
 
  // Add or Update Number
   function addNumber(action) {
@@ -171,6 +162,48 @@
       }
     });
   }
+
+  function bulkDelete() {
+    var ids = [];
+    $('.row-check:checked').each(function() {
+      ids.push(parseInt($(this).val(), 10));
+      console.log("Selected ID for deletion: " + $(this).val());
+    });
+
+    if (ids.length === 0) {
+      showNotification("Bulk Delete Failed: No numbers selected", true);
+      return;     
+    }
+    var requestPayload = {};
+    requestPayload.id = ids;
+
+    $.ajax({
+      type: "DELETE",
+      url: CUSTOM_MODULE_API_BASE_URL + "numbers/v1/number",
+      dataType: "json",
+      contentType: "application/json; charset=utf-8",
+      data: JSON.stringify(requestPayload),
+      success: function(response, textStatus, jqXHR) {
+        $('#bulk-delete').modal('hide');
+
+        // Update Reload buttons
+        //reloadKamRequired(true);
+
+        // Remove deleted rows from table
+        ids.forEach(function(id_int) {
+          numbers_table.row(function(idx, data, node) {
+            return parseInt(data.id, 10) === id_int;
+          }).remove();
+        });
+        numbers_table.draw();
+
+        showNotification("Bulk Delete Successful: Deleted " + response.data.length + " numbers.");
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        showNotification("Bulk Delete Failed: " + jqXHR.responseText, true);
+      }
+    });    
+  } 
 
   function updateNumber() {
     addNumber("PUT");
@@ -314,7 +347,12 @@ $(document).ready(function() {
       selector = "#delete";
       modal_body = $(selector + ' .modal-body');
       id = modal_body.find("input#id").val();
-      deleteNumber(id);
+      if (id) {
+        deleteNumber(id);
+      }
+      else {
+        bulkDelete();
+      }
 
 
       numbers_table.row(function(idx, data, node) {
@@ -339,6 +377,7 @@ $(document).ready(function() {
 
     });
 
+    
     
 
 });  // document ready

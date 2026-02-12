@@ -1,4 +1,4 @@
-;(function(window, document) {
+x;(function(window, document) {
   'use strict';
 
   // throw an error if required functions not defined

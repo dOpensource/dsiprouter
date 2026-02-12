@@ -222,12 +222,14 @@ def delete_numbers_by_dids():
         payload = getRequestData()
         did = payload.get('did')
         dids = payload.get('dids', [])
+        id = payload.get('id', [])
         if did:
             dids = [did]
-        if not dids:
-            raise http_exceptions.BadRequest('did or dids is required')
+        if not dids and not id:
+            raise http_exceptions.BadRequest('did or the id of the did is required')
 
         deleted = []
+        # Delete by DIDs
         for d in dids:
             normalized = d.lstrip('+')
             number = db.query(dSIPNumber).filter(
@@ -240,6 +242,14 @@ def delete_numbers_by_dids():
                 db.delete(number)
                 deleted.append({'did': d, 'id': number.id})
 
+        # Delete by IDs
+        for entry in id:
+            number = db.query(dSIPNumber).filter(dSIPNumber.id == entry).first()
+            if number is not None:
+                db.delete(number)
+                deleted.append({'id': entry, 'did': number.did})   
+            
+        # If nothing deleted, raise not found    
         if not deleted:
             raise http_exceptions.NotFound('No numbers found to delete')
 

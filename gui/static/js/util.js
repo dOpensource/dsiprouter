@@ -212,6 +212,20 @@
   }
 
   /**
+   *  // Clear form fields
+   * @param {String} selector     Modal Element Selector
+   *
+   */
+  window.clearFormFields = function(selector) {
+    var modal_body = $(selector + ' .modal-body');
+    var forms = modal_body.find('form')
+    forms.each(function () {
+      this.reset();
+    });
+  } 
+  
+  
+  /**
    * Show notification in top notification bar
    * @param {String} msg      message to display
    * @param {Boolean} error   whether the notification is an error
