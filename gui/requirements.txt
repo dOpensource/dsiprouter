@@ -16,6 +16,7 @@ josepy
 myst-parser
 mysqlclient
 pem
+psutil
 psycopg2
 psycopg2_binary
 pycryptodome

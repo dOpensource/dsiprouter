@@ -27,6 +27,7 @@ from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
+from util.system import system_info
 from sysloginit import initSyslogLogger
 import settings
 
@@ -35,6 +36,68 @@ api = Blueprint('api', __name__)
 
 # TODO: we need to abstract out common code between gui and api
 
+@api.route("/api/v1/stats", methods=['GET'])
+@api_security
+def getStats():
+    
+    data = {}
+    
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        # Get Kamailio Stats
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
+        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+        if r.status_code >= 400:
+            ex = http_exceptions.HTTPException(r.reason)
+            ex.code = r.status_code
+            raise ex
+        
+        # Only using waiting stat for now, but we can easily add more if needed
+        data['queued_messages'] = r.json()['result']['waiting']
+
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "dlg.stats_active", "id": 1}
+        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+        if r.status_code >= 400:
+            ex = http_exceptions.HTTPException(r.reason)
+            ex.code = r.status_code
+            raise ex
+
+        # Return all active calls (aka dialogs) 
+        data['active_calls'] = r.json()['result']['all']
+
+         # Get UAC Registration Info for both Endpoints and Carrier Groups
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "uac.reg_dump", "id": 1}
+        r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+        if r.status_code >= 400:
+            ex = http_exceptions.HTTPException(r.reason)
+            ex.code = r.status_code
+            raise ex
+        
+        if r.json()['result'] is not None:
+            registrations = r.json()['result']
+            num_of_reg_failures = 0
+            for reg in registrations:
+                if ((reg['flags'] & StatusCodes.UAC_REG_SUCCEEDED)!= StatusCodes.UAC_REG_SUCCEEDED and \
+                                    (reg['flags'] & StatusCodes.UAC_REG_INPROGRESS_WITH_AUTH) != StatusCodes.UAC_REG_INPROGRESS_WITH_AUTH and \
+                                    (reg['flags'] & StatusCodes.UAC_REG_INPROGRESS) != StatusCodes.UAC_REG_INPROGRESS):
+                    num_of_reg_failures += 1
+
+            data['registration_failures'] = num_of_reg_failures
+        else:
+            data['registration_failures'] = 0
+
+        # Get System Version Info
+        data['version'] = system_info()['version']
+
+        return createApiResponse(
+            msg='Successfully retrieved kamailio stats',
+            data=data,
+        )
+
+    except Exception as ex:
+        return showApiError(ex)
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
 @api_security
