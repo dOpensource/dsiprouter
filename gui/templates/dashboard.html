@@ -4,212 +4,6 @@
 
 {% block custom_css %}
   {{ link_tag('dashboard') }}
-  <style>
-    .dashboard-container {
-      padding: 20px;
-    }
-
-    .metric-card {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 140px;
-    }
-
-    .metric-icon {
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-
-    .metric-label {
-      font-size: 14px;
-      color: #666;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .metric-value {
-      font-size: 42px;
-      font-weight: bold;
-      color: #333;
-      text-align: center;
-    }
-
-    .metric-subtitle {
-      font-size: 12px;
-      color: #999;
-      text-align: center;
-      margin-top: 5px;
-    }
-
-    .chart-container {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      position: relative;
-      height: 300px;
-    }
-
-    .chart-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 15px;
-      color: #333;
-    }
-
-    .chart-legend {
-      font-size: 12px;
-      color: #666;
-    }
-
-    .legend-item {
-      display: inline-block;
-      margin-right: 20px;
-      margin-bottom: 10px;
-    }
-
-    .legend-color {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      margin-right: 5px;
-      vertical-align: middle;
-    }
-
-    .status-panel {
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .status-panel-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 15px;
-      color: #333;
-    }
-
-    .status-item {
-      display: flex;
-      align-items: center;
-      padding: 8px 0;
-      font-size: 14px;
-    }
-
-    .status-icon {
-      font-size: 18px;
-      margin-right: 10px;
-      width: 20px;
-      text-align: center;
-    }
-
-    .status-online {
-      color: #5cb85c;
-    }
-
-    .status-error {
-      color: #d9534f;
-    }
-
-    .status-warning {
-      color: #f0ad4e;
-    }
-
-    .endpoint-list {
-      list-style: none;
-      padding: 0;
-    }
-
-    .endpoint-item {
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      font-size: 14px;
-    }
-
-    .endpoint-item:last-child {
-      border-bottom: none;
-    }
-
-    .endpoint-name {
-      font-weight: 500;
-      color: #333;
-    }
-
-    .endpoint-calls {
-      color: #0275d8;
-      text-decoration: none;
-    }
-
-    .endpoint-calls:hover {
-      text-decoration: underline;
-    }
-
-    .alert-item {
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 4px;
-      background-color: #f5f5f5;
-      border-left: 4px solid;
-      font-size: 14px;
-    }
-
-    .alert-error {
-      border-left-color: #d9534f;
-      background-color: #fff5f5;
-    }
-
-    .alert-warning {
-      border-left-color: #f0ad4e;
-      background-color: #fffbf0;
-    }
-
-    .alert-icon {
-      font-size: 16px;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-
-    .alert-title {
-      font-weight: bold;
-      color: #333;
-      display: block;
-      margin-bottom: 4px;
-    }
-
-    .alert-message {
-      color: #666;
-      font-size: 12px;
-    }
-
-    .metric-icon-sip {
-      color: #5cb85c;
-    }
-
-    .metric-icon-queue {
-      color: #f0ad4e;
-    }
-
-    .metric-icon-cps {
-      color: #0275d8;
-    }
-
-    .metric-icon-fail {
-      color: #d9534f;
-    }
-  </style>
 {% endblock %}
 
 {% block body %}
@@ -263,86 +57,62 @@
     <div class="row">
       <div class="col-xs-12 col-md-6">
         <div class="chart-container">
-          <div class="chart-title">SIP Messages Over Time</div>
+          <div class="chart-title">Endpoint Group Messages(Last 4 Hours)</div>
           <div class="chart-legend">
             <div class="legend-item">
               <span class="legend-color" style="background-color: #ff9800;"></span>
-              <span>Incoming Messages</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color" style="background-color: #1976d2;"></span>
-              <span>Outgoing Messages</span>
+              <span>Endpoint Group Messages</span>
             </div>
           </div>
-          <canvas id="messagesChart"></canvas>
+          <div class="chart-canvas">
+            <canvas id="messagesChart"></canvas>
+          </div>
         </div>
       </div>
       <div class="col-xs-12 col-md-6">
         <div class="chart-container">
-          <div class="chart-title">Active Calls & CPS</div>
+          <div class="chart-title">Carrier Group Messages(Last 4 Hours)</div>
           <div class="chart-legend">
             <div class="legend-item">
-              <span class="legend-color" style="background-color: #ff9800;"></span>
-              <span>Calls Per Second</span>
-            </div>
-            <div class="legend-item">
               <span class="legend-color" style="background-color: #1976d2;"></span>
-              <span>CPS</span>
+              <span>Carrier Group Messages</span>
             </div>
           </div>
-          <canvas id="callsChart"></canvas>
+          <div class="chart-canvas">
+            <canvas id="callsChart"></canvas>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Status, Endpoints, Alerts Row -->
+    
     <div class="row">
+
+      <!-- System Status -->
       <div class="col-xs-12 col-md-4">
-        <div class="status-panel">
+        <div class="status-panel" id="status-panel">
           <div class="status-panel-title">System Status</div>
-          <div class="status-item">
-            <span class="status-icon status-online">✓</span>
-            <span>SIP Server: <span id="sip-status">Online</span></span>
-          </div>
-          <div class="status-item">
-            <span class="status-icon status-online">✓</span>
-            <span>Database: <span id="db-status">Connected</span></span>
+          <div id="systems-container">
           </div>
         </div>
       </div>
-      <div class="col-xs-12 col-md-4">
+      
+      <!-- Endpoints -->
+       <div class="col-xs-12 col-md-4">
         <div class="status-panel">
-          <div class="status-panel-title">Top Endpoints</div>
+          <div class="status-panel-title">Top Endpoints Groups</div>
           <ul class="endpoint-list" id="endpoints-list">
-            <li class="endpoint-item">
-              <span class="endpoint-name">PBX-1:</span>
-              <a class="endpoint-calls" href="#" data-toggle="tooltip" title="View calls">324 Calls</a>
-            </li>
-            <li class="endpoint-item">
-              <span class="endpoint-name">Gateway-1:</span>
-              <a class="endpoint-calls" href="#" data-toggle="tooltip" title="View calls">178 Calls</a>
-            </li>
-            <li class="endpoint-item">
-              <span class="endpoint-name">SIP-Client-22:</span>
-              <a class="endpoint-calls" href="#" data-toggle="tooltip" title="View calls">102 Calls</a>
-            </li>
           </ul>
         </div>
       </div>
+
+      
+     
+      <!-- Alerts -->
       <div class="col-xs-12 col-md-4">
         <div class="status-panel">
           <div class="status-panel-title">Alerts</div>
           <div id="alerts-container">
-            <div class="alert-item alert-error">
-              <span class="alert-icon">⚠</span>
-              <span class="alert-title">High Registration Failures</span>
-              <span class="alert-message">8 Errors Last 10 min</span>
-            </div>
-            <div class="alert-item alert-warning">
-              <span class="alert-icon">!</span>
-              <span class="alert-title">High CPU Load</span>
-              <span class="alert-message">CPU Usage 85%</span>
-            </div>
           </div>
         </div>
       </div>

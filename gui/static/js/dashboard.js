@@ -25,11 +25,22 @@
 
     // Fetch stats data from endpoint
     function fetchDashboardStats() {
+
+      // Remove old alerts
+      var alertsContainer = document.getElementById('alerts-container');
+      while (alertsContainer.firstChild) {  
+        alertsContainer.removeChild(alertsContainer.firstChild);
+      }
+
+
       fetch('/api/v1/stats')
         .then(response => response.json())
         .then(results => {
           updateMetrics(results);
-          updateCharts(results);
+          updateCharts(results.data.charts);
+          updateSystemInfo(results.data.components);
+          updateAlerts(results.data.alerts);
+          updateTopEndPointGroups(results.data.topEndpointGroups);
         })
         .catch(error => console.error('Error fetching dashboard stats:', error));
     }
@@ -41,33 +52,6 @@
       document.getElementById('cps-value').textContent = (results.calls_per_second || 0).toFixed(1);
       document.getElementById('reg-failures').textContent = results.data.registration_failures || 0;
 
-      document.getElementById('sip-status').textContent = results.data.sip_server_status || 'Online';
-      document.getElementById('db-status').textContent = results.data.database_status || 'Connected';
-
-      // Update endpoints
-      if (results.data.top_endpoints && results.data.top_endpoints.length > 0) {
-        const endpointsList = document.getElementById('endpoints-list');
-        endpointsList.innerHTML = data.top_endpoints.map(ep =>
-          `<li class="endpoint-item">
-            <span class="endpoint-name">${ep.name}:</span>
-            <a class="endpoint-calls" href="#">${ep.calls} Calls</a>
-          </li>`
-        ).join('');
-      }
-
-      // Update alerts
-      if (results.data.alerts && results.data.alerts.length > 0) {
-        const alertsContainer = document.getElementById('alerts-container');
-        alertsContainer.innerHTML = data.alerts.map(alert => {
-          const alertClass = alert.type === 'error' ? 'alert-error' : 'alert-warning';
-          const icon = alert.type === 'error' ? '⚠' : '!';
-          return `<div class="alert-item ${alertClass}">
-            <span class="alert-icon">${icon}</span>
-            <span class="alert-title">${alert.title}</span>
-            <span class="alert-message">${alert.message}</span>
-          </div>`;
-        }).join('');
-      }
     }
 
     // Update charts with data
@@ -76,15 +60,15 @@
       const defaultMessagesIncoming = [60, 80, 70, 90, 100];
       const defaultMessagesOutgoing = [40, 60, 50, 75, 85];
       const defaultCallsData = [40, 35, 45, 55, 50];
-      const defaultCpsData = [2.5, 2.8, 3.0, 3.2, 3.5];
+    
+      const timeLabels = data['messagesOverTime'].timeLabels || defaultTimeLabels;
+      const endpointGroupMessages = data['messagesOverTime'].messages || defaultMessagesIncoming;
+     
+      const carrierGroupTimeLabels = data['carrierGroupMessages'].timeLabels || defaultTimeLabels;
+      const carrierGroupMessages = data['carrierGroupMessages'].messages || defaultMessagesIncoming;
+      
 
-      const timeLabels = data.time_labels || defaultTimeLabels;
-      const messagesIncoming = data.messages_incoming || defaultMessagesIncoming;
-      const messagesOutgoing = data.messages_outgoing || defaultMessagesOutgoing;
-      const activeCalls = data.active_calls || defaultCallsData;
-      const cpsValues = data.cps_values || defaultCpsData;
-
-      // Messages Over Time Chart
+      // Endpoint Group Messages Chart
       const messagesCtx = document.getElementById('messagesChart').getContext('2d');
       if (messagesChart) messagesChart.destroy();
       messagesChart = new Chart(messagesCtx, {
@@ -93,8 +77,8 @@
           labels: timeLabels,
           datasets: [
             {
-              label: 'Incoming Messages',
-              data: messagesIncoming,
+              label: 'Endpoint Group Messages',
+              data: endpointGroupMessages,
               borderColor: '#ff9800',
               backgroundColor: 'rgba(255, 152, 0, 0.1)',
               fill: true,
@@ -102,12 +86,40 @@
               borderWidth: 2,
               pointRadius: 4,
               pointBackgroundColor: '#ff9800'
-            },
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                maxTicksLimit: 4
+              }
+            }
+          }
+        }
+      });
+
+      // Carrier Group Messages Chart
+      const callsCtx = document.getElementById('callsChart').getContext('2d');
+      if (callsChart) callsChart.destroy();
+      callsChart = new Chart(callsCtx, {
+        type: 'line',
+        data: {
+          labels:  carrierGroupTimeLabels,
+          datasets: [
             {
-              label: 'Outgoing Messages',
-              data: messagesOutgoing,
-              borderColor: '#1976d2',
-              backgroundColor: 'rgba(25, 118, 210, 0.1)',
+              label: 'Carrier Group Messages',
+              data: carrierGroupMessages,
+              backgroundColor: '#1976d2',
               fill: true,
               tension: 0.3,
               borderWidth: 2,
@@ -134,69 +146,57 @@
           }
         }
       });
+    }
 
-      // Active Calls & CPS Chart
-      const callsCtx = document.getElementById('callsChart').getContext('2d');
-      if (callsChart) callsChart.destroy();
-      callsChart = new Chart(callsCtx, {
-        type: 'bar',
-        data: {
-          labels: timeLabels,
-          datasets: [
-            {
-              label: 'Calls Per Second',
-              data: activeCalls,
-              backgroundColor: '#ff9800',
-              yAxisID: 'y'
-            },
-            {
-              type: 'line',
-              label: 'CPS',
-              data: cpsValues,
-              borderColor: '#1976d2',
-              backgroundColor: 'transparent',
-              borderWidth: 2,
-              yAxisID: 'y1',
-              pointRadius: 4,
-              pointBackgroundColor: '#1976d2',
-              tension: 0.3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              type: 'linear',
-              display: true,
-              position: 'left',
-              title: {
-                display: false
-              },
-              beginAtZero: true
-            },
-            y1: {
-              type: 'linear',
-              display: true,
-              position: 'right',
-              title: {
-                display: false
-              },
-              beginAtZero: true,
-              grid: {
-                drawOnChartArea: false
-              }
-            }
-          }
-        }
+    function updateSystemInfo(components) {
+      const systemInfoContainer = document.getElementById('systems-container');
+      systemInfoContainer.innerHTML = components.map(component => `
+        <div class="status-item">
+          <div class="system-info-header">
+          ${component.status.toLowerCase() === 'running' ? '<span class="status-online">&#10003</span>' : '<span class="status-offline">&#215;</span>'}
+            <span class="system-info-name">${component.name}:</span>
+            ${component.name === 'Database' ? `<span class="system-info-type">${component.type}</span>` : ''}
+            <span class="system-info-version">${component.version}</span>
+            <span class="system-info-location">(${component.location})</span>
+          </div>
+        </div>
+      `).join('');
+    } 
+
+    function updateAlerts(alerts) {
+      
+      var alertsContainer = document.getElementById('alerts-container');
+      if (alerts.length === 0) {
+        alertsContainer.innerHTML = 'No Alerts';
+        return;
+      } 
+      alerts.forEach(function(alert) {
+        const newDiv = document.createElement('div');
+        const alertClass = alert.type === 'error' ? 'alert-error' : 'alert-warning';
+        const icon = alert.type === 'error' ? '⚠' : '!';
+        newDiv.classList.add('alert-item', alertClass);
+        newDiv.innerHTML = `
+          <span class="alert-icon">${icon}</span>
+          <span class="alert-title">${alert.title}</span>
+          <span class="alert-message">${alert.message}</span>
+        `;
+        alertsContainer.appendChild(newDiv);  
       });
     }
+
+    function updateTopEndPointGroups(topEndpointGroups) {
+      // Update endpoints
+      if (topEndpointGroups.endpointgroups && topEndpointGroups.endpointgroups.length > 0) {
+        const endpointsList = document.getElementById('endpoints-list');
+        endpointsList.innerHTML = topEndpointGroups.endpointgroups.map(ep => `
+          <li class="endpoint-item">
+            <span class="endpoint-name">${ep.name}:</span>
+            <a class="endpoint-calls" href="#">${ep.calls} Calls</a>
+          </li>`
+        ).join('');
+      }
+    }
+      
 
     // Load data on page load
     document.addEventListener('DOMContentLoaded', function() {
