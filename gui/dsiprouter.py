@@ -6,6 +6,7 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
+
 # all of our standard and project file imports
 import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time, requests
 import importlib.util
@@ -70,6 +71,11 @@ import settings
 # TODO: create /var/log/dsiprouter/ and move there
 UPGRADE_LOG = f'{settings.BACKUP_FOLDER}/upgrade.log'
 UPGRADE_OFFSET = f'{UPGRADE_LOG}.offset'
+
+# Check if in ENVIRONMENT VARIABLE for debug mode, if so override settings.DEBUG   
+settings.DEBUG = bool(os.getenv('DSIP_DEBUG', settings.DEBUG))
+settings.KAM_HOST = os.getenv('KAM_HOST', settings.KAM_HOST)
+settings.KAM_PORT = int(os.getenv('KAM_PORT', settings.KAM_PORT))
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
@@ -2622,8 +2628,8 @@ def initApp(flask_app):
         pidfd.write(str(os.getpid()))
 
     # start the Flask App server
-    bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
-
+    #bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
+    bjoern.run(flask_app, '0.0.0.0', 5000)
 
 def teardown():
     global global_db_engine

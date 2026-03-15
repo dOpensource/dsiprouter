@@ -1,12 +1,15 @@
-version: '3'
 services:
   dsiprouter:
     build: 
       context: .
       dockerfile: docker/dsiprouter/dockerfile
     image: dopensource/dsiprouter
+    networks:
+      my_custom_net:
+        ipv4_address: 172.28.5.8
     volumes:
       - .:/opt/dsiprouter
+      - ./testing/dsiprouter/run:/run/dsiprouter
     ports:
       - "5000:5000"
     environment:
@@ -14,30 +17,63 @@ services:
       - DSIP_USER=admin
       - DSIP_PASS=admin
       - DSIP_DEBUG=True
+      - KAM_HOST=dsiprouter-kamailio
+      - KAM_PORT=5060
+      - KAM_DB_DRIVER=
       - KAM_DB_HOST=dsiprouter-mysql
-      - KAM_DB_TYPE=mysql 
+      - KAM_DB_TYPE=mysql
       - KAM_DB_PORT=3306
       - KAM_DB_NAME=kamailio
       - KAM_DB_USER=kamailio
       - KAM_DB_PASS=kamailiorw
     depends_on: 
+      - dsiprouter-kamailio
       - dsiprouter-mysql
-    command: ["./docker/dsiprouter/wait-for-dsiprouter-mysql.sh","dsiprouter-mysql","python","dsiprouter.py","runserver"]
+    command: ["./docker/dsiprouter/wait-for-dsiprouter-mysql.sh","dsiprouter-mysql","flask","--app","dsiprouter","run","--host=0.0.0.0"]
+    
 
   dsiprouter-mysql:
-    image: mysql:5.7
+    image: mariadb:10.11
+    networks:
+      my_custom_net:
+        ipv4_address: 172.28.5.9
     volumes:
       - /tmp/dbdata:/var/lib/mysql
-      - ./testing/sql/v0.60+ent:/docker-entrypoint-initdb.d/
+      - ./testing/sql/v0.79/:/docker-entrypoint-initdb.d/
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
       - MYSQL_USER=kamailio
       - MYSQL_PASSWORD=kamailiorw
       - MYSQL_DATABASE=kamailio
     healthcheck:
-      test: mysql --user=root -e "select * from kamailio.dr_gateways"
+      test:  ["CMD-SHELL", "mysql --user=root -e 'select * from kamailio.dr_gateways'"]
+      interval: 10s
       timeout: 45s
       retries: 5
+  
+  dsiprouter-kamailio:
+    image: ghcr.io/kamailio/kamailio:5.8.3-focal
+    networks:
+      my_custom_net:
+        ipv4_address: 172.28.5.10  
+    volumes:
+      - ./testing/kamailio/configs/:/etc/kamailio/
+      - ./testing/dsiprouter/configs:/etc/dsiprouter/
+    ports:
+      - "5070:5060/udp"
+      - "5070:5060/tcp"
+    depends_on:
+      dsiprouter-mysql:
+        condition: service_healthy
+
+
+networks:
+  my_custom_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16  # Defines the range for this network
+    
 
