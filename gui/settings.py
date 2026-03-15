@@ -5,7 +5,7 @@
 # dSIPRouter will need to be restarted for any changes to take effect - except settings that can be hot reloaded
 # for more information on hot reloading and shared memory via IPC see shared.updateConfig() and dsiprouter.syncSettings()
 
-DSIP_ID = None
+DSIP_ID = b'34f5e0b3a0d299569b989393cf7b5d92f875a7e284f906bfdc6712763849aa93dbc656a268ae47ad2aeab99182a04d620c10878f1a0161ded82d21d8fad0fbec'
 DSIP_CLUSTER_ID = 1
 DSIP_CLUSTER_SYNC = False
 DSIP_PROTO = 'https'
@@ -39,13 +39,18 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.78'
+VERSION = '0.79'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
 # 'inout'       = inbound from carriers and outbound to carriers only (no domain routing)
 ROLE = ''
 GUI_INACTIVE_TIMEOUT = 20
+
+
+# Kamailio settings
+KAM_HOST = 'localhost'
+KAM_PORT = 5060
 
 # MySQL settings for kamailio
 
@@ -97,7 +102,7 @@ FLOWROUTE_SECRET_KEY = ''
 FLOWROUTE_API_ROOT_URL = 'https://api.flowroute.com/v2'
 
 # Homer settings
-HOMER_ID = None
+HOMER_ID = 694989643
 HOMER_HEP_HOST = ''
 HOMER_HEP_PORT = 9060
 
