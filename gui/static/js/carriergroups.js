@@ -421,7 +421,7 @@
       modal_body.find(".strip").val('');
       modal_body.find(".prefix").val('');
       modal_body.find(".rweight").val('');
-
+      modal_body.find(".media").val('proxy');
 
       /* make sure ip_addr not disabled */
       modal_body.find('.ip_addr').prop('disabled', false);
@@ -437,6 +437,7 @@
       var strip = $(c).find('tr:eq(' + row_index + ') td:eq(4)').text();
       var prefix = $(c).find('tr:eq(' + row_index + ') td:eq(5)').text();
       var rweight = $(c).find('tr:eq(' + row_index + ') td:eq(6)').text();
+      var media = $(c).find('tr:eq(' + row_index + ') td.media').text().trim();
 
       /** Clear out the modal */
       var modal_body = $('#edit .modal-body');
@@ -446,6 +447,7 @@
       modal_body.find(".strip").val('');
       modal_body.find(".prefix").val('');
       modal_body.find(".rweight").val('');
+      modal_body.find(".media").val('proxy');
 
       /* update modal fields */
       modal_body.find(".gwid").val(gwid);
@@ -454,6 +456,7 @@
       modal_body.find(".strip").val(strip);
       modal_body.find(".prefix").val(prefix);
       modal_body.find(".rweight").val(rweight);
+      modal_body.find(".media").val(media);
     });
 
     carriers_tbody.on('click', '#open-Delete', function() {
@@ -462,7 +465,7 @@
       var gwid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
       var name = $(c).find('tr:eq(' + row_index + ') td:eq(2)').text();
       var ip_addr = $(c).find('tr:eq(' + row_index + ') td:eq(3)').text();
-      var related_rules = JSON.parse($(c).find('tr:eq(' + row_index + ') td:eq(7)').text());
+      var related_rules = JSON.parse($(c).find('tr:eq(' + row_index + ') td:eq(8)').text());
 
       var modal_body = $('#delete .modal-body');
 

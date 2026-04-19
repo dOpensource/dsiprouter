@@ -265,6 +265,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
             carriers = [
                 db.query(
                     Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                    func.SUBSTRING_INDEX(func.SUBSTRING_INDEX(Gateways.attrs, ',', 5), ',', -1).label("media"),
                     Dispatcher.attrs.label("dispatcher_attrs")
                 ).filter(
                     Gateways.gwid == gwid
@@ -288,6 +289,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
                 gwlist = [int(gw) for gw in filter(None, Gatewaygroup.gwlist.split(","))]
                 carriers = db.query(
                     Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                    func.SUBSTRING_INDEX(func.SUBSTRING_INDEX(Gateways.attrs, ',', 5), ',', -1).label("media"),
                     Dispatcher.attrs.label("dispatcher_attrs")
                 ).filter(
                     Gateways.gwid.in_(gwlist)
@@ -307,6 +309,7 @@ def displayCarriers(gwid=None, gwgroup=None, newgwid=None):
         else:
             carriers = db.query(
                 Gateways.gwid, Gateways.description, Gateways.address, Gateways.strip, Gateways.pri_prefix,
+                func.SUBSTRING_INDEX(func.SUBSTRING_INDEX(Gateways.attrs, ',', 5), ',', -1).label("media"),
                 Dispatcher.attrs.label("dispatcher_attrs")
             ).filter(
                 Gateways.type == settings.FLT_CARRIER
@@ -389,6 +392,7 @@ def addUpdateCarriers(data=None):
         strip = form['strip'] if len(form['strip']) > 0 else '0'
         prefix = form['prefix'] if len(form['prefix']) > 0 else ''
         rweight = int(form['rweight']) if form.get('rweight', '') != '' else 1
+        media = form.get('media', 'proxy') if form.get('media', '') in ('proxy', 'direct') else 'proxy'
 
         if len(hostname) == 0:
             raise http_exceptions.BadRequest("Carrier hostname/address is required")
@@ -405,7 +409,7 @@ def addUpdateCarriers(data=None):
                 db.add(Addr)
                 db.flush()
 
-                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id)
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, gwgroup=gwgroup, addr_id=Addr.id, media=media)
                 db.add(Gateway)
                 db.flush()
 
@@ -417,14 +421,14 @@ def addUpdateCarriers(data=None):
                 Gatewaygroup.gwlist = ','.join(gwlist)
 
                 # Create dispatcher group with the set id being the gateway group id
-                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid, media=media)
                 db.add(dispatcher)
             else:
                 Addr = Address(name, host_addr, 32, settings.FLT_CARRIER)
                 db.add(Addr)
                 db.flush()
 
-                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id)
+                Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_CARRIER, addr_id=Addr.id, media=media)
                 db.add(Gateway)
 
         # Updating
@@ -433,6 +437,8 @@ def addUpdateCarriers(data=None):
             Gateway.address = sip_addr
             Gateway.strip = strip
             Gateway.pri_prefix = prefix
+            gw_attrs = Gateway.attrsToDict()
+            Gateway.attrs = Gateways.buildAttrs(gw_attrs['gwid'], gw_attrs['type'], gw_attrs['msteams_domain'], gw_attrs['signalling'], media)
 
             gw_fields = strFieldsToDict(Gateway.description)
             gw_fields['name'] = name
@@ -443,12 +449,12 @@ def addUpdateCarriers(data=None):
             if db.query(Dispatcher).filter(
                 Dispatcher.description.regexp_match(f'gwid={gwid}(;|$)')
             ).update({
-                "attrs": Dispatcher.buildAttrs(rweight=rweight)
+                "attrs": Dispatcher.buildAttrs(rweight=rweight, media=media)
             }, synchronize_session=False):
                 pass
             # add new dispatcher entry if it did not exist (gwgroup must also exist)
             elif len(gwgroup) > 0:
-                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid)
+                dispatcher = Dispatcher(setid=gwgroup, destination=sip_addr, rweight=rweight, name=name, gwid=gwid, media=media)
                 db.add(dispatcher)
 
             # if address exists update
