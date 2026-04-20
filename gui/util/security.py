@@ -4,7 +4,8 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, hashlib, binascii, string, ssl, OpenSSL, secrets, re
+import os, hashlib, binascii, string, ssl, OpenSSL, secrets, re, hmac
+import urllib.parse
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from shared import updateConfig, StatusCodes
@@ -482,3 +483,32 @@ class KeyCertPair():
 
     def dumpCerts(self, encoding=OpenSSL.crypto.FILETYPE_PEM):
         return b'\n'.join([OpenSSL.crypto.dump_certificate(encoding, cert) for cert in self.certs])
+
+def validSlackSignature(slack_signing_secret,request):
+
+    timestamp = request.headers['X-Slack-Request-Timestamp']
+    slack_payload = request.form
+    dict_slack = slack_payload.to_dict()
+
+    payload= "&".join(['='.join([key, urllib.parse.quote(val, safe='')]) for key, val in dict_slack.items()])  
+
+    ### compose the message:
+    sig_basestring = 'v0:' + timestamp + ':' + payload
+
+    sig_basestring = sig_basestring.encode('utf-8')
+
+    ## secret
+    signing_secret = slack_signing_secret.encode('utf-8') # I had an env variable declared with slack_signing_secret
+                                    
+    my_signature = 'v0=' + hmac.new(
+             signing_secret,
+             sig_basestring,
+             hashlib.sha256
+             ).hexdigest()
+
+    slack_signature = request.headers['x-slack-signature']
+    if hmac.compare_digest(my_signature, slack_signature):
+        return True
+    else:
+        return False
+
