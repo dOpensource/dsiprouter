@@ -43,6 +43,7 @@ from modules.api.licensemanager.classes import WoocommerceError
 from modules.api.licensemanager.functions import licenseDictToStateDict, getLicenseStatusFromStateDict, \
     getLicenseStatus
 from modules.api.licensemanager.routes import license_manager
+from modules.api.outboundroutes.routes import outboundroutes
 from modules.api.auth.routes import user
 from modules.numbers import numbers
 from util.security import Credentials, urandomChars, AES_CTR
@@ -81,12 +82,14 @@ app.register_blueprint(api)
 app.register_blueprint(carriergroups)
 app.register_blueprint(user)
 app.register_blueprint(license_manager)
+app.register_blueprint(outboundroutes)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
 csrf.exempt(carriergroups)
 csrf.exempt(user)
 csrf.exempt(license_manager)
+csrf.exempt(outboundroutes)
 
 numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)

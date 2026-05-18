@@ -64,3 +64,21 @@ modules.fusionpbx.fusionpbx_sync_functions
    :undoc-members:
    :private-members:
    :special-members:
+
+modules.api.outboundroutes.routes
+=================================
+
+.. automodule:: modules.api.outboundroutes.routes
+   :members:
+   :undoc-members:
+   :private-members:
+   :special-members:
+
+modules.api.outboundroutes.functions
+====================================
+
+.. automodule:: modules.api.outboundroutes.functions
+   :members:
+   :undoc-members:
+   :private-members:
+   :special-members:

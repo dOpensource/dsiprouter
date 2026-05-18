@@ -38,3 +38,5 @@ Global Outbound Routes
         
 5) Click on the blue Reload Kamailio button in order for the changes to be updated.
 
+These routes can also be managed via the REST API; see :doc:`api`.
+
