@@ -194,11 +194,11 @@
       var modal_body = modal.find('.modal-body');
 
       if ($(this).is(":checked") || $(this).prop("checked")) {
-        modal_body.find('.hardfwd-options').removeClass("hidden");
+        modal_body.find('.hardfwd-options').removeClass('d-none');
         modal_body.find('.hardfwd_enabled').val(1);
       }
       else {
-        modal_body.find('.hardfwd-options').addClass("hidden");
+        modal_body.find('.hardfwd-options').addClass('d-none');
         modal_body.find('.hardfwd_enabled').val(0);
       }
     });
@@ -209,11 +209,11 @@
       var modal_body = modal.find('.modal-body');
 
       if ($(this).is(":checked") || $(this).prop("checked")) {
-        modal_body.find('.failfwd-options').removeClass("hidden");
+        modal_body.find('.failfwd-options').removeClass('d-none');
         modal_body.find('.failfwd_enabled').val(1);
       }
       else {
-        modal_body.find('.failfwd-options').addClass("hidden");
+        modal_body.find('.failfwd-options').addClass('d-none');
         modal_body.find('.failfwd_enabled').val(0);
       }
     });

@@ -130,7 +130,7 @@
 }
 
 .wrap .nav-bar .nav .dropdown-menu > .dropdown-item:hover {
-  background: #3355ff;
+  background: #444;
 }
 
 .wrap .side-menu-link {
@@ -272,11 +272,11 @@
 }
 
 .wrap ul.accordion li.open .link {
-  color: #FF8100;
+  color: #F0AD4E;
 }
 
 .wrap ul.accordion li.open i {
-  color: #FF8100;
+  color: #F0AD4E;
 }
 
 .wrap ul.accordion li.open i.ti-chevron-down {
@@ -319,13 +319,13 @@
 } */
 
 .card.border-info > .card-header {
-  color: #FF8100;
+  color: #F0AD4E;
   background-color: #000000;
-  border-color: #FF8100;
+  border-color: #F0AD4E;
 }
 
 .card.border-info {
-  border-color: #FF8100;
+  border-color: #F0AD4E;
 }
 
 .loginlogo {
@@ -344,7 +344,7 @@
 }
 
 a.currentlink {
-  color: #FF8100 !important;
+  color: #F0AD4E !important;
 }
 
 a.navlink {
@@ -715,4 +715,201 @@ table.dataTable {
     border: 2px solid rgba(220, 50, 50, 0.7);
     box-shadow: 0 0 0 2px rgba(220, 50, 50, 0.3),
                 0 0 0 4px rgba(220, 50, 50, 0.15);
+}
+
+/* Fix Bootstrap 5 nav flex direction for sidebar */
+#side-menu .nav {
+  flex-direction: column;
+}
+
+#side-menu .nav-header {
+  width: 100%;
+}
+
+/* Reload dropdown item states */
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-warning {
+  background-color: #F0AD4E;
+  color: #333;
+}
+
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-warning:hover {
+  background-color: #ec971f;
+  color: #333;
+}
+
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-secondary {
+  background-color: transparent;
+  color: #999;
+}
+
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-secondary:hover {
+  background-color: #333;
+  color: #ccc;
+}
+
+/* Force navbar items on same line */
+.nav.navbar-nav.ml-auto {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.nav.navbar-nav.ml-auto > * {
+  display: inline-block;
+  margin-left: 0.5em;
+}
+
+/* Add space after admin dropdown */
+.nav.navbar-nav.ml-auto {
+  margin-right: 1em;
+}
+
+/* Fix modal close button position for Bootstrap 5 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header .close,
+.modal-header .btn-close {
+  order: 2;
+  margin-left: auto;
+}
+
+.modal-header .modal-title {
+  order: 1;
+}
+
+/* Add vertical spacing between form fields in modals */
+.modal-body .form-group,
+.modal-body .form-control,
+.modal-body .form-select,
+.modal-body input[type='text'],
+.modal-body input[type='number'],
+.modal-body input[type='email'],
+.modal-body input[type='password'],
+.modal-body select,
+.modal-body textarea {
+  margin-bottom: 1rem;
+}
+
+.modal-body label {
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* Fix nav-tabs styling for Bootstrap 5 */
+.modal-body .nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1rem;
+}
+
+.modal-body .nav-tabs li {
+  margin-bottom: -1px;
+}
+
+.modal-body .nav-tabs li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #495057;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+}
+
+.modal-body .nav-tabs li a:hover {
+  border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+.modal-body .nav-tabs li a.active,
+.modal-body .nav-tabs li.active a {
+  color: #495057;
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.modal-body .tab-content {
+  padding-top: 1rem;
+}
+
+/* Make endpoint group modals wider */
+#edit.modal .modal-dialog,
+#add.modal .modal-dialog {
+  max-width: 800px;
+  width: 90%;
+}
+
+/* Ensure tabs don't wrap */
+.modal-body .nav-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.modal-body .nav-tabs .nav-item {
+  white-space: nowrap;
+}
+
+/* Add Row button on one line */
+#addEndpointRow,
+#updateEndpointRow {
+  white-space: nowrap;
+}
+
+/* Make endpoint table wider and host field auto-expand */
+#endpoint-table2,
+#endpoint-table {
+  width: 100%;
+  table-layout: auto;
+}
+
+#endpoint-table2 th,
+#endpoint-table th {
+  white-space: nowrap;
+}
+
+/* Host field auto-expand */
+#endpoint-table2 input[name='hostname'],
+#endpoint-table input[name='hostname'],
+#endpoint-tablebody2 input[name='hostname'],
+#endpoint-tablebody input[name='hostname'],
+.endpoint-host {
+  min-width: 150px;
+  width: auto;
+}
+
+/* Host field expand on focus */
+input[name='hostname']:focus {
+  width: auto !important;
+  min-width: 250px !important;
+  max-width: 400px !important;
+}
+
+/* Remove space after tabs */
+.modal-body .nav-tabs {
+  margin-bottom: 0;
+}
+
+.modal-body .tab-content {
+  padding-top: 0.5rem;
+}
+
+#endpoint-nav {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Compatibility for hidden class */
+.hidden {
+  display: none !important;
+}
+
+/* Add space before backup/restore buttons */
+#backup .form-group,
+#restore .form-group {
+  margin-top: 1.5rem;
 }

@@ -8,8 +8,8 @@
   </div>
 
   <div class="tableAddButton btn-toolbar">
-    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
-            data-target="#add">Add
+    <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+            data-bs-target="#add">Add
     </button>
   </div>
 {% endblock %}
@@ -52,14 +52,14 @@
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
             <button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit"
-                    data-toggle="modal" data-target="#edit"><i class="ti ti-pencil"></i>
+                    data-bs-toggle="modal" data-bs-target="#edit"><i class="ti ti-pencil"></i>
             </button>
           </p>
         </td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Delete">
             <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete"
-                    data-toggle="modal" data-target="#delete"><i class="ti ti-trash"></i>
+                    data-bs-toggle="modal" data-bs-target="#delete"><i class="ti ti-trash"></i>
             </button>
           </p>
         </td>
@@ -74,8 +74,8 @@
 {% block edit_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
-        class="ti ti-x" aria-hidden="true"></i></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-square-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Edit Your Outbound Route</h4>
   </div>
 
@@ -137,8 +137,8 @@
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
-        class="ti ti-x" aria-hidden="true"></i></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-square-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add an Outbound Route</h4>
   </div>
 
@@ -199,8 +199,8 @@
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
-        class="ti ti-x" aria-hidden="true"></i></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-square-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
   </div>
 
@@ -223,8 +223,8 @@
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success"><i class="ti ti-circle-check"></i> Yes
         </button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i
-            class="ti ti-x"></i> No
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+            class="ti ti-square-x"></i> No
         </button>
       </div>
     </form>

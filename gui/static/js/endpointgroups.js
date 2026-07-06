@@ -301,7 +301,7 @@
     modal_body.find(".cdr_send_day").val('1');
     modal_body.find(".cdr_send_month").val('*');
     modal_body.find(".cdr_send_weekday").val('*');
-    modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+    modal_body.find('.FusionPBXDomainOptions').addClass('d-none');
     modal_body.find('.updateButton').attr("disabled", false);
 
     // Clear out update button in add footer
@@ -526,12 +526,12 @@
       var modal_body = modal.find('.modal-body');
 
       if (self.is(":checked") || self.prop("checked")) {
-        modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
+        modal_body.find('.FusionPBXDomainOptions').removeClass('d-none');
         modal_body.find('.fusionpbx_db_enabled').val(1);
         self.bootstrapToggle('on');
       }
       else {
-        modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+        modal_body.find('.FusionPBXDomainOptions').addClass('d-none');
         modal_body.find('.fusionpbx_db_enabled').val(0);
         self.bootstrapToggle('off');
       }
@@ -662,3 +662,40 @@
   });
 
 })(window, document);
+
+// Auto-expand host field while typing, shrink on blur
+// Auto-expand host field while typing, shrink on blur
+$(document).on("focus", "input[name=\"hostname\"]", function() {
+  $(this).css("width", "auto");
+  $(this).css("min-width", "200px");
+});
+
+$(document).on("input", "input[name=\"hostname\"]", function() {
+  this.style.width = "auto";
+  this.style.width = (this.scrollWidth + 10) + "px";
+});
+
+$(document).on("blur", "input[name=\"hostname\"]", function() {
+  $(this).css("width", "");
+  $(this).css("min-width", "");
+});
+
+// Auto-adjust modal width based on host field content
+$(document).on("input", "input[name=\"hostname\"]", function() {
+  var inputWidth = this.scrollWidth + 50;
+  var modal = $(this).closest(".modal-dialog");
+  var currentWidth = modal.width();
+  var minWidth = 800;
+  var maxWidth = $(window).width() * 0.9;
+  
+  var newWidth = Math.max(minWidth, Math.min(inputWidth + 400, maxWidth));
+  
+  if (newWidth > currentWidth) {
+    modal.css("max-width", newWidth + "px");
+  }
+});
+
+// Reset modal width on close
+$(document).on("hidden.bs.modal", ".modal", function() {
+  $(this).find(".modal-dialog").css("max-width", "");
+});
