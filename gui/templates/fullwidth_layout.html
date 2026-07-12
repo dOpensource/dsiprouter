@@ -33,26 +33,26 @@
           <ul class="nav navbar-nav ml-auto">
             <div class="btn-group" style="margin-right: 0.5em">
               {% if state.kam_reload_required == True or state.dsip_reload_required == True %}
-                {% set btn_class="btn-warning" %}
+                {% set btn_class="btn-reload" %}
               {% else %}
                 {% set btn_class="btn-primary" %}
               {% endif %}
-              <button type="button" class="btn {{ btn_class }} dropdown-toggle" id="reload" data-bs-toggle="dropdown" aria-expanded="false">
+              <button type="button" class="btn {{ btn_class }} btn-sm dropdown-toggle" id="reload" data-bs-toggle="dropdown" aria-expanded="false">
                 Reload
               </button>
               <ul class="dropdown-menu">
                 {% if state.kam_reload_required == True %}
-                  {% set kam_reload_state="btn-warning" %}
+                  {% set kam_reload_state="btn-reload" %}
                 {% else %}
                   {% set kam_reload_state="btn-secondary" %}
                 {% endif %}
                 {% if state.dsip_reload_required == True %}
-                  {% set dsip_reload_state="btn-warning" %}
+                  {% set dsip_reload_state="btn-reload" %}
                 {% else %}
                   {% set dsip_reload_state="btn-secondary" %}
                 {% endif %}
-                <li><a class="dropdown-item {{ kam_reload_state }}" id="reload_kam" href="#">Reload Kamailio</a></li>
-                <li><a class="dropdown-item {{ dsip_reload_state }}" id="reload_dsip" href="#">Reload dSIPRouter</a></li>
+                <li><a class="dropdown-item custom-nav-dropdown-item {{ kam_reload_state }}" id="reload_kam" href="#">Reload Kamailio</a></li>
+                <li><a class="dropdown-item custom-nav-dropdown-item {{ dsip_reload_state }}" id="reload_dsip" href="#">Reload dSIPRouter</a></li>
               </ul>
             </div>
             <!-- <form id="qform" class="navbar-form float-left" role="search">
@@ -66,7 +66,7 @@
                 <!-- <li><a href="#"><span class="fa fa-user"></span>My Profile</a></li>
                 <li><a href="#"><span class="fa fa-gear"></span>Settings</a></li> -->
                 <li class="divider"></li>
-                <li><a href="/logout"><span class="ti ti-logout"></span>Logout</a></li>
+                <li><a class="dropdown-item custom-nav-dropdown-item" href="/logout"><span class="ti ti-logout"></span>Logout</a></li>
               </ul>
             </li>
           </ul>

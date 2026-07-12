@@ -913,3 +913,26 @@ input[name='hostname']:focus {
 #restore .form-group {
   margin-top: 1.5rem;
 }
+
+.btn-reload {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #fd7e14;
+    --bs-btn-border-color: #fd7e14;
+
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #e66a00;
+    --bs-btn-hover-border-color: #d65f00;
+
+    --bs-btn-active-bg: #c95600;
+    --bs-btn-active-border-color: #bb5100;
+}
+
+.custom-nav-dropdown-item {
+  color: #c4c4c5;
+  bg-color: #000000;
+}
+
+
+
+
+
