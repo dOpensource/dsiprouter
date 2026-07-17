@@ -776,7 +776,22 @@ table.dataTable {
 .modal-header .btn-close {
   order: 2;
   margin-left: auto;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
 }
+
+.modal-header .close .ti-x {
+  /* Change the color of the X */
+  color: #000000;
+  /* Change the size of the icon */
+  font-size: 24px; 
+  /* Adjust how thick the line strokes are */
+  stroke-width: 0px; 
+  font-weight: bold;
+}
+
 
 .modal-header .modal-title {
   order: 1;
@@ -931,8 +946,5 @@ input[name='hostname']:focus {
   color: #c4c4c5;
   bg-color: #000000;
 }
-
-
-
 
 
