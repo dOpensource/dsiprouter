@@ -21,23 +21,23 @@
     <div class="col-md-12">
       <div id="endpoint-nav" class="navbar"> <!-- begin nav tabs -->
         <ul class="nav nav-tabs">
-          <li role="presentation" class="auth-tab active">
-            <a href="#backup" name="backup-toggle" data-toggle="tab">Backup</a>
+          <li role="presentation" class="nav-item auth-tab">
+            <a class="nav-link" href="#backup" name="backup-toggle" data-bs-toggle="tab">Backup</a>
           </li>
-          <li role="presentation">
-            <a href="#restore" name="restore-toggle" data-toggle="tab">Restore</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#restore" name="restore-toggle" data-bs-toggle="tab">Restore</a>
           </li>
         </ul>
       </div><!-- end nav tabs -->
 
       <div class="tab-content"> <!-- begin tab content -->
-        <div id="backup" class="tab-pane fade in active" name="backup-toggle">
+        <div id="backup" class="tab-pane fade show active" name="backup-toggle">
           <div class="form-group">
             <button id="start-Backup" class="btn btn-success btn-md">Download Backup</button>
           </div>
         </div>
 
-        <div id="restore" class="tab-pane fade in" name="restore-toggle">
+        <div id="restore" class="tab-pane fade" name="restore-toggle">
           <form id="restore-backup" action="#">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 

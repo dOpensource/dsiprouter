@@ -12,7 +12,7 @@
   </div>
 
   <div class="tableAddButton">
-    <button id='open-DomainAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal" data-target="#add">
+    <button id='open-DomainAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal" data-bs-target="#add">
       Add
     </button>
   </div>
@@ -60,8 +60,8 @@
         {% if row.type|domainTypeFilter() != "Dynamic" %}
           <td>
             <p data-placement="top" data-toggle="tooltip" title="Edit">
-              <button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-toggle="modal"
-                      data-target="#edit"><i class="ti ti-pencil"></i>
+              <button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-bs-toggle="modal"
+                      data-bs-target="#edit"><i class="ti ti-pencil"></i>
               </button>
             </p>
           </td>
@@ -69,7 +69,7 @@
             {% if pbxlookup[row.domain]['domain_auth'] == "msteams" %}
               <p data-placement="top" data-toggle="tooltip" title="Test MSTeams Connectivity">
                 <button id="open-Test" class="open-Test btn btn-warning btn-sm" data-title="Test MSTeams Connectivity"
-                        data-toggle="modal"
+                        data-bs-toggle="modal"
                         onclick="window.location='domains/msteams/{{ row.id }}'">
                   <i class="ti ti-plane"></i></button>
               </p>
@@ -77,8 +77,8 @@
           </td>
           <td>
             <p data-placement="top" data-toggle="tooltip" title="Delete">
-              <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-toggle="modal"
-                      data-target="#delete"><i class="ti ti-trash"></i></button>
+              <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-bs-toggle="modal"
+                      data-bs-target="#delete"><i class="ti ti-trash"></i></button>
             </p>
           </td>
         {% else %}
@@ -96,7 +96,7 @@
 {% block edit_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Edit Your Domain Detail</h4>
   </div>
@@ -160,7 +160,7 @@
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add New Domain</h4>
   </div>
@@ -217,7 +217,7 @@
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
   </div>
@@ -237,7 +237,7 @@
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success"><i class="ti ti-circle-check"></i> Yes</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
             class="ti ti-x"></i> No
         </button>
       </div>

@@ -12,8 +12,8 @@
   </div>
 
   <div class="tableAddButton">
-    <button id='open-CarrierGroupAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
-            data-target="#add-group"> Add
+    <button id='open-CarrierGroupAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+            data-bs-target="#add-group"> Add
     </button>
   </div>
 {% endblock %}
@@ -55,14 +55,14 @@
         <td class='lb_enabled hide'>{{ row.lb_enabled|noneFilter() }}</td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Edit">
-            <button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-toggle="modal"
-                    data-target="#edit-group"><i class="ti ti-pencil"></i></button>
+            <button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-bs-toggle="modal"
+                    data-bs-target="#edit-group"><i class="ti ti-pencil"></i></button>
           </p>
         </td>
         <td>
           <p data-placement="top" data-toggle="tooltip" title="Delete">
-            <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-toggle="modal"
-                    data-target="#delete-group"><i class="ti ti-trash"></i></button>
+            <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-bs-toggle="modal"
+                    data-bs-target="#delete-group"><i class="ti ti-trash"></i></button>
           </p>
         </td>
       </tr>
@@ -75,7 +75,7 @@
 {% block edit_modal %}
   <!-- edit-endpoint modal -->
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Edit Your Carrier Detail</h4>
   </div>
@@ -121,7 +121,7 @@
 {% block add_modal %}
   <!-- add-endpoint modal -->
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add New Carrier Detail</h4>
   </div>
@@ -166,7 +166,7 @@
 {% block delete_modal %}
   <!-- delete-endpoint modal -->
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
   </div>
@@ -186,7 +186,7 @@
 
       <div class="modal-footer ">
         <button type="submit" class="btn btn-success"><i class="ti ti-circle-check"></i> Yes</button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
             class="ti ti-x"></i> No
         </button>
       </div>
@@ -202,7 +202,7 @@
       <div class="modal-content">
 
         <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+          <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
               class="ti ti-x" aria-hidden="true"></i></button>
           <h4 class="modal-title custom_align" id="Heading">Edit Your Carrier Group</h4>
         </div>
@@ -213,16 +213,16 @@
             <!-- nav tabs -->
             <div id="carrier-nav" class="navbar">
               <ul class="nav nav-tabs">
-                <li role="presentation" class="nav-item">
+                <li role="presentation" class="nav-item nav-item">
                   <a href="#" name="auth-toggle" data-type="toggle" class="nav-link">Auth</a>
                 </li>
-                <li role="presentation" class="nav-item">
+                <li role="presentation" class="nav-item nav-item">
                   <a href="#" name="config-toggle" data-type="toggle" class="nav-link">Config</a>
                 </li>
-                <li role="presentation" class="nav-item">
+                <li role="presentation" class="nav-item nav-item">
                   <a href="#" name="carriers-toggle" data-type="toggle" class="nav-link">Endpoints</a>
                 </li>
-                {#              <li role="presentation" class="nav-item">#}
+                {#              <li role="presentation" class="nav-item nav-item">#}
                 {#                <a href="/carriers" name="carriers-link" data-type="link" class="nav-link">Endpoints</a>#}
                 {#              </li>#}
               </ul>
@@ -303,8 +303,8 @@
               <div class="wrapper-horizontal edge-centered">
 
                 <div class="tableAddButton">
-                  <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
-                          data-target="#add"> Add
+                  <button id='open-CarrierAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+                          data-bs-target="#add"> Add
                   </button>
                 </div>
 
@@ -338,7 +338,7 @@
       <div class="modal-content">
 
         <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+          <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
               class="ti ti-x" aria-hidden="true"></i></button>
           <h4 class="modal-title custom_align" id="Heading">Add New Carrier Group</h4>
         </div>
@@ -443,7 +443,7 @@
       <div class="modal-content">
 
         <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+          <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
               class="ti ti-x" aria-hidden="true"></i></button>
           <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
         </div>
@@ -462,7 +462,7 @@
             <div class="modal-footer ">
               <button type="submit" class="btn btn-success"><i class="ti ti-circle-check"></i> Yes
               </button>
-              <button type="button" class="btn btn-secondary" data-dismiss="modal"><i
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
                   class="ti ti-x"></i> No
               </button>
             </div>

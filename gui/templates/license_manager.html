@@ -88,8 +88,8 @@
     <button id='refreshButton' class='btn btn-info btn-md' data-title="Refresh Licenses">
       Refresh
     </button>
-    <button id='open-LicenseAdd' class='btn btn-success btn-md' data-title="Activate" data-toggle="modal"
-            data-target="#add">
+    <button id='open-LicenseAdd' class='btn btn-success btn-md' data-title="Activate" data-bs-toggle="modal"
+            data-bs-target="#add">
       Add
     </button>
   </div>
@@ -120,7 +120,7 @@
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Activate License</h4>
   </div>
@@ -149,7 +149,7 @@
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><i
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
         class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Deactivate License</h4>
   </div>
@@ -167,7 +167,7 @@
         <button id="deleteButton" type="button" class="btn btn-success"><i
             class="ti ti-circle-check" autofocus="autofocus"></i> Yes
         </button>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal"><i
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
             class="ti ti-x"></i> No
         </button>
       </div>
