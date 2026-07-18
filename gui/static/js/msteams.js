@@ -41,7 +41,7 @@
         'title': tlscheck_msg,
         'placement': 'right',
         'trigger': 'manual',
-        'tooltipClass': 'tooltipclass'
+        'customClass': 'tooltipclass'
       });
       tlscheckrow_obj.tooltip('show');
     }

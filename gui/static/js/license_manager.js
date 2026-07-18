@@ -194,7 +194,7 @@
   function createDeleteButton() {
     return '' +
       '<div class="dt-resize-height">' +
-      '  <button class="open-Delete btn btn-danger btn-sm" data-title="Deactivate" data-toggle="modal" data-target="#delete" onclick="updateDeleteModal(this)">' +
+      '  <button class="open-Delete btn btn-danger btn-sm" data-title="Deactivate" data-bs-toggle="modal" data-bs-target="#delete" onclick="updateDeleteModal(this)">' +
       '    <i class="ti ti-trash"></i>' +
       '  </button>' +
       '</div>';

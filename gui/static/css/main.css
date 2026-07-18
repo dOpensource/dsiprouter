@@ -354,6 +354,8 @@ a.navlink {
 .label-toggle {
   margin-left: 10px;
   width: 100%;
+  /* center the descriptive label against the toggle button */
+  vertical-align: middle;
 }
 
 .container.container,

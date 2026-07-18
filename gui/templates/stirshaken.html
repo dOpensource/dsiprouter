@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block body %}
-  <div class="col-md-12">
+  <div class="col-md-12 ps-4">
     <form action="/stirshaken" method="POST" role="form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="saveTeleblock">
@@ -18,15 +18,17 @@
 
       <hr>
 
-      <div class="form-group">
-        <label class="label-toggle">STIR/SHAKEN Service </label>
-        <input id="toggleStirShaken" name="stir_shaken_enabled" type="checkbox"
-               title="Toggle STIR/SHAKEN" {{ toggle_checked }}
-               data-toggle="toggle"
-               value="{{ settings.STIR_SHAKEN_ENABLED }}"
-               data-on="<span class='icon-gryphon'></span> Enabled"
-               data-off="<span class='icon-gryphon'></span> Disabled"
-               data-width="120px">
+      <div class="form-group mb-3">
+        <div class="checkbox">
+          <input id="toggleStirShaken" name="stir_shaken_enabled" type="checkbox"
+                 title="Toggle STIR/SHAKEN" {{ toggle_checked }}
+                 data-toggle="toggle"
+                 value="{{ settings.STIR_SHAKEN_ENABLED }}"
+                 data-on="<span class='icon-gryphon'></span> Enabled"
+                 data-off="<span class='icon-gryphon'></span> Disabled"
+                 data-width="120px">
+          <span class="label-toggle ms-2">STIR/SHAKEN Service</span>
+        </div>
       </div>
 
       <div id="stirShakenOptions" class="form-group {{ options_hidden }}">
