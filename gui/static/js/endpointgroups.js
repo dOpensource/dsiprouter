@@ -302,6 +302,10 @@
     modal_body.find(".cdr_send_month").val('*');
     modal_body.find(".cdr_send_weekday").val('*');
     modal_body.find('.FusionPBXDomainOptions').addClass('d-none');
+    /* reset the FusionPBX toggle to off; if the widget is already built its
+       intercepted 'checked' setter updates the slider, otherwise the state is
+       picked up when the tab is next shown */
+    modal_body.find(".toggleFusionPBXDomain").prop('checked', false).trigger('change');
     modal_body.find('.updateButton').attr("disabled", false);
 
     // Clear out update button in add footer
@@ -399,12 +403,13 @@
       endpoint_table1.data('Tabledit').reload();
     }
 
-    if (gwgroup_data.fusionpbx.enabled) {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
-    }
-    else {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-    }
+    /* Set the underlying checkbox state and let the change handler sync the
+       hidden field / options. The bootstrap5-toggle widget renders from this
+       state when its tab is shown (see the shown.bs.tab handler); don't call
+       .bootstrapToggle() here, it throws while the FusionPBX tab is hidden. */
+    modal_body.find(".toggleFusionPBXDomain")
+      .prop('checked', !!gwgroup_data.fusionpbx.enabled)
+      .trigger('change');
 
     if (gwgroup_data.auth.type == "userpwd") {
       /* userpwd auth enabled, Set the radio button to true */
@@ -528,13 +533,21 @@
       if (self.is(":checked") || self.prop("checked")) {
         modal_body.find('.FusionPBXDomainOptions').removeClass('d-none');
         modal_body.find('.fusionpbx_db_enabled').val(1);
-        self.bootstrapToggle('on');
       }
       else {
         modal_body.find('.FusionPBXDomainOptions').addClass('d-none');
         modal_body.find('.fusionpbx_db_enabled').val(0);
-        self.bootstrapToggle('off');
       }
+    });
+
+    /* bootstrap5-toggle (ecmas build) throws if constructed while its element is
+       hidden, so it cannot be auto-initialized inside a hidden tab pane. Build
+       (or re-render) the FusionPBX toggle when its tab is shown and therefore
+       visible. Re-rendering also recalculates the slider size correctly. */
+    $('a[name="fusion-toggle"]').on('shown.bs.tab', function() {
+      $($(this).attr('href')).find('.toggleFusionPBXDomain').each(function() {
+        this.bootstrapToggle(this.bsToggle ? 'rerender' : undefined);
+      });
     });
 
     /* listener for freePBX toggle */
@@ -546,12 +559,12 @@
       if (self.is(":checked") || self.prop("checked")) {
         modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
         modal_body.find('.freepbx_enabled').val(1);
-        self.bootstrapToggle('on');
+        this.bootstrapToggle('on');
       }
       else {
         modal_body.find('.FreePBXDomainOptions').addClass("hidden");
         modal_body.find('.freepbx_enabled').val(0);
-        self.bootstrapToggle('off');
+        this.bootstrapToggle('off');
       }
     });
 

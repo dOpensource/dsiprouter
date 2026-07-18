@@ -242,14 +242,15 @@
               </div>
 
               <div class="form-group">
+                <!-- no wrapping <label> (double-toggles) and no data-toggle="toggle"
+                     (auto-init throws while hidden); carriergroups.js initializes
+                     this toggle when the Config tab is shown -->
                 <div class="checkbox">
-                  <label class="label-toggle">
-                    <input class="toggle-loadbalancing" type="checkbox" data-toggle="toggle" value="1"
-                           data-on="<span class='icon-load_balance'></span> Enabled"
-                           data-off="<span class='icon-load_balance'></span> Disabled"
-                           data-width="125px">
-                    Load Balancing
-                  </label>
+                  <input class="toggle-loadbalancing" type="checkbox" value="1"
+                         data-on="<span class='icon-load_balance'></span> Enabled"
+                         data-off="<span class='icon-load_balance'></span> Disabled"
+                         data-width="125px">
+                  <span class="label-toggle ms-2">Load Balancing</span>
                 </div>
                 <input class="lb_enabled" type="hidden" name="lb_enabled" value="0">
               </div>
@@ -355,14 +356,15 @@
             </div>
 
             <div class="form-group">
+              <!-- no wrapping <label> (double-toggles) and no data-toggle="toggle"
+                   (auto-init throws while hidden); carriergroups.js initializes
+                   this toggle when the Config tab is shown -->
               <div class="checkbox">
-                <label class="label-toggle">
-                  <input class="toggle-loadbalancing" type="checkbox" data-toggle="toggle" value="1"
-                         data-on="<span class='icon-load_balance'></span> Enabled"
-                         data-off="<span class='icon-load_balance'></span> Disabled"
-                         data-width="125px">
-                  Load Balancing
-                </label>
+                <input class="toggle-loadbalancing" type="checkbox" value="1"
+                       data-on="<span class='icon-load_balance'></span> Enabled"
+                       data-off="<span class='icon-load_balance'></span> Disabled"
+                       data-width="125px">
+                <span class="label-toggle ms-2">Load Balancing</span>
               </div>
               <input class="lb_enabled" type="hidden" name="lb_enabled" value="0">
             </div>

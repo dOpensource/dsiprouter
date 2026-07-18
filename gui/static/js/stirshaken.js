@@ -7,13 +7,11 @@
     function updateToggle() {
       if (toggle.is(":checked") || toggle.prop("checked")) {
         $('#stirShakenOptions').removeClass("hidden");
-        $(this).val("1");
-        $(this).bootstrapToggle('on');
+        toggle.val("1");
       }
       else {
         $('#stirShakenOptions').addClass("hidden");
-        $(this).val("0");
-        $(this).bootstrapToggle('off');
+        toggle.val("0");
       }
     }
 

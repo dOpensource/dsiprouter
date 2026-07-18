@@ -10,7 +10,7 @@
 
   <!-- inherited CSS -->
   {{ link_tag('bootstrap') }}
-  {{ link_tag('bootstrap-toggle') }}
+  {{ link_tag('bootstrap5-toggle.min') }}
   {{ link_tag('datatables.min') }}
   {{ link_tag('tabler-icons.min') }}
   {{ link_tag('highlight/{}'.format(highlight_theme|default('github'))) }}
@@ -216,7 +216,7 @@
     {% include 'includes/overrides.js' %}
   </script>
   {{ script_tag('bootstrap.bundle') }}
-  {{ script_tag('bootstrap-toggle') }}
+  {{ script_tag('bootstrap5-toggle.ecmas.min') }}
   {{ script_tag('validator') }}
   {{ script_tag('main') }}
   {{ script_tag('datatables.min') }}
