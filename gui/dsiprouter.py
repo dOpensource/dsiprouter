@@ -2587,6 +2587,16 @@ def initApp(flask_app):
     flask_app.jinja_env.globals.update(zip=zip)
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
 
+    # cache-busting token for static assets (file mtime) so browsers pick up
+    # CSS/JS changes without a manual hard refresh; falls back to the app version
+    _static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    def staticAssetVersion(relpath):
+        try:
+            return str(int(os.path.getmtime(os.path.join(_static_dir, relpath))))
+        except OSError:
+            return settings.VERSION
+    flask_app.jinja_env.globals.update(staticAssetVersion=staticAssetVersion)
+
     # Dynamically update settings
     intializeGlobalSettings()
 

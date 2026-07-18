@@ -245,14 +245,15 @@
 
         <div id="fusionpbx" class="tab-pane fade" name="fusion-toggle">
           <div class="form-group">
+            <!-- NOTE: no wrapping <label> (would double-toggle) and no data-toggle="toggle"
+                 (auto-init throws while this tab pane is hidden). endpointgroups.js
+                 initializes this toggle on shown.bs.tab, once it is visible. -->
             <div class="checkbox">
-              <label class="label-toggle">
-                <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                       data-on="<span class='icon-fusionpbx'></span> Enabled"
-                       data-off="<span class='icon-fusionpbx'></span> Disabled"
-                       data-width="125px">
-                FusionPBX Domain Support
-              </label>
+              <input class="toggleFusionPBXDomain" type="checkbox" value="1"
+                     data-on="<span class='icon-fusionpbx'></span> Enabled"
+                     data-off="<span class='icon-fusionpbx'></span> Disabled"
+                     data-width="125px">
+              <span class="label-toggle ms-2">FusionPBX Domain Support</span>
             </div>
             <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
           </div>
@@ -512,21 +513,21 @@ systemctl restart fail2ban</code></pre>
 
         <div id="fusionpbx2" class="tab-pane fade" name="fusion-toggle">
           <div class="form-group">
-            <div class="checkbox-inline">
-              <label class="label-toggle">
-                <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                       data-on="<span class='icon-fusionpbx'></span> Enabled"
-                       data-off="<span class='icon-fusionpbx'></span> Disabled"
-                       data-width="125px">
-                FusionPBX Domain Support
-              </label>
+            <!-- NOTE: no wrapping <label> (would double-toggle) and no data-toggle="toggle"
+                 (auto-init throws while this tab pane is hidden). endpointgroups.js
+                 initializes this toggle on shown.bs.tab, once it is visible. -->
+            <div class="checkbox">
+              <input class="toggleFusionPBXDomain" type="checkbox" value="1"
+                     data-on="<span class='icon-fusionpbx'></span> Enabled"
+                     data-off="<span class='icon-fusionpbx'></span> Disabled"
+                     data-width="125px">
+              <span class="label-toggle ms-2">FusionPBX Domain Support</span>
             </div>
-            <div class="checkbox-inline">
-              <label class="checkbox-inline">
-                <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0">Cluster
-                Support
-              </label>
-            </div>
+          </div>
+          <div class="form-group">
+            <label class="checkbox">
+              <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0"> Cluster Support
+            </label>
           </div>
           <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
           <div class="FusionPBXDomainOptions form-group d-none">

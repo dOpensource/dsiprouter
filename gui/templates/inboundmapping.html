@@ -156,13 +156,14 @@
 
       <div class="form-group">
         <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggle-hardfwd" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-call_hardfwd'></span> Enabled"
-                   data-off="<span class='icon-call_hardfwd'></span> Disabled"
-                   data-width="125px">
-            Hard Forwarding
-          </label>
+          <!-- no wrapping <label> (double-toggles) and no data-toggle="toggle"
+               (auto-init throws while the modal is hidden); inboundmapping.js
+               initializes this toggle on shown.bs.modal -->
+          <input class="toggle-hardfwd" type="checkbox" value="1"
+                 data-on="<span class='icon-call_hardfwd'></span> Enabled"
+                 data-off="<span class='icon-call_hardfwd'></span> Disabled"
+                 data-width="125px">
+          <span class="label-toggle ms-2">Hard Forwarding</span>
         </div>
         <input class="hardfwd_enabled" type="hidden" name="hardfwd_enabled" value="0">
       </div>
@@ -202,13 +203,14 @@
 
       <div class="form-group">
         <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggle-failfwd" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-call_failfwd'></span> Enabled"
-                   data-off="<span class='icon-call_failfwd'></span> Disabled"
-                   data-width="125px">
-            Failover Forwarding
-          </label>
+          <!-- no wrapping <label> (double-toggles) and no data-toggle="toggle"
+               (auto-init throws while the modal is hidden); inboundmapping.js
+               initializes this toggle on shown.bs.modal -->
+          <input class="toggle-failfwd" type="checkbox" value="1"
+                 data-on="<span class='icon-call_failfwd'></span> Enabled"
+                 data-off="<span class='icon-call_failfwd'></span> Disabled"
+                 data-width="125px">
+          <span class="label-toggle ms-2">Failover Forwarding</span>
         </div>
         <input class="failfwd_enabled" type="hidden" name="failfwd_enabled" value="0">
       </div>
@@ -311,13 +313,14 @@
 
       <div class="form-group">
         <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggle-hardfwd" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-call_hardfwd'></span> Enabled"
-                   data-off="<span class='icon-call_hardfwd'></span> Disabled"
-                   data-width="125px">
-            Hard Forwarding
-          </label>
+          <!-- no wrapping <label> (double-toggles) and no data-toggle="toggle"
+               (auto-init throws while the modal is hidden); inboundmapping.js
+               initializes this toggle on shown.bs.modal -->
+          <input class="toggle-hardfwd" type="checkbox" value="1"
+                 data-on="<span class='icon-call_hardfwd'></span> Enabled"
+                 data-off="<span class='icon-call_hardfwd'></span> Disabled"
+                 data-width="125px">
+          <span class="label-toggle ms-2">Hard Forwarding</span>
         </div>
         <input class="hardfwd_enabled" type="hidden" name="hardfwd_enabled" value="0">
       </div>
@@ -357,13 +360,14 @@
 
       <div class="form-group">
         <div class="checkbox">
-          <label class="label-toggle">
-            <input class="toggle-failfwd" type="checkbox" data-toggle="toggle" value="1"
-                   data-on="<span class='icon-call_failfwd'></span> Enabled"
-                   data-off="<span class='icon-call_failfwd'></span> Disabled"
-                   data-width="125px">
-            Failover Forwarding
-          </label>
+          <!-- no wrapping <label> (double-toggles) and no data-toggle="toggle"
+               (auto-init throws while the modal is hidden); inboundmapping.js
+               initializes this toggle on shown.bs.modal -->
+          <input class="toggle-failfwd" type="checkbox" value="1"
+                 data-on="<span class='icon-call_failfwd'></span> Enabled"
+                 data-off="<span class='icon-call_failfwd'></span> Disabled"
+                 data-width="125px">
+          <span class="label-toggle ms-2">Failover Forwarding</span>
         </div>
         <input class="failfwd_enabled" type="hidden" name="failfwd_enabled" value="0">
       </div>

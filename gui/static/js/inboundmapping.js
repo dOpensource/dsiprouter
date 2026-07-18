@@ -96,9 +96,10 @@
       /* reset options selected */
       modal_body.find("select").val('');
 
-      /* reset toggle buttons */
-      modal_body.find("input.toggle-hardfwd").bootstrapToggle('off');
-      modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
+      /* reset toggle buttons (the widget is hidden here, so set the checkbox
+         state + fire change; the slider is (re)built on shown.bs.modal) */
+      modal_body.find("input.toggle-hardfwd").prop('checked', false).trigger('change');
+      modal_body.find("input.toggle-failfwd").prop('checked', false).trigger('change');
     });
 
     routes_table.table().on('click', '#open-Update', function() {
@@ -154,20 +155,10 @@
         }).prop("selected", true);
       }
 
-      /* update toggle buttons */
-      if (hf_ruleid.length > 0) {
-        modal_body.find("input.toggle-hardfwd").bootstrapToggle('on');
-      }
-      else {
-        modal_body.find("input.toggle-hardfwd").bootstrapToggle('off');
-      }
-
-      if (ff_ruleid.length > 0) {
-        modal_body.find("input.toggle-failfwd").bootstrapToggle('on');
-      }
-      else {
-        modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
-      }
+      /* update toggle buttons (widget hidden here; set checkbox state + fire
+         change, the slider is (re)built on shown.bs.modal) */
+      modal_body.find("input.toggle-hardfwd").prop('checked', hf_ruleid.length > 0).trigger('change');
+      modal_body.find("input.toggle-failfwd").prop('checked', ff_ruleid.length > 0).trigger('change');
     });
 
     routes_table.table().on('click', '#open-Delete', function() {
@@ -216,6 +207,15 @@
         modal_body.find('.failfwd-options').addClass('d-none');
         modal_body.find('.failfwd_enabled').val(0);
       }
+    });
+
+    /* bootstrap5-toggle (ecmas build) throws if constructed while hidden, so it
+       cannot be auto-initialized inside a closed modal. Build (or re-render, to
+       fix slider sizing) the forwarding toggles once the modal is shown. */
+    $('#add, #edit').on('shown.bs.modal', function() {
+      $(this).find('.toggle-hardfwd, .toggle-failfwd').each(function() {
+        this.bootstrapToggle(this.bsToggle ? 'rerender' : undefined);
+      });
     });
   });
 

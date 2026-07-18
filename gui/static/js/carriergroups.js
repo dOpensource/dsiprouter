@@ -259,12 +259,22 @@
       var modal_toggle_divs = modal_body.children('div[name*="toggle"]');
       for (var i = 0; i < modal_toggle_divs.length; i++) {
         if ($(modal_toggle_divs[i]).attr('name') === target_link.attr('name')) {
-          $(modal_toggle_divs[i]).removeClass("hidden");
+          /* templates hide these panes with d-none; also clear the legacy
+             'hidden' class so the pane actually reveals */
+          $(modal_toggle_divs[i]).removeClass("d-none hidden");
         }
         else {
-          $(modal_toggle_divs[i]).addClass("hidden");
+          $(modal_toggle_divs[i]).addClass("d-none");
         }
       }
+
+      /* bootstrap5-toggle (ecmas build) throws if constructed while hidden, so
+         (re)build the load-balancing slider now that its pane is visible */
+      target_link.closest('.modal').find('.toggle-loadbalancing').each(function() {
+        if (this.offsetParent !== null) {
+          this.bootstrapToggle(this.bsToggle ? 'rerender' : undefined);
+        }
+      });
 
       // add styling to the toggles
       target_link.addClass('current-navlink');
@@ -317,8 +327,9 @@
       /* reset plugin selections */
       plugin_name_sel.val('').change();
 
-      /* reset toggle buttons */
-      modal_body.find("input.toggle-loadbalancing").bootstrapToggle('off');
+      /* reset toggle buttons (widget hidden here; set checkbox state + fire
+         change, the slider is (re)built when the Config tab is shown) */
+      modal_body.find("input.toggle-loadbalancing").prop('checked', false).trigger('change');
 
       // update gwgroup for all modals
       $('.modal-body').find(".gwgroup").each(function() {
@@ -358,13 +369,9 @@
       modal_body.find(".auth_username").val(auth_username);
       modal_body.find(".auth_proxy").val(auth_proxy);
 
-      /* update toggle buttons */
-      if (lb_enabled === '1') {
-        modal_body.find("input.toggle-loadbalancing").bootstrapToggle('on');
-      }
-      else {
-        modal_body.find("input.toggle-loadbalancing").bootstrapToggle('off');
-      }
+      /* update toggle buttons (widget hidden here; set checkbox state + fire
+         change, the slider is (re)built when the Config tab is shown) */
+      modal_body.find("input.toggle-loadbalancing").prop('checked', lb_enabled === '1').trigger('change');
 
       // update gwgroup for all modals
       modal_bodies.find(".gwgroup").each(function() {

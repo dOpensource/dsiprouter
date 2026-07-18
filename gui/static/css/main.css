@@ -911,6 +911,9 @@ input[name='hostname']:focus {
 
 .modal-body .tab-content {
   padding-top: 0.5rem;
+  /* bottom breathing room so a short tab (e.g. FusionPBX toggle when disabled)
+     isn't cramped against the modal footer */
+  padding-bottom: 1rem;
 }
 
 #endpoint-nav {

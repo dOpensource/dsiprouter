@@ -133,8 +133,10 @@
       }
     })
 
-    // default is enabled
-    showallcalls_inp.bootstrapToggle('on');
+    // default is enabled (bootstrap5-toggle auto-inits this visible checkbox on
+    // window.load; set the checkbox state + fire change rather than calling the
+    // removed jQuery .bootstrapToggle() plugin)
+    showallcalls_inp.prop('checked', true).val(1).trigger('change');
 
     /* listener for completed calls toggle */
     showallcalls_inp.change(function() {
