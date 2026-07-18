@@ -56,6 +56,8 @@
       d.getMinutes().toString().padStart(2, '0');
   }
 
+  $(document).ready(function() {
+
   $('#start-Backup').click(function() {
     $.ajax({
       url: API_BASE_URL + 'backupandrestore/backup',
@@ -75,9 +77,8 @@
         downloadResponse(response, fname);
       },
       error: function(xhr, text_status, error_msg) {
-	      var string = JSON.stringify(xhr.responseJSON);
-	      var json_object = JSON.parse(string);
-        showNotification(json_object.msg, true);
+        var msg = (xhr.responseJSON && xhr.responseJSON.msg) ? xhr.responseJSON.msg : ('Backup failed: ' + (error_msg || text_status));
+        showNotification(msg, true);
       },
       complete: function(xhr, text_status) {
         changeLoadingState(false);
@@ -104,9 +105,8 @@
         reloadKamRequired(true);
       },
       error: function(xhr, text_status, error_msg) {
-	      var string = JSON.stringify(xhr.responseJSON);
-	      var json_object = JSON.parse(string);
-        showNotification(json_object.msg, true);
+        var msg = (xhr.responseJSON && xhr.responseJSON.msg) ? xhr.responseJSON.msg : ('Restore failed: ' + (error_msg || text_status));
+        showNotification(msg, true);
       },
       complete: function(xhr, text_status) {
         changeLoadingState(false);
@@ -115,5 +115,7 @@
 
     return false;
   });
+
+  }); /* end $(document).ready */
 
 })(window, document);
