@@ -5,7 +5,7 @@ import requests
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from database import startSession, DummySession
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from shared import getRequestData, rowToDict
@@ -124,6 +124,9 @@ def _map_payload_to_instruction(payload):
 
 @agents_api.route('/gui/agents', methods=['GET'])
 def get_agents_page():
+    if not session.get('logged_in'):
+        return render_template('index.html', version=settings.VERSION)
+
     return render_template('agents.html')
 
 @agents_api.route('/api/agents/v1/agent', methods=['GET'])
