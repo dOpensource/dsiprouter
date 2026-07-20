@@ -320,7 +320,7 @@
       btn = $('#add .modal-footer').find('#addButton');
       btn.html("<i class='ti ti-circle-check'></i> Add");
       btn.removeClass("btn-success");
-      btn.addClass("btn-primary");
+      btn.addClass("btn-success");
     }
     else {
       btn = $('#edit .modal-footer').find('#updateButton');

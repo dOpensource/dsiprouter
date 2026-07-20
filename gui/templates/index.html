@@ -35,27 +35,23 @@
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
               <div style="margin-bottom: 25px" class="input-group">
-                <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="ti ti-user"></i></span>
-                </div>
+                <span class="input-group-text" id="username-label"><i class="ti ti-user"></i></span>
                 <input id="login-username" type="text" class="form-control" name="username" value=""
-                       placeholder="username or email" autofocus="autofocus">
+                       placeholder="username or email" aria-label="Username" aria-describedby="username-label" autofocus="autofocus">
               </div>
 
               <div style="margin-bottom: 25px" class="input-group">
-                <div class="input-group-prepend">
-                  <span class="input-group-text"><i class="ti ti-lock"></i></span>
-                </div>
-                <input id="login-password" type="password" class="form-control" name="password" placeholder="password">
+                
+                <span class="input-group-text" id="password-label"><i class="ti ti-lock"></i></span>
+                <input id="login-password" type="password" class="form-control" name="password" placeholder="password" aria-label="Password" aria-describedby="password-label">
               </div>
 
               <input id="nextpage" type="hidden" name="nextpage" value="{{ nextpage }}">
               <div style="margin-top:10px" class="form-group">
                 <!-- Button -->
 
-                <div class="col-sm-12 controls">
+                <div class="col-sm-12" style="padding-bottom: 5px;">
                   <button class="btn btn-success" type="submit">Login</button>
-
                 </div>
               </div>
 

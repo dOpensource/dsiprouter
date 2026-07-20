@@ -936,6 +936,20 @@ input[name='hostname']:focus {
 
 .btn-reload {
     --bs-btn-color: #fff;
+    --bs-btn-bg: #2188B0;
+    --bs-btn-border-color: #2188B0;
+
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #2188B0;
+    --bs-btn-hover-border-color: #2188B0;
+
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #2188B0;
+    --bs-btn-active-border-color: #2188B0;
+}
+
+.btn-reload-required {
+    --bs-btn-color: #fff;
     --bs-btn-bg: #fd7e14;
     --bs-btn-border-color: #fd7e14;
 
@@ -943,6 +957,7 @@ input[name='hostname']:focus {
     --bs-btn-hover-bg: #e66a00;
     --bs-btn-hover-border-color: #d65f00;
 
+    --bs-btn-active-color: #fff;
     --bs-btn-active-bg: #c95600;
     --bs-btn-active-border-color: #bb5100;
 }
@@ -952,4 +967,6 @@ input[name='hostname']:focus {
   bg-color: #000000;
 }
 
-
+.user-profile-button {
+    color: #fff;
+}

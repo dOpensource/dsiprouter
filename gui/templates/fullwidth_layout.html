@@ -33,9 +33,9 @@
           <ul class="nav navbar-nav ml-auto">
             <div class="btn-group" style="margin-right: 0.5em">
               {% if state.kam_reload_required == True or state.dsip_reload_required == True %}
-                {% set btn_class="btn-reload" %}
+                {% set btn_class="btn-reload-required" %}
               {% else %}
-                {% set btn_class="btn-primary" %}
+                {% set btn_class="btn-reload" %}
               {% endif %}
               <button type="button" class="btn {{ btn_class }} btn-sm dropdown-toggle" id="reload" data-bs-toggle="dropdown" aria-expanded="false">
                 Reload
@@ -60,7 +60,7 @@
                <input type="text" class="form-control" placeholder="Search" />
              </form> -->
             <li class="dropdown movable">
-              <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown"><span
+              <a href="#" class="dropdown-toggle user-profile-button" data-bs-toggle="dropdown"><span
                   class="ti ti-user"></span>{{ session.username }}</a>
               <ul class="dropdown-menu" role="menu">
                 <!-- <li><a href="#"><span class="fa fa-user"></span>My Profile</a></li>

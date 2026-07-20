@@ -245,6 +245,26 @@ def favicon():
         'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
+@app.context_processor
+def inject_login_nextpage():
+    nextpage = request.full_path
+    if nextpage.endswith('?'):
+        nextpage = nextpage[:-1]
+
+    return {
+        'nextpage': nextpage,
+    }
+
+
+def _sanitize_nextpage(nextpage):
+    if isinstance(nextpage, str) and nextpage.startswith('/'):
+        parsed = urllib.parse.urlsplit(nextpage)
+        if not parsed.scheme and not parsed.netloc:
+            return nextpage
+
+    return url_for('index')
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     try:
@@ -277,14 +297,14 @@ def login():
             if secrets.compare_digest(pwcheck, settings.DSIP_PASSWORD):
                 session['logged_in'] = True
                 session['username'] = form['username']
-                return redirect(url_for('index'))
+                return redirect(_sanitize_nextpage(form.get('nextpage')))
        
         # Check for user in other auth modules
         for auth_mod in auth_modules:
             if auth_mod.authenticate(form['username'], form['password']):
                 session['logged_in'] = True
                 session['username'] = form['username']
-                return redirect(url_for('index'))
+                return redirect(_sanitize_nextpage(form.get('nextpage')))
 
         # if we got here auth failed
         flash('Wrong Username or Password')
@@ -345,7 +365,7 @@ def deleteCarrierGroups():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -418,7 +438,7 @@ def deleteCarriers():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -510,7 +530,7 @@ def displayEndpointGroups():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -559,7 +579,7 @@ def displayCDRS():
     """
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -594,7 +614,7 @@ def displayLicenseManager():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -621,7 +641,7 @@ def addUpdateEndpointGroups():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -767,7 +787,7 @@ def displayInboundMapping():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1483,7 +1503,7 @@ def displayTeleBlock():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1551,7 +1571,7 @@ def displayTransNexus(msg=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1651,7 +1671,7 @@ def displayOutboundRoutes():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1940,7 +1960,7 @@ def displayStirShaken(msg=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2054,7 +2074,7 @@ def displayUpgrade(msg=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
