@@ -446,7 +446,7 @@ function validateOSInfo() {
     debian)
         case "$DISTRO_VER" in
         13)
-            KAM_VERSION=${KAM_VERSION:-"6.0.1"}
+            KAM_VERSION=${KAM_VERSION:-"6.0.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
             ;;
         12|11|10)
