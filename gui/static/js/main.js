@@ -28,6 +28,43 @@ if (typeof API_BASE_URL === "undefined") {
 /* TODO: replace shorthands with $(document).ready(...) its more verbose */
 $(function() {
   var accordionActive = false;
+  var SYSTEM_SETTINGS_MENU_ID = '#system-settings-menu';
+  var SYSTEM_SETTINGS_EXPANDED_KEY = 'dsip.systemSettings.expanded';
+
+  function setSystemSettingsExpanded(expanded) {
+    localStorage.setItem(SYSTEM_SETTINGS_EXPANDED_KEY, expanded ? '1' : '0');
+  }
+
+  function getSystemSettingsExpanded() {
+    return localStorage.getItem(SYSTEM_SETTINGS_EXPANDED_KEY) === '1';
+  }
+
+  function shouldKeepSystemSettingsExpanded($menu) {
+    if (getSystemSettingsExpanded()) {
+      return true;
+    }
+
+    var currentPath = window.location.pathname;
+    var matchesCurrentPage = false;
+    $menu.find('.submenu a').each(function() {
+      if (this.pathname === currentPath) {
+        matchesCurrentPage = true;
+        return false;
+      }
+    });
+
+    return matchesCurrentPage;
+  }
+
+  function openSystemSettingsMenu($menu) {
+    var $submenu = $menu.children('.submenu');
+    if ($submenu.length <= 0) {
+      return;
+    }
+
+    $menu.addClass('open');
+    $submenu.show();
+  }
 
   $(window).on('resize', function() {
     var windowWidth = $(window).width();
@@ -130,15 +167,33 @@ $(function() {
     var $next = $this.next();
     var anchor = $this.find('a')
 
+    if ($next.length <= 0 || !$next.hasClass('submenu')) {
+      return;
+    }
+
+    var wasOpen = $this.parent().hasClass('open');
+
     $next.slideToggle();
     $this.parent().toggleClass('open');
 
     if (!e.data.multiple) {
       $el.find('.submenu').not($next).slideUp().parent().removeClass('open');
     }
+
+    if ($this.parent().is(SYSTEM_SETTINGS_MENU_ID)) {
+      setSystemSettingsExpanded(!wasOpen);
+    } else if (!e.data.multiple) {
+      setSystemSettingsExpanded(false);
+    }
   };
 
   var accordion = new Accordion($('ul.accordion'), false);
+
+  var $systemSettingsMenu = $(SYSTEM_SETTINGS_MENU_ID);
+  if (shouldKeepSystemSettingsExpanded($systemSettingsMenu)) {
+    openSystemSettingsMenu($systemSettingsMenu);
+    setSystemSettingsExpanded(true);
+  }
 });
 
 $(function() {
