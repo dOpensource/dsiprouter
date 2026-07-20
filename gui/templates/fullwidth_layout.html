@@ -83,7 +83,7 @@
             </div>
           </li>
 
-          <li class="nav-header">
+          <li class="nav-header{% if request.path in ['/settings', '/backupandrestore', '/certificates', '/teleblock', '/transnexus', '/stirshaken', '/licensing', '/upgrade'] %} open{% endif %}" id="system-settings-menu">
             <div class="link">
               <i class="ti ti-layout-grid"></i>
               <a class="navlink" href="/carriergroups">Carrier Groups</a>
@@ -155,7 +155,7 @@
               <a class="navlink" href="#">System Settings</a>
               <i class="ti ti-chevron-down"></i>
             </div>
-            <ul class="submenu">
+            <ul class="submenu"{% if request.path in ['/settings', '/backupandrestore', '/certificates', '/teleblock', '/transnexus', '/stirshaken', '/licensing', '/upgrade'] %} style="display:block"{% endif %}>
               <li><a class="navlink" href="/settings">Global Settings</a></li>
               <li><a href="/backupandrestore">Backup and Restore</a></li>
               <li><a href="/certificates">Certificates</a></li>
