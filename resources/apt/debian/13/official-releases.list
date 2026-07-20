@@ -1,0 +1,14 @@
+#-------------------------------------------------------------------
+# packages from debian 13 (trixie) release
+#-------------------------------------------------------------------
+deb https://deb.debian.org/debian/ trixie main contrib non-free
+#deb-src https://deb.debian.org/debian/ trixie main contrib non-free
+
+deb https://deb.debian.org/debian/ trixie-updates main contrib non-free
+#deb-src https://deb.debian.org/debian/ trixie-updates main contrib non-free
+
+deb https://deb.debian.org/debian/ trixie-backports main
+#deb-src https://deb.debian.org/debian/ trixie-backports main
+
+deb https://deb.debian.org/debian-security/ trixie-security main
+#deb-src https://deb.debian.org/debian-security/ trixie-security main
