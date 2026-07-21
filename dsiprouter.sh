@@ -7,6 +7,7 @@
 #========================== NOTES ==========================#
 #
 # Supported OS:
+# - Debian 13 (trixie)      - STABLE
 # - Debian 12 (bookworm)    - STABLE
 # - Debian 11 (bullseye)    - STABLE
 # - Debian 10 (buster)      - STABLE
@@ -444,6 +445,10 @@ function validateOSInfo() {
     case "$DISTRO" in
     debian)
         case "$DISTRO_VER" in
+        13)
+            KAM_VERSION=${KAM_VERSION:-"6.0.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
         12|11|10)
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
@@ -1796,7 +1801,11 @@ function installRTPEngine() {
     fi
 
     printdbg "Attempting to install RTPEngine..."
-    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
+    if [[ -f "${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
+    else
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
+    fi
     if (( $? != 0 )); then
         printerr "RTPEngine install failed"
         exit 1
@@ -1840,7 +1849,11 @@ function uninstallRTPEngine() {
     fi
 
     printdbg "Attempting to uninstall RTPEngine..."
-    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh uninstall
+    if [[ -f "${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+    else
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh uninstall
+    fi
 
     if (( $? == 0 )); then
         if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
@@ -2398,8 +2411,8 @@ function installDnsmasq() {
     useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
 
     printdbg "Attempting to install DNSmasq..."
-    if (( ${DISTRO_VER} == 12 )); then
-        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_VER}.sh install
+    if [[ -f "${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
     else
         ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh install
     fi
@@ -2455,7 +2468,11 @@ function uninstallDnsmasq() {
     fi
 
     printdbg "Attempting to uninstall DNSmasq..."
-    ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
+    if [[ -f "${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+    else
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
+    fi
 
     if (( $? != 0 )); then
         printerr "DNSmasq uninstall failed - OS install script failure"
@@ -3900,7 +3917,7 @@ function usageOptions() {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
+        "install" "[-debug|-all|--all|-mysql|--mysql|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
         " " "-dmz <pub iface>,<priv iface>|--dmz=<pub iface>,<priv iface>|-netm <mode>|--network-mode=<mode>|-homer <homerhost[:heplifyport]>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user[:pass]@]dbhost[:port][/dbname]>|--database-admin=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcsync <num>|" \
@@ -4082,7 +4099,7 @@ function processCMD() {
                         ;;
                     -mysql|--mysql)
                         DEFAULT_SERVICES=0
-                        RUN_CMMANDS+=(installMysql)
+                        RUN_COMMANDS+=(installMysql)
                         shift
                         ;;
                     -kam|--kamailio)
