@@ -112,6 +112,10 @@ function uninstall() {
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
 
+    gpasswd -d kamailio dsiprouter
+    gpasswd -d nginx dsiprouter
+    gpasswd -d dsiprouter kamailio
+
     return 0
 }
 
