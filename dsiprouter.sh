@@ -3917,7 +3917,7 @@ function usageOptions() {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
+        "install" "[-debug|-all|--all|-mysql|--mysql|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
         " " "-dmz <pub iface>,<priv iface>|--dmz=<pub iface>,<priv iface>|-netm <mode>|--network-mode=<mode>|-homer <homerhost[:heplifyport]>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user[:pass]@]dbhost[:port][/dbname]>|--database-admin=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcsync <num>|" \
@@ -4099,7 +4099,7 @@ function processCMD() {
                         ;;
                     -mysql|--mysql)
                         DEFAULT_SERVICES=0
-                        RUN_CMMANDS+=(installMysql)
+                        RUN_COMMANDS+=(installMysql)
                         shift
                         ;;
                     -kam|--kamailio)
