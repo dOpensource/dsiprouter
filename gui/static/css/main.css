@@ -715,8 +715,7 @@ table.dataTable {
 
     /* Subtle fading border */
     border: 2px solid #fd7e14;
-    box-shadow: 0 0 0 2px #fd7e14,
-                0 0 0 4px #fd7e14;
+    
 }
 
 /* Fix Bootstrap 5 nav flex direction for sidebar */
