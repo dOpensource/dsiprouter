@@ -711,12 +711,12 @@ table.dataTable {
 .reload-required {
     /* Red overlay approach for better color forcing */
     background-blend-mode: multiply;
-    background-image: linear-gradient(rgba(200, 40, 40, 0.4), rgba(200, 40, 40, 0.4));
+    background-image: linear-gradient(#fd7e14, rgba(253, 126, 20, 0.4));
 
     /* Subtle fading border */
-    border: 2px solid rgba(220, 50, 50, 0.7);
-    box-shadow: 0 0 0 2px rgba(220, 50, 50, 0.3),
-                0 0 0 4px rgba(220, 50, 50, 0.15);
+    border: 2px solid #fd7e14;
+    box-shadow: 0 0 0 2px #fd7e14,
+                0 0 0 4px #fd7e14;
 }
 
 /* Fix Bootstrap 5 nav flex direction for sidebar */
