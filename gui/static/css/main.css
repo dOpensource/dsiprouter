@@ -338,6 +338,17 @@
   color: #9d9d9d;
 }
 
+/* Side navigation links: show underline only on hover */
+#side-menu a.navlink,
+#side-menu .submenu a {
+  text-decoration: none;
+}
+
+#side-menu a.navlink:hover,
+#side-menu .submenu a:hover {
+  text-decoration: underline;
+}
+
 .a {
   color: #9d9d9d;
   text-decoration: none;
@@ -552,6 +563,23 @@ a.navlink {
   width: 50vw;
 }
 
+/* ensure responsive tables inside modal bodies can scroll horizontally */
+.modal-body .table-responsive {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* prevent name column from wrapping */
+table#carriers td.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
 /* fix bootstrap modals when stacking */
 .modal-open.modal {
   overflow-x: hidden;
@@ -590,6 +618,12 @@ table.dataTable {
 .dataTables_wrapper > div:last-child {
   padding-right: 10px;
   padding-left: 10px;
+}
+
+/* add breathing room before pagination controls on paginated pages */
+.dataTables_wrapper .dataTables_paginate,
+div.dt-container div.dt-paging {
+  margin-top: 0.75rem;
 }
 
 #reloading_overlay {
@@ -853,11 +887,11 @@ table.dataTable {
   padding-top: 1rem;
 }
 
-/* Make endpoint group modals wider */
+/* Make endpoint group modals wider and let them grow with the form content */
 #edit.modal .modal-dialog,
 #add.modal .modal-dialog {
-  max-width: 800px;
-  width: 90%;
+  width: min(95vw, 1200px);
+  max-width: min(95vw, 1200px);
 }
 
 /* Ensure tabs don't wrap */
@@ -888,20 +922,35 @@ table.dataTable {
   white-space: nowrap;
 }
 
-/* Host field auto-expand */
-#endpoint-table2 input[name='hostname'],
-#endpoint-table input[name='hostname'],
-#endpoint-tablebody2 input[name='hostname'],
-#endpoint-tablebody input[name='hostname'],
+/* Keep Tabledit action buttons on one line in endpoint tables */
+#endpoint-table .tabledit-toolbar,
+#endpoint-table2 .tabledit-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 0.25rem;
+}
+
+#endpoint-table .tabledit-toolbar .tabledit-save-button,
+#endpoint-table2 .tabledit-toolbar .tabledit-save-button {
+  margin-left: 0.25rem;
+}
+
+/* Host field default width and auto-expand */
+#endpoint-table2 input[name='host'],
+#endpoint-table input[name='host'],
+#endpoint-tablebody2 input[name='host'],
+#endpoint-tablebody input[name='host'],
 .endpoint-host {
-  min-width: 150px;
-  width: auto;
+  min-width: 20ch;
+  width: 20ch;
+  max-width: 100%;
 }
 
 /* Host field expand on focus */
-input[name='hostname']:focus {
+input[name='host']:focus {
   width: auto !important;
-  min-width: 250px !important;
+  min-width: 20ch !important;
   max-width: 400px !important;
 }
 
@@ -968,4 +1017,8 @@ input[name='hostname']:focus {
 
 .user-profile-button {
     color: #fff;
+}
+
+.tableAddButton {
+    padding-top: 4px;
 }

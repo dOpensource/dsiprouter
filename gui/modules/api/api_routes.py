@@ -22,7 +22,7 @@ from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
+from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
@@ -1563,6 +1563,8 @@ def updateEndpointGroups(gwgroupid=None):
             # Check if the Endpoint Group was created by the  MSTeams Domain Logic
             if "pstnhub.microsoft.com" in ep_gateway.address:
                 msteams_domain = gwgroup_desc_dict['name']
+            else:
+                msteams_domain = ""
             ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media,msteams_domain=msteams_domain)
 
             gwlist.append(gwid)
@@ -3148,6 +3150,42 @@ def generatePassword():
             msg='Successfully generated password',
             data=[urandomChars(DEF_PASSWORD_LEN)],
         )
+    except Exception as ex:
+        return showApiError(ex)
+
+@api.route("/api/v1/sys/isvalidhost/<host>", methods=['GET'])
+@api_security
+def isValidHost(host):
+    """
+    Check if the given host is valid
+    """ 
+
+    result = "Host validation check completed"
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        host_type = check_host_type(host)
+
+        if host_type == 'ip':
+            is_valid = isValidIP(host)
+        elif host_type == 'hostname':
+            try:
+                is_valid = hostToIP(host)
+                if (is_valid != ""):
+                    is_valid = True
+            except Exception as ex:
+                is_valid = False
+                result = ex.args[0] if len(ex.args) > 0 else "Unknown error"
+        else:
+            is_valid = False
+
+        return createApiResponse(
+            msg=result,
+            data={"status": is_valid},
+        )
+
     except Exception as ex:
         return showApiError(ex)
 

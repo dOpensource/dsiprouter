@@ -59,6 +59,85 @@
   var endpoint_table1;
   var endpoint_table2;
   var gwgroup_table;
+  var model_timerid;
+ 
+
+  function ensureHostValidationStyles() {
+    if ($('#tabledit-host-validation-style').length) {
+      return;
+    }
+
+    $('head').append(
+      '<style id="tabledit-host-validation-style">' +
+      '.tabledit-host-validation-msg{' +
+      'display:none;margin-top:6px;padding:6px 8px;border-radius:4px;' +
+      'border-left:3px solid #dc3545;background:#fff5f5;color:#842029;font-size:12px;line-height:1.3;' +
+      '}' +
+      '</style>'
+    );
+  }
+
+  function getHostValidationMessageBox(hostInput) {
+    var hostCell = hostInput.closest('td');
+    var msgBox = hostCell.find('.tabledit-host-validation-msg');
+    if (!msgBox.length) {
+      msgBox = $('<div class="tabledit-host-validation-msg"></div>');
+      hostInput.after(msgBox);
+    }
+    return msgBox;
+  }
+
+  function setHostValidationState(hostInput, isValid, msg) {
+    var msgBox = getHostValidationMessageBox(hostInput);
+
+    if (isValid) {
+      hostInput.css('border', '');
+      msgBox.text('').hide();
+      return;
+    }
+
+    hostInput.css('border', '1px solid red');
+    msgBox.text(msg || 'Host validation failed').show();
+  }
+
+  function validateHostWithApi(hostValue) {
+    var result = {
+      isValid: false,
+      msg: 'Host validation failed'
+    };
+
+    $.ajax({
+      type: 'GET',
+      url: API_BASE_URL + 'sys/isvalidhost/' + encodeURIComponent(hostValue),
+      dataType: 'json',
+      contentType: 'application/json; charset=utf-8',
+      async: false,
+      success: function(response) {
+        var responseData = response && response.data ? response.data : null;
+
+        if (responseData && typeof responseData.status === 'boolean') {
+          result.isValid = responseData.status;
+        }
+        else if (typeof response.status === 'boolean') {
+          result.isValid = response.status;
+        }
+
+        if (typeof response.msg === 'string' && response.msg.length > 0) {
+          result.msg = response.msg;
+        }
+      },
+      error: function(jqXHR) {
+        if (jqXHR.responseJSON && typeof jqXHR.responseJSON.msg === 'string' && jqXHR.responseJSON.msg.length > 0) {
+          result.msg = jqXHR.responseJSON.msg;
+        }
+        else if (typeof jqXHR.responseText === 'string' && jqXHR.responseText.length > 0) {
+          result.msg = jqXHR.responseText;
+        }
+      }
+    });
+
+    return result;
+  }
 
   function generateEndpointObject(row) {
     var jq_row = $(row);
@@ -108,6 +187,7 @@
 
   function generateEndpointTable(selector) {
     var endpoint_table = $(selector);
+    ensureHostValidationStyles();
 
     endpoint_table.Tabledit({
       columns: {
@@ -122,6 +202,18 @@
           [7, 'keepalive', KEEPALIVE_OPTIONS_STR],
         ],
         saveButton: true,
+      },
+      beforeSave: function(cells) {
+        var hostInput = $(cells).closest('tr').find('input[name="host"]');
+        if (!hostInput.length) {
+          return true;
+        }
+
+        var hostValue = $.trim(hostInput.val());
+        var validationResult = validateHostWithApi(hostValue);
+        setHostValidationState(hostInput, validationResult.isValid, validationResult.msg);
+
+        return validationResult.isValid;
       },
       ajaxDisabled: true,
       restoreButton: false
@@ -268,6 +360,21 @@
             "gwgroupid": gwgroupid_int
           }).draw();
         }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        var btn;
+        if (action === "POST") {
+          btn = $('#add .modal-footer').find('#addButton');
+        }
+        else {
+          btn = $('#edit .modal-footer').find('#updateButton');
+          btn.unbind('click');
+        }
+        btn.addClass("btn-danger");
+        btn.html("<i class='ti ti-alert-circle'></i> Error!");
+        btn.attr("disabled", true);
+        clearTimeout(model_timerid);
+
       }
     })
   }
@@ -631,7 +738,7 @@
       if (validateFields('#add')) {
         addEndpointGroup();
         // hide the modal after 1.5 sec
-        setTimeout(function() {
+        model_timerid = setTimeout(function() {
           var add_modal = $('#add');
           if (add_modal.is(':visible')) {
             add_modal.modal('hide');
@@ -648,7 +755,7 @@
       if (validateFields('#edit')) {
         updateEndpointGroup();
         // hide the modal after 1.5 sec
-        setTimeout(function() {
+        model_timerid = setTimeout(function() {
           var edit_modal = $('#edit');
           if (edit_modal.is(':visible')) {
             edit_modal.modal('hide');
@@ -659,6 +766,8 @@
       /* prevent page reload */
       return false;
     });
+
+    
 
     /* handler for deleting endpoint group */
     $('#deleteButton').click(function() {
@@ -677,33 +786,35 @@
 })(window, document);
 
 // Auto-expand host field while typing, shrink on blur
-// Auto-expand host field while typing, shrink on blur
-$(document).on("focus", "input[name=\"hostname\"]", function() {
-  $(this).css("width", "auto");
-  $(this).css("min-width", "200px");
+$(document).on("focus", "input[name=\"host\"]", function() {
+  $(this).css("width", "20ch");
+  $(this).css("min-width", "20ch");
 });
 
-$(document).on("input", "input[name=\"hostname\"]", function() {
+$(document).on("input", "input[name=\"host\"]", function() {
   this.style.width = "auto";
-  this.style.width = (this.scrollWidth + 10) + "px";
+  this.style.width = Math.max(20, this.scrollWidth + 10) + "px";
 });
 
-$(document).on("blur", "input[name=\"hostname\"]", function() {
-  $(this).css("width", "");
-  $(this).css("min-width", "");
+$(document).on("blur", "input[name=\"host\"]", function() {
+  $(this).css("width", "20ch");
+  $(this).css("min-width", "20ch");
 });
 
 // Auto-adjust modal width based on host field content
-$(document).on("input", "input[name=\"hostname\"]", function() {
-  var inputWidth = this.scrollWidth + 50;
+$(document).on("input", "input[name=\"host\"]", function() {
   var modal = $(this).closest(".modal-dialog");
+  var form = $(this).closest("form");
   var currentWidth = modal.width();
-  var minWidth = 800;
-  var maxWidth = $(window).width() * 0.9;
-  
-  var newWidth = Math.max(minWidth, Math.min(inputWidth + 400, maxWidth));
-  
+  var viewportWidth = $(window).width() * 0.95;
+  var formWidth = form.get(0).scrollWidth + 80;
+  var minWidth = 720;
+  var maxWidth = Math.min(viewportWidth, 1200);
+
+  var newWidth = Math.max(minWidth, Math.min(formWidth, maxWidth));
+
   if (newWidth > currentWidth) {
+    modal.css("width", newWidth + "px");
     modal.css("max-width", newWidth + "px");
   }
 });

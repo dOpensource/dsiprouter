@@ -76,6 +76,7 @@ if (typeof jQuery === 'undefined') {
                 }
             },
             onDraw: function() { return; },
+            beforeSave: function() { return true; },
             onSuccess: function() { return; },
             onFail: function() { return; },
             onAlways: function() { return; },
@@ -282,6 +283,10 @@ if (typeof jQuery === 'undefined') {
                 });
             },
             submit: function(td) {
+                if (plugin.settings.beforeSave(td) === false) {
+                    return false;
+                }
+
                 // Send AJAX request to server.
                 var ajaxResult = ajax(plugin.settings.buttons.edit.action);
 
