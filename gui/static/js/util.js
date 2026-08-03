@@ -271,21 +271,21 @@
     var top_nav = $('#top-nav');
 
     if (required) {
-      reload_btn.removeClass('btn-primary');
+      reload_btn.removeClass('btn-reload');
       split_btn.removeClass('btn-primary');
-      kamailio_btn.removeClass('btn-secondary');
-      reload_btn.addClass('btn-warning');
+      kamailio_btn.removeClass('custom-nav-dropdown-item');
+      reload_btn.addClass('btn-reload-required');
       split_btn.addClass('btn-warning');
-      kamailio_btn.addClass('btn-warning');
+      kamailio_btn.addClass('custom-nav-dropdown-item-active');
       top_nav.addClass('reload-required');
     }
     else {
-      reload_btn.removeClass('btn-warning');
+      reload_btn.removeClass('btn-reload-required');
       split_btn.removeClass('btn-warning');
-      kamailio_btn.removeClass('btn-warning');
-      reload_btn.addClass('btn-primary');
+      kamailio_btn.removeClass('custom-nav-dropdown-item-active');
+      reload_btn.addClass('btn-reload');
       split_btn.addClass('btn-primary');
-      kamailio_btn.addClass('btn-secondary');
+      kamailio_btn.addClass('custom-nav-dropdown-item');
       top_nav.removeClass('reload-required');
     }
   };
@@ -300,20 +300,20 @@
     var dsiprouter_btn = $('#reload_dsip');
 
     if (required) {
-      reload_btn.removeClass('btn-primary');
+      reload_btn.removeClass('btn-reload');
       split_btn.removeClass('btn-primary');
-      dsiprouter_btn.removeClass('btn-secondary');
-      reload_btn.addClass('btn-warning');
+      dsiprouter_btn.removeClass('custom-nav-dropdown-item');
+      reload_btn.addClass('btn-reload-required');
       split_btn.addClass('btn-warning');
-      dsiprouter_btn.addClass('btn-warning');
+      dsiprouter_btn.addClass('custom-nav-dropdown-item-active');
     }
     else {
-      reload_btn.removeClass('btn-warning');
+      reload_btn.removeClass('btn-reload-required');
       split_btn.removeClass('btn-warning');
-      dsiprouter_btn.removeClass('btn-warning');
-      reload_btn.addClass('btn-primary');
+      dsiprouter_btn.removeClass('custom-nav-dropdown-item-active');
+      reload_btn.addClass('btn-reload');
       split_btn.addClass('btn-primary');
-      dsiprouter_btn.addClass('btn-secondary');
+      dsiprouter_btn.addClass('custom-nav-dropdown-item');
     }
   };
 

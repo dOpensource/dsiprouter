@@ -1012,7 +1012,10 @@ input[name='host']:focus {
 
 .custom-nav-dropdown-item {
   color: #c4c4c5;
-  bg-color: #000000;
+}
+
+.custom-nav-dropdown-item-active {
+  color: #fd7e14;
 }
 
 .user-profile-button {

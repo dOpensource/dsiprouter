@@ -33,7 +33,7 @@
       </div>
 
       <div id="authservice_settings" class="form-group {% if settings.TRANSNEXUS_AUTHSERVICE_ENABLED != 1 %}hidden{% endif %}">
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="authservice_host" name="authservice_host"
                  placeholder="Auth Service Host"
                  value="{{ settings.TRANSNEXUS_AUTHSERVICE_HOST }}">
