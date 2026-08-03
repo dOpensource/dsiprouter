@@ -4079,7 +4079,6 @@ function processCMD() {
     local ARG="$1" OPT="" RETVAL=0
     case $ARG in
         install)
-	    set -x
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemPath setCloudPlatform createInitService createSwapFile installDsiprouterCli)
             shift
