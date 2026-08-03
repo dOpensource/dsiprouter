@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Debian 13 (trixie) RTPEngine installer.
-# Installs RTPEngine from distribution packages (ngcp-rtpengine-*) instead of
+# Installs RTPEngine from Debian distribution packages (rtpengine-*) instead of
 # compiling from source. See ../install.sh for the source-build variant.
 
 # Debug this script if in debug mode
@@ -15,13 +15,16 @@ fi
 # never prompt during apt operations (dkms/kernel modules can be interactive)
 export DEBIAN_FRONTEND=noninteractive
 
-# RTPEngine binary packages provided by Debian (sipwise/ngcp packaging)
+# RTPEngine binary packages provided by Debian trixie (sipwise upstream).
+# NOTE: Debian dropped the legacy "ngcp-" prefix and no longer ships a
+#       separate iptables-setup helper package (the daemon manages it).
 RTPENGINE_PKGS=(
-    ngcp-rtpengine-daemon
-    ngcp-rtpengine-iptables
-    ngcp-rtpengine-kernel-dkms
-    ngcp-rtpengine-utils
+    rtpengine-daemon
+    rtpengine-kernel-dkms
+    rtpengine-utils
 )
+# systemd unit shipped by the daemon package (we replace it with our own)
+RTPENGINE_PKG_SERVICE="rtpengine-daemon.service"
 
 # TODO: add support for searching packages.debian.org
 function debSearch() {
@@ -46,17 +49,12 @@ function aptInstallKernelHeadersFromURI() {
     local KERN_HDR_COMMON_URI="" KERN_HDR_COMMON_DEB=""
 
     (
-        # download the .deb file
         cd /tmp/
         curl -sLO --retry 3 "$KERN_HDR_URI"
-
-        # install dependent common headers
         KERN_HDR_COMMON_URI=$(
             debSearch $(
                 dpkg --info "$KERN_HDR_DEB" 2>/dev/null |
-                grep 'Depends:' |
-                cut -d ':' -f 2 |
-                tr ',' '\n' |
+                grep 'Depends:' | cut -d ':' -f 2 | tr ',' '\n' |
                 grep -oP 'linux-headers-.*-common'
             )
         ) &&
@@ -67,8 +65,6 @@ function aptInstallKernelHeadersFromURI() {
             apt-get install -y -f
             rm -f "$KERN_HDR_COMMON_DEB"
         }
-
-        # install the kernel headers
         apt-get install -y ./${KERN_HDR_DEB}
         RET=$((RET + $?))
         rm -f "$KERN_HDR_DEB"
@@ -90,11 +86,8 @@ function install {
         return 1
     fi
 
-    # try installing kernel dev headers so the DKMS module can build:
-    # 1: headers from repos
-    # 2: headers from snapshot.debian.org
-    # NOTE: headers should be installed for all kernels on the system
-    #       but we do not want to support ancient kernel dependencies
+    # install kernel dev headers so the DKMS module can build:
+    # 1: headers from repos  2: headers from snapshot.debian.org
     (
         RET=0
         for OS_KERNEL in $(ls /lib/modules/ 2>/dev/null); do
@@ -109,18 +102,18 @@ function install {
     fi
 
     # prevent the packaged daemon from auto-starting on install; we manage our own unit
-    systemctl mask ngcp-rtpengine-daemon.service &>/dev/null
+    systemctl mask ${RTPENGINE_PKG_SERVICE} &>/dev/null
 
     ## install RTPEngine from distribution packages (no source build)
-    apt-get install -y "${RTPENGINE_PKGS[@]}"
+    apt-get install -y --no-install-recommends "${RTPENGINE_PKGS[@]}"
     if (( $? != 0 )); then
         printerr "Problem installing RTPEngine packages"
-        systemctl unmask ngcp-rtpengine-daemon.service &>/dev/null
+        systemctl unmask ${RTPENGINE_PKG_SERVICE} &>/dev/null
         return 1
     fi
 
-    systemctl unmask ngcp-rtpengine-daemon.service &>/dev/null
-    systemctl disable ngcp-rtpengine-daemon.service &>/dev/null
+    systemctl unmask ${RTPENGINE_PKG_SERVICE} &>/dev/null
+    systemctl disable ${RTPENGINE_PKG_SERVICE} &>/dev/null
 
     # make sure RTPEngine kernel module configured
     if [[ -z "$(find /lib/modules/ -name 'xt_RTPENGINE.ko*' 2>/dev/null)" ]]; then
@@ -162,6 +155,8 @@ function install {
     rm -f /lib/systemd/system/rtpengine*.service
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v3.service /lib/systemd/system/rtpengine.service
     chmod 644 /lib/systemd/system/rtpengine.service
+    # Debian 13 provides no iptables-setup helper; drop those ExecStart hooks
+    sed -i '/rtpengine-iptables-setup/d' /lib/systemd/system/rtpengine.service
     systemctl daemon-reload
     systemctl enable rtpengine
 
@@ -180,7 +175,7 @@ function uninstall {
     rm -f /{etc,lib}/systemd/system/rtpengine.service 2>/dev/null
     systemctl daemon-reload
 
-    apt-get remove -y ngcp-rtpengine\*
+    apt-get remove -y rtpengine rtpengine-daemon rtpengine-kernel-dkms rtpengine-utils 2>/dev/null
 
     rm -f /usr/sbin/rtpengine* /usr/bin/rtpengine /etc/rsyslog.d/rtpengine.conf /etc/logrotate.d/rtpengine
 
