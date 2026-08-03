@@ -117,6 +117,7 @@ function addNewSetting() {
     document.getElementById('newSettingKey').value = '';
     document.getElementById('newSettingValue').value = '';
     loadSettings();
+    reloadDsipRequired();
   })
   .catch(error => {
     showMessage('Error: ' + error.message, 'error');
@@ -146,6 +147,7 @@ function updateSettingValue(key) {
     
     showMessage('Setting updated successfully', 'success');
     loadSettings();
+    reloadDsipRequired();
   })
   .catch(error => {
     showMessage('Error: ' + error.message, 'error');
@@ -172,6 +174,7 @@ function deleteSetting(key) {
     
     showMessage('Setting deleted successfully', 'success');
     loadSettings();
+    reloadDsipRequired();
   })
   .catch(error => {
     showMessage('Error: ' + error.message, 'error');
