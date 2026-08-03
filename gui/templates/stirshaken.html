@@ -33,46 +33,52 @@
 
       <div id="stirShakenOptions" class="form-group {{ options_hidden }}">
 
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="stir_shaken_prefix_a" name="stir_shaken_prefix_a"
+                 style="width: 100ch; max-width: 100%;"
                  placeholder="Caller ID Prefix A Validated Calls"
                  value="{{ settings.STIR_SHAKEN_PREFIX_A }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="stir_shaken_prefix_b" name="stir_shaken_prefix_b"
+                 style="width: 100ch; max-width: 100%;"       
                  placeholder="Caller ID Prefix B Validated Calls"
                  value="{{ settings.STIR_SHAKEN_PREFIX_B }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="stir_shaken_prefix_c" name="stir_shaken_prefix_c"
+                 style="width: 100ch; max-width: 100%;"
                  placeholder="Caller ID Prefix C Validated Calls"
                  value="{{ settings.STIR_SHAKEN_PREFIX_C }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="stir_shaken_prefix_invalid"
                  name="stir_shaken_prefix_invalid"
+                 style="width: 100ch; max-width: 100%;" 
                  placeholder="Caller ID Prefix Invalid Calls"
                  value="{{ settings.STIR_SHAKEN_PREFIX_INVALID }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="stir_shaken_cert_url"
                  name="stir_shaken_cert_url"
+                 style="width: 100ch; max-width: 100%;" 
                  placeholder="Certificate URL"
                  value="{{ settings.STIR_SHAKEN_CERT_URL }}">
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-3">
           <input class="form-control " type="text" id="stir_shaken_key_path"
                  name="stir_shaken_key_path"
+                 style="width: 100ch; max-width: 100%;" 
                  placeholder="Key Path"
                  value="{{ settings.STIR_SHAKEN_KEY_PATH }}">
         </div>
 
-        <div class="checkbox">
+        <div class="checkbox mb-3">
           <label>
             <input type="checkbox"
                    name="stir_shaken_block_invalid" {{ 'checked' if (settings.STIR_SHAKEN_BLOCK_INVALID == 1) else '' }}>
