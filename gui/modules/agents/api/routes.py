@@ -247,7 +247,7 @@ def control_agent(agent_id, control):
         if control == 'start':
             # Placeholder for starting the agent
             print(f"Starting agent: {agent.name}")
-            va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message)
+            va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message,webhook_secret=agent.webhook_secret)
             if va.start():
                 agent.status = 1
                 db.add(agent)
@@ -429,7 +429,7 @@ def get_projects_by_provider(provider):
     if provider.lower() != 'openai':
         return showApiError(f'Provider {provider} not supported', code=400) 
     try:
-        headers = {'Authorization': f'Bearer {settings.OPENAI_API_KEY}'
+        headers = {'Authorization': f'Bearer {settings.VOICEAI_OPENAI_KEY}'
                    , 'Content-Type': 'application/json'}
        
         print(headers)
