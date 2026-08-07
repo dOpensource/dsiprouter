@@ -56,8 +56,8 @@
 
 
 <div class="modal-header">
-    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+  <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+    class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Update Agent</h4>
 
   </div>
@@ -98,7 +98,7 @@
             value="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') }}">
           <span class="input-group-btn">
             <button type="button" class="btn btn-default copy-webhook-url" title="Copy webhook URL">
-              <span class="glyphicon glyphicon-copy"></span>
+              <i class="ti ti-copy"></i>
             </button>
           </span>
         </div>
@@ -142,8 +142,8 @@
         </div>
       </div> -->
       <div class="modal-footer ">
-        <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Update
+        <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Update
 
         </button>
       </div>
@@ -196,7 +196,7 @@
             value="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') }}">
           <span class="input-group-btn">
             <button type="button" class="btn btn-default copy-webhook-url" title="Copy webhook URL">
-              <span class="glyphicon glyphicon-copy"></span>
+              <i class="ti ti-copy"></i>
             </button>
           </span>
         </div>
@@ -314,13 +314,11 @@ use the 'request_callback' function to send their details to staff.
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
       <div class="form-group">
-        <input class="gwgroup form-control" type="hidden" name="gwgroup">
-        <input class="gwid form-control" type="hidden" name="gwid">
-        <input class="name form-control" type="hidden" name="name">
+        <input class="id form-control" type="hidden" id="id" name="id" value="">
       </div>
 
       <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i> Are you sure you want
-        to delete this Certificate?
+        to delete this Agent?
       </div>
 
       <div class="modal-footer ">

@@ -169,9 +169,6 @@ function bindWebhookUrlPreview(modalSelector) {
 
 
 function deleteEntity(id) {
-    var id_int = parseInt(id, 10);
-   
-
     $.ajax({
       type: "DELETE",
       url: url + "/" + id,
@@ -180,10 +177,7 @@ function deleteEntity(id) {
       success: function(response, textStatus, jqXHR) {
         $('#delete').modal('hide');
         $('#edit').modal('hide');
-        agents_table.row(function (idx, data, node) {
-            //return data.id === id_int;
-            return data.id === id_int;
-        }).remove().draw();
+        agents_table.ajax.reload(null, false);
 
         showNotification("Agent " + id + " was deleted");
       }
@@ -218,10 +212,10 @@ function deleteEntity(id) {
 				{"data": null, render: function(data, type, row) {
           if (data.status === "0") {
 
-            return "Stopped <button class='agentStatus btn btn.dataset.container=" + data.container_name + " btn-success btn-xs agent_stopped' id='agentStatus'><span class='glyphicon glyphicon-play'></span></button>";
+            return "Stopped <button class='agentStatus btn btn.dataset.container=" + data.container_name + " btn-success btn-xs agent_stopped' id='agentStatus'><i class='ti ti-player-play'></i></button>";
           }
           else if (data.status === "1") {
-            return "Started <button class='agentStatus btn btn.dataset.container=" + data.container_name + " btn-danger btn-xs agent_started' id='agentStatus'><span class='glyphicon glyphicon-stop'></span></button>";
+            return "Started <button class='agentStatus btn btn.dataset.container=" + data.container_name + " btn-danger btn-xs agent_started' id='agentStatus'><i class='ti ti-player-stop'></i></button>";
 
           }
          }
@@ -236,14 +230,14 @@ function deleteEntity(id) {
         {"data": "error", "visible": false},
         {"data": null,
           render: function (data, type, row) {
-          return `<button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
-          data-target="#edit"><span class="glyphicon glyphicon-pencil"></span></button>`;
+          return `<button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-bs-toggle="modal"
+          data-bs-target="#edit"><i class="ti ti-pencil"></i></button>`;
           }
         },
         {"data": null,
           render: function (data, type, row) {
-          return `<button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal"
-          data-target="#delete"><span class="glyphicon glyphicon-trash"></span></button>`;
+          return `<button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-bs-toggle="modal"
+          data-bs-target="#delete"><i class="ti ti-trash"></i></button>`;
           }
         },
 
@@ -303,6 +297,13 @@ function deleteEntity(id) {
       edit_modal_body.find('select#toolchain').val(data.tools || []);
       edit_modal_body.find('input#callback_email').val(data.callback_email || '');
       edit_modal_body.find('textarea#agent_instructions').val(data.instructions || '');
+    });
+
+    $('#' + ENTITY + "_table tbody").on('click', 'button.open-Delete', function() {
+      var data = agents_table.row($(this).parents('tr')).data();
+      var delete_modal_body = $('#delete .modal-body');
+
+      delete_modal_body.find('input#id').val(data && data.id ? data.id : '');
     });
 
 
