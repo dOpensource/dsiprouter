@@ -7,7 +7,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time, requests
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time, requests, socket
 import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
@@ -2641,7 +2641,7 @@ def initApp(flask_app):
     with open(settings.DSIP_PID_FILE, 'w') as pidfd:
         pidfd.write(str(os.getpid()))
 
-    # start the Flask App server
+    # Start the Flask app server over the unix socket.
     bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
 
 

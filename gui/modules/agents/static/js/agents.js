@@ -77,6 +77,7 @@
     requestPayload.type= modal_body.find("select#agent_type").val();
     requestPayload.project_id = modal_body.find("select#project_id").val();
     requestPayload.name = modal_body.find("input#agent_name").val();
+    requestPayload.webhook_secret = modal_body.find("input#webhook_secret").val();
     requestPayload.tools = modal_body.find("select#toolchain").val();
     requestPayload.callback_email = modal_body.find("input#callback_email").val();
     requestPayload.instructions = modal_body.find("textarea#agent_instructions").val();
@@ -114,13 +115,7 @@
         }
 
         if (action === "POST") {
-          agents_table.row.add({
-            "id": response.data[0].id,
-            "name": requestPayload.agent_name,
-            "type": requestPayload.agent_type,
-            "status": response.data[0].status,
-            "did-mappings": response.data[0].did-mappings
-          }).draw();
+          agents_table.row.add(response.data[0]).draw(false);
 
           // Clear the form fields for next entry
            clearFormFields("#add");
@@ -129,13 +124,7 @@
         else {
           agents_table.row(function(idx, data, node) {
             return data.id === response.data[0].id;
-          }).data({
-            "id": response.data[0].id,
-            "name": requestPayload.agent_name,
-            "type": requestPayload.agent_type,
-            "status": response.data[0].status,
-            "did-mappings": response.data[0].did-mappings
-          }).draw();
+          }).data(response.data[0]).draw(false);
         }
 
        
@@ -280,6 +269,7 @@ function deleteEntity(id) {
       }
       edit_modal_body.find('input#id').val(data.id || '');
       edit_modal_body.find('input#agent_name').val(data.name || '');
+      edit_modal_body.find('input#webhook_secret').val(data.webhook_secret || '');
       edit_modal_body.find('select#predefined_instructions').val(data.instructions_id || '');
       edit_modal_body.find('select#toolchain').val(data.tools || []);
       edit_modal_body.find('input#callback_email').val(data.callback_email || '');

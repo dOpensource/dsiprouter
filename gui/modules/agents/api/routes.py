@@ -5,7 +5,7 @@ import requests
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from database import startSession, DummySession
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from shared import getRequestData, rowToDict
@@ -23,6 +23,59 @@ OPENAI_BASE_URL = settings.OPENAI_BASE_URL if hasattr(settings, 'OPENAI_BASE_URL
 
 agents_api = numbers_api = Blueprint('agents', __name__, template_folder='../templates', static_folder='../static', static_url_path='/agents/static')
 
+
+def _infer_container_port(container):
+    if not container:
+        return ''
+
+    def _normalize_port(value):
+        if value is None:
+            return ''
+        return str(value).split('/')[0]
+
+    target_container_port = '9000/tcp'
+
+    # Refresh docker attrs so port bindings reflect the running container.
+    try:
+        container.reload()
+    except Exception:
+        pass
+
+    attrs = getattr(container, 'attrs', None) or {}
+    if isinstance(attrs, dict):
+        ports = attrs.get('NetworkSettings', {}).get('Ports', {}) or {}
+        if target_container_port in ports:
+            bindings = ports.get(target_container_port) or []
+            if bindings and isinstance(bindings, list):
+                host_port = bindings[0].get('HostPort') or ''
+                if host_port:
+                    return _normalize_port(host_port)
+
+        if ports:
+            # Fallback: return first mapped host port if 9000/tcp is unavailable.
+            for _container_port, bindings in ports.items():
+                if bindings and isinstance(bindings, list):
+                    host_port = bindings[0].get('HostPort') or ''
+                    if host_port:
+                        return _normalize_port(host_port)
+
+    ports = getattr(container, 'ports', None) or {}
+    if isinstance(ports, dict) and ports:
+        if target_container_port in ports:
+            bindings = ports.get(target_container_port) or []
+            if bindings and isinstance(bindings, list):
+                host_port = bindings[0].get('HostPort') or ''
+                if host_port:
+                    return _normalize_port(host_port)
+        for _container_port, bindings in ports.items():
+            if bindings and isinstance(bindings, list):
+                host_port = bindings[0].get('HostPort') or ''
+                if host_port:
+                    return _normalize_port(host_port)
+
+    return ''
+
+
 class VoiceAgentContainer(dockerContainer):
     def __init__(self, agent_name, image_name=None,container_name=None, agent_instructions=None, agent_api_key=None, webhook_secret=None, tools_api_keys=None, callback_email=None, greeting_message=None):
         self.agent_name = agent_name
@@ -31,6 +84,8 @@ class VoiceAgentContainer(dockerContainer):
         self.agent_instructions = agent_instructions
         self.agent_api_key = agent_api_key
         self.webhook_secret = webhook_secret
+        self.container_port = ''
+        self.container_port_mapped = ''
         self.tools_api_keys = tools_api_keys
         self.callback_email = callback_email
         self.greeting_message = greeting_message
@@ -39,13 +94,22 @@ class VoiceAgentContainer(dockerContainer):
             'AGENT_NAME': self.agent_name, 
             'AGENT_INSTRUCTIONS': self.agent_instructions or '',
             'AGENT_API_KEY': self.agent_api_key or '',
+            'OPENAI_API_KEY': settings.VOICEAI_OPENAI_KEY if hasattr(settings, 'VOICEAI_OPENAI_KEY') else '',
             'WEBHOOK_SECRET': self.webhook_secret or '',
+            'OPENAI_WEBHOOK_SECRET': self.webhook_secret or '',
             'TOOLS_API_KEYS': self.tools_api_keys or '',
             'CALLBACK_EMAIL': self.callback_email or '',
             'GREETING_MESSAGE': self.greeting_message or ''
             }
-        
-        dockerContainer.__init__(self, image_name=self.image_name, container_name=container_name or normalize_container_name(self.agent_name), environment_vars=env)
+
+        # Let Docker auto-assign an available host port for container port 9000/tcp.
+        dockerContainer.__init__(
+            self,
+            image_name=self.image_name,
+            container_name=container_name or normalize_container_name(self.agent_name),
+            environment_vars=env,
+            ports={'9000/tcp': ('127.0.0.1', None)}
+        )
 
 
     def to_dict(self):
@@ -61,11 +125,12 @@ class VoiceAgentContainer(dockerContainer):
         }
     
     def start(self):
-        # Placeholder for starting the agent
         print(f"Starting agent: {self.agent_name}")
         try:
-            super().start()
-            return True
+            container = super().start()
+            self.container_port = _infer_container_port(container)
+            self.container_port_mapped = self.container_port
+            return container is not None
         except Exception as e:
             print(f"Error starting agent {self.agent_name}: {e}")
             return False
@@ -107,6 +172,7 @@ def _map_payload_to_agent(payload):
     mapped['tools'] = payload.get('agent-tools', payload.get('tools', ''))
     mapped['training_website'] = payload.get('agent-training-website', payload.get('training_website', ''))
     mapped['callback_email'] = payload.get('agent-callback-email', payload.get('callback_email', ''))
+    mapped['webhook_secret'] = payload.get('agent-webhook-secret', payload.get('webhook_secret', ''))
     mapped['did_mapping'] = payload.get('agent-did-mapping', payload.get('did_mapping', payload.get('did_mappings', '')))
     mapped['deployment_type'] = payload.get('agent-deployment-type', payload.get('deployment_type', ''))
     mapped['deployment_profile_id'] = payload.get('agent-deployment-profile-id', payload.get('deployment_profile_id', 0)) or 0
@@ -120,6 +186,59 @@ def _map_payload_to_instruction(payload):
     mapped['project_type'] = payload.get('instruction-project-type', payload.get('project_type', 'openai')) or 'openai'
     mapped['instructions'] = payload.get('instruction-text', payload.get('instructions', ''))
     return mapped
+
+
+@agents_api.route('/webhook/agents/<string:agent_name>', methods=['POST'])
+def proxy_agent_webhook(agent_name):
+    db = DummySession()
+    try:
+        db = startSession()
+        agent = db.query(dSIPAgent).filter(dSIPAgent.name == agent_name).first()
+        if agent is None:
+            raise http_exceptions.NotFound('Agent not found')
+
+        container_port = getattr(agent, 'container_port_mapped', '') or ''
+        if not container_port:
+            raise http_exceptions.ServiceUnavailable('Agent container port not available')
+
+        remote_uri = f'http://127.0.0.1:{container_port}/'
+        proxy_headers = {
+            key: value
+            for key, value in request.headers.items()
+            if key.lower() not in {
+                'host',
+                'content-length',
+                'connection',
+                'upgrade',
+                'proxy-connection',
+            }
+        }
+        proxy_headers['X-Forwarded-For'] = request.headers.get('X-Forwarded-For', request.remote_addr or '')
+        proxy_headers['X-Forwarded-Host'] = request.host
+        proxy_headers['X-Forwarded-Proto'] = request.scheme
+
+        upstream_response = requests.post(
+            remote_uri,
+            headers=proxy_headers,
+            data=request.get_data(),
+            timeout=15,
+        )
+
+        response_headers = {}
+        for key, value in upstream_response.headers.items():
+            if key.lower() not in {'content-length', 'connection', 'transfer-encoding', 'content-encoding'}:
+                response_headers[key] = value
+
+        return Response(
+            upstream_response.content,
+            status=upstream_response.status_code,
+            headers=response_headers,
+            content_type=upstream_response.headers.get('Content-Type', 'application/json'),
+        )
+    except Exception as ex:
+        return showApiError(ex)
+    finally:
+        db.close()
 
 
 @agents_api.route('/gui/agents', methods=['GET'])
@@ -173,6 +292,7 @@ def create_agent():
             training_website=mapped.get('training_website', ''),
             tools=mapped.get('tools', ''),
             callback_email=mapped.get('callback_email', ''),
+            webhook_secret=mapped.get('webhook_secret', ''),
             did_mapping=mapped.get('did_mapping', ''),
             deployment_type=mapped.get('deployment_type', ''),
             deployment_profile_id=int(mapped.get('deployment_profile_id', 0)),
@@ -250,6 +370,8 @@ def control_agent(agent_id, control):
             va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message,webhook_secret=agent.webhook_secret)
             if va.start():
                 agent.status = 1
+                agent.container_port = getattr(va, 'container_port', '')
+                agent.container_port_mapped = getattr(va, 'container_port_mapped', '')
                 db.add(agent)
                 db.flush()
                 db.commit()
@@ -260,6 +382,8 @@ def control_agent(agent_id, control):
             va = VoiceAgentContainer(agent_name=agent.name, container_name=agent.container_name, image_name=agent.image_name, agent_instructions=agent.instructions, tools_api_keys=agent.tools, callback_email=agent.callback_email, greeting_message=agent.greeting_message)
             if va.stop():
                 agent.status = 0
+                agent.container_port = ''
+                agent.container_port_mapped = ''
                 db.add(agent)
                 db.flush()
                 db.commit()

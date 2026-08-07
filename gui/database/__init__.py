@@ -653,11 +653,10 @@ def createValidEngine(uri_list):
     :raise:             SQLAlchemyError if all connections fail
     """
 
-    # globals from the top-level module
-    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+    module_globals = globals()
 
-    if DB_ENGINE_NAME in caller_globals:
-        return caller_globals[DB_ENGINE_NAME]
+    if DB_ENGINE_NAME in module_globals:
+        return module_globals[DB_ENGINE_NAME]
 
     errors = []
 
@@ -693,11 +692,10 @@ def startSession():
     This method uses a singleton pattern to grab the global session loader and start a session
     """
 
-    # globals from the top-level module
-    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+    module_globals = globals()
 
-    if SESSION_LOADER_NAME in caller_globals:
-        return caller_globals[SESSION_LOADER_NAME]()
+    if SESSION_LOADER_NAME in module_globals:
+        return module_globals[SESSION_LOADER_NAME]()
 
     db_engine, session_loader = createSessionObjects()
     return session_loader()
@@ -824,13 +822,14 @@ def createSessionObjects():
 
     session_loader = scoped_session(sessionmaker(bind=db_engine))
 
-    # load them into the top level module global namespace
-    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
-    caller_globals[DB_ENGINE_NAME] = db_engine
-    caller_globals[SESSION_LOADER_NAME] = session_loader
+    # Cache them in this module's global namespace so all request handlers
+    # share one engine/session-loader and don't remap ORM classes repeatedly.
+    module_globals = globals()
+    module_globals[DB_ENGINE_NAME] = db_engine
+    module_globals[SESSION_LOADER_NAME] = session_loader
 
     # return references for the calling function
-    return caller_globals[DB_ENGINE_NAME], caller_globals[SESSION_LOADER_NAME]
+    return module_globals[DB_ENGINE_NAME], module_globals[SESSION_LOADER_NAME]
 
 
 # TODO: change to the global define pattern instead of instantiating dummy objects
