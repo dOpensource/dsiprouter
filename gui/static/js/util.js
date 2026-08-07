@@ -229,14 +229,18 @@
    * Show notification in top notification bar
    * @param {String} msg      message to display
    * @param {Boolean} error   whether the notification is an error
+   * @param {Boolean} hideModals  whether to hide visible modals first
    */
-  window.showNotification = function(msg, error = false, duration = 10000) {
+  window.showNotification = function(msg, error = false, duration = 10000, hideModals = true) {
     var top_bar = $('.top-bar');
     var msg_bar = $('.message-bar');
-    var visible_modals = $('.modal').filter(':not(:hidden)');
 
-    // hide modals if shown
-    visible_modals.modal('hide');
+    if (hideModals === true) {
+      var visible_modals = $('.modal').filter(':not(:hidden)');
+
+      // hide modals if shown
+      visible_modals.modal('hide');
+    }
 
     // stop the animation if already running
     top_bar.stop(true, true);
