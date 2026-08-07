@@ -418,7 +418,7 @@ def control_agent(agent_id, control):
         db.close()
 
 
-@agents_api.route('/api/agents/v1/<int:agent_id>', methods=['DELETE'])
+@agents_api.route('/api/agents/v1/agent/<int:agent_id>', methods=['DELETE'])
 @api_security
 def delete_agent(agent_id):
     db = DummySession()
