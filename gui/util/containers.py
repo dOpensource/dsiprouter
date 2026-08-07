@@ -12,6 +12,14 @@ class dockerContainer:
 
     def start(self):
         try:
+            # Recreate the container cleanly if one already exists with this name.
+            try:
+                existing = self.client.containers.get(self.container_name)
+                existing.remove(force=True)
+                print(f"Container '{self.container_name}' removed before restart.")
+            except docker.errors.NotFound:
+                pass
+
             self.container = self.client.containers.run(
                 image=self.image_name,
                 name=self.container_name,
@@ -20,18 +28,21 @@ class dockerContainer:
                 detach=True
             )
             print(f"Container '{self.container_name}' started successfully.")
+            return self.container
         except docker.errors.APIError as e:
             print(f"Error starting image {self.image_name} for container '{self.container_name}': {e}")
+            return None
 
     def stop(self):
-        if self.container:
-            try:
-                self.container.stop()
-                print(f"Container '{self.container_name}' stopped successfully.")
-            except docker.errors.APIError as e:
-                print(f"Error stopping container '{self.container_name}': {e}")
-        else:
-            print(f"Container '{self.container_name}' is not running.") 
+        try:
+            container = self.container or self.client.containers.get(self.container_name)
+            container.stop()
+            self.container = container
+            print(f"Container '{self.container_name}' stopped successfully.")
+        except docker.errors.NotFound:
+            print(f"Container '{self.container_name}' does not exist.")
+        except docker.errors.APIError as e:
+            print(f"Error stopping container '{self.container_name}': {e}")
 
     def restart(self):
         if self.container:

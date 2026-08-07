@@ -39,6 +39,8 @@ class dSIPAgent(Base):
     deployment_type = Column('deployment_type', String(255), nullable=False, default='')
     deployment_profile_id = Column('deployment_profile_id', Integer, nullable=False, default=0)
     container_name = Column('container_name', String(255), nullable=False, default='')
+    container_port = Column('container_port', String(64), nullable=False, default='')
+    container_port_mapped = Column('container_port_mapped', String(64), nullable=False, default='')
     image_name = Column('image_name', String(255), nullable=False, default='')
     created_at = Column('created_at', DateTime,
                         server_default=text('CURRENT_TIMESTAMP'),
@@ -48,10 +50,11 @@ class dSIPAgent(Base):
                          server_onupdate=text('CURRENT_TIMESTAMP'))
     status = Column(Integer, nullable=False, default=0)
     error = Column(String(200), nullable=False, default='')
+    webhook_secret = Column('webhook_secret', String(255), nullable=False, default='')
 
     def __init__(self, name, type, project_id, greeting_message, instructions,
                  instructions_id=0, guardrails='', tools='', callback_email='',
-                 training_website='', did_mapping='', deployment_type='', deployment_profile_id=0, status=0, error='', image_name=settings.VOICEAI_AGENT_IMAGE):
+                 training_website='', did_mapping='', deployment_type='', deployment_profile_id=0, status=0, error='', image_name=settings.VOICEAI_AGENT_IMAGE,webhook_secret="", container_port='', container_port_mapped=''):
         self.name = name
         self.type = type
         self.project_id = project_id
@@ -65,10 +68,13 @@ class dSIPAgent(Base):
         self.did_mapping = did_mapping
         self.deployment_type = deployment_type
         self.container_name = normalize_container_name(name)
+        self.container_port = container_port
+        self.container_port_mapped = container_port_mapped
         self.image_name = image_name
         self.deployment_profile_id = deployment_profile_id
         self.status = status
         self.error = error
+        self.webhook_secret = webhook_secret
 
     def to_dict(self):
         """Return a plain dict representation of this object (simple fields)."""
@@ -87,11 +93,14 @@ class dSIPAgent(Base):
             'did_mapping': self.did_mapping,
             'deployment_type': self.deployment_type,
             'deployment_profile_id': self.deployment_profile_id,
+            'container_port': self.container_port,
+            'container_port_mapped': self.container_port_mapped,
             'created_at': getattr(self, 'created_at', None),
             'modified_at': getattr(self, 'modified_at', None),
             'status': self.status,
             'error': self.error,
             'image': self.image,
+            'webhook_secret': self.webhook_secret
         }
 
 
