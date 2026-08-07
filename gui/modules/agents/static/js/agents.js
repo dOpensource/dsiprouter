@@ -145,6 +145,29 @@
 }
 
 
+function updateWebhookUrlPreview(modalSelector) {
+  var modal = $(modalSelector);
+  var urlField = modal.find('.agent-webhook-url');
+  var templateUrl = urlField.attr('data-webhook-template-url') || urlField.val() || '';
+  var agentName = (modal.find('input.agent_name').val() || 'Agent Name').trim();
+
+  urlField.val(templateUrl.replace(/Agent Name$/, agentName || 'Agent Name'));
+}
+
+
+function bindWebhookUrlPreview(modalSelector) {
+  var modal = $(modalSelector);
+
+  modal.find('input.agent_name').off('.webhookPreview').on('input.webhookPreview keyup.webhookPreview change.webhookPreview paste.webhookPreview', function() {
+    updateWebhookUrlPreview(modal);
+  });
+
+  modal.off('shown.bs.modal.webhookPreview').on('shown.bs.modal.webhookPreview', function() {
+    updateWebhookUrlPreview(modal);
+  });
+}
+
+
 function deleteEntity(id) {
     var id_int = parseInt(id, 10);
    
@@ -171,6 +194,9 @@ function deleteEntity(id) {
 
   
     var url = CUSTOM_MODULE_API_BASE_URL + "agents/v1/agent";
+
+  bindWebhookUrlPreview('#add');
+  bindWebhookUrlPreview('#edit');
 
 		// datatable init
 		agents_table = $('#' + ENTITY + "_table").DataTable({
@@ -272,6 +298,7 @@ function deleteEntity(id) {
       edit_modal_body.find('input#id').val(data.id || '');
       edit_modal_body.find('input#agent_name').val(data.name || '');
       edit_modal_body.find('input#webhook_secret').val(data.webhook_secret || '');
+      updateWebhookUrlPreview('#edit');
       edit_modal_body.find('select#predefined_instructions').val(data.instructions_id || '');
       edit_modal_body.find('select#toolchain').val(data.tools || []);
       edit_modal_body.find('input#callback_email').val(data.callback_email || '');
@@ -353,6 +380,39 @@ $('.predefined_instructions').change(function() {
 
 $('#open-Add').click(function() {
       clear('#add');
+  updateWebhookUrlPreview('#add');
+});
+
+$(document).on('click', '.copy-webhook-url', function(ev) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.stopImmediatePropagation();
+
+  var modal = $(this).closest('.modal');
+  var webhookUrl = modal.find('.agent-webhook-url').val() || '';
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(webhookUrl).then(function() {
+      return;
+    }).catch(function() {
+      showNotification('Unable to copy webhook URL', true);
+    });
+    return;
+  }
+
+  var fallbackField = modal.find('.agent-webhook-url')[0];
+  if (fallbackField) {
+    fallbackField.select();
+    fallbackField.setSelectionRange(0, fallbackField.value.length);
+    try {
+      document.execCommand('copy');
+    }
+    catch (error) {
+      showNotification('Unable to copy webhook URL', true);
+    }
+  }
+
+  return false;
 });
 
 /* validate fields before submitting api request */
