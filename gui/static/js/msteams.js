@@ -15,20 +15,20 @@
 
     //Hostname Check
     if (msg.hostname_check == true) {
-      hostcheck_obj.addClass("glyphicon glyphicon-ok");
+      hostcheck_obj.addClass("ti ti-check");
       hostcheck_obj.css("color", "green");
     }
     else {
-      hostcheck_obj.addClass("glyphicon glyphicon-remove");
+      hostcheck_obj.addClass("ti ti-x");
       hostcheck_obj.css("color", "red");
     }
 
     if (msg.tls_check.tls_cert_valid == true) {
-      tlscheck_obj.addClass("glyphicon glyphicon-ok");
+      tlscheck_obj.addClass("ti ti-check");
       tlscheck_obj.css("color", "green");
     }
     else {
-      tlscheck_obj.addClass("glyphicon glyphicon-remove");
+      tlscheck_obj.addClass("ti ti-x");
       tlscheck_obj.css("color", "red");
       if (msg.tls_check.tls_error.length > 0) {
         tlscheck_msg = msg.tls_check.tls_error;
@@ -41,18 +41,18 @@
         'title': tlscheck_msg,
         'placement': 'right',
         'trigger': 'manual',
-        'tooltipClass': 'tooltipclass'
+        'customClass': 'tooltipclass'
       });
       tlscheckrow_obj.tooltip('show');
     }
 
     //Option Check
     if (msg.option_check == true) {
-      optioncheck_obj.addClass("glyphicon glyphicon-ok");
+      optioncheck_obj.addClass("ti ti-check");
       optioncheck_obj.css("color", "green");
     }
     else {
-      optioncheck_obj.addClass("glyphicon glyphicon-remove");
+      optioncheck_obj.addClass("ti ti-x");
       optioncheck_obj.css("color", "red");
     }
   }

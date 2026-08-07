@@ -30,14 +30,14 @@
     var btn;
     if (modal_selector == "#add") {
       btn = $('#add .modal-footer').find('#addButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
+      btn.html("<i class='ti ti-circle-check'></i> Add");
       btn.removeClass("btn-success");
       btn.addClass("btn-primary");
       modal_body.find('#domain').val("");
     }
     else {
       btn = $('#edit .modal-footer').find('#updateButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Update");
+      btn.html("<i class='ti ti-circle-check'></i> Update");
       btn.removeClass("btn-success");
       btn.addClass("btn-warning");
     }
@@ -106,7 +106,7 @@
         }
 
         btn.addClass("btn-success");
-        btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
+        btn.html("<i class='ti ti-check'></i> Saved!");
         btn.attr("disabled", true);
 
         // Update Reload buttons if the number was assigned
@@ -191,10 +191,12 @@ function deleteEntity(id) {
         {"data": "callback_email", "visible": false},
 				{"data": null, render: function(data, type, row) {
           if (data.status === "0") {
+
             return "Stopped <button class='agentStatus btn btn.dataset.container=" + data.container_name + " btn-success btn-xs agent_stopped' id='agentStatus'><span class='glyphicon glyphicon-play'></span></button>";
           }
           else if (data.status === "1") {
             return "Started <button class='agentStatus btn btn.dataset.container=" + data.container_name + " btn-danger btn-xs agent_started' id='agentStatus'><span class='glyphicon glyphicon-stop'></span></button>";
+
           }
          }
         },

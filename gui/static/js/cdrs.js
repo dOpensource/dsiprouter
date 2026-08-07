@@ -5,8 +5,8 @@
   if (typeof API_BASE_URL === "undefined") {
     throw new Error("API_BASE_URL is required and is not defined");
   }
-  if (typeof delayedCallback === "undefined") {
-    throw new Error("delayedCallback() is required and is not defined");
+  if (typeof delayedCallback === "undefined" || typeof throttledCallback === "undefined") {
+    throw new Error("delayedCallback() and throttledCallback() are required and are not defined");
   }
 
   // globals for this script
@@ -92,17 +92,28 @@
           {"data": "call_id", "orderable": false}
         ],
         "order": [[1, 'desc']],
-        "pageLength": 100
+        "pageLength": 100,
+        // make searchbox trigger less often
+        // very important for intensive serverside queries
+        "searchDelay": 1000,
       });
 
-      // make searchbox less spammy
-      var searchbox = $('#cdrs input[type="search"]');
-      searchbox.unbind();
-      searchbox.bind('input', delayedCallback(
-        function(ev) {
-          cdr_table.search(this.value).draw();
-        }, 500)
-      );
+      // skip searchbox delay when pressing enter
+      // we throttle this in case enter is held down
+      // ignored if fired without changing the search text
+      var searchbox = $(cdr_table.table().container()).find('input[type="search"]');
+      var throttledEnter = throttledCallback(function(ev) {
+        if (this.value === cdr_table.search()) {
+          ev.preventDefault();
+          return;
+        }
+        cdr_table.search(this.value).draw();
+      }, 200);
+      searchbox.on('keydown', function(ev) {
+        if (ev.key === 'Enter') {
+          throttledEnter.call(this, ev);
+        }
+      });
     }
 
     changeLoadingState(false);
@@ -122,8 +133,10 @@
       }
     })
 
-    // default is enabled
-    showallcalls_inp.bootstrapToggle('on');
+    // default is enabled (bootstrap5-toggle auto-inits this visible checkbox on
+    // window.load; set the checkbox state + fire change rather than calling the
+    // removed jQuery .bootstrapToggle() plugin)
+    showallcalls_inp.prop('checked', true).val(1).trigger('change');
 
     /* listener for completed calls toggle */
     showallcalls_inp.change(function() {

@@ -45,6 +45,8 @@ function install() {
 
     # allow root to fix permissions before starting services (required to work with SELinux enabled)
     usermod -a -G kamailio root
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
 
     # add repo sources to apt
     mkdir -p /etc/apt/sources.list.d

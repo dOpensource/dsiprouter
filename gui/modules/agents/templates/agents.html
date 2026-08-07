@@ -12,8 +12,8 @@
   </div>
 
   <div class="tableAddButton">
-    <button id='open-Add' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
-            data-target="#add">
+    <button id='open-Add' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+            data-bs-target="#add">
       Add
     </button>
   </div>
@@ -54,10 +54,12 @@
 
 {% block edit_modal %}
 
+
 <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><span
         class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
     <h4 class="modal-title custom_align" id="Heading">Update Agent</h4>
+
   </div>
   <div class="modal-body">
     <form id="addAgentForm" action="#" method="POST" role="form" enctype="multipart/form-data">
@@ -125,6 +127,7 @@
       <div class="modal-footer ">
         <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
             class="glyphicon glyphicon-ok-sign"></span> Update
+
         </button>
       </div>
     </form>
@@ -136,8 +139,8 @@
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add</h4>
   </div>
   <div class="modal-body">
@@ -220,8 +223,8 @@ use the 'request_callback' function to send their details to staff.
         </div>
       </div> -->
       <div class="modal-footer ">
-        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Add 
+        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Add
         </button>
       </div>
     </form>
@@ -235,8 +238,8 @@ use the 'request_callback' function to send their details to staff.
       <div class="modal-content">
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add - Configure Webhook</h4>
   </div>
 
@@ -255,8 +258,8 @@ use the 'request_callback' function to send their details to staff.
       </div>
   
   <div class="modal-footer ">
-       <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-          class="glyphicon glyphicon-ok-sign"></span> Save
+       <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><i
+          class="ti ti-circle-check"></i> Save
       </button>
   </div>
   </div><!-- /.modal-content -->
@@ -267,8 +270,8 @@ use the 'request_callback' function to send their details to staff.
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
   </div>
 
@@ -282,16 +285,16 @@ use the 'request_callback' function to send their details to staff.
         <input class="name form-control" type="hidden" name="name">
       </div>
 
-      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
+      <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i> Are you sure you want
         to delete this Certificate?
       </div>
 
       <div class="modal-footer ">
-        <button id="deleteButton" type="button" class="btn btn-success"><span
-            class="glyphicon glyphicon-ok-sign"></span> Yes
+        <button id="deleteButton" type="button" class="btn btn-success"><i
+            class="ti ti-circle-check"></i> Yes
         </button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><span
-            class="glyphicon glyphicon-remove"></span> No
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+            class="ti ti-x"></i> No
         </button>
       </div>
     </form>

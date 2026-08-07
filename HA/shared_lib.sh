@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
-#
 # NOTES:
-# contains utility functions and shared variables
-# should be sourced by an external script
+#   contains utility functions and shared variables
+#   should be sourced by an external script
 #
 # TODO: section library scripts into more manageable files (grouping related funcs)
-# we should also put them in a central location such as: <project dir>/bashlibs
+#       we should also put them in a central location such as: <project dir>/bashlibs
+#
+# shellcheck shell=bash
 #
 
 #############

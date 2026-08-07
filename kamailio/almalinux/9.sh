@@ -77,6 +77,9 @@ EOF
         return 1
     fi
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     # get info about the kamailio install for later use in script
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 

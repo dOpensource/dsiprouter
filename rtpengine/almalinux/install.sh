@@ -207,6 +207,9 @@ function install {
     mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /run/rtpengine
 
+    # allow rtpengine to read configs from dsiprouter group
+    usermod -a -G dsiprouter rtpengine
+
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
 

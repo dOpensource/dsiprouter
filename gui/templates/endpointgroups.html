@@ -12,16 +12,16 @@
 
   <div class="tableAddButton">
     <div class="btn-group mr-2">
-      <button id='open-EndpointGroupsAdd' class='btn btn-success btn-md' data-title="Add" data-toggle="modal"
-              data-target="#add">
+      <button id='open-EndpointGroupsAdd' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+              data-bs-target="#add">
         Add
       </button>
     </div>
     <!--
     <div class="btn-group">
       <div class="dropdown">
-        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Batch Actions<span class="caret"></span>
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Batch Actions
         </button>
 
         <div class="dropdown-menu" style="width:190px;padding:5px" aria-labelledby="dropdownMenuButton">
@@ -36,7 +36,7 @@
 
 
 {% block table %}
-  <table id="endpointgroups" class="table table-striped table-centered">
+  <table id="endpointgroups" class="table table-striped table-centered" style="width: 100%;">
     <thead>
     <tr class='element-row'>
       <th data-field="name">Name</th>
@@ -50,11 +50,11 @@
 {% block edit_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Edit Endpoint Group Details
-      <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete"
-              data-toggle="modal" data-target="#delete"><span class="glyphicon glyphicon-trash"></span>
+      <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete"
+              data-bs-toggle="modal" data-bs-target="#delete"><i class="ti ti-trash"></i>
       </button>
     </h4>
   </div>
@@ -77,35 +77,35 @@
       <!-- nav tabs -->
       <div id="endpoint-nav" class="navbar">
         <ul class="nav nav-tabs">
-          <li role="presentation" class="auth-tab active">
-            <a href="#auth" name="auth-toggle" data-toggle="tab">Auth</a>
+          <li role="presentation" class="nav-item auth-tab">
+            <a class="nav-link active" href="#auth" name="auth-toggle" data-bs-toggle="tab">Auth</a>
           </li>
-          <li role="presentation">
-            <a href="#endpoints" name="endpoints-toggle" data-toggle="tab">Endpoints</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#endpoints" name="endpoints-toggle" data-bs-toggle="tab">Endpoints</a>
           </li>
-          <li role="presentation">
-            <a href="#call_settings" name="settings-toggle" data-toggle="tab">Call Settings</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#call_settings" name="settings-toggle" data-bs-toggle="tab">Call Settings</a>
           </li>
-          <li role="presentation">
-            <a href="#notifications" name="notifications-toggle" data-toggle="tab">Notifications</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#notifications" name="notifications-toggle" data-bs-toggle="tab">Notifications</a>
           </li>
-          <li role="presentation">
-            <a href="#cdr" name="cdr-toggle" data-toggle="tab">CDR</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#cdr" name="cdr-toggle" data-bs-toggle="tab">CDR</a>
           </li>
-          <li role="presentation">
-            <a href="#fusionpbx" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#fusionpbx" name="fusion-toggle" data-bs-toggle="tab">FusionPBX</a>
           </li>
         </ul>
       </div>
 
       <!-- tab content -->
       <div class="tab-content">
-        <div id="auth" class="tab-pane fade in active" name="auth-toggle">
+        <div id="auth" class="tab-pane fade show active" name="auth-toggle">
           <div class="form-group">
-            <div id="authoptions2" class="btn-group" data-toggle="buttons">
-              <label><input class="authtype" type="radio" name="authtype" id="ip2" value="ip" checked> IP
+            <div id="authoptions2" class="btn-group">
+              <label><input class="authtype" type="radio" name="authtype" id="ip2" value="ip" checked>&nbsp;IP
                 Auth</label>
-              <label><input class="authtype" type="radio" name="authtype" id="userpwd2" value="userpwd">
+              <label><input class="authtype" type="radio" name="authtype" id="userpwd2" value="userpwd">&nbsp;
                 Username/Password
                 Auth</label>
             </div>
@@ -121,7 +121,7 @@
             <div class="form-group wrapper-fieldicon-right">
               <input id="auth_password2" class="form-control" type="password" name="auth_password"
                      placeholder="Auth Password">
-              <span toggle="#auth_password2" class="field-icon toggle-password glyphicon glyphicon-eye-close"></span>
+              <i toggle="#auth_password2" class="field-icon toggle-password ti ti-eye-off"></i>
             </div>
             <div class="form-group">
               <input class="auth_domain form-control" type="text" name="auth_domain"
@@ -130,46 +130,46 @@
           </div>
         </div> <!-- end of auth tab -->
 
-        <div id="endpoints" class="tab-pane fade in" name="endpoints-toggle">
+        <div id="endpoints" class="tab-pane fade" name="endpoints-toggle">
           <table id="endpoint-table" class="table">
             <thead>
             <tr>
               <th>ID</th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="hostname or IP address to route to (and/or) authenticate endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="hostname or IP address to route to (and/or) authenticate endpoint">
                   Host
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="port to use when routing to endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="port to use when routing to endpoint">
                   Port
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="signalling transport for calls to endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="signalling transport for calls to endpoint">
                   Signalling
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="media transport for calls to endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="media transport for calls to endpoint">
                   Media
                 </span>
               </th>
               <th>Description</th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="relative weight (load balancing only) out of sum of endpoint weights in this group.
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="relative weight (load balancing only) out of sum of endpoint weights in this group.
                       value must be 1-100 or 0 to disable load balancing on this endpoint">
                   Weight
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="when enabled, the gateway is sent keepalive messages (at a default interval of 60 seconds).
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="when enabled, the gateway is sent keepalive messages (at a default interval of 60 seconds).
                       if disabled, the destination is always attempted when routing">
                   Keepalive
                 </span>
@@ -184,7 +184,7 @@
           </table>
         </div> <!-- enf of endpoints tab -->
 
-        <div id="call_settings" class="tab-pane fade in" name="settings-toggle">
+        <div id="call_settings" class="tab-pane fade" name="settings-toggle">
           <div class="form-group">
             <input class="strip form-control" type="text" name="strip"
                    placeholder="# of characters to strip from RURI (inbound calls)">
@@ -203,7 +203,7 @@
           </div>
         </div> <!-- end of call settings tab -->
 
-        <div id="notifications" class="tab-pane fade in" name="notifications-toggle">
+        <div id="notifications" class="tab-pane fade" name="notifications-toggle">
           <div class="form-group">
             <input class="email_over_max_calls form-control" type="text" name="email_over_max_calls"
                    placeholder="Email for Over Max Concurrent Calls">
@@ -214,7 +214,7 @@
           </div>
         </div> <!-- end of notifications tab -->
 
-        <div id="cdr" class="tab-pane fade in" name="cdr-toggle">
+        <div id="cdr" class="tab-pane fade" name="cdr-toggle">
           <div class="form-group">
             <input class="cdr_email form-control" type="text" name="cdr_email"
                    placeholder="Email to send CDR's">
@@ -243,20 +243,21 @@
           </div>
         </div> <!-- end of cdr  tab -->
 
-        <div id="fusionpbx" class="tab-pane fade in" name="fusion-toggle">
+        <div id="fusionpbx" class="tab-pane fade" name="fusion-toggle">
           <div class="form-group">
+            <!-- NOTE: no wrapping <label> (would double-toggle) and no data-toggle="toggle"
+                 (auto-init throws while this tab pane is hidden). endpointgroups.js
+                 initializes this toggle on shown.bs.tab, once it is visible. -->
             <div class="checkbox">
-              <label class="label-toggle">
-                <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                       data-on="<span class='icon-fusionpbx'></span> Enabled"
-                       data-off="<span class='icon-fusionpbx'></span> Disabled"
-                       data-width="125px">
-                FusionPBX Domain Support
-              </label>
+              <input class="toggleFusionPBXDomain" type="checkbox" value="1"
+                     data-on="<span class='icon-fusionpbx'></span> Enabled"
+                     data-off="<span class='icon-fusionpbx'></span> Disabled"
+                     data-width="125px">
+              <span class="label-toggle ms-2">FusionPBX Domain Support</span>
             </div>
             <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
           </div>
-          <div class="FusionPBXDomainOptions form-group hidden">
+          <div class="FusionPBXDomainOptions form-group d-none">
             <div class="alert alert-warning pre-scrollable">
               <strong>
                 You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
@@ -287,7 +288,7 @@ systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of fusionpbx tab -->
 
-        <div class="FreePBXDomainOptions form-group hidden">
+        <div class="FreePBXDomainOptions form-group d-none">
           <div class="alert alert-warning pre-scrollable">
             <strong>
               Run these commands as root on the FreePBX server.
@@ -307,8 +308,8 @@ systemctl restart fail2ban</code></pre>
       </div> <!-- end of tabcontent tab -->
 
       <div class="modal-footer">
-        <button type="submit" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Update
+        <button type="submit" id="updateButton" class="btn btn-warning btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Update
         </button>
       </div>
     </form>
@@ -320,8 +321,8 @@ systemctl restart fail2ban</code></pre>
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add Endpoint Group Details</h4>
   </div>
 
@@ -343,35 +344,35 @@ systemctl restart fail2ban</code></pre>
       <!-- nav tabs -->
       <div id="endpoint-nav" class="navbar">
         <ul class="nav nav-tabs">
-          <li role="presentation" class="active">
-            <a href="#auth2" name="auth-toggle" data-toggle="tab">Auth</a>
+          <li role="presentation" class="nav-item active">
+            <a class="nav-link active" href="#auth2" name="auth-toggle" data-bs-toggle="tab">Auth</a>
           </li>
-          <li role="presentation">
-            <a href="#endpoints2" name="endpoints-toggle" data-toggle="tab">Endpoints</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#endpoints2" name="endpoints-toggle" data-bs-toggle="tab">Endpoints</a>
           </li>
-          <li role="presentation">
-            <a href="#call_settings2" name="settings-toggle" data-toggle="tab">Config</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#call_settings2" name="settings-toggle" data-bs-toggle="tab">Config</a>
           </li>
-          <li role="presentation">
-            <a href="#notifications2" name="notifications-toggle" data-toggle="tab">Notifications</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#notifications2" name="notifications-toggle" data-bs-toggle="tab">Notifications</a>
           </li>
-          <li role="presentation">
-            <a href="#cdr2" name="cdr-toggle" data-toggle="tab">CDR</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#cdr2" name="cdr-toggle" data-bs-toggle="tab">CDR</a>
           </li>
-          <li role="presentation">
-            <a href="#fusionpbx2" name="fusion-toggle" data-toggle="tab">FusionPBX</a>
+          <li role="presentation" class="nav-item">
+            <a class="nav-link" href="#fusionpbx2" name="fusion-toggle" data-bs-toggle="tab">FusionPBX</a>
           </li>
         </ul>
       </div>
 
       <div class="tab-content"> <!-- begin tab content -->
 
-        <div id="auth2" class="tab-pane fade in active" name="auth-toggle">
+        <div id="auth2" class="tab-pane fade show active" name="auth-toggle">
           <div class="form-group">
-            <div id="authoptions" class="btn-group" data-toggle="buttons">
-              <label><input class="authtype" type="radio" name="authtype" id="ip" value="ip" checked> IP
-                Auth</label>
-              <label><input class="authtype" type="radio" name="authtype" id="userpwd" value="userpwd">
+            <div id="authoptions" class="btn-group">
+              <label><input class="authtype" type="radio" name="authtype" id="ip" value="ip" checked>&nbsp;IP
+                Auth&nbsp;</label>
+              <label><input class="authtype" type="radio" name="authtype" id="userpwd" value="userpwd">&nbsp;
                 Username/Password
                 Auth</label>
             </div>
@@ -387,7 +388,7 @@ systemctl restart fail2ban</code></pre>
             <div class="form-group wrapper-fieldicon-right">
               <input id="auth_password" class="form-control" type="password" name="auth_password"
                      placeholder="Auth Password">
-              <span toggle="#auth_password" class="field-icon toggle-password glyphicon glyphicon-eye-close"></span>
+              <i toggle="#auth_password" class="field-icon toggle-password ti ti-eye-off"></i>
             </div>
             <div class="form-group">
               <input class="auth_domain form-control" typead="text" name="auth_domain"
@@ -396,46 +397,46 @@ systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of auth tab -->
 
-        <div id="endpoints2" class="tab-pane fade in" name="endpoints-toggle">
+        <div id="endpoints2" class="tab-pane fade" name="endpoints-toggle">
           <table id="endpoint-table2" class="table">
             <thead>
             <tr>
               <th>ID</th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="hostname or IP address to route to (and/or) authenticate endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="hostname or IP address to route to (and/or) authenticate endpoint">
                   Host
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="port to use when routing to endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="port to use when routing to endpoint">
                   Port
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="signalling transport for calls to endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="signalling transport for calls to endpoint">
                   Signalling
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="media transport for calls to endpoint">
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="media transport for calls to endpoint">
                   Media
                 </span>
               </th>
               <th>Description</th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="relative weight (load balancing only) out of sum of endpoint weights in this group.
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="relative weight (load balancing only) out of sum of endpoint weights in this group.
                       value must be 1-100 or 0 to disable load balancing on this endpoint">
                   Weight
                 </span>
               </th>
               <th>
-                <span data-toggle="tooltip" data-placement="top" title=""
-                      data-original-title="when enabled, the gateway is sent keepalive messages (at a default interval of 60 seconds).
+                <span data-bs-toggle="tooltip" data-bs-placement="top"
+                      title="when enabled, the gateway is sent keepalive messages (at a default interval of 60 seconds).
                       if disabled, the destination is always attempted when routing">
                   Keepalive
                 </span>
@@ -451,7 +452,7 @@ systemctl restart fail2ban</code></pre>
           </table>
         </div> <!-- enf of endpoints tab -->
 
-        <div id="call_settings2" class="tab-pane fade in" name="settings-toggle">
+        <div id="call_settings2" class="tab-pane fade" name="settings-toggle">
           <div class="form-group">
             <input class="strip form-control" type="text" name="strip"
                    placeholder="# of characters to strip from RURI (inbound calls)">
@@ -470,7 +471,7 @@ systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of call settings tab -->
 
-        <div id="notifications2" class="tab-pane fade in" name="notifications-toggle">
+        <div id="notifications2" class="tab-pane fade" name="notifications-toggle">
           <div class="form-group">
             <input class="email_over_max_calls form-control" type="text" name="email_over_max_calls"
                    placeholder="Email for Over Max Concurrent Calls">
@@ -481,7 +482,7 @@ systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of notifications tab -->
 
-        <div id="cdr2" class="tab-pane fade in" name="cdr-toggle">
+        <div id="cdr2" class="tab-pane fade" name="cdr-toggle">
           <div class="form-group">
             <input class="cdr_email form-control" type="text" name="cdr_email"
                    placeholder="Email to send CDR's">
@@ -510,26 +511,26 @@ systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of cdr  tab -->
 
-        <div id="fusionpbx2" class="tab-pane fade in" name="fusion-toggle">
+        <div id="fusionpbx2" class="tab-pane fade" name="fusion-toggle">
           <div class="form-group">
-            <div class="checkbox-inline">
-              <label class="label-toggle">
-                <input class="toggleFusionPBXDomain" type="checkbox" data-toggle="toggle" value="1"
-                       data-on="<span class='icon-fusionpbx'></span> Enabled"
-                       data-off="<span class='icon-fusionpbx'></span> Disabled"
-                       data-width="125px">
-                FusionPBX Domain Support
-              </label>
-            </div>
-            <div class="checkbox-inline">
-              <label class="checkbox-inline">
-                <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0">Cluster
-                Support
-              </label>
+            <!-- NOTE: no wrapping <label> (would double-toggle) and no data-toggle="toggle"
+                 (auto-init throws while this tab pane is hidden). endpointgroups.js
+                 initializes this toggle on shown.bs.tab, once it is visible. -->
+            <div class="checkbox">
+              <input class="toggleFusionPBXDomain" type="checkbox" value="1"
+                     data-on="<span class='icon-fusionpbx'></span> Enabled"
+                     data-off="<span class='icon-fusionpbx'></span> Disabled"
+                     data-width="125px">
+              <span class="label-toggle ms-2">FusionPBX Domain Support</span>
             </div>
           </div>
+          <div class="form-group">
+            <label class="checkbox">
+              <input type="checkbox" class='fusionpbx_clustersupport' name="fusionpbx_clustersupport" value="0">&nbsp;Cluster Support
+            </label>
+          </div>
           <input class="fusionpbx_db_enabled " type="hidden" name="fusionpbx_db_enabled" value="0">
-          <div class="FusionPBXDomainOptions form-group hidden">
+          <div class="FusionPBXDomainOptions form-group d-none">
             <div class="alert alert-warning pre-scrollable">
               <strong>
                 You need access to the FusionPBX database. Run these commands as root on the FusionPBX server.
@@ -560,7 +561,7 @@ systemctl restart fail2ban</code></pre>
           </div>
         </div> <!-- end of fusionpbx tab -->
 
-        <div class="FreePBXDomainOptions form-group hidden">
+        <div class="FreePBXDomainOptions form-group d-none">
           <div class="alert alert-warning pre-scrollable">
             <strong>
               Run these commands as root on the FreePBX server.
@@ -580,8 +581,8 @@ systemctl restart fail2ban</code></pre>
       </div> <!-- end of tabcontent tab -->
 
       <div class="modal-footer ">
-        <button type="submit" id="addButton" class="btn btn-success btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Add
+        <button type="submit" id="addButton" class="btn btn-success btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Add
         </button>
       </div>
     </form>
@@ -593,8 +594,8 @@ systemctl restart fail2ban</code></pre>
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
   </div>
 
@@ -608,16 +609,16 @@ systemctl restart fail2ban</code></pre>
         <input class="name form-control" type="hidden" name="name">
       </div>
 
-      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
+      <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i> Are you sure you want
         to delete this Endpoint Group?
       </div>
 
       <div class="modal-footer ">
-        <button id="deleteButton" type="button" class="btn btn-success"><span
-            class="glyphicon glyphicon-ok-sign" autofocus="autofocus"></span> Yes
+        <button id="deleteButton" type="button" class="btn btn-success"><i
+            class="ti ti-circle-check" autofocus="autofocus"></i> Yes
         </button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><span
-            class="glyphicon glyphicon-remove"></span> No
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+            class="ti ti-x"></i> No
         </button>
       </div>
     </form>

@@ -23,7 +23,7 @@ function install() {
     fi
 
     # configure init.d daemon
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/init.d/dnsmasq /etc/init.d/dnsmasq
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/init.d/dnsmasq.sh /etc/init.d/dnsmasq
     chmod 755 /etc/init.d/dnsmasq
     touch /usr/share/dnsmasq/installed-marker
 

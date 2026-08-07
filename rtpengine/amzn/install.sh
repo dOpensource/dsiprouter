@@ -318,6 +318,9 @@ function install {
     userdel rtpengine &>/dev/null; groupdel rtpengine &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "RTPengine RTP Proxy" rtpengine
 
+    # allow rtpengine to read configs from dsiprouter group
+    usermod -a -G dsiprouter rtpengine
+
     # reuse repo if it exists and matches version we want to install
     if [[ -d ${SRC_DIR}/rtpengine ]]; then
         if [[ "$(getGitTagFromShallowRepo ${SRC_DIR}/rtpengine)" != "${RTPENGINE_VER}" ]]; then
@@ -423,7 +426,8 @@ function install {
     # Reconfigure systemd service files
     rm -f /lib/systemd/system/rtpengine.service 2>/dev/null
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /lib/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre.sh /usr/sbin/rtpengine-start-pre
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post.sh /usr/sbin/rtpengine-stop-post
     chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
 
     # Reload systemd configs

@@ -66,7 +66,7 @@ function loadSettingsTable() {
           const safeKey = JSON.stringify(row.key);
           return `<button onclick='updateSettingValue(${safeKey})' class="btn btn-primary">Save</button>
                   <button onclick='deleteSetting(${safeKey})' class="btn btn-danger">
-                    <span class="glyphicon glyphicon-trash"></span>
+                    <i class="ti ti-trash"></i>
                   </button>`;
         }
       }
@@ -117,6 +117,7 @@ function addNewSetting() {
     document.getElementById('newSettingKey').value = '';
     document.getElementById('newSettingValue').value = '';
     loadSettings();
+    reloadDsipRequired();
   })
   .catch(error => {
     showMessage('Error: ' + error.message, 'error');
@@ -146,6 +147,7 @@ function updateSettingValue(key) {
     
     showMessage('Setting updated successfully', 'success');
     loadSettings();
+    reloadDsipRequired();
   })
   .catch(error => {
     showMessage('Error: ' + error.message, 'error');
@@ -172,6 +174,7 @@ function deleteSetting(key) {
     
     showMessage('Setting deleted successfully', 'success');
     loadSettings();
+    reloadDsipRequired();
   })
   .catch(error => {
     showMessage('Error: ' + error.message, 'error');

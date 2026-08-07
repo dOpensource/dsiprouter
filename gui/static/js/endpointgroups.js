@@ -59,6 +59,85 @@
   var endpoint_table1;
   var endpoint_table2;
   var gwgroup_table;
+  var model_timerid;
+ 
+
+  function ensureHostValidationStyles() {
+    if ($('#tabledit-host-validation-style').length) {
+      return;
+    }
+
+    $('head').append(
+      '<style id="tabledit-host-validation-style">' +
+      '.tabledit-host-validation-msg{' +
+      'display:none;margin-top:6px;padding:6px 8px;border-radius:4px;' +
+      'border-left:3px solid #dc3545;background:#fff5f5;color:#842029;font-size:12px;line-height:1.3;' +
+      '}' +
+      '</style>'
+    );
+  }
+
+  function getHostValidationMessageBox(hostInput) {
+    var hostCell = hostInput.closest('td');
+    var msgBox = hostCell.find('.tabledit-host-validation-msg');
+    if (!msgBox.length) {
+      msgBox = $('<div class="tabledit-host-validation-msg"></div>');
+      hostInput.after(msgBox);
+    }
+    return msgBox;
+  }
+
+  function setHostValidationState(hostInput, isValid, msg) {
+    var msgBox = getHostValidationMessageBox(hostInput);
+
+    if (isValid) {
+      hostInput.css('border', '');
+      msgBox.text('').hide();
+      return;
+    }
+
+    hostInput.css('border', '1px solid red');
+    msgBox.text(msg || 'Host validation failed').show();
+  }
+
+  function validateHostWithApi(hostValue) {
+    var result = {
+      isValid: false,
+      msg: 'Host validation failed'
+    };
+
+    $.ajax({
+      type: 'GET',
+      url: API_BASE_URL + 'sys/isvalidhost/' + encodeURIComponent(hostValue),
+      dataType: 'json',
+      contentType: 'application/json; charset=utf-8',
+      async: false,
+      success: function(response) {
+        var responseData = response && response.data ? response.data : null;
+
+        if (responseData && typeof responseData.status === 'boolean') {
+          result.isValid = responseData.status;
+        }
+        else if (typeof response.status === 'boolean') {
+          result.isValid = response.status;
+        }
+
+        if (typeof response.msg === 'string' && response.msg.length > 0) {
+          result.msg = response.msg;
+        }
+      },
+      error: function(jqXHR) {
+        if (jqXHR.responseJSON && typeof jqXHR.responseJSON.msg === 'string' && jqXHR.responseJSON.msg.length > 0) {
+          result.msg = jqXHR.responseJSON.msg;
+        }
+        else if (typeof jqXHR.responseText === 'string' && jqXHR.responseText.length > 0) {
+          result.msg = jqXHR.responseText;
+        }
+      }
+    });
+
+    return result;
+  }
 
   function generateEndpointObject(row) {
     var jq_row = $(row);
@@ -108,6 +187,7 @@
 
   function generateEndpointTable(selector) {
     var endpoint_table = $(selector);
+    ensureHostValidationStyles();
 
     endpoint_table.Tabledit({
       columns: {
@@ -122,6 +202,18 @@
           [7, 'keepalive', KEEPALIVE_OPTIONS_STR],
         ],
         saveButton: true,
+      },
+      beforeSave: function(cells) {
+        var hostInput = $(cells).closest('tr').find('input[name="host"]');
+        if (!hostInput.length) {
+          return true;
+        }
+
+        var hostValue = $.trim(hostInput.val());
+        var validationResult = validateHostWithApi(hostValue);
+        setHostValidationState(hostInput, validationResult.isValid, validationResult.msg);
+
+        return validationResult.isValid;
       },
       ajaxDisabled: true,
       restoreButton: false
@@ -248,7 +340,7 @@
         }
 
         btn.addClass("btn-success");
-        btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
+        btn.html("<i class='ti ti-check'></i> Saved!");
         btn.attr("disabled", true);
 
         // Update Reload buttons
@@ -268,6 +360,21 @@
             "gwgroupid": gwgroupid_int
           }).draw();
         }
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        var btn;
+        if (action === "POST") {
+          btn = $('#add .modal-footer').find('#addButton');
+        }
+        else {
+          btn = $('#edit .modal-footer').find('#updateButton');
+          btn.unbind('click');
+        }
+        btn.addClass("btn-danger");
+        btn.html("<i class='ti ti-alert-circle'></i> Error!");
+        btn.attr("disabled", true);
+        clearTimeout(model_timerid);
+
       }
     })
   }
@@ -301,7 +408,11 @@
     modal_body.find(".cdr_send_day").val('1');
     modal_body.find(".cdr_send_month").val('*');
     modal_body.find(".cdr_send_weekday").val('*');
-    modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+    modal_body.find('.FusionPBXDomainOptions').addClass('d-none');
+    /* reset the FusionPBX toggle to off; if the widget is already built its
+       intercepted 'checked' setter updates the slider, otherwise the state is
+       picked up when the tab is next shown */
+    modal_body.find(".toggleFusionPBXDomain").prop('checked', false).trigger('change');
     modal_body.find('.updateButton').attr("disabled", false);
 
     // Clear out update button in add footer
@@ -314,13 +425,13 @@
     var btn;
     if (modal_selector == "#add") {
       btn = $('#add .modal-footer').find('#addButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
+      btn.html("<i class='ti ti-circle-check'></i> Add");
       btn.removeClass("btn-success");
-      btn.addClass("btn-primary");
+      btn.addClass("btn-success");
     }
     else {
       btn = $('#edit .modal-footer').find('#updateButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Update");
+      btn.html("<i class='ti ti-circle-check'></i> Update");
       btn.removeClass("btn-success");
       btn.addClass("btn-warning");
     }
@@ -390,7 +501,7 @@
     var updatebtn = $('#edit .modal-footer').find("#updateButton");
     updatebtn.removeClass("btn-success");
     updatebtn.addClass("btn-warning");
-    updatebtn.html("<span class='glyphicon glyphicon-ok-sign'></span>Update");
+    updatebtn.html("<i class='ti ti-circle-check'></i>Update");
 
     if (gwgroup_data.endpoints) {
       for (var i = 0; i < gwgroup_data.endpoints.length; i++) {
@@ -399,12 +510,13 @@
       endpoint_table1.data('Tabledit').reload();
     }
 
-    if (gwgroup_data.fusionpbx.enabled) {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('on');
-    }
-    else {
-      modal_body.find(".toggleFusionPBXDomain").bootstrapToggle('off');
-    }
+    /* Set the underlying checkbox state and let the change handler sync the
+       hidden field / options. The bootstrap5-toggle widget renders from this
+       state when its tab is shown (see the shown.bs.tab handler); don't call
+       .bootstrapToggle() here, it throws while the FusionPBX tab is hidden. */
+    modal_body.find(".toggleFusionPBXDomain")
+      .prop('checked', !!gwgroup_data.fusionpbx.enabled)
+      .trigger('change');
 
     if (gwgroup_data.auth.type == "userpwd") {
       /* userpwd auth enabled, Set the radio button to true */
@@ -441,6 +553,7 @@
   $(document).ready(function() {
     // datatable init
     gwgroup_table = $('#endpointgroups').DataTable({
+      "autoWidth": false,
       "ajax": {
         "url": API_BASE_URL + "endpointgroups"
       },
@@ -525,15 +638,23 @@
       var modal_body = modal.find('.modal-body');
 
       if (self.is(":checked") || self.prop("checked")) {
-        modal_body.find('.FusionPBXDomainOptions').removeClass("hidden");
+        modal_body.find('.FusionPBXDomainOptions').removeClass('d-none');
         modal_body.find('.fusionpbx_db_enabled').val(1);
-        self.bootstrapToggle('on');
       }
       else {
-        modal_body.find('.FusionPBXDomainOptions').addClass("hidden");
+        modal_body.find('.FusionPBXDomainOptions').addClass('d-none');
         modal_body.find('.fusionpbx_db_enabled').val(0);
-        self.bootstrapToggle('off');
       }
+    });
+
+    /* bootstrap5-toggle (ecmas build) throws if constructed while its element is
+       hidden, so it cannot be auto-initialized inside a hidden tab pane. Build
+       (or re-render) the FusionPBX toggle when its tab is shown and therefore
+       visible. Re-rendering also recalculates the slider size correctly. */
+    $('a[name="fusion-toggle"]').on('shown.bs.tab', function() {
+      $($(this).attr('href')).find('.toggleFusionPBXDomain').each(function() {
+        this.bootstrapToggle(this.bsToggle ? 'rerender' : undefined);
+      });
     });
 
     /* listener for freePBX toggle */
@@ -545,12 +666,12 @@
       if (self.is(":checked") || self.prop("checked")) {
         modal_body.find('.FreePBXDomainOptions').removeClass("hidden");
         modal_body.find('.freepbx_enabled').val(1);
-        self.bootstrapToggle('on');
+        this.bootstrapToggle('on');
       }
       else {
         modal_body.find('.FreePBXDomainOptions').addClass("hidden");
         modal_body.find('.freepbx_enabled').val(0);
-        self.bootstrapToggle('off');
+        this.bootstrapToggle('off');
       }
     });
 
@@ -558,13 +679,13 @@
       var input = $($(this).attr("toggle"));
       if (input.attr("type") == "password") {
         input.attr("type", "text");
-        $(this).removeClass("glyphicon glyphicon-eye-close");
-        $(this).addClass("glyphicon glyphicon-eye-open");
+        $(this).removeClass("ti-eye-off");
+        $(this).addClass("ti-eye");
       }
       else {
         input.attr("type", "password");
-        $(this).removeClass("glyphicon glyphicon-eye-open");
-        $(this).addClass("glyphicon glyphicon-eye-close");
+        $(this).removeClass("ti-eye");
+        $(this).addClass("ti-eye-off");
       }
     });
 
@@ -585,8 +706,8 @@
           success: function(response, textStatus, jqXHR) {
             authpwd_inp.attr("type", "text");
             authpwd_inp.val(response.data[0])
-            togglepwd_span.removeClass("glyphicon glyphicon-eye-close");
-            togglepwd_span.addClass("glyphicon glyphicon-eye-open");
+            togglepwd_span.removeClass("ti-eye-off");
+            togglepwd_span.addClass("ti-eye");
           }
         });
 
@@ -617,7 +738,7 @@
       if (validateFields('#add')) {
         addEndpointGroup();
         // hide the modal after 1.5 sec
-        setTimeout(function() {
+        model_timerid = setTimeout(function() {
           var add_modal = $('#add');
           if (add_modal.is(':visible')) {
             add_modal.modal('hide');
@@ -634,7 +755,7 @@
       if (validateFields('#edit')) {
         updateEndpointGroup();
         // hide the modal after 1.5 sec
-        setTimeout(function() {
+        model_timerid = setTimeout(function() {
           var edit_modal = $('#edit');
           if (edit_modal.is(':visible')) {
             edit_modal.modal('hide');
@@ -645,6 +766,8 @@
       /* prevent page reload */
       return false;
     });
+
+    
 
     /* handler for deleting endpoint group */
     $('#deleteButton').click(function() {
@@ -661,3 +784,42 @@
   });
 
 })(window, document);
+
+// Auto-expand host field while typing, shrink on blur
+$(document).on("focus", "input[name=\"host\"]", function() {
+  $(this).css("width", "20ch");
+  $(this).css("min-width", "20ch");
+});
+
+$(document).on("input", "input[name=\"host\"]", function() {
+  this.style.width = "auto";
+  this.style.width = Math.max(20, this.scrollWidth + 10) + "px";
+});
+
+$(document).on("blur", "input[name=\"host\"]", function() {
+  $(this).css("width", "20ch");
+  $(this).css("min-width", "20ch");
+});
+
+// Auto-adjust modal width based on host field content
+$(document).on("input", "input[name=\"host\"]", function() {
+  var modal = $(this).closest(".modal-dialog");
+  var form = $(this).closest("form");
+  var currentWidth = modal.width();
+  var viewportWidth = $(window).width() * 0.95;
+  var formWidth = form.get(0).scrollWidth + 80;
+  var minWidth = 720;
+  var maxWidth = Math.min(viewportWidth, 1200);
+
+  var newWidth = Math.max(minWidth, Math.min(formWidth, maxWidth));
+
+  if (newWidth > currentWidth) {
+    modal.css("width", newWidth + "px");
+    modal.css("max-width", newWidth + "px");
+  }
+});
+
+// Reset modal width on close
+$(document).on("hidden.bs.modal", ".modal", function() {
+  $(this).find(".modal-dialog").css("max-width", "");
+});

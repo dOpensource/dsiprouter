@@ -25,7 +25,7 @@ def displayCarrierGroups(gwgroup=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()

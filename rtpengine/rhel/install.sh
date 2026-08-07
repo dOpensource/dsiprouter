@@ -125,6 +125,9 @@ function install {
     mkdir -p /run/rtpengine ${SYSTEM_RTPENGINE_CONFIG_DIR}
     chown -R rtpengine:rtpengine /run/rtpengine
 
+    # allow rtpengine to read configs from dsiprouter group
+    usermod -a -G dsiprouter rtpengine
+
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf
 
@@ -162,7 +165,8 @@ function install {
     # Reconfigure systemd service files
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/systemd/rtpengine-v1.service /lib/systemd/system/rtpengine.service
     chmod 644 /lib/systemd/system/rtpengine.service
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-{start-pre,stop-post} /usr/sbin/
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-start-pre.sh /usr/sbin/rtpengine-start-pre
+    cp -f ${DSIP_PROJECT_DIR}/rtpengine/rtpengine-stop-post.sh /usr/sbin/rtpengine-stop-post
     chmod +x /usr/sbin/rtpengine-{start-pre,stop-post} /usr/bin/rtpengine
     systemctl daemon-reload
     systemctl enable rtpengine

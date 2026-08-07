@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(dirname $(readlink -f "$BASH_SOURCE"))))}
+DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
 DSIP_SYSTEM_CONFIG_DIR="/etc/dsiprouter"
 DSIP_CONFIG_FILE="${DSIP_SYSTEM_CONFIG_DIR}/gui/settings.py"
 

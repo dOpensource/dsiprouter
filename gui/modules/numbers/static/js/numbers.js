@@ -83,7 +83,7 @@
         }
 
         btn.addClass("btn-success");
-        btn.html("<span class='glyphicon glyphicon-check'></span> Saved!");
+        btn.html("<i class='ti ti-check'></i> Saved!");
         btn.attr("disabled", true);
 
         // Update Reload buttons if the number was assigned
@@ -270,14 +270,14 @@ $(document).ready(function() {
         {"data": "assigned_reference_id"},
         {"data": null,
           render: function (data, type, row) {
-          return `<button id="open-Update" class="open-Update btn btn-primary btn-xs" data-title="Edit" data-toggle="modal"
-          data-target="#edit"><span class="glyphicon glyphicon-pencil"></span></button>`;
+          return `<button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-toggle="modal"
+          data-target="#edit"><i class="ti ti-pencil"></i></button>`;
           }
         },
         {"data": null,
           render: function (data, type, row) {
-          return `<button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete" data-toggle="modal"
-          data-target="#delete"><span class="glyphicon glyphicon-trash"></span></button>`;
+          return `<button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-toggle="modal"
+          data-target="#delete"><i class="ti ti-trash"></i></button>`;
           }
         }
       ],

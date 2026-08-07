@@ -1,7 +1,10 @@
 # NOTES:
-# contains utility functions and shared variables
-# should be sourced by an external script
-# exporting upon import removes need to import again in sub-processes
+#   contains utility functions and shared variables
+#   should be sourced by an external script
+#   exporting upon import removes need to import again in sub-processes
+#
+# shellcheck shell=bash
+#
 
 ######################
 # Imported Constants #
@@ -23,7 +26,7 @@ export GOOGLE_DNS_IPV6="2001:4860:4860::8888"
 # Constants for imported functions
 export DSIP_INIT_FILE=${DSIP_INIT_FILE:-"/lib/systemd/system/dsip-init.service"}
 export DSIP_SYSTEM_CONFIG_DIR=${DSIP_SYSTEM_CONFIG_DIR:-"/etc/dsiprouter"}
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(dirname $(readlink -f "$BASH_SOURCE")))}
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
 
 # reuse credential settings from python files (exported for later usage)
 export SALT_LEN=${SALT_LEN:-$(grep -m 1 -oP 'SALT_LEN[ \t]+=[ \t]+\K[0-9]+' ${DSIP_PROJECT_DIR}/gui/util/security.py)}

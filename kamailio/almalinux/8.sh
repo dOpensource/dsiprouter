@@ -55,6 +55,9 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     # Add the Kamailio repos to yum
     (cat << EOF
 [kamailio]

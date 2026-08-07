@@ -179,13 +179,13 @@
     var input = $(self.attr("data-toggle"));
     if (input.attr("type") === "password") {
       input.attr("type", "text");
-      self.removeClass("glyphicon glyphicon-eye-close");
-      self.addClass("glyphicon glyphicon-eye-open");
+      self.removeClass("ti-eye-off");
+      self.addClass("ti-eye");
     }
     else {
       input.attr("type", "password");
-      self.removeClass("glyphicon glyphicon-eye-open");
-      self.addClass("glyphicon glyphicon-eye-close");
+      self.removeClass("ti-eye");
+      self.addClass("ti-eye-off");
     }
   }
   // export function to make it available in scope when called via dataTable widgets
@@ -194,8 +194,8 @@
   function createDeleteButton() {
     return '' +
       '<div class="dt-resize-height">' +
-      '  <button class="open-Delete btn btn-danger btn-xs" data-title="Deactivate" data-toggle="modal" data-target="#delete" onclick="updateDeleteModal(this)">' +
-      '    <span class="glyphicon glyphicon-trash"></span>' +
+      '  <button class="open-Delete btn btn-danger btn-sm" data-title="Deactivate" data-bs-toggle="modal" data-bs-target="#delete" onclick="updateDeleteModal(this)">' +
+      '    <i class="ti ti-trash"></i>' +
       '  </button>' +
       '</div>';
   }
@@ -206,7 +206,7 @@
     return '' +
       '<div class="wrapper-fieldicon-right dt-resize-height">' +
       '  <input id="' + unique_key_id + '" class="key" type="password" name="key" value="' + data + '" readonly>' +
-      '  <span class="field-icon toggle-password glyphicon glyphicon-eye-close" data-toggle="#' + unique_key_id + '" onclick="togglePasswordHidden(this)"></span>' +
+      '  <i class="field-icon toggle-password ti ti-eye-off" data-toggle="#' + unique_key_id + '" onclick="togglePasswordHidden(this)"></i>' +
       '</div>';
   }
 
@@ -279,8 +279,8 @@
       // reset toggles
       if (key.attr("type") !== "password") {
         key.attr("type", "password");
-        toggle.removeClass("glyphicon glyphicon-eye-open");
-        toggle.addClass("glyphicon glyphicon-eye-close");
+        toggle.removeClass("ti-eye");
+        toggle.addClass("ti-eye-off");
       }
     });
 

@@ -91,6 +91,9 @@ function install() {
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     # TODO: amzn2 should be based off rhel not centos but the kamailio rhel repos are out of date
     yum-config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
     echo $RHEL_BASE_VER >/etc/yum/vars/rhelver &&

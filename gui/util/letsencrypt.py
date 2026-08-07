@@ -146,11 +146,8 @@ def generateCertificate(domain, notification_email, directory_url=DIRECTORY_URL_
         keyfile.write(pkey_pem.decode('utf-8'))
     with os.fdopen(os.open(cert_file, os.O_WRONLY | os.O_CREAT, 0o640), 'w') as certfile:
         certfile.write(fullchain_pem)
-
-    # Change owner to root:kamailio so that Kamailio can load the configurations
-    change_owner(cert_domain_dir, "dsiprouter", "kamailio")
-    change_owner(key_file, "dsiprouter", "kamailio")
-    change_owner(cert_file, "dsiprouter", "kamailio")
+    os.chmod(key_file, 0o640)
+    os.chmod(cert_file, 0o640)
 
     return pkey_pem.decode('utf-8'), fullchain_pem
 

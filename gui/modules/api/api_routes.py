@@ -22,7 +22,7 @@ from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
+from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
@@ -1560,7 +1560,12 @@ def updateEndpointGroups(gwgroupid=None):
             ep_gateway.address = sip_addr
             ep_gateway.strip = strip
             ep_gateway.pri_prefix = prefix
-            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media)
+            # Check if the Endpoint Group was created by the  MSTeams Domain Logic
+            if "pstnhub.microsoft.com" in ep_gateway.address:
+                msteams_domain = gwgroup_desc_dict['name']
+            else:
+                msteams_domain = ""
+            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media,msteams_domain=msteams_domain)
 
             gwlist.append(gwid)
 
@@ -3148,6 +3153,42 @@ def generatePassword():
     except Exception as ex:
         return showApiError(ex)
 
+@api.route("/api/v1/sys/isvalidhost/<host>", methods=['GET'])
+@api_security
+def isValidHost(host):
+    """
+    Check if the given host is valid
+    """ 
+
+    result = "Host validation check completed"
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        host_type = check_host_type(host)
+
+        if host_type == 'ip':
+            is_valid = isValidIP(host)
+        elif host_type == 'hostname':
+            try:
+                is_valid = hostToIP(host)
+                if (is_valid != ""):
+                    is_valid = True
+            except Exception as ex:
+                is_valid = False
+                result = ex.args[0] if len(ex.args) > 0 else "Unknown error"
+        else:
+            is_valid = False
+
+        return createApiResponse(
+            msg=result,
+            data={"status": is_valid},
+        )
+
+    except Exception as ex:
+        return showApiError(ex)
+
 
 # TODO:  The response coming back from Kamailio Command Line
 #        is not in proper JSON format.  The field and Attributes
@@ -3516,11 +3557,8 @@ def uploadCertificates(domain=None):
             newfile.write(pkey_bytes)
         with open(cert_file, 'wb') as newfile:
             newfile.write(cert_bytes)
-
-        # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations
-        change_owner(cert_domain_dir, "dsiprouter", "kamailio")
-        change_owner(key_file, "dsiprouter", "kamailio")
-        change_owner(cert_file, "dsiprouter", "kamailio")
+        os.chmod(key_file, 0o640)
+        os.chmod(cert_file, 0o640)
 
         # Convert Certificate and key to base64 so that they can be stored in the database
         key_base64 = base64.b64encode(pkey_bytes)

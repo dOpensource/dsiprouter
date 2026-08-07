@@ -7,6 +7,7 @@
 #========================== NOTES ==========================#
 #
 # Supported OS:
+# - Debian 13 (trixie)      - STABLE
 # - Debian 12 (bookworm)    - STABLE
 # - Debian 11 (bullseye)    - STABLE
 # - Debian 10 (buster)      - STABLE
@@ -63,7 +64,7 @@
 
 
 # set project dir (where src files are located)
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
@@ -444,6 +445,10 @@ function validateOSInfo() {
     case "$DISTRO" in
     debian)
         case "$DISTRO_VER" in
+        13)
+            KAM_VERSION=${KAM_VERSION:-"6.0.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
         12|11|10)
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
@@ -1796,7 +1801,11 @@ function installRTPEngine() {
     fi
 
     printdbg "Attempting to install RTPEngine..."
-    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
+    if [[ -f "${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
+    else
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
+    fi
     if (( $? != 0 )); then
         printerr "RTPEngine install failed"
         exit 1
@@ -1840,7 +1849,11 @@ function uninstallRTPEngine() {
     fi
 
     printdbg "Attempting to uninstall RTPEngine..."
-    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh uninstall
+    if [[ -f "${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+    else
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh uninstall
+    fi
 
     if (( $? == 0 )); then
         if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
@@ -1884,7 +1897,7 @@ function installDsiprouterCli() {
     fi
 
     # add dsiprouter CLI command to the path
-    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+    install -o root -g root -m 755 ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
     # add specific commands to sudoers that dsiprouter can run with escalated privileges
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
 
@@ -2398,8 +2411,8 @@ function installDnsmasq() {
     useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
 
     printdbg "Attempting to install DNSmasq..."
-    if (( ${DISTRO_VER} == 12 )); then
-        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_VER}.sh install
+    if [[ -f "${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
     else
         ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh install
     fi
@@ -2455,7 +2468,11 @@ function uninstallDnsmasq() {
     fi
 
     printdbg "Attempting to uninstall DNSmasq..."
-    ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
+    if [[ -f "${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+    else
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
+    fi
 
     if (( $? != 0 )); then
         printerr "DNSmasq uninstall failed - OS install script failure"
@@ -3692,7 +3709,7 @@ function updatePermissions() {
         if id -u dsiprouter &>/dev/null; then
             # dsiprouter needs to have control over the certs to allow changes
             # note that nginx should never have write access
-            chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
+            chown -R dsiprouter:dsiprouter ${DSIP_CERTS_DIR}
         else
             # dsiprouter user does not yet exist so make sure kamailio user has access
             chown -R root:kamailio ${DSIP_CERTS_DIR}
@@ -3729,7 +3746,7 @@ function updatePermissions() {
         # kamailio configs will contain plaintext passwords / tokens
         # in the case where the dsiprouter user does not yet exist we set stricter permissions
         if id -u dsiprouter &>/dev/null; then
-            chown -R dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+            chown -R dsiprouter:dsiprouter ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
         else
             chown -R root:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
         fi
@@ -3751,10 +3768,15 @@ function updatePermissions() {
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
 
         # project files can only be edited by root
-        chown -R root:root ${DSIP_PROJECT_DIR}/
+        chown -R root:root "$DSIP_PROJECT_DIR/"
+        find "$DSIP_PROJECT_DIR" -type d -exec chmod 755 {} +
+        find "$DSIP_PROJECT_DIR" -type f -exec chmod 644 {} +
         # files that should be executable
-        chmod +x ${DSIP_PROJECT_DIR}/dsiprouter.sh
-        chmod +x ${DSIP_PROJECT_DIR}/resources/upgrade/*/scripts/migrate.sh
+        find "$DSIP_PROJECT_DIR" -type f \( -name '*.sh' -o -name '*.py' \) \
+            -not -path "$DSIP_PROJECT_DIR/venv/*" \
+            -not -path "$DSIP_PROJECT_DIR/.venv/*" \
+            -exec awk 'FNR==1 && /^#!/ {printf "%s\0", FILENAME; nextfile}' {} + |
+            xargs -0 chmod 755
     }
     # set permissions for files/dirs used by rtpengine
     setRtpenginePerms() {
@@ -3763,7 +3785,7 @@ function updatePermissions() {
         chmod 770 /run/rtpengine
 
         if id -u dsiprouter &>/dev/null; then
-            chown -R dsiprouter:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+            chown -R dsiprouter:dsiprouter ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
         else
             chown -R root:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
         fi
@@ -3895,7 +3917,7 @@ function usageOptions() {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
+        "install" "[-debug|-all|--all|-mysql|--mysql|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
         " " "-dmz <pub iface>,<priv iface>|--dmz=<pub iface>,<priv iface>|-netm <mode>|--network-mode=<mode>|-homer <homerhost[:heplifyport]>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user[:pass]@]dbhost[:port][/dbname]>|--database-admin=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcsync <num>|" \
@@ -4057,7 +4079,6 @@ function processCMD() {
     local ARG="$1" OPT="" RETVAL=0
     case $ARG in
         install)
-	    set -x
             # always add official repo's, set platform, and create init service
             RUN_COMMANDS+=(configureSystemPath setCloudPlatform createInitService createSwapFile installDsiprouterCli)
             shift
@@ -4077,7 +4098,7 @@ function processCMD() {
                         ;;
                     -mysql|--mysql)
                         DEFAULT_SERVICES=0
-                        RUN_CMMANDS+=(installMysql)
+                        RUN_COMMANDS+=(installMysql)
                         shift
                         ;;
                     -kam|--kamailio)

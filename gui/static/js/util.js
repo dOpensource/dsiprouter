@@ -271,21 +271,21 @@
     var top_nav = $('#top-nav');
 
     if (required) {
-      reload_btn.removeClass('btn-primary');
+      reload_btn.removeClass('btn-reload');
       split_btn.removeClass('btn-primary');
-      kamailio_btn.removeClass('btn-secondary');
-      reload_btn.addClass('btn-warning');
+      kamailio_btn.removeClass('custom-nav-dropdown-item');
+      reload_btn.addClass('btn-reload-required');
       split_btn.addClass('btn-warning');
-      kamailio_btn.addClass('btn-warning');
+      kamailio_btn.addClass('custom-nav-dropdown-item-active');
       top_nav.addClass('reload-required');
     }
     else {
-      reload_btn.removeClass('btn-warning');
+      reload_btn.removeClass('btn-reload-required');
       split_btn.removeClass('btn-warning');
-      kamailio_btn.removeClass('btn-warning');
-      reload_btn.addClass('btn-primary');
+      kamailio_btn.removeClass('custom-nav-dropdown-item-active');
+      reload_btn.addClass('btn-reload');
       split_btn.addClass('btn-primary');
-      kamailio_btn.addClass('btn-secondary');
+      kamailio_btn.addClass('custom-nav-dropdown-item');
       top_nav.removeClass('reload-required');
     }
   };
@@ -300,20 +300,20 @@
     var dsiprouter_btn = $('#reload_dsip');
 
     if (required) {
-      reload_btn.removeClass('btn-primary');
+      reload_btn.removeClass('btn-reload');
       split_btn.removeClass('btn-primary');
-      dsiprouter_btn.removeClass('btn-secondary');
-      reload_btn.addClass('btn-warning');
+      dsiprouter_btn.removeClass('custom-nav-dropdown-item');
+      reload_btn.addClass('btn-reload-required');
       split_btn.addClass('btn-warning');
-      dsiprouter_btn.addClass('btn-warning');
+      dsiprouter_btn.addClass('custom-nav-dropdown-item-active');
     }
     else {
-      reload_btn.removeClass('btn-warning');
+      reload_btn.removeClass('btn-reload-required');
       split_btn.removeClass('btn-warning');
-      dsiprouter_btn.removeClass('btn-warning');
-      reload_btn.addClass('btn-primary');
+      dsiprouter_btn.removeClass('custom-nav-dropdown-item-active');
+      reload_btn.addClass('btn-reload');
       split_btn.addClass('btn-primary');
-      dsiprouter_btn.addClass('btn-secondary');
+      dsiprouter_btn.addClass('custom-nav-dropdown-item');
     }
   };
 
@@ -352,17 +352,65 @@
   }
 
   /**
-   * Queued delay of a callback
-   * @param fn  The callback function
-   * @param ms  The timeout in milliseconds
-   * @returns {(function(...[*]): void)|*}
+   * Returns a debounced version of the provided callback function.
+   * When the returned function is called, it will wait for the specified timeout
+   * before executing the original callback. If it's called again within that
+   * timeout, the previous timeout is canceled and a new one starts.
+   * @param {Function}  fn  The callback function to execute
+   * @param {Number}    ms  The timeout in milliseconds (default: 0)
+   * @returns {Function}    A debounced version of the callback
    */
-  window.delayedCallback = function(fn, ms) {
-    let timer = 0
-    return function(...args) {
-      clearTimeout(timer)
-      timer = setTimeout(fn.bind(this, ...args), ms || 0)
+  window.delayedCallback = function(fn, ms = 0) {
+    if (typeof fn === 'number') {
+      var tmp = fn;
+      fn = ms;
+      ms = tmp;
     }
+
+    var timer;
+    return function() {
+      var context = this;
+      var args = arguments;
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        fn.apply(context, args);
+      }, ms);
+    };
+  };
+
+  /**
+   * Returns a throttled version of the provided callback function.
+   * When the returned function is called, it executes the callback immediately
+   * if not already in a 'cooling' period. Any subsequent calls within the 
+   * specified timeout will reset the 'cooling' period timer.
+   * @param {Function}  fn  The callback function to execute
+   * @param {Number}    ms  The timeout in milliseconds (default: 0)
+   * @returns {Function}    A throttled version of the callback
+   */
+  window.throttledCallback = function(fn, ms = 0) {
+    if (typeof fn === 'number') {
+      var tmp = fn;
+      fn = ms;
+      ms = tmp;
+    }
+
+    var timer;
+    var cooling = false;
+
+    return function() {
+      var context = this;
+      var args = arguments;
+
+      if (!cooling) {
+        fn.apply(context, args);
+        cooling = true;
+      }
+
+      clearTimeout(timer);
+      timer = setTimeout(function() {
+        cooling = false;
+      }, ms);
+    };
   };
 
 })(window, document);

@@ -107,8 +107,16 @@
   }
 }
 
-.modal-dialog {
-    width: fit-content;
-    margin: 30px auto;
-    min-width: 600px;
+#add-group .modal-dialog,
+#delete-group .modal-dialog {
+  width: fit-content;
+  margin: 30px auto;
+  min-width: 600px;
+}
+
+#edit-group .modal-dialog {
+  width: max-content;
+  max-width: calc(100vw - 3.5rem);
+  margin: 30px auto;
+  min-width: 600px;
 }

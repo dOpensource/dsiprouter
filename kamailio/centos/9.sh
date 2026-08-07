@@ -46,6 +46,9 @@ function install() {
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     # TODO: fix upstream kamailio.repo file
     #dnf config-manager -y --add-repo https://rpm.kamailio.org/centos/kamailio.repo &&
     #dnf config-manager --disable 'kamailio*' &&
