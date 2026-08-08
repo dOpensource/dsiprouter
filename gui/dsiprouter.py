@@ -16,7 +16,7 @@ from flask import Flask, render_template, request, redirect, flash, session, url
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from pygtail import Pygtail
-from sqlalchemy import exc as sql_exceptions, Integer
+from sqlalchemy import exc as sql_exceptions, Integer, or_
 from sqlalchemy.orm import load_only
 from sqlalchemy.sql import text, func, select
 from sqlalchemy.orm.session import close_all_sessions
@@ -32,6 +32,7 @@ from database import DummySession, createSessionObjects, startSession, settingsT
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
     Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
     Dispatcher, DsipGwgroup2LB
+from modules.numbers.db.dsip_number import dSIPNumber
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
@@ -91,6 +92,22 @@ numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)
 auth_modules = []
 dynamicModules = {}
+
+
+def _sync_number_status_from_inbound_route(db, did, gwlist):
+    normalized_did = did.lstrip('+') if did else ''
+    if not normalized_did:
+        return
+
+    number = db.query(dSIPNumber).filter(
+        or_(
+            dSIPNumber.did == normalized_did,
+            dSIPNumber.did == '+' + normalized_did,
+        )
+    ).first()
+
+    if number is not None:
+        number.status = 'assigned' if gwlist else 'available'
 
 # Load Dynamic Modules - Module v2 Architecture
 for custom_module in glob.glob(f"{settings.DSIP_PROJECT_DIR}/gui/modules/*"):
@@ -937,6 +954,7 @@ def addUpdateInboundMapping():
 
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             inserts.append(IMap)
+            _sync_number_status_from_inbound_route(db, prefix, gwlist)
 
             # find last rule in dr_rules
             res = db.execute(
@@ -1071,6 +1089,7 @@ def addUpdateInboundMapping():
             IMap.prefix = prefix
             IMap.gwlist = gwlist
             IMap.description = description
+            _sync_number_status_from_inbound_route(db, IMap.prefix, IMap.gwlist)
 
             hardfwd_exists = True if db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).scalar() else False
             db.flush()
@@ -1313,6 +1332,7 @@ def deleteInboundMapping():
             dispatcher_gateway.delete(synchronize_session=False)
         # Delete the rule now
         db.delete(im_rule)
+        _sync_number_status_from_inbound_route(db, im_rule.prefix, '')
 
         if len(hf_ruleid) > 0:
             # no dr_rules created for fwding without a gwgroup selected
