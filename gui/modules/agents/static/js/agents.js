@@ -168,6 +168,33 @@ function bindWebhookUrlPreview(modalSelector) {
 }
 
 
+function loadPredefinedInstructions() {
+  fetch(CUSTOM_MODULE_API_BASE_URL + 'agents/v1/instructions')
+    .then(response => response.json())
+    .then(results => {
+      var optionsMarkup = "<option value=''>Select Pre-defined Agent Instructions</option>";
+      var instructionSets = (results && results.data) ? results.data : [];
+
+      instructionSets.forEach(instructionSet => {
+        optionsMarkup += "<option value='" + instructionSet.id + "'>" +
+          instructionSet.name + " - " + instructionSet.id +
+          "</option>";
+      });
+
+      $('select.predefined_instructions').each(function() {
+        var currentValue = $(this).val() || '';
+        $(this).html(optionsMarkup);
+        if (currentValue) {
+          $(this).val(currentValue);
+        }
+      });
+    })
+    .catch(() => {
+      // Keep existing static fallback options when API loading fails.
+    });
+}
+
+
 function deleteEntity(id) {
     $.ajax({
       type: "DELETE",
@@ -347,36 +374,25 @@ function deleteEntity(id) {
 			}
 		});
 
+  loadPredefinedInstructions();
 
-  /*  fetch('/api/agents/v1/instructions')
-      .then(response => response.json())
-     .then(results => {
-        var instructions_select = document.querySelector(".predefined_instructions");
-        instructions_select.innerHTML = "<option value=''>Select Instruction Set</option>";
-        results.data.forEach(instruction_set => {
-          var option = document.createElement("option");
-          option.value = instruction_set.id;
-          option.textContent = instruction_set.name + " - " + instruction_set.id;
-          instructions_select.appendChild(option);
-        });
-    })
-*/
+$(document).on('change', 'select.predefined_instructions', function() {
+  var modal = $(this).closest('.modal');
+  var instructionField = modal.find('textarea.agent_instructions');
+  var instructionId = $(this).val();
 
-$('.predefined_instructions').change(function() {
-
-  var instruction_id = $(this).val();
-  if (instruction_id) {
-    fetch('/api/agents/v1/instructions/' + instruction_id)
+  if (instructionId) {
+    fetch(CUSTOM_MODULE_API_BASE_URL + 'agents/v1/instructions/' + instructionId)
       .then(response => response.json())
       .then(result => {
-        $(".agent_instructions").val(result.data[0].instructions);
-      })
+        var instructionText = (result && result.data && result.data[0]) ? (result.data[0].instructions || '') : '';
+        instructionField.val(instructionText);
+      });
   }
   else {
-    $(".agent_instructions").val("");
+    instructionField.val('');
   }
-
-})
+});
 
 
 $('#open-Add').click(function() {
@@ -508,13 +524,30 @@ $(document).on('change', 'select.agent_type', function () {
 $(document).on('change', 'select.project_id', function () {
   var modal_body = $(this).closest('.modal-body');
   var selected_text = $(this).find('option:selected').text();
+  var agent_name_input = modal_body.find('input.agent_name');
 
   if ($(this).val()) {
-    modal_body.find('input.agent_name').val(selected_text + ' agent');
+    var project_label = selected_text;
+    var hyphen_idx = project_label.indexOf('-');
+    if (hyphen_idx > -1) {
+      project_label = project_label.substring(0, hyphen_idx);
+    }
+
+    var normalized_name = project_label
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .replace(/_+/g, '_');
+
+    agent_name_input.val(normalized_name);
   }
   else {
-    modal_body.find('input.agent_name').val('');
+    agent_name_input.val('');
   }
+
+  // Keep webhook URL preview in sync with the generated/cleared agent name.
+  agent_name_input.trigger('change').trigger('input');
 });
 
 
