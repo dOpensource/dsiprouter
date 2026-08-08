@@ -54,7 +54,7 @@ class Gateways(object):
     gwid = Column(UnsignedInt, primary_key=True, autoincrement=True, nullable=False)
 
     def __init__(self, name, address, strip, prefix, type=0, gwgroup=None, addr_id=None,
-                 msteams_domain='', signalling='proxy', media='proxy'):
+                 msteams_domain='', signalling='proxy', did_override='', media='proxy'):
         description = {"name": name}
         if gwgroup is not None:
             description["gwgroup"] = str(gwgroup)
@@ -65,13 +65,14 @@ class Gateways(object):
         self.address = address
         self.strip = strip
         self.pri_prefix = prefix
-        self.attrs = Gateways.buildAttrs(0, type, msteams_domain, signalling, media)
+        self.did_override = did_override
+        self.attrs = Gateways.buildAttrs(0, type, msteams_domain, signalling, media, did_override)
         self.description = dictToStrFields(description)
 
     @staticmethod
-    def buildAttrs(gwid=0, type=0, msteams_domain='', signalling='proxy', media='proxy'):
+    def buildAttrs(gwid=0, type=0, msteams_domain='', signalling='proxy', media='proxy', did_override=''):
         # gwid in dr_attrs is updated via trigger before insert/update
-        return ','.join([str(gwid), str(type), msteams_domain, signalling, media])
+        return ','.join([str(gwid), str(type), msteams_domain, signalling, media, did_override])
 
     def attrsToDict(self):
         attrs_dict = {}
@@ -92,10 +93,15 @@ class Gateways(object):
             attrs_dict['signalling'] = attrs_list[3]
         except IndexError:
             attrs_dict['signalling'] = 'proxy'
-        try:
+        if len(attrs_list) > 5:
             attrs_dict['media'] = attrs_list[4]
-        except IndexError:
-            attrs_dict['media'] = 'proxy'
+            attrs_dict['did_override'] = attrs_list[5]
+        else:
+            try:
+                attrs_dict['media'] = attrs_list[4]
+            except IndexError:
+                attrs_dict['media'] = 'proxy'
+            attrs_dict['did_override'] = ''
         return attrs_dict
 
 

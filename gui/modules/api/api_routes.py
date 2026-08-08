@@ -944,6 +944,7 @@ def getEndpointGroup(gwgroupid):
         else:
             auth['type'] = "ip"
         gwgroup_data['auth'] = auth
+        gwgroup_data['did_override'] = ''
 
         gwgroup_data['endpoints'] = []
         endpoint_weights = {}
@@ -981,6 +982,7 @@ def getEndpointGroup(gwgroupid):
                 'maintmode': ''
             })
             gwgroup_data['strip'] = endpoint.strip
+            gwgroup_data['did_override'] = attrs_dict['did_override']
             gwgroup_data['prefix'] = endpoint.pri_prefix
 
         # Notifications
@@ -1149,7 +1151,7 @@ def updateEndpointGroups(gwgroupid=None):
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "call_settings": dict, "auth": dict,
-                               "strip": int, "prefix": str, "notifications": dict, "cdr": dict,
+                               "strip": int, "did_override": str, "prefix": str, "notifications": dict, "cdr": dict,
                                "fusionpbx": dict, "endpoints": list}
 
     # ensure requred args are provided
@@ -1219,6 +1221,7 @@ def updateEndpointGroups(gwgroupid=None):
 
         # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
+        did_override = request_payload['did_override'] if 'did_override' in request_payload else ""
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
@@ -1332,11 +1335,11 @@ def updateEndpointGroups(gwgroupid=None):
                     db.add(Addr)
                     db.flush()
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
-                        signalling=signalling, media=media)
+                        signalling=signalling, did_override=did_override, media=media)
                 else:
                     # we know this a new endpoint so we don't have to check for any address records here
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
-                        signalling=signalling, media=media)
+                        signalling=signalling, did_override=did_override, media=media)
 
                 db.add(Gateway)
                 db.flush()
@@ -1404,11 +1407,11 @@ def updateEndpointGroups(gwgroupid=None):
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
-                    signalling=signalling, media=media)
+                    signalling=signalling, did_override=did_override, media=media)
             else:
                 # we know this a new endpoint so we don't have to check for any address records here
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
-                    signalling=signalling, media=media)
+                    signalling=signalling, did_override=did_override, media=media)
 
             db.add(Gateway)
             db.flush()
@@ -1447,6 +1450,7 @@ def updateEndpointGroups(gwgroupid=None):
                 port = int(tmp[1]) if len(tmp) > 1 else 5060
             signalling = endpoint['signalling'] if 'signalling' in endpoint else endpoint_attrs['signalling']
             media = endpoint['media'] if 'media' in endpoint else endpoint_attrs['media']
+            endpoint_did_override = did_override if 'did_override' in request_payload else endpoint_attrs['did_override']
             name = endpoint['description'] if 'description' in endpoint else endpoint_fields['name']
             endpoint_fields['name'] = name
 
@@ -1565,7 +1569,8 @@ def updateEndpointGroups(gwgroupid=None):
                 msteams_domain = gwgroup_desc_dict['name']
             else:
                 msteams_domain = ""
-            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media,msteams_domain=msteams_domain)
+            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling,
+                did_override=endpoint_did_override, media=media, msteams_domain=msteams_domain)
 
             gwlist.append(gwid)
 
@@ -1803,7 +1808,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
-        "name": str, "call_settings": dict, "auth": dict, "strip": int, "prefix": str,
+        "name": str, "call_settings": dict, "auth": dict, "strip": int, "did_override": str, "prefix": str,
         "notifications": dict, "cdr": dict, "fusionpbx": dict, "endpoints": list
     }
 
@@ -1854,6 +1859,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
+        did_override = request_payload['did_override'] if 'did_override' in request_payload else ""
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
@@ -1961,10 +1967,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
-                    msteams_domain=msteams_domain, signalling=signalling, media=media)
+                    msteams_domain=msteams_domain, signalling=signalling, did_override=did_override, media=media)
             else:
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
-                    msteams_domain=msteams_domain, signalling=signalling, media=media)
+                    msteams_domain=msteams_domain, signalling=signalling, did_override=did_override, media=media)
 
             db.add(Gateway)
             db.flush()
