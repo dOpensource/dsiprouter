@@ -140,7 +140,7 @@
 
       <div class="form-group">
         <select class="gwgroupid form-control" name="gwgroupid" title="gwgroupid" required="required">
-          <option class="d-none" value="" selected disabled>Endpoint Group</option>
+          <option value="0" selected="selected">-- not assigned --</option>
           {% for epgroup in epgroups %}
             <option value="{{ epgroup['id'] }}">{{ epgroup['description']|attrFilter('name') }}</option>
             {% if epgroup['description']|attrFilter('lb') %}

@@ -15,6 +15,7 @@ from werkzeug.utils import secure_filename
 from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
     GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallSettings, InboundMapping, dSIPCDRInfo, \
     dSIPCertificates, Dispatcher, dSIPDNIDEnrichment, getDsipSettingsTableAsDict, updateDsipSettingsTable
+from modules.numbers.db.dsip_number import dSIPNumber
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
     strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
     updateConfig
@@ -33,6 +34,22 @@ from sysloginit import initSyslogLogger
 import settings
 
 api = Blueprint('api', __name__)
+
+
+def _sync_number_status_from_inbound_route(db, did, gwlist):
+    normalized_did = did.lstrip('+') if did else ''
+    if not normalized_did:
+        return
+
+    number = db.query(dSIPNumber).filter(
+        or_(
+            dSIPNumber.did == normalized_did,
+            dSIPNumber.did == '+' + normalized_did,
+        )
+    ).first()
+
+    if number is not None:
+        number.status = 'assigned' if gwlist else 'available'
 
 
 # TODO: we need to abstract out common code between gui and api
@@ -585,6 +602,7 @@ def handleInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             db.add(IMap)
+            _sync_number_status_from_inbound_route(db, prefix, gwlist)
 
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
@@ -660,6 +678,21 @@ def handleInboundMapping():
                 else:
                     raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
 
+            route_row = None
+            if rule_id is not None:
+                route_row = db.query(InboundMapping).filter(
+                    InboundMapping.groupid == settings.FLT_INBOUND,
+                    InboundMapping.ruleid == rule_id
+                ).first()
+            elif did_pattern is not None:
+                route_row = db.query(InboundMapping).filter(
+                    InboundMapping.groupid == settings.FLT_INBOUND,
+                    InboundMapping.prefix == did_pattern
+                ).first()
+
+            if route_row is not None:
+                _sync_number_status_from_inbound_route(db, route_row.prefix, route_row.gwlist)
+
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
@@ -679,9 +712,12 @@ def handleInboundMapping():
             if rule_id is not None:
                 rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
                     InboundMapping.ruleid == rule_id)
+                rule_row = rule.first()
                 if rule.delete(synchronize_session=False) == 0:
                     payload['msg'] = 'No Rules Found'
                     payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
+                elif rule_row is not None:
+                    _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
 
             # delete single rule by did
             else:
@@ -689,9 +725,12 @@ def handleInboundMapping():
                 if did_pattern is not None:
                     rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
                         InboundMapping.prefix == did_pattern)
+                    rule_row = rule.first()
                     if rule.delete(synchronize_session=False) == 0:
                         payload['msg'] = 'No Rules Found'
                         payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
+                    elif rule_row is not None:
+                        _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
 
                 # no other options
                 else:

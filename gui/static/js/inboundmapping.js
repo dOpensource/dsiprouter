@@ -95,6 +95,7 @@
 
       /* reset options selected */
       modal_body.find("select").val('');
+      modal_body.find("select.gwgroupid").val('0');
 
       /* reset toggle buttons (the widget is hidden here, so set the checkbox
          state + fire change; the slider is (re)built on shown.bs.modal) */
@@ -146,7 +147,7 @@
 
       /* update options selected */
       modal_body.find("select").val('');
-      modal_body.find("select.gwgroupid").val(gwgroupid);
+      modal_body.find("select.gwgroupid").val(gwgroupid.length > 0 ? gwgroupid : '0');
       modal_body.find("select.hf_gwgroupid").val(hf_gwgroupid);
       modal_body.find("select.ff_gwgroupid").val(ff_gwgroupid);
       if (lb_enabled) {

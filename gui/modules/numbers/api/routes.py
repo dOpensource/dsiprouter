@@ -4,7 +4,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 
 from flask import Blueprint, session,render_template, request
 from modules.numbers.db.dsip_number import dSIPNumber
-from database import startSession, DummySession
+from database import startSession, DummySession, InboundMapping
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from shared import getRequestData, rowToDict, showError, debugException, debugEndpoint
 from sqlalchemy import or_
@@ -14,6 +14,27 @@ import csv
 import io
 
 numbers_api = Blueprint('numbers', __name__, template_folder='../templates', static_folder='../static', static_url_path='/numbers/static')
+
+
+def _sync_available_inbound_route(db, did):
+    normalized_did = did.lstrip('+') if did else ''
+    if not normalized_did:
+        return
+
+    route = db.query(InboundMapping).filter(
+        InboundMapping.groupid == settings.FLT_INBOUND,
+        or_(
+            InboundMapping.prefix == normalized_did,
+            InboundMapping.prefix == '+' + normalized_did,
+        )
+    ).first()
+
+    if route is None:
+        db.add(InboundMapping(settings.FLT_INBOUND, normalized_did, '', f'name:{normalized_did}'))
+    else:
+        route.prefix = normalized_did
+        route.gwlist = ''
+        route.description = f'name:{normalized_did}'
 
 @numbers_api.route('/gui/numbers', methods=['GET'])
 def numbers_index():
@@ -129,6 +150,9 @@ def create_number():
             from datetime import datetime
             number.assigned_date = datetime.utcnow()
 
+        if number.status == 'available':
+            _sync_available_inbound_route(db, number.did)
+
         db.add(number)
         db.flush()
         db.commit()
@@ -176,6 +200,9 @@ def update_number(number_id):
         if payload.get('assigned_length'):
             from datetime import datetime
             number.assigned_date = datetime.utcnow()
+
+        if number.status == 'available':
+            _sync_available_inbound_route(db, number.did)
 
         db.add(number)
         db.flush()

@@ -270,14 +270,14 @@ $(document).ready(function() {
         {"data": "assigned_reference_id"},
         {"data": null,
           render: function (data, type, row) {
-          return `<button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-toggle="modal"
-          data-target="#edit"><i class="ti ti-pencil"></i></button>`;
+          return `<button id="open-Update" class="open-Update btn btn-primary btn-sm" data-title="Edit" data-bs-toggle="modal"
+          data-bs-target="#edit"><i class="ti ti-pencil"></i></button>`;
           }
         },
         {"data": null,
           render: function (data, type, row) {
-          return `<button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-toggle="modal"
-          data-target="#delete"><i class="ti ti-trash"></i></button>`;
+          return `<button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete" data-bs-toggle="modal"
+          data-bs-target="#delete"><i class="ti ti-trash"></i></button>`;
           }
         }
       ],
@@ -295,6 +295,7 @@ $(document).ready(function() {
       $('#assigned_date').val(data.assigned_date);
       $('#assigned_length').val(data.assigned_length);
       $('#assigned_reference_id').val(data.assigned_reference_id);
+      $('#edit').modal('show');
     });
 
     $('#numbers-table tbody').on('click', 'button.open-Delete', function() {
