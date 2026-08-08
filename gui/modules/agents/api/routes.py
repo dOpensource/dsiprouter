@@ -183,10 +183,23 @@ def _map_payload_to_agent(payload):
 
 def _map_payload_to_instruction(payload):
     # Map incoming payload keys to dSIPAgentInstruction attributes
+    # Request payloads can be JSON scalars or form arrays (flat=False), normalize both.
+    def _get_text(data, keys, default=''):
+        for key in keys:
+            if key not in data:
+                continue
+            value = data.get(key)
+            if isinstance(value, list):
+                value = value[0] if len(value) > 0 else default
+            if value is None:
+                continue
+            return str(value)
+        return default
+
     mapped = {}
-    mapped['name'] = payload.get('instruction-name', payload.get('name', ''))
-    mapped['project_type'] = payload.get('instruction-project-type', payload.get('project_type', 'openai')) or 'openai'
-    mapped['instructions'] = payload.get('instruction-text', payload.get('instructions', ''))
+    mapped['name'] = _get_text(payload, ['instruction-name', 'instruction_name', 'name'])
+    mapped['project_type'] = _get_text(payload, ['instruction-project-type', 'instruction_project_type', 'project_type'], 'openai') or 'openai'
+    mapped['instructions'] = _get_text(payload, ['instruction-text', 'instruction_text', 'instructions', 'text'])
     return mapped
 
 
@@ -501,6 +514,13 @@ def create_agent_instruction():
     try:
         db = startSession()
         payload = getRequestData()
+        if not isinstance(payload, dict):
+            payload = {}
+
+        raw_text = request.get_data(as_text=True) or ''
+        if len(raw_text.strip()) > 0 and not payload.get('instructions') and not payload.get('instruction-text'):
+            payload['instructions'] = raw_text
+
         mapped = _map_payload_to_instruction(payload)
 
         instruction = dSIPAgentInstruction(
