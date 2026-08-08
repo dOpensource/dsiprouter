@@ -283,6 +283,7 @@
     requestPayload.auth = auth;
 
     requestPayload.strip = modal_body.find(".strip").val();
+    requestPayload.did_override = modal_body.find(".did_override").val();
     requestPayload.prefix = modal_body.find(".prefix").val();
 
     var notifications = {};
@@ -316,6 +317,9 @@
     // doing it here allows us to keep placeholder on the input
     if (requestPayload.strip.length === 0) {
       requestPayload.strip = 0;
+    }
+    if (!requestPayload.did_override) {
+      requestPayload.did_override = '';
     }
 
     // Put into JSON Message and send over
@@ -390,6 +394,7 @@
     modal_body.find(".name").val('');
     modal_body.find(".ip_addr").val('');
     modal_body.find(".strip").val('');
+    modal_body.find(".did_override").val('');
     modal_body.find(".prefix").val('');
     modal_body.find(".fusionpbx_db_server").val('');
     modal_body.find(".fusionpbx_db_username").val('fusionpbx');
@@ -479,6 +484,7 @@
     modal_body.find("#auth_password").val(gwgroup_data.auth.pass);
     modal_body.find(".auth_domain").val(gwgroup_data.auth.domain);
     modal_body.find(".strip").val(gwgroup_data.strip);
+    modal_body.find(".did_override").val(gwgroup_data.did_override);
     modal_body.find(".prefix").val(gwgroup_data.prefix);
     modal_body.find(".email_over_max_calls").val(gwgroup_data.notifications.overmaxcalllimit);
     modal_body.find(".email_endpoint_failure").val(gwgroup_data.notifications.endpointfailure);

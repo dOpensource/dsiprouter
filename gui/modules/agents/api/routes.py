@@ -9,6 +9,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
 from flask import Blueprint, jsonify, request, Response, session
 from database import startSession, DummySession
 from modules.api.api_functions import createApiResponse, showApiError, api_security
+from modules.api.api_routes import addEndpointGroups
 from shared import getRequestData, rowToDict
 from modules.agents.db.dsip_agent import dSIPAgent as dSIPAgent
 from modules.agents.db.dsip_agent import dSIPAgentInstruction as dSIPAgentInstruction
@@ -284,6 +285,32 @@ def create_agent():
         payload = getRequestData()
         mapped = _map_payload_to_agent(payload)
         print(f'Mapped payload for agent creation: {mapped}')
+
+        endpointgroup_payload = {
+            'name': f"Voice Agent - {mapped['name']}",
+            'auth': {
+                'type': 'ip',
+            },
+            'strip': 0,
+            'did_override': mapped.get('project_id', '') or '',
+            'prefix': '',
+            'endpoints': [
+                {
+                    'host': 'sip.api.openai.com',
+                    'port': 5061,
+                    'signalling': 'sips_tls',
+                    'media': 'rtp_avp',
+                    'description': mapped['name']
+                }
+            ]
+        }
+
+        endpointgroup_resp, endpointgroup_status = addEndpointGroups(data=endpointgroup_payload)
+        if endpointgroup_status != 200:
+            error_json = endpointgroup_resp.get_json(silent=True) or {}
+            raise http_exceptions.BadRequest(
+                error_json.get('msg', 'Failed to create endpoint group for agent')
+            )
 
         agent = dSIPAgent(
             name=mapped['name'],
