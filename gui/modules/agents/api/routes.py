@@ -10,6 +10,7 @@ from flask import Blueprint, jsonify, request, Response, session
 from database import startSession, DummySession
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.api_routes import addEndpointGroups
+from modules.api.licensemanager.functions import getLicenseStatus
 from shared import getRequestData, rowToDict
 from modules.agents.db.dsip_agent import dSIPAgent as dSIPAgent
 from modules.agents.db.dsip_agent import dSIPAgentInstruction as dSIPAgentInstruction
@@ -298,6 +299,14 @@ def create_agent():
         payload = getRequestData()
         mapped = _map_payload_to_agent(payload)
         print(f'Mapped payload for agent creation: {mapped}')
+
+        # Without a valid DSIP_CORE license, limit this module to 2 voice agents.
+        if getLicenseStatus(license_tag='DSIP_CORE') != 3:
+            existing_agents = db.query(dSIPAgent).count()
+            if existing_agents >= 2:
+                raise http_exceptions.Forbidden(
+                    'Only 2 voice agents are allowed without a DSIP_CORE license'
+                )
 
         endpointgroup_payload = {
             'name': f"Voice Agent - {mapped['name']}",
