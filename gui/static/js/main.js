@@ -30,6 +30,7 @@ $(function() {
   var accordionActive = false;
   var SYSTEM_SETTINGS_MENU_ID = '#system-settings-menu';
   var SYSTEM_SETTINGS_EXPANDED_KEY = 'dsip.systemSettings.expanded';
+  var SIDEBAR_COLLAPSED_KEY = 'dsip.sidebar.collapsed';
 
   function setSystemSettingsExpanded(expanded) {
     localStorage.setItem(SYSTEM_SETTINGS_EXPANDED_KEY, expanded ? '1' : '0');
@@ -64,6 +65,27 @@ $(function() {
 
     $menu.addClass('open');
     $submenu.show();
+  }
+
+  function isDesktopViewport() {
+    return $(window).width() >= 768;
+  }
+
+  function setSidebarCollapsed(collapsed) {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }
+
+  function getSidebarCollapsed() {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+  }
+
+  function applySidebarCollapsedState() {
+    var isCollapsed = getSidebarCollapsed();
+    var collapseEnabled = isDesktopViewport() && isCollapsed;
+    $('.wrap').toggleClass('sidebar-collapsed', collapseEnabled);
+    $('#side-menu-collapse-toggle')
+      .toggleClass('is-active', isCollapsed)
+      .attr('aria-pressed', isCollapsed ? 'true' : 'false');
   }
 
   $(window).on('resize', function() {
@@ -138,6 +160,8 @@ $(function() {
         $ddl.appendTo($topMenu.find('.nav'));
       }
     }
+
+    applySidebarCollapsedState();
   });
 
   /**/
@@ -148,6 +172,12 @@ $(function() {
     $menulink.toggleClass('active');
     $wrap.toggleClass('active');
     return false;
+  });
+
+  $('#side-menu-collapse-toggle').on('click', function(ev) {
+    ev.preventDefault();
+    setSidebarCollapsed(!getSidebarCollapsed());
+    applySidebarCollapsedState();
   });
 
   /*Accordion*/
@@ -165,7 +195,16 @@ $(function() {
     var $el = e.data.el;
     var $this = $(this);
     var $next = $this.next();
-    var anchor = $this.find('a')
+    var anchor = $this.find('a');
+
+    // In collapsed desktop mode, labels are hidden, so use icon-row clicks for navigation.
+    if ($('.wrap').hasClass('sidebar-collapsed') && anchor.length > 0) {
+      var href = anchor.attr('href');
+      if (href && href !== '#') {
+        window.location.href = href;
+        return;
+      }
+    }
 
     if ($next.length <= 0 || !$next.hasClass('submenu')) {
       return;
@@ -194,14 +233,22 @@ $(function() {
     openSystemSettingsMenu($systemSettingsMenu);
     setSystemSettingsExpanded(true);
   }
+
+  applySidebarCollapsedState();
 });
 
 $(function() {
   /* styling links */
+  $('#side-menu li.nav-header').removeClass('selected-menu-item');
   $('a').each(function() {
-    if ($(this).prop('href') === window.location.href) {
-      $(this).removeClass('navlink');
-      $(this).addClass('currentlink');
+    var $anchor = $(this);
+    if ($anchor.prop('href') === window.location.href) {
+      $anchor.removeClass('navlink');
+      $anchor.addClass('currentlink');
+
+      if ($anchor.closest('#side-menu').length > 0) {
+        $anchor.closest('li.nav-header').addClass('selected-menu-item');
+      }
     }
   });
   /* prevent empty links from jumping to top of page */
