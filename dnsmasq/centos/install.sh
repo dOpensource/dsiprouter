@@ -76,6 +76,9 @@ function uninstall {
         yum remove -y dnsmasq
     fi
 
+    # remove systemd service configs
+    rm -rf /etc/systemd/system/dnsmasq.service.d/
+
     # remove our NetworkManager configurations
     rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf
 

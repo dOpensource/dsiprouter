@@ -12,8 +12,8 @@
   </div>
 
   <div class="tableAddButton">
-    <button id='open-Add' class='btn btn-primary btn-md' data-title="Add" data-toggle="modal"
-            data-target="#add">
+    <button id='open-Add' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+            data-bs-target="#add">
       Add
     </button>
   </div>
@@ -43,11 +43,11 @@
 {% block edit_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Update Certificate
-      <button id="open-Delete" class="open-Delete btn btn-danger btn-xs" data-title="Delete"
-              data-toggle="modal" data-target="#delete"><span class="glyphicon glyphicon-trash"></span>
+      <button id="open-Delete" class="open-Delete btn btn-danger btn-sm" data-title="Delete"
+              data-bs-toggle="modal" data-bs-target="#delete"><i class="ti ti-trash"></i>
       </button>
     </h4>
   </div>
@@ -61,13 +61,13 @@
                autofocus="autofocus">
       </div>
       <div class="form-group">
-        <div id="certtypeoptions2" class="btn-group" data-toggle="buttons">
+        <div id="certtypeoptions2" class="btn-group">
 {#          <label>#}
 {#            <input type="radio" name="certtype" id="certtype_generate2" value="generated" checked>#}
 {#            Generate#}
 {#          </label>#}
           <label>
-            <input type="radio" name="certtype" id="certtype_upload2" value="uploaded">
+            <input type="radio" name="certtype" id="certtype_upload2" value="uploaded">&nbsp;
             Upload
           </label>
         </div>
@@ -90,8 +90,8 @@
       </div> <!-- end of upload tab -->
 
       <div class="modal-footer ">
-        <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Update Certificate
+        <button type="button" id="updateButton" class="btn btn-success btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Update Certificate
         </button>
       </div>
     </form>
@@ -103,8 +103,8 @@
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Add</h4>
   </div>
   <div class="modal-body">
@@ -121,13 +121,13 @@
         <label class="form-check-label" for="replace_default_cert">Replace the default certificate</label>
       </div>
       <div class="form-group">
-        <div id="certtypeoptions" class="btn-group" data-toggle="buttons">
+        <div id="certtypeoptions" class="btn-group">
 {#          <label>#}
 {#            <input type="radio" name="certtype" id="certtype_generate" value="generated">#}
 {#            Generate#}
 {#          </label>#}
           <label>
-            <input type="radio" name="certtype" id="certtype_upload" value="uploaded" checked>
+            <input type="radio" name="certtype" id="certtype_upload" value="uploaded" checked>&nbsp;
             Upload
           </label>
         </div>
@@ -153,8 +153,8 @@
       </div> <!-- end of upload tab -->
 
       <div class="modal-footer ">
-        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Add Certifcate
+        <button type="button" id="addButton" class="btn btn-success btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Add Certifcate
         </button>
       </div>
     </form>
@@ -166,8 +166,8 @@
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
   </div>
 
@@ -181,16 +181,16 @@
         <input class="name form-control" type="hidden" name="name">
       </div>
 
-      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span> Are you sure you want
+      <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i> Are you sure you want
         to delete this Certificate?
       </div>
 
       <div class="modal-footer ">
-        <button id="deleteButton" type="button" class="btn btn-success"><span
-            class="glyphicon glyphicon-ok-sign"></span> Yes
+        <button id="deleteButton" type="button" class="btn btn-success"><i
+            class="ti ti-circle-check"></i> Yes
         </button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><span
-            class="glyphicon glyphicon-remove"></span> No
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+            class="ti ti-x"></i> No
         </button>
       </div>
     </form>

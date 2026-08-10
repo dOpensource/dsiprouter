@@ -7,6 +7,7 @@
 #========================== NOTES ==========================#
 #
 # Supported OS:
+# - Debian 13 (trixie)      - STABLE
 # - Debian 12 (bookworm)    - STABLE
 # - Debian 11 (bullseye)    - STABLE
 # - Debian 10 (buster)      - STABLE
@@ -63,7 +64,7 @@
 
 
 # set project dir (where src files are located)
-export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-$(dirname $(readlink -f "$0"))}
+export DSIP_PROJECT_DIR=${DSIP_PROJECT_DIR:-/opt/dsiprouter}
 # Import dsip_lib utility / shared functions
 . ${DSIP_PROJECT_DIR}/dsiprouter/dsip_lib.sh
 
@@ -289,10 +290,10 @@ function setDynamicScriptSettings() {
         export INTERNAL_IP6_ADDR=$(getIP -6 "$PRIVATE_IFACE")
         export INTERNAL_IP_NET6=$(getInternalCIDR -6 "$PRIVATE_IFACE")
 
-        EXTERNAL_IP_ADDR=$(getIP -4 "$PUBLIC_IFACE")
-        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$INTERNAL_IP_ADDR}
-        EXTERNAL_IP6_ADDR=$(getIP -6 "$PUBLIC_IFACE")
-        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$INTERNAL_IP6_ADDR}
+        EXTERNAL_IP_ADDR=$(getExternalIP -4 "$PUBLIC_IFACE")
+        export EXTERNAL_IP_ADDR=${EXTERNAL_IP_ADDR:-$(getIP -4 "$PUBLIC_IFACE")}
+        EXTERNAL_IP6_ADDR=$(getExternalIP -6 "$PUBLIC_IFACE")
+        export EXTERNAL_IP6_ADDR=${EXTERNAL_IP6_ADDR:-$(getIP -6 "$PUBLIC_IFACE")}
 
 #		if [[ -f /proc/net/if_inet6 ]] && [[ -n "$INTERNAL_IP6_ADDR" ]]; then
 #			# sanity check, is the ipv6 address routable?
@@ -311,7 +312,7 @@ function setDynamicScriptSettings() {
         export UAC_REG_ADDR="$EXTERNAL_IP_ADDR"
 
         export INTERNAL_FQDN=$(getInternalFQDN)
-        export EXTERNAL_FQDN=$(getExternalFQDN)
+        export EXTERNAL_FQDN=$(getExternalFQDN "$PUBLIC_IFACE")
         if [[ -z "$EXTERNAL_FQDN" ]] || ! checkConn "$EXTERNAL_FQDN"; then
             # if external fqdn is not routable set it to the internal fqdn instead
             export EXTERNAL_FQDN="$INTERNAL_FQDN"
@@ -444,6 +445,10 @@ function validateOSInfo() {
     case "$DISTRO" in
     debian)
         case "$DISTRO_VER" in
+        13)
+            KAM_VERSION=${KAM_VERSION:-"6.0.3"}
+            RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
+            ;;
         12|11|10)
             KAM_VERSION=${KAM_VERSION:-"5.8.3"}
             RTPENGINE_VER=${RTPENGINE_VER:-"mr11.5.1.11"}
@@ -815,7 +820,7 @@ function updateDsiprouterStartup {
 # 1. using Let's Encrypt / certbot
 # 2. issuing a new self-signed cert
 function renewSSLCert() {
-    local DEFAULT_CERT_UPLOADED CERT_ISSUER RENEW_START_TS LAST_CHANGE_TS
+    local DEFAULT_CERT_UPLOADED CERT_ISSUER CERT_CN CERTBOT_INFO LE_CERT_TS DSIP_CERT_TS
 
     # Do not renew if the admin uploaded a default cert
     DEFAULT_CERT_UPLOADED=$(
@@ -836,22 +841,54 @@ function renewSSLCert() {
                 printwarn "No LetsEncrypt certificates managed by Certbot found"
                 return 1
             fi
-            RENEW_START_TS=$(date '+%s')
+
+            # NOTE: does not handle multiple domains
+            CERT_CN=$(
+                openssl x509 -in ${DSIP_SSL_CERT} -noout -nameopt compat -subject 2>/dev/null |
+                perl -pe 's%^.*?/CN=([^/]*).*?$%\1%'
+            )
+            # CERTBOT_INFO[0] == full path to LE cert
+            # CERTBOT_INFO[1] == full path to LE key
+            CERTBOT_INFO=($(
+                certbot -n certificates | awk -v domain="$CERT_CN" -F': ' '
+                /Domains:/ { d=$2 }
+                /Certificate Path:/ { c=$2 }
+                /Private Key Path:/ {
+                    if (d ~ domain) {
+                        print c
+                        print $2
+                        found=1
+                    }
+                }
+                END {
+                    if (!found) exit 1
+                }'
+            ))
+
+            if (( $? != 0 )); then
+                printerr "dSIPRouter certificate has CN=$CERT_CN, but certbot does not have that domain registered"
+                return 1
+            fi
+
             certbot -n renew
             if (( $? == 0 )); then
-                # we only want to reload the live cert if it was actually changed
-                LAST_CHANGE_TS=$(stat -c '%Y' /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem)
+                # we only want to reload the live cert if it differs from the let's encrypt cert
+                {
+                    LE_CERT_TS=$(stat -c '%Y' "${CERTBOT_INFO[0]}") &&
+                    DSIP_CERT_TS=$(stat -c '%Y' "$DSIP_SSL_CERT")
+                }
                 if (( $? != 0 )); then
-                    printerr "Could not find new certificate for ${EXTERNAL_FQDN}"
+                    printerr 'Failed reading certificate files'
                     return 1
                 fi
-                if (( $LAST_CHANGE_TS < $RENEW_START_TS )); then
+                if (( $LE_CERT_TS == $DSIP_CERT_TS )); then
                     return 0
                 fi
 
-                rm -f ${DSIP_CERTS_DIR}/dsiprouter*
-                cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/fullchain.pem ${DSIP_SSL_CERT}
-                cp -f /etc/letsencrypt/live/${EXTERNAL_FQDN}/privkey.pem ${DSIP_SSL_KEY}
+                printbold 'LetsEncrypt certificate differs from dSIPRouter, updating live certificates'
+                rm -f "$DSIP_SSL_CERT" "$DSIP_SSL_KEY"
+                cp -f "${CERTBOT_INFO[0]}" "$DSIP_SSL_CERT"
+                cp -f "${CERTBOT_INFO[1]}" "$DSIP_SSL_KEY"
             else
                 printerr "Failed renewing certificate for ${EXTERNAL_FQDN} using LetsEncrypt"
                 return 1
@@ -1124,8 +1161,9 @@ function updateKamailioStartup {
 function generateRtpengineConfig() {
     mkdir -p ${BACKUPS_DIR}/rtpengine/
     cp -af ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/. ${BACKUPS_DIR}/rtpengine/ 2>/dev/null
-    cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
-    ln -sft ${SYSTEM_RTPENGINE_CONFIG_DIR}/ ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/*
+    #cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/rtpengine.conf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+    rm -rf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/rtpengine.conf
+    ln -sf ${SYSTEM_RTPENGINE_CONFIG_DIR}/rtpengine.conf ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/rtpengine.conf
 }
 
 # updates and settings in rtpengine config that may change
@@ -1764,7 +1802,11 @@ function installRTPEngine() {
     fi
 
     printdbg "Attempting to install RTPEngine..."
-    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
+    if [[ -f "${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
+    else
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh install
+    fi
     if (( $? != 0 )); then
         printerr "RTPEngine install failed"
         exit 1
@@ -1808,7 +1850,11 @@ function uninstallRTPEngine() {
     fi
 
     printdbg "Attempting to uninstall RTPEngine..."
-    ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh uninstall
+    if [[ -f "${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+    else
+        ${DSIP_PROJECT_DIR}/rtpengine/${DISTRO}/install.sh uninstall
+    fi
 
     if (( $? == 0 )); then
         if [ -f "${DSIP_SYSTEM_CONFIG_DIR}/.kamailioinstalled" ]; then
@@ -1852,7 +1898,7 @@ function installDsiprouterCli() {
     fi
 
     # add dsiprouter CLI command to the path
-    ln -sf ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
+    install -o root -g root -m 755 ${DSIP_PROJECT_DIR}/dsiprouter.sh /usr/bin/dsiprouter
     # add specific commands to sudoers that dsiprouter can run with escalated privileges
     cp -f ${DSIP_PROJECT_DIR}/dsiprouter/sudoers.d/99-dsiprouter ${DSIP_SUDOERS_FILE}
 
@@ -2366,8 +2412,8 @@ function installDnsmasq() {
     useradd --system --user-group --shell /bin/false --comment "DNSmasq DNS Resolver" dnsmasq &>/dev/null
 
     printdbg "Attempting to install DNSmasq..."
-    if (( ${DISTRO_VER} == 12 )); then
-        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_VER}.sh install
+    if [[ -f "${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh install
     else
         ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh install
     fi
@@ -2423,7 +2469,11 @@ function uninstallDnsmasq() {
     fi
 
     printdbg "Attempting to uninstall DNSmasq..."
-    ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
+    if [[ -f "${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh" ]]; then
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/${DISTRO_MAJOR_VER}.sh uninstall
+    else
+        ${DSIP_PROJECT_DIR}/dnsmasq/${DISTRO}/install.sh uninstall
+    fi
 
     if (( $? != 0 )); then
         printerr "DNSmasq uninstall failed - OS install script failure"
@@ -3651,7 +3701,7 @@ EOSSH
 # $@ == subset of permissions to update
 # TODO: update systemd ExecStartPre commands to use this logic instead
 function updatePermissions() {
-    local OPT=""
+    local OPT STI_CERTS
 
     # set permissions on the X509 certs used by dsiprouter and kamailio
     # [special use case]: testing kamailio service startup
@@ -3660,12 +3710,15 @@ function updatePermissions() {
         if id -u dsiprouter &>/dev/null; then
             # dsiprouter needs to have control over the certs to allow changes
             # note that nginx should never have write access
-            chown -R dsiprouter:kamailio ${DSIP_CERTS_DIR}
+            chown -R dsiprouter:dsiprouter ${DSIP_CERTS_DIR}
         else
             # dsiprouter user does not yet exist so make sure kamailio user has access
             chown -R root:kamailio ${DSIP_CERTS_DIR}
         fi
         find ${DSIP_CERTS_DIR}/ -type f -exec chmod 640 {} +
+        # STIR/SHAKEN certs need to be globally readable for nginx
+        STI_CERTS=$(grep -rl --include='*' 'BEGIN CERTIFICATE' "${DSIP_CERTS_DIR}/stirshaken/") &&
+        chmod 644 $STI_CERTS
     }
     # set permissions for files/dirs used by dnsmasq
     setDnsmasqPerms() {
@@ -3694,7 +3747,7 @@ function updatePermissions() {
         # kamailio configs will contain plaintext passwords / tokens
         # in the case where the dsiprouter user does not yet exist we set stricter permissions
         if id -u dsiprouter &>/dev/null; then
-            chown -R dsiprouter:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
+            chown -R dsiprouter:dsiprouter ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
         else
             chown -R root:kamailio ${DSIP_SYSTEM_CONFIG_DIR}/kamailio/
         fi
@@ -3716,10 +3769,15 @@ function updatePermissions() {
         find ${DSIP_SYSTEM_CONFIG_DIR}/gui/ -type f -exec chmod 600 {} +
 
         # project files can only be edited by root
-        chown -R root:root ${DSIP_PROJECT_DIR}/
+        chown -R root:root "$DSIP_PROJECT_DIR/"
+        find "$DSIP_PROJECT_DIR" -type d -exec chmod 755 {} +
+        find "$DSIP_PROJECT_DIR" -type f -exec chmod 644 {} +
         # files that should be executable
-        chmod +x ${DSIP_PROJECT_DIR}/dsiprouter.sh
-        chmod +x ${DSIP_PROJECT_DIR}/resources/upgrade/*/scripts/migrate.sh
+        find "$DSIP_PROJECT_DIR" -type f \( -name '*.sh' -o -name '*.py' \) \
+            -not -path "$DSIP_PROJECT_DIR/venv/*" \
+            -not -path "$DSIP_PROJECT_DIR/.venv/*" \
+            -exec awk 'FNR==1 && /^#!/ {printf "%s\0", FILENAME; nextfile}' {} + |
+            xargs -0 chmod 755
     }
     # set permissions for files/dirs used by rtpengine
     setRtpenginePerms() {
@@ -3728,7 +3786,7 @@ function updatePermissions() {
         chmod 770 /run/rtpengine
 
         if id -u dsiprouter &>/dev/null; then
-            chown -R dsiprouter:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
+            chown -R dsiprouter:dsiprouter ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
         else
             chown -R root:rtpengine ${DSIP_SYSTEM_CONFIG_DIR}/rtpengine/
         fi
@@ -3860,7 +3918,7 @@ function usageOptions() {
     printf "\n%-s%24s%s\n" \
         "$(pprint -n COMMAND)" " " "$(pprint -n OPTIONS)"
     printf "%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n%-30s %s\n" \
-        "install" "[-debug|-all|--all|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
+        "install" "[-debug|-all|--all|-mysql|--mysql|-kam|--kamailio|-dsip|--dsiprouter|-rtp|--rtpengine|-dns|--dnsmasq" \
         " " "-dmz <pub iface>,<priv iface>|--dmz=<pub iface>,<priv iface>|-netm <mode>|--network-mode=<mode>|-homer <homerhost[:heplifyport]>|" \
         " " "-db <[user[:pass]@]dbhost[:port][/dbname]>|--database=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcid <num>|--dsip-clusterid=<num>|" \
         " " "-dbadmin <[user[:pass]@]dbhost[:port][/dbname]>|--database-admin=<[user[:pass]@]dbhost[:port][/dbname]>|-dsipcsync <num>|" \
@@ -4041,7 +4099,7 @@ function processCMD() {
                         ;;
                     -mysql|--mysql)
                         DEFAULT_SERVICES=0
-                        RUN_CMMANDS+=(installMysql)
+                        RUN_COMMANDS+=(installMysql)
                         shift
                         ;;
                     -kam|--kamailio)
@@ -4081,6 +4139,9 @@ function processCMD() {
 
                         PUBLIC_IFACE=$(echo "$TMP" | cut -d ',' -f 1)
                         PRIVATE_IFACE=$(echo "$TMP" | cut -d ',' -f 2)
+			echo $PUBLIC_IFACE
+			echo $PRIVATE_IFACE
+			exit
                         ;;
                     -netm|--network-mode=*)
                         if echo "$1" | grep -q '=' 2>/dev/null; then

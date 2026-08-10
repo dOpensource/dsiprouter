@@ -1,10 +1,227 @@
-.dashboard-metric {
-	font-size: 80px;
-	text-align: center;
-}
 
-.dashboard-metric-label {
-	font-size: 35px;
-	text-align: center;
-	color: #ddd;
-}
+    .dashboard-container {
+      padding: 20px;
+    }
+
+    .metric-card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+    }
+
+    .metric-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    .metric-label {
+      font-size: 14px;
+      color: #666;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 42px;
+      font-weight: bold;
+      color: #333;
+      text-align: center;
+    }
+
+    .metric-subtitle {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+      margin-top: 5px;
+    }
+
+    .chart-container {
+      
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: relative;
+      height: 300px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chart-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .chart-legend {
+      font-size: 12px;
+      color: #666;
+      flex: 0 0 auto;
+    }
+
+    .chart-canvas {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .chart-canvas canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .legend-item {
+      display: inline-block;
+      margin-right: 20px;
+      margin-bottom: 10px;
+    }
+
+    .legend-color {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .status-panel {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .status-panel-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .status-icon {
+      font-size: 18px;
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .status-online {
+      color: #5cb85c;
+    }
+
+    .status-offline {
+      color: #d9534f;
+    }
+
+    .status-error {
+      color: #d9534f;
+    }
+
+    .status-warning {
+      color: #f0ad4e;
+    }
+
+    .endpoint-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .endpoint-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    .endpoint-item:last-child {
+      border-bottom: none;
+    }
+
+    .endpoint-name {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .endpoint-calls {
+      color: #0275d8;
+      text-decoration: none;
+    }
+
+    .endpoint-calls:hover {
+      text-decoration: underline;
+    }
+
+    .alert-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      background-color: #f5f5f5;
+      border-left: 4px solid;
+      font-size: 14px;
+    }
+
+    .alert-error {
+      border-left-color: #d9534f;
+      background-color: #fff5f5;
+    }
+
+    .alert-warning {
+      border-left-color: #f0ad4e;
+      background-color: #fffbf0;
+    }
+
+    .alert-icon {
+      font-size: 16px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .alert-title {
+      font-weight: bold;
+      color: #333;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .alert-message {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .metric-icon-sip {
+      color: #5cb85c;
+    }
+
+    .metric-icon-queue {
+      color: #f0ad4e;
+    }
+
+    .metric-icon-cps {
+      color: #0275d8;
+    }
+
+    .metric-icon-fail {
+      color: #d9534f;
+    }
+ 

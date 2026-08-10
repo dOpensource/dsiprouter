@@ -1,0 +1,41 @@
+{% extends 'table_layout.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block custom_css %}
+    {{ link_tag('settings') }}  
+{% endblock %}
+
+ {% block table_headers %}
+  <div>
+    <h3>Settings</h3>
+  </div>
+  {% endblock %}
+
+{% block table %}
+  <!-- settings table -->
+  <table id="settings-table" class="table table-striped table-centered">
+    <thead>
+    <tr class='element-row'>
+      <th><input type="checkbox" class="checkall"/></th>
+      <th data-field="key">Key</th>
+      <th data-field="value">Value</th>
+      <th data-field="category">Category</th>
+      <th data-field="actions">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  
+{% endblock %}    
+</div>
+
+
+
+
+
+
+{% block custom_js %}
+  {{ script_tag('settings') }}
+{% endblock %}

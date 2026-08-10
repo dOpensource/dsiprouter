@@ -1,0 +1,29 @@
+{% extends 'fullwidth_layout.html' %}
+
+{% block title %}Numbers{% endblock %}
+
+{% block custom_css %}
+{% endblock %}
+
+{% block body %}
+
+  <div class="wrapper-horizontal edge-centered children-align-inherit content-header">
+    <div>
+      <h3>Hello World</h3>
+      
+    </div>
+
+    {% if reloadstatus %}
+      <h3>Kamailio reload: {{ reloadstatus }}</h3>
+    {% endif %}
+  </div>
+
+  <div class="content-section"> <!-- begin numbers section -->
+    {{ message }}
+  </div> <!-- end numbers section -->
+
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('numbers') }}
+{% endblock %}

@@ -91,7 +91,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 dispatcher = Dispatcher(
                     setid=PBXDomain.id,
                     destination=sipuri,
-                    attrs=f'socket=tls:{socket_addr}:5061;ping_from=sip:{domain}',
+                    attrs=f'ping_from=sip:{domain}',
                     flags=Dispatcher.FLAGS['KEEP_ALIVE'],
                     name=hostname
                 )
@@ -123,7 +123,7 @@ def addDomain(domain, authtype, pbxs, notes, db):
                 db.add(Addr)
             hostname="{}:{};{}".format(hostname,"5061","transport=tls")
             endpoints.append({"host": hostname, "description": "msteams_endpoint", "maintmode": False, 
-            'keepalive': '1'})
+            'keepalive': '1','signalling':'sips_tls','media':'rtp_savp'})
 
         endpointGroup['endpoints'] = endpoints
         addEndpointGroups(endpointGroup, "msteams", domain)
@@ -165,7 +165,7 @@ def configureMSTeams(id):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()

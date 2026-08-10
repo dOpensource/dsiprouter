@@ -8,7 +8,9 @@ from werkzeug import exceptions as http_exceptions
 from shared import debugEndpoint, debugException, StatusCodes, getRequestData, updateConfig
 from modules.api.api_functions import showApiError, api_security
 from modules.api.licensemanager.classes import WoocommerceLicense, WoocommerceError
-from modules.api.licensemanager.functions import searchLicenses, addToLicenseStore, removeFromLicenseStore
+from modules.api.licensemanager.functions import (
+    searchLicenses, addToLicenseStore, removeFromLicenseStore, syncLicensesToGlobalState
+)
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 import settings
 
@@ -405,6 +407,41 @@ def deactivateLicense():
         removeFromLicenseStore(lc)
 
         response_payload['msg'] = 'deactivation succeeded'
+        return jsonify(response_payload), StatusCodes.HTTP_OK
+
+    except WoocommerceError as ex:
+        return showWoocommerceError(ex)
+    except Exception as ex:
+        return showApiError(ex)
+
+@license_manager.route('/api/v1/licensing/refresh', methods=['GET'])
+@api_security
+def refreshLicenses():
+    """
+    Refresh the in-memory license cache with data from the license server
+
+    ================
+    Response Payload
+    ================
+
+    .. code-block:: json
+
+        {
+            error: <string>,
+            msg: <string>,
+            kamreload: <bool>,
+            data: []
+        }
+    """
+    # defaults.. keep data returned separate from returned metadata
+    response_payload = {'error': '', 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        syncLicensesToGlobalState()
+        response_payload['msg'] = 'successfully retrieved licenses'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except WoocommerceError as ex:

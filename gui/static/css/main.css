@@ -85,6 +85,11 @@
   position: relative;
 }
 
+:root {
+  --side-menu-width: 18em;
+  --side-menu-collapsed-width: 4.5em;
+}
+
 .wrap .nav-bar {
   -webkit-border-radius: 0;
   -moz-border-radius: 0;
@@ -104,11 +109,11 @@
   margin-top: 25px;
 }
 
-.wrap .nav-bar .navbar-right {
+.wrap .nav-bar .ml-auto {
   float: right !important;
 }
 
-.wrap .nav-bar .navbar-right .btn {
+.wrap .nav-bar .ml-auto .btn {
   margin-top: 0.5em;
 }
 
@@ -124,17 +129,17 @@
   right: 0;
 }
 
-.wrap .nav-bar .nav .dropdown-menu > li > a {
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item {
   color: #ddd;
   padding: 8px;
 }
 
-.wrap .nav-bar .nav .dropdown-menu > li > a:hover {
-  background: #3355ff;
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item:hover {
+  background: #444;
 }
 
 .wrap .side-menu-link {
-  left: 21em;
+  left: calc(var(--side-menu-width) - 1em);
 }
 
 .wrap .burger {
@@ -174,24 +179,83 @@
   position: absolute;
   z-index: -1;
   background: #404040;
-  width: 22em;
+  width: var(--side-menu-width);
   padding-top: 10px;
   padding-right: 20px;
   padding-left: 10px;
   float: left;
   display: block;
   left: 0;
-  height: 2000px;
+  min-height: 100vh;
+}
+
+.wrap #side-menu .side-menu-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 32px;
+  margin-bottom: 6px;
+}
+
+.sidebar-collapse-btn {
+  color: #c4c4c5;
+  margin-right: 0;
+  padding: 0.35rem 0.5rem;
+  line-height: 1;
+  display: none;
+}
+
+.sidebar-collapse-btn:hover,
+.sidebar-collapse-btn:focus {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.sidebar-collapse-btn.is-active,
+.sidebar-collapse-btn.is-active:hover,
+.sidebar-collapse-btn.is-active:focus {
+  color: #F0AD4E;
+}
+
+.wrap.sidebar-collapsed #side-menu {
+  width: var(--side-menu-collapsed-width);
+  padding-right: 6px;
+  padding-left: 6px;
+}
+
+.wrap.sidebar-collapsed #side-menu .link {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.wrap.sidebar-collapsed #side-menu .link > a,
+.wrap.sidebar-collapsed #side-menu .submenu,
+.wrap.sidebar-collapsed #side-menu .link > i.ti-chevron-down {
+  display: none !important;
+}
+
+.wrap.sidebar-collapsed #side-menu li i {
+  position: static;
+  display: block;
+  margin: 0 auto;
 }
 
 .wrap .content {
-  position: absolute;
-  right: 0;
-  min-width: 400px;
+  position: relative;
+  float: right;
   -webkit-transition: all 0.3s ease-out;
   -moz-transition: all 0.3s ease-out;
   -o-transition: all 0.3s ease-out;
   transition: all 0.3s ease-out;
+  min-height: 100vh;
+  width: 100%;
+}
+
+@media screen and (min-width: 400px) {
+  .wrap .content {
+    min-width: 400px;
+  }
 }
 
 .wrap .content .top-bar {
@@ -206,8 +270,7 @@
   margin: 0;
   background: #fff;
   display: block;
-  position: absolute;
-  height: 2000px;
+  min-height: 100vh;
   width: 100%;
 }
 
@@ -258,7 +321,7 @@
   transition: all 0.4s ease;
 }
 
-.wrap ul.accordion li i.glyphicon-chevron-down {
+.wrap ul.accordion li i.ti-chevron-down {
   right: 12px;
   left: auto;
   font-size: 16px;
@@ -266,14 +329,18 @@
 }
 
 .wrap ul.accordion li.open .link {
-  color: #FF8100;
+  color: #F0AD4E;
 }
 
 .wrap ul.accordion li.open i {
-  color: #FF8100;
+  color: #F0AD4E;
 }
 
-.wrap ul.accordion li.open i.glyphicon-chevron-down {
+.wrap.sidebar-collapsed #side-menu li.nav-header.selected-menu-item > .link > i:not(.ti-chevron-down) {
+  color: #F0AD4E;
+}
+
+.wrap ul.accordion li.open i.ti-chevron-down {
   -webkit-transform: rotate(180deg);
   -ms-transform: rotate(180deg);
   -o-transform: rotate(180deg);
@@ -312,14 +379,14 @@
   color: #ffb266;
 } */
 
-.panel-info > .panel-heading {
-  color: #FF8100;
+.card.border-info > .card-header {
+  color: #F0AD4E;
   background-color: #000000;
-  border-color: #FF8100;
+  border-color: #F0AD4E;
 }
 
-.panel-info {
-  border-color: #FF8100;
+.card.border-info {
+  border-color: #F0AD4E;
 }
 
 .loginlogo {
@@ -332,13 +399,24 @@
   color: #9d9d9d;
 }
 
+/* Side navigation links: show underline only on hover */
+#side-menu a.navlink,
+#side-menu .submenu a {
+  text-decoration: none;
+}
+
+#side-menu a.navlink:hover,
+#side-menu .submenu a:hover {
+  text-decoration: underline;
+}
+
 .a {
   color: #9d9d9d;
   text-decoration: none;
 }
 
 a.currentlink {
-  color: #FF8100 !important;
+  color: #F0AD4E !important;
 }
 
 a.navlink {
@@ -348,9 +426,12 @@ a.navlink {
 .label-toggle {
   margin-left: 10px;
   width: 100%;
+  /* center the descriptive label against the toggle button */
+  vertical-align: middle;
 }
 
-.container.container {
+.container.container,
+.container-fluid {
   width: 100%;
   height: 100%;
   margin: auto;
@@ -543,6 +624,23 @@ a.navlink {
   width: 50vw;
 }
 
+/* ensure responsive tables inside modal bodies can scroll horizontally */
+.modal-body .table-responsive {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* prevent name column from wrapping */
+table#carriers td.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
 /* fix bootstrap modals when stacking */
 .modal-open.modal {
   overflow-x: hidden;
@@ -583,6 +681,12 @@ table.dataTable {
   padding-left: 10px;
 }
 
+/* add breathing room before pagination controls on paginated pages */
+.dataTables_wrapper .dataTables_paginate,
+div.dt-container div.dt-paging {
+  margin-top: 0.75rem;
+}
+
 #reloading_overlay {
   position: absolute;
   width: 100%;
@@ -598,43 +702,46 @@ table.dataTable {
   z-index: 1050;
 }
 
-/* iPhone 11 */
-@media screen and (max-width: 552px) {
-  .left-half {
-    display: none;
-  }
+/* Layout breakpoints */
+/* Extra small devices (portrait phones, less than 576px) - Default styles */
 
-  .right-half {
-    width: 100%;
-  }
-
-  .col-xs-4 {
-    width: 70%;
-    display: inline-block;
-  }
-
-  /*.wrap .content .content-inner .content-section {
- margin: 0 auto;
-  }*/
-
+/* Small devices (landscape phones, 576px and up) */
+@media screen and (min-width: 576px) {
 }
 
-@media screen and (min-width: 769px) {
+/* Medium devices (tablets, 768px and up) */
+@media screen and (min-width: 768px) {
+  .sidebar-collapse-btn {
+    display: inline-flex;
+    align-items: center;
+  }
+
   .side-menu-link {
     display: none;
   }
 
-  .wrap {
-    position: relative;
+  .wrap .content {
+    width: calc(100% - var(--side-menu-width));
   }
 
-  .wrap .content {
-    left: 20em;
-    right: 0;
+  .wrap.sidebar-collapsed .content {
+    width: calc(100% - var(--side-menu-collapsed-width));
   }
 }
 
-@media screen and (max-width: 768px) {
+/* Large devices (desktops, 992px and up) */
+@media screen and (min-width: 992px) {
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media screen and (min-width: 1200px) {
+}
+
+/* Specific overrides for small screens */
+@media screen and (max-width: 767.98px) {
+  .wrap .content .top-bar {
+    display: block !important;
+  }
   .wrap .nav-bar .navbar-brand {
     margin-top: 0;
     padding-left: 0;
@@ -654,7 +761,15 @@ table.dataTable {
   }
 
   .wrap.active .content {
-    left: 20em;
+    -webkit-transform: translateX(var(--side-menu-width));
+    -moz-transform: translateX(var(--side-menu-width));
+    -ms-transform: translateX(var(--side-menu-width));
+    -o-transform: translateX(var(--side-menu-width));
+    transform: translateX(var(--side-menu-width));
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
   }
 
   .wrap.active .content #bgrOne {
@@ -678,8 +793,305 @@ table.dataTable {
     -o-transform: rotate(315deg);
     transform: rotate(315deg);
   }
+  
+  .left-half {
+    display: none;
+  }
+
+  .right-half {
+    width: 100%;
+  }
+
+  .col-4 {
+    width: 70%;
+    display: inline-block;
+  }
 }
 
 #reload_kam, #reload_dsip {
   cursor: pointer;
+}
+
+.reload-required {
+    /* Red overlay approach for better color forcing */
+    background-blend-mode: multiply;
+    background-image: linear-gradient(#fd7e14, rgba(253, 126, 20, 0.4));
+
+    /* Subtle fading border */
+    border: 2px solid #fd7e14;
+    
+}
+
+/* Fix Bootstrap 5 nav flex direction for sidebar */
+#side-menu .nav {
+  flex-direction: column;
+}
+
+#side-menu .nav-header {
+  width: 100%;
+}
+
+/* Reload dropdown item states */
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-warning {
+  background-color: #F0AD4E;
+  color: #333;
+}
+
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-warning:hover {
+  background-color: #ec971f;
+  color: #333;
+}
+
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-secondary {
+  background-color: transparent;
+  color: #999;
+}
+
+.wrap .nav-bar .nav .dropdown-menu > .dropdown-item.btn-secondary:hover {
+  background-color: #333;
+  color: #ccc;
+}
+
+/* Force navbar items on same line */
+.nav.navbar-nav.ml-auto {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.nav.navbar-nav.ml-auto > * {
+  display: inline-block;
+  margin-left: 0.5em;
+}
+
+/* Add space after admin dropdown */
+.nav.navbar-nav.ml-auto {
+  margin-right: 1em;
+}
+
+/* Fix modal close button position for Bootstrap 5 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header .close,
+.modal-header .btn-close {
+  order: 2;
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+
+.modal-header .close .ti-x {
+  /* Change the color of the X */
+  color: #000000;
+  /* Change the size of the icon */
+  font-size: 24px; 
+  /* Adjust how thick the line strokes are */
+  stroke-width: 0px; 
+  font-weight: bold;
+}
+
+
+.modal-header .modal-title {
+  order: 1;
+}
+
+/* Add vertical spacing between form fields in modals */
+.modal-body .form-group,
+.modal-body .form-control,
+.modal-body .form-select,
+.modal-body input[type='text'],
+.modal-body input[type='number'],
+.modal-body input[type='email'],
+.modal-body input[type='password'],
+.modal-body select,
+.modal-body textarea {
+  margin-bottom: 1rem;
+}
+
+.modal-body label {
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* Fix nav-tabs styling for Bootstrap 5 */
+.modal-body .nav-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1rem;
+}
+
+.modal-body .nav-tabs li {
+  margin-bottom: -1px;
+}
+
+.modal-body .nav-tabs li a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #495057;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+}
+
+.modal-body .nav-tabs li a:hover {
+  border-color: #e9ecef #e9ecef #dee2e6;
+}
+
+.modal-body .nav-tabs li a.active,
+.modal-body .nav-tabs li.active a {
+  color: #495057;
+  background-color: #fff;
+  border-color: #dee2e6 #dee2e6 #fff;
+}
+
+.modal-body .tab-content {
+  padding-top: 1rem;
+}
+
+/* Make endpoint group modals wider and let them grow with the form content */
+#edit.modal .modal-dialog,
+#add.modal .modal-dialog {
+  width: min(95vw, 1200px);
+  max-width: min(95vw, 1200px);
+}
+
+/* Ensure tabs don't wrap */
+.modal-body .nav-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.modal-body .nav-tabs .nav-item {
+  white-space: nowrap;
+}
+
+/* Add Row button on one line */
+#addEndpointRow,
+#updateEndpointRow {
+  white-space: nowrap;
+}
+
+/* Make endpoint table wider and host field auto-expand */
+#endpoint-table2,
+#endpoint-table {
+  width: 100%;
+  table-layout: auto;
+}
+
+#endpoint-table2 th,
+#endpoint-table th {
+  white-space: nowrap;
+}
+
+/* Keep Tabledit action buttons on one line in endpoint tables */
+#endpoint-table .tabledit-toolbar,
+#endpoint-table2 .tabledit-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  gap: 0.25rem;
+}
+
+#endpoint-table .tabledit-toolbar .tabledit-save-button,
+#endpoint-table2 .tabledit-toolbar .tabledit-save-button {
+  margin-left: 0.25rem;
+}
+
+/* Host field default width and auto-expand */
+#endpoint-table2 input[name='host'],
+#endpoint-table input[name='host'],
+#endpoint-tablebody2 input[name='host'],
+#endpoint-tablebody input[name='host'],
+.endpoint-host {
+  min-width: 20ch;
+  width: 20ch;
+  max-width: 100%;
+}
+
+/* Host field expand on focus */
+input[name='host']:focus {
+  width: auto !important;
+  min-width: 20ch !important;
+  max-width: 400px !important;
+}
+
+/* Remove space after tabs */
+.modal-body .nav-tabs {
+  margin-bottom: 0;
+}
+
+.modal-body .tab-content {
+  padding-top: 0.5rem;
+  /* bottom breathing room so a short tab (e.g. FusionPBX toggle when disabled)
+     isn't cramped against the modal footer */
+  padding-bottom: 1rem;
+}
+
+#endpoint-nav {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Compatibility for hidden class */
+.hidden {
+  display: none !important;
+}
+
+/* Add space before backup/restore buttons */
+#backup .form-group,
+#restore .form-group {
+  margin-top: 1.5rem;
+}
+
+.btn-reload {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #2188B0;
+    --bs-btn-border-color: #2188B0;
+
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #2188B0;
+    --bs-btn-hover-border-color: #2188B0;
+
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #2188B0;
+    --bs-btn-active-border-color: #2188B0;
+}
+
+.btn-reload-required {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #fd7e14;
+    --bs-btn-border-color: #fd7e14;
+
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #e66a00;
+    --bs-btn-hover-border-color: #d65f00;
+
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #c95600;
+    --bs-btn-active-border-color: #bb5100;
+}
+
+.custom-nav-dropdown-item {
+  color: #c4c4c5;
+}
+
+.custom-nav-dropdown-item-active {
+  color: #fd7e14;
+}
+
+.user-profile-button {
+    color: #fff;
+}
+
+.tableAddButton {
+    padding-top: 4px;
 }

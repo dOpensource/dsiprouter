@@ -6,7 +6,7 @@
 
 ## What is dSIPRouter?
 
-dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables three basic use cases:
+dSIPRouter allows you to quickly turn [Kamailio](https://www.kamailio.org/) into an easy to use SIP Service Provider platform, which enables five basic use cases:
 
 - **SIP Trunking services:**
 Provide services to customers that have an on-premise PBX such as FreePBX, FusionPBX, Avaya, etc.
@@ -22,9 +22,12 @@ We can provide SBC functionality that allows dSIPRouter to interconnect your exi
 - **WebRTC Proxy (Core Subscription Required):**
 We can provide functionality that allows dSIPRouter to register WebRTC clients to PBX's that has extensions being exposed as just UDP and TCP.  Hence, becoming a WebRTC Proxy.
 
+- **Voice AI Gateway:**
+dSIPRouter can host and manage your Voice AI agents.  This allows you manage all the components needed to deploy Voice AI agents using one interface.  We currently support OpenAI Realtime Agents.  But, based on demand, we will support other Voice AI solutions.
+
 The dSIPRouter UI allows you to manage the platform.  We also make it easy to intergrate dSIPRouter into your existing workflow by using our [API](https://www.postman.com/dopensource/workspace/dsiprouter/overview)
 
-**Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on Twitter to get the latest updates on dSIPRouter**
+**Follow us at [#dsiprouter](https://twitter.com/dsiprouter) on X to get the latest updates on dSIPRouter**
 
 ### Project Web Site
 
@@ -59,12 +62,11 @@ A current list of contributors can be found [here](CONTRIBUTORS.md)
 You can find the steps to install of support operating systems:
 
 - [Debian Based Systems](https://dsiprouter.readthedocs.io/en/latest/debian_install.html#debian-install)
-- [Redhat Based Systems](https://dsiprouter.readthedocs.io/en/latest/rhel_install.html#rhel-install)
 
 ### Support
 
-- Free Support: [dSIPRouter Question & Answer Forum](https://groups.google.com/forum/#!forum/dsiprouter)
-- Paid Support: [dSIPRouter Support](https://dsiprouter.org/#fh5co-support-section)
+- Free Support: [dSIPRouter Slack Channel](https://join.slack.com/t/dsiproutercommunity/shared_invite/zt-1dtqvpyck-H9k~DYgJJ2XIFgh_rWqdPA)
+- Paid Support: [dSIPRouter Support](https://dsiprouter.org/pricing/)
 
 ### Training
 
@@ -106,8 +108,8 @@ Details on training can be found [here](https://dopensource.com/product/dsiprout
 - High Availablity (Subscription Required)
   - Mysql Active-Active replication
   - Pacemaker / Corosync Active-Passive floating IP
-  - Consul DNS Load-balancing and DNS Failover
   - dSIPRouter cluster synchronization
   - Kamailio DMQ replication
 - Microsoft Teams Support (Subscription Required)
 - WebSockets Enabled by Default
+- Voice AI Gateway

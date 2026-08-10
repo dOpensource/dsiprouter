@@ -32,6 +32,8 @@ function install() {
     usermod -a -G dsiprouter nginx
     # make dsiprouter user has access to kamailio files
     usermod -a -G kamailio dsiprouter
+    # make sure the kamailio user has access to dsiprouter directories
+    usermod -a -G dsiprouter kamailio
 
     # setup runtime directorys for dsiprouter
     mkdir -p ${DSIP_RUN_DIR}
@@ -109,6 +111,10 @@ function uninstall() {
     systemctl disable dsiprouter.service
     rm -f /lib/systemd/system/dsiprouter.service
     systemctl daemon-reload
+
+    gpasswd -d kamailio dsiprouter
+    gpasswd -d nginx dsiprouter
+    gpasswd -d dsiprouter kamailio
 
     return 0
 }

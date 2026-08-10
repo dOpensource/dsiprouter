@@ -1,9 +1,17 @@
-{%- macro link_tag(location) -%}
-        <link rel="stylesheet" href="/static/css/{{ location }}.css">
+{%- macro link_tag(location, module) -%}
+        {%- if module -%}
+        <link rel="stylesheet" href="/{{ module }}/static/css/{{ location }}.css">
+        {%- else -%}
+        <link rel="stylesheet" href="/static/css/{{ location }}.css?v={{ staticAssetVersion('css/' ~ location ~ '.css') }}">
+        {%- endif -%}
 {%- endmacro -%}
 
-{%- macro script_tag(location) -%}
-        <script src="/static/js/{{ location }}.js"></script>
+{%- macro script_tag(location, module) -%}
+        {%- if module -%}
+        <script src="/{{ module }}/static/js/{{ location }}.js"></script>
+        {%- else -%}
+        <script src="/static/js/{{ location }}.js?v={{ staticAssetVersion('js/' ~ location ~ '.js') }}"></script>
+        {%- endif -%}
 {%- endmacro -%}
 
 {%- macro tracked_link(title, url) -%}

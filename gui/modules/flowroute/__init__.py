@@ -16,7 +16,7 @@ class Numbers():
         self.auth = None
         self.api_url = None
 
-    def getNumbers(self, starts_with=None, contains=None, ends_with=None, limit=1000000, offset=None):
+    def getNumbers(self, starts_with=None, contains=None, ends_with=None, limit=1000000, offset=None, alias=None):
         """
         Get flowroute DID's associated with accnt
 
@@ -33,8 +33,23 @@ class Numbers():
             'contains': contains,
             'ends_with': ends_with,
             'limit': limit,
-            'offset': offset
+            'offset': offset,
         }
+
+        # Default is to show unassigned numbers by setting alias to None
+        if alias is not None:
+            # Search for a particular alias
+            if len(alias) > 0:  
+                payload['alias'] = alias
+            # Show all numbers
+            if alias == " " or alias == "":
+                pass
+                    
         resp = requests.get(self.api_url, auth=self.auth, params=payload)
         resp.raise_for_status()
-        return [num['attributes']['value'] for num in resp.json()['data']]
+        if alias == None: # Show unassigned numbers
+            print("look for empty space")
+            return [num['attributes']['value'] for num in resp.json()['data'] if num['attributes']['alias'] == None]
+        else:
+            return [num['attributes']['value'] for num in resp.json()['data']] 
+            

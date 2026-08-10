@@ -85,12 +85,13 @@
   </div>
 
   <div class="tableAddButton">
-    <div class="btn-group mr-2">
-      <button id='open-LicenseAdd' class='btn btn-success btn-md' data-title="Activate" data-toggle="modal"
-              data-target="#add">
-        Add
-      </button>
-    </div>
+    <button id='refreshButton' class='btn btn-warning btn-md' data-title="Refresh Licenses">
+      Refresh
+    </button>
+    <button id='open-LicenseAdd' class='btn btn-success btn-md' data-title="Activate" data-bs-toggle="modal"
+            data-bs-target="#add">
+      Add
+    </button>
   </div>
 {% endblock %}
 
@@ -104,7 +105,7 @@
       <th data-field="active">Active</th>
       <th data-field="active">Valid</th>
       <th data-field="expires">Expiration Date</th>
-      <th class="hidden"></th>
+      <th class="d-none"></th>
     </tr>
     </thead>
   </table>
@@ -119,8 +120,8 @@
 {% block add_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Activate License</h4>
   </div>
 
@@ -131,12 +132,12 @@
       <div class="form-group wrapper-fieldicon-right">
         <input id="add-key" class="form-control key" type="password" name="key"
                placeholder="License Key" autofocus="autofocus">
-        <span class="field-icon toggle-password glyphicon glyphicon-eye-close" data-toggle="#add-key"></span>
+        <i class="field-icon toggle-password ti ti-eye-off" data-toggle="#add-key"></i>
       </div>
 
       <div class="modal-footer">
-        <button type="submit" id="addButton" class="btn btn-success btn-lg" style="width: 100%;"><span
-            class="glyphicon glyphicon-ok-sign"></span> Add
+        <button type="submit" id="addButton" class="btn btn-success btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Add
         </button>
       </div>
     </form>
@@ -148,8 +149,8 @@
 {% block delete_modal %}
 
   <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span
-        class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
     <h4 class="modal-title custom_align" id="Heading">Deactivate License</h4>
   </div>
 
@@ -158,16 +159,16 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="key" type="hidden" name="key">
 
-      <div class="alert alert-danger"><span class="glyphicon glyphicon-warning-sign"></span>
+      <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i>
         Are you sure you want to deactivate this License?
       </div>
 
       <div class="modal-footer ">
-        <button id="deleteButton" type="button" class="btn btn-success"><span
-            class="glyphicon glyphicon-ok-sign" autofocus="autofocus"></span> Yes
+        <button id="deleteButton" type="button" class="btn btn-success"><i
+            class="ti ti-circle-check" autofocus="autofocus"></i> Yes
         </button>
-        <button type="button" class="btn btn-default" data-dismiss="modal"><span
-            class="glyphicon glyphicon-remove"></span> No
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+            class="ti ti-x"></i> No
         </button>
       </div>
     </form>
@@ -177,6 +178,14 @@
 
 {% block custom_js %}
   {{ script_tag('jquery.tabledit') }}
+  {% if state.license_server_unreachable %}
+    <script type="application/javascript">
+      if (typeof showNotification === "undefined") {
+        throw new Error("showNotification() is required and is not defined");
+      }
+      showNotification("The license server was unreachable. Try Refresh-ing the license data.", true);
+    </script>
+  {% endif %}
   {{ script_tag('license_manager') }}
 {% endblock %}
 

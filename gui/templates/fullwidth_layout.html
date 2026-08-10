@@ -10,9 +10,9 @@
 
   <!-- inherited CSS -->
   {{ link_tag('bootstrap') }}
-  {{ link_tag('bootstrap-theme') }}
-  {{ link_tag('bootstrap-toggle') }}
+  {{ link_tag('bootstrap5-toggle.min') }}
   {{ link_tag('datatables.min') }}
+  {{ link_tag('tabler-icons.min') }}
   {{ link_tag('highlight/{}'.format(highlight_theme|default('github'))) }}
   {{ link_tag('main') }}
 
@@ -24,53 +24,49 @@
 
 <body>
 
-  <div class="container">
+  <div class="container-fluid">
     <div class="wrap">
-      <nav class="nav-bar navbar-inverse" role="navigation">
+    <nav id="top-nav" class="nav-bar navbar-dark bg-dark {% if state.kam_reload_required or state.dsip_reload_required %}reload-required{% endif %}" role="navigation">
         <div id="top-menu" class="container-fluid active">
           <a class="navbar-brand" href="http://dopensource.com/dsiprouter"><img
               src="{{ url_for('static', filename='images/dsiprouter_x50px.png') }}"></a>
-          <ul class="nav navbar-nav navbar-right">
+          <ul class="nav navbar-nav ml-auto">
             <div class="btn-group" style="margin-right: 0.5em">
               {% if state.kam_reload_required == True or state.dsip_reload_required == True %}
-                <button type="button" class="btn btn-warning" id="reload">Reload</button>
-                <button type="button" class="btn btn-warning dropdown-toggle" id="reload-split" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
+                {% set btn_class="btn-reload-required" %}
               {% else %}
-                <button type="button" class="btn btn-primary" id="reload">Reload</button>
-                <button type="button" class="btn btn-primary dropdown-toggle" id="reload-split" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
+                {% set btn_class="btn-reload" %}
               {% endif %}
-              <span class="caret"></span>
-              <span class="sr-only">Toggle Dropdown</span>
+              <button type="button" class="btn {{ btn_class }} btn-sm dropdown-toggle" id="reload" data-bs-toggle="dropdown" aria-expanded="false">
+                Reload
               </button>
-              <ul class="dropdown-menu" role="menu">
+              <ul class="dropdown-menu">
                 {% if state.kam_reload_required == True %}
-                  {% set kam_reload_state="btn-warning" %}
+                  {% set kam_reload_state="btn-reload" %}
                 {% else %}
                   {% set kam_reload_state="btn-secondary" %}
                 {% endif %}
                 {% if state.dsip_reload_required == True %}
-                  {% set dsip_reload_state="btn-warning" %}
+                  {% set dsip_reload_state="btn-reload" %}
                 {% else %}
                   {% set dsip_reload_state="btn-secondary" %}
                 {% endif %}
-                <li><a class="dropdown-item {{ kam_reload_state }}" id="reload_kam">Reload Kamailio</a></li>
-                <li><a class="dropdown-item {{ dsip_reload_state }}" id="reload_dsip">Reload dSIPRouter</a></li>
+                <li><a class="dropdown-item custom-nav-dropdown-item {{ kam_reload_state }}" id="reload_kam" href="#">Reload Kamailio</a></li>
+                <li><a class="dropdown-item custom-nav-dropdown-item {{ dsip_reload_state }}" id="reload_dsip" href="#">Reload dSIPRouter</a></li>
               </ul>
             </div>
-            <!-- <form id="qform" class="navbar-form pull-left" role="search">
+            <!-- <form id="qform" class="navbar-form float-left" role="search">
                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                <input type="text" class="form-control" placeholder="Search" />
              </form> -->
             <li class="dropdown movable">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="caret"></span><span
-                  class="fa fa-4x fa-child"></span>{{ session.username }}</a>
+              <a href="#" class="dropdown-toggle user-profile-button" data-bs-toggle="dropdown"><span
+                  class="ti ti-user"></span>{{ session.username }}</a>
               <ul class="dropdown-menu" role="menu">
                 <!-- <li><a href="#"><span class="fa fa-user"></span>My Profile</a></li>
                 <li><a href="#"><span class="fa fa-gear"></span>Settings</a></li> -->
                 <li class="divider"></li>
-                <li><a href="/logout"><span class="fa fa-power-off"></span>Logout</a></li>
+                <li><a class="dropdown-item custom-nav-dropdown-item" href="/logout"><span class="ti ti-logout"></span>Logout</a></li>
               </ul>
             </li>
           </ul>
@@ -78,53 +74,55 @@
       </nav>
 
       <aside id="side-menu" class="aside" role="navigation">
+        <div class="side-menu-header">
+          <button id="side-menu-collapse-toggle" class="btn btn-link sidebar-collapse-btn" type="button" title="Toggle sidebar" aria-label="Toggle sidebar" aria-pressed="false">
+            <i class="ti ti-layout-sidebar-left-collapse"></i>
+          </button>
+        </div>
         <ul class="nav nav-list accordion">
 
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-lg fa-globe"></i>
-              <a class="navlink" href="/">Dashboard</a>
-              <i class="fa fa-chevron-down"></i>
+             <i class="ti ti-dashboard"></i>
+             <a class="navlink" href="/">Dashboard</a>
             </div>
           </li>
 
-          <li class="nav-header">
+          <li class="nav-header{% if request.path in ['/settings', '/backupandrestore', '/certificates', '/teleblock', '/transnexus', '/stirshaken', '/licensing', '/upgrade'] %} open{% endif %}" id="system-settings-menu">
             <div class="link">
-              <i class="fa fa-lg fa-users"></i>
+              <i class="ti ti-layout-grid"></i>
               <a class="navlink" href="/carriergroups">Carrier Groups</a>
-              <i class="fa fa-chevron-down"></i>
+              
             </div>
           </li>
 
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-users"></i>
+              <i class="ti ti-road"></i>
               <a class="navlink" href="/endpointgroups">Endpoint Groups</a>
-              <i class="fa fa-chevron-down"></i>
+              
             </div>
           </li>
 
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-cloud"></i>
+              <i class="ti ti-world"></i>
               <a class="navlink" href="/domains">Domains</a>
-              <i class="fa fa-chevron-down"></i>
+              
             </div>
           </li>
 
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-lg fa-map-marker"></i>
+             <i class="ti ti-arrow-left"></i>
               <a class="navlink" href="/inboundmapping">Inbound Routes</a>
-              <i class="fa fa-chevron-down"></i>
             </div>
           </li>
 
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-lg fa-file-image-o"></i>
+              <i class="ti ti-arrow-right"></i>
               <a class="navlink" href="/outboundroutes">Outbound Routes</a>
-              <i class="fa fa-chevron-down"></i>
             </div>
           </li>
           <!--
@@ -138,20 +136,33 @@
           -->
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-lg fa-file-image-o"></i>
+              <i class="ti ti-list-details"></i>
               <a class="navlink" href="/cdrs">Call Detail Records</a>
-              <i class="fa fa-chevron-down"></i>
+              
             </div>
           </li>
+          <!-- Load Dynamic Modules -->
+          {% for module_name, module_details in dynamicModules.items() %}
+          <li class="nav-header">
+            <div class="link">
+              <i class="{{ module_details['menu_icon'] }}"></i>
+              <a class="navlink" href="/gui/{{ module_name }}">{{ module_details['menu_name'] }}</a>
+              
+            </div>
+          </li>
+          {% endfor %}
+          
 
           <li class="nav-header">
             <div class="link">
-              <i class="fa fa-lg fa-file-image-o"></i>
+           
+              <i class="ti ti-settings"></i>
               <a class="navlink" href="#">System Settings</a>
-              <i class="glyphicon glyphicon-chevron-down"></i>
+              <i class="ti ti-chevron-down"></i>
             </div>
-            <ul class="submenu">
-              <li><a class="navlink" href="/backupandrestore">Backup and Restore</a></li>
+            <ul class="submenu"{% if request.path in ['/settings', '/backupandrestore', '/certificates', '/teleblock', '/transnexus', '/stirshaken', '/licensing', '/upgrade'] %} style="display:block"{% endif %}>
+              <li><a class="navlink" href="/settings">Global Settings</a></li>
+              <li><a href="/backupandrestore">Backup and Restore</a></li>
               <li><a href="/certificates">Certificates</a></li>
               <li><a href="/teleblock">Teleblock</a></li>
               <li><a href="/transnexus">TransNexus</a></li>
@@ -167,7 +178,7 @@
       <!--Body content-->
       <div class="content">
         <div class="top-bar" style="display: none;">
-          <div class="message-bar" style="text-align: center;"></div>
+          <div class="message-bar" id="message-bar" style="text-align: center;"></div>
           <a href="#menu" class="side-menu-link burger">
             <span class='burger_inside' id='bgrOne'></span>
             <span class='burger_inside' id='bgrTwo'></span>
@@ -176,7 +187,7 @@
         </div>
 
         <section class="content-inner">
-          <div id="reloading_overlay" class="hidden"></div>
+          <div id="reloading_overlay" class="d-none"></div>
           {% block body %}
           {% endblock %}
         </section>
@@ -199,13 +210,18 @@
       writable: false,
       value: "{{ settings.DSIP_API_PROTO }}" + "://" + window.location.hostname + ":" + "{{ settings.DSIP_API_PORT }}" + "/api/v1/"
     });
+    Object.defineProperty(window, "CUSTOM_MODULE_API_BASE_URL", {
+      configurable: false,
+      writable: false,
+      value: "{{ settings.DSIP_API_PROTO }}" + "://" + window.location.hostname + ":" + "{{ settings.DSIP_API_PORT }}" + "/api/"
+    });
   </script>
   {{ script_tag('util') }}
   <script type="application/javascript">
     {% include 'includes/overrides.js' %}
   </script>
-  {{ script_tag('bootstrap') }}
-  {{ script_tag('bootstrap-toggle') }}
+  {{ script_tag('bootstrap.bundle') }}
+  {{ script_tag('bootstrap5-toggle.ecmas.min') }}
   {{ script_tag('validator') }}
   {{ script_tag('main') }}
   {{ script_tag('datatables.min') }}

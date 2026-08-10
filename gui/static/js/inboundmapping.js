@@ -5,13 +5,13 @@
    * @global window scope
    * @namespace aria
    */
-  var aria = aria || {};
+  /* var aria = aria || {}; */
 
   /**
    * @global script scope
    * @type {Array}
    */
-  var DID_LIST = DID_LIST || [];
+  /*var DID_LIST = DID_LIST || []; */
 
   /**
    * Search DID_LIST for search_string
@@ -58,6 +58,9 @@
     )
   }
 
+  // globals for this script
+  var routes_table = null;
+
   /* any handlers depending on DOM elems go here */
   $(document).ready(function() {
     /* only created if we have DID's */
@@ -68,7 +71,8 @@
     }
 
     /* init datatable */
-    $('#inboundmapping').DataTable({
+    routes_table = $('#inboundmapping').DataTable({
+      "autoWidth": false,
       "columnDefs": [
         {"orderable": true, "targets": [1, 2, 3, 4, 5]},
         {"orderable": false, "targets": [0, 6, 7]},
@@ -91,13 +95,15 @@
 
       /* reset options selected */
       modal_body.find("select").val('');
+      modal_body.find("select.gwgroupid").val('0');
 
-      /* reset toggle buttons */
-      modal_body.find("input.toggle-hardfwd").bootstrapToggle('off');
-      modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
+      /* reset toggle buttons (the widget is hidden here, so set the checkbox
+         state + fire change; the slider is (re)built on shown.bs.modal) */
+      modal_body.find("input.toggle-hardfwd").prop('checked', false).trigger('change');
+      modal_body.find("input.toggle-failfwd").prop('checked', false).trigger('change');
     });
 
-    $('#inboundmapping').on('click', '#open-Update', function() {
+    routes_table.table().on('click', '#open-Update', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('inboundmapping');
       var ruleid = $(c).find('tr:eq(' + row_index + ') td.ruleid').text();
@@ -141,7 +147,7 @@
 
       /* update options selected */
       modal_body.find("select").val('');
-      modal_body.find("select.gwgroupid").val(gwgroupid);
+      modal_body.find("select.gwgroupid").val(gwgroupid.length > 0 ? gwgroupid : '0');
       modal_body.find("select.hf_gwgroupid").val(hf_gwgroupid);
       modal_body.find("select.ff_gwgroupid").val(ff_gwgroupid);
       if (lb_enabled) {
@@ -150,23 +156,13 @@
         }).prop("selected", true);
       }
 
-      /* update toggle buttons */
-      if (hf_ruleid.length > 0) {
-        modal_body.find("input.toggle-hardfwd").bootstrapToggle('on');
-      }
-      else {
-        modal_body.find("input.toggle-hardfwd").bootstrapToggle('off');
-      }
-
-      if (ff_ruleid.length > 0) {
-        modal_body.find("input.toggle-failfwd").bootstrapToggle('on');
-      }
-      else {
-        modal_body.find("input.toggle-failfwd").bootstrapToggle('off');
-      }
+      /* update toggle buttons (widget hidden here; set checkbox state + fire
+         change, the slider is (re)built on shown.bs.modal) */
+      modal_body.find("input.toggle-hardfwd").prop('checked', hf_ruleid.length > 0).trigger('change');
+      modal_body.find("input.toggle-failfwd").prop('checked', ff_ruleid.length > 0).trigger('change');
     });
 
-    $('#inboundmapping').on('click', '#open-Delete', function() {
+    routes_table.table().on('click', '#open-Delete', function() {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('inboundmapping');
       var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();
@@ -190,11 +186,11 @@
       var modal_body = modal.find('.modal-body');
 
       if ($(this).is(":checked") || $(this).prop("checked")) {
-        modal_body.find('.hardfwd-options').removeClass("hidden");
+        modal_body.find('.hardfwd-options').removeClass('d-none');
         modal_body.find('.hardfwd_enabled').val(1);
       }
       else {
-        modal_body.find('.hardfwd-options').addClass("hidden");
+        modal_body.find('.hardfwd-options').addClass('d-none');
         modal_body.find('.hardfwd_enabled').val(0);
       }
     });
@@ -205,13 +201,22 @@
       var modal_body = modal.find('.modal-body');
 
       if ($(this).is(":checked") || $(this).prop("checked")) {
-        modal_body.find('.failfwd-options').removeClass("hidden");
+        modal_body.find('.failfwd-options').removeClass('d-none');
         modal_body.find('.failfwd_enabled').val(1);
       }
       else {
-        modal_body.find('.failfwd-options').addClass("hidden");
+        modal_body.find('.failfwd-options').addClass('d-none');
         modal_body.find('.failfwd_enabled').val(0);
       }
+    });
+
+    /* bootstrap5-toggle (ecmas build) throws if constructed while hidden, so it
+       cannot be auto-initialized inside a closed modal. Build (or re-render, to
+       fix slider sizing) the forwarding toggles once the modal is shown. */
+    $('#add, #edit').on('shown.bs.modal', function() {
+      $(this).find('.toggle-hardfwd, .toggle-failfwd').each(function() {
+        this.bootstrapToggle(this.bsToggle ? 'rerender' : undefined);
+      });
     });
   });
 

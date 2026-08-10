@@ -15,7 +15,7 @@
   <div class="table-responsive content-section">
     {% block table %}
     {% endblock %}
-    <img id="loading-spinner" class="hidden" src="{{ url_for('static', filename='images/spinner.svg') }}" alt=""/>
+    <img id="loading-spinner" class="d-none" src="{{ url_for('static', filename='images/spinner.svg') }}" alt=""/>
   </div>
 
 
@@ -52,6 +52,15 @@
     <div class="modal-dialog">
       <div class="modal-content">
         {% block import_modal %}
+        {% endblock %}
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+
+  <div class="modal fade" id="bulkdelete" tabindex="-1" role="dialog" aria-labelledby="Import" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        {% block bulkdelete_modal %}
         {% endblock %}
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->

@@ -104,9 +104,10 @@ EOF
     cronRemove -u dsiprouter 'dsiprouter_cron.py fusionpbx'
     cronAppend -u dsiprouter "*/1 * * * * ${PYTHON_CMD} ${DSIP_PROJECT_DIR}/gui/dsiprouter_cron.py fusionpbx sync"
 
-    # Change to dsiprouter group so that the FusionPBX provisioning configuation can be written
-    chown root:dsiprouter /etc/nginx/sites-enabled
-    chmod 775 /etc/nginx/sites-enabled
+    updatePermissions -nginx -certs
+
+    #Add dsiprouter user to docker group so it can run docker commands without sudo
+    usermod -aG docker dsiprouter
     
     printdbg "FusionPBX module installed"
     return 0
@@ -159,6 +160,9 @@ function uninstall {
 
     rm -rf ${DSIP_CERTS_DIR}/fusionpbx/
     cronRemove -u dsiprouter 'dsiprouter_cron.py fusionpbx'
+
+    # Remove dsiprouter user from docker group
+    gpasswd -d dsiprouter docker
 
     printdbg "FusionPBX module uninstalled"
     return 0

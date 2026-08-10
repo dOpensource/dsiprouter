@@ -4,37 +4,207 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json
+import os, time, random, subprocess, requests, csv, base64, codecs, re, socket, json, urllib3
 from contextlib import closing
 from datetime import datetime
 from flask import Blueprint, jsonify, request, send_file, g
-from sqlalchemy import exc as sql_exceptions, and_, or_
+from sqlalchemy import exc as sql_exceptions, and_, or_, bindparam
 from sqlalchemy.sql import text
 from werkzeug import exceptions as http_exceptions
 from werkzeug.utils import secure_filename
 from database import startSession, DummySession, Address, dSIPNotification, dSIPMultiDomainMapping, Gateways, \
     GatewayGroups, Subscribers, dSIPLeases, dSIPMaintModes, dSIPCallSettings, InboundMapping, dSIPCDRInfo, \
-    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment
+    dSIPCertificates, Dispatcher, dSIPDNIDEnrichment, getDsipSettingsTableAsDict, updateDsipSettingsTable
+from modules.numbers.db.dsip_number import dSIPNumber
 from shared import allowed_file, dictToStrFields, isCertValid, rowToDict, debugEndpoint, StatusCodes, \
-    strFieldsToDict, getRequestData, IO
+    strFieldsToDict, getRequestData, IO, objToDict, getAllowedSettings,updateDsipLocalSettingsFromDict, \
+    updateConfig
 from util.pyasync import daemonize
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from modules.api.api_functions import createApiResponse, showApiError, api_security
 from modules.api.kamailio.functions import reloadKamailio
-from util.networking import getExternalIP, hostToIP, safeUriToHost, safeStripPort
+from util.networking import getExternalIP, hostToIP, isValidIP, parseGenericUri, safeUriToHost, safeStripPort, check_host_type
 from util.notifications import sendEmail
 from util.security import AES_CTR, urandomChars, KeyCertPair
 from util.file_handling import change_owner
 from util import kamtls, letsencrypt
 from util.cron import addTaggedCronjob, updateTaggedCronjob, deleteTaggedCronjob
+from util.system import system_info
 from sysloginit import initSyslogLogger
 import settings
 
 api = Blueprint('api', __name__)
 
 
+def _sync_number_status_from_inbound_route(db, did, gwlist):
+    normalized_did = did.lstrip('+') if did else ''
+    if not normalized_did:
+        return
+
+    number = db.query(dSIPNumber).filter(
+        or_(
+            dSIPNumber.did == normalized_did,
+            dSIPNumber.did == '+' + normalized_did,
+        )
+    ).first()
+
+    if number is not None:
+        number.status = 'assigned' if gwlist else 'available'
+
+
 # TODO: we need to abstract out common code between gui and api
 
+@api.route("/api/v1/stats", methods=['GET'])
+@api_security
+def getStats():
+
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+    
+        data = {'components': [], 'alerts': [], 'charts': {}, 'topEndpointGroups': []}
+
+
+        db = startSession()
+
+        # Endpoint Group Chart
+
+        epgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.ENDPOINT.value)
+        ).all()
+
+        endpoint_groupids = [group.id for group in epgroups]
+
+        # DBQuery to get the number of calls by hour for endpoint groups
+        if len(endpoint_groupids) > 0:
+            stmt = text(
+                'select hour(call_start_time), count(*) '
+                'from cdrs '
+                'where call_start_time between date_sub(now(), interval 4 hour) and now() '
+                'and (src_gwgroupid in :group_ids '
+                'or dst_gwgroupid in :group_ids) '
+                'group by hour(call_start_time) '
+                'order by hour(call_start_time)'
+            ).bindparams(bindparam('group_ids', expanding=True))
+            results = db.execute(stmt, {'group_ids': endpoint_groupids}).all()
+        else:
+            results = []
+
+        if results is not None:
+            data['charts']['messagesOverTime'] = {'timeLabels': [], 'messages': []}
+            for row in results:
+                data['charts']['messagesOverTime']['timeLabels'].append(str(row[0]) + ":00")
+                data['charts']['messagesOverTime']['messages'].append(row[1])
+               
+        #Carrier Group Chart
+
+        epgroups = db.query(GatewayGroups).filter(
+            GatewayGroups.description.regexp_match(GatewayGroups.FILTER.CARRIER.value)
+        ).all()
+
+        carrier_groupids = [group.id for group in epgroups]
+
+        # DBQuery to get the number of calls by hour for carrier groups
+        if len(carrier_groupids) > 0:
+            stmt = text(
+                'select hour(call_start_time), count(*) '
+                'from cdrs '
+                'where call_start_time between date_sub(now(), interval 4 hour) and now() '
+                 'and (src_gwgroupid in :group_ids '
+                'or dst_gwgroupid in :group_ids)' 
+                'group by hour(call_start_time) '
+                'order by hour(call_start_time) '
+            ).bindparams(bindparam('group_ids', expanding=True))
+            results = db.execute(stmt, {'group_ids': carrier_groupids}).all()
+        else:
+            results = []
+
+        if results is not None:
+            data['charts']['carrierGroupMessages'] = {'timeLabels': [], 'messages': []}
+            for row in results:
+                data['charts']['carrierGroupMessages']['timeLabels'].append(str(row[0]) + ":00")
+                data['charts']['carrierGroupMessages']['messages'].append(row[1])
+
+
+       # Top Endpoint Groups by calls
+       # DBQuery to get the number of calls by hour for endpoint groups
+        if len(endpoint_groupids) > 0:
+            stmt = text(
+                'select src_gwgroupid, description, count(*) '
+                'from cdrs '
+                'join dr_gw_lists on cdrs.src_gwgroupid = dr_gw_lists.id '
+                'where call_start_time between date_sub(now(), interval 4 hour) and now() '
+                 'and (src_gwgroupid in :group_ids '
+                'or dst_gwgroupid in :group_ids) ' 
+                'group by src_gwgroupid '
+                'order by count(*) desc '
+            ).bindparams(bindparam('group_ids', expanding=True))
+            results = db.execute(stmt, {'group_ids': endpoint_groupids}).all()
+        else:
+            results = []
+
+        if results is not None:
+            data['topEndpointGroups'] = {'endpointgroups': []}
+            for row in results:
+                # Grab the name of the endpointgroup from the description field
+                name = strFieldsToDict(row[1])['name'] if 'name' in strFieldsToDict(row[1]) else ''
+                data['topEndpointGroups']['endpointgroups'].append({
+                    'id': row[0],
+                    'name': name,
+                    'calls': row[2]
+                })
+
+       
+       # Get System Version Info
+        data['components'] = system_info()['components']
+        data['alerts'] = system_info()['alerts']
+        
+
+        # Get Kamailio Stats
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "tm.stats", "id": 1}
+        try:
+            r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+            # Only using waiting stat for now, but we can easily add more if needed
+            data['queued_messages'] = r.json()['result']['waiting']
+        except requests.exceptions.RequestException as e:
+            data['queued_messages'] = '0'
+            pass
+      
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "dlg.stats_active", "id": 1}
+        try:
+            r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+            data['active_calls'] = r.json()['result']['all']
+        except requests.exceptions.RequestException as e:
+            data['active_calls'] = 0
+            pass
+        
+        # Get UAC Registration Info for both Endpoints and Carrier Groups
+        jsonrpc_payload = {"jsonrpc": "2.0", "method": "uac.reg_dump", "id": 1}
+        try:
+            r = requests.get('http://127.0.0.1:5060/api/kamailio', json=jsonrpc_payload)
+            if r.json()['result'] is not None:
+                registrations = r.json()['result']
+                num_of_reg_failures = 0
+                for reg in registrations:
+                    if ((reg['flags'] & StatusCodes.UAC_REG_SUCCEEDED)!= StatusCodes.UAC_REG_SUCCEEDED and \
+                                (reg['flags'] & StatusCodes.UAC_REG_INPROGRESS_WITH_AUTH) != StatusCodes.UAC_REG_INPROGRESS_WITH_AUTH and \
+                                (reg['flags'] & StatusCodes.UAC_REG_INPROGRESS) != StatusCodes.UAC_REG_INPROGRESS):
+                        num_of_reg_failures += 1
+
+                data['registration_failures'] = num_of_reg_failures
+            else:
+                data['registration_failures'] = 0
+        except requests.exceptions.RequestException as e:
+            data['registration_failures'] = 0
+    
+
+        return createApiResponse(
+            msg='Successfully retrieved kamailio stats',
+            data=data,
+        )
+
+    except Exception as ex:
+        return showApiError(ex)
 
 @api.route("/api/v1/kamailio/stats", methods=['GET'])
 @api_security
@@ -432,6 +602,7 @@ def handleInboundMapping():
                 raise http_exceptions.BadRequest("Duplicate DID's are not allowed")
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             db.add(IMap)
+            _sync_number_status_from_inbound_route(db, prefix, gwlist)
 
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
@@ -507,6 +678,21 @@ def handleInboundMapping():
                 else:
                     raise http_exceptions.BadRequest('One of the following is required: {ruleid, or did}')
 
+            route_row = None
+            if rule_id is not None:
+                route_row = db.query(InboundMapping).filter(
+                    InboundMapping.groupid == settings.FLT_INBOUND,
+                    InboundMapping.ruleid == rule_id
+                ).first()
+            elif did_pattern is not None:
+                route_row = db.query(InboundMapping).filter(
+                    InboundMapping.groupid == settings.FLT_INBOUND,
+                    InboundMapping.prefix == did_pattern
+                ).first()
+
+            if route_row is not None:
+                _sync_number_status_from_inbound_route(db, route_row.prefix, route_row.gwlist)
+
             db.commit()
             getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
             payload['kamreload'] = getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required']
@@ -526,9 +712,12 @@ def handleInboundMapping():
             if rule_id is not None:
                 rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
                     InboundMapping.ruleid == rule_id)
+                rule_row = rule.first()
                 if rule.delete(synchronize_session=False) == 0:
                     payload['msg'] = 'No Rules Found'
                     payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
+                elif rule_row is not None:
+                    _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
 
             # delete single rule by did
             else:
@@ -536,9 +725,12 @@ def handleInboundMapping():
                 if did_pattern is not None:
                     rule = db.query(InboundMapping).filter(InboundMapping.groupid == settings.FLT_INBOUND).filter(
                         InboundMapping.prefix == did_pattern)
+                    rule_row = rule.first()
                     if rule.delete(synchronize_session=False) == 0:
                         payload['msg'] = 'No Rules Found'
                         payload['status_code'] = StatusCodes.HTTP_NOT_FOUND
+                    elif rule_row is not None:
+                        _sync_number_status_from_inbound_route(db, rule_row.prefix, '')
 
                 # no other options
                 else:
@@ -791,6 +983,7 @@ def getEndpointGroup(gwgroupid):
         else:
             auth['type'] = "ip"
         gwgroup_data['auth'] = auth
+        gwgroup_data['did_override'] = ''
 
         gwgroup_data['endpoints'] = []
         endpoint_weights = {}
@@ -828,6 +1021,7 @@ def getEndpointGroup(gwgroupid):
                 'maintmode': ''
             })
             gwgroup_data['strip'] = endpoint.strip
+            gwgroup_data['did_override'] = attrs_dict['did_override']
             gwgroup_data['prefix'] = endpoint.pri_prefix
 
         # Notifications
@@ -996,7 +1190,7 @@ def updateEndpointGroups(gwgroupid=None):
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {"gwgroupid": int, "name": str, "call_settings": dict, "auth": dict,
-                               "strip": int, "prefix": str, "notifications": dict, "cdr": dict,
+                               "strip": int, "did_override": str, "prefix": str, "notifications": dict, "cdr": dict,
                                "fusionpbx": dict, "endpoints": list}
 
     # ensure requred args are provided
@@ -1066,6 +1260,7 @@ def updateEndpointGroups(gwgroupid=None):
 
         # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
+        did_override = request_payload['did_override'] if 'did_override' in request_payload else ""
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
@@ -1179,11 +1374,11 @@ def updateEndpointGroups(gwgroupid=None):
                     db.add(Addr)
                     db.flush()
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
-                        signalling=signalling, media=media)
+                        signalling=signalling, did_override=did_override, media=media)
                 else:
                     # we know this a new endpoint so we don't have to check for any address records here
                     Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
-                        signalling=signalling, media=media)
+                        signalling=signalling, did_override=did_override, media=media)
 
                 db.add(Gateway)
                 db.flush()
@@ -1251,11 +1446,11 @@ def updateEndpointGroups(gwgroupid=None):
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
-                    signalling=signalling, media=media)
+                    signalling=signalling, did_override=did_override, media=media)
             else:
                 # we know this a new endpoint so we don't have to check for any address records here
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
-                    signalling=signalling, media=media)
+                    signalling=signalling, did_override=did_override, media=media)
 
             db.add(Gateway)
             db.flush()
@@ -1294,6 +1489,7 @@ def updateEndpointGroups(gwgroupid=None):
                 port = int(tmp[1]) if len(tmp) > 1 else 5060
             signalling = endpoint['signalling'] if 'signalling' in endpoint else endpoint_attrs['signalling']
             media = endpoint['media'] if 'media' in endpoint else endpoint_attrs['media']
+            endpoint_did_override = did_override if 'did_override' in request_payload else endpoint_attrs['did_override']
             name = endpoint['description'] if 'description' in endpoint else endpoint_fields['name']
             endpoint_fields['name'] = name
 
@@ -1407,7 +1603,13 @@ def updateEndpointGroups(gwgroupid=None):
             ep_gateway.address = sip_addr
             ep_gateway.strip = strip
             ep_gateway.pri_prefix = prefix
-            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling, media=media)
+            # Check if the Endpoint Group was created by the  MSTeams Domain Logic
+            if "pstnhub.microsoft.com" in ep_gateway.address:
+                msteams_domain = gwgroup_desc_dict['name']
+            else:
+                msteams_domain = ""
+            ep_gateway.attrs = Gateways.buildAttrs(gwid=gwid, type=current_endpoint['type'], signalling=signalling,
+                did_override=endpoint_did_override, media=media, msteams_domain=msteams_domain)
 
             gwlist.append(gwid)
 
@@ -1645,7 +1847,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
     # use a whitelist to avoid possible buffer overflow vulns or crashes
     VALID_REQUEST_DATA_ARGS = {
-        "name": str, "call_settings": dict, "auth": dict, "strip": int, "prefix": str,
+        "name": str, "call_settings": dict, "auth": dict, "strip": int, "did_override": str, "prefix": str,
         "notifications": dict, "cdr": dict, "fusionpbx": dict, "endpoints": list
     }
 
@@ -1696,6 +1898,7 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
 
         # runtime defaults for this route
         strip = request_payload['strip'] if 'strip' in request_payload else 0
+        did_override = request_payload['did_override'] if 'did_override' in request_payload else ""
         prefix = request_payload['prefix'] if 'prefix' in request_payload else ""
         authtype = request_payload['auth']['type'] \
             if 'auth' in request_payload and 'type' in request_payload['auth'] else ""
@@ -1803,10 +2006,10 @@ def addEndpointGroups(data=None, endpointGroupType=None, domain=None):
                 db.add(Addr)
                 db.flush()
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid, addr_id=Addr.id,
-                    msteams_domain=msteams_domain, signalling=signalling, media=media)
+                    msteams_domain=msteams_domain, signalling=signalling, did_override=did_override, media=media)
             else:
                 Gateway = Gateways(name, sip_addr, strip, prefix, settings.FLT_PBX, gwgroup=gwgroupid,
-                    msteams_domain=msteams_domain, signalling=signalling, media=media)
+                    msteams_domain=msteams_domain, signalling=signalling, did_override=did_override, media=media)
 
             db.add(Gateway)
             db.flush()
@@ -2561,8 +2764,9 @@ def generateCDRS(
 
     db = DummySession()
 
-    # defaults.. keep data returned separate from returned metadata
-    response_payload = {'error': None, 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
+    # we only need the response payload if called from a flask session
+    if not run_standalone:
+        response_payload = {'error': None, 'msg': '', 'kamreload': getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'], 'data': []}
     # define here so we can cleanup in finally statement
     csv_file = ''
 
@@ -2592,11 +2796,11 @@ def generateCDRS(
         if gwgroup is not None:
             gwgroupName = strFieldsToDict(gwgroup.description)['name']
         else:
-            response_payload['status'] = "0"
-            response_payload['message'] = "Endpont group doesn't exist"
             if run_standalone:
                 IO.logerr(f'Endpont group {gwgroupid} does not exist')
                 return None
+            response_payload['status'] = "0"
+            response_payload['message'] = "Endpont group doesn't exist"
             return jsonify(response_payload)
 
         if len(cdrfilter) > 0:
@@ -2715,10 +2919,11 @@ def generateCDRS(
             data['call_id'] = row[12]
             cdrs.append(data)
 
-        response_payload['status'] = "200"
-        response_payload['data'] = cdrs
-        response_payload['total_rows'] = total_rows
-        response_payload['filtered_rows'] = filtered_rows
+        if not run_standalone:
+            response_payload['status'] = "200"
+            response_payload['data'] = cdrs
+            response_payload['total_rows'] = total_rows
+            response_payload['filtered_rows'] = filtered_rows
 
         # Convert array of dicts to csv format
         if report_type == "csv":
@@ -2746,13 +2951,13 @@ def generateCDRS(
                     data['attachments'] = [csv_file]
                     data['recipients'] = cdr_info.email.split(',')
                     sendEmail(**data)
+                    if run_standalone:
+                        IO.loginfo(f'Sent CDR report for endpoint group {gwgroupid}')
+                        return None
                     # remove CDRs from the payload that is being returned
                     response_payload.pop('data')
                     response_payload['format'] = 'csv'
                     response_payload['type'] = 'email'
-                    if run_standalone:
-                        IO.loginfo(f'Sent CDR report for endpoint group {gwgroupid}')
-                        return None
                     return jsonify(response_payload)
 
             if run_standalone:
@@ -2768,6 +2973,8 @@ def generateCDRS(
     except Exception as ex:
         db.rollback()
         db.flush()
+        if run_standalone:
+            raise
         return showApiError(ex)
     finally:
         db.close()
@@ -2988,6 +3195,42 @@ def generatePassword():
             msg='Successfully generated password',
             data=[urandomChars(DEF_PASSWORD_LEN)],
         )
+    except Exception as ex:
+        return showApiError(ex)
+
+@api.route("/api/v1/sys/isvalidhost/<host>", methods=['GET'])
+@api_security
+def isValidHost(host):
+    """
+    Check if the given host is valid
+    """ 
+
+    result = "Host validation check completed"
+
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        host_type = check_host_type(host)
+
+        if host_type == 'ip':
+            is_valid = isValidIP(host)
+        elif host_type == 'hostname':
+            try:
+                is_valid = hostToIP(host)
+                if (is_valid != ""):
+                    is_valid = True
+            except Exception as ex:
+                is_valid = False
+                result = ex.args[0] if len(ex.args) > 0 else "Unknown error"
+        else:
+            is_valid = False
+
+        return createApiResponse(
+            msg=result,
+            data={"status": is_valid},
+        )
+
     except Exception as ex:
         return showApiError(ex)
 
@@ -3359,11 +3602,8 @@ def uploadCertificates(domain=None):
             newfile.write(pkey_bytes)
         with open(cert_file, 'wb') as newfile:
             newfile.write(cert_bytes)
-
-        # Change owner to dsiprouter:kamailio so that Kamailio can load the configurations
-        change_owner(cert_domain_dir, "dsiprouter", "kamailio")
-        change_owner(key_file, "dsiprouter", "kamailio")
-        change_owner(cert_file, "dsiprouter", "kamailio")
+        os.chmod(key_file, 0o640)
+        os.chmod(cert_file, 0o640)
 
         # Convert Certificate and key to base64 so that they can be stored in the database
         key_base64 = base64.b64encode(pkey_bytes)
@@ -3393,3 +3633,112 @@ def uploadCertificates(domain=None):
         return showApiError(ex)
     finally:
         db.close()
+
+
+@api.route("/api/v1/settings", methods=['GET'])
+@api_security
+def getSettings():
+    """Get all current settings from the database"""
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        if settings.LOAD_SETTINGS_FROM == 'file':
+            settings_data = objToDict(settings)
+        else:
+            # Get DB-backed settings
+            settings_data = getDsipSettingsTableAsDict(settings.DSIP_ID)
+        
+        clean_settings_data = getAllowedSettings(settings_data)  # ensure allowed settings are loaded  
+    
+        return createApiResponse(
+            msg='Settings retrieved',
+            data=[clean_settings_data] if clean_settings_data else [],
+        )
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@api.route("/api/v1/settings", methods=['POST'])
+@api_security
+def addSetting():
+    """Add or create a new setting"""
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        payload = getRequestData()
+        key = payload.get('key', '').strip()
+        value = payload.get('value', '')
+
+        if not key:
+            raise http_exceptions.BadRequest('key is required')
+
+        # Validate key is a valid Python identifier
+        if not key.replace('_', '').isalnum() or (not key[0].isalpha() and key[0] != '_'):
+            raise http_exceptions.BadRequest('Invalid key format; must be a valid Python identifier')
+
+        # Update settings in the database
+        update_dict = {key: value}
+
+        # Update the settings.py file and reload in memory
+        # Todo: add the ability to add new settings in the settings.py and add it to the database
+        updateConfig(settings,update_dict, True)
+        
+        # Reload settings from DB
+        updated_settings = getAllowedSettings(getDsipSettingsTableAsDict(settings.DSIP_ID))
+
+        return createApiResponse(
+            msg='Setting added',
+            data=[updated_settings] if updated_settings else [update_dict],
+        )
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@api.route("/api/v1/settings/<key>", methods=['PUT'])
+@api_security
+def updateSetting(key):
+    """Update an existing setting"""
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        payload = getRequestData()
+        value = payload.get('value', '')
+        
+        update_dict = {key: value}
+
+        # Update the settings.py file and reload in memory
+        updateConfig(settings,update_dict, True)
+        
+        # Reload settings from DB
+        clean_settings_data = getAllowedSettings(getDsipSettingsTableAsDict(settings.DSIP_ID))
+
+        return createApiResponse(
+            msg='Setting updated',
+            data=[clean_settings_data] if clean_settings_data else [update_dict],
+        )
+    except Exception as ex:
+        return showApiError(ex)
+
+
+@api.route("/api/v1/settings/<key>", methods=['DELETE'])
+@api_security
+def deleteSetting(key):
+    """Delete a setting (set to empty/None)"""
+    try:
+        if settings.DEBUG:
+            debugEndpoint()
+
+        # Delete the setting by setting it to empty
+        update_dict = {key: ''}
+        # Update the settings.py file and reload in memory
+        updateConfig(settings,update_dict, True)
+
+        return createApiResponse(
+            msg='Setting deleted',
+            data=[{'key': key, 'status': 'deleted'}],
+        )
+    except Exception as ex:
+        return showApiError(ex)

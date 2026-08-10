@@ -33,7 +33,9 @@ def licenseDictToStateDict(keystore):
     return {lc.license_key: lc for lc in quickLoadLicenses(keystore)}
 
 def syncLicensesToGlobalState():
-    getSharedMemoryDict(STATE_SHMEM_NAME)['dsip_license_store'] = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
+    state = getSharedMemoryDict(STATE_SHMEM_NAME)
+    state['dsip_license_store'] = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
+    state['license_server_unreachable'] = False
 
 def getLicenseStatusFromStateDict(license_state, tag):
     """

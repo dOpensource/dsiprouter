@@ -223,26 +223,6 @@ def reloadkam():
 def update_nginx(sources):
     print("Updating Nginx")
 
-#    # Connect to docker
-#    client = docker.from_env()
-#    if client is not None:
-#        print("Got handle to docker")
-#
-#    try:
-#        # If there isn't any FusionPBX sources then just shutdown the container
-#        if len(sources) < 1:
-#            containers = client.containers.list()
-#            for container in containers:
-#                if container.name == "dsiprouter-nginx":
-#                    # Stop the container
-#                    container.stop()
-#                    container.remove(force=True)
-#                    print("Stopped nginx container")
-#            return
-#    except Exception as e:
-#        os.remove(FUSIONPBX_SYNC_LOCK)
-#        print(e)
-
     # Create the Nginx file
     try:
         serverList = ""
@@ -270,50 +250,6 @@ def update_nginx(sources):
     except Exception as e:
         os.remove(FUSIONPBX_SYNC_LOCK)
         print(e)
-
-#    Depricating the use of docker containers - logic will be removed during the next release
-#    # Check if dsiprouter-nginx is running. If so, reload nginx
-#
-#    containers = client.containers.list()
-#    print("past container list")
-#    for container in containers:
-#        if container.name == "dsiprouter-nginx":
-#            # Execute a command to reload nginx
-#            container.exec_run("nginx -s reload")
-#            print("Reloaded nginx")
-#            return
-#
-#    # Start the container if one is not running
-#    try:
-#        print("trying to create a container")
-#        host_volume_path = script_dir + "/dsiprouter.nginx"
-#        html_volume_path = script_dir + "/html"
-#        cert_volume_path = script_dir + "/certs"
-#        # host_volume_path = script_dir
-#        print(host_volume_path)
-#        # remove the container with a name of dsiprouter-nginx to avoid conflicts if it already exists
-#        containerList = client.containers.list('dsiprouter-nginx')
-#        containerFound = False
-#        for c in containerList:
-#            if c.name == "dsiprouter-nginx":
-#                containerFound = True
-#        if containerFound:
-#            print("dsiprouter-nginx found...about to remove it and recreate")
-#            container = client.containers.get('dsiprouter-nginx')
-#            container.remove()
-#        client.containers.run(image='nginx:latest',
-#                              name="dsiprouter-nginx",
-#                              ports={'80/tcp': '80/tcp', '443/tcp': '443/tcp'},
-#                              volumes={
-#                                  host_volume_path: {'bind': '/etc/nginx/conf.d/default.conf', 'mode': 'rw'},
-#                                  html_volume_path: {'bind': '/etc/nginx/html', 'mode': 'rw'},
-#                                  cert_volume_path: {'bind': '/etc/ssl/certs', 'mode': 'rw'}
-#                              },
-#                              detach=True)
-#        print("created a container")
-#    except Exception as e:
-#        os.remove(FUSIONPBX_SYNC_LOCK)
-#        print(str(e))
 
 
 def sync_needed(source, dest):

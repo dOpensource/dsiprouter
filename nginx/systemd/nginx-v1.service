@@ -4,23 +4,30 @@
 [Unit]
 Description=A high performance web server and a reverse proxy server
 Documentation=man:nginx(8)
+Requires=
 Requires=basic.target network.target
+Wants=
 Wants=nginx-watcher.path
+After=
 After=network.target network-online.target basic.target nss-lookup.target remote-fs.target
 DefaultDependencies=no
 
 [Service]
 Type=forking
-Environment='RUNDIR=/run/nginx'
 PIDFile=/run/nginx/nginx.pid
+ExecStartPre=
 ExecStartPre=/usr/bin/dsiprouter chown -certs -nginx
 ExecStartPre=/usr/sbin/nginx -t
+ExecStart=
 ExecStart=/usr/sbin/nginx
+ExecReload=
 ExecReload=/usr/sbin/nginx -s reload
+ExecStop=
 ExecStop=/bin/kill -s SIGQUIT ${MAINPID}
 TimeoutStopSec=3
 KillMode=mixed
 Restart=on-failure
 
 [Install]
+WantedBy=
 WantedBy=multi-user.target

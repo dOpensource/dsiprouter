@@ -4,7 +4,8 @@ import sys
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
-import base64, bson, inspect, os
+import base64, bson, inspect, os, glob
+import importlib.util
 from collections import OrderedDict
 from enum import Enum
 from datetime import datetime, timedelta
@@ -53,7 +54,7 @@ class Gateways(object):
     gwid = Column(UnsignedInt, primary_key=True, autoincrement=True, nullable=False)
 
     def __init__(self, name, address, strip, prefix, type=0, gwgroup=None, addr_id=None,
-                 msteams_domain='', signalling='proxy', media='proxy'):
+                 msteams_domain='', signalling='proxy', did_override='', media='proxy'):
         description = {"name": name}
         if gwgroup is not None:
             description["gwgroup"] = str(gwgroup)
@@ -64,13 +65,14 @@ class Gateways(object):
         self.address = address
         self.strip = strip
         self.pri_prefix = prefix
-        self.attrs = Gateways.buildAttrs(0, type, msteams_domain, signalling, media)
+        self.did_override = did_override
+        self.attrs = Gateways.buildAttrs(0, type, msteams_domain, signalling, media, did_override)
         self.description = dictToStrFields(description)
 
     @staticmethod
-    def buildAttrs(gwid=0, type=0, msteams_domain='', signalling='proxy', media='proxy'):
+    def buildAttrs(gwid=0, type=0, msteams_domain='', signalling='proxy', media='proxy', did_override=''):
         # gwid in dr_attrs is updated via trigger before insert/update
-        return ','.join([str(gwid), str(type), msteams_domain, signalling, media])
+        return ','.join([str(gwid), str(type), msteams_domain, signalling, media, did_override])
 
     def attrsToDict(self):
         attrs_dict = {}
@@ -91,10 +93,15 @@ class Gateways(object):
             attrs_dict['signalling'] = attrs_list[3]
         except IndexError:
             attrs_dict['signalling'] = 'proxy'
-        try:
+        if len(attrs_list) > 5:
             attrs_dict['media'] = attrs_list[4]
-        except IndexError:
-            attrs_dict['media'] = 'proxy'
+            attrs_dict['did_override'] = attrs_list[5]
+        else:
+            try:
+                attrs_dict['media'] = attrs_list[4]
+            except IndexError:
+                attrs_dict['media'] = 'proxy'
+            attrs_dict['did_override'] = ''
         return attrs_dict
 
 
@@ -652,11 +659,10 @@ def createValidEngine(uri_list):
     :raise:             SQLAlchemyError if all connections fail
     """
 
-    # globals from the top-level module
-    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+    module_globals = globals()
 
-    if DB_ENGINE_NAME in caller_globals:
-        return caller_globals[DB_ENGINE_NAME]
+    if DB_ENGINE_NAME in module_globals:
+        return module_globals[DB_ENGINE_NAME]
 
     errors = []
 
@@ -692,11 +698,10 @@ def startSession():
     This method uses a singleton pattern to grab the global session loader and start a session
     """
 
-    # globals from the top-level module
-    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
+    module_globals = globals()
 
-    if SESSION_LOADER_NAME in caller_globals:
-        return caller_globals[SESSION_LOADER_NAME]()
+    if SESSION_LOADER_NAME in module_globals:
+        return module_globals[SESSION_LOADER_NAME]()
 
     db_engine, session_loader = createSessionObjects()
     return session_loader()
@@ -741,6 +746,38 @@ def createSessionObjects():
     dsip_user = Table('dsip_user', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
     # TODO: this is temporary and will be refactored
     dsip_gwgroup2lb = Table('dsip_gwgroup2lb', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+   
+
+    # Load Database Tables for Dynamic Modules - Module v2 Architecture
+    for custom_module in glob.glob(f"{settings.DSIP_PROJECT_DIR}/gui/modules/*"):
+        if os.path.exists(f"{custom_module}/__init__.py"):
+            module_path = f"modules." + os.path.basename(custom_module)
+            try:
+                print(f"Loading module: {module_path}")
+                module = importlib.import_module(module_path)
+                # Only v2 have an init_module function
+                if hasattr(module, 'init_db'):
+                    module.init_db(mapper, db_engine)
+                    print(f"Module loaded: {module.description}")
+            except Exception as e:
+                print(f"Failed to init db tables for module: {module_path} - {str(e)}")
+
+
+
+    # try to import the dSIPAgent model defined in modules; keep it optional
+    # to avoid hard import failures in environments with different PYTHONPATHs
+    #try:
+    #    from modules.agents.db.dsip_agent import dSIPAgent
+    #    dsip_agent = Table('dsip_agent', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    #except Exception:
+    #    dSIPAgent = None
+
+    # try to import dSIPNumber model for `dsip_numbers` table
+    #try:
+    #    from modules.numbers.db.dsip_number import dSIPNumber
+    #    dsip_numbers = Table('dsip_numbers', mapper.metadata, autoload_replace=True, autoload_with=db_engine)
+    #except Exception:
+    #    dSIPNumber = None
 
     # dr_gw_lists_alias = select([
     #     dr_gw_lists.c.id.label("drlist_id"),
@@ -775,7 +812,13 @@ def createSessionObjects():
     mapper.map_imperatively(dSIPCertificates, dsip_certificates)
     mapper.map_imperatively(dSIPDNIDEnrichment, dsip_dnid_enrichment)
     mapper.map_imperatively(dSIPUser, dsip_user)
-    # TODO: this is temporary and will be refactored
+    ## map the dSIPAgent model if it was successfully imported
+    #if dSIPAgent is not None:
+    #    mapper.map_imperatively(dSIPAgent, dsip_agent)
+    # map the dSIPNumber model if it was successfully imported
+    #if dsip_numbers is not None:
+    #    mapper.map_imperatively(dSIPNumber, dsip_numbers)
+    ## TODO: this is temporary and will be refactored
     mapper.map_imperatively(DsipGwgroup2LB, dsip_gwgroup2lb)
 
     # mapper.map_imperatively(GatewayGroups, gw_join, properties={
@@ -785,13 +828,14 @@ def createSessionObjects():
 
     session_loader = scoped_session(sessionmaker(bind=db_engine))
 
-    # load them into the top level module global namespace
-    caller_globals = dict(inspect.getmembers(inspect.stack()[-1][0]))["f_globals"]
-    caller_globals[DB_ENGINE_NAME] = db_engine
-    caller_globals[SESSION_LOADER_NAME] = session_loader
+    # Cache them in this module's global namespace so all request handlers
+    # share one engine/session-loader and don't remap ORM classes repeatedly.
+    module_globals = globals()
+    module_globals[DB_ENGINE_NAME] = db_engine
+    module_globals[SESSION_LOADER_NAME] = session_loader
 
     # return references for the calling function
-    return caller_globals[DB_ENGINE_NAME], caller_globals[SESSION_LOADER_NAME]
+    return module_globals[DB_ENGINE_NAME], module_globals[SESSION_LOADER_NAME]
 
 
 # TODO: change to the global define pattern instead of instantiating dummy objects
@@ -899,7 +943,7 @@ def settingsToTableFormat(settings, updates=None):
     # translate db specific fields
     if isinstance(data['KAM_DB_HOST'], (list, tuple)):
         data['KAM_DB_HOST'] = ','.join(data['KAM_DB_HOST'])
-    data['DSIP_LICENSE_STORE'] = base64.b64encode(bson.dumps(data['DSIP_LICENSE_STORE']))
+    #data['DSIP_LICENSE_STORE'] = base64.b64encode(bson.dumps(data['DSIP_LICENSE_STORE']))
 
     # order matters here, as this is used to update table settings as well
     return DsipSettings([
@@ -991,7 +1035,7 @@ def settingsTableToDict(table_values, updates=None):
 
     if ',' in table_values['KAM_DB_HOST']:
         table_values['KAM_DB_HOST'] = table_values['KAM_DB_HOST'].split(',')
-    table_values['DSIP_LICENSE_STORE'] = bson.loads(base64.b64decode(table_values['DSIP_LICENSE_STORE']))
+    #table_values['DSIP_LICENSE_STORE'] = bson.loads(base64.b64decode(table_values['DSIP_LICENSE_STORE']))
     return table_values
 
 

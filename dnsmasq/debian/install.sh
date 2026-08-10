@@ -160,8 +160,10 @@ function install() {
     systemctl unmask dnsmasq.service
 
     # configure dnsmasq systemd service
-    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /lib/systemd/system/dnsmasq.service
-    chmod 644 /lib/systemd/system/dnsmasq.service
+    mkdir -p /etc/systemd/system/dnsmasq.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/dnsmasq/systemd/dnsmasq-v1.service /etc/systemd/system/dnsmasq.service.d/override.conf
+    chmod 755 /etc/systemd/system/dnsmasq.service.d/
+    chmod 644 /etc/systemd/system/dnsmasq.service.d/override.conf
     systemctl daemon-reload
     systemctl enable dnsmasq
 
@@ -198,6 +200,9 @@ function uninstall() {
 
     # uninstall packages
     apt-get remove -y --purge dnsmasq
+
+    # remove systemd service configs
+    rm -rf /etc/systemd/system/dnsmasq.service.d/
 
     # remove network manager config
     rm -f /etc/NetworkManager/conf.d/99-dsiprouter.conf

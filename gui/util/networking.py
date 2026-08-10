@@ -1,5 +1,6 @@
 import socket, binascii, requests, re
 import requests.packages.urllib3.util.connection as urllib3_conn
+import ipaddress
 from util.pyasync import mtexec
 
 # constants
@@ -59,6 +60,16 @@ def isValidIP(address, ip_ver=''):
         if not ipv4Test(address) and not ipv6Test(address):
             return False
         return True
+
+
+def check_host_type(host_string):
+    try:
+        # Check if it's a valid IPv4 or IPv6 address
+        ipaddress.ip_address(host_string)
+        return "ip"
+    except ValueError:
+        # If ValueError is thrown, it's not a valid IP string
+        return "hostname"
 
 
 def getInternalIP(ip_ver=''):

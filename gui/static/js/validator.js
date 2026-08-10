@@ -67,8 +67,8 @@
       minlength: 'Not long enough'
     },
     feedback: {
-      success: 'glyphicon-ok',
-      error: 'glyphicon-remove'
+      success: 'ti ti-check',
+      error: 'ti ti-x'
     }
   }
 
@@ -231,7 +231,7 @@
     var method = this.options.html ? 'html' : 'text'
     var errors = $el.data('bs.validator.errors')
     var $group = $el.closest('.form-group')
-    var $block = $group.find('.help-block.with-errors')
+    var $block = $group.find('.form-text.with-errors')
     var $feedback = $group.find('.form-control-feedback')
 
     if (!errors.length) return
@@ -252,7 +252,7 @@
 
   Validator.prototype.clearErrors = function ($el) {
     var $group = $el.closest('.form-group')
-    var $block = $group.find('.help-block.with-errors')
+    var $block = $group.find('.form-text.with-errors')
     var $feedback = $group.find('.form-control-feedback')
 
     $block.html($block.data('bs.validator.originalContent'))
@@ -313,7 +313,7 @@
         window.clearTimeout(timeout) && $this.removeData('bs.validator.timeout')
       })
 
-    this.$element.find('.help-block.with-errors')
+    this.$element.find('.form-text.with-errors')
       .each(function () {
         var $this = $(this)
         var originalContent = $this.data('bs.validator.originalContent')

@@ -47,13 +47,15 @@ function install() {
         ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
 
     # configure nginx systemd service
+    mkdir -p /etc/systemd/system/nginx.service.d/
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-stop.sh /usr/sbin/nginx-stop
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v1.service /lib/systemd/system/nginx.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v1.service /etc/systemd/system/nginx.service.d/override.conf
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher-v1.service /lib/systemd/system/nginx-watcher.service
     perl -p \
         -e "s%PathChanged\=.*%PathChanged=${DSIP_CERTS_DIR}/%;" \
         ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.path >/lib/systemd/system/nginx-watcher.path
-    chmod 644 /lib/systemd/system/nginx.service
+    chmod 755 /etc/systemd/system/nginx.service.d/
+    chmod 644 /etc/systemd/system/nginx.service.d/override.conf
     chmod 644 /lib/systemd/system/nginx-watcher.service
     chmod 644 /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload
@@ -71,7 +73,7 @@ function uninstall() {
 
     # remove nginx systemd service
     rm -f /usr/sbin/nginx-stop
-    rm -f /lib/systemd/system/nginx.service
+    rm -rf /etc/systemd/system/nginx.service.d/
     rm -f /lib/systemd/system/nginx-watcher.service
     rm -f /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload

@@ -31,6 +31,7 @@ class WoocommerceLicense(object):
         "baseurl": "https://dopensource.com/wp-json/lmfwc/v2/licenses/",
         "key": "ck_068f510a518ff5ecf1cbdcbc7db7f9bac2331613",
         "secret": "cs_5ae2f3decfa59f427a59b41f2e41459d18023dd7",
+        "timeout": 5
     }
     # constant salt used for equality checks
     # should not be used for generating a hash that is stored
@@ -164,7 +165,8 @@ class WoocommerceLicense(object):
             auth=(
                 WoocommerceLicense.SERVER['key'],
                 WoocommerceLicense.SERVER['secret']
-            )
+            ),
+            timeout=WoocommerceLicense.SERVER['timeout']
         )
         res.raise_for_status()
         r_json = res.json()

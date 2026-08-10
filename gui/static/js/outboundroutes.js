@@ -1,9 +1,13 @@
 ;(function(window, document) {
   'use strict';
 
+  // globals for this script
+  var routes_table = null;
+
   $(document).ready(function () {
     /* data tables init */
-    $('#outboundmapping').DataTable({
+    routes_table = $('#outboundmapping').DataTable({
+      "autoWidth": false,
       "columnDefs": [
         {"orderable": true, "targets": [1, 3, 4, 5, 6, 7, 8, 9]},
         {"orderable": false, "targets": [0, 2, 10, 11]},
@@ -24,7 +28,7 @@
     });
 
     /* listeners */
-    $('#outboundmapping').on('click', '#open-Update', function () {
+    routes_table.table().on('click', '#open-Update', function () {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('outboundmapping');
 
@@ -64,7 +68,7 @@
       modal_body.find("select.routeid").val(routeid);
     });
 
-    $('#outboundmapping').on('click','#open-Delete', function () {
+    routes_table.table().on('click','#open-Delete', function () {
       var row_index = $(this).parent().parent().parent().index() + 1;
       var c = document.getElementById('outboundmapping');
       var ruleid = $(c).find('tr:eq(' + row_index + ') td:eq(1)').text();

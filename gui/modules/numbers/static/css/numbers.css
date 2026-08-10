@@ -1,0 +1,34 @@
+.optional-group {
+    position: relative;
+    /* Adds a light gray border around the group */
+    border: 1px solid #ccc;
+    /* Adds space between the border and the content inside */
+    padding: 15px;
+    /* Adds space between this group and other elements on the page */
+    margin-bottom: 20px;
+    /* Optional: Rounds the corners of the box */
+    border-radius: 5px;
+    /* Optional: Makes sure padding/border is included in element's total width/height */
+    box-sizing: border-box;
+}
+
+.optional-group::after {
+  content: "Optional";
+  position: absolute;
+  top: -10px;
+  right: 15px;
+  background: white; /* Matches form background to 'cut' the border */
+  padding: 0 5px;
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Styles the input within the optional group if needed */
+.optional-group input {
+    /* Ensures inputs fill the available width within the new padding */
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    box-sizing: border-box;
+}

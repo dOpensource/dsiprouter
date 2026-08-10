@@ -77,6 +77,9 @@ EOF
         return 1
     fi
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     # get info about the kamailio install for later use in script
     KAM_MODULES_DIR=$(find /usr/lib{32,64,}/{i386*/*,i386*/kamailio/*,x86_64*/*,x86_64*/kamailio/*,*} -name drouting.so -printf '%h' -quit 2>/dev/null)
 
@@ -141,8 +144,10 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
-    chmod 644 /lib/systemd/system/kamailio.service
+    mkdir -p /etc/systemd/system/kamailio.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service.d/override.conf
+    chmod 755 /etc/systemd/system/kamailio.service.d/
+    chmod 644 /etc/systemd/system/kamailio.service.d/override.conf
     systemctl daemon-reload
     systemctl enable kamailio
 
@@ -239,6 +244,9 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --reload
+
+    # Remove systemd service files
+    rm -rf /etc/systemd/system/kamailio.service.d/
 
     # Remove kamailio Logging
     rm -f /etc/rsyslog.d/kamailio.conf

@@ -16,75 +16,113 @@
     {% endif %}
   </div>
 
-  <div class="content-section"> <!-- begin placeholders -->
-    <div class="col-xs-4 col-sm-4 placeholder">
-      <div class="dashboard-metric-label">Active SIP Messages</div>
-      <div id="dashboard_current_calls" class="dashboard-metric"></div>
+  <div class="dashboard-container">
+    <!-- Metric Cards Row -->
+    <div class="row">
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-sip">☎</div>
+          <div class="metric-label">Active SIP Calls</div>
+          <div class="metric-value" id="active-calls">0</div>
+          <div class="metric-subtitle">Currently Active</div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-queue">⏳</div>
+          <div class="metric-label">Queued SIP Messages</div>
+          <div class="metric-value" id="queued-messages">0</div>
+          <div class="metric-subtitle">In Queue</div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-cps">📊</div>
+          <div class="metric-label">Calls Per Second</div>
+          <div class="metric-value" id="cps-value">0</div>
+          <div class="metric-subtitle">Calls Per Second</div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon metric-icon-fail">⚠</div>
+          <div class="metric-label">Registration Failures</div>
+          <div class="metric-value" id="reg-failures">0</div>
+          <div class="metric-subtitle">Reg Failures</div>
+        </div>
+      </div>
     </div>
-    <div class="col-xs-4 col-sm-4 placeholder">
-      <div class="dashboard-metric-label">SIP Messages in Queue</div>
-      <div id="dashboard_calls_inqueue" class="dashboard-metric"></div>
-    </div>
-    <div class="col-xs-4 col-sm-4 placeholder">
-      <div class="dashboard-metric-label">Total SIP Messages</div>
-      <div id="dashboard_total_calls_processed" class="dashboard-metric"></div>
-    </div>
-  </div> <!-- end placeholders -->
 
-  <div class="content-section"> <!-- begin dashboard info -->
-    <div class="col-xs-4">
-      <div class="panel panel-default">
-        <div class="panel-heading">Documentation</div>
-        <div class="panel-body">
-          <ul>
-            <li><a href="/docs/user/index.html" target="_blank">User Documentation</a></li>
-            <li><a href="/docs/dev/index.html" target="_blank">Developer Documentation</a></li>
-            <li><a href="/docs/routes/index.html" target="_blank">Routes Documentation</a></li>
-          </ul>
+    <!-- Charts Row -->
+    <div class="row">
+      <div class="col-12 col-md-6">
+        <div class="chart-container">
+          <div class="chart-title">Endpoint Group Messages(Last 4 Hours)</div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: #ff9800;"></span>
+              <span>Endpoint Group Messages</span>
+            </div>
+          </div>
+          <div class="chart-canvas">
+            <canvas id="messagesChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="chart-container">
+          <div class="chart-title">Carrier Group Messages(Last 4 Hours)</div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: #1976d2;"></span>
+              <span>Carrier Group Messages</span>
+            </div>
+          </div>
+          <div class="chart-canvas">
+            <canvas id="callsChart"></canvas>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-xs-4">
-      <div class=" panel  panel-default">
-        <div class="panel-heading">Training</div>
-        <div class="panel-body">
-          <ul>
-            <li><a href="https://dopensource.com/product/dsiprouter-admin-course/" target="_blank">dSIPRouter 1 Day
-              Admin Course</a></li>
+
+    
+    <div class="row">
+
+      <!-- System Status -->
+      <div class="col-12 col-md-4">
+        <div class="status-panel" id="status-panel">
+          <div class="status-panel-title">System Status</div>
+          <div id="systems-container">
+          </div>
+        </div>
+      </div>
+      
+      <!-- Endpoints -->
+       <div class="col-12 col-md-4">
+        <div class="status-panel">
+          <div class="status-panel-title">Top Endpoints Groups</div>
+          <ul class="endpoint-list" id="endpoints-list">
           </ul>
         </div>
       </div>
-    </div>
-    <div class="col-xs-4">
-      <div class="panel panel-default">
-        <div class="panel-heading">Support</div>
-        <div class="panel-body">
-          <ul>
-            <li>Paid Support
-              <ul>
-                <li><a href="https://dopensource.com/dsiprouter-core/" target="_blank">Annual Subscription</a></li>
-              </ul>
-            </li>
-            <li>Free Support
-              <ul>
-                <li><a href="https://join.slack.com/t/dsiproutercommunity/shared_invite/zt-1dtqvpyck-H9k~DYgJJ2XIFgh_rWqdPA/" target="_blank">Slack</a></li>
-                <li><a href="https://groups.google.com/forum/#!forum/dsiprouter" target="_blank">User Forum</a></li>
-              </ul>
-            </li>
-            <li>Kamailio Consultants Directory
-              <ul>
-                <li><a href="https://www.kamailio.org/w/business-directory/" target="_black">Kamailio Business
-                  Directory</a></li>
-              </ul>
-            </li>
-          </ul>
+
+      
+     
+      <!-- Alerts -->
+      <div class="col-12 col-md-4">
+        <div class="status-panel">
+          <div class="status-panel-title">Alerts</div>
+          <div id="alerts-container">
+          </div>
         </div>
       </div>
     </div>
-  </div> <!-- end dashboard info -->
+  </div>
 
 {% endblock %}
 
+
 {% block custom_js %}
+  {{ script_tag('chart.min') }}
   {{ script_tag('dashboard') }}
 {% endblock %}

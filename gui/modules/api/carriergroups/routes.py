@@ -2,8 +2,9 @@ import sys, os, importlib.util
 # make sure the generated source files are imported instead of the template ones
 if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
-from flask import Blueprint, jsonify
-from database import startSession, DummySession, GatewayGroups
+from flask import Blueprint, jsonify, request
+from werkzeug import exceptions as http_exceptions
+from database import startSession, DummySession, GatewayGroups, Gateways, Address, DsipGwgroup2LB
 from shared import debugEndpoint, StatusCodes, getRequestData, strFieldsToDict
 from util.ipc import STATE_SHMEM_NAME, getSharedMemoryDict
 from util.networking import getExternalIP
@@ -18,13 +19,68 @@ carriergroups = Blueprint('carriergroups','__name__')
 #       marked for implementation in v0.74
 
 
+def getCarrierGroupEndpoints(db, gwgroupid):
+    """
+    Return the endpoints (carriers) associated with a carrier group
+    """
+
+    endpoints = []
+
+    gateways = db.query(Gateways).filter(
+        Gateways.description.regexp_match(f'gwgroup:{gwgroupid}(,|$)')
+    ).all()
+
+    for gateway in gateways:
+        fields = strFieldsToDict(gateway.description)
+        endpoints.append({
+            'gwid': gateway.gwid,
+            'name': fields['name'] if 'name' in fields else '',
+            'hostname': gateway.address,
+            'strip': gateway.strip,
+            'prefix': gateway.pri_prefix
+        })
+
+    return endpoints
+
+
+def deleteCarrierGroupData(db, gwgroupid):
+    """
+    Delete a carrier group along with its endpoints, addresses and load balancing settings\n
+    The caller is responsible for committing the transaction
+    """
+
+    gateways = db.query(Gateways).filter(
+        Gateways.description.regexp_match(f'gwgroup:{gwgroupid}(,|$)')
+    )
+
+    # the address entries are tracked on the gateway, gather them before the gateways are removed
+    address_ids = []
+    for gateway in gateways:
+        fields = strFieldsToDict(gateway.description)
+        if 'addr_id' in fields:
+            address_ids.append(fields['addr_id'])
+
+    if len(address_ids) > 0:
+        db.query(Address).filter(Address.id.in_(address_ids)).delete(synchronize_session=False)
+
+    gateways.delete(synchronize_session=False)
+
+    db.query(DsipGwgroup2LB).filter(
+        DsipGwgroup2LB.gwgroupid == gwgroupid
+    ).delete(synchronize_session=False)
+
+    db.query(GatewayGroups).filter(
+        GatewayGroups.id == gwgroupid
+    ).delete(synchronize_session=False)
+
+
 @carriergroups.route('/api/v1/carriergroups',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['GET'])
 @carriergroups.route('/api/v1/carriergroups/<string:id>',methods=['DELETE'])
 @api_security
-def listCarrierGroups():
+def listCarrierGroups(id=None):
     """
-    List all Carrier Groups\n
+    List all Carrier Groups, retrieve a single Carrier Group, or delete a Carrier Group\n
 
     ===============
     Request Payload
@@ -67,22 +123,45 @@ def listCarrierGroups():
 
         db = startSession()
 
-        carriergroups = db.query(GatewayGroups).filter(
+        carriergroup_query = db.query(GatewayGroups).filter(
             GatewayGroups.description.regexp_match(GatewayGroups.FILTER.CARRIER.value)
-        ).all()
+        )
+        # a specific carrier group was requested
+        if id is not None:
+            carriergroup_query = carriergroup_query.filter(GatewayGroups.id == id)
+
+        carriergroups = carriergroup_query.all()
+
+        if id is not None and len(carriergroups) == 0:
+            raise http_exceptions.NotFound("The carrier group doesn't exist")
+
+        if request.method == 'DELETE':
+            deleteCarrierGroupData(db, id)
+            db.commit()
+
+            getSharedMemoryDict(STATE_SHMEM_NAME)['kam_reload_required'] = True
+            response_payload['kamreload'] = True
+            response_payload['msg'] = 'Carrier group deleted'
+            return jsonify(response_payload), StatusCodes.HTTP_OK
 
         for carriergroup in carriergroups:
             # Grap the description field, which is comma seperated key/value pair
             fields = strFieldsToDict(carriergroup.description)
 
             # append summary of endpoint group data
-            response_payload['data'].append({
+            carriergroup_data = {
                 'gwgroupid': carriergroup.id,
                 'name': fields['name'],
                 'gwlist': carriergroup.gwlist
-            })
+            }
 
-        response_payload['msg'] = 'Endpoint groups found'
+            # include the endpoints when a single carrier group is requested
+            if id is not None:
+                carriergroup_data['endpoints'] = getCarrierGroupEndpoints(db, carriergroup.id)
+
+            response_payload['data'].append(carriergroup_data)
+
+        response_payload['msg'] = 'Carrier groups found'
         return jsonify(response_payload), StatusCodes.HTTP_OK
 
     except Exception as ex:

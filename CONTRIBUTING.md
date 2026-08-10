@@ -137,9 +137,22 @@ curl --insecure -H "Authorization: Bearer $DSIP_TOKEN" -X GET https://$DSIP_HOST
 ```
 
 
-### Usability
+## Usability
 
- - Web GUI
+### Web UI standards
+
+The buttons on the page should follow the color scheme defined below:
+
+| Button Name | Button Purpose | Button Background Color | Bootstrap5 class / Custom class |
+|-------------|----------------|--------------|
+| Reload | Reload Core dSIPRouter Components | #2188B0| btn-reload |
+| Add | Add new configuration | #198754 | btn-success
+| Update | Update a configuration |        | btn-warning
+| Delete | Delete a configuration |        | btn-danager
+| 
+
+
+
  - REST API
  - CLI Commands
 

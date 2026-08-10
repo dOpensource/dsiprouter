@@ -13,10 +13,10 @@
 
   <div class="btn-group col-sm-3" id="menu">
     <select class="btn-primary btn-md" id="endpointgroups">
-      <option class="hidden" value="0" selected disabled>Select Endpoint Group</option>
+      <option class="d-none" value="0" selected disabled>Select Endpoint Group</option>
     </select>
-    <i class="glyphicon glyphicon glyphicon-refresh" id="refreshCDR"></i>
-    <i class="glyphicon glyphicon-download-alt" id="downloadCDR"></i>
+    <i class="ti ti-refresh" id="refreshCDR"></i>
+    <i class="ti ti-download" id="downloadCDR"></i>
   </div>
 
   <div>
@@ -39,9 +39,9 @@
       <th data-field="call_start_time">Call Start</th>
       <th data-field="call_duration">Call Duration</th>
       <th data-field="call_direction">Call Direction</th>
-      <th data-field="src_gwgroupid" class="hidden"></th>
+      <th data-field="src_gwgroupid" class="d-none"></th>
       <th data-field="src_gwgroupname">Source Gateway Group</th>
-      <th data-field="dst_gwgroupid" class="hidden"></th>
+      <th data-field="dst_gwgroupid" class="d-none"></th>
       <th data-field="dst_gwgroupname">Destination Gateway Group</th>
       <th data-field="src_username">Source Username</th>
       <th data-field="dst_username">Destination Username</th>

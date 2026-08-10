@@ -7,7 +7,7 @@ if sys.path[0] != '/etc/dsiprouter/gui':
     sys.path.insert(0, '/etc/dsiprouter/gui')
 
 # all of our standard and project file imports
-import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time
+import os, json, urllib.parse, glob, datetime, csv, logging, signal, bjoern, secrets, subprocess, time, requests, socket
 import importlib.util
 from ansi2html import Ansi2HTMLConverter
 from copy import copy
@@ -16,7 +16,7 @@ from flask import Flask, render_template, request, redirect, flash, session, url
 from flask_wtf.csrf import CSRFProtect
 from itsdangerous import URLSafeTimedSerializer
 from pygtail import Pygtail
-from sqlalchemy import exc as sql_exceptions, Integer
+from sqlalchemy import exc as sql_exceptions, Integer, or_
 from sqlalchemy.orm import load_only
 from sqlalchemy.sql import text, func, select
 from sqlalchemy.orm.session import close_all_sessions
@@ -32,10 +32,10 @@ from database import DummySession, createSessionObjects, startSession, settingsT
     Gateways, Address, InboundMapping, OutboundRoutes, Subscribers, dSIPLCR, UAC, GatewayGroups, \
     Domain, DomainAttrs, dSIPMultiDomainMapping, dSIPHardFwd, dSIPFailFwd, updateDsipSettingsTable, \
     Dispatcher, DsipGwgroup2LB
+from modules.numbers.db.dsip_number import dSIPNumber
 from modules import flowroute
 from modules.domain.domain_routes import domains
 from modules.api.api_routes import api
-from modules.api.mediaserver.routes import mediaserver
 from modules.api.carriergroups.routes import carriergroups, addCarrierGroups
 from modules.api.carriergroups.functions import addUpdateCarriers, displayCarrierGroups, displayCarriers
 from modules.api.kamailio.functions import reloadKamailio
@@ -44,6 +44,7 @@ from modules.api.licensemanager.functions import licenseDictToStateDict, getLice
     getLicenseStatus
 from modules.api.licensemanager.routes import license_manager
 from modules.api.auth.routes import user
+from modules.numbers import numbers
 from util.security import Credentials, urandomChars, AES_CTR
 from util.ipc import SETTINGS_SHMEM_NAME, STATE_SHMEM_NAME, createSharedMemoryDict, getSharedMemoryDict
 from util.parse_json import CreateEncoder
@@ -72,22 +73,65 @@ UPGRADE_OFFSET = f'{UPGRADE_LOG}.offset'
 
 # module variables
 app = Flask(__name__, static_folder="./static", static_url_path="/static")
+if settings.DEBUG:
+    app.config['EXPLAIN_TEMPLATE_LOADING'] = True
+app.logger.setLevel(logging.INFO)
 app.register_blueprint(domains)
 app.register_blueprint(api)
-app.register_blueprint(mediaserver)
 app.register_blueprint(carriergroups)
 app.register_blueprint(user)
 app.register_blueprint(license_manager)
 app.register_blueprint(Blueprint('docs', 'docs', static_url_path='/docs', static_folder=settings.DSIP_DOCS_DIR))
 csrf = CSRFProtect(app)
 csrf.exempt(api)
-csrf.exempt(mediaserver)
 csrf.exempt(carriergroups)
 csrf.exempt(user)
 csrf.exempt(license_manager)
+
 numbers_api = flowroute.Numbers()
 ansi_converter = Ansi2HTMLConverter(inline=True)
 auth_modules = []
+dynamicModules = {}
+
+
+def _sync_number_status_from_inbound_route(db, did, gwlist):
+    normalized_did = did.lstrip('+') if did else ''
+    if not normalized_did:
+        return
+
+    number = db.query(dSIPNumber).filter(
+        or_(
+            dSIPNumber.did == normalized_did,
+            dSIPNumber.did == '+' + normalized_did,
+        )
+    ).first()
+
+    if number is not None:
+        number.status = 'assigned' if gwlist else 'available'
+
+# Load Dynamic Modules - Module v2 Architecture
+for custom_module in glob.glob(f"{settings.DSIP_PROJECT_DIR}/gui/modules/*"):
+    if os.path.exists(f"{custom_module}/__init__.py"):
+        module_path = f"modules." + os.path.basename(custom_module)
+        try:
+            print(f"Trying to Load module: {module_path}")
+            module = importlib.import_module(module_path)
+            # Only v2 have an init_module function
+            if hasattr(module, 'init_module'):
+                module.init_module(app, csrf, settings)
+                print(f"Module loaded: {module.description}")
+                module_details = {}
+                module_details['menu_name'] = module.menu_name
+                module_details['menu_icon'] = module.menu_icon
+                dynamicModules[module.name] = module_details
+            else:
+                print(f"Module is NOT v2, will load statically: {module_path}")
+        except Exception as e:
+            print(f"Failed to load module: {module_path} - {str(e)}")
+
+
+
+
 
 
 @app.before_first_request
@@ -168,6 +212,28 @@ def backupandrestore():
         return showError(type=error)
 
 
+@app.route('/settings')
+def ui_settings():
+    try:
+        if (settings.DEBUG):
+            debugEndpoint()
+
+        if not session.get('logged_in'):
+            return render_template('index.html', version=settings.VERSION)
+        else:
+            action = request.args.get('action')
+            return render_template('settings.html', show_add_onload=action, version=settings.VERSION)
+
+
+    except http_exceptions.HTTPException as ex:
+        debugException(ex)
+        return showError(type='http', code=ex.code, msg=ex.description)
+    except Exception as ex:
+        debugException(ex, log_ex=False, print_ex=True, showstack=False)
+        error = "server"
+        return showError(type=error)
+
+
 @app.route('/certificates')
 def certificates():
     try:
@@ -194,6 +260,26 @@ def certificates():
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
         'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
+@app.context_processor
+def inject_login_nextpage():
+    nextpage = request.full_path
+    if nextpage.endswith('?'):
+        nextpage = nextpage[:-1]
+
+    return {
+        'nextpage': nextpage,
+    }
+
+
+def _sanitize_nextpage(nextpage):
+    if isinstance(nextpage, str) and nextpage.startswith('/'):
+        parsed = urllib.parse.urlsplit(nextpage)
+        if not parsed.scheme and not parsed.netloc:
+            return nextpage
+
+    return url_for('index')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -228,14 +314,14 @@ def login():
             if secrets.compare_digest(pwcheck, settings.DSIP_PASSWORD):
                 session['logged_in'] = True
                 session['username'] = form['username']
-                return redirect(url_for('index'))
+                return redirect(_sanitize_nextpage(form.get('nextpage')))
        
         # Check for user in other auth modules
         for auth_mod in auth_modules:
             if auth_mod.authenticate(form['username'], form['password']):
                 session['logged_in'] = True
                 session['username'] = form['username']
-                return redirect(url_for('index'))
+                return redirect(_sanitize_nextpage(form.get('nextpage')))
 
         # if we got here auth failed
         flash('Wrong Username or Password')
@@ -296,7 +382,7 @@ def deleteCarrierGroups():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -369,7 +455,7 @@ def deleteCarriers():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -461,7 +547,7 @@ def displayEndpointGroups():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -510,7 +596,7 @@ def displayCDRS():
     """
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -545,7 +631,7 @@ def displayLicenseManager():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -572,7 +658,7 @@ def addUpdateEndpointGroups():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -718,7 +804,7 @@ def displayInboundMapping():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -757,6 +843,7 @@ SELECT * FROM (
         if len(settings.FLOWROUTE_ACCESS_KEY) > 0 and len(settings.FLOWROUTE_SECRET_KEY) > 0:
             try:
                 dids = numbers_api.getNumbers()
+                # print("The did's returned: {}".format(dids))
             except http_exceptions.HTTPException as ex:
                 debugException(ex)
                 return showError(type="http", code=ex.code, msg="Flowroute Credentials Not Valid")
@@ -867,6 +954,7 @@ def addUpdateInboundMapping():
 
             IMap = InboundMapping(settings.FLT_INBOUND, prefix, gwlist, description)
             inserts.append(IMap)
+            _sync_number_status_from_inbound_route(db, prefix, gwlist)
 
             # find last rule in dr_rules
             res = db.execute(
@@ -1001,6 +1089,7 @@ def addUpdateInboundMapping():
             IMap.prefix = prefix
             IMap.gwlist = gwlist
             IMap.description = description
+            _sync_number_status_from_inbound_route(db, IMap.prefix, IMap.gwlist)
 
             hardfwd_exists = True if db.query(dSIPHardFwd).filter(dSIPHardFwd.dr_ruleid == ruleid).scalar() else False
             db.flush()
@@ -1243,6 +1332,7 @@ def deleteInboundMapping():
             dispatcher_gateway.delete(synchronize_session=False)
         # Delete the rule now
         db.delete(im_rule)
+        _sync_number_status_from_inbound_route(db, im_rule.prefix, '')
 
         if len(hf_ruleid) > 0:
             # no dr_rules created for fwding without a gwgroup selected
@@ -1433,7 +1523,7 @@ def displayTeleBlock():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1501,7 +1591,7 @@ def displayTransNexus(msg=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1601,7 +1691,7 @@ def displayOutboundRoutes():
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -1890,7 +1980,7 @@ def displayStirShaken(msg=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2004,7 +2094,7 @@ def displayUpgrade(msg=None):
 
     try:
         if not session.get('logged_in'):
-            return redirect(url_for('index'))
+            return render_template('index.html', version=settings.VERSION)
 
         if (settings.DEBUG):
             debugEndpoint()
@@ -2259,7 +2349,8 @@ def injectGlobals():
     return {
         'settings': settings,
         'state': state,
-        'licenseValid': lambda tag: getLicenseStatusFromStateDict(state['dsip_license_store'], tag)
+        'licenseValid': lambda tag: getLicenseStatusFromStateDict(state['dsip_license_store'], tag),
+        'dynamicModules': dynamicModules
     }
 
 
@@ -2309,6 +2400,7 @@ def injectGlobals():
 # DEPRECATED: updating network settings portion of this function has moved to the CLI
 #             marked for refactoring in v0.80 as shown below
 #               def syncSettings(new_fields={}):
+
 def syncSettings(new_fields={}, update_net=False):
     """
     Synchronize settings.py with shared mem / db
@@ -2363,7 +2455,6 @@ def syncSettings(new_fields={}, update_net=False):
         debugException(ex)
         IO.printerr('Could Not Update dsip_settings Database Table')
         raise
-
 
 def sigHandler(signum=None, frame=None):
     """ Logic for trapped signals """
@@ -2437,10 +2528,11 @@ def intializeGlobalSettings():
         IO.printinfo(f'global settings initialized: {updated_settings}')
 
 
-def intializeGlobalState():
+def intializeGlobalState(**state_updates):
     """
     Initialize global state and make it accessible in shared memory
 
+    :param state_updates:  if passed in, the changes to make to the global state
     :return:    None
     :rtype:     None
     """
@@ -2457,12 +2549,25 @@ def intializeGlobalState():
     except json.JSONDecodeError:
         state = {}
 
-    # license checks are always performed on startup, not loaded from state file
-    state['dsip_license_store'] = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
+    try:
+        # license checks are always performed on startup, not loaded from state file
+        state['dsip_license_store'] = licenseDictToStateDict(settings.DSIP_LICENSE_STORE)
+        state['license_server_unreachable'] = False
+    except requests.exceptions.RequestException as ex:
+        IO.logerr(str(ex))
+        # if we failed to contact the license server, allow startup, but warn user
+        # TODO: maybe we should use the alerting toolbar to display this notification instead
+        state['dsip_license_store'] = {}
+        state['license_server_unreachable'] = True
+
+    # these values are loaded from state file if it exists
     state['kam_reload_required'] = state.get('kam_reload_required', False)
     state['dsip_reload_required'] = state.get('dsip_reload_required', False)
     state['dsip_reload_ongoing'] = state.get('dsip_reload_ongoing', False)
     state['dsip_upgrade_ongoing'] = state.get('dsip_upgrade_ongoing', False)
+
+    # after normal logic for loading state we do any overwrites passed in
+    state.update(state_updates)
 
     createSharedMemoryDict(state, name=STATE_SHMEM_NAME)
 
@@ -2482,10 +2587,6 @@ def intializeAuthModules():
         spec.loader.exec_module(auth_mod)
         auth_mod.initialize()
         auth_modules.append(auth_mod)
-
-def guiLicenseCheck(tag):
-    global state
-    return getLicenseStatusFromStateDict(state['dsip_license_store'], tag)
 
 
 def initApp(flask_app):
@@ -2513,6 +2614,8 @@ def initApp(flask_app):
     flask_app.config['EMAIL_SALT'] = urandomChars()
     flask_app.config['TIMED_SERIALIZER'] = URLSafeTimedSerializer(flask_app.config["SECRET_KEY"])
 
+   
+
     # Add jinja2 filters
     flask_app.jinja_env.filters["attrFilter"] = attrFilter
     flask_app.jinja_env.filters["yesOrNoFilter"] = yesOrNoFilter
@@ -2524,11 +2627,18 @@ def initApp(flask_app):
     flask_app.jinja_env.globals.update(zip=zip)
     flask_app.jinja_env.globals.update(jsonLoads=json.loads)
 
+    # cache-busting token for static assets (file mtime) so browsers pick up
+    # CSS/JS changes without a manual hard refresh; falls back to the app version
+    _static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    def staticAssetVersion(relpath):
+        try:
+            return str(int(os.path.getmtime(os.path.join(_static_dir, relpath))))
+        except OSError:
+            return settings.VERSION
+    flask_app.jinja_env.globals.update(staticAssetVersion=staticAssetVersion)
+
     # Dynamically update settings
     intializeGlobalSettings()
-
-    # Reload Kamailio with the settings from dSIPRouter settings config
-    reloadKamailio()
 
     # configs depending on updated settings go here
     # DEPRECATED: flask_app.env is deprecated and only flask_app.debug will be used in the future, marked for removal in v0.80
@@ -2563,8 +2673,16 @@ def initApp(flask_app):
     if os.path.exists(settings.DSIP_UNIX_SOCK):
         os.remove(settings.DSIP_UNIX_SOCK)
 
-    # Initialize global variables based on persistent state
-    intializeGlobalState()
+    try:
+        # Reload Kamailio with the settings from dSIPRouter settings config
+        reloadKamailio()
+    except http_exceptions.HTTPException as ex:
+        IO.logerr(ex.description)
+        # Initialize global variables and make sure user knows kamailio needs reloaded
+        intializeGlobalState(kam_reload_required=True)
+    else:
+        # Initialize global variables based on persistent state
+        intializeGlobalState()
 
     # Initialize authentication modules
     intializeAuthModules()
@@ -2573,7 +2691,7 @@ def initApp(flask_app):
     with open(settings.DSIP_PID_FILE, 'w') as pidfd:
         pidfd.write(str(os.getpid()))
 
-    # start the Flask App server
+    # Start the Flask app server over the unix socket.
     bjoern.run(flask_app, 'unix:{}'.format(settings.DSIP_UNIX_SOCK), reuse_port=True)
 
 

@@ -118,13 +118,16 @@ function install {
         -pe 's%TLS_PROTOCOLS%${tls_protocols}%g;' \
         ${DSIP_PROJECT_DIR}/nginx/configs/nginx.conf >/etc/nginx/nginx.conf
 
+    # configure nginx systemd service
+    mkdir -p /etc/systemd/system/nginx.service.d/
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-stop.sh /usr/sbin/nginx-stop
-    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v1.service /lib/systemd/system/nginx.service
+    cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-v1.service /etc/systemd/system/nginx.service.d/override.conf
     cp -f ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher-v1.service /lib/systemd/system/nginx-watcher.service
     perl -p \
         -e "s%PathChanged\=.*%PathChanged=${DSIP_CERTS_DIR}/%;" \
         ${DSIP_PROJECT_DIR}/nginx/systemd/nginx-watcher.path >/lib/systemd/system/nginx-watcher.path
-    chmod 644 /lib/systemd/system/nginx.service
+    chmod 755 /etc/systemd/system/nginx.service.d/
+    chmod 644 /etc/systemd/system/nginx.service.d/override.conf
     chmod 644 /lib/systemd/system/nginx-watcher.service
     chmod 644 /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload
@@ -133,55 +136,34 @@ function install {
     return 0
 }
 
-
-function uninstall {
-    # Uninstall dependencies for dSIPRouter
-    PIP_CMD="pip"
-
-    cat ${DSIP_PROJECT_DIR}/gui/requirements.txt | xargs -n 1 $PYTHON_CMD -m ${PIP_CMD} uninstall --yes
-    if [ $? -eq 1 ]; then
-        printerr "dSIPRouter uninstall failed or the libraries are already uninstalled"
-        exit 1
-    else
-        printdbg "DSIPRouter uninstall was successful"
-        exit 0
-    fi
-
-    yum remove -y python36u\*
-    yum remove -y ius-release
+function uninstall() {
+    # stop nginx and remove nginx package
+    systemctl stop nginx
+    systemctl disable nginx
     yum remove -y nginx
-    yum groupremove -y "Development Tools"
 
-    # Remove the repos
-    rm -f /etc/yum.repos.d/ius*
-    rm -f /etc/pki/rpm-gpg/IUS-COMMUNITY-GPG-KEY
-    yum clean all
-
-    # Remove Firewall for DSIP_PORT
-    firewall-cmd --zone=public --remove-port=${DSIP_PORT}/tcp --permanent
-    firewall-cmd --reload
-
-    # Remove dSIPRouter Logging
-    rm -f /etc/rsyslog.d/dsiprouter.conf
-
-    # Remove logrotate settings
-    rm -f /etc/logrotate.d/dsiprouter
-
-    # Remove dSIProuter as a service
-    systemctl disable dsiprouter.service
-    rm -f /lib/systemd/system/dsiprouter.service
+    # remove nginx systemd service
+    rm -f /usr/sbin/nginx-stop
+    rm -rf /etc/systemd/system/nginx.service.d/
+    rm -f /lib/systemd/system/nginx-watcher.service
+    rm -f /lib/systemd/system/nginx-watcher.path
     systemctl daemon-reload
+
+    # remove SELINUX permissions
+    semanage port -d -t http_port_t -p tcp ${DSIP_PORT}
+
+    return 0
 }
 
-
 case "$1" in
-    uninstall|remove)
-        uninstall
+    uninstall)
+        uninstall && exit 0 || exit 1
         ;;
     install)
-        install
+        install && exit 0 || exit 1
         ;;
     *)
         printerr "usage $0 [install | uninstall]"
+        exit 1
         ;;
 esac

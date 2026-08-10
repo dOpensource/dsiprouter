@@ -195,6 +195,8 @@ function install {
 
     # allow root to fix permissions before starting services (required to work with SELinux enabled)
     usermod -a -G rtpengine root
+    # allow rtpengine to read configs from dsiprouter group
+    usermod -a -G dsiprouter rtpengine
 
     # setup rtpengine defaults file
     cp -f ${DSIP_PROJECT_DIR}/rtpengine/configs/default.conf /etc/default/rtpengine.conf

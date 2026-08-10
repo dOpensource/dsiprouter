@@ -28,16 +28,73 @@ if (typeof API_BASE_URL === "undefined") {
 /* TODO: replace shorthands with $(document).ready(...) its more verbose */
 $(function() {
   var accordionActive = false;
+  var SYSTEM_SETTINGS_MENU_ID = '#system-settings-menu';
+  var SYSTEM_SETTINGS_EXPANDED_KEY = 'dsip.systemSettings.expanded';
+  var SIDEBAR_COLLAPSED_KEY = 'dsip.sidebar.collapsed';
+
+  function setSystemSettingsExpanded(expanded) {
+    localStorage.setItem(SYSTEM_SETTINGS_EXPANDED_KEY, expanded ? '1' : '0');
+  }
+
+  function getSystemSettingsExpanded() {
+    return localStorage.getItem(SYSTEM_SETTINGS_EXPANDED_KEY) === '1';
+  }
+
+  function shouldKeepSystemSettingsExpanded($menu) {
+    if (getSystemSettingsExpanded()) {
+      return true;
+    }
+
+    var currentPath = window.location.pathname;
+    var matchesCurrentPage = false;
+    $menu.find('.submenu a').each(function() {
+      if (this.pathname === currentPath) {
+        matchesCurrentPage = true;
+        return false;
+      }
+    });
+
+    return matchesCurrentPage;
+  }
+
+  function openSystemSettingsMenu($menu) {
+    var $submenu = $menu.children('.submenu');
+    if ($submenu.length <= 0) {
+      return;
+    }
+
+    $menu.addClass('open');
+    $submenu.show();
+  }
+
+  function isDesktopViewport() {
+    return $(window).width() >= 768;
+  }
+
+  function setSidebarCollapsed(collapsed) {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  }
+
+  function getSidebarCollapsed() {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+  }
+
+  function applySidebarCollapsedState() {
+    var isCollapsed = getSidebarCollapsed();
+    var collapseEnabled = isDesktopViewport() && isCollapsed;
+    $('.wrap').toggleClass('sidebar-collapsed', collapseEnabled);
+    $('#side-menu-collapse-toggle')
+      .toggleClass('is-active', isCollapsed)
+      .attr('aria-pressed', isCollapsed ? 'true' : 'false');
+  }
 
   $(window).on('resize', function() {
     var windowWidth = $(window).width();
     var $topMenu = $('#top-menu');
     var $sideMenu = $('#side-menu');
-    var top_bar = $('.top-bar');
     var msg_bar = $('.message-bar');
 
     if (windowWidth < 768) {
-      top_bar.show();
       msg_bar.hide();
 
       if ($topMenu.hasClass("active")) {
@@ -85,7 +142,6 @@ $(function() {
       }
     }
     else {
-      top_bar.hide();
       msg_bar.show();
 
       if ($sideMenu.hasClass("active")) {
@@ -104,6 +160,8 @@ $(function() {
         $ddl.appendTo($topMenu.find('.nav'));
       }
     }
+
+    applySidebarCollapsedState();
   });
 
   /**/
@@ -114,6 +172,12 @@ $(function() {
     $menulink.toggleClass('active');
     $wrap.toggleClass('active');
     return false;
+  });
+
+  $('#side-menu-collapse-toggle').on('click', function(ev) {
+    ev.preventDefault();
+    setSidebarCollapsed(!getSidebarCollapsed());
+    applySidebarCollapsedState();
   });
 
   /*Accordion*/
@@ -131,7 +195,22 @@ $(function() {
     var $el = e.data.el;
     var $this = $(this);
     var $next = $this.next();
-    var anchor = $this.find('a')
+    var anchor = $this.find('a');
+
+    // In collapsed desktop mode, labels are hidden, so use icon-row clicks for navigation.
+    if ($('.wrap').hasClass('sidebar-collapsed') && anchor.length > 0) {
+      var href = anchor.attr('href');
+      if (href && href !== '#') {
+        window.location.href = href;
+        return;
+      }
+    }
+
+    if ($next.length <= 0 || !$next.hasClass('submenu')) {
+      return;
+    }
+
+    var wasOpen = $this.parent().hasClass('open');
 
     $next.slideToggle();
     $this.parent().toggleClass('open');
@@ -139,17 +218,37 @@ $(function() {
     if (!e.data.multiple) {
       $el.find('.submenu').not($next).slideUp().parent().removeClass('open');
     }
+
+    if ($this.parent().is(SYSTEM_SETTINGS_MENU_ID)) {
+      setSystemSettingsExpanded(!wasOpen);
+    } else if (!e.data.multiple) {
+      setSystemSettingsExpanded(false);
+    }
   };
 
   var accordion = new Accordion($('ul.accordion'), false);
+
+  var $systemSettingsMenu = $(SYSTEM_SETTINGS_MENU_ID);
+  if (shouldKeepSystemSettingsExpanded($systemSettingsMenu)) {
+    openSystemSettingsMenu($systemSettingsMenu);
+    setSystemSettingsExpanded(true);
+  }
+
+  applySidebarCollapsedState();
 });
 
 $(function() {
   /* styling links */
+  $('#side-menu li.nav-header').removeClass('selected-menu-item');
   $('a').each(function() {
-    if ($(this).prop('href') === window.location.href) {
-      $(this).removeClass('navlink');
-      $(this).addClass('currentlink');
+    var $anchor = $(this);
+    if ($anchor.prop('href') === window.location.href) {
+      $anchor.removeClass('navlink');
+      $anchor.addClass('currentlink');
+
+      if ($anchor.closest('#side-menu').length > 0) {
+        $anchor.closest('li.nav-header').addClass('selected-menu-item');
+      }
     }
   });
   /* prevent empty links from jumping to top of page */
@@ -178,7 +277,7 @@ $(function() {
 //       if (attr === 'maintmode') {
 //         $('#checkbox_' + pbxid)[0].checked = false;
 //         if (attrvalue == 1) {
-//           $('#maintmode_' + pbxid).html("<span class='glyphicon glyphicon-wrench'>");
+//           $('#maintmode_' + pbxid).html("<i class='ti ti-wrench'>");
 //         }
 //         else {
 //           $('#maintmode_' + pbxid).html("");
@@ -225,7 +324,7 @@ $(document).ready(function() {
 
   /* kam reload button listener */
   $('#reload_kam').click(function() {
-    reloading_overlay.removeClass('hidden');
+    reloading_overlay.removeClass('d-none');
 
     $.ajax({
       type: "POST",
@@ -234,12 +333,12 @@ $(document).ready(function() {
       global: false,
       success: function(response, text_status, xhr) {
         reloadKamRequired(false);
-        reloading_overlay.addClass('hidden');
+        reloading_overlay.addClass('d-none');
         showNotification("Kamailio was reloaded");
       },
       error: function(xhr, text_status, error_msg) {
         error_msg = JSON.parse(xhr.responseText)["msg"];
-        reloading_overlay.addClass('hidden');
+        reloading_overlay.addClass('d-none');
         showNotification("Kamailio was NOT reloaded: " + error_msg, true);
       }
     });
@@ -248,7 +347,7 @@ $(document).ready(function() {
   /* dsiprouter reload button listener */
   $('#reload_dsip').click(function() {
     var url = API_BASE_URL + "reload/dsiprouter";
-    reloading_overlay.removeClass('hidden');
+    reloading_overlay.removeClass('d-none');
 
     $.ajax({
       type: "POST",
@@ -290,14 +389,14 @@ $(document).ready(function() {
             }, 3000)
           },
           function() {
-            reloading_overlay.addClass('hidden');
+            reloading_overlay.addClass('d-none');
             showNotification("dSIPRouter reload timed out. Check the logs for more information.", true);
           }
         )
       },
       error: function(xhr, text_status, error_msg) {
         error_msg = JSON.parse(xhr.responseText)["msg"];
-        reloading_overlay.addClass('hidden');
+        reloading_overlay.addClass('d-none');
         showNotification("dSIPRouter reload failed to start: " + error_msg, true);
       }
     });
@@ -345,10 +444,10 @@ $(document).ready(function() {
         /* show correct div's */
         $.each(hide_show_divs, function(i, elem) {
           if (target_radio.data('toggle') === $(elem).attr('name')) {
-            $(elem).removeClass("hidden");
+            $(elem).removeClass("d-none");
           }
           else {
-            $(elem).addClass("hidden");
+            $(elem).addClass("d-none");
           }
         });
       }
@@ -359,10 +458,10 @@ $(document).ready(function() {
         /* show correct div's */
         $.each(hide_show_divs, function(i, elem) {
           if (target_radio.data('toggle') === $(elem).attr('name')) {
-            $(elem).addClass("hidden");
+            $(elem).addClass("d-none");
           }
           else {
-            $(elem).removeClass("hidden");
+            $(elem).removeClass("d-none");
           }
         });
       }
@@ -381,7 +480,7 @@ $(document).ready(function() {
   });
 
   /* enable bootstrap tooltips */
-  $('[data-toggle="tooltip"]').tooltip();
+  $('[data-bs-toggle="tooltip"]').tooltip();
 });
 
 /* handle multiple modal stacking */

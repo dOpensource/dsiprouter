@@ -29,14 +29,14 @@
     var btn;
     if (modal_selector == "#add") {
       btn = $('#add .modal-footer').find('#addButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Add");
+      btn.html("<i class='ti ti-circle-check'></i> Add");
       btn.removeClass("btn-success");
       btn.addClass("btn-primary");
       modal_body.find('#domain').val("");
     }
     else {
       btn = $('#edit .modal-footer').find('#updateButton');
-      btn.html("<span class='glyphicon glyphicon-ok-sign'></span> Update");
+      btn.html("<i class='ti ti-circle-check'></i> Update");
       btn.removeClass("btn-success");
       btn.addClass("btn-warning");
     }
@@ -109,7 +109,7 @@ function addUploaded (requestPayload,action) {
       }
 
       btn.addClass("btn-success");
-      btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
+      btn.html("<i class='ti ti-check'></i>Saved!");
       btn.attr("disabled", true);
 
       showNotification("Certificates were uploaded");
@@ -169,7 +169,7 @@ function addGenerated(requestPayload,action) {
         }
 
         btn.addClass("btn-success");
-        btn.html("<span class='glyphicon glyphicon-check'></span>Saved!");
+        btn.html("<i class='ti ti-check'></i>Saved!");
         btn.attr("disabled", true);
 
         if (action === "POST") {

@@ -5,12 +5,10 @@
     if (toggle_node.is(":checked") || toggle_node.prop("checked")) {
       settings_node.removeClass("hidden");
       toggle_node.val("1");
-      toggle_node.bootstrapToggle('on');
     }
     else {
       settings_node.addClass("hidden");
       toggle_node.val("0");
-      toggle_node.bootstrapToggle('off');
     }
   }
 

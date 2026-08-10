@@ -1,0 +1,340 @@
+{% extends 'table_layout.html' %}
+
+{% block title %}Voice Agents{% endblock %}
+
+{% block custom_css %}
+  {{ link_tag('agents','agents') }}
+{% endblock %}
+
+{% block table_headers %}
+  <div>
+    <h3>Voice Agents</h3>
+  </div>
+
+  <div class="tableAddButton">
+    <button id='open-Add' class='btn btn-success btn-md' data-title="Add" data-bs-toggle="modal"
+            data-bs-target="#add">
+      Add
+    </button>
+  </div>
+{% endblock %}
+
+
+{% block table %}
+  <table id="agents_table" class="table table-striped table-centered">
+    <thead>
+    <tr class='element-row'>
+      <th data-field="id">ID</th>
+      <th data-field="name">Name</th>
+      <th data-field="project_id">ProjectID</th>
+      <th data-field="greeting_message">Greeting Message</th>
+      <th data-field="instructions">Instructions</th>
+      <th data-field="instructions_id">Instructions ID</th>
+      <th data-field="guardrails">Guardrails</th>
+      <th data-field="training_website">Training Website</th>
+      <th data-field="tools">Tools</th>
+      <th data-field="callback_email">Callback Email</th>
+      <th data-field="type">Type</th>
+      <th data-field="status">Status</th>
+      <th data-field="did_mapping">Assigned Inbound Route</th>
+      <th data-field="deployment_type">Deployment Type</th>
+      <th data-field="deployment_profile_id">Deployment Profile ID</th>
+      <th data-field="container_name">Container Name</th>
+      <th data-field="image_name">Image Name</th>
+      <th data-field="created_at">Created At</th>
+      <th data-field="modified_at">Modified At</th>
+      <th data-field="error">Error</th>
+      <th data-field="actions"></th>
+      <th data-field="actions"></th>
+    </tr>
+    </thead>
+  </table>
+{% endblock %}
+
+
+{% block edit_modal %}
+
+
+<div class="modal-header">
+  <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+    class="ti ti-x" aria-hidden="true"></i></button>
+    <h4 class="modal-title custom_align" id="Heading">Update Agent</h4>
+
+  </div>
+  <div class="modal-body">
+    <form id="addAgentForm" action="#" method="POST" role="form" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <input type="hidden" name="id" id="id" value=""/>
+
+      <div class="form-group">
+      <div class="radio">
+          <select class="agent_type form-control" name="agent_type" id="agent_type">
+            <option value="">Select Voice Agent API</option>
+            <option value="openai">OpenAI - Realtime</option>
+            <option value="livekit">LiveKit (Coming Soon)</option>
+          </select>
+       </div>
+      </div>
+      <div class="form-group">
+      <div class="radio">
+          <select class="project_id form-control" name="project_id" id="project_id">
+            <option value="">Select Project ID</option>
+          </select>
+       </div>
+      </div>
+      <div class="form-group">
+        <input class="agent_name form-control" type="text" id="agent_name" name="agent_name" placeholder="Agent Name" value=""
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <label class="control-label">Webhook URL</label>
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control agent-webhook-url"
+            readonly
+            data-webhook-template-url="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') }}"
+            data-webhook-base-url="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/') }}"
+            value="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') }}">
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-default copy-webhook-url" title="Copy webhook URL">
+              <i class="ti ti-copy"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <input class="webhook_secret form-control" type="password" id="webhook_secret" name="webhook_secret" placeholder="Webhook Secret" value=""
+               autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="toolchain">Select Tools for Agent </label>
+        <div class="radio">
+          <select class="toolchain form-control" multiple name="toolchain" id="toolchain">
+            <option value="tool_id_1">Request Callback</option>
+            <option value="tool_id_2">Create Quote</option>
+          </select>
+        </div>
+      </div>
+       <div class="form-group">
+        <input class="callback_email form-control" type="text" id="callback_email" name="callback_email" placeholder="Tool Notification Email" value=""
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <!-- <div class="radio">
+          <select class="predefined_instructions form-control" name="predefined_instructions" id="predefined_instructions">
+            <option value="">Select Pre-defined Agent Instructions</option>
+            <option value="instruction_1">Inbound Lead Generation</option>
+            <option value="instruction_2">Inbound Customer Support</option>
+          </select>
+       </div> -->
+          <textarea class="agent_instructions form-control" id="agent_instructions" name="agent_instructions" placeholder="Agent Instructions" rows="8">
+          </textarea>
+      </div>
+      <!--<div class="form-group">
+        <div class="radio">
+          <select class="authtype form-control" name="deployment_location">
+            <option value="">Select Deployment Location </option>
+            <option value="deployment_id_1">Local Instance</option>
+            <option value="deployment_id_2">dSIPRouter Cluster</option>
+            <option value="deployment_id_3">Kubernetes Cluster</option>
+          </select>
+        </div>
+      </div> -->
+      <div class="modal-footer ">
+        <button type="button" id="updateButton" class="btn btn-primary btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Update
+
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+{% block add_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
+    <h4 class="modal-title custom_align" id="Heading">Add</h4>
+  </div>
+  <div class="modal-body">
+    <form id="addAgentForm" action="#" method="POST" role="form" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="form-group">
+      <div class="radio">
+          <select class="agent_type form-control" name="agent_type" id="agent_type">
+            <option value="">Select Voice Agent API</option>
+            <option value="openai">OpenAI - Realtime</option>
+            <option value="livekit">LiveKit (Coming Soon)</option>
+          </select>
+       </div>
+      </div>
+      <div class="form-group">
+      <div class="radio">
+          <select class="project_id form-control" name="project_id" id="project_id">
+            <option value="">Select Project ID</option>
+          </select>
+       </div>
+      </div>
+      <div class="form-group">
+        <input class="agent_name form-control" type="text" id="agent_name" name="agent_name" placeholder="Agent Name" value=""
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <label class="control-label">Webhook URL</label>
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control agent-webhook-url"
+            readonly
+            data-webhook-template-url="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') }}"
+            data-webhook-base-url="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/') }}"
+            value="{{ ('https://' ~ settings.EXTERNAL_FQDN ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') if settings.EXTERNAL_FQDN else ('https://' ~ settings.EXTERNAL_IP_ADDR ~ ':' ~ settings.DSIP_PORT ~ '/webhook/agents/Agent Name') }}">
+          <span class="input-group-btn">
+            <button type="button" class="btn btn-default copy-webhook-url" title="Copy webhook URL">
+              <i class="ti ti-copy"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <input class="webhook_secret form-control" type="password" id="webhook_secret" name="webhook_secret" placeholder="Webhook Secret" value=""
+               autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="toolchain">Select Tools for Agent </label>
+        <div class="radio">
+          <select class="toolchain form-control" multiple name="toolchain" id="toolchain">
+            <option value="tool_id_1">Request Callback</option>
+            <option value="tool_id_2">Create Quote</option>
+          </select>
+        </div>
+      </div>
+       <div class="form-group">
+        <input class="callback_email form-control" type="text" id="callback_email" name="callback_email" placeholder="Tool Notification Email" value=""
+               autofocus="autofocus">
+      </div>
+      <div class="form-group">
+        <div class="radio">
+          <select class="predefined_instructions form-control" name="predefined_instructions" id="predefined_instructions">
+            <option value="">Select Pre-defined Agent Instructions</option>
+            <option value="instruction_1">Inbound Lead Generation</option>
+            <option value="instruction_2">Inbound Customer Support</option>
+          </select>
+       </div>
+          <textarea class="agent_instructions form-control" id="agent_instructions" name="agent_instructions" placeholder="Agent Instructions" rows="8">
+# Role & Objective
+- AI Agent built by Orange64. 
+- You assist users with inquiries about Orange64, our services, and general questions.
+- We provide business phone service and Voice AI solutions that increase productivity and customer satisfaction.
+
+# Tools
+- If a user requests a callback, 
+use the 'request_callback' function to send their details to staff.
+
+# Language and Tone
+- The conversation will be only in English.
+
+# Instructions / Rules
+- Don't answer questions outside of your role.
+- Our services and pricing includes business phone service starting at $30/month per phone and Voice AI agents: starting at $100/month per agent
+- If a user requests a quote calculate the number of phones or agents needed and provide pricing based on the pricing.
+- If a user requests a callback, use the 'request_callback' function to send their details. Repeat the phone number back to the user for confirmation.
+      </textarea>
+      </div>
+      <!--<div class="form-group">
+        <div class="radio">
+          <select class="authtype form-control" name="deployment_location">
+            <option value="">Select Deployment Location </option>
+            <option value="deployment_id_1">Local Instance</option>
+            <option value="deployment_id_2">dSIPRouter Cluster</option>
+            <option value="deployment_id_3">Kubernetes Cluster</option>
+          </select>
+        </div>
+      </div> -->
+      <div class="modal-footer ">
+        <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><i
+            class="ti ti-circle-check"></i> Add
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+
+<div class="modal fade" id="add_webhook_info" tabindex="-1" role="dialog" aria-labelledby="Add" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+  <div class="modal-header">
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
+    <h4 class="modal-title custom_align" id="Heading">Add - Configure Webhook</h4>
+  </div>
+
+  <div class="modal-body">
+    <form id="addDomainForm" action="/domains" method="POST" role="form">
+      <input class="domain_id" type="hidden" name="domain_id">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="form-group">
+        <input class="domain_name form-control" type="text" name="Webhook URL" autofocus="autofocus"
+               value="https://mack.test.dsiprouter:5001:/orange64-agent">
+      </div>
+      <div class="form-group">
+        <input class="domain_name form-control" type="text" name="Webhook Secret" autofocus="autofocus"
+               value="">
+      </div>
+  
+  <div class="modal-footer ">
+       <button type="button" id="addButton" class="btn btn-primary btn-lg" style="width: 100%;"><i
+          class="ti ti-circle-check"></i> Save
+      </button>
+  </div>
+  </div><!-- /.modal-content -->
+</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+{% block delete_modal %}
+
+  <div class="modal-header">
+    <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true"><i
+        class="ti ti-x" aria-hidden="true"></i></button>
+    <h4 class="modal-title custom_align" id="Heading">Delete this entry</h4>
+  </div>
+
+  <div class="modal-body">
+    <form action="/pbxdelete" method="POST" role="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="form-group">
+        <input class="id form-control" type="hidden" id="id" name="id" value="">
+      </div>
+
+      <div class="alert alert-danger"><i class="ti ti-alert-triangle"></i> Are you sure you want
+        to delete this Agent?
+      </div>
+
+      <div class="modal-footer ">
+        <button id="deleteButton" type="button" class="btn btn-success"><i
+            class="ti ti-circle-check"></i> Yes
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i
+            class="ti ti-x"></i> No
+        </button>
+      </div>
+    </form>
+  </div>
+
+{% endblock %}
+
+{% block custom_js %}
+  {{ script_tag('jquery.tabledit') }}
+  {{ script_tag('agents', 'agents') }}
+{% endblock %}

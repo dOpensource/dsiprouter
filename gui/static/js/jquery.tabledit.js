@@ -52,13 +52,13 @@ if (typeof jQuery === 'undefined') {
             restoreButton: true,
             buttons: {
                 edit: {
-                    class: 'btn btn-sm btn-default',
-                    html: '<span class="glyphicon glyphicon-pencil"></span>',
+                    class: 'btn btn-sm btn-secondary',
+                    html: '<i class="ti ti-pencil"></i>',
                     action: 'edit'
                 },
                 delete: {
-                    class: 'btn btn-sm btn-default',
-                    html: '<span class="glyphicon glyphicon-trash"></span>',
+                    class: 'btn btn-sm btn-secondary',
+                    html: '<i class="ti ti-trash"></i>',
                     action: 'delete'
                 },
                 save: {
@@ -76,6 +76,7 @@ if (typeof jQuery === 'undefined') {
                 }
             },
             onDraw: function() { return; },
+            beforeSave: function() { return true; },
             onSuccess: function() { return; },
             onFail: function() { return; },
             onAlways: function() { return; },
@@ -282,6 +283,10 @@ if (typeof jQuery === 'undefined') {
                 });
             },
             submit: function(td) {
+                if (plugin.settings.beforeSave(td) === false) {
+                    return false;
+                }
+
                 // Send AJAX request to server.
                 var ajaxResult = ajax(plugin.settings.buttons.edit.action);
 

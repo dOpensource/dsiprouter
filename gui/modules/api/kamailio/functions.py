@@ -160,12 +160,17 @@ def reloadKamailio():
                 sendJsonRpcCmd(*cmdset)
             except NoDispatcherSets:
                 pass
-            except KamailioError as ex:
-                err = http_exceptions.HTTPException(str(ex))
-                err.code = 500
-                raise err
             except requests.exceptions.HTTPError as ex:
-                err = http_exceptions.HTTPException(response=ex.response)
+                err = http_exceptions.HTTPException(
+                    description=f'jsonrpc cmd {cmdset} failed ===> "{str(ex)}"',
+                    response=ex.response
+                )
+                raise err
+            except KamailioError as ex:
+                err = http_exceptions.HTTPException(
+                    description=f'jsonrpc cmd {cmdset} failed -===> "{str(ex)}"'
+                )
+                err.code = 500
                 raise err
 
         IO.printinfo("[---- Reloaded Kamailio with dSIPRouter Settings ----]")

@@ -68,6 +68,9 @@ EOF
     userdel kamailio &>/dev/null; groupdel kamailio &>/dev/null
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     dnf install -y kamailio kamailio-ldap kamailio-mysql kamailio-sipdump kamailio-websocket kamailio-postgresql kamailio-debuginfo \
         kamailio-xmpp kamailio-unixodbc kamailio-utils kamailio-tls kamailio-presence kamailio-outbound kamailio-gzcompress \
         kamailio-http_async_client kamailio-dmq_userloc kamailio-jansson kamailio-json kamailio-uuid kamailio-sctp
@@ -141,8 +144,10 @@ EOF
     firewall-cmd --reload
 
     # Configure Kamailio systemd service
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /lib/systemd/system/kamailio.service
-    chmod 644 /lib/systemd/system/kamailio.service
+    mkdir -p /etc/systemd/system/kamailio.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service.d/override.conf
+    chmod 755 /etc/systemd/system/kamailio.service.d/
+    chmod 644 /etc/systemd/system/kamailio.service.d/override.conf
     systemctl daemon-reload
     systemctl enable kamailio
 
@@ -239,6 +244,9 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --reload
+
+    # Remove systemd service files
+    rm -rf /etc/systemd/system/kamailio.service.d/
 
     # Remove kamailio Logging
     rm -f /etc/rsyslog.d/kamailio.conf

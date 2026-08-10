@@ -39,7 +39,7 @@ DSIP_CERTS_DIR = '/etc/dsiprouter/certs'
 
 # dSIPRouter internal settings
 
-VERSION = '0.78'
+VERSION = '0.79'
 DEBUG = False
 # '' (default)  = handle inbound with domain mapping from endpoints, inbound from carriers and outbound to carriers
 # 'outbound'    = act as an outbound proxy only (no domain routing)
@@ -232,4 +232,7 @@ GIT_RELEASE_URL = 'https://api.github.com/repos/dOpensource/dsiprouter/releases'
 # example for ldap module:
 # AUTH_MODULES = {"ldap": {"LDAP_HOST":"ldap://ldap.dopensource.com", "USER_SEARCH_BASE":"ou=People,dc=dopensource,dc=com", "GROUP_SEARCH_BASE":"dc=dopensource,dc=com", "GROUP_MEMBER_ATTRIBUTE":"memberUid", "REQUIRED_GROUP":"support", "USER_ATTRIBUTE":"uid"}}
 AUTH_MODULES = {}
+
+VOICEAI_OPENAI_KEY = ''
+VOICEAI_AGENT_IMAGE = 'dopensource/dsiprouter-voice-agents:latest' 
 ############### End Local-Only Settings ##################

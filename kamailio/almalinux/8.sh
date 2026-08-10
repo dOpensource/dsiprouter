@@ -55,6 +55,9 @@ function install() {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
+    # allow kamailio to read configs / certs from dsiprouter group
+    usermod -a -G dsiprouter kamailio
+
     # Add the Kamailio repos to yum
     (cat << EOF
 [kamailio]
@@ -145,16 +148,12 @@ EOF
     firewall-cmd --zone=public --add-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --reload
 
-    # Make sure MariaDB and Local DNS start before Kamailio
-    if ! grep -q v 'mariadb.service dnsmasq.service' /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e 's/(After=.*)/\1 mariadb.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if ! grep -q v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service 2>/dev/null; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
+    # Configure Kamailio systemd service
+    mkdir -p /etc/systemd/system/kamailio.service.d/
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/systemd/kamailio-v2.service /etc/systemd/system/kamailio.service.d/override.conf
+    chmod 755 /etc/systemd/system/kamailio.service.d/
+    chmod 644 /etc/systemd/system/kamailio.service.d/override.conf
     systemctl daemon-reload
-
-    # Enable Kamailio for system startup
     systemctl enable kamailio
 
     # Configure rsyslog defaults
@@ -260,6 +259,9 @@ function uninstall {
     firewall-cmd --zone=public --remove-port=${KAM_WSS_PORT}/tcp --permanent
     firewall-cmd --zone=public --remove-port=${KAM_DMQ_PORT}/udp --permanent
     firewall-cmd --reload
+
+    # Remove systemd service files
+    rm -rf /etc/systemd/system/kamailio.service.d/
 
     # Remove kamailio Logging
     rm -f /etc/rsyslog.d/kamailio.conf

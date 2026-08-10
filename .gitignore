@@ -6,9 +6,28 @@
 /resources/terraform/do/*.hcl
 /resources/terraform/do/terraform.tfvars
 */__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+*.db
+*.sqlite
 venv/
 # TODO: these following files could be generated elsewhere
 # adding them to python path where needed to cleanup project dir
 docs/build/
 gui/modules/fusionpbx/certs/cert.key
 gui/modules/fusionpbx/certs/cert_combined.crt
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.pot
+*.mo
+*.swp
+*.swo
+.DS_Store   
+.env
