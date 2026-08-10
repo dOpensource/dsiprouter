@@ -66,7 +66,7 @@ You can find the steps to install of support operating systems:
 ### Support
 
 - Free Support: [dSIPRouter Slack Channel](https://join.slack.com/t/dsiproutercommunity/shared_invite/zt-1dtqvpyck-H9k~DYgJJ2XIFgh_rWqdPA)
-- Paid Support: [dSIPRouter Support](https://dsiprouter.org/#fh5co-support-section)
+- Paid Support: [dSIPRouter Support](https://dsiprouter.org/pricing/)
 
 ### Training
 
